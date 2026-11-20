@@ -313,6 +313,59 @@ CLIENT_ID = os.environ.get("HERON_CLIENT_ID") or uuid.uuid4().hex[:12]
 # person, a machine or a model.
 CONVERSATION_ID = os.environ.get("HERON_CONVERSATION_ID") or uuid.uuid4().hex
 
+# THE HOST'S OWN NAME FOR THIS CHAT, for the MCP server alone - issue #1033,
+# D-186. A fresh uuid per process made the SAME chat a stranger to its own
+# model after the Claude app restarted: the restarted server was a new
+# process, so a new conversation, and every call was refused "in use by
+# another chat" for three minutes - by itself, before the restart (seen
+# 2026-11-19, Revit 2020). Claude Code puts the chat's session id in the
+# server's environment, and a chat it RESUMES keeps that id (a forked one
+# gets a new one), so the conversation made from it is the same before and
+# after a restart, and the resumed chat takes back its own hold.
+#
+# HASHED, NEVER SENT AS IT IS: the conversation is still random and
+# meaningless on the wire and in the add-in log, and the session id never
+# leaves this machine. An explicit HERON_CONVERSATION_ID still wins - the
+# rule above. A host that names no session (Codex, an older Claude Code)
+# leaves the per-process uuid, exactly as before.
+#
+# ONLY THE SERVER ADOPTS IT (adopt_host_conversation, called by
+# heron_mcp_server.py). A command line run from a chat's own shell inherits
+# the same variable, and it is NOT adopted there: a command line is its own
+# conversation and hands back what it held when it ends (hand_back_models),
+# which must never free the chat's own holds.
+HOST_SESSION_VARIABLE = "CLAUDE_CODE_SESSION_ID"
+
+
+def host_conversation(environ=None):
+    """
+    The conversation the host's session id makes, or None: none named,
+    or HERON_CONVERSATION_ID already says which conversation this is.
+    The same session id always makes the same conversation; two make two.
+    """
+    env = os.environ if environ is None else environ
+    if env.get("HERON_CONVERSATION_ID"):
+        return None
+    session = (env.get(HOST_SESSION_VARIABLE) or "").strip()
+    if not session:
+        return None
+    return hashlib.sha256(("heron-conversation:" + session).encode("utf-8")).hexdigest()[:32]
+
+
+def adopt_host_conversation(environ=None):
+    """
+    The MCP server's one call at start: use the host's chat as this
+    process's conversation when the host names one. Returns True when it
+    did. Called before any request is sent, so nothing was sent under the
+    per-process uuid it replaces.
+    """
+    global CONVERSATION_ID
+    found = host_conversation(environ)
+    if found is None:
+        return False
+    CONVERSATION_ID = found
+    return True
+
 # THE REVITS THIS PROCESS SENT A MODEL REQUEST TO, by process id - so a
 # command line can hand back what it held when it ends (hand_back_models).
 # Filled by Bridge.request; read only when this file runs as a command.
@@ -909,15 +962,48 @@ def lease_state(bridge):
     return bool(reply.get("inUse")), bool(reply.get("mine")), int(reply.get("leaseSecondsRemaining", 0))
 
 
+def model_hold_state(bridge):
+    """
+    Who holds the model in front of this Revit: (held, mine, seconds_remaining),
+    from `info` - lease-exempt, and it looks at the hold without claiming or
+    renewing it (row 5b-1645, D-141). (None, None, 0) when the add-in does not
+    say - one from before 2026-11-20, or no model in front - which is unknown,
+    never free.
+    """
+    reply = bridge.request("info")
+    if not isinstance(reply, dict) or not reply.get("ok") or "activeModelHeld" not in reply:
+        return None, None, 0
+    held = reply.get("activeModelHeld") is True
+    try:
+        seconds = int(reply.get("activeModelHoldSecondsRemaining") or 0)
+    except (TypeError, ValueError):
+        seconds = 0
+    return held, held and reply.get("activeModelMine") is True, seconds
+
+
 def availability(bridge):
     """
     The (free) / (in use) column, as one short phrase.
 
     docs/25 called this "the missing data that makes the list honest".
+
+    THE LEASE IS PER PERSON AND THE HOLD PER CHAT (D-141), so "(free)" was said
+    of a Revit whose model in front another of the owner's chats held - the
+    lease was free - and the next request was refused (row 5b-1645). So a
+    Revit the lease calls free, or this chat's, is asked who holds the model
+    in front, and another chat's hold is said. An add-in that does not say
+    leaves the column as the lease alone gave it.
     """
     in_use, mine, seconds = lease_state(bridge)
     if in_use is None:
         return "(availability unknown)"
+    if not in_use or mine:
+        held, held_mine, left = model_hold_state(bridge)
+        if held and not held_mine:
+            return ("(the model in front is in use by another chat, ~%d min left)"
+                    % max(1, int((left + 59) // 60)))
+        if held and held_mine:
+            return "(in use by this chat)"
     if not in_use:
         return "(free)"
     if mine:

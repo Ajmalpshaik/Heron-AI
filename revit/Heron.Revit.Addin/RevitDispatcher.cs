@@ -310,13 +310,15 @@ namespace Heron.Revit.Addin
         /// there. Naming a model that is no longer open would be worse
         /// than naming none.
         /// </summary>
-        public void NoteActiveModel(string title)
+        public void NoteActiveModel(string title, string key = null)
         {
             lock (_modelLock)
             {
                 _activeModel = string.IsNullOrEmpty(title) ? null : title;
-                // The same title for the bridge's lease-free `info` (5b-1470 c).
+                // The same title for the bridge's lease-free `info` (5b-1470 c),
+                // and the model's key beside it, for who holds it (5b-1645).
                 BridgeActiveModel.Title = _activeModel;
+                BridgeActiveModel.Key = _activeModel == null ? null : key;
             }
         }
 
@@ -349,6 +351,7 @@ namespace Heron.Revit.Addin
                 {
                     _activeModel = null;
                     BridgeActiveModel.Title = null;
+                    BridgeActiveModel.Key = null;
                 }
             }
         }

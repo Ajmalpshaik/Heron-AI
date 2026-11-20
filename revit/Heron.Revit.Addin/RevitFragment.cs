@@ -651,6 +651,24 @@ namespace Heron.Revit.Addin
                 return Compile(prologue + source, PrologueLines(prologue), out script);
             };
 
+            // THE SELECTION THE FIRST RUN IS BOUND FROM, kept for D-142's second
+            // run (row 5b-1830). The delete box rolls the first run back and
+            // puts back the selection it found AFTER that run - which lost what
+            // the run deleted - so the second run, bound afresh from the live
+            // selection, found it empty and came back needs_unbound with no
+            // Keep or Discard. Held as ids, never as elements: an element the
+            // rollback put back is not the same object.
+            List<ElementId> firstRunSelection = null;
+            if (!bindAfterSetup && uidoc != null)
+            {
+                try { firstRunSelection = new List<ElementId>(uidoc.Selection.GetElementIds()); }
+                catch (Exception ex)
+                {
+                    firstRunSelection = null;
+                    HeronApplication.Log("Could not note the selection a run is bound from: " + ex.Message);
+                }
+            }
+
             if (!bindAfterSetup)
             {
                 var early = bindAndCompile();
@@ -920,6 +938,25 @@ namespace Heron.Revit.Addin
                     // own selection, which the delete box has put back.
                     if (bindAfterSetup || confirmed != null)
                     {
+                        // D-142's SECOND RUN IS BOUND FROM THE FIRST RUN'S OWN
+                        // SELECTION (row 5b-1830), put back first - those of its
+                        // ids the rollback restored. A run with setup steps is
+                        // not: its steps ran again above and chose the selection
+                        // themselves, as they did the first time.
+                        if (confirmed != null && !bindAfterSetup && firstRunSelection != null
+                            && firstRunSelection.Count > 0)
+                        {
+                            var again = new List<ElementId>();
+                            foreach (var id in firstRunSelection)
+                                if (target.GetElement(id) != null) again.Add(id);
+                            try { uidoc.Selection.SetElementIds(again); }
+                            catch (Exception ex)
+                            {
+                                HeronApplication.Log("Could not put back the selection the first run "
+                                                     + "was bound from: " + ex.Message);
+                            }
+                        }
+
                         var late = bindAndCompile();
                         if (late != null)
                         {
@@ -7001,6 +7038,13 @@ namespace Heron.Revit.Addin
                     return null;
                 }
 
+                // A COLLECTOR THAT FAULTS IS REFUSED, NOT READ AS AN EMPTY
+                // CATEGORY (row 5b-1865). This was `catch { }`: a category that
+                // faulted at once added nothing, and one that faulted part way
+                // kept what it had read - and the fragment then answered as if
+                // the model had no such elements, or fewer, which the comment
+                // below calls a real answer. A fault is not one, so it stops
+                // here as a name that is not a category does, and says so.
                 try
                 {
                     foreach (var element in new FilteredElementCollector(doc)
@@ -7013,7 +7057,14 @@ namespace Heron.Revit.Addin
                         elements.Add(element);
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    problem = "Heron could not read every element of \"" + part + "\" in "
+                            + doc.Title + " for '" + need + "' - Revit stopped the read ("
+                            + ex.Message + "). Nothing was run, because a set read part way "
+                            + "would answer as if the model had fewer of them, or none.";
+                    return null;
+                }
             }
 
             // AN EMPTY SECOND SET IS A VALUE, NOT A MISSING ONE - the same rule

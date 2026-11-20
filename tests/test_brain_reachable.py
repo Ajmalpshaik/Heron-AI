@@ -695,6 +695,16 @@ def main():
                   "capability, which is data, not a guess (D-01)")
             check(SKILL.methods_for(jobs, "paint the walls", ["MAKE_PIPE"]) == [],
                   "and a linked capability alone offers nothing either")
+            # ROW 5b-650: "this" was made singular before it was dropped, so it
+            # became "thi" - kept as a word - and every request saying "this"
+            # shared a word with every method saying it.
+            check("thi" not in SKILL._words("tag this view") and
+                  "doe" not in SKILL._words("what does this feed"),
+                  "a plain word is dropped before it is made singular - 'this' "
+                  "is never 'thi', 'does' never 'doe' (5b-650)")
+            plain = [skill("this-job", ["MAKE_PIPE"], ["do this now"])]
+            check(SKILL.methods_for(plain, "paint this", ["MAKE_PIPE"]) == [],
+                  "so 'this' alone links no request to a method")
 
             got = BRAIN.method("family-creation")
             needs = SKILL.load_all()[0]["family-creation"].needs()

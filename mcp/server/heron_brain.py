@@ -2849,15 +2849,22 @@ def gaps(days=None):
     found = GAPS.analyse(entries)
 
     wanted = []
+    unread = None
     try:
         _S, CAP, _SK, _SE, _E, _R = _brain()
         with _Open() as store:
             wanted = CAP.gaps(store)
-    except Exception:
+    except Exception as why:
         # Broad on purpose, and the docstring above says why: the trail half
         # is the deliverable. Reporting nothing because the knowledge store is
         # unavailable would withhold the evidence at the moment it is wanted.
+        #
+        # BUT AN EMPTY LIST IS NOT WHAT WAS READ (row 5b-1864). The tool turned
+        # it into "Nothing is recorded as wanted-but-unprovided" - true only
+        # of a store that was opened - so why it could not be read goes back
+        # beside it, and the tool says that in its place.
         wanted = []
+        unread = "%s: %s" % (type(why).__name__, why)
 
     # The error CODES stay in heron_gaps, and so does the sentence explaining
     # each one. Resolved here rather than in the server because the server is
@@ -2871,6 +2878,8 @@ def gaps(days=None):
     return {
         "found": found,
         "wanted": wanted,
+        # None when the registry half was read; otherwise why it was not.
+        "wanted_unread": unread,
         "skipped": skipped,
         "defects": explain(found["defects"], GAPS.DEFECTS),
         "recent": found.get("recent") or {},

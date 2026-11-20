@@ -215,6 +215,24 @@ def validate(skill):
             "%s: a skill needs at least TWO utterances. One is a name; two is "
             "the beginning of knowing how somebody actually asks" % where)
 
+    # EVERY PRECONDITION AND UTTERANCE IS TEXT (FRAGMENT-ISSUES 5b-1584). A line
+    # with a colon and a space in it is a MAPPING to YAML, not a sentence:
+    # sheets-from-excel's "Family: Type" title block line was served to the
+    # chat as a dictionary, and nothing refused it. tests/test_skills.py read
+    # the files for it; the loader's own check is this, so a method written
+    # after that suite ran is refused too. Quote such a line.
+    for field in ("preconditions", "utterances"):
+        items = skill.data.get(field)
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if not isinstance(item, str):
+                problems.append(
+                    "%s: every one of its %s must be text, not %r - a line with "
+                    "a colon and a space in it is read as a mapping; quote it"
+                    % (where, field, item))
+                break
+
     # THE RULE THIS FILE STATES IN CAPITALS, AND `isupper()` WAS NOT IT.
     #
     # "A SKILL NAMES CAPABILITIES, NEVER FRAGMENTS" is the whole reason a
@@ -268,6 +286,11 @@ def _words(text):
     singular - "families" is "family", "ducts" is "duct", "glass" stays."""
     found = []
     for word in re.findall(r"[a-z0-9]+", (text or "").lower()):
+        # A PLAIN WORD IS DROPPED BEFORE IT IS MADE SINGULAR (row 5b-650):
+        # "this" became "thi" and "does" "doe", which no list held, so every
+        # request saying "this" shared a word with every method saying it.
+        if word in _PLAIN:
+            continue
         if len(word) > 4 and word.endswith("ies"):
             word = word[:-3] + "y"
         elif len(word) > 3 and word.endswith("s") and not word.endswith("ss"):

@@ -297,6 +297,34 @@ namespace Heron.Revit.Addin
             }
         }
 
+        /// <summary>
+        /// WHO HOLDS THE MODEL, LOOKED AT AND NEVER CLAIMED OR RENEWED - for the
+        /// bridge's `info` (row 5b-1645). `revit_health` said a Revit was
+        /// "(free)" from the lease alone while another chat held the model in
+        /// front, and the next request was refused. Returns whether it is held;
+        /// `mine` is whether the asking conversation holds it, and `secondsLeft`
+        /// the most the hold can still last - both false and 0 when it is free.
+        /// A conversation of one request is never the holder, as in Claim.
+        /// </summary>
+        public bool Look(string model, string conversation, DateTime nowUtc, TimeSpan quiet,
+                         out bool mine, out long secondsLeft)
+        {
+            mine = false;
+            secondsLeft = 0;
+            if (string.IsNullOrEmpty(model)) return false;
+            lock (_gate)
+            {
+                Sweep(nowUtc, quiet);
+                Hold hold;
+                if (!_holds.TryGetValue(model, out hold)) return false;
+                var asker = Usable(conversation);
+                mine = asker != null && string.Equals(hold.Conversation, asker, StringComparison.Ordinal);
+                var left = quiet - (nowUtc - hold.LastUtc);
+                secondsLeft = (long)Math.Ceiling(Math.Max(0.0, left.TotalSeconds));
+                return true;
+            }
+        }
+
         /// <summary>How many models are held now.</summary>
         public int Count(DateTime nowUtc, TimeSpan quiet)
         {

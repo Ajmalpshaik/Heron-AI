@@ -884,6 +884,35 @@ def _ended_by_reply(tool, reply):
     """
     failure = analyse(reply, writes=tools.writes(tool))
     _ended("ok" if failure is None else _failure_ended(failure))
+    # AND ITS WORD, for the outcome line (row 5b-1563): a good reply to a tool
+    # that keeps nothing in the model is ANSWERED - it ran, and what follows is
+    # its answer. A failure's word is already said by `_failure_ended`. The
+    # pin's refusal that may follow says its own (`_other_model`).
+    if failure is None and not _changes_model(tool):
+        _outcome(ANSWERED)
+
+
+def _unbound(unbound):
+    """
+    A single-purpose tool's answer when there is no one Revit to send it to -
+    none connected, several and none chosen, or the chosen one closed - and
+    its word: NOT RUN, as the doors say it (row 5b-1563). Labelled refused on
+    the activity list, as it always was.
+    """
+    _outcome(NOT_RUN)
+    return _ended("refused", str(unbound))
+
+
+def _other_model(tool, refusal):
+    """
+    The pin's refusal after a single-purpose tool's reply came back from
+    another model than this chat's, and its word (row 5b-1563): REFUSED for a
+    tool that only reads or analyses - Heron asked, and is not showing an
+    answer about another model - and OUTCOME UNKNOWN for one that acts on the
+    screen, which acted in that model before the reply could be checked.
+    """
+    _outcome(REFUSED if tools.risk_of(tool) <= tools.ANALYZE else UNKNOWN)
+    return _ended("refused", refusal)
 
 
 def _recorded(fn):

@@ -36,7 +36,7 @@ import base64
 import binascii
 
 from heron_server_core import (NEWLINE, _Image, _ended, _ended_by_reply,   # noqa: E402
-                               binding, pinned, server)
+                               _other_model, _unbound, binding, pinned, server)
 from heron_session import NotBound                          # noqa: E402
 # heron_server_core has loaded heron_brain, which put brain/ on the path.
 from heron_install import install_line                      # noqa: E402
@@ -67,7 +67,7 @@ def revit_phases() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _ended("refused", str(unbound))
+        return _unbound(unbound)
 
     reply = session.request("list_phases")
     session.close()
@@ -81,7 +81,7 @@ def revit_phases() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        return _other_model("revit_phases", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -153,7 +153,7 @@ def revit_levels() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _ended("refused", str(unbound))
+        return _unbound(unbound)
 
     reply = session.request("list_levels")
     session.close()
@@ -167,7 +167,7 @@ def revit_levels() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        return _other_model("revit_levels", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -266,7 +266,7 @@ def revit_worksets() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _ended("refused", str(unbound))
+        return _unbound(unbound)
 
     reply = session.request("list_worksets")
     session.close()
@@ -280,7 +280,7 @@ def revit_worksets() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        return _other_model("revit_worksets", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -395,7 +395,7 @@ def revit_views() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _ended("refused", str(unbound))
+        return _unbound(unbound)
 
     reply = session.request("list_views")
     session.close()
@@ -409,7 +409,7 @@ def revit_views() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        return _other_model("revit_views", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -864,7 +864,7 @@ def revit_sheets() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _ended("refused", str(unbound))
+        return _unbound(unbound)
 
     reply = session.request("list_sheets")
     session.close()
@@ -878,7 +878,7 @@ def revit_sheets() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        return _other_model("revit_sheets", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -980,7 +980,7 @@ def revit_rooms() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _ended("refused", str(unbound))
+        return _unbound(unbound)
 
     reply = session.request("list_rooms")
     session.close()
@@ -993,7 +993,7 @@ def revit_rooms() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        return _other_model("revit_rooms", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1069,7 +1069,7 @@ def revit_schedules() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _ended("refused", str(unbound))
+        return _unbound(unbound)
 
     reply = session.request("list_schedules")
     session.close()
@@ -1082,7 +1082,7 @@ def revit_schedules() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        return _other_model("revit_schedules", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1152,7 +1152,7 @@ def revit_families() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _ended("refused", str(unbound))
+        return _unbound(unbound)
 
     reply = session.request("list_families")
     session.close()
@@ -1165,7 +1165,7 @@ def revit_families() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        return _other_model("revit_families", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1277,7 +1277,7 @@ def revit_export_check() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _ended("refused", str(unbound))
+        return _unbound(unbound)
 
     reply = session.request("check_export")
     session.close()
@@ -1290,7 +1290,7 @@ def revit_export_check() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        return _other_model("revit_export_check", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1348,7 +1348,7 @@ def revit_imports() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _ended("refused", str(unbound))
+        return _unbound(unbound)
 
     reply = session.request("list_imports")
     session.close()
@@ -1361,7 +1361,7 @@ def revit_imports() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        return _other_model("revit_imports", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1423,7 +1423,7 @@ def revit_annotation() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _ended("refused", str(unbound))
+        return _unbound(unbound)
 
     reply = session.request("list_annotation")
     session.close()
@@ -1436,7 +1436,7 @@ def revit_annotation() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        return _other_model("revit_annotation", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1582,7 +1582,7 @@ def revit_systems() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _ended("refused", str(unbound))
+        return _unbound(unbound)
 
     reply = session.request("list_systems")
     session.close()
@@ -1596,7 +1596,7 @@ def revit_systems() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        return _other_model("revit_systems", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1631,7 +1631,7 @@ def revit_parameters(category: str = "ducts", parameter: str = "") -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _ended("refused", str(unbound))
+        return _unbound(unbound)
 
     # THE PIN TRAVELS WITH THE REQUEST, for the reason revit_select_by_category
     # gives at length: a guard checked on the reply is checked too late. This
@@ -1653,7 +1653,7 @@ def revit_parameters(category: str = "ducts", parameter: str = "") -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        return _other_model("revit_parameters", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1836,7 +1836,7 @@ def revit_groups(category: str = "") -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _ended("refused", str(unbound))
+        return _unbound(unbound)
 
     reply = session.request("list_groups",
                             op_args={"category": category or "",
@@ -1852,7 +1852,7 @@ def revit_groups(category: str = "") -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        return _other_model("revit_groups", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)

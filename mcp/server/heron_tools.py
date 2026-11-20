@@ -577,7 +577,26 @@ LIBRARY = ("heron_capabilities", "heron_lookup", "heron_method",
 # session NOT RUN; a classified failure its own word; a fault after the
 # request left OUTCOME UNKNOWN.
 STATES_OUTCOME = ("revit_change", "revit_read", "revit_show", "revit_undo_last",
-                  "revit_apply_move")
+                  "revit_apply_move",
+                  # THE INVENTORY READS AND THE SINGLE-PURPOSE TOOLS (row
+                  # 5b-1563, 2026-11-20): every return read against
+                  # heron_server_core.OUTCOMES - ANSWERED for a good reply
+                  # (`_ended_by_reply`), NOT RUN with no Revit to ask
+                  # (`_unbound`), REFUSED for an answer from another model
+                  # that is withheld, OUTCOME UNKNOWN for a selection or an
+                  # isolate made there. revit_view_image answers with a
+                  # picture, not text, so no line can carry its word.
+                  "revit_phases", "revit_levels", "revit_worksets", "revit_views",
+                  "revit_sheets", "revit_rooms", "revit_schedules", "revit_families",
+                  "revit_export_check", "revit_imports", "revit_annotation",
+                  "revit_systems", "revit_parameters", "revit_groups",
+                  "revit_select_by_category", "revit_isolate_temporary",
+                  "revit_reset_temporary", "revit_preview_move", "revit_release",
+                  "revit_use_this_model",
+                  # And revit_offer_settings: a refusal REFUSED, no capability by
+                  # that name NOT RUN, a table offered ANSWERED - nothing is sent
+                  # to Revit from it.
+                  "revit_offer_settings")
 
 
 class NotDeclared(Exception):
