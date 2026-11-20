@@ -256,6 +256,7 @@ an edit.
 | [D-185](#d-185--reload-latest-and-sync-with-central-stay-the-modellers-own-clicks-and-heron-builds-no-route-for-either) | Reload Latest and Sync with Central stay the modeller's own clicks, and Heron builds no route for either | ✅ Accepted · 2026-11-19 |
 | [D-186](#d-186--what-heron-should-know-out-of-the-box-runs-bim-and-iso-standards-first-regional-next-and-company-last---and-no-standard-and-no-knowledge-store-ever-ships-with-heron) | What Heron should know out of the box runs BIM and ISO standards first, regional next and company last - and no standard, and no knowledge store, ever ships with Heron | ✅ Accepted · 2026-11-20 |
 | [D-187](#d-187--every-new-finding-is-a-github-issue-at-once-the-register-entry-and-its-issue-are-written-in-the-same-change-linked-both-ways) | Every new finding is a GitHub issue at once: the register entry and its issue are written in the same change, linked both ways | ✅ Accepted · 2026-11-20 |
+| [D-190](#d-190--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) | The usage counter keeps offered, helped and the last date it helped; "helped" is only the modeller's word; it moves a clause less than one rank; and no question text is kept | ✅ Accepted · 2026-11-20 |
 
 ## Format
 
@@ -1680,3 +1681,12 @@ What this makes easy. What this makes hard. What it locks in.
 **Numbering:** D-187 is the id `tools/next-id.py` printed free on 2026-11-20, with `origin/main` at `f9c188f0` ending at D-185 and D-186 held by open pull request #1096 and by `claude/clever-ritchie-0sy1nr`. It was first written here as D-186 and renamed with `tools/renumber.py` before this branch was pushed.
 
 **Full record:** [`decisions/D-187.md`](decisions/D-187.md)
+
+## D-190 — The usage counter keeps offered, helped and the last date it helped; "helped" is only the modeller's word; it moves a clause less than one rank; and no question text is kept
+
+**Status:** Accepted · **Date:** 2026-11-20 · **Accepted:** Ajmal PS, 2026-11-20, in conversation, answering question 1 on [#1096](https://github.com/Ajmalpshaik/Heron-AI/pull/1096): *"yes to all four on the usage counter, build it"*
+**Settles:** the four parts [D-70](decisions/D-70.md) left open · R-16 and R-25 of [the RAG requirement note](work-notes/plans/rag/01-requirements.md) · WN-12 of [#1006](https://github.com/Ajmalpshaik/Heron-AI/issues/1006)
+**Extends:** [D-70](decisions/D-70.md) - Heron keeps a usage counter, on the machine, as numbers
+**Affects:** [`brain/heron_usage.py`](../brain/heron_usage.py) · [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) `USAGE_SPAN` · the `heron_helped` tool · [`tests/test_usage_counter.py`](../tests/test_usage_counter.py)
+
+**Full record:** [`decisions/D-190.md`](decisions/D-190.md)

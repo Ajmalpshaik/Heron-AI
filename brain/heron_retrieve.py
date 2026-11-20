@@ -63,6 +63,7 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 import heron_scope as SCOPE                                   # noqa: E402
 import heron_search as SEARCH                                 # noqa: E402
 import heron_embed as EMBED                                   # noqa: E402
+import heron_usage as USAGE                                   # noqa: E402
 import heron_fragment as FRAG                                 # noqa: E402
 import heron_rerank as RERANK                                 # noqa: E402
 import heron_capability as CAP                                # noqa: E402
@@ -82,6 +83,13 @@ RRF_K = 60
 # are half a rank apart" reads against a number the file already lives by,
 # instead of against 0.0002 with nothing to compare it to.
 ONE_RANK = 1.0 / (RRF_K + 1) - 1.0 / (RRF_K + 2)
+
+# THE USAGE NUDGE, D-190 clause 3: "less than one rank - it settles a tie,
+# never beats a better match". A clause the modeller said helped every time it
+# was shown gets this much; half as often, half this. HALF A RANK, so even the
+# full nudge is narrower than the smallest difference either route can express.
+# Documents get no other nudge (see documents()), so this is the whole of it.
+USAGE_SPAN = 0.5 * ONE_RANK
 
 # THE TWO ROUTES DO NOT GET AN EQUAL VOTE, AND THE REASON IS MEASURED.
 #
@@ -159,6 +167,9 @@ class Candidate(object):
         # warm-up finishing after the search. See ran().
         self.vector_backend = None
         self.vector_why = None
+        # D-190: the clause's counts from heron_usage, when the modeller has
+        # ever said it helped - {offered, helped, last_helped}. None otherwise.
+        self.usage = None
         # THE UTTERANCES A RE-RANKER READS, from the store's `rerank_said`.
         # Empty until _carry_said fills it, and on a store indexed before it.
         self.said = ""
@@ -192,6 +203,9 @@ class Candidate(object):
         said = "%s%s" % (" + ".join(parts), " - both agree" if agreed else "")
         if self.rerank_rank is not None:
             said += ", re-ranker #%d" % self.rerank_rank
+        if self.usage:
+            said += ", helped %d of %d times shown" % (
+                int(self.usage.get("helped", 0)), int(self.usage.get("offered", 0)))
         return said
 
     def __repr__(self):
@@ -278,8 +292,13 @@ class Contest(object):
     """
 
     def __init__(self, ranked, eligible_count, pool, breadth, noun="fragment",
-                 nudged=True):
+                 nudged=True, span=None, nudge_name="quality"):
         self.count = len(ranked)
+        # HOW FAR THE NUDGE THAT MAY HAVE SET THIS ORDER CAN MOVE IT, and what
+        # it is called. Fragments: status, QUALITY_SPAN. Clauses: the usage
+        # counter, USAGE_SPAN (D-190) - nudged only where it applied.
+        self.span = QUALITY_SPAN if span is None else span
+        self.nudge_name = nudge_name
         self.eligible = eligible_count
         self.pool = pool
         self.breadth = breadth
@@ -343,7 +362,7 @@ class Contest(object):
         """
         if self.count < 2 or self.reranked or self.top_gap is None:
             return False
-        if self.top_gap * ONE_RANK < QUALITY_SPAN and self.nudged:
+        if self.top_gap * ONE_RANK < self.span and self.nudged:
             return True
         return self.top_gap < 1.0
 
@@ -404,7 +423,7 @@ class Contest(object):
             said += ("; they span %.1f fusion rank(s) and %d of %d were "
                      "found by both routes"
                      % (self.spread, self.agreed, self.count))
-        elif self.top_gap * ONE_RANK < QUALITY_SPAN and self.nudged:
+        elif self.top_gap * ONE_RANK < self.span and self.nudged:
             # THE COMPARISON IS AGAINST WHAT STATUS CAN ACTUALLY MOVE, not
             # against a whole rank. Across the statuses a fragment may be
             # OFFERED at, the nudge spans about six tenths of one rank - so a
@@ -413,10 +432,12 @@ class Contest(object):
             # those, in the one sentence here whose job is to say honestly
             # what set an order. Found by a review 2026-09-11.
             said = ("A COIN TOSS: the top two are %.1f of one fusion rank "
-                    "apart, which is inside the %.1f rank(s) the quality "
-                    "nudge spans - their order could have come from status "
+                    "apart, which is inside the %.1f rank(s) the %s "
+                    "nudge spans - their order could have come from %s "
                     "alone, not from either route preferring one"
-                    % (self.top_gap, QUALITY_SPAN / ONE_RANK))
+                    % (self.top_gap, self.span / ONE_RANK, self.nudge_name,
+                       "status" if self.nudge_name == "quality"
+                       else "what the modeller said helped"))
         elif self.top_gap < 1.0:
             said = ("A COIN TOSS: the top two are %.1f of one fusion rank "
                     "apart, and one rank is the smallest difference either "
@@ -907,6 +928,19 @@ def _until_filled_pairs(store, text, keep, pool, ceiling=20):
     return seen[:pool]
 
 
+def apply_usage(candidate, counts):
+    """The usage nudge on one clause (D-70, D-190): USAGE_SPAN times how often
+    the modeller said it helped over how often it was shown - or nothing, when
+    nobody ever said. Returns the nudge added. Half a rank at most."""
+    entry = (counts or {}).get(candidate.id)
+    helped_rate = USAGE.rate(entry)
+    if helped_rate is None:
+        return 0.0
+    candidate.quality = USAGE_SPAN * helped_rate
+    candidate.usage = dict(entry)
+    return candidate.quality
+
+
 def documents(store, text, limit=5, pool=20):
     """The retrieval stack over ingested chunks. Returns (candidates, why).
 
@@ -998,6 +1032,8 @@ def documents(store, text, limit=5, pool=20):
             break
 
     vector_weight = VECTOR_WEIGHT_BY_BACKEND.get(backend_name, 0.6)
+    store_path = getattr(store, "path", None)
+    counts = USAGE.load(USAGE.usage_path(store_path)) if store_path else {}
     for got in candidates.values():
         if got.keyword_rank is not None:
             got.fused += KEYWORD_WEIGHT / (RRF_K + got.keyword_rank)
@@ -1010,6 +1046,12 @@ def documents(store, text, limit=5, pool=20):
         # not a worse answer than a REVIEWED one, it is an unread one. Reusing
         # the nudge here would be borrowing a number that means something
         # else, which is how a ranking stops being explainable.
+        #
+        # THE USAGE NUDGE IS THE ONE A CLAUSE GETS (D-70, D-190): how often
+        # the modeller SAID it helped, over how often it was shown, times
+        # USAGE_SPAN - half a rank at most. Read from the counter beside this
+        # store, never from inside it (Golden Rule 11).
+        apply_usage(got, counts)
 
     ranked = sorted(candidates.values(),
                     key=lambda c: (-c.score,
@@ -1098,7 +1140,9 @@ def find_documents(store, text, limit=5):
     contest = Contest(ranked, eligible_chunks, 20,
                       SEARCH.chunk_breadth(store, text,
                                            statuses=OFFERABLE_DOCUMENTS),
-                      noun="chunk", nudged=False)
+                      noun="chunk",
+                      nudged=any(c.usage for c in ranked),
+                      span=USAGE_SPAN, nudge_name="usage")
     note += ". " + contest.sentence()
 
     return SEARCH.Answer(
@@ -1129,7 +1173,10 @@ def find_documents(store, text, limit=5):
                      "score": c.score, "why": c.why(),
                      "words_score": c.keyword_score,
                      "nearness_score": c.vector_score,
-                     "rerank_score": c.rerank_score} for c in ranked],
+                     "rerank_score": c.rerank_score,
+                     # D-190: only where the modeller has said it helped.
+                     **({"usage": c.usage} if c.usage else {})}
+                    for c in ranked],
         note=note, contest=contest,
         backends=ran(ranked))
 

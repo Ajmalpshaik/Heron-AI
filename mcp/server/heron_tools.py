@@ -287,6 +287,14 @@ TOOLS = {
     # describe. What crosses between them is a number and a clause number.
     "heron_standards":          (READ,    None),
 
+    # The usage counter (D-70, D-190). READ, operation None, for every reason
+    # heron_hvac is: it reads no model and sends nothing to Revit. On the
+    # modeller's word that an answer helped, it adds one to that clause's count
+    # in a small file beside the knowledge store, in Heron's own folder - only
+    # the clause id and the counts, never the question - and that count nudges
+    # the clause by less than one rank next time. Nothing is ever sent.
+    "heron_helped":             (READ,    None),
+
     # Stage 9's two (HERON-RAG-RSH-017, docs/28). READ, operation None, and
     # for these two that is a stronger claim than for the others: the Research
     # agent is the one part of this plan whose NAME suggests reaching outside,
