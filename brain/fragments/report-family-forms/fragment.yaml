@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -43,9 +43,30 @@ capability: REPORT_FAMILY_FORMS
 # only form words, and every form row, answer as version 4 did; "all" now reads
 # the 2D too but hands on forms alone. DRAFT at the time, until NEEDS-CHECKING Group ND
 # proves version 5 (D-30); a READ card, so revit_read still ran it meanwhile.
-version: 5
+version: 6
 source: OFFICIAL
 risk: READ
+
+# VERSION 6 (2026-11-20) - ONE COPY OF THE LIST, COUNT AND EXTENTS FIRST, AND
+# A BOUND ON IT, and back to DRAFT. GitHub issue #1051 item A1: with which
+# "solid" it answered 50,871 characters for 98 forms and 57,449 for 130 - past
+# the chat's limit on one tool's answer, so it was not shown - because every
+# form's line came TWICE, also on an 11-form family. Version 5 kept the lines
+# in a list, `rows`, beside `formList`, and the add-in sends every list of text
+# a fragment leaves whole beside the answer (row 5b-1467's providesItems);
+# `joins` repeated `combinationList` the same way. Neither was a declared
+# output and nothing reads either, so they are now kept inside the read and
+# no longer reach the reply - no output was renamed or dropped. `formList` now
+# OPENS with the count, solid and void, and how far the forms reach together
+# in X, Y and Z; then each form's line once, the first 60 (`formsDescribed`);
+# past that ONE line - how many more, their ids (the first 240) and how to
+# read them, by those ids or by a kind or a side. Nothing matched, it stays
+# empty. `elements` still hands on every form read, described or not, so
+# SET_SELECTION or DELETE_ELEMENTS chained with expect_from reaches all of
+# them. Version 5 was PROVEN (the proof block below, kept as the record of
+# what it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING
+# Group <TBD> is run (D-30) - on the owner's word that a fragment found wrong
+# may be changed even though it is proven.
 
 purpose: >
   Lists the FORMS a family is made of - every extrusion, revolve, blend, sweep
@@ -59,6 +80,10 @@ purpose: >
 
   **ONE LINE**, as REPORT_FAMILY_PARAMETERS answers: a list is cut to three
   entries before anyone reads it.
+
+  **COUNT AND EXTENTS FIRST, EACH FORM ONCE, AND NO MORE THAN 60 DESCRIBED
+  (version 6, 2026-11-20)** - past 60, the rest are one line of ids, to be
+  read by those ids or by a kind or a side; every form is still handed on.
 
   **`which` NARROWS IT** - "all", or kinds and sides with commas between:
   "void", "solid, revolve", "swept blend", "freeform" - or the ids the form
@@ -135,10 +160,17 @@ contract:
       # Every matching form on ONE line: solid or void, kind, id, plane,
       # extent, volume, subcategory, visibility, and its join or cut. Given
       # ids, just those forms.
+      # VERSION 6 (issue #1051 A1): entries "  ||  " apart - FIRST "N form(s),
+      # S solid and V void, together reaching X a to b, Y c to d, Z e to f mm";
+      # then one entry per form, the first 60; past 60, a last entry "and K more
+      # form(s), not described here ... their ids: ..." (the first 240 ids),
+      # saying to read them by those ids, up to 60 at a time, or by a kind or a
+      # side. Each form's line is in the reply ONCE. Empty when none matched.
       role: result
       type: string
     - name: combinationList
-      # Every join or cut in the family, with its members, on one line.
+      # Every join or cut in the family, with its members, on one line - in
+      # the reply ONCE since version 6.
       role: result
       type: string
     - name: scanned
