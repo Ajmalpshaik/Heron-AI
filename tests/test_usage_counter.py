@@ -167,20 +167,60 @@ def main():
                       - RETRIEVE.USAGE_SPAN / 2) < 1e-15,
                   "and helped half the times shown is half of it")
 
-            # THROUGH THE REAL STACK: the copy the routes ranked second, said
-            # to help, is NOT lifted over the first - the routes put them more
-            # than half a rank apart.
+            # THE SAME TWO RULES WHEN A RE-RANKER SETS THE ORDER - asked of
+            # _rerank directly, with a scorer this suite supplies, so every
+            # machine checks it whether or not a cross-encoder is installed.
+            # On that backend the cross-encoder's score decides; the usage
+            # nudge rides in the tie-break (the fused score), so it decides
+            # only between clauses the cross-encoder scored the same.
+            was = RETRIEVE.RERANK.scores
+            try:
+                for label, given, expected in (
+                        ("scored the same", [0.5, 0.5], ["b", "a"]),
+                        ("scored a above b", [0.9, 0.1], ["a", "b"])):
+                    pair = [RETRIEVE.Candidate("a", {}), RETRIEVE.Candidate("b", {})]
+                    pair[0].fused = pair[1].fused = 0.03
+                    RETRIEVE.apply_usage(pair[1], {"b": {"offered": 1, "helped": 1}})
+                    RETRIEVE.RERANK.scores = (lambda q, ps, given=given:
+                                              list(given[:len(ps)]))
+                    got = [c.id for c in RETRIEVE._rerank("q", pair, lambda c: c.id)]
+                    check(got == expected,
+                          "re-ranked, the cross-encoder %s: %r - %s" % (
+                              label, got,
+                              "the clause said to help wins the tie"
+                              if expected[0] == "b" else
+                              "the nudge never beats the cross-encoder's order"))
+            finally:
+                RETRIEVE.RERANK.scores = was
+
+            # THROUGH THE REAL STACK, ON WHATEVER BACKEND THIS MACHINE HAS. The
+            # order is the LIST's order - never assumed to be the score's,
+            # because with a re-ranker the cross-encoder sets it. `winner` is
+            # the copy that came second before anything was said.
             again = RETRIEVE.find_documents(store, QUESTION)
             order = [c["id"] for c in again.candidates if c["id"] in clause_ids]
             before = [c["id"] for c in first.candidates if c["id"] in clause_ids]
-            gap = [c["score"] for c in first.candidates if c["id"] == before[0]][0] \
-                - [c["score"] for c in first.candidates if c["id"] == winner][0]
-            check(before[-1] == winner and gap > RETRIEVE.USAGE_SPAN,
-                  "before anything was said, the routes put %s second, %.2f "
-                  "rank(s) behind" % (winner[:12], gap / RETRIEVE.ONE_RANK))
-            check(order == before,
-                  "and after the modeller said it helped it is STILL second - "
-                  "it never beats a better match: %r" % [o[:8] for o in order])
+            check(before[-1] == winner,
+                  "before anything was said, %s came second" % winner[:12])
+            old = dict((c["id"], c) for c in first.candidates)
+            reranked = old[before[0]].get("rerank_score") is not None
+            if reranked:
+                # The deciding value is the cross-encoder's. Only an exact tie
+                # lets the nudge decide.
+                tied = old[before[0]]["rerank_score"] == old[winner]["rerank_score"]
+                backend = "re-ranked"
+            else:
+                # The deciding value is the fused score; a gap inside
+                # USAGE_SPAN is one the nudge may close.
+                tied = (old[before[0]]["score"] - old[winner]["score"]
+                        < RETRIEVE.USAGE_SPAN)
+                backend = "fused"
+            expected = [winner, before[0]] if tied else before
+            check(order == expected,
+                  "on this machine's backend (%s), the two copies %s - so after "
+                  "the modeller said the second helped, the order is %r"
+                  % (backend, "tied" if tied else "were not tied, and it "
+                     "never beats a better match", [o[:8] for o in order]))
             told = [c for c in again.candidates if c["id"] == winner][0]
             check("helped 1 of 1" in told.get("why", "")
                   and told.get("usage", {}).get("helped") == 1,

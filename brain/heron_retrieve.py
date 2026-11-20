@@ -750,6 +750,14 @@ def _rerank(text, ranked, passage):
     # sort uses. A cross-encoder returning the same score for two passages has
     # no opinion about their order, and the route that did have one should keep
     # the last word rather than handing it to the alphabet.
+    #
+    # THE USAGE NUDGE (D-191) IS IN THAT TIEBREAK, because c.score is the fused
+    # score plus it. So where a re-ranker sets the order, the nudge decides only
+    # between clauses the cross-encoder scored the same - "settles a tie, never
+    # beats a better match" on the order that is actually shown. It is NOT
+    # added to the cross-encoder's score: that score is on a model's own scale,
+    # and half a fusion rank means nothing there. Found on the owner's PC,
+    # where the re-ranker is installed, 2026-11-20.
     scored.sort(key=lambda c: (-c.rerank_score, -c.score, c.id))
     for position, candidate in enumerate(scored, 1):
         candidate.rerank_rank = position
