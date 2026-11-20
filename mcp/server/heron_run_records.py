@@ -265,6 +265,7 @@ def page(record, run, offset=0, limit=DEFAULT_LIMIT, judge=None):
         run, record.get("fragment") or reply.get("ran") or "?",
         record.get("document") or reply.get("document") or "?",
         record.get("at") or "?", _ended(reply, judged(record, judge)))]
+    lines.extend(undo_lines(record))
     lines.extend(change_lines(reply))
     lines.append("")
     if not shown:
@@ -280,6 +281,36 @@ def page(record, run, offset=0, limit=DEFAULT_LIMIT, judge=None):
         lines.append("More: heron_run_record run=%s offset=%d"
                      % (run, offset + len(shown)))
     return "\n".join(lines)
+
+
+# WHAT REVIT DID TO A KEPT RUN AFTERWARDS - row 5b-1163, 2026-11-20. The
+# record is written once, when the job ends; the add-in stamps `undo`
+# {state, at} on it when it sees the run's own undo entry undone (Ctrl+Z, or
+# Heron's Undo) or redone back on top - the latest move only. Until then the
+# record said KEPT for good, after the modeller had undone it.
+UNDO_WORDS = {
+    "undone": "UNDONE in Revit at %s - the change is no longer in the model (Redo, Ctrl+Y, "
+              "in Revit puts it back while nothing else has been done since).",
+    "redone": "Undone and then REDONE in Revit at %s - the change is in the model again.",
+}
+
+# What the record cannot see, said on every kept record so a missing stamp is
+# never read as "not undone".
+UNDO_UNSEEN = ("Heron sees an undo only while its add-in runs in that Revit: one made with "
+               "Revit closed and reopened since, or after other edits it could not tie to "
+               "this change, is not written here - look at the model.")
+
+
+def undo_lines(record):
+    """What the record says about an undo of the run, for a kept run alone."""
+    reply = record.get("reply") if isinstance(record.get("reply"), dict) else {}
+    if reply.get("verdictKind") != "kept":
+        return []
+    undo = record.get("undo") if isinstance(record.get("undo"), dict) else {}
+    words = UNDO_WORDS.get(undo.get("state"))
+    lines = [words % (undo.get("at") or "?")] if words else []
+    lines.append(UNDO_UNSEEN)
+    return lines
 
 
 # WHAT A KEPT RUN THAT CHANGED NOTHING IS CALLED IN ITS RECORD - row 5b-1821.

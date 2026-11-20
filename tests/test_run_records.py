@@ -818,6 +818,34 @@ def judged_words(runs, folder):
           "and with no judge, no word")
 
 
+def undone_later(runs):
+    print("\n11. a kept record says when Revit undid it afterwards (row 5b-1163)")
+    # Seen to FAIL before heron_run_records read the add-in's `undo` stamp:
+    # the page said KEPT and nothing else, after the modeller's Ctrl+Z.
+    kept = {"fragment": "rename-views", "reply": reply_with()}
+    words = getattr(runs, "UNDO_WORDS", None)
+    check(words is not None, "the reader has words for an undo seen later")
+    page = lambda record: runs.page(record, "wf-1", 0, 5)
+    undone = dict(kept, undo={"state": "undone", "at": "2026-11-20T10:15:00Z"})
+    check("UNDONE in Revit at 2026-11-20T10:15:00Z" in page(undone),
+          "a kept run the add-in saw undone says UNDONE, and when")
+    redone = dict(kept, undo={"state": "redone", "at": "2026-11-20T10:16:00Z"})
+    check("REDONE in Revit at 2026-11-20T10:16:00Z" in page(redone)
+          and "UNDONE in Revit" not in page(redone),
+          "one redone since says the latest - redone - and not undone")
+    unseen = getattr(runs, "UNDO_UNSEEN", "an undo made with Revit closed")
+    check(unseen in page(kept) and unseen in page(undone),
+          "every kept record says an undo the add-in could not see is not written here")
+    rolled = {"fragment": "rename-views",
+              "reply": reply_with(verdictKind="rolledBack", verdict="rolled back"),
+              "undo": {"state": "undone", "at": "x"}}
+    check("UNDONE" not in page(rolled) and unseen not in page(rolled),
+          "a run that was not kept says nothing about an undo")
+    odd = dict(kept, undo={"state": "sideways"})
+    check("UNDONE" not in page(odd) and "REDONE" not in page(odd) and unseen in page(odd),
+          "a stamp it has no words for is not read as an undo")
+
+
 def main():
     runs = load()
     if runs is None:
@@ -838,6 +866,7 @@ def main():
         model_text(runs)
         taken_back(runs)
         judged_words(runs, folder)
+        undone_later(runs)
     finally:
         shutil.rmtree(folder, ignore_errors=True)
 

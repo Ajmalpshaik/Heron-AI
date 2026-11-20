@@ -1122,3 +1122,32 @@ job of its own, started only when the owner asks for it. These two answers are w
 whether his fuller plan of 2026-11-17 adds to them is his to say when it starts.
 
 ---
+
+### 🔵 Q-94 — Heron's usage counter: does it keep the question you typed, or only a count against the clause it answered from? *(found 2026-09-12, carried here 2026-11-20)*
+
+**Where it comes from.** [D-70](../decisions/D-70.md) settled, on the owner's yes of 2026-09-12, that Heron
+keeps a **counter** of how often each standard clause answers a question - a clause id and a count, per
+scope, deletable, never sent - so that ranking can learn which clauses are used. Its own section *What this
+does NOT settle* says the rest: *"Keeping the sentences a person typed is a materially different thing from
+keeping a tally against a clause number ... storing the question text needs its own answer."* The question
+was written down in the work note `work-notes/plans/next-steps-2026-09-12.md` (B1) and never put to the
+owner; it moved here when that note was retired on 2026-11-20 (WN-22, issue
+[#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007)), because a question must never live only in a
+work note. Nothing is built either way: the counter itself is R-16 and R-25 of
+[`rag/01-requirements.md`](../work-notes/plans/rag/01-requirements.md), tracked as WN-12 of
+[#1006](https://github.com/Ajmalpshaik/Heron-AI/issues/1006).
+
+**The question, in a modeller's words: when you ask Heron about a standard, should it remember only that
+clause 5.3 was used once more, or also the words you typed?**
+
+1. **Only the clause and a count** - what D-70 already covers. **Cost:** Heron can learn which clauses are
+   used, but never which questions led to them, so a wrong answer cannot be traced back to how it was asked.
+2. **The clause, the count and the question text,** on this PC only, deleted with the counter, never sent.
+   **Cost:** the sentences you type - which can name a project, a client or a room - are kept on disk.
+
+**Nothing is recommended.** Shape 1 is what D-70 covers; shape 2 is new, and it is the half with the privacy
+consequence. Whoever builds R-25 stores the clause id and the count until this is answered.
+
+**Tracked as GitHub issue [#1009](https://github.com/Ajmalpshaik/Heron-AI/issues/1009) since 2026-11-16 (WN-39)** - the owner answers there.
+
+---
