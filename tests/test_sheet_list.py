@@ -61,7 +61,16 @@ try:
 except ImportError:                                   # pragma: no cover
     from urllib import unquote
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Redirected on Windows, print encodes in cp1252 and dies on the curly
+# apostrophes the probes print (U+201B, issue #1055) - heron-ship section 2.
+# The same block as tests/test_ingest.py.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass  # already unicode-safe, or redirected to something that cannot
+
+ROOT =os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_sheet_list as L                                  # noqa: E402

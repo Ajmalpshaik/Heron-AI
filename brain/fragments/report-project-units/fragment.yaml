@@ -104,6 +104,10 @@ compatibility-note: >
 
 utterances:
   - what units is this project in
+  # ADDED 2026-11-20, issue #958 row 5b-1882: on the owner's backend "are the
+  # project units metric or imperial" went to SET_PROJECT_UNITS, an Admin write,
+  # whose passage says "imperial" and this one's said neither word.
+  - is this project in metric or imperial
   - show the project units
   - is cooling load in watts or btu/h
   - what symbol does air flow use
@@ -118,11 +122,3 @@ utterances:
   # and "what symbol does air flow show" - claimed in the routing table above
   # - fell to a three-way tie that SET_AIR_TERMINAL_FLOW, a write, took.
   - what symbol does air flow show
-  # ADDED 2026-11-20, row 5b-1882. On the owner's PC (model+rerank) "are the
-  # project units metric or imperial" reached SET_PROJECT_UNITS, an Admin write,
-  # and in a cloud container so did three more such questions on both
-  # re-ranked backends: the eight sentences the re-ranker reads beside the
-  # identity (D-134) said nothing of metric or imperial, and the write's said
-  # "to imperial". Eighth, so the re-ranker reads it; the guard sentence in
-  # tests/test_routing_phrases.py is NOT declared and stays ranked.
-  - does this project use metric or imperial units
