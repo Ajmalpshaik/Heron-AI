@@ -57,8 +57,7 @@ purpose: >
   **NOTHING FROM A LINK IS EVER SELECTED OR CARRIED** - the counts and lists stay this model's own doors; the chain
   revives ids against this model, and a linked id that happens to be in
   use here binds an unrelated element (FRAGMENT-ISSUES row 75). Links
-  nested inside a link are not read, and are counted in the answer. This
-  is version 2, and like version 1 it is DRAFT - it has never been proved.
+  nested inside a link are not read, and are counted in the answer.
 
 contract:
   needs:

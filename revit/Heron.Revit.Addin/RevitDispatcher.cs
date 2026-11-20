@@ -79,6 +79,18 @@ namespace Heron.Revit.Addin
         private static RevitJob _running;
 
         /// <summary>
+        /// One rollback the job Revit's thread is running asked for, and what
+        /// the rollback check found - called by RevitFragment.RollBackAndCheck,
+        /// the one place a group is rolled back. Anywhere no job is running it
+        /// changes nothing. 5b row 1559.
+        /// </summary>
+        internal static void NoteRollback(bool held, bool reported)
+        {
+            var job = _running;
+            if (job != null) job.NoteRollback(held, reported);
+        }
+
+        /// <summary>
         /// The workflow id of the job Revit's thread is running now - the id
         /// its run record carries - or null anywhere else. Read by the keep,
         /// so the undo guard knows WHICH RUN kept a change, and the Activity
@@ -602,12 +614,18 @@ namespace Heron.Revit.Addin
                 // thread and RunRecord writes its record with the request's
                 // name in it (D-161); the server's line under this answer says
                 // where to read it.
+                //
+                // AND IT CARRIES THE RUN'S WORKFLOW ID, the key that record is
+                // written under, so the chat has something to hand
+                // heron_run_record once the box is answered. It carried none
+                // until 2026-11-20 (FRAGMENT-ISSUES 5b row 1159).
                 RecordRefusal(job.WorkflowId, request, "awaiting_modeller");
                 return Json.Error("awaiting_modeller",
                     "Revit is still waiting for you to choose Keep or Discard, and Heron " +
                     "has stopped waiting for the answer. Whatever you press in Revit stands - " +
                     "Discard puts the model back exactly as it was. " +
-                    "Do not repeat the request while the box is open.");
+                    "Do not repeat the request while the box is open.",
+                    Json.Str("workflow", job.WorkflowId));
             }
 
             if (!finished)
@@ -628,11 +646,15 @@ namespace Heron.Revit.Addin
                 // because of it. Execute lowers it when the job genuinely
                 // ends, which is the only honest moment - and until then the
                 // screen keeps saying what the freeze is.
+                //
+                // WITH THE RUN'S WORKFLOW ID, as awaiting_modeller's: when the
+                // job ends, RunRecord writes its record under it (5b row 1159).
                 RecordRefusal(job.WorkflowId, request, "still_running");
                 return Json.Error("still_running",
                     "Revit started the request but has not finished within " +
                     _operationTimeout.TotalSeconds.ToString(CultureInfo.InvariantCulture) +
-                    " seconds. It is still working; do not repeat the request.");
+                    " seconds. It is still working; do not repeat the request.",
+                    Json.Str("workflow", job.WorkflowId));
             }
 
             return job.Response;
@@ -779,6 +801,16 @@ namespace Heron.Revit.Addin
                             // only the pane's may ask for the pane's own Undo
                             // (row 5b-1741).
                             response = RevitOperations.Run(app, job.Request);
+
+                            // A REFUSAL AFTER A ROLLBACK SAYS WHETHER IT HELD,
+                            // in the fields an answered write carries - not
+                            // only in its sentence (5b row 1559). Every path
+                            // that rolls a group back goes through
+                            // RevitFragment.RollBackAndCheck, which tallies it
+                            // on this job; a refusal that already says, and
+                            // every answer that is not a refusal, is unchanged.
+                            response = Json.WithRollback(response, job.Rollbacks,
+                                                         job.RollbacksHeld, job.RollbacksReported);
                         }
                         catch (Exception ex)
                         {
@@ -1120,6 +1152,30 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// A kept run seen undone or redone in Revit, written onto its run
+        /// record - FRAGMENT-ISSUES 5b row 1163. Until 2026-11-20 the record
+        /// said KEPT for good: the undo was known only in this add-in's memory,
+        /// gone when Revit closed. The latest move only, as `undo` {state, at};
+        /// heron_run_record prints it. A run with no record - a move, a read -
+        /// has nothing to stamp, and nothing is written. Told by the undo guard
+        /// (HeronUndoGuard.RunMoved), which catches anything this throws: it
+        /// runs inside Revit's DocumentChanged.
+        /// </summary>
+        internal static void StampUndo(string run, string what, DateTime at)
+        {
+            var body = HeronRuns.Read(HeronPaths.Runs, run);
+            if (body == null) return;
+
+            var stamped = Json.Set(body, "undo", Json.Obj(
+                Json.Str("state", what),
+                Json.Str("at", at.ToString("o", CultureInfo.InvariantCulture))));
+            if (stamped == body) return;
+
+            if (!HeronRuns.Write(run, stamped))
+                HeronApplication.Log("Undo guard could not stamp run record " + run + " " + what + ".");
+        }
+
+        /// <summary>
         /// What the banner says Heron is doing, in the words a modeller would
         /// use rather than the words the wire uses.
         ///
@@ -1394,6 +1450,25 @@ namespace Heron.Revit.Addin
             /// <summary>Follows this request through every layer that touches it.</summary>
             public string WorkflowId { get; private set; }
             public string Response { get; private set; }
+
+            /// <summary>
+            /// EVERY ROLLBACK THIS JOB ASKED REVIT FOR, as a tally the refusal
+            /// can carry (5b row 1559): how many, whether every one held, and
+            /// whether Revit reported every one. Written on Revit's thread by
+            /// NoteRollback while the job runs, read on the same thread after
+            /// - so it needs no lock.
+            /// </summary>
+            public int Rollbacks { get; private set; }
+            public bool RollbacksHeld { get; private set; }
+            public bool RollbacksReported { get; private set; }
+
+            public void NoteRollback(bool held, bool reported)
+            {
+                if (Rollbacks == 0) { RollbacksHeld = true; RollbacksReported = true; }
+                Rollbacks++;
+                RollbacksHeld = RollbacksHeld && held;
+                RollbacksReported = RollbacksReported && reported;
+            }
 
             /// <summary>
             /// Revit's thread takes the job. False when the caller abandoned it

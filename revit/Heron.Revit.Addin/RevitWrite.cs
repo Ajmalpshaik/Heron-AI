@@ -18,23 +18,21 @@ namespace Heron.Revit.Addin
     /// <summary>
     /// The first code in Heron that can change a model.
     ///
-    /// ===================== RUN, BUT NOT MEASURED =======================
-    /// IT HAS RUN. NEEDS-CHECKING.md records it against a real model:
-    /// preview_move returned an approval token, move_elements accepted it,
-    /// and the reply was ok: true, moved: 3, blocked: 0, skipped: 0,
-    /// warnings: 0, under a single undo entry reading "Heron: move ducts up
-    /// 200 mm". This banner said "never loaded into Revit and has never
-    /// moved anything" until 2026-09-21, long after that run - and a warning
-    /// a reader can disprove in a minute discredits the half of it that
-    /// still matters. FRAGMENT-ISSUES section 5b, row 9.
+    /// ========================= RUN, AND MEASURED ========================
+    /// IT HAS RUN, AND IT HAS BEEN MEASURED. NEEDS-CHECKING Group D records
+    /// it against a real model: preview_move returned an approval token,
+    /// move_elements accepted it, and the reply was ok: true, moved: 3,
+    /// blocked: 0, skipped: 0, warnings: 0, under a single undo entry reading
+    /// "Heron: move ducts up 200 mm". D3 - "move them, then MEASURE one" -
+    /// passed on 2026-10-17 in Revit 2024: all three ducts +200.0000 mm, the
+    /// pinned control unmoved, one undo. This banner said "never loaded into
+    /// Revit" until 2026-09-21 and "nobody has put a tape measure on the
+    /// result" until 2026-11-20, each long after the run that disproved it -
+    /// and a warning a reader can disprove in a minute discredits the rest.
+    /// FRAGMENT-ISSUES section 5b, rows 9 and 665.
     ///
-    /// THE HALF THAT STILL MATTERS, UNCHANGED: nobody has put a tape measure
-    /// on the result. Compiling proves the API surface agrees and a reply of
-    /// moved: 3 proves Revit accepted the call; neither proves a duct moved
-    /// 200 millimetres rather than 200 feet, and this file is where that
-    /// would happen. D3 in NEEDS-CHECKING.md - "move them, then MEASURE one"
-    /// - is not struck through. HeronPermissions keeps writing switched off
-    /// until somebody does.
+    /// WHAT THAT DOES NOT SETTLE: whether writing is switched on. That is
+    /// HeronPermissions' and the owner's (D-19), not this file's.
     /// ===================================================================
     ///
     /// It is deliberately shaped to REFUSE rather than to guess. Every check
@@ -347,7 +345,15 @@ namespace Heron.Revit.Addin
                        HeronUnits.DescribeVerticalMove(preview.MillimetresUp);
 
             var handler = new CollectWarnings();
-            var workflow = HeronIdentity.NewWorkflowId();
+
+            // THE JOB'S OWN WORKFLOW ID, so the line this move writes and the
+            // line the dispatcher writes for the same job can be joined - which
+            // ducts moved, beside which Revit ran it and how long it took. This
+            // minted a second id until 2026-11-20, and every move wrote two
+            // lines nothing could join (FRAGMENT-ISSUES 5b row 1061). A fresh
+            // one only where no job is running on this thread, which the
+            // dispatcher's door never allows: the record is still written.
+            var workflow = RevitDispatcher.RunningWorkflow ?? HeronIdentity.NewWorkflowId();
 
             // WHAT ACTUALLY MOVED, which is not the same as what was asked to.
             // Filled in by Verify. Declared out here because the answer has to
@@ -400,11 +406,22 @@ namespace Heron.Revit.Addin
 
                         if (transaction.Commit() != TransactionStatus.Committed)
                         {
+                            // WHAT REVIT OBJECTED TO, IN ITS OWN WORDS, and
+                            // that the move was rolled back - as the fragment
+                            // path has said since package C3. This was one
+                            // fixed sentence until 2026-11-20 that named
+                            // neither (FRAGMENT-ISSUES 5b row 1062). Read
+                            // before the rollback: the preprocessor wrote it
+                            // at the commit.
+                            var refused = handler.Said.RefusedSentence();
+                            var why = refused.Length == 0
+                                ? "Revit did not accept the change."
+                                : refused;
                             var after = RevitFragment.RollBackAndCheck(group, doc, watch);
                             var undone = after.Held;
-                            return Failed(workflow, preview, handler, (undone
-                                ? "Revit did not accept the change, so nothing was moved."
-                                : "Revit did not accept the change. " + NotHeld(after))
+                            return Failed(workflow, preview, handler, why + " " + (undone
+                                ? "The move was rolled back completely, so nothing was moved and the model is as it was."
+                                : NotHeld(after))
                                 + Also(after));
                         }
                     }
@@ -931,7 +948,27 @@ namespace Heron.Revit.Addin
             // under a new name. The title and the path are carried on the
             // Preview separately, for the wording, so nothing is lost here.
             // FRAGMENT-ISSUES section 5b, row 13.
-            if (info != null) return info.UniqueId;
+            //
+            // AND THE MODEL'S OWN CreationGUID BESIDE IT, since 2026-11-20.
+            // The Project Information id is the TEMPLATE's: every project made
+            // from one template shares it, so a click into another such model
+            // before saying yes was refused by the element re-count with words
+            // about the model changing, never as document_not_in_front, naming
+            // neither model (FRAGMENT-ISSUES 5b row 1060, measured in Revit
+            // 2024). CreationGUID tells template-born projects apart and
+            // follows a model through Save As - so row 13's case still holds -
+            // D-113 chose it for the knowledge stores for the same reasons.
+            // Read by RevitOperations.CreationGuid: null on 2020 to 2023,
+            // which have none, and the key is then what it always was. TWO
+            // COPIES OF ONE FILE carry one CreationGUID and are still not told
+            // apart here: whether a path belongs in the key is the owner's.
+            if (info != null)
+            {
+                string creation = null;
+                try { creation = RevitOperations.CreationGuid(doc); }
+                catch (Exception) { creation = null; }
+                return creation == null ? info.UniqueId : info.UniqueId + "|" + creation;
+            }
 
             // ProjectInformation is present in every project document. A
             // family document has none, and Heron does not write to those -
@@ -1175,16 +1212,36 @@ namespace Heron.Revit.Addin
         {
             public int Count;
 
+            /// <summary>
+            /// WHAT REVIT REFUSED, IN ITS OWN WORDS - every failure of Error
+            /// severity or above in the batch that rolled the move back, with
+            /// the number of elements each names. Kept by HeronFailureNote, the
+            /// fragment path's own record, so the move quotes Revit in the same
+            /// shape (FRAGMENT-ISSUES 5b row 1062). The JUDGING stays this
+            /// class's: the note only records.
+            /// </summary>
+            public readonly HeronFailureNote Said = new HeronFailureNote();
+
             public FailureProcessingResult PreprocessFailures(FailuresAccessor accessor)
             {
                 var messages = accessor.GetFailureMessages();
 
+                List<HeronFailureNote.Posted> refusing = null;
                 foreach (var message in messages)
                 {
                     if (message.GetSeverity() >= FailureSeverity.Error)
                     {
-                        return FailureProcessingResult.ProceedWithRollBack;
+                        if (refusing == null) refusing = new List<HeronFailureNote.Posted>();
+                        refusing.Add(Read(message));
                     }
+                }
+
+                if (refusing != null)
+                {
+                    // Every entry is above a warning, so the note records each
+                    // one as refused. Its answer is the same as this class's.
+                    Said.RollsBack(null, refusing, (int)FailureSeverity.Warning);
+                    return FailureProcessingResult.ProceedWithRollBack;
                 }
 
                 foreach (var message in messages)
@@ -1197,6 +1254,29 @@ namespace Heron.Revit.Addin
                 }
 
                 return FailureProcessingResult.Continue;
+            }
+
+            /// <summary>
+            /// One refusing message, as words and an element count. Only
+            /// description: the severity was already judged above, so a message
+            /// whose words cannot be read still rolls the move back. Bare
+            /// catches, the guarded-read idiom RevitFragment's own reader uses.
+            /// </summary>
+            private static HeronFailureNote.Posted Read(FailureMessageAccessor message)
+            {
+                string text = null;
+                try { text = message.GetDescriptionText(); }
+                catch { }
+
+                var elements = 0;
+                try
+                {
+                    var ids = message.GetFailingElementIds();
+                    elements = ids == null ? 0 : ids.Count;
+                }
+                catch { }
+
+                return new HeronFailureNote.Posted((int)FailureSeverity.Error, text, elements);
             }
         }
     }

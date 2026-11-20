@@ -467,10 +467,14 @@ namespace Heron.Revit.Addin
             // and a fragment that opens its own would walk straight through it.
             if (ownsTransactions && !writing)
             {
+                // "OPENS ITS OWN TRANSACTIONS", NOT "WORKS IN AN EDIT MODE":
+                // D-115 and D-125 gave editScopeFailures to any fragment Revit
+                // refuses inside a transaction, whatever the reason, and
+                // CREATE_ASSEMBLY declares it in no edit mode (5b row 1557).
                 return Json.Error("needs_write_path",
-                    "This fragment works in one of Revit's edit modes and opens its own "
-                    + "transactions inside Heron's, so it runs only as a change - never as "
-                    + "a read, where nothing is allowed to open one. Nothing was run.");
+                    "This fragment opens its own transactions inside Heron's, so it runs "
+                    + "only as a change - never as a read, where nothing is allowed to open "
+                    + "one. Nothing was run.");
             }
 
             // AND ONE THAT OPENS A TRANSACTION WITHOUT SAYING SO. The check
@@ -814,7 +818,7 @@ namespace Heron.Revit.Addin
                 // fragment may have caught the clock's throw and returned
                 // normally; what it left is then a part-done answer, and
                 // reporting it as the answer would be the wrong half.
-                if (HeronRunClock.Tripped) return ClockStopped(name, null);
+                if (HeronRunClock.Tripped) return WithCount(ClockStopped(name, null), counted);
 
                 // THE RUN GUARD ON THE READ PATH. Nothing of Heron's is open
                 // to roll back, but a read can still reach past its model - a
@@ -823,7 +827,7 @@ namespace Heron.Revit.Addin
                 // either way: an answer from a job that tried to publish is
                 // not the answer that was asked for.
                 var guardedRead = Guarded(threw, ReadOpensNothing);
-                if (guardedRead != null) return guardedRead;
+                if (guardedRead != null) return WithCount(guardedRead, counted);
 
                 // A REVIT DIALOG HERON DECLINED STOPS A READ TOO: an answer
                 // built around a question nobody answered is not the answer
@@ -834,7 +838,7 @@ namespace Heron.Revit.Addin
                 // in the model was changed", which only the count above can
                 // vouch for on a read (row 5b-350).
                 var stoppedRead = DialogRefusal(name, null);
-                if (stoppedRead != null) return stoppedRead;
+                if (stoppedRead != null) return WithCount(stoppedRead, counted);
             }
             else
             {
@@ -1240,6 +1244,12 @@ namespace Heron.Revit.Addin
                 }
             }
 
+            // A READ THAT THREW SAYS IN A FIELD THAT ITS MODEL WAS COUNTED
+            // UNCHANGED, as an answered read does: ReadChangedModel found no
+            // change before this line was reached, so the count stands (5b row
+            // 1559). The write path's refusal says whether its rollback held -
+            // RevitDispatcher adds that.
+            if (threw != null && !writing) return WithCount(threw, counted);
             if (threw != null) return threw;
 
             // EVERY ELEMENT, for the dispatcher's run record. The reply only
@@ -2802,6 +2812,10 @@ namespace Heron.Revit.Addin
                     + (watch == null ? "" : " '" + watch.Job + "'")
                     + (after.Held ? " took earlier kept work with it" : " did not hold"));
             }
+
+            // AND THE JOB IS TOLD, so a refusal after it says in fields whether
+            // it held, not only in words (5b row 1559, RevitDispatcher).
+            RevitDispatcher.NoteRollback(after.Held, after.Reported);
             return after;
         }
 
@@ -3882,8 +3896,29 @@ namespace Heron.Revit.Addin
                 Elsewhere.Clear();
             }
 
-            public string Document;         // whose elements these are
+            public string Document;         // whose elements these are - its TITLE, for the words
             public string By;               // the fragment that left them
+
+            // AND WHICH MODEL THAT IS, BY WHAT IDENTIFIES IT - FRAGMENT-ISSUES
+            // 5b row 1164. The chain was matched to a model by its title alone,
+            // a few hundred lines from InDocument's own sentence that a title
+            // is not an identity: two files can share one, and ids taken in
+            // one could be bound in the other and looked up there by number.
+            // RevitOperations.DocumentKey - CreationGUID where the release has
+            // one, path, title - the key the rollback witness and the grant
+            // use. A Save As makes a new key, so what was carried is dropped:
+            // the safe side, and the next step says nothing is carried.
+            public string Key;
+
+            /// <summary>Whether these values were taken in `target` - never by title alone.</summary>
+            public bool Of(Document target)
+            {
+                if (target == null || Key == null) return false;
+                string key;
+                try { key = RevitOperations.DocumentKey(target); }
+                catch (Exception) { return false; }
+                return string.Equals(Key, key, StringComparison.Ordinal);
+            }
 
             // WHAT THE PRODUCER RAN WITH, and the reason it is here rather
             // than only `By`. Two runs of `select-by-category-name` leave
@@ -4212,7 +4247,7 @@ namespace Heron.Revit.Addin
             // Q-89: LEFT BY A RUN THAT WAS TAKEN BACK - a dry run, a proof's
             // trial, a Discard. Asked first: whatever is expected, everything
             // carried was replaced by that run, and none of it may be bound.
-            if (chain != null && chain.Document == target.Title && chain.TakenBack != null)
+            if (chain != null && chain.Of(target) && chain.TakenBack != null)
             {
                 return Json.Error("chain_taken_back",
                     HeronBindingNote.CarriedFromTakenBack(wantedBy, chain.By, chain.TakenBack,
@@ -4410,7 +4445,7 @@ namespace Heron.Revit.Addin
             // that was taken back left (Q-89): an expectation is refused for
             // them below, and a need is never filled from them by name.
             var chain = ChainFor(client, false);
-            var carried = chain != null && chain.Document == target.Title
+            var carried = chain != null && chain.Of(target)
                           && chain.TakenBack == null
                 ? chain.Values : null;
 
@@ -4500,8 +4535,8 @@ namespace Heron.Revit.Addin
                     lines.Append("IFailuresPreprocessor ").Append(name)
                          .Append(" = (IFailuresPreprocessor)__heron[\"").Append(name)
                          .Append("\"];\n");
-                    how.Add(name + " - Heron's failure discipline, for the fragment's own "
-                            + "edit mode");
+                    how.Add(name + " - Heron's failure discipline, for the transactions "
+                            + "the fragment opens itself");
                     continue;
                 }
 
@@ -4959,9 +4994,10 @@ namespace Heron.Revit.Addin
             // Q-89: AND AFTER A RUN THAT WAS TAKEN BACK THE CHAIN STARTS AFRESH.
             // Nothing that run left may be bound, and a name it left that this
             // run does not write again would otherwise outlive the mark.
-            if (chain.Document != target.Title || chain.TakenBack != null) chain.Clear();
+            if (!chain.Of(target) || chain.TakenBack != null) chain.Clear();
 
             chain.Document = target.Title;
+            chain.Key = RevitOperations.DocumentKey(target);
             chain.By = name;
             chain.Inputs = ranWith;
             chain.TakenBack = takenBack;
@@ -7840,6 +7876,17 @@ namespace Heron.Revit.Addin
         {
             var ids = value as IList<ElementId>;
 
+            // ONE ID FOR A NEED THAT WANTS A LIST IS A LIST OF ONE - FRAGMENT-
+            // ISSUES 5b row 1406. A step that provides one `created`
+            // (CREATE_TEXT_NOTE) handed its ElementId to a need typed
+            // IList<Element>, this fell through to `return value`, and the
+            // fragment threw a cast before it was reached. Shaped exactly as a
+            // list is: an id that names nothing in this model resolves to
+            // nothing, which the binder refuses - never a cast at run time.
+            var single = value as ElementId;
+            if (ids == null && single != null && IsElementList(type))
+                ids = new List<ElementId> { single };
+
             if (ids != null && IsElementList(type))
             {
                 if (ids.Count == 0) return new List<Element>();
@@ -7859,6 +7906,10 @@ namespace Heron.Revit.Addin
             {
                 return value;
             }
+
+            // And a list of ids wanted, one id given: the same list of one.
+            if (single != null && type.IndexOf("IList<ElementId>", StringComparison.Ordinal) >= 0)
+                return new List<ElementId> { single };
 
             var already = value as IList<Element>;
             if (already != null && IsElementList(type))

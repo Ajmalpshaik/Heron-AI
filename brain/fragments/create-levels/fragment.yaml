@@ -7,7 +7,7 @@ heron-layer: brain
 id: FRG-DOC-008
 semantic-identity: "add storeys to the project"
 kind: action
-domain: revit.document
+domain: revit.datums
 capability: CREATE_LEVELS
 version: 2
 source: OFFICIAL
@@ -30,9 +30,7 @@ purpose: >
   refusal is recorded against its height and the whole job is then undone -
   nothing kept, one request one change (Article 8). Version 1 let it vanish
   and returned one level fewer with nothing said. It makes the levels and
-  nothing else - `noViewsMade`, and the note below the contract. This is
-  version 2; version 1's proof no longer describes the code and is kept as a
-  record, and the fragment is DRAFT until it is proved again.
+  nothing else - `noViewsMade`, and the note below the contract.
 
   **THE ELEVATION IS READ BACK AS `ProjectElevation`.** That is the one in the
   same space as everything else in the model. `Elevation` is measured from

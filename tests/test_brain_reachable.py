@@ -813,6 +813,38 @@ def main():
                   "and that the notes are collected again after the read, "
                   "which takes the chain over")
 
+            # A ROOF JOINED TO A ROOF - row 5b-1671, the owner's answer of
+            # 2026-11-19. Revit's API has no Join/Unjoin Roof, and these words
+            # reached CREATE_EXTRUSION_ROOF, which makes a NEW roof. They now
+            # reach SHAPE_WALL_TOPS_TO_ROOF - the other way, for the walls
+            # under a roof - with the join-roofs method named first, whose
+            # purpose says the API has none, asks before the other way, and
+            # sends roof to roof to Modify > Join/Unjoin Roof by hand.
+            for said in ("join the main roof to the wing roof",
+                         "join this roof to that roof"):
+                asked = BRAIN.lookup(said)
+                check(asked.get("capability") == "SHAPE_WALL_TOPS_TO_ROOF",
+                      "\"%s\" reaches the other way, SHAPE_WALL_TOPS_TO_ROOF, "
+                      "never a tool that makes a new roof - %s"
+                      % (said, asked.get("capability")))
+                check([m["id"] for m in asked.get("methods") or []][:1]
+                      == ["join-roofs"],
+                      "and names the join-roofs method first - %s"
+                      % [m["id"] for m in asked.get("methods") or []])
+            joins = BRAIN.method("join-roofs")
+            steps = " ".join((joins or {}).get("purpose", "").split())
+            at = [steps.find(step) for step in (
+                "HAS NO JOIN/UNJOIN ROOF", "0. SAY IT FIRST",
+                "1. LOOK FOR ANOTHER WAY", "ASK FIRST",
+                "2. WHEN NO OTHER WAY GETS THERE",
+                "Modify > Join/Unjoin Roof")]
+            check(joins is not None and min(at) >= 0 and at == sorted(at)
+                  and "revit_health" in steps,
+                  "the join-roofs method says the API has none and names the "
+                  "release, offers another way and asks first, then sends "
+                  "roof to roof to Join/Unjoin Roof by hand - in that order %s"
+                  % at)
+
             # THE OWNER'S FIXED-SIZE ASK. "A detailed generator, no
             # parameters" shared only "family" with the family method and
             # "family" and "parameters" with the profile one, so the profile
