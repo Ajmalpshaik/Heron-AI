@@ -63,7 +63,9 @@ purpose: >
   against this model, and a linked id that happens to be in use here binds
   an unrelated element (FRAGMENT-ISSUES row 75). Only model elements are
   read from a link, never its views or sheets. Links nested inside a link
-  are not read, and are counted in the answer.
+  are not read, and are counted in the answer. This is version 2; version
+  1's proof no longer describes the code, and the fragment is DRAFT until
+  it is proved again.
 
 # A NAME TWO PARAMETERS SHARE IS NEVER READ: a sleeve whose size name, or whose
 # service's, is carried twice is `unreadable` with the name said - never read

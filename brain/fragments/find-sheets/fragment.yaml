@@ -49,7 +49,9 @@ purpose: >
   **VERSION 2 reads each sheet back as the drawing list.** One `findings` row
   per sheet - its number, its name and how many views are on it - with EMPTY
   on a sheet that holds none and PLACEHOLDER on one that cannot. A sheet VIEW
-  TEMPLATE is not a sheet and is left out.
+  TEMPLATE is not a sheet and is left out. Version 1's proof no longer
+  describes the code and is kept as a record; the card is DRAFT until it is
+  proved again.
 
   **VERSION 3 picks the sheets of an issue.** By one revision - its Seq., its
   description or its date - carried ANYWHERE on the sheet, not only as the

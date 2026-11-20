@@ -40,7 +40,9 @@ purpose: >
   **NOTHING FROM A LINK IS EVER SELECTED OR CARRIED** - `elements` and `notLinear` stay this model's own; the chain
   revives ids against this model, and a linked id that happens to be in
   use here binds an unrelated element (FRAGMENT-ISSUES row 75). Links
-  nested inside a link are not read, and are counted in the answer.
+  nested inside a link are not read, and are counted in the answer. This
+  is version 2; version 1's proof no longer describes the code, and the
+  fragment is DRAFT until it is proved again.
 
 contract:
   needs:

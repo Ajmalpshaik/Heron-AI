@@ -80,6 +80,8 @@ purpose: >
 
   In a family document the version 1 audit of NESTED family types is not run:
   a nested handwheel needs no connector, and reporting one would be false work.
+  Version 1's proof no longer describes the code and is kept below as a record;
+  the fragment is DRAFT until it is proved again (NEEDS-CHECKING Group CB).
 
   **VERSION 3 (2026-10-11): CLASSIFICATION, IN BOTH DOCUMENTS.** The OmniClass
   Number against the classification file - not in it, or filed under another
@@ -96,7 +98,8 @@ purpose: >
   System Classification Fitting (a WARN); one primary, lying on the X axis
   (a WARN); and an elbow's connector Angle driven by an INSTANCE family
   parameter - by a TYPE one a FAIL, by none a WARN until Revit's own elbow is
-  read (NEEDS-CHECKING Group JN).
+  read (NEEDS-CHECKING Group JN). Version 3's proof no longer describes the
+  code and is kept below as a record; DRAFT until it is proved again.
 
 # IN A PROJECT, A REQUIRED NAME THE TYPE CARRIES TWICE IS A WARN, NOT A PASS -
 # counted by name, never looked up, and counted in `warned` (D-54 s3,

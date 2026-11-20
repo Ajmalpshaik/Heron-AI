@@ -24,7 +24,9 @@ purpose: >
   `totalMm` for them all - "how many metres of duct is there", "what is the
   total length of wall". An element handed in twice is measured once, so the
   total and the list always agree. A length of zero is named in
-  `lengthUnknown`, never added as nothing.
+  `lengthUnknown`, never added as nothing. This is version 2; version 1's proof
+  no longer describes the code and is kept as a record, and the fragment is
+  DRAFT until it is proved again.
 
   **THE SURFACE AREA IS REVIT'S OWN, NOT ONE DERIVED HERE.** Revit already
   computes perimeter times length for a duct or pipe and keeps it on the
