@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -21,10 +21,23 @@ semantic-identity: "rename a revision numbering sequence or change its digits, s
 # suffix, starting number - that 2022 moved onto named sequences. Version 1 was
 # DRAFT with no proof, so no proof went stale. The custom-list checks (empty,
 # repeated, ellipsis) are new on every release.
+#
+# VERSION 3, 2026-11-20: FRAGMENT-ISSUES row 5b-414, the owner's yes of
+# 2026-11-20 (Ajmalpshaik/Heron-AI#926) - "refuse a numbering change only
+# when an issued revision's printed letter would really change". Version 2
+# refused every settings change while any issued revision used the
+# numbering: on 4355-BHVD-3D-50C10-BL001A the list AA, BB, CC, D, E turned
+# into AA, BB, CC, DD, EE was refused though AA to CC, the issued ones, print
+# the same. Each issued revision's printed number is now worked out under the
+# settings asked for; the same is allowed and said, a different one refused
+# with both numbers, and one that cannot be worked out (per-sheet numbering
+# above all) refused as before. Version 2 was PROVEN (the proof block below,
+# kept as its record); the C# moved, so it is DRAFT until NEEDS-CHECKING
+# Group OP is run (D-30).
 kind: action
 domain: revit.sheets
 capability: EDIT_REVISION_NUMBERING_SEQUENCE
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -45,9 +58,10 @@ purpose: >
   **THE TYPE IS FIXED ONCE MADE**, so a value belonging to the other type is
   refused by name.
 
-  **A SEQUENCE AN ISSUED REVISION USES KEEPS ITS SETTINGS** - changing them
-  would change the number that revision prints on drawings already sent out -
-  so that is refused, naming the revisions. A new name is allowed.
+  **AN ISSUED REVISION KEEPS WHAT IT PRINTS** - a settings change is
+  refused only when it would change what an issued revision prints on
+  drawings already sent out, naming the revisions; one that leaves them as
+  they are goes ahead and says so. A new name is allowed.
 
   A field already at the value asked is named in `alreadyThat` and not
   written; every write is read back, and a half-done edit is rolled back.

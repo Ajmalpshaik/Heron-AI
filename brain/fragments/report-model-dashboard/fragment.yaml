@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "the whole model at a glance - elements by category, level an
 kind: action
 domain: revit.qa
 capability: REPORT_MODEL_DASHBOARD
-version: 3
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -50,6 +50,18 @@ risk: READ
 # this card reads whatever it is sent. Still DRAFT at the time, no proof to go
 # stale, and "format" stays 1. No modeller's words were given for it, and none
 # are added.
+#
+# VERSION 4 (2026-11-20, FRAGMENT-ISSUES row 5b-1355, the owner's answer of
+# 2026-11-19 on Ajmalpshaik/Heron-AI#924): "Center line" is a SUBCATEGORY,
+# one name under Ducts, Duct Fittings, Flex Ducts, Pipes, Cable Trays and
+# more - so the parent is checked and shown beside the name. A `categories`
+# row whose category has a parent is named "Center line (Ducts)", carries
+# `parent` and `sampleIds`, and is not counted as a category of its own: the
+# findings line counts categories by the one each row belongs to and names
+# the subcategories apart. elementTotal and `instances` keep their rule.
+# "format" stays 1: the keys are added, none is taken away. Version 3 was
+# PROVEN (the proof block below, kept as its record); the C# moved, so it is
+# DRAFT until NEEDS-CHECKING Group OP is run (D-30).
 purpose: >
   Reads the open project once and counts what it holds, part by part, for the
   Heron Companion's Model Dashboard: the placed model elements by category,
@@ -83,8 +95,13 @@ purpose: >
 #   model         {title, isFamily, isWorkshared}
 #   elementTotal  placed model elements - not a type, a model category, not
 #                 view-specific, with an extent (a bounding box), not a Level
-#   categories    [{name, instances, types}] - model categories with at least
-#                 one, most first; `types` is how many types those elements USE
+#   categories    [{name, parent, instances, types, sampleIds}] - model
+#                 categories with at least one, most first; `types` is how many
+#                 types those elements USE. VERSION 4: `parent` is null for a
+#                 category; for a SUBCATEGORY it is its parent's name, `name`
+#                 is "<subcategory> (<parent>)" and `sampleIds` its first 5
+#                 element ids (a subcategory row only). A subcategory is a row
+#                 of its own and is not counted as a category
 #   levels        [{name, elevationMm, instances}] - every level, bottom to top
 #                 by project elevation; elevationMm is the level's Elevation as
 #                 its Properties show it, from its own Elevation Base

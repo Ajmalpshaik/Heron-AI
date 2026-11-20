@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LNK-015
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,13 +9,35 @@ semantic-identity: "which models are linked into this one, and are they actually
 kind: filter
 domain: revit.document
 capability: LIST_LINKED_MODELS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
+# VERSION 2 (2026-11-20) - THE LINK'S SETTINGS, and back to DRAFT.
+# FRAGMENT-ISSUES row 5b-474, the owner's yes of 2026-11-20
+# (Ajmalpshaik/Heron-AI#921): "is the link room bounding" and "are the links
+# relative or absolute" had no read and reached SET_LINK_ROOM_BOUNDING and
+# LOAD_KEYNOTE_FILE, both writes. Each file now says its path type, Room
+# Bounding, Overlay or Attachment, nested or not, unloaded for this user only
+# or not, and its saved path; each placement whether it is pinned, its
+# workset, and its name as Revit shows it (which ends with its shared
+# position). `summary` is new - every line whole. The owner asked for the
+# other settings a modeller asks about too; these are the ones every release
+# 2020 to 2027 can read without opening the link (tools/api-surface,
+# 2026-11-20). Version 1 was PROVEN (the proof block below, kept as its
+# record); the C# moved, so it is DRAFT until NEEDS-CHECKING Group OP is run.
 purpose: >
   Reports the Revit models linked into this project - one row per linked FILE,
   how many times each is placed, and whether it is loaded right now.
+
+  **And how each link is set, as Manage Links and the link's Properties show
+  it (version 2):** its path type - relative or absolute, or Revit Server -
+  and the path it was saved with; whether its type is Room Bounding; whether
+  it is an Overlay or an Attachment; whether it is nested inside another
+  link; whether it is unloaded for this user only. For each placement:
+  whether it is pinned, which workset it is on, and its shared position as
+  Revit names it. A setting that cannot be read is said, never guessed. It
+  only reads - changing any of these is a write of its own.
 
   **Loaded is established by asking for the document, not by reading a status.**
   A link's stored status says what Revit last recorded; `GetLinkDocument()`
@@ -46,6 +68,13 @@ contract:
       # reject.
       role: result
       type: IList<ElementId>
+    - name: summary
+      # VERSION 2. Every file and every placement, each setting on its own
+      # line, as ONE string: a reply prints a list as its first three names
+      # (row 5b-195), so `findings` could not carry six links' settings. A
+      # RESULT, and EMPTY when the model has no link - the negative case.
+      role: result
+      type: string
 
 proof:
   date: '2026-09-13'
@@ -94,6 +123,17 @@ compatibility-note: >
 #   "copy these out of the link"     -> COPY_ELEMENTS_BETWEEN_DOCUMENTS, fromLink=true
 
 
+# ROUTING (2026-11-20, version 2 - row 5b-474). Questions about how a link is
+# SET come here; changing a setting is a write:
+#
+#   "is the link room bounding"          -> here
+#   "are the links relative or absolute" -> here
+#   "is the link pinned"                 -> here
+#   "make the link room bounding"        -> SET_LINK_ROOM_BOUNDING
+#   "make the links relative"            -> SET_LINK_ROOM_BOUNDING (it took
+#                                           SET_LINK_PATH_TYPE in)
+#   "select the pinned elements"         -> SELECT_BY_PIN_STATE
+
 # ROUTING (2026-10-12, the gap fill)
 #
 #   "link the architect's model"            -> LINK_FILES
@@ -106,3 +146,8 @@ utterances:
   - show me the links
   - are all the links loaded
   - which link is this from
+  # VERSION 2 (row 5b-474) - questions about a link's settings.
+  - is the link room bounding
+  - are the links relative or absolute
+  - which links are pinned
+  - is the link overlay or attachment

@@ -14,7 +14,13 @@ capability: RELOAD_LINKS
 # see the merge block above `utterances`. Version 1's proof below is kept as
 # the record; it no longer describes the code, so the card is DRAFT until
 # version 2 is proved on a real model (D-30).
-version: 2
+# VERSION 3 (2026-11-20): FRAGMENT-ISSUES row 73, the owner's answer of
+# 2026-11-20 (Ajmalpshaik/Heron-AI#921) - "yes, on a scratch copy only". A
+# link's load and unload happen outside Revit's undo, so on a real model the
+# chat asks first, every time, and says there is no undo; when anything was
+# done the first finding says so too. Its proof runs on a scratch copy of a
+# sample model only, never a job model (NEEDS-CHECKING Group OP). Still DRAFT.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -42,10 +48,15 @@ purpose: >
   actually returns is how the first real run answers it, instead of a guess
   hardening into a fact.
 
-  **This is document management, not a model edit**, and whether Revit permits
-  it inside an open transaction is UNPROVEN. It opens none itself (Golden Rule
-  16). If the host's write path wraps it in one and Revit refuses, that is the
-  finding, and it is the first thing to check against a real model.
+  **THERE IS NO UNDO - ASK FIRST, EVERY TIME, ON A REAL MODEL (version 3).**
+  Loading and unloading a link is document management, done outside Revit's
+  undo: Undo cannot take it back and Discard does not roll it back. An unload
+  was measured both ways on a scratch copy - refused inside an open
+  transaction, done for real outside one, with nothing to roll back. So
+  before it runs on a working model the modeller is asked, and told there is
+  no undo; when anything was done, the first finding says so again. It is
+  proved on a scratch copy of a sample model only. It opens no transaction
+  itself (Golden Rule 16).
 
   **AN UNLOAD IS READ BACK (version 2).** A link already unloaded is skipped and
   said; after unloading, the link is asked whether it is still loaded, and one

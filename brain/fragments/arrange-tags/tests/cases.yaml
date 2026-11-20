@@ -35,7 +35,23 @@ positive:
       the room tag's head exactly where it was (REPORT_LOCATION), its id in
       `keptInPlace`, and the door tag moved clear of it
 
+  # VERSION 3 (2026-11-20) - row 5b-240. FAILS on version 2. NOT RUN.
+  # NEEDS-CHECKING Group OP.
+  - given: >
+      two leaderless door tags on top of each other on a 1:100 plan, with
+      minGapMm 2
+    expect: >
+      the two tag boxes about 2 mm apart ON THE SHEET - 200 mm in the model,
+      `gap` 0.656 ft in the run record. Version 2 left them touching: it
+      read 2 as 2 model millimetres, 0.02 mm on the sheet
+
 negative:
+  # VERSION 3 - a gap already scaled by the caller is scaled again.
+  - given: the same pair with minGapMm 200, the figure a caller scaled for version 2
+    expect: >
+      `gap` 65.6 ft - 20 m in the model, 200 mm on the sheet - and the
+      tags thrown far apart. The card is scaled once, by the card: a
+      caller never multiplies first (brain/skills/annotate-a-view.yaml)
   # VERSION 2 - room tags alone, each in its own room, nothing clashing.
   - given: the two room tags of that plan alone
     expect: moved 0, `notTags` empty - they are tags now, and nothing clashes

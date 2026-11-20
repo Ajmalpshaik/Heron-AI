@@ -1594,6 +1594,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-on.md`](needs-checking/group-on.md)
 
+## Group OP - seven tools changed on the owner's answers of 2026-11-19/20: tag gaps on paper, the dashboard's subcategories, a link's settings, reloading with no undo, spaces with no area, Object Styles' material, revision numbers that do not move - DRAFT until proved (2026-11-20)
+
+**Its own file:** [`needs-checking/group-op.md`](needs-checking/group-op.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

@@ -119,7 +119,31 @@ positive:
       both answers are version 2's, with "breakdowns": null and NO
       "breakdowns:" line in notRead
 
+  # VERSION 4 (2026-11-20) - row 5b-1355. FAILS on version 3. NOT RUN.
+  # NEEDS-CHECKING Group OP.
+  - given: >
+      the Snowdon HVAC copy with its links loaded - the model whose JT1 run
+      read three rows all named "Center line"
+    expect: >
+      each of those rows named with its parent beside it - "Center line
+      (Ducts)", "Center line (Duct Fittings)", "Center line (Flex Ducts)" or
+      whatever Revit reads as the parent - `parent` set, `sampleIds` up to
+      5; every other row `parent` null; elementTotal still equal to the sum
+      of every row's `instances`; and the findings line counting those rows
+      as subcategories, not as categories. Select one sampleIds element in
+      Revit and read its category in Properties: that says which elements
+      they are
+
 negative:
+  # VERSION 4 - no subcategory to name.
+  - given: >
+      a new project from the default template holding one wall and no model
+      line - a model line sits on a line style, which is a subcategory of
+      Lines, so it would be named like Center line
+    expect: >
+      every row `parent` null and no `sampleIds` key anywhere; the findings
+      line's category count equal to the number of rows, and no
+      "subcategor" in it
   # THE CASE THAT MATTERS - the batch-prove leg (tools/jobs).
   - given: >
       a FAMILY document open beside the project (Family1, or any .rfa), the

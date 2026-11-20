@@ -121,6 +121,24 @@ def test_numbers_are_the_ones_sent():
     assert [b["value"] for b in cats["bars"]] == [600, 400, 250]
 
 
+def test_a_subcategory_is_named_apart_and_not_a_category():
+    # Row 5b-1355: REPORT_MODEL_DASHBOARD version 4 names a subcategory row
+    # "Center line (Ducts)" with a `parent`; three of them add no category,
+    # and a parent with no row of its own counts once.
+    rows = [{"name": "Ducts", "instances": 600, "types": 4},
+            {"name": "Center line (Ducts)", "parent": "Ducts", "instances": 590, "types": 0},
+            {"name": "Center line (Duct Fittings)", "parent": "Duct Fittings",
+             "instances": 400, "types": 0},
+            {"name": "Center line (Flex Ducts)", "parent": "Flex Ducts", "instances": 30, "types": 0}]
+    board = built(categories=rows, elementTotal=1620)
+    assert tile(board, "elements")["note"] == "in 3 categories", tile(board, "elements")["note"]
+    labels = [b["label"] for b in [c for c in board["charts"] if c["key"] == "categories"][0]["bars"]]
+    assert len(set(labels)) == len(labels) == 4, labels
+    assert "in 3 categories" in D.dashboard(sample(categories=rows, elementTotal=1620))["said"]
+    # A version 3 answer has no parent: every row is a category, as before.
+    assert tile(built(), "elements")["note"] == "in 3 categories"
+
+
 def test_a_part_not_read_is_never_zero():
     board = built(sheets=None, notRead=["sheets: the title blocks could not be read"])
     assert tile(board, "sheets")["state"] == "not read"

@@ -161,7 +161,8 @@ def read(text):
                   "isWorkshared": model.get("isWorkshared") is True},
         "elementTotal": _int(data.get("elementTotal")),
         "categories": [{"name": _text(r.get("name")), "instances": _int(r.get("instances")),
-                        "types": _int(r.get("types"))} for r in _rows(data, "categories")],
+                        "types": _int(r.get("types")),
+                        "parent": _text(r.get("parent")) or None} for r in _rows(data, "categories")],
         "levels": [{"name": _text(r.get("name")), "elevationMm": _num(r.get("elevationMm")),
                     "instances": _int(r.get("instances"))} for r in _rows(data, "levels")],
         "noLevel": _int(data.get("noLevel")),
@@ -241,6 +242,15 @@ def _missing(data, key):
     return "%s: not read" % key
 
 
+def _category_count(rows):
+    """How many categories the rows are on. A subcategory row (one with a
+    `parent`, REPORT_MODEL_DASHBOARD version 4, row 5b-1355) is not a category
+    of its own - three "Center line" rows under Ducts, Duct Fittings and Flex
+    Ducts add none - but its parent counts once when it has no row itself."""
+    own = {r["name"] for r in rows if not r.get("parent")}
+    return len(own | {r["parent"] for r in rows if r.get("parent")})
+
+
 def _plural(n, one, many=None):
     return "%d %s" % (n, one if n == 1 else (many or one + "s"))
 
@@ -264,7 +274,7 @@ def tiles(data):
     unloaded = sum(1 for l in links if not l["loaded"])
     out = [
         {"key": "elements", "label": "Model elements", "value": data["elementTotal"],
-         "note": "in %s" % _plural(len(data["categories"]), "category", "categories"),
+         "note": "in %s" % _plural(_category_count(data["categories"]), "category", "categories"),
          "state": "info"},
         {"key": "warnings", "label": "Warnings", "value": w["total"],
          "note": ("%s among them" % _plural(w["errors"], "error")) if w["errors"]
@@ -512,7 +522,7 @@ def summary(data, rows=None):
                 "was changed." % title)
     w = data["warnings"]
     parts = ["%s in %s" % (_plural(data["elementTotal"], "model element"),
-                           _plural(len(data["categories"]), "category", "categories")),
+                           _plural(_category_count(data["categories"]), "category", "categories")),
              "%s%s" % (_plural(w["total"], "warning"),
                        (" (%s)" % _plural(w["errors"], "error")) if w["errors"] else "")]
     said = "Model Dashboard for %s: %s; %s worth a look%s." % (

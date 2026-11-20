@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,17 @@ semantic-identity: "make and rename this model's spaces to match the linked mode
 kind: action
 domain: revit.rooms
 capability: SYNC_SPACES_WITH_LINKED_ROOMS
-version: 1
+# VERSION 2 (2026-11-20) - FRAGMENT-ISSUES row 5b-1125, the owner's answer of
+# 2026-11-20 (Ajmalpshaik/Heron-AI#921): "investigate the tool properly; if
+# the defect is real, repair it". It was real, in the code: its read-back
+# said it dropped a space that did not hold and only wrote a line, so on
+# Project1 (Revit 2020) two spaces that read back with NO AREA stayed in
+# `created` and the run judged PASS - the proof block below is that run,
+# kept as its record. A space made with no area now leaves `created` and is
+# counted apart in `noArea`, its line saying whether the link is Room
+# Bounding. A space is still made only where the linked model has a placed
+# room. The C# moved, so it is DRAFT until NEEDS-CHECKING Group OP is run.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -77,6 +87,13 @@ contract:
     - name: orphans
       # Spaces here with no linked room under them. Listed, never deleted
       # (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: noArea
+      # VERSION 2 (row 5b-1125). Spaces made that read back with NO AREA -
+      # nothing bounds them here. Left in the model where the linked model
+      # has a room, and NOT in `created` - what it could not finish, never
+      # a thing it made work of (D-52).
       role: accounting
       type: IList<ElementId>
     - name: notPlaced
