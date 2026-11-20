@@ -560,6 +560,14 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1853](row-5b-1853.md) | [#1053](https://github.com/Ajmalpshaik/Heron-AI/issues/1053) | Your decision, then a Revit run | Copy view filters copies in id order, not the source view's priority, and leaves the Enable Filter tick behind |
 | [row 5b-1854](row-5b-1854.md) | [#1053](https://github.com/Ajmalpshaik/Heron-AI/issues/1053) | Your decision, then a Revit run | Two proven reads ask the view, not its template, whether the template controls its filters or overrides |
 | [row 5b-1855](row-5b-1855.md) | [#1054](https://github.com/Ajmalpshaik/Heron-AI/issues/1054) | Code fix on your PC | Two 'top filter' questions still reach the new filter-reorder write; partly fixed in #1027 |
+| [row 5b-1892](row-5b-1892.md) | [#1099](https://github.com/Ajmalpshaik/Heron-AI/issues/1099) | Code fix | The sheets job's skill, Group MY and the table card still call it DRAFT and the write-values card PROVEN |
+| [row 5b-1893](row-5b-1893.md) | [#1100](https://github.com/Ajmalpshaik/Heron-AI/issues/1100) | Your decision | Make sheets says nothing when Revit refuses a sheet name |
+| [row 5b-1894](row-5b-1894.md) | [#1099](https://github.com/Ajmalpshaik/Heron-AI/issues/1099) | Code fix | HANDOVER and docs/07 still say v0.1.0 is the only release; v0.2.0 was published 2026-11-16 |
+| [row 5b-1895](row-5b-1895.md) | [#1099](https://github.com/Ajmalpshaik/Heron-AI/issues/1099) | Code fix | docs/22 and heron-ready.py still put the Changes, Admin and Publish switches on the ribbon or in heron.config |
+| [row 5b-1896](row-5b-1896.md) | [#1100](https://github.com/Ajmalpshaik/Heron-AI/issues/1100) | Your decision | The Constitution's Enforcement table names a credential store and an egress filter that do not exist |
+| [row 5b-1897](row-5b-1897.md) | [#1099](https://github.com/Ajmalpshaik/Heron-AI/issues/1099) | Code fix | docs/28 says agent SEL-008's proof reads current; prove-agent check reads it STALE |
+| [row 5b-1898](row-5b-1898.md) | [#1100](https://github.com/Ajmalpshaik/Heron-AI/issues/1100) | Your decision | A host agent retired on the owner's delegation, against D-154's signed retirement |
+| [row 5b-1899](row-5b-1899.md) | [#1100](https://github.com/Ajmalpshaik/Heron-AI/issues/1100) | Your decision | The install guides still send a modeller to the zip, not the one Setup file of D-167 |
 
 ## Found finished on 2026-11-16 - closed in the register, no issue
 
