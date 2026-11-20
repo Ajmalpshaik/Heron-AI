@@ -310,7 +310,10 @@ purpose: >
       that repeats in a row is ONE form made in step 7 and ARRAY_FAMILY_FORMS,
       its count an Integer parameter given its value in step 3; an arrayed
       void's copies are each
-      combined in turn, by the ids the array gives back.
+      combined in turn, by the ids the array gives back - `members` are the
+      copies' model groups, `memberForms` the void inside each (version 5);
+      whether Revit combines a void that sits in an array's group is not yet
+      run (row 5b-358, NEEDS-CHECKING Group OR).
       ARRAY ONLY A FORM SKETCHED ON A PLANE NO PARAMETER MOVES - Ref. Level,
       a centre plane. A form sketched on a plane a parameter moves LOSES ITS
       WORK PLANE in the array, and the row breaks at another type. Measured
