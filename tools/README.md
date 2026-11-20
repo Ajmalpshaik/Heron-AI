@@ -2585,7 +2585,7 @@ python tools/check-decision-titles.py                        # against HEAD's hi
 python tools/check-decision-titles.py --published origin/main # against what main has published
 ```
 
-**A gate: CI's gates job runs it, with `--published HEAD^1`.** It reads every decision heading in
+**A gate: CI's gates job runs it, with `--published HEAD`** - on a pull request the merge commit, so a branch that renumbers or rewords its own decision carries the `**Numbering:**` lines before it merges, not after (issue #1056, option 2; it was `HEAD^1` until 2026-11-20, and a renumbering branch then turned every later pull request red). It reads every decision heading in
 [`docs/DECISIONS.md`](../docs/DECISIONS.md) and the git history of that file, and fails when a number's heading
 no longer carries the title the number was first written with, when a title turns up under a number it was not
 first written under, when a number leaves the log, or when a `decisions/D-NN.md` record stops opening with its

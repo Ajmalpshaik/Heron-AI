@@ -168,8 +168,13 @@ with `python brain/heron_scope.py --rebuild`.
 **`check-decision-titles` needs the whole git history** and exits **2** in a shallow clone, saying so:
 it reads what each decision was FIRST written as, and a clone cut short cannot show that. A cloud
 session starts from one - measured 2026-09-23, 51 commits - so run `git fetch --unshallow` first. CI's
-gates job fetches the whole history for it, and passes `--published HEAD^1` so that a title a branch
-changed before it was merged counts as a draft.
+gates job fetches the whole history for it, and passes `--published HEAD` - on a pull request the merge
+commit, so **the branch's own history counts** (issue #1056, option 2, since 2026-11-20). A branch that
+renumbers its decision because main took the number - `tools/renumber.py`, §6a - or rewords a title it
+wrote, fails its own pull request until the `**Numbering:**` lines are there: the moved decision names the
+number it had (renumber.py writes that one), and the decision now under the old number quotes the branch's
+title if the branch wrote first. Run it with no flag on the branch, main merged in, and you see what CI
+sees. It was `HEAD^1` until then, which let such a branch pass and turned every pull request after it red.
 
 ## 2. The tests
 
