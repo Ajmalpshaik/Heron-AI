@@ -1025,6 +1025,42 @@ def nothing_written(reply):
     return not any(part.get(key) for key in ("added", "modified", "deleted"))
 
 
+# THE CLOSING SENTENCE OF A KEEP THAT MADE NOTHING FOLLOWS ITS OUTCOME WORD
+# (issue #1043). D-168 has revit_change say NOTHING CHANGED, or REFUSED, of a
+# change Revit kept in which nothing changed by every count; the add-in's own
+# verdict for the same reply is still its KEPT paragraph - true of the
+# transaction group, and on 2026-11-18 (Revit 2020, FRAME_ELEMENTS_IN_CAMERA)
+# a reply whose outcome line said REFUSED ended "'frame-elements-in-camera'
+# was KEPT". The word is decided by the door (heron_server_core.kept_nothing),
+# never here; this only says it in a sentence. No Ctrl+Z is offered: told to
+# undo after a job that wrote nothing, a modeller undoes what came before it.
+EMPTY_KEEP = {
+    "NOTHING CHANGED": (
+        "'%s' CHANGED NOTHING: Revit kept its transaction but counted no change in "
+        "it, and every result the capability declares is zero - so nothing in the "
+        "model changed and there is nothing to undo. Do not press Ctrl+Z for it: "
+        "that would undo whatever was done before."),
+    "REFUSED": (
+        "'%s' SAID NO AND MADE NOTHING: the capability refused what was asked - its "
+        "own `refused` above says what - and Revit counted no change, so nothing in "
+        "the model changed and there is nothing to undo. Do not press Ctrl+Z for it: "
+        "that would undo whatever was done before."),
+}
+
+
+def empty_keep_line(word, reply, name=None):
+    """The closing sentence for a kept reply its door called NOTHING CHANGED
+    or REFUSED - in place of the add-in's "was KEPT" - or None for any other
+    word. The modeller's own Keep and Delete answers stay in front of it, as
+    they do on a KEPT verdict: they are what the modeller pressed."""
+    said = EMPTY_KEEP.get(word)
+    if said is None:
+        return None
+    reply = reply if isinstance(reply, dict) else {}
+    line = said % (reply.get("ran") or name or "this change")
+    return _with_asking(_with_asking(line, reply.get("asking")), reply.get("deleteAsking"))
+
+
 def _with_asking(line, asking):
     """
     A KEPT verdict with the add-in's sentence saying the modeller was asked in

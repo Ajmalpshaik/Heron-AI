@@ -191,7 +191,9 @@ DOORS = ("revit_change", "revit_read", "revit_show")
 # every return of revit_undo_last was read against the table, as row 5b-1563
 # asks of a tool that joins. Section 9 walks them.
 UNDO_TOOL = "revit_undo_last"
-SAYS = DOORS + (UNDO_TOOL,)
+# revit_apply_move joined on 2026-11-19 (row 5b-1563): it keeps a change.
+MOVE_TOOL = "revit_apply_move"
+SAYS = DOORS + (UNDO_TOOL, MOVE_TOOL)
 WORDS = ("KEPT", "NOTHING CHANGED", "ANSWERED", "NOT ANSWERED", "REFUSED", "NOT RUN",
          "ROLLED BACK", "STILL RUNNING", "OUTCOME UNKNOWN")
 
@@ -308,6 +310,10 @@ KEPT_BUT_NOT_APPLIED = dict(KEPT, applied=False)
 KEPT_BUT_ASKED_AND_DECLINED = dict(KEPT, asked=True, kept=False)
 DISCARDED_BUT_KEPT = dict(DISCARDED, kept=True)
 DISCARDED_BUT_APPLIED = dict(DISCARDED, applied=True)
+
+# revit_apply_move (row 5b-1563): what the add-in answers a move it made.
+MOVE_OK = dict(MODEL, ok=True, moved=3, category="Ducts", distance="300 mm east",
+               undoEntry="Heron: move elements", warnings=0)
 
 ELSEWHERE = dict(READ_OK, document="Tower B", documentPath="C:/jobs/TowerB.rvt",
                  projectKey="key-2")
@@ -432,11 +438,12 @@ class Case(object):
         self.setup, self.kind = setup, kind
         self.logged = ""
 
-    def run(self, stage, body=False):
+    def run(self, stage, body=False, reply_out=None):
         """The door's reply - through the tool function a host is served, or
         (`body`) through the page's own route to the same body, which never
-        passed the wrapper. A crash comes back as text no check will take for
-        an answer (heron-ship 2a)."""
+        passed the wrapper; `reply_out` is the dict that route hands back
+        what the body said in (the Commands panel's, issue #1043). A crash
+        comes back as text no check will take for an answer (heron-ship 2a)."""
         stage.fresh(self.reply, self.pin)
         # WHAT THE SERVER WRITES TO ITS OWN LOG is kept, not printed among the
         # checks: a door that breaks after sending records the traceback
@@ -447,7 +454,8 @@ class Case(object):
                 self.setup(stage)
             door = getattr(stage.module, self.door)
             if body:
-                door = stage.module._through(door)
+                door = (stage.module._through(door) if reply_out is None
+                        else stage.module._through(door, reply_out=reply_out))
             return door(**self.arguments)
         except Exception as exc:                                # noqa: BLE001
             return "(%s raised %s: %s)" % (self.door, type(exc).__name__, exc)
@@ -582,6 +590,15 @@ def build_cases(module, core):
     def patched(owner, name, value):
         return lambda stage: stage.patch(owner, name, value)
 
+    # revit_apply_move's approval (revit_preview_move leaves it; the tool
+    # takes it once) - offered for a case that should reach Revit, cleared
+    # for the one that should not.
+    def approved(stage):
+        stage.module.approval.offer("approval-pinned", "move 3 ducts 300 mm east")
+
+    def unapproved(stage):
+        stage.module.approval.clear()
+
     def breaks_after_asking(stage):
         def boom(_reply):
             raise RuntimeError("a fault in Heron's own code, after Revit was asked")
@@ -597,7 +614,7 @@ def build_cases(module, core):
         stage.patch(os.path, "isfile",
                     lambda path: False if str(path).endswith("fragment.cs") else real(path))
 
-    C, R, S, U = "revit_change", "revit_read", "revit_show", UNDO_TOOL
+    C, R, S, U, M = "revit_change", "revit_read", "revit_show", UNDO_TOOL, MOVE_TOOL
     say = {"request": "count the things"}
     cases = [
         # ---- the change door --------------------------------------------
@@ -925,6 +942,33 @@ def build_cases(module, core):
              {}, [1, 2, 3], pin=MODEL, kind="undo unknown"),
         Case("the request itself raising, at revit_undo_last", U, "OUTCOME UNKNOWN", {},
              UNDO_SENT, pin=MODEL, setup=pipe_breaks, kind="undo raised"),
+
+        # ---- revit_apply_move (row 5b-1563) --------------------------------
+        # The other tool that keeps a change. Not a door: it takes no
+        # capability, only the approval revit_preview_move left - so each
+        # case that should reach Revit is given one first.
+        Case("a move the user approved, moved and kept", M, "KEPT", {}, MOVE_OK,
+             setup=approved, kind="move"),
+        Case("a move with some elements held back, kept", M, "KEPT", {},
+             dict(MOVE_OK, blocked=1, partly=1), setup=approved, kind="move"),
+        Case("nothing waiting to be approved, at revit_apply_move", M, "REFUSED", {},
+             MOVE_OK, setup=unapproved, kind="move"),
+        Case("no Revit session, at revit_apply_move", M, "NOT RUN", {}, MOVE_OK,
+             setup=lambda stage: (approved(stage), not_bound(stage)), kind="move"),
+        Case("the Changes switch off, at revit_apply_move", M, "REFUSED", {},
+             error("write_disabled"), setup=approved, kind="move"),
+        Case("Revit busy, so it never took the move", M, "NOT RUN", {},
+             error("revit_busy"), setup=approved, kind="move"),
+        Case("NO ANSWER AT ALL to the move", M, "OUTCOME UNKNOWN", {}, None,
+             setup=approved, kind="move"),
+        Case("an answer LOST after the move was sent", M, "OUTCOME UNKNOWN", {},
+             error("unknown_outcome"), setup=approved, kind="move"),
+        Case("a failure code Heron has never seen, at revit_apply_move", M,
+             "OUTCOME UNKNOWN", {}, error("never_seen_before"), setup=approved,
+             kind="move"),
+        Case("the request itself raising, at revit_apply_move", M, "OUTCOME UNKNOWN",
+             {}, MOVE_OK, setup=lambda stage: (approved(stage), pipe_breaks(stage)),
+             kind="move raised"),
     ]
     return picked, cases
 
@@ -1015,7 +1059,7 @@ def the_vocabulary(core, registry):
     # list is the three doors and that one tool, and a fifth name fails here.
     check(tuple(getattr(registry, "STATES_OUTCOME", ())) == SAYS,
           "heron_tools.STATES_OUTCOME names the tools that say one: the three doors, "
-          "and revit_undo_last - found %r" % (getattr(registry, "STATES_OUTCOME", ()),))
+          "revit_undo_last and revit_apply_move - found %r" % (getattr(registry, "STATES_OUTCOME", ()),))
     line = getattr(core, "outcome_line", None)
     read_back = getattr(core, "outcome_of", None)
     check(line is not None and read_back is not None,
@@ -1072,7 +1116,9 @@ def never_more_than_known(stage, core, cases, replies):
     check(not any(stated(replies[c]) in ("KEPT", "REFUSED", "ANSWERED", "NOT RUN")
                   for c in lost),
           "and never KEPT, REFUSED, ANSWERED or NOT RUN")
-    only_kept = [c.name for c in cases if stated(replies[c]) == "KEPT"]
+    # AT THE DOORS: revit_apply_move's KEPT (row 5b-1563) is read off a move the
+    # add-in made, which carries no verdict - its own cases say it.
+    only_kept = [c.name for c in cases if stated(replies[c]) == "KEPT" and c.door in DOORS]
     # BY THE REPLY'S OWN VERDICT, not by which fixture it is: D-168's keeps are
     # built from the card they run, and the ones that changed something are KEPT.
     check(sorted(only_kept) == sorted(c.name for c in cases
@@ -1521,7 +1567,7 @@ def additive(stage, cases, replies, core):
     said_old = getattr(getattr(core, "running_code", None), "SAID", None)
     differs = []
     for case in cases:
-        if case.kind in ("raised", "undo raised"):
+        if case.kind in ("raised", "undo raised", "move raised"):
             # THE BODY RAISED: there is no reply of its own to compare, and
             # the whole answer is the wrapper's. Section 3b reads it.
             continue
@@ -1536,10 +1582,123 @@ def additive(stage, cases, replies, core):
             differs.append(case.name)
         if lines_of(body):
             differs.append("%s (its body carries a line of its own)" % case.name)
-    compared = len([c for c in cases if c.kind not in ("raised", "undo raised")])
+    compared = len([c for c in cases if c.kind not in ("raised", "undo raised",
+                                                      "move raised")])
     check(not differs,
           "all %d: every sentence the door wrote is there, in the same order - "
           "not: %s" % (compared, "; ".join(differs[:5]) or "none"))
+
+
+def the_panel_says_it_too(stage, cases, replies, core):
+    """
+    ISSUE #1043: Revit's Commands panel runs revit_change's and revit_read's
+    own body through `_through` (mcp/server/heron_command_run.py), which no
+    wrapper gives an outcome line - so a saved command that made nothing
+    read as kept there, its closing sentence the only verdict. The body's
+    word is handed back in reply_out["how"], and the runner sets the line
+    with the core's own `_said_outcome`: what the panel shows must be what a
+    chat is given, word for word.
+    """
+    print()
+    print("5c. The Commands panel's route says the same word as a chat's (issue #1043)")
+    said = getattr(core, "_said_outcome", None)
+    said_old = getattr(getattr(core, "running_code", None), "SAID", None)
+    differs, compared = [], 0
+    for case in cases:
+        if case.kind in ("raised", "undo raised") or case.door not in ("revit_change",
+                                                                       "revit_read"):
+            continue
+        compared += 1
+        out = {}
+        body = case.run(stage, body=True, reply_out=out)
+        whole = replies[case]
+        if said_old and whole.endswith(said_old) and said_old not in body:
+            whole = whole[:-len(said_old)].rstrip("\n")
+        panel = said(case.door, body, out.get("ended"), out.get("how")) if said else body
+        if panel != whole:
+            differs.append("%s (%s, panel %s)" % (case.name, case.word, stated(panel)))
+    check(compared >= 20 and not differs,
+          "all %d revit_change and revit_read endings: the panel's answer is the chat's, "
+          "outcome line included - not: %s" % (compared, "; ".join(differs[:5]) or "none"))
+
+
+def the_page_labels_what_the_body_said(stage, picked):
+    """
+    ROW 5b-403: the Companion page's Apply runs revit_change's own body, and
+    its line on the activity list was guessed from the answer's first line -
+    a lost answer or a busy Revit could read as anything. It is the body's own
+    label now, handed back by `_through`. Driven here against the stand-in
+    Revit, through the page's two Apply actions, and read off the list.
+    """
+    print()
+    print("5e. The Companion's Apply says how the call ended as the door said it (row 5b-403)")
+    module = stage.module
+    try:
+        activity = module._companion_module().ACTIVITY
+    except Exception as exc:                                    # noqa: BLE001
+        check(False, "the activity list can be read: %s: %s" % (type(exc).__name__, exc))
+        return
+
+    def line_of(action, reply, call):
+        stage.fresh(reply)
+        before = (activity.since(0) or [{"seq": 0}])[-1]["seq"]
+        had, sys.stderr = sys.stderr, io.StringIO()
+        try:
+            call()
+        except Exception as exc:                                # noqa: BLE001
+            return "(raised %s)" % type(exc).__name__
+        finally:
+            sys.stderr = had
+            stage.unpatch()
+        mine = [i for i in activity.since(before) if i.get("tool") == action]
+        return mine[-1].get("outcome") if len(mine) == 1 else "(%d lines)" % len(mine)
+
+    change = picked["change"]
+    for reply, want, what in ((dict(KEPT), "ok", "a change Revit kept"),
+                              (error("unknown_outcome"), "failed", "an answer lost after it left"),
+                              (None, "failed", "no answer at all"),
+                              (error("revit_busy"), "failed", "Revit busy"),
+                              (error("write_disabled"), "refused", "the Changes switch off")):
+        got = line_of("companion_apply", reply,
+                      lambda: module._apply_change(change, [("unused", "1")]))
+        check(got == want, "the page's Apply, %s: its line says %r - found %r"
+              % (what, want, got))
+        got = line_of("companion_table_apply", reply,
+                      lambda: module._apply_table([["1", "Comments", "a", "b"]]))
+        check(got == want, "the table's Apply, %s: its line says %r - found %r"
+              % (what, want, got))
+
+
+def a_keep_that_made_nothing_closes_on_its_word(cases, replies):
+    """
+    ISSUE #1043: a reply whose outcome line says NOTHING CHANGED or REFUSED
+    of a change Revit kept (D-168) ended on the add-in's "'x' was KEPT:
+    Revit accepted the transaction" - FRAME_ELEMENTS_IN_CAMERA on Revit 2020,
+    2026-11-18. The closing sentence follows the word: "was KEPT" only where
+    the line says KEPT.
+    """
+    print()
+    print("5d. A keep that made nothing never closes on \"was KEPT\" (issue #1043)")
+    # D-168's keeps: a kept reply carrying Revit's change report, which the
+    # door read as made nothing. A refusal before anything was sent is REFUSED
+    # with no verdict of the add-in's to close on, and is not one of them.
+    empty = [c for c in cases if isinstance(c.reply, dict) and c.door == "revit_change"
+             and c.reply.get("verdictKind") == "kept" and "changes" in c.reply
+             and stated(replies[c]) in ("NOTHING CHANGED", "REFUSED")]
+    check(len(empty) >= 2, "the suite has a REFUSED and a NOTHING CHANGED keep (%d)"
+          % len(empty))
+    for case in empty:
+        text = replies[case]
+        check("was KEPT" not in text and "accepted the transaction" not in text,
+              "%s: says %s and never 'was KEPT'" % (case.name, stated(text)))
+        mark = ("CHANGED NOTHING" if stated(text) == "NOTHING CHANGED"
+                else "SAID NO AND MADE NOTHING")
+        check(mark in text and "there is nothing to undo" in text,
+              "%s: closes on '%s' and that there is nothing to undo" % (case.name, mark))
+    kept = [c for c in cases if stated(replies[c]) == "KEPT" and c.door == "revit_change"]
+    check(kept and all("was KEPT" in replies[c] for c in kept),
+          "and every reply that says KEPT still closes on the add-in's own 'was KEPT' "
+          "(%d)" % len(kept))
 
 
 def breaks_after_sending(stage, cases, replies, core):
@@ -2046,6 +2205,9 @@ def main():
         nothing_taken_back_is_handed_on(stage, picked)
         every_path_one_line(cases, replies, core)
         additive(stage, cases, replies, core)
+        the_panel_says_it_too(stage, cases, replies, core)
+        a_keep_that_made_nothing_closes_on_its_word(cases, replies)
+        the_page_labels_what_the_body_said(stage, picked)
         asyncio.run(through_the_sdk(stage, cases, picked))
         nothing_else_moved(stage, cases, replies, picked)
         the_undo_tool(stage, cases, replies)

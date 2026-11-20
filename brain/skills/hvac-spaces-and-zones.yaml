@@ -190,10 +190,12 @@ purpose: >
      THE PROJECT'S SETTING FIRST: REPORT_AREA_VOLUME_COMPUTATIONS answers
      volumeComputation in the dialog's own words, "Areas only" or "Areas and
      Volumes", with placedSpaces and spacesWithVolume beside it. On "Areas
-     only" - what a new mechanical project starts on - EVERY space reads no
-     volume, and that is the setting, not the spaces (rows 5b-327 and
-     5b-336, the second still open). Say which it is before any volume is
-     read out. Changing it is the modeller's: by hand in Architecture > Room
+     only" EVERY space reads no volume, and that is the setting, not the
+     spaces (rows 5b-327 and 5b-336, the second still open). READ THE
+     SETTING, NEVER ASSUME IT: no template is known to start on either -
+     Revit 2020's own metric mechanical template starts on "Areas and
+     Volumes" (row 5b-1653), and other templates and releases were not
+     read. Say which it is before any volume is read out. Changing it is the modeller's: by hand in Architecture > Room
      & Area > Area and Volume Computations, or SET_AREA_VOLUME_COMPUTATIONS,
      a change of its own behind the owner's Admin switch (D-106).
      Then FILTER_ELEMENTS_BY_CATEGORY with category=Spaces and

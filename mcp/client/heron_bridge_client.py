@@ -2443,6 +2443,9 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
             if reply.get("deleteAsking"):
                 print("    ASKED  %s" % reply.get("deleteAsking"))
             print("    %s  %s" % (state, verdict))
+            outward = outward_not_taken_back(name, operation, reply)
+            if outward:
+                print("    %s" % outward)
 
         # D-171: A SAVE ASKED FOR WITH THE RUN IS MADE ON A PREVIEW TOO, and is
         # not rolled back - so it is printed under the verdict, and ROLLED BACK
@@ -2471,6 +2474,32 @@ def save_sentence(reply):
         return None
     return "%s  %s" % ("SAVED" if save.get("done") is True else "NOT SAVED",
                        save.get("said") or "Revit's Heron did not say more")
+
+
+# A PUBLISH JOB'S OUTWARD WORK IS NOT TAKEN BACK BY A ROLLBACK (FRAGMENT-ISSUES
+# 5b-1063). `fragment save-document --write --set closeWindow=true` on Revit
+# 2024, 2026-10-17, closed the window and printed the add-in's rollback verdict
+# "NOTHING WAS KEPT ... Send it again with apply to keep it" - true of the
+# transaction group, and wrong of the job: the window was closed, and sending
+# it again with --apply would ask to close a window already closed. The
+# add-in's sentence is its own and stays; this line, under it, says what a
+# rollback cannot take back. Only for a run sent as `run_fragment_publish`
+# without --apply that the add-in did not keep.
+OUTWARD_NOT_TAKEN_BACK = (
+    "NOT TAKEN BACK  '%s' is a Publish job: what it did outside the model - a file "
+    "written, a document saved, a window closed - still stands; the rollback took back "
+    "only what it changed inside the model. Read the results above for what it did, and "
+    "do not send it again with --apply to keep it: that would do the outward part a "
+    "second time.")
+
+
+def outward_not_taken_back(name, operation, reply):
+    """The line saying a Publish run's outward work stands, or None."""
+    if operation != "run_fragment_publish" or not isinstance(reply, dict):
+        return None
+    if reply.get("applied"):
+        return None
+    return OUTWARD_NOT_TAKEN_BACK % name
 
 
 def print_save(reply):

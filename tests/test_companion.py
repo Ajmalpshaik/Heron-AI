@@ -745,10 +745,31 @@ def test_changes():
           "category graphics is offered; per-element overrides (read from the selection) are not")
 
     server = tools.server_text()
-    check('_through(revit_change, origin="companion")(capability, values)' in server
-          and '_through(revit_change, reply_out=out, origin="companion")(' in server
+    check('_through(revit_change, reply_out=out, origin="companion")(capability, values)'
+          in server
           and 'body = getattr(tool, "__wrapped__", tool)' in server,
           "Apply runs revit_change's OWN body - no second write path")
+    # ROW 5b-403: EACH PAGE ACTION THAT REACHES REVIT WRITES HOW IT ENDED AS
+    # THE BODY SAID IT - the label `_through` hands back - never a guess from
+    # the answer's first line, and never "refused" for a lost answer.
+    def body_of(name):
+        at = server.find("\ndef %s(" % name)
+        return server[at:server.find("\ndef ", at + 10)] if at >= 0 else ""
+    apply_src, table_src = body_of("_apply_change"), body_of("_apply_table")
+    place_src, load_src = body_of("_sprinkler_layout_place"), body_of("_load_settings")
+    check('outcome=out.get("ended"))' in apply_src,
+          "the Apply's line says how revit_change's body ended (row 5b-403)")
+    check('outcome="refused" if stopped else out.get("ended"))' in table_src,
+          "the table's Apply: a stale table refused, otherwise the body's own label")
+    check('outcome="refused")' not in place_src and 'return stopped(said, ended or "failed")'
+          in place_src and place_src.count('outcome=out.get("ended")') == 2,
+          "the layout's Place: a reply that is not ok carries the body's label, not "
+          "\"refused\", and both good lines say it")
+    check(place_src.count("return stopped(") == 4 and load_src.count("return stopped(") == 5,
+          "and every return before or after Revit is asked writes a line of its own - "
+          "the layout's four, Load from Revit's five")
+    check('outcome="refused")' not in load_src and 'outcome=out.get("ended"))' in load_src,
+          "Load from Revit: a read that is not ok is never called refused")
     check("with _revit_lock:" in server and "def _settings_card(folder):" in server,
           "and holds the same lock every tool call holds, so it never displaces the chat")
     check('"companion_apply":' in io.open(os.path.join(ROOT, "mcp", "server", "heron_tools.py"),

@@ -71,7 +71,8 @@ class Failure(object):
         """
         Whether Heron may send the same request again WITHOUT a person
         deciding to. Deliberately narrow: only a request that provably never
-        reached the model qualifies.
+        reached the model qualifies - or a read whose answer never came, which
+        is safe to ask again whether or not it ran (row 5b-1560).
         """
         return self.next_step == RETRY
 
@@ -560,12 +561,11 @@ def recognised(code):
     client's two. Asked by the outcome line (heron_server_core, row 5b-1159),
     which says OUTCOME UNKNOWN of every code that has none.
 
-    `analyse` files such a code on a read under "refused" - it only reads -
-    and that is its judgement of what may safely be asked next. It is not a
-    statement that nothing ran: `handler_failed` has no row on purpose (see
-    the note at the foot of the table), and the bridge raises it after the
-    job may have run. So the line asks THIS, and never reads "refused" off a
-    code nobody recognised.
+    `analyse` filed such a code on a read under "refused" until 2026-11-19;
+    it files it as unknown now (row 5b-1560), because it is not a statement
+    that nothing ran: `handler_failed` has no row on purpose (see the note at
+    the foot of the table), and the bridge raises it after the job may have
+    run. The line still asks THIS, so the two cannot drift apart.
     """
     return code in _KNOWN or code in _ARRIVED_UNUSABLE
 
@@ -601,8 +601,16 @@ def analyse(reply, writes=False):
         # never came - and in the second the read may have run. So the
         # sentence says only what is known. Something that CAME BACK and could
         # not be read is no longer None: it is `reply_unreadable`, above.
+        #
+        # AND IT IS FILED AS NOT KNOWN, NOT AS NEVER RAN (row 5b-1560). It was
+        # NEVER_RAN until 2026-11-19 - so `touched_the_model` answered False
+        # beside a reason saying Heron cannot tell whether Revit was reached,
+        # and revit_show, which `writes` is False for, may have changed a
+        # selection or a view. Asking again stays allowed: the request only
+        # reads, and RETRY is about whether asking again is safe, not about
+        # whether it ran - so what a read retries is unchanged.
         return Failure(
-            "no_reply", NEVER_RAN, RETRY,
+            "no_reply", UNKNOWN, RETRY,
             "nothing came back, so Heron cannot tell whether Revit was reached; the "
             "request only reads, so it may be asked again")
 
@@ -629,7 +637,7 @@ def analyse(reply, writes=False):
 
     # FAIL CLOSED. An unrecognised code on an operation that writes is treated
     # as an unknown outcome, because this file cannot prove otherwise and the
-    # cost of being wrong is the model. On a read it is merely a refusal.
+    # cost of being wrong is the model.
     if writes:
         return Failure(
             code, UNKNOWN, LOOK_AT_THE_MODEL,
@@ -637,8 +645,15 @@ def analyse(reply, writes=False):
             "can change the model, so it is treated as though the outcome is unknown",
             message)
 
-    return Failure(code, REFUSED, FIX_FIRST,
-                   "Heron does not recognise this failure, but the operation only reads",
+    # ON A READ IT IS NOT KNOWN EITHER - never a refusal (row 5b-1560). It was
+    # REFUSED until 2026-11-19, which answered "may this be asked again" and
+    # read as "nothing ran": `handler_failed`, raised by the bridge when an
+    # exception escapes the dispatch, comes after the job may have run, and
+    # revit_show may have changed a selection or a view. FIX_FIRST is kept, so
+    # nothing is asked again unasked - what a read retries is unchanged.
+    return Failure(code, UNKNOWN, FIX_FIRST,
+                   "Heron does not recognise this failure; the operation only reads, but "
+                   "whether it ran in Revit is not known",
                    message)
 
 

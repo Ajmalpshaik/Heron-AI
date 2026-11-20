@@ -194,7 +194,15 @@ purpose: >
      plane for left-right and front-back, so the shape stays centred on its
      insertion point; from Ref. Level for a height.
   7. THE FORMS, each drawn exactly where the planes are NOW, so that its faces
-     lie on them: EXTRUDE_BETWEEN_PLANES for a box, which locks itself;
+     lie on them - IN THE FAMILY'S OWN COORDINATES, NEVER THE PROJECT'S: every
+     point is measured from the planes step 0's REPORT_FAMILY_TEMPLATE names
+     and the one that Defines Origin, as they stand after step 5. A family
+     from the metric casework template drawn in project coordinates and
+     placed at 0,0,0 came out 45 mm short in X, with its box reaching back to
+     (-405, -600) where nothing was drawn (Revit 2024, row 5b-1709). A
+     template can also hold content of its own that REPORT_FAMILY_TEMPLATE
+     does not list - forms and solids are not in its report; whether the
+     casework template does is not yet measured (row 5b-1709, a PC run). EXTRUDE_BETWEEN_PLANES for a box, which locks itself;
      EXTRUDE_POLYGON_BETWEEN_PLANES for a HEXAGON or another even regular
      polygon whose size across the flats a parameter drives - a bolt head,
      a nut - which makes its own side planes, labels them and locks itself,
@@ -416,6 +424,11 @@ purpose: >
   13. REPORT_FAMILY_FORMS - every form read back with its size, against the
       list from step 0, before the proof. For a fixed family it is the last
       check: the number of forms and the overall extents against the plan.
+      AND THE EXTENTS AGAINST THE ORIGIN PLANES, before the family is saved:
+      every form inside the box the outer planes make, measured from the
+      planes that define the origin - a form or a count that reaches past
+      them, or a total that differs from what the sizes give, is put to the
+      modeller before saving, never saved and explained after (row 5b-1709).
       THEN LOOK AT IT, before telling the modeller it is done. Sizes can all
       read back right while a part sits on the wrong side, floats off the
       body or is missing - that is found here, never by the modeller. In

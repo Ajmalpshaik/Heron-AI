@@ -691,17 +691,15 @@ def _failure_outcome(failure):
     `_BY_FAILURE` - for a code heron_failure HAS A ROW FOR.
 
     ANYTHING IT DOES NOT POSITIVELY RECOGNISE IS OUTCOME UNKNOWN, at every
-    door. `analyse` files an unrecognised code on a read under "refused",
-    which is its answer to "may this be asked again" and not a statement
-    that nothing ran: `handler_failed` is left out of its table on purpose,
-    and the bridge raises it after the job may have run. A reply with no
-    `ok` and no code at all goes the same way.
+    door. `analyse` files an unrecognised code on a read as unknown too since
+    2026-11-19 (row 5b-1560; it was "refused"): `handler_failed` is left out
+    of its table on purpose, and the bridge raises it after the job may have
+    run. A reply with no `ok` and no code at all goes the same way.
 
     AND SO IS NOTHING COMING BACK AT ALL. `no_reply` is what `analyse` makes
-    of that, and on a read it files it under never-ran beside the reason
-    "Heron cannot tell whether Revit was reached" (row 5b-1560). It has no
-    row either, so the one rule covers it: not known - for a read as for a
-    change.
+    of that, filed as unknown on a read as on a change since row 5b-1560 (it
+    was never-ran, beside the reason "Heron cannot tell whether Revit was
+    reached"). It has no row either, so the one rule covers it.
     """
     if not failures.recognised(failure.code):
         return UNKNOWN

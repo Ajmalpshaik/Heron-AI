@@ -506,6 +506,18 @@ def main():
               "it says what is so: nothing in the MODEL changes, and it needs no Revit")
         check("noted as wanted" in described and "D-63" in described,
               "and that a capability nobody provides is noted as wanted (D-63)")
+        # AND ITS REPLY SAYS THE SAME (FRAGMENT-ISSUES 5b-1511). For a name
+        # nobody provides it answered "Heron keeps no second list of missing
+        # things" - in the call that had just noted the name in one.
+        body = ""
+        for node in ast.walk(ast.parse(server)):
+            if isinstance(node, ast.FunctionDef) and node.name == "heron_resolve":
+                body = " ".join(ast.get_source_segment(server, node).split())
+        check(bool(body) and "keeps no second list" not in body,
+              "heron_resolve's reply no longer says Heron keeps no list of missing things")
+        check("noted %s as wanted (D-63)" in body and 'found.get("known")' in body,
+              "it says the name asked for was noted as wanted (D-63) - when no card "
+              "declares it, the one case resolve notes")
 
         # --- 6b. a window that empties the trail is not an empty trail ------
         # ROW 5b-93, AND IT IS SECTION 7's ARGUMENT ONE TOOL ALONG. `gaps`
@@ -577,6 +589,57 @@ def main():
                 asker.join(120)
                 check(done, "and is answered the moment the preparation ends")
 
+            # ROW 5b-1522: AND A QUESTION THAT ARRIVES WHILE THE WARM-UP IS
+            # STILL WAITING FOR THE TRAINED ENCODER WAITS TOO. The lock was
+            # taken only after that wait, so a first lookup slipped in, indexed
+            # with the fallback encoder and was labelled "a trained model". The
+            # encoder's wait is stood in for by one that takes a second; the
+            # warm-up is run again on the store already built.
+            embed = sys.modules.get("heron_embed")
+            check(embed is not None, "the warm-up loaded the encoder's module")
+            if warm is not None and embed is not None:
+                real_warmed, waited, free = embed.warmed, [], []
+
+                def slow_warmed(_timeout=None):
+                    # WHILE THE ENCODER IS AWAITED, may anybody else prepare
+                    # the store? Asked of the lock itself from another thread,
+                    # so the answer does not hang on how long a lookup takes.
+                    def probe():
+                        got = BRAIN._PREPARING.acquire(blocking=False)
+                        if got:
+                            BRAIN._PREPARING.release()
+                        free.append(got)
+                    prober = threading.Thread(target=probe)
+                    prober.start()
+                    prober.join(10)
+                    time.sleep(1.0)
+                    waited.append(time.time())
+
+                embed.warmed = slow_warmed
+                BRAIN._STORE_WARM[0] = None
+                holding = getattr(BRAIN, "_STORE_HOLDING", None)
+                if holding is not None:
+                    holding.clear()
+                answered = []
+                try:
+                    warm()
+                    asker = threading.Thread(
+                        target=lambda: (BRAIN.catalogue(), answered.append(time.time())))
+                    asker.start()
+                    asker.join(120)
+                    thread = BRAIN._STORE_WARM[0]
+                    if thread is not None:
+                        thread.join(120)
+                finally:
+                    embed.warmed = real_warmed
+                check(free == [False],
+                      "while the warm-up waits for the trained encoder it holds the "
+                      "store's lock, so nothing else can prepare the store meanwhile "
+                      "(row 5b-1522) - lock free to another thread: %r" % (free,))
+                check(waited and answered and answered[0] >= waited[0],
+                      "a question asked while the warm-up waits for the trained encoder "
+                      "waits for it, and is answered only after (row 5b-1522)")
+
             on_main = getattr(BRAIN, "_on_main_branch", None)
             check(on_main is not None, "the branch is read without running git")
             if on_main is not None:
@@ -642,6 +705,16 @@ def main():
             check(got is not None and [u["capability"] for u in got["uses"]]
                   == needs,
                   "with every capability it uses, in the skill's own order")
+            # ROW 5b-1709: a casework family drawn in project coordinates came
+            # out 45 mm short with its box reaching where nothing was drawn.
+            # The forms are drawn from the origin planes, and their extents are
+            # compared with those planes before the family is saved.
+            steps = " ".join((got or {}).get("purpose", "").split())
+            drawn = steps.find("IN THE FAMILY'S OWN COORDINATES, NEVER THE PROJECT'S")
+            compared = steps.find("AND THE EXTENTS AGAINST THE ORIGIN PLANES")
+            check(drawn >= 0 and compared > drawn and "5b-1709" in steps,
+                  "family-creation draws every form from the family's origin planes and "
+                  "compares the extents with them before saving (row 5b-1709)")
             listed = BRAIN.method("")
             check("family-creation" in [j["id"] for j in listed["jobs"]],
                   "an empty job lists every job by id")
@@ -992,6 +1065,14 @@ def main():
                   and said.find("REPORT_AREA_VOLUME_COMPUTATIONS answers") >= 0,
                   "hvac-spaces-and-zones: the project's volume setting is "
                   "read before any space's volume is (rows 5b-327, 5b-336)")
+            # ROW 5b-1653: it said "Areas only" is "what a new mechanical project
+            # starts on"; Revit 2020's metric mechanical template starts on
+            # "Areas and Volumes".
+            flat = " ".join(said.split())
+            check("what a new mechanical project starts on" not in flat
+                  and "READ THE SETTING, NEVER ASSUME IT" in flat,
+                  "hvac-spaces-and-zones: says to read the volume setting, never "
+                  "assume which one a new project starts on (row 5b-1653)")
 
             # THEIR WORDS. The capabilities are the ones the live lookup
             # returned for each sentence on 2026-11-12 (the trained encoder,

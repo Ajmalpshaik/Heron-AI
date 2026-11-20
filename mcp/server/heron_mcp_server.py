@@ -188,7 +188,11 @@ def _through(tool, reply_out=None, origin="chat"):
     calling tool's line by itself: a read run on another tool's behalf
     leaves that line as it was. A caller that hands its answer back
     unchanged may adopt it - it is put in reply_out["ended"], and
-    revit_edit_table returns `_ended(out.get("ended"), said)` (row 5b-389)."""
+    revit_edit_table returns `_ended(out.get("ended"), said)` (row 5b-389).
+
+    AND THE BODY'S OUTCOME WORD, in reply_out["how"] (issue #1043): the
+    Commands panel shows the body's text alone, which no wrapper gives an
+    outcome line, so heron_command_run adds the line from this word."""
     body = getattr(tool, "__wrapped__", tool)
 
     def call(*a, **k):
@@ -199,6 +203,7 @@ def _through(tool, reply_out=None, origin="chat"):
         # EMPTIED FOR THE BODY, so "ended" is what THIS body said - never
         # the caller's own word, still standing from before the call.
         _ctx.reply_out, _ctx.origin, _ctx.outcome = reply_out, origin, None
+        _ctx.how = None
         try:
             # The page's Apply is a write from this same process, so old code
             # refuses it here exactly as _recorded refuses the chat's.
@@ -207,6 +212,7 @@ def _through(tool, reply_out=None, origin="chat"):
         finally:
             if reply_out is not None:
                 reply_out["ended"] = getattr(_ctx, "outcome", None)
+                reply_out["how"] = getattr(_ctx, "how", None)
             _ctx.reply_out, _ctx.origin, _ctx.outcome = None, "chat", kept
             _ctx.how = kept_how
     return call
@@ -700,6 +706,9 @@ def heron_version() -> str:
     except Exception:
         lines.append("MCP SDK version unknown, serving as %s." % type(server).__name__)
 
+    # WHICH CHECKOUT THIS SERVER RUNS, AND AT WHAT COMMIT (row 5b-1156).
+    lines.extend(_served_from())
+
     try:
         live, starting, stale, mismatched = bridge.discover()
     except Exception as exc:
@@ -740,6 +749,53 @@ def heron_version() -> str:
         lines.append("Everything agrees.")
 
     return "\n".join(lines)
+
+
+def _git_said(folder, *args):
+    """What `git -C folder <args>` printed, one line - or None when git is
+    not there, the folder is not a checkout, or it took too long."""
+    import subprocess
+    try:
+        done = subprocess.run(["git", "-C", folder] + list(args), capture_output=True,
+                              text=True, encoding="utf-8", errors="replace", timeout=5)
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return None
+    said = (done.stdout or "").strip()
+    return said if done.returncode == 0 and said else None
+
+
+def _served_from(started_in=None):
+    """
+    The lines heron_version says about the code this server runs (row 5b-1156):
+    the folder, and that folder's branch and commit as git reads them - "not
+    read" where git does not answer, never a guess.
+
+    EVERY CARD, PROOF AND LINE OF PYTHON IT SERVES IS THAT FOLDER'S, fixed when
+    the chat started (`_repo_root`, `heron_brain.ROOT`). A chat opened in one
+    checkout runs that checkout's server; a session that moved to another
+    folder after it started - a worktree entered mid-session - is still
+    answered from the first. So it also says when the folder this process was
+    started in (`started_in`, its working folder by default) is not the folder
+    whose code it runs. A folder the session moved to after the start is not
+    visible to the server, and the last line says so rather than imply it is.
+    Developer-facing: a modeller's chat opens in one folder and stays there.
+    """
+    folder = os.path.normpath(_repo_root())
+    branch = _git_said(folder, "rev-parse", "--abbrev-ref", "HEAD")
+    commit = _git_said(folder, "rev-parse", "--short=12", "HEAD")
+    lines = ["Served from %s - branch %s, commit %s." % (
+        folder, branch or "not read", commit or "not read")]
+    if branch is None and commit is None:
+        lines.append("  git did not answer there, so which code this is could not be read.")
+    started_in = os.path.normpath(os.path.abspath(started_in or os.getcwd()))
+    inside = started_in == folder or started_in.startswith(folder + os.sep)
+    if not inside:
+        lines.append("  This server was started in %s, which is NOT that folder: its cards, "
+                     "proofs and code are the folder above's, not the one it was started in."
+                     % started_in)
+    lines.append("  A folder the session moved to after this chat started is not seen here: "
+                 "the server keeps answering from the folder above until the chat is reopened.")
+    return lines
 
 
 @server.tool()
@@ -893,8 +949,12 @@ def revit_apply_move() -> str:
     the model. There is nothing to apply until a preview has been shown, and
     each approval can be used once.
     """
+    # EVERY RETURN SAYS ITS WORD (row 5b-1563): this tool keeps a change, as
+    # revit_change does, and joined heron_tools.STATES_OUTCOME on 2026-11-19
+    # with each return read against heron_server_core.OUTCOMES.
     token, summary = approval.take()
     if token is None:
+        _outcome(REFUSED)
         return _ended("refused",
                       "There is nothing waiting to be approved. Ask for the change and "
                       "Heron will show what it would do first. Nothing has been sent "
@@ -903,6 +963,8 @@ def revit_apply_move() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
+        # No Revit session to send it to: nothing said no, so NOT RUN.
+        _outcome(NOT_RUN)
         return _ended("refused", str(unbound))
 
     # idempotent=False, and this is the whole reason that flag exists. If the
@@ -914,6 +976,9 @@ def revit_apply_move() -> str:
     # an op_arg of that name used to overwrite it, so the bridge refused the
     # request as unauthenticated and no move ever reached Revit. The client now
     # refuses reserved keys outright rather than letting that happen quietly.
+    # FROM HERE A FAULT IN HERON'S OWN CODE IS OUTCOME UNKNOWN, never the
+    # SDK's bare error: the move may have been made (`_after_it_left`).
+    _sent()
     reply = session.request("move_elements", op_args={"approvalToken": token},
                             idempotent=False)
     session.close()
@@ -976,6 +1041,9 @@ def revit_apply_move() -> str:
     lines.append("One Ctrl+Z in Revit puts this back - it is a single undo step called "
                  "\"%s\"." % reply.get("undoEntry"))
 
+    # KEPT: the add-in moved and kept the move; the lines above say how many
+    # moved, and which did not. A classified failure said its own word above.
+    _outcome(KEPT)
     return _ended("ok", "\n".join(lines))
 
 
@@ -1559,10 +1627,24 @@ def _by_words(request, door, values):
         elsewhere.append(name)
         return "   -> run it with %s, not %s" % (runs, door)
 
+    # AND HOW FAR EACH IS PROVED (row 5b-1523). The list named each one's risk
+    # and door and not its status, so a DRAFT picked from it was learned only
+    # from revit_change's refusal, a turn later - while heron_lookup already
+    # printed the status on every line. The same answer, from the same place:
+    # `_how_it_runs`, the file's status and the client's own D-117 rule.
+    # Shown, never used: it moves no candidate (D-01).
+    folders = _folders_by_capability()
+
+    def proved(name, risk):
+        status, _risk, _door, held = _how_it_runs(name, risk, folders)
+        return status, ("   -> revit_change refuses it until it is proved (D-117)"
+                        if held else "")
+
+    status, held = proved(capability, found.get("risk"))
     lines.append("")
-    lines.append("  best match   %s   (%s)%s"
-                 % (capability, found.get("risk") or "risk unread",
-                    marked(capability, found.get("risk"))))
+    lines.append("  best match   %s   (%s, %s)%s%s"
+                 % (capability, found.get("risk") or "risk unread", status,
+                    marked(capability, found.get("risk")), held))
     lines.extend(_contract_lines(capability, separator=False))
 
     # EVERY CANDIDATE CARRIES WHAT IT NEEDS TYPED, not only the first. A host
@@ -1576,10 +1658,11 @@ def _by_words(request, door, values):
         seen.add(c["capability"])
         others.append(c)
     for c in others[:5]:
+        status, held = proved(c["capability"], c.get("risk"))
         lines.append("")
-        lines.append("  also close   %s   (%s)   %s%s"
-                     % (c["capability"], c.get("risk") or "risk unread", c["why"],
-                        marked(c["capability"], c.get("risk"))))
+        lines.append("  also close   %s   (%s, %s)   %s%s%s"
+                     % (c["capability"], c.get("risk") or "risk unread", status, c["why"],
+                        marked(c["capability"], c.get("risk")), held))
         lines.extend("  " + line if line else line
                      for line in _contract_lines(c["capability"], separator=False,
                                                  notes=False))
@@ -2118,10 +2201,22 @@ def revit_change(capability: str = "", values: str = "",
     # A DRY RUN'S IS PRINTED WHOLE, WHATEVER IT IS, and takes no part in the
     # batch: if the add-in answered KEPT to a run sent without `apply`, that
     # paragraph is the one thing the chat must read in full.
+    #
+    # AND A KEEP THAT MADE NOTHING CLOSES ON ITS OWN WORD, NOT "was KEPT"
+    # (issue #1043). D-168's NOTHING CHANGED and REFUSED are read here, once,
+    # and the same reading decides the outcome line below - so the closing
+    # sentence and the line cannot disagree. Read only of a keep nobody
+    # declined: a Discard and a contradiction keep their own words.
+    empty = None
+    if not dry_run and _change_outcome(reply) == KEPT:
+        empty = kept_nothing(reply, (brain.fragment_contract(folder) or {}).get("provides"))
     if reply.get("verdict"):
         lines.append("")
-        lines.append(str(reply["verdict"]) if dry_run
-                     else runs.verdict_line(reply, _BATCH))
+        if dry_run:
+            lines.append(str(reply["verdict"]))
+        else:
+            lines.append(runs.empty_keep_line(empty, reply, folder)
+                         or runs.verdict_line(reply, _BATCH))
 
     # Q-69: AND WHAT THE SAVE DID, under the verdict - kept or not, in the
     # add-in's own words, a Discard's included.
@@ -2223,8 +2318,9 @@ def revit_change(capability: str = "", values: str = "",
     # CHANGED, or REFUSED when the capability itself said no and made
     # nothing - read off Revit's change report and the card's own declared
     # results. Anything found, made or changed stays KEPT.
+    # Read once, above, where the closing sentence was chosen (issue #1043).
     if ended == KEPT:
-        ended = kept_nothing(reply, (brain.fragment_contract(folder) or {}).get("provides")) or KEPT
+        ended = empty or KEPT
 
     # WHETHER HERON CAN STILL UNDO IT, on a change that WAS kept (D-157): one
     # line, last, from what the add-in's undo guard held straight after the
@@ -2451,12 +2547,16 @@ def _apply_change(capability, pairs, identity=None, still=None):
         if moved:
             _note("companion_apply", started, 0, reply=moved, outcome="refused")
             return moved
+        # HOW IT ENDED IS THE BODY'S OWN LABEL (row 5b-403), handed back by
+        # `_through` - never guessed from the answer's first line.
+        out = {}
         try:
-            reply = _through(revit_change, origin="companion")(capability, values)
+            reply = _through(revit_change, reply_out=out, origin="companion")(capability, values)
         except Exception as error:                   # noqa: BLE001 - said on the page
             _note("companion_apply", started, time.time() - clock, error=error)
             return "Heron could not run it: %s" % error
-    _note("companion_apply", started, time.time() - clock, reply=reply)
+    _note("companion_apply", started, time.time() - clock, reply=reply,
+          outcome=out.get("ended"))
     return reply
 
 
@@ -2504,9 +2604,11 @@ def _apply_table(rows, identity=None):
         except ValueError:
             result = None
     # A stale table is a refusal, whatever the answer's words: nothing was written.
+    # Otherwise the body's own label (row 5b-403): a lost answer or Revit busy
+    # is said as the door said it, never guessed from the first line.
     stopped = result is not None and not result.get("applied")
     _note("companion_table_apply", started, time.time() - clock, reply=text,
-          outcome="refused" if stopped else None)
+          outcome="refused" if stopped else out.get("ended"))
     return text, result
 
 
@@ -2732,18 +2834,26 @@ def _sprinkler_layout_place(data, result, inputs, level, identity):
     except ValueError as why:
         return {"ok": False, "said": "Nothing was placed: %s" % why}
     started, clock = time.strftime("%H:%M:%S"), time.time()
+
+    # EVERY RETURN WRITES ITS OWN LINE, with how it ended said and not guessed
+    # (row 5b-403): the refusals before anything is sent were on no line at all.
+    def stopped(said, outcome):
+        _note("companion_sprinkler_layout_place", started, time.time() - clock,
+              reply=said, outcome=outcome)
+        return {"ok": False, "said": said}
+
     with _revit_lock:
         moved = _moved_since(identity)
         if moved:
-            return {"ok": False, "said": moved}
+            return stopped(moved, "refused")
         before, why = _read_layout_rooms(sent["rooms"])
         if before is None:
-            return {"ok": False, "said": "Nothing was placed - the rooms could not be read "
-                                         "again to check they have not changed: %s" % why}
+            return stopped("Nothing was placed - the rooms could not be read again to "
+                           "check they have not changed: %s" % why, "failed")
         moved = LAYOUT.changed(data, before, sent["rooms"])
         if moved:
-            return {"ok": False, "said": "Nothing was placed: %s. Ask the chat to lay these "
-                                         "rooms out again." % "; ".join(moved)}
+            return stopped("Nothing was placed: %s. Ask the chat to lay these rooms out "
+                           "again." % "; ".join(moved), "refused")
         out = {}
         text = _through(revit_change, reply_out=out, origin="companion")(
             "PLACE_FAMILY_INSTANCES",
@@ -2751,22 +2861,29 @@ def _sprinkler_layout_place(data, result, inputs, level, identity):
         reply = out.get("reply")
         provides = (reply or {}).get("provides") or {}
         if not isinstance(reply, dict) or not reply.get("ok"):
-            _note("companion_sprinkler_layout_place", started, time.time() - clock,
-                  reply=text, outcome="refused")
-            return {"ok": False, "said": "Nothing was placed: %s" % text}
+            # THE BODY'S OWN LABEL: a lost placement answer is "failed" - the
+            # heads may be in the model - and never "refused" (row 5b-403).
+            # The words stay "Nothing was placed" only where the door refused.
+            ended = out.get("ended")
+            said = ("Nothing was placed: %s" % text if ended == "refused" else
+                    "Heron cannot say whether the heads were placed - look at the "
+                    "level in Revit before pressing again: %s" % text)
+            return stopped(said, ended or "failed")
         failed = provides.get("failed")
         after, why = _read_layout_rooms(sent["rooms"])
     if after is None:
         said = ("%d head(s) were sent to level %s, but the rooms could not be read back "
                 "(%s) - check them in Revit; its undo list has the placing." % (
                     sent["count"], level, why))
-        _note("companion_sprinkler_layout_place", started, time.time() - clock, reply=said)
+        _note("companion_sprinkler_layout_place", started, time.time() - clock, reply=said,
+              outcome=out.get("ended"))
         return {"ok": True, "said": said, "placed": {"sent": sent["count"], "read_back": None}}
     back = LAYOUT.read_back(before, after, sent, result, inputs)
     said = "Placed on level %s as one undo entry. %s%s" % (
         level, back["text"],
         (" Revit could not place %s of them." % failed) if failed not in (None, 0, "0") else "")
-    _note("companion_sprinkler_layout_place", started, time.time() - clock, reply=said)
+    _note("companion_sprinkler_layout_place", started, time.time() - clock, reply=said,
+          outcome=out.get("ended"))
     return {"ok": True, "said": said,
             "placed": {"level": level, "sent": sent["count"], "failed": failed,
                        "read_back": [dict((k, v) for k, v in r.items() if k != "spacing")
@@ -3020,21 +3137,29 @@ def _load_settings(kind):
                 "loaded.", [])
     reader, _applier = companion_page.LOADS[kind]
     started, clock = time.strftime("%H:%M:%S"), time.time()
+
+    # EVERY RETURN THAT REACHED FOR REVIT WRITES ITS LINE, saying how it ended
+    # (row 5b-403): these returns wrote none, and the read's own were guessed.
+    def stopped(said, outcome):
+        _note("companion_load", started, time.time() - clock, reply=said, outcome=outcome)
+        return said, []
+
     with _revit_lock:
         try:
             session = binding.resolve()
         except NotBound as unbound:
-            return str(unbound), []
+            return stopped(str(unbound), "refused")
         views = session.request("list_views")
         session.close()
         if not isinstance(views, dict) or not views.get("ok"):
-            return "Revit did not say which view is active, so nothing was loaded.", []
+            return stopped("Revit did not say which view is active, so nothing was "
+                           "loaded.", "failed")
         wrong_model = pinned.check(views)
         if wrong_model is not None:
-            return wrong_model, []
+            return stopped(wrong_model, "refused")
         view = views.get("activeView")
         if not view:
-            return "Revit has no active view, so nothing was loaded.", []
+            return stopped("Revit has no active view, so nothing was loaded.", "refused")
         out = {}
         values = ("viewName=%s: %s" % (views.get("activeViewType"), view)
                   if kind == "filters" and views.get("activeViewType") else
@@ -3042,8 +3167,8 @@ def _load_settings(kind):
         said = _through(revit_read, reply_out=out, origin="companion")(reader, values)
         reply = out.get("reply")
         if not isinstance(reply, dict) or not reply.get("ok"):
-            _note("companion_load", started, time.time() - clock, reply=said, outcome="refused")
-            return said, []
+            # The read's own label: a lost answer or Revit busy is not a refusal.
+            return stopped(said, out.get("ended") or "failed")
         provides = reply.get("provides") or {}
         if kind == "filters":
             cards = companion_page.filter_cards(view, provides.get("filterSettings") or "")
@@ -3062,7 +3187,7 @@ def _load_settings(kind):
     text = ("Loaded %d %s from the active view '%s'. Nothing in the model was changed."
             % (len(cards), what, view) if cards else
             "The active view '%s' has no %s. Nothing in the model was changed." % (view, what))
-    _note("companion_load", started, time.time() - clock, reply=text)
+    _note("companion_load", started, time.time() - clock, reply=text, outcome=out.get("ended"))
     return text, cards
 
 
@@ -5505,12 +5630,19 @@ def heron_resolve(capability: str) -> str:
                     "release does not announce itself: it runs, it half-works, "
                     "and it is found later by somebody measuring something."
                     % (capability, where))
+        # THE NAME ASKED FOR IS NOTED AS WANTED (D-63, row 5b-1511): until
+        # 2026-11-19 this said Heron kept no list of missing things, in the
+        # same call that had just written the name to one -
+        # heron_brain.resolve calls heron_capability.want on exactly this
+        # branch, for a name no card declares (`known` false).
+        noted = ("" if found.get("known") else
+                 "Heron has noted %s as wanted (D-63), so its gap report shows that "
+                 "somebody asked for it.\n" % capability)
         return ("Nothing provides %s.\n"
-                "That absence IS the gap - Heron keeps no second list of "
-                "missing things, because one that had to be kept in step "
-                "would eventually disagree with this answer.\n"
+                "That absence IS the gap.\n"
+                "%s"
                 "Run heron_capabilities to see which jobs are waiting on it."
-                % capability)
+                % (capability, noted))
 
     lines = ["%s%s" % (capability, where),
              "  risk       %s   (the highest any provider carries, worked out "

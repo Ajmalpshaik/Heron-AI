@@ -570,7 +570,14 @@ LIBRARY = ("heron_capabilities", "heron_lookup", "heron_method",
 # that sent nothing is ANSWERED; each refusal REFUSED; no session NOT RUN; no
 # answer, or an Undo sent in a model this chat does not work on, OUTCOME
 # UNKNOWN. It is not a door to the library, so the doors are still three.
-STATES_OUTCOME = ("revit_change", "revit_read", "revit_show", "revit_undo_last")
+#
+# AND revit_apply_move, SINCE 2026-11-19 (row 5b-1563), by the same steps: the
+# other tool that keeps a change. A move made and kept is KEPT, its lines
+# saying how many moved and which did not; nothing approved REFUSED; no
+# session NOT RUN; a classified failure its own word; a fault after the
+# request left OUTCOME UNKNOWN.
+STATES_OUTCOME = ("revit_change", "revit_read", "revit_show", "revit_undo_last",
+                  "revit_apply_move")
 
 
 class NotDeclared(Exception):
