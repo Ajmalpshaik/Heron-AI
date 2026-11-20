@@ -1457,6 +1457,11 @@ def context(request, path=None, revit=None, full=False, depth=None,
                        "body": p.body if full else None}
                       for p in ctx.parts],
             "not_carried": [{"kind": k, "reason": r} for k, r in ctx.refused],
+            # R-43: how each part was found, and what the host must say is
+            # missing rather than fill in. getattr, so a brain older than
+            # this server still answers - with the two keys empty.
+            "confidence": getattr(ctx, "confidence", {}),
+            "missing": list(getattr(ctx, "missing", [])),
             "revit": revit,
         }
 

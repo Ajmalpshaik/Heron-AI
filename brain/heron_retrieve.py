@@ -331,6 +331,23 @@ class Contest(object):
         self.best_near = max(near) if near else None
 
     @property
+    def coin_toss(self):
+        """Whether the top two are too close for their order to mean anything.
+
+        THE SAME TWO COMPARISONS sentence() makes, as a fact a caller can read
+        without parsing a sentence back out - heron_context's packet confidence
+        stands on it (R-43). Not a threshold: one is against what the status
+        nudge can move, the other against one rank, the smallest difference
+        either route can express. A re-ranked order is never called one, for
+        the reason sentence() gives: the fusion gap did not set that order.
+        """
+        if self.count < 2 or self.reranked or self.top_gap is None:
+            return False
+        if self.top_gap * ONE_RANK < QUALITY_SPAN and self.nudged:
+            return True
+        return self.top_gap < 1.0
+
+    @property
     def pool_is_evidence(self):
         """Whether "both agree" means anything yet.
 
@@ -906,9 +923,18 @@ def documents(store, text, limit=5, pool=20):
     SEARCH.ensure_chunk_table(store)
 
     try:
+        # R-85 AND R-93: what each document is licensed for and whether it is
+        # a BIM standard, carried with the clause so a citation can say so.
+        # Read only where the store has the columns - a store an older
+        # heron_ingest made has neither, and that is NULL here, never a fault.
+        have = set(row[1] for row in store.execute(
+            "PRAGMA table_info(documents)").fetchall())
+        extra = "".join(", %s AS %s" % ("d." + name if name in have else "NULL",
+                                        name)
+                        for name in ("licence", "category"))
         allowed = store.execute(
             "SELECT c.id, c.document_id, c.locator, c.heading_path, c.text, "
-            "c.untrusted, d.title, d.status, d.path "
+            "c.untrusted, d.title, d.status, d.path" + extra + " "
             "FROM chunks c JOIN documents d ON d.id = c.document_id "
             "WHERE d.status IN (%s)"
             % ",".join("?" * len(OFFERABLE_DOCUMENTS)),
@@ -1098,6 +1124,8 @@ def find_documents(store, text, limit=5):
                      "heading_path": c.row["heading_path"],
                      "status": c.row["status"],
                      "untrusted": c.row["untrusted"],
+                     "licence": c.row["licence"],
+                     "category": c.row["category"],
                      "score": c.score, "why": c.why(),
                      "words_score": c.keyword_score,
                      "nearness_score": c.vector_score,
