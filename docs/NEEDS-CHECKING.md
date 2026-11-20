@@ -1590,6 +1590,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-om.md`](needs-checking/group-om.md)
 
+## Group ON - ASSIGN_LOCATION_DATA version 3: room or space name and number into two parameters, a space tested by its boundary, rooms in a link when asked, DRAFT until proved (2026-11-19)
+
+**Its own file:** [`needs-checking/group-on.md`](needs-checking/group-on.md)
+
 ## Group OO - the owner's real specification for the knowledge store: the chunker, the citation and the refusal on a genuine one (2026-11-19)
 
 **Its own file:** [`needs-checking/group-oo.md`](needs-checking/group-oo.md)
