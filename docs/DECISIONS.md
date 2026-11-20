@@ -249,6 +249,11 @@ an edit.
 | [D-178](#d-178--a-qa-checklist-run-can-be-written-as-an-excel-workbook-and-an-html-page-each-a-new-file) | A QA checklist run can be written as an Excel workbook and an HTML page, each a new file | ✅ Accepted · 2026-11-17 |
 | [D-179](#d-179--a-project-checklist-can-extend-an-office-checklist-changing-only-severity-target-and-onoff-and-every-run-names-the-checks-it-used) | A project checklist can extend an office checklist, changing only severity, target and on/off, and every run names the checks it used | ✅ Accepted · 2026-11-17 |
 | [D-180](#d-180--a-setting-hides-folder-paths-from-what-the-chat-is-told-off-unless-turned-on) | A setting hides folder paths from what the chat is told, off unless turned on | ❌ Not accepted · 2026-11-17 - dropped; Q-40 stands |
+| [D-181](#d-181--checking-a-folder-of-models-opens-each-one-in-the-revit-the-modeller-connected-heron-to-one-at-a-time-and-opening-a-model-read-only-is-a-read) | Checking a folder of models opens each one in the Revit the modeller connected Heron to, one at a time, and opening a model read-only is a read | • Accepted, nothing built · 2026-11-19 |
+| [D-182](#d-182--an-edited-spreadsheet-comes-back-through-a-comparison-with-the-export-outside-revit-and-only-its-changed-cells-are-sent-a-blank-cell-of-that-file-is-skipped-before-its-parameter-is-looked-for) | An edited spreadsheet comes back through a comparison with the export, outside Revit, and only its changed cells are sent; a blank cell of that file is skipped before its parameter is looked for | ✅ Accepted · 2026-11-20 |
+| [D-183](#d-183--sheets-made-from-a-spreadsheet-keep-four-choices-as-built-a-blank-cell-writes-nothing-a-date-goes-in-as-iso-a-refused-value-is-listed-and-its-sheet-kept-and-1000-rows-is-the-most) | Sheets made from a spreadsheet keep four choices as built: a blank cell writes nothing, a date goes in as ISO, a refused value is listed and its sheet kept, and 1,000 rows is the most | ✅ Accepted · 2026-11-20 |
+| [D-184](#d-184--before-heron-acts-on-a-parameter-by-its-name-it-checks-where-that-name-lives-in-the-model-and-asks-the-modeller-which-one-when-more-than-one-place-carries-it) | Before Heron acts on a parameter by its name, it checks where that name lives in the model, and asks the modeller which one when more than one place carries it | ✅ Accepted · 2026-11-19 |
+| [D-185](#d-185--reload-latest-and-sync-with-central-stay-the-modellers-own-clicks-and-heron-builds-no-route-for-either) | Reload Latest and Sync with Central stay the modeller's own clicks, and Heron builds no route for either | ✅ Accepted · 2026-11-19 |
 
 ## Format
 
@@ -1608,3 +1613,47 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** nothing - the code was removed
 
 **Full record:** [`decisions/D-180.md`](decisions/D-180.md)
+
+## D-181 — Checking a folder of models opens each one in the Revit the modeller connected Heron to, one at a time, and opening a model read-only is a read
+
+**Status:** Accepted, nothing built · **Date:** 2026-11-19 · **Accepted:** Ajmal PS, 2026-11-19, in conversation, written on [#1038](https://github.com/Ajmalpshaik/Heron-AI/issues/1038): *"in one Revit because I have to connect the Heron on that Revit ... which Revit I given to AI, in that Revit"*
+**Settles:** [Q-93](open-questions/tier-3.md), both of its questions
+**Keeps:** [D-129](decisions/D-129.md) - a fragment that runs too long is stopped by its run clock · [D-152](decisions/D-152.md) - a QA checklist runs on a model
+**Affects:** nothing yet - [research note 51](51-studying-another-revit-mcp.md) item 7, a later build job
+
+**Full record:** [`decisions/D-181.md`](decisions/D-181.md)
+
+## D-182 — An edited spreadsheet comes back through a comparison with the export, outside Revit, and only its changed cells are sent; a blank cell of that file is skipped before its parameter is looked for
+
+**Status:** Accepted · **Date:** 2026-11-20 · **Accepted:** Ajmal PS, 2026-11-20, in conversation, written on [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925): [Q-87](open-questions/tier-2.md) confirmed as his own decision. Points 4 and 5 decided by Claude on his delegation of the same day - *"You can decide this thing. Investigate on this and decide which is the best option."* - and his word overrules them at any time
+**Settles:** [Q-87](open-questions/tier-2.md) (a), (b) and (c) · rows [5b-1525](fragment-issues/section-5b-rows-1501-1525.md), [5b-1526](fragment-issues/section-5b-rows-1526-1550.md) and [5b-1528](fragment-issues/section-5b-rows-1526-1550.md)
+**Keeps:** [D-117](decisions/D-117.md) - a change is kept only from a fragment whose proof still stands · [D-33](decisions/D-33.md) - asked, never assumed
+**Affects:** [`heron_sheet_compare.py`](../brain/heron_sheet_compare.py) (unchanged) · [`SET_PARAMETER_VALUES_BY_ID`](../brain/fragments/set-parameter-values-by-id/fragment.yaml) version 10 · [`parameters-csv-round-trip`](../brain/skills/parameters-csv-round-trip.yaml) · [Group NJ](needs-checking/group-nj.md) NJ5, NJ14
+
+**Full record:** [`decisions/D-182.md`](decisions/D-182.md)
+
+## D-183 — Sheets made from a spreadsheet keep four choices as built: a blank cell writes nothing, a date goes in as ISO, a refused value is listed and its sheet kept, and 1,000 rows is the most
+
+**Status:** Accepted · **Date:** 2026-11-20 · **Accepted:** Ajmal PS, 2026-11-20, in conversation, written on [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925): *keep all four as built*
+**Settles:** the four owner's choices of row [5b-1486](fragment-issues/section-5b-rows-1476-1500.md)
+**Affects:** [`CREATE_SHEETS_FROM_TABLE`](../brain/fragments/create-sheets-from-table/fragment.yaml) (unchanged) · [`heron_sheet_list.py`](../brain/heron_sheet_list.py) (unchanged) · whatever card carries this job later
+
+**Full record:** [`decisions/D-183.md`](decisions/D-183.md)
+
+## D-184 — Before Heron acts on a parameter by its name, it checks where that name lives in the model, and asks the modeller which one when more than one place carries it
+
+**Status:** Accepted · **Date:** 2026-11-19 · **Accepted:** Ajmal PS, 2026-11-19, in conversation, written on [#916](https://github.com/Ajmalpshaik/Heron-AI/issues/916): *"there is chances in a project parameter or shared parameter or project information itself ... if any doubt regarding this, it should be asked again ... which parameter should be changed ... it should be checked before acting."*
+**Settles:** row [5b-1632](fragment-issues/row-5b-1632.md)
+**Extends:** [D-33](decisions/D-33.md) - Heron never assumes an input; it asks, once
+**Affects:** [Group NK](needs-checking/group-nk.md) NK8 (c) - no code
+
+**Full record:** [`decisions/D-184.md`](decisions/D-184.md)
+
+## D-185 — Reload Latest and Sync with Central stay the modeller's own clicks, and Heron builds no route for either
+
+**Status:** Accepted · **Date:** 2026-11-19 · **Accepted:** Ajmal PS, 2026-11-19, in conversation, written on [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911): *by hand*
+**Settles:** row [5b-1423](fragment-issues/section-5b-rows-1401-1425.md)
+**Keeps:** Article 10 of the [Constitution](../HERON_CONSTITUTION.md) - never synchronise on Heron's own initiative · [D-125](decisions/D-125.md) - a fragment says what transaction it needs
+**Affects:** nothing in code - `SYNC_WITH_CENTRAL` stays as found
+
+**Full record:** [`decisions/D-185.md`](decisions/D-185.md)

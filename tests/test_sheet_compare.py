@@ -471,6 +471,19 @@ def section_small_file(folder, first):
                    "var text = candidate.Id.ToString();",
                    "if (blankHow == \"skip\") { blankCellsSkipped++; continue; }"):
         check(anchor in card, "the card's C# still reads so: %s" % anchor[:70])
+    # Row 5b-1526, version 10: this small file's blanks fall under columns its
+    # other elements changed, and a mixed set - ducts and air terminals - has
+    # elements that lack one of those parameters. The card must leave such a
+    # blank alone BEFORE it looks for the parameter, or the whole file is
+    # refused for a cell nobody asked it to write.
+    skip = card.find("if (blankHow == \"skip\") { blankCellsSkipped++;")
+    lookup = card.find("var matches = parametersCalled(target, parameterName);")
+    check(skip >= 0 and lookup >= 0 and skip < lookup,
+          "under blankCells=skip a blank cell is skipped before its parameter is looked for "
+          "(skip at %d, lookup at %d)" % (skip, lookup))
+    after = card[lookup:lookup + 2000] if lookup >= 0 else ""
+    check("a blank cannot clear" in after and "cellsCleared++;" in after,
+          "under clear a blank still needs its parameter - a text one - to empty")
     with io.open(EXPORT_CS, encoding="utf-8") as handle:
         export = handle.read()
     for anchor in ('header.Add("ElementId");',

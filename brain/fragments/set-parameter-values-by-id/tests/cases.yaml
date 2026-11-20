@@ -210,7 +210,9 @@ positive_pattern:
       Type Properties, every other air terminal type untouched, ONE entry in
       Revit's undo list, a finding naming the three
 
-  - given: key=Type Name|in=Air Terminals|types=yes;600*|Comments=x
+  # Type Comments, not Comments: a TYPE has Type Comments, and Comments is an
+  # instance parameter on placed elements (row 5b-1634, the owner 2026-11-19).
+  - given: key=Type Name|in=Air Terminals|types=yes;600*|Type Comments=x
     expect: every type whose name starts 600 (any case) written, no other
 
 negative_pattern:
@@ -221,7 +223,7 @@ negative_pattern:
       NOTHING on that row written - refused naming the type without Model and
       saying none of the three is written; the other two types' Model unchanged
 
-  - given: key=Type Name|in=Air Terminals|types=yes;ZZZ*|Comments=x
+  - given: key=Type Name|in=Air Terminals|types=yes;ZZZ*|Type Comments=x
     expect: refused - no type has a Type Name matching 'ZZZ*'; nothing written
 
   - given: a * row and an exact row naming one of the same types
@@ -250,3 +252,33 @@ negative_by_builtin:
     expect: written 0; refused says it has no parameter called that; nothing written
   - given: key=Mark|in=Columns;OB-POST|Top Level {NOT_A_BUILT_IN}=Level 2
     expect: written 0; it has no parameter called that; nothing written
+
+# VERSION 10 (2026-11-20, row 5b-1526) - under blankCells=skip a blank cell is
+# left as it is BEFORE its parameter is looked for. NEEDS-CHECKING Group NJ,
+# NJ14. Arranged on the round trip's scratch project: a Text, Instance project
+# parameter "Heron Terminal Note" bound to Air Terminals ONLY, so the ducts
+# have not got it. Each positive FAILS on version 9, which looked for the
+# parameter first and refused the whole file.
+positive_blank_skipped_first:
+  - given: >
+      csvPath a file - the shape heron_sheet_compare writes - with the columns
+      Comments and Heron Terminal Note: a DUCT row with Comments changed and
+      Heron Terminal Note blank, an AIR TERMINAL row with both filled;
+      blankCells=skip
+    expect: >
+      written 3 - the duct's Comments and the terminal's two - read back as
+      asked, blankCellsSkipped 1, stale empty, ONE entry in Revit's undo
+      list. Version 9 wrote nothing: "has no parameter called Heron Terminal
+      Note" for the duct
+  - given: the same file with every Heron Terminal Note cell blank, blankCells=skip
+    expect: >
+      the Comments cells written, nothing from that column, and a finding
+      naming it - "was blank and skipped, so that column's parameter was not
+      looked for on any element"
+negative_blank_skipped_first:
+  - given: the first file again, blankCells=clear
+    expect: >
+      NOTHING written - the duct has no parameter called Heron Terminal Note;
+      under clear a blank still needs its parameter, a text one, to empty
+  - given: the first file with a VALUE typed under Heron Terminal Note on the duct's row, blankCells=skip
+    expect: NOTHING written - "has no parameter called Heron Terminal Note", the duct's row named

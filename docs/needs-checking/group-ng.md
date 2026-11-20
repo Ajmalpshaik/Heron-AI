@@ -59,9 +59,17 @@ Every line with `HERON_CLIENT_ID=ajmal-pc`, `--session <process id>` when two Re
 | **NG3** | *Lengths through a list, KEPT.* Through `try-once` (or `revit_change` once PROVEN): `typeName=600 x 600, 625 x 625`, `values=Width=900`, and KEEP | Both read Width 900 mm in the Family Types dialog, the five others unchanged; `route` "each type made current in turn"; the dimension reads 900 in each when that type is chosen; "600 x 600" current again; ONE entry in the undo list; the Keep or Discard question asked ONCE, its deletions (if any) counted once |
 | **NG4** | *Already held.* NG3's call again | Nothing written, `alreadyHeld` both, no type made current, no question |
 | **NG5** | *Project, the negative FIRST, then the positive.* Rolled back, in the scratch project. Negative: `rows=key=Type Name|in=Air Terminals|types=yes;*|Model_Number=X` - the second family's two types lack Model_Number. Positive: `rows=key=Type Name|in=Air Terminals|types=yes|Family Name=Heron Many Types Test;*|Manufacturer=|URL=|Model_Number=` | Negative: that row REFUSED naming each type without Model_Number, "NONE of the nine is written" - the seven types' Model_Number still "M-1". Positive: `written` 7, the three empty on all seven in Type Properties, the second family untouched - **this also answers question 3** (Family Name narrows a type search) |
-| **NG6** | *A name pattern.* Rolled back: `rows=key=Type Name|in=Air Terminals|types=yes;6*|Comments=six` | "600 x 600" and "625 x 625" written, no other type |
-| **NG7** | *Pattern matching nothing; a pattern and an exact row on one type.* Rolled back: `...;ZZZ*|Comments=x` then `...;6*|Comments=x;600 x 600|Comments=y` | First: refused, "no type ... matching 'ZZZ*'". Second: both rows refused - "another row's key names it too" - nothing written |
+| **NG6** | *A name pattern, on TYPES.* Rolled back: `rows=key=Type Name|in=Air Terminals|types=yes;6*|Type Comments=six` | "600 x 600" and "625 x 625" written - Type Comments reads "six" on both - no other type |
+| **NG7** | *Pattern matching nothing; a pattern and an exact row on one type.* Rolled back: `...;ZZZ*|Type Comments=x` then `...;6*|Type Comments=x;600 x 600|Type Comments=y` | First: refused, "no type ... matching 'ZZZ*'". Second: both rows refused - "another row's key names it too" - nothing written |
 | **NG8** | *Second route.* By hand on a copy: the Family Types dialog, each type chosen and its three values cleared; compared with NG1's positive kept on another copy | The two copies read the same in every type |
+
+**NG6 and NG7 write Type Comments, checked 2026-11-20.** Revit has two: **Comments** is an *instance*
+parameter, on placed elements, and **Type Comments** is a *type* parameter - the owner, 2026-11-19: *"there is 2
+comments - in the instance parameter, and type parameter also, but in the type parameter it's Type Comments, so
+we need to check and confirm that as Comments instance only or Type Comments."* Both rows name TYPES - `types=yes`
+and a Type Name pattern - so what they test is a write on types, and that is Type Comments. Until 2026-11-20 they
+said Comments, which a type has not got, and the card was right to refuse it
+([row 5b-1634](../fragment-issues/row-5b-1634.md)). Run 2's NG6 and NG7 below were run on the old wording.
 
 **Before the owner's own families.** The three air terminal families he cleared by hand on 2026-11-11 are
 done; nothing here is run on them or on any job. The first use on a real family after NG passes is his

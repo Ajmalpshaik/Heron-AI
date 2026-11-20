@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -208,7 +208,26 @@ capability: SET_PARAMETER_VALUES_BY_ID
 # Group OH is run (D-30) - on the owner's word of 2026-11-16 to fix every
 # issue from #852 to #854. Kept out of the purpose and the identity line, for
 # the reason version 3 gives.
-version: 9
+#
+# VERSION 10 (2026-11-20, FRAGMENT-ISSUES 5b-1526) - UNDER blankCells=skip A
+# BLANK CELL IS LEFT AS IT IS BEFORE ITS PARAMETER IS LOOKED FOR, and back to
+# DRAFT. Version 9 looked for the parameter first, so a blank under a column
+# its element has not got - or has on its TYPE - stopped the whole file,
+# though skip says leave it. The comparison step the owner chose for the round
+# trip (OPEN-QUESTIONS Q-87, confirmed by him 2026-11-20, D-182) writes a small
+# file whose blanks are every cell its element did not change, so a mixed set -
+# ducts and air terminals, a column one kind has not got - could never come
+# back. Decided on the owner's delegation of 2026-11-20 (*"You can decide this
+# thing"*) over a per-column warning in the export and a UniqueId column: see
+# D-182. A cell with a value still needs its parameter, once and writable, and
+# under clear so does a blank. A column whose every cell was blank and skipped
+# is named in a finding, so nothing from it is passed over in silence. Every
+# other route - by id, by key, a pattern - is exactly version 9's. Version 9
+# was PROVEN on 2026-11-16 (the proof block below, kept as the record of what
+# it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group NJ,
+# NJ14, is run (D-30). Kept out of the purpose and the identity line, for the
+# reason version 3 gives.
+version: 10
 source: OFFICIAL
 risk: MODIFY
 
@@ -408,7 +427,9 @@ contract:
 # versions 4 to 8, and the card is DRAFT until Group NG proves version 8.
 # (Group NG did, 2026-11-13: the proof block below is version 8's. VERSION 9,
 # row 5b-1703, changed impl/ once more, so it is the record now; DRAFT until
-# Group OH.)
+# Group OH. Group OH did, 2026-11-16: the proof block below is version 9's.
+# VERSION 10, row 5b-1526, changed impl/ once more, so it is the record now;
+# DRAFT until Group NJ, NJ14.)
 # VERSION 3's PROOF, KEPT AS A RECORD. Version 4 changed impl/ (rows 5b-1259,
 # 5b-1260), so its fingerprint no longer described the code and the card was
 # DRAFT at the time, until NEEDS-CHECKING Group HZ proves version 4 (D-30). A
