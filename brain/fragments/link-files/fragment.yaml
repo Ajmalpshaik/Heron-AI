@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LNK-015
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -11,7 +11,32 @@ domain: revit.document
 capability: LINK_FILES
 # VERSION 2 (2026-11-02), AT DRAFT: a point cloud (.rcp, .rcs) is linked too -
 # see the WIDENED block below.
-version: 2
+#
+# VERSION 3 (2026-11-20, FRAGMENT-ISSUES rows 5b-1124 and 5b-1121) - A REVIT
+# LINK IS READ BACK BY ITS INSTANCE, and back to DRAFT. Version 2 read back
+# only the link TYPE's GetLinkedFileStatus and answered "Loaded" - measured
+# 2026-10-18 on Revit 2020 (session 30308, a fresh scratch Project1 and the
+# owner's HeronLinkSource.rvt): an instance made here read GetLinkDocument()
+# NULL and drew nothing, while the same file linked by hand drew and read at
+# once. Now, after the regeneration, the INSTANCE's GetLinkDocument() is read
+# and its model elements counted; a Revit link counts in `linked` and
+# `linkedIds` only when its model attached. One whose document reads null is
+# named in `notAttached`, its line says no linked model could be read from it
+# during this run and to check the plan after Keep, and it is never called
+# Loaded. It is not removed - Keep or
+# Discard is the modeller's. WHETHER GetLinkDocument() ANSWERS INSIDE THE OPEN
+# TRANSACTION IS NOT KNOWN: nothing has read it there, so the NEEDS-CHECKING
+# run of this version says, beside the same file linked by hand. Reloading is
+# not the cure inside this card: RevitAPI.xml says RevitLinkType.Load and
+# LoadFrom need every transaction phase finished first. Two facts more are
+# said and change nothing: the LoadResult RevitLinkType.Create hands back, by
+# name, and how many documents of the file are open in this Revit before it is
+# linked (row 5b-1121 counted thirteen after rolled-back runs). A CAD link and
+# a point cloud read back exactly as version 2. Version 2 was PROVEN on
+# 2026-11-14 (the proof block below, kept as the record - its positive's
+# "Loaded" is the type's word this version stops trusting); its C# moved, so
+# it is DRAFT until that run (D-30).
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -30,7 +55,8 @@ risk: MODIFY
 # A FILE ALREADY LINKED IS LEFT OUT AND NAMED - twice is the building twice.
 # Nothing is IMPORTED; a link stays a link.
 #
-# READ BACK: each new link looked up by id; a Revit link's load status read.
+# READ BACK: each new link looked up by id; a Revit link by its instance's
+# own linked document since version 3 (above), never its type's status.
 #
 # RELOAD_LINKS acts on links already there - it reloads them, or unloads them.
 #
@@ -87,6 +113,13 @@ contract:
       type: IList<ElementId>
     - name: alreadyLinked
       # File names already linked, left out (D-52).
+      role: accounting
+      type: IList<string>
+    # VERSION 3 (rows 5b-1124, 5b-1121): each Revit link made whose model did
+    # NOT attach - GetLinkDocument() null after the regeneration - by file
+    # name and link id. Not in `linked` or `linkedIds`; left in the model for
+    # Keep or Discard.
+    - name: notAttached
       role: accounting
       type: IList<string>
     - name: report

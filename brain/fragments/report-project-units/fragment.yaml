@@ -104,6 +104,10 @@ compatibility-note: >
 
 utterances:
   - what units is this project in
+  # ADDED 2026-11-20, issue #958 row 5b-1882: on the owner's backend "are the
+  # project units metric or imperial" went to SET_PROJECT_UNITS, an Admin write,
+  # whose passage says "imperial" and this one's said neither word.
+  - is this project in metric or imperial
   - show the project units
   - is cooling load in watts or btu/h
   - what symbol does air flow use

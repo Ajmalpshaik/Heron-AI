@@ -15,8 +15,18 @@
 //
 // So the first line of the report puts the RAW internal value beside Revit's
 // own display string for the same duct. Wrong assumption, and those two
-// disagree obviously on the first run, before a single size is written. That
-// line is the check; read it.
+// disagree obviously on the first run, before a single size is written.
+//
+// VERSION 2 (2026-11-20, WN-2): THE CHECK IS A GATE, NOT A LINE TO READ.
+// Version 1 printed "If those disagree, STOP" and then wrote every size
+// anyway - the check was left to whoever read the reply after the model had
+// changed. Now, before any duct is touched, the first readable flow is
+// converted twice: by the constant below, and by Revit's own
+// UnitUtils.ConvertFromInternalUnits to litres per second (DisplayUnitType on
+// Revit 2020, UnitTypeId from 2021 - the one adapter, `revitLitresPerSecond`).
+// If the two disagree by more than one part in a million, or Revit's
+// conversion cannot be read, NOTHING is written and `refused` says why. When
+// they agree, every size is worked out exactly as version 1 worked it out.
 //
 // IT ALWAYS ROUNDS UP. Rounding down to the nearer standard size pushes the
 // velocity ABOVE the design figure, and that is the direction that causes noise
@@ -38,6 +48,15 @@ var refused = new List<string>();
 var mmPerFoot = 304.8;
 var cubicMetresPerCubicFoot = 0.028316846592;
 
+// The release's own conversion of an internal airflow to litres per second
+// (version 2, WN-2) - the second opinion the gate below asks for.
+Func<double, double> revitLitresPerSecond = v => v;
+#if REVIT2020
+revitLitresPerSecond = v => UnitUtils.ConvertFromInternalUnits(v, DisplayUnitType.DUT_LITERS_PER_SECOND);
+#else
+revitLitresPerSecond = v => UnitUtils.ConvertFromInternalUnits(v, UnitTypeId.LitersPerSecond);
+#endif
+
 // Ascending, so the first one big enough is the next size UP.
 var round = roundSizesMm.OrderBy(v => v).ToList();
 var rect = rectSizesMm.OrderBy(v => v).ToList();
@@ -55,24 +74,51 @@ if (targetVelocity <= 0)
 }
 else
 {
-    // THE UNIT SANITY LINE. First readable duct only; this is a check, not a
-    // report.
+    // THE UNIT CHECK. First readable duct only - and since version 2 (WN-2)
+    // a GATE: a disagreement stops the run before any size is written.
+    var unitsAgree = true;
     foreach (var element in elements)
     {
         var flowParameter = element == null ? null : element.get_Parameter(BuiltInParameter.RBS_DUCT_FLOW_PARAM);
         if (flowParameter == null || !flowParameter.HasValue) continue;
         var raw = flowParameter.AsDouble();
+        // A duct carrying no flow cannot test the unit: 0 agrees with 0 under
+        // any factor. Checked on the first duct that carries some - the same
+        // test the sizing loop below uses to leave a duct alone (the review of
+        // 2026-11-20).
+        if (raw * cubicMetresPerCubicFoot <= 1e-9) continue;
         var shown = "";
         try { shown = flowParameter.AsValueString(); } catch { }
-        findings.Add(string.Format(
-            "UNIT CHECK on {0}: internal {1:0.000000} read as {2:0.0} L/s, and Revit itself shows '{3}'. "
-            + "If those disagree, STOP - every size below is wrong by the same factor",
-            element.Id, raw, raw * cubicMetresPerCubicFoot * 1000.0, shown));
+        var ours = raw * cubicMetresPerCubicFoot * 1000.0;
+        double? revits = null;
+        try { revits = revitLitresPerSecond(raw); } catch { revits = null; }
+        if (revits == null)
+        {
+            unitsAgree = false;
+            refused.Add(string.Format("UNIT CHECK on {0}: Revit's own conversion of its flow to L/s could not "
+                + "be read, so the unit this card assumes could not be checked - NOTHING was sized", element.Id));
+        }
+        else if (Math.Abs(ours - revits.Value) > 1e-6 * Math.Max(1.0, Math.Abs(revits.Value)))
+        {
+            unitsAgree = false;
+            refused.Add(string.Format(
+                "UNIT CHECK on {0}: internal {1:0.000000} reads {2:0.000} L/s by this card's factor but {3:0.000} "
+                + "L/s by Revit's own conversion (Revit shows '{4}') - every size would be wrong by the same "
+                + "factor, so NOTHING was sized", element.Id, raw, ours, revits.Value, shown));
+        }
+        else
+        {
+            findings.Add(string.Format(
+                "UNIT CHECK on {0}: internal {1:0.000000} read as {2:0.0} L/s, the same as Revit's own "
+                + "conversion, and Revit itself shows '{3}' - checked before any size was written",
+                element.Id, raw, ours, shown));
+        }
         break;
     }
 
     foreach (var element in elements)
     {
+        if (!unitsAgree) break;
         if (element == null) continue;
 
         var flowParameter = element.get_Parameter(BuiltInParameter.RBS_DUCT_FLOW_PARAM);
@@ -177,7 +223,11 @@ else
         }
     }
 
-    findings.Add(string.Format("{0} duct(s) sized at {1:0.0} m/s. {2} carried NO FLOW and were left "
-        + "alone - if that is most of them, the system is not connected and sizing is not the problem",
-        sized, targetVelocity, noFlow.Count));
+    if (!unitsAgree)
+        findings.Add("NOTHING was sized: the unit check above failed, and a size worked out from a flow in "
+            + "the wrong unit is wrong by the same factor on every duct");
+    else
+        findings.Add(string.Format("{0} duct(s) sized at {1:0.0} m/s. {2} carried NO FLOW and were left "
+            + "alone - if that is most of them, the system is not connected and sizing is not the problem",
+            sized, targetVelocity, noFlow.Count));
 }

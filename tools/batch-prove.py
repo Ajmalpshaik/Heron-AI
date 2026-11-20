@@ -722,16 +722,11 @@ def judge(record, frag, expect=None):
     # name ALONE: a sentence where a list or an undeclared string was expected
     # stays UNREADABLE, as the checks of test_batch_prove.py say it must. And
     # only of a negative that ran - a refused leg gives nothing back, which
-    # would read as "gone".
-    things = dict((key, value) for key, value in (positive.get("provides") or {}).items()
-                  if HV._is_helper_object(value))
-    if (verdict == POSITIVE_UNREADABLE and things and negative and negative.get("ok")
-            and HV._result_appeared(dict(positive, provides=things), negative, frag)):
+    # would read as "gone". `accept` asks the same function (row 5b-1863).
+    made = HV.things_made(positive, negative, frag) if verdict == POSITIVE_UNREADABLE else []
+    if made:
         verdict = None
-        reason = ("%s is made in the positive and empty in the negative"
-                  % ", ".join(sorted(key for key in things
-                                     if HV._result_appeared(dict(positive, provides={key: things[key]}),
-                                                            negative, frag))))
+        reason = "%s is made in the positive and empty in the negative" % ", ".join(made)
 
     if not negative or not negative.get("ok"):
         why = HV.phase_failure(negative)

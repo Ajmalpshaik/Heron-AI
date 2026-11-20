@@ -322,6 +322,27 @@ def main():
               "and a fragment that collects nothing has no link question at "
               "all - asking every fragment raised 310 of 360")
 
+        # FRAGMENT-ISSUES row 5b-258, 2026-11-20: the word "linked" in the
+        # card's prose or a comment answered this question for 13 live
+        # readers that read no link at all - "a label linked to a parameter".
+        # Only the code, comments stripped, and the contract count now.
+        make(work, "proselinked",
+             (BASE % ("FRG-T-030", "READ", "")).replace(
+                 "contract:", "# Each label is linked to a parameter.\ncontract:", 1),
+             "// the linked parameter of each label\n" + COLLECTS)
+        got = verdicts_for(tool, work, "proselinked")[7]
+        check(got[0] == tool.LOOK,
+              "the word 'linked' in a comment or the card's prose does NOT "
+              "answer the link question for a reader that collects (5b-258)")
+
+        make(work, "codelinked", BASE % ("FRG-T-031", "READ", ""),
+             COLLECTS + "foreach (var l in new FilteredElementCollector(doc)"
+             ".OfClass(typeof(RevitLinkInstance))) { var d = ((RevitLinkInstance)l)"
+             ".GetLinkDocument(); }\n")
+        got = verdicts_for(tool, work, "codelinked")[7]
+        check(got[0] == tool.ANSWERED,
+              "a reader whose code reads a link's document still answers it")
+
         print()
         print("3e. Question 12 asks what is nullable, not whether a guard exists")
         print("-" * 66)

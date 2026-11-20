@@ -2,6 +2,11 @@
 // leaves `values`, `blank`, `absent`, `resolvedFrom` and `noteWording` - and,
 // since version 7, `ambiguous`.
 //
+// VERSION 8 (2026-11-20, FRAGMENT-ISSUES row 5b-342) - "Level" asks the level
+// parameters in turn and the first that HOLDS a level answers; an empty
+// phantom Family Level no longer answers `absent` for an element whose level
+// is in its Schedule Level. See the Level read below.
+//
 // THREE OUTCOMES, NOT TWO, and this is the whole point of the fragment.
 //
 //   values   the parameter is there and has something in it
@@ -254,21 +259,27 @@ foreach (var e in elements)
         ElementId levelId = ElementId.InvalidElementId;
         try { levelId = e.LevelId; } catch { }
 
+        // VERSION 8 (FRAGMENT-ISSUES rows 5b-342 and 5b-335): the five in
+        // turn, and the first that holds a LEVEL answers. Version 7 took the
+        // first of them get_Parameter returned at all - and on a work
+        // plane-based diffuser on a level's plane it returns an empty "Level"
+        // the element does not carry, so a diffuser whose Schedule Level is
+        // Level 1 was answered `absent`, "not on a level".
         if (levelId == ElementId.InvalidElementId)
         {
-            Parameter lp = null;
-            try
+            foreach (var which in new[] { BuiltInParameter.FAMILY_LEVEL_PARAM,
+                                          BuiltInParameter.SCHEDULE_LEVEL_PARAM,
+                                          BuiltInParameter.LEVEL_PARAM,
+                                          BuiltInParameter.INSTANCE_REFERENCE_LEVEL_PARAM,
+                                          BuiltInParameter.RBS_START_LEVEL_PARAM })
             {
-                lp = e.get_Parameter(BuiltInParameter.FAMILY_LEVEL_PARAM)
-                     ?? e.get_Parameter(BuiltInParameter.SCHEDULE_LEVEL_PARAM)
-                     ?? e.get_Parameter(BuiltInParameter.LEVEL_PARAM)
-                     ?? e.get_Parameter(BuiltInParameter.INSTANCE_REFERENCE_LEVEL_PARAM)
-                     ?? e.get_Parameter(BuiltInParameter.RBS_START_LEVEL_PARAM);
-            }
-            catch { }
-            if (lp != null)
-            {
-                try { levelId = lp.AsElementId(); } catch { }
+                Parameter lp = null;
+                try { lp = e.get_Parameter(which); } catch { lp = null; }
+                if (lp == null || lp.StorageType != StorageType.ElementId) continue;
+                ElementId held = ElementId.InvalidElementId;
+                try { held = lp.AsElementId(); } catch { }
+                if (held == null || held == ElementId.InvalidElementId) continue;
+                if (e.Document.GetElement(held) is Level) { levelId = held; break; }
             }
         }
 

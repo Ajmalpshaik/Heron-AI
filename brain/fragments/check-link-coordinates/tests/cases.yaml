@@ -6,7 +6,24 @@ positive:
       agreeing 1, and mismatched naming the moved link with E/W 500 mm at both
       points
 
+  - given: >
+      version 2 (row 5b-1122) - two Revit links, one loaded and placed by
+      shared coordinates, one UNLOADED in Manage Links, toleranceMm 0
+    expect: >
+      coordinates holds ONE line, the loaded link's "agrees within 1 mm";
+      notChecked names the unloaded link "not loaded - NOT CHECKED"; agreeing
+      1; findings says 1 agree and 1 link(s) NOT CHECKED, and not counted as
+      agreeing. NOT RUN
+
 negative:
+  - given: >
+      version 2 (row 5b-1122) - every Revit link in the model unloaded in
+      Manage Links
+    expect: >
+      coordinates EMPTY - nothing a proof can read as a pass; agreeing 0,
+      mismatched empty, every link in notChecked, and findings begins "NO LINK
+      WAS CHECKED". A run that put any not-loaded line in coordinates fails
+      here. NOT RUN
   - given: a model with one link placed by shared coordinates and untouched
     expect: >
       mismatched empty and agreeing 1 - no difference invented

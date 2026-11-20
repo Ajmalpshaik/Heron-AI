@@ -85,7 +85,7 @@ Priorities: **P1** = fix before trusting the affected workflow; **P2** = improve
 
 ### C01 — Preserve room holes or refuse creation (P1)
 
-*Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-1) - work it there.*
+*done 2026-11-20 (WN-1, issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005)): `CREATE_FROM_ROOM_BOUNDARIES` version 3 (DRAFT) refuses a room with a hole on the floor route before Revit 2022 BEFORE anything is built, and refuses a room whose boundary loop does not close instead of dropping the loop; created and refused stay apart. No opening route was used, because none has been run in Revit. Not run in Revit - NEEDS-CHECKING [Group OU](../../needs-checking/group-ou.md) OU16.*
 
 **Fragment:** `create-from-room-boundaries`  
 **Evidence:** [implementation](../../../brain/fragments/create-from-room-boundaries/impl/any/fragment.cs), legacy floor branch and curve-loop construction.
@@ -98,7 +98,7 @@ The legacy floor branch creates from `curveLoops[0]` even when there are holes, 
 
 ### C02 — Make sizing checks actionable before writes (P1)
 
-*Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-2) - work it there.*
+*done 2026-11-20 (WN-2, issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005)): `AUTO_SIZE_MEP` version 2 (PROVEN v1 -> DRAFT) makes the unit check a gate before any write - the flow by its own factor against Revit's `UnitUtils` conversion to L/s; a disagreement, or a conversion it cannot read, sizes NOTHING and says why. The word STOP is gone. Not run in Revit - NEEDS-CHECKING [Group OU](../../needs-checking/group-ou.md) OU19.*
 
 **Fragments:** `auto-size-mep`, `auto-size-pipe`  
 **Evidence:** [duct sizing](../../../brain/fragments/auto-size-mep/impl/any/fragment.cs), [pipe sizing](../../../brain/fragments/auto-size-pipe/impl/any/fragment.cs).
@@ -159,7 +159,7 @@ One records an unreadable checkout status as owned by an unknown person; the oth
 
 ### C07 — Preserve loop structure in room geometry (P2)
 
-*Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-3) - work it there.*
+*done 2026-11-20 (WN-3, issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005)): `READ_ROOM_GEOMETRY` version 3 (PROVEN v2 -> DRAFT) adds `holeLoops`, one list of edges per hole in Revit's loop order; `holes` is unchanged edge for edge, so nothing that chains it moves. Not run in Revit - NEEDS-CHECKING [Group OU](../../needs-checking/group-ou.md) OU17.*
 
 **Fragment:** `read-room-geometry`  
 **Evidence:** [implementation](../../../brain/fragments/read-room-geometry/impl/any/fragment.cs), flat `holes` list.

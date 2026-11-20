@@ -43,7 +43,8 @@
 //   Thermal   the same, "Thermal Asset=" and "Thermal: Thermal Conductivity=".
 //
 // AN IDENTITY FIELD IS FOUND BY REVIT'S OWN PARAMETER FIRST, then by the
-// field's name as typed. Keywords has no parameter of Revit's own on any
+// field's name as typed - counted first since version 3, and refused when the
+// material carries the name twice (row 5b-203). Keywords has no parameter of Revit's own on any
 // release (BuiltInParameter read off the shipped assemblies 2026-10-20), so
 // it is found by its name or refused saying so - NEEDS-CHECKING Group IA.
 //
@@ -355,6 +356,13 @@ var findings = new List<string>();
             { "Keynote", new[] { BuiltInParameter.KEYNOTE_PARAM } },
             { "Mark", new[] { BuiltInParameter.ALL_MODEL_MARK } },
         };
+        // VERSION 3 (FRAGMENT-ISSUES 5b-1534, row 5b-203's repair; D-54 s3). A
+        // field found by its NAME - Keywords always, any other where Revit's
+        // own parameter is missing - is counted first. LookupParameter hands
+        // back whichever of two same-named parameters it meets first,
+        // "determined at random" in Autodesk's words, so a material carrying
+        // the name twice is NOT READ and the call is refused, naming it -
+        // before any value is written, so nothing from the call is kept.
         Func<Material, string, Parameter> identityParameter = (material, field) =>
         {
             foreach (var builtIn in identityParameters[field])
@@ -362,6 +370,12 @@ var findings = new List<string>();
                 var found = material.get_Parameter(builtIn);
                 if (found != null) return found;
             }
+            var named = material.GetParameters(field).Count;
+            if (named > 1)
+                throw new InvalidOperationException(string.Format(
+                    "The material '{0}' carries TWO OR MORE parameters called '{1}' - NOT READ, because Revit hands back "
+                    + "whichever of them it meets first, so which one to write cannot be told (D-54). Rename one of the two "
+                    + "first. Nothing from this call was kept", material.Name, field));
             return material.LookupParameter(field);
         };
         Func<Parameter, string> parameterText = p =>

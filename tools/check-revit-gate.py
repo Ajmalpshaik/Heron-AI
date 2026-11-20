@@ -389,9 +389,25 @@ def ask(fid, name, doc, raw, code):
     # 8 - links
     collects = "filteredelementcollector" in squashed
     reads = doc.get("risk") in ("READ", "ANALYZE", "SUGGEST")
-    if "revitlinkinstance" in text or "linked" in text:
-        say(ANSWERED, "the fragment names linked documents, so the case was "
-                      "considered")
+    # WHAT COUNTS AS "LINKS WERE CONSIDERED" IS THE CODE AND THE CONTRACT, NOT
+    # THE PROSE (FRAGMENT-ISSUES row 5b-258, 2026-11-20). Until then the word
+    # "linked" anywhere in the card or its comments answered this question, so
+    # a label "linked to a parameter", a connector "linked to a system" or a
+    # sentence saying links are NOT read passed it - measured that day, 13
+    # live READ fragments that collect from the host, and none of them reads a
+    # link. Comments are stripped as _document_names_used does; a need called
+    # includeLinks or a provide called linksSearched is the contract saying so.
+    link_code = "\n".join(line for line in (code or "").splitlines()
+                          if not line.strip().startswith("//"))
+    link_code = re.sub(r"/\*.*?\*/", "", link_code, flags=re.S).lower()
+    link_contract = (
+        "includeLinks" in [n.get("name") for n in needs_of(doc)]
+        or "linksSearched" in [n.get("name") for n in
+                               (doc.get("contract") or {}).get("provides") or []])
+    if ("revitlinkinstance" in link_code or "getlinkdocument" in link_code
+            or "revitlinktype" in link_code or link_contract):
+        say(ANSWERED, "the fragment reads linked documents in its code or "
+                      "its contract, so the case was considered")
     elif not collects:
         # This asked every fragment and raised 310 of 360, which is the shape of
         # the library rather than a finding. A fragment that sets a view's scale

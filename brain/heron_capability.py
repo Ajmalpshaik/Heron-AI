@@ -261,8 +261,34 @@ def resolve(store, name, revit=None):
     if not rows:
         return None
 
-    rows.sort(key=lambda r: (-TRUST.get(r["status"], 0), r["id"]))
+    # TRUST, THEN VERSION, NEWEST FIRST, THEN ID - as the sentence above says.
+    # The sort had trust and id alone until 2026-11-20, so two providers at one
+    # status were ordered by id whatever their versions (row 5b-1862). The
+    # store holds no version, so it is read from each card on disk - only when
+    # there is more than one provider to order.
+    if len(rows) > 1:
+        for row in rows:
+            row["version"] = _version_on_disk(row.get("folder"))
+    rows.sort(key=lambda r: (-TRUST.get(r["status"], 0), -r.get("version", 0), r["id"]))
     return Capability(name, rows)
+
+
+def _version_on_disk(folder):
+    """The card's own top-level `version:` as a number, or 0 when the card
+    cannot be read or says none - so a provider whose version is unknown is
+    ordered after every one whose version is known, never ahead of it."""
+    if not folder:
+        return 0
+    path = os.path.join(ROOT, folder, "fragment.yaml")
+    try:
+        with open(path, encoding="utf-8") as handle:
+            for line in handle:
+                if line.startswith("version:"):
+                    value = line.split(":", 1)[1].split("#", 1)[0].strip().strip("\"'")
+                    return int(value) if value.isdigit() else 0
+    except (IOError, OSError, UnicodeDecodeError):
+        return 0
+    return 0
 
 
 def _no_better_than_disk(fid, index_status):

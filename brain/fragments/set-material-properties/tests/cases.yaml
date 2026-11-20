@@ -37,7 +37,27 @@ positive:
       wasColour and nowColour one "Name: r,g,b" entry per material, nowColour
       reading 200,120,60 for every one
 
+  # VERSION 3, row 5b-1534 (row 5b-203's repair). NOT RUN.
+  - given: >
+      VERSION 3. materialsNamed "IA Probe Steel", fieldValues "Keywords=steel,
+      galvanised" - a material carrying one parameter called Keywords
+    expect: >
+      exactly version 2's answer - fieldsChanged 1, Keywords read back as
+      written: the count must not turn down a name that occurs once
+
 negative:
+  # VERSION 3, row 5b-1534. NOT RUN - it needs a material carrying a name
+  # twice, e.g. a project parameter "Keywords" bound to Materials twice
+  # (instance and type, or two shared ones of that name).
+  - given: >
+      VERSION 3. materialsNamed "IA Probe*", fieldValues "Keywords=x" where
+      one of the materials carries TWO parameters called "Keywords"
+    expect: >
+      the call refused, naming that material as carrying TWO OR MORE
+      parameters called 'Keywords' - NOT READ - and "Nothing from this call
+      was kept": no material's Keywords changed, the other materials included
+      (all or nothing). A value written here went to whichever parameter Revit
+      returned first (row 5b-203)
   - given: >
       VERSION 2: the Shading Colour call above run a second time
     expect: >

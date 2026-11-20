@@ -137,6 +137,14 @@ positive:
     expect: >
       one set made, for that value alone
 
+  # VERSION 5, row 5b-1534. NOT RUN.
+  - given: >
+      version 5 - mode "by-parameter" with parameterName naming a sheet
+      parameter each sheet carries ONCE, two values
+    expect: >
+      exactly version 4's answer - one set per value in `created`, `ambiguous`
+      EMPTY: the count must not turn down a name that occurs once
+
 negative:
   - given: the print range left as it was
     expect: >
@@ -222,6 +230,18 @@ negative:
     expect: >
       `refused` "No set name was given." - the word "none" the card binds is
       no name, never a set called none
+  # VERSION 5, row 5b-1534 (row 5b-203's repair). NOT RUN - it needs a model
+  # whose sheets carry the parameter name twice.
+  - given: >
+      version 5 - mode "by-parameter" with parameterName "Sheet Group" where
+      "Sheet Group" is bound to Sheets twice (a project parameter beside a
+      shared one of the same name), the sheets' values 01 and 02
+    expect: >
+      `refused` naming every such sheet as carrying TWO OR MORE parameters
+      called 'Sheet Group' - NOT READ - and "Nothing was changed"; `ambiguous`
+      holds their ids, `done` false, `created` and `updated` empty, the Print
+      dialog's set list and print range exactly as before. A set made here
+      would sort the sheets by whichever parameter Revit returned first
 
 second_route:
   - >

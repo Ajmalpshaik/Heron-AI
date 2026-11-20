@@ -573,15 +573,15 @@ def check_register():
     print("  %d row(s), %d done, %d left" % (len(rows), len(done), len(left)))
 
     # EACH ROW READ WITH ITS GROUP'S HEADING, as owner-queue.py reads it - the
-    # heading often says what the whole group needs (row 5b-1173).
-    heading_of, line_of, heading = {}, {}, ""
+    # heading often says what the whole group needs (row 5b-1173). Its OWN
+    # group's, from the register's one reader of it: the last `## Group`
+    # heading passed was taken here until 2026-11-20, so the dated groups AC
+    # to AF, which have none, borrowed the newest group's (row 5b-1861).
+    heading_of, line_of = NCR.headings_of(text), {}
     for line in text.split("\n"):
-        g = re.match(r"^## (Group [A-Z]+.*)$", line)
-        if g:
-            heading = g.group(1)
         m = re.match(r"^\|\s*\*\*([A-Z]+\d+[a-z]?)\*\*", line)
         if m:
-            heading_of[m.group(1)], line_of[m.group(1)] = heading, line
+            line_of[m.group(1)] = line
 
     for _s, item, _e, body in left:
         group = re.match("[A-Z]+", item).group(0)
