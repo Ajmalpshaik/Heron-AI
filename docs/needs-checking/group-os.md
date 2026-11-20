@@ -7,6 +7,8 @@
 
 ## Group OS - the add-in's own fixes for issues #932, #933, #934 and #1057: the move quotes Revit under one workflow id and tells template-born models apart, a refusal says whether its rollback held, a run still waiting names its run, an undo reaches the run record, the bridge caps an answer, the chain belongs to a model - BUILT, NOT RUN IN REVIT (2026-11-20)
 
+**Tracked as GitHub issue [#1104](https://github.com/Ajmalpshaik/Heron-AI/issues/1104) since 2026-11-20** - tick the group in that issue when the checks are done. Every result stays in this file.
+
 **Why:** on 2026-11-20 the coordinating session gave one session the add-in core, the bridge and run
 records - issues [#932](https://github.com/Ajmalpshaik/Heron-AI/issues/932),
 [#933](https://github.com/Ajmalpshaik/Heron-AI/issues/933),
