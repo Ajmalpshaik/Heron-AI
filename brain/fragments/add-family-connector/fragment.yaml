@@ -119,9 +119,7 @@ purpose: >
   ALONE TAKES NO CONNECTOR through the API - "oEdgeLoopRef.ptr() is NULL", and
   a sketch plane made from it "is not a planar face" - and a nested family's
   face took one off-centre that stayed put when the frame moved; the ring is
-  the way round both. Version 4's proof no longer describes the code and is
-  kept below as a record; the card is DRAFT until NEEDS-CHECKING Group JA is
-  signed.
+  the way round both.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 

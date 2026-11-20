@@ -1606,6 +1606,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oq.md`](needs-checking/group-oq.md)
 
+## Group OS - the add-in's own fixes for issues #932, #933, #934 and #1057: the move quotes Revit under one workflow id and tells template-born models apart, a refusal says whether its rollback held, a run still waiting names its run, an undo reaches the run record, the bridge caps an answer, the chain belongs to a model - BUILT, NOT RUN IN REVIT (2026-11-20)
+
+**Its own file:** [`needs-checking/group-os.md`](needs-checking/group-os.md)
+
 ## Group OT - thirteen family-editor tools repaired from issues #944, #945, #1029 and #1051, and five measurements the rows still owe - DRAFT until proved (2026-11-20)
 
 **Its own file:** [`needs-checking/group-ot.md`](needs-checking/group-ot.md)

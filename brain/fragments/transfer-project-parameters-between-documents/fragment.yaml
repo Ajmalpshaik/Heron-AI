@@ -63,7 +63,7 @@ purpose: >
   force is now read first and put back once the bindings are made, whatever
   happened, and `sharedParameterFileRestored` says whether it reads as it did
   before. If it cannot be read first, nothing is attempted; if it cannot be put
-  back, `refused` says so and names both paths. DRAFT, never proved.
+  back, `refused` says so and names both paths.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). **The
   undo belongs to THIS document** - the source project is only read.

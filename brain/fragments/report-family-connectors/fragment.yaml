@@ -36,8 +36,6 @@ purpose: >
   where ticked, a fitting connector's Angle, a preset Flow, a System flow's
   Flow Factor, and an electrical connector's Voltage, Number of Poles,
   Apparent Load, Power Factor, Power Factor State and Load Classification.
-  Version 1's proof of 2026-10-21 no longer describes the code and is kept
-  below as a record; DRAFT until proved again (NEEDS-CHECKING Group IR).
 
   **ONE LINE**, as REPORT_FAMILY_FORMS answers: a list is cut to three entries
   before anyone reads it.
