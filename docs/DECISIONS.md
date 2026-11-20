@@ -1663,6 +1663,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-186 — What Heron should know out of the box runs BIM and ISO standards first, regional next and company last - and no standard, and no knowledge store, ever ships with Heron
 
 **Status:** Accepted · **Date:** 2026-11-20 · **Accepted:** Ajmal PS, 2026-09-11, in conversation - recorded as R-88 of [the RAG requirement note](work-notes/plans/rag/01-requirements.md), and written here as a rule on [#1006](https://github.com/Ajmalpshaik/Heron-AI/issues/1006) (WN-19)
+**Numbering:** D-186 was first written, three minutes before this decision, on the branch `claude/clever-ritchie-0sy1nr` as "A chat the Claude app resumes after a restart is the same conversation to Revit, and takes back its own model". That branch renumbered its decision D-188 with `tools/renumber.py` before either branch merged, so D-186 is this decision.
 **Settles:** R-87, R-88 and R-88a of [the RAG requirement note](work-notes/plans/rag/01-requirements.md)
 **Keeps:** [D-07](decisions/D-07.md) - Heron is public and open source · [D-26](decisions/D-26.md) - the model file never leaves · [17 §2](17-open-source-and-distribution.md) - code is public, knowledge is not
 **Affects:** [`tools/build-release-assets.py`](../tools/build-release-assets.py) - the download refuses a store and a source document by name · [`tests/test_knowledge_rules.py`](../tests/test_knowledge_rules.py) - nothing shaped like a store is tracked
