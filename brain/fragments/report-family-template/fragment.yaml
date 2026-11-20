@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,12 +9,28 @@ semantic-identity: "what kind of family is open - wall, ceiling, floor, roof or 
 kind: action
 domain: revit.families
 capability: REPORT_FAMILY_TEMPLATE
-# Version 4, 2026-10-29: each adaptive point's Orientation in pointList - see
-# VERSION 4 below. Version 3 was PROVEN (2026-10-18); its proof was kept below
-# as a record and no longer described the code.
-version: 4
+# Version 5, 2026-11-20: an empty family name falls back to the document's
+# Title - see VERSION 5 under `risk:`. Version 4 (each adaptive point's
+# Orientation in pointList, VERSION 4 below) was PROVEN on 2026-11-02.
+version: 5
 source: OFFICIAL
 risk: READ
+
+# VERSION 5 (2026-11-20) - A FAMILY NEVER SAVED IS NAMED BY ITS TITLE, and
+# back to DRAFT. FRAGMENT-ISSUES row 5b-304: on six new, never-saved families
+# in Revit 2024 this printed `Family ""` in templateReport and `"" is a
+# detail item` in its first finding, while each document's Title read Family1
+# to Family6 - the fallback to `doc.Title` ran only when the owner family was
+# null, not when its name was empty. The name is now the family's own when it
+# has one, else the Title with any ".rfa" taken off. Nothing else changed.
+# `provides` already names only the real results; the helpers a proof lists
+# beside them (axisOf, countOf, mm, shown, stored, invariant) are listed by the
+# add-in's harness, which reports every top-level local whatever `provides`
+# says (RevitFragment.Report), so no code was renamed. Version 4 was PROVEN
+# (the proof block below, kept as the record of what it proved); its C# moved,
+# so it is DRAFT again until NEEDS-CHECKING Group <TBD> is run (D-30) - on the
+# owner's word that a fragment found wrong may be changed even though it is
+# proven.
 
 purpose: >
   Says what KIND of family is open in the Family Editor, and what its template
