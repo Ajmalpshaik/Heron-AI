@@ -220,8 +220,14 @@ def settings_said_by_revit():
                   for word, field in (("changes", "Changes"), ("admin", "Admin"),
                                       ("publish", "Publish"))),
           "Changes, Admin and Publish are said from Revit's memory, as D-166 holds them")
+    # WHO IS ASKING IS READ, AND ONLY THAT: `client` for the lease's `mine`, and
+    # since row 5b-1645 `conversation` for whether THIS chat holds the model in
+    # front - the same kind of read, saying who holds what, never what a
+    # setting is (Golden Rule 19 is about permission, and neither raises one).
+    asked = info.replace('Json.ReadString(request, "client")', "").replace(
+        'Json.ReadString(request, "conversation")', "")
     check(".Save(" not in info and "SetSwitch" not in info and ".Set(" not in info
-          and "Json.Read" not in info.replace('Json.ReadString(request, "client")', ""),
+          and "Json.Read" not in asked,
           "and only read: nothing in `info` saves a setting, and nothing on the request "
           "chooses what is said")
 

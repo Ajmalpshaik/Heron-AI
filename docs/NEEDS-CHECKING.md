@@ -1622,6 +1622,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ou.md`](needs-checking/group-ou.md)
 
+## Group OV - a resumed chat takes back its model, health names who holds it and which model a change goes to, the panel's outcome line, and two add-in fixes (2026-11-20)
+
+**Its own file:** [`needs-checking/group-ov.md`](needs-checking/group-ov.md)
+
 ## Group OY - EXTEND_ROOF_TO_ROOF, a roof by extrusion extended to meet another roof by rays: the owner's other way to Join/Unjoin Roof - DRAFT until proved (2026-11-20)
 
 **Its own file:** [`needs-checking/group-oy.md`](needs-checking/group-oy.md)
