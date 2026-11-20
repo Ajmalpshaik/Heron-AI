@@ -291,6 +291,35 @@ def arrived_unusable():
           "is not listed as a live Revit")
 
 
+def core_pieces():
+    """
+    The pieces of heron_server_core.py the outcome line's rollback words are
+    made of, run alone - a dict of them, empty where one is missing (so a check
+    fails rather than crashes, heron-ship 2a). Its `__source__` is the file.
+    """
+    import ast
+    path = os.path.join(ROOT, "mcp", "server", "heron_server_core.py")
+    with io.open(path, encoding="utf-8") as fh:
+        source = fh.read()
+    wanted_names = set(["KEPT", "NOTHING_CHANGED", "ANSWERED", "NOT_ANSWERED", "REFUSED",
+                        "NOT_RUN", "ROLLED_BACK", "STILL_RUNNING", "UNKNOWN",
+                        "ROLLED_BACK_HELD", "_BY_FAILURE"])
+    wanted_functions = set(["_failure_outcome", "_failure_ended"])
+    body = []
+    for node in ast.parse(source).body:
+        if isinstance(node, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id in wanted_names for t in node.targets):
+            body.append(node)
+        elif isinstance(node, ast.FunctionDef) and node.name in wanted_functions:
+            body.append(node)
+    space = {"failures": fa, "FAILURE_REFUSED": fa.REFUSED, "__source__": source}
+    try:
+        exec(compile(ast.Module(body=body, type_ignores=[]), path, "exec"), space)
+    except Exception as exc:                                  # noqa: BLE001
+        print("  (could not run heron_server_core's pieces alone: %s)" % exc)
+    return space
+
+
 def beside_the_code():
     """
     WHAT THE ADD-IN SAYS BESIDE ITS CODE, READ BY THE SERVER (row 5b-1901).
@@ -307,8 +336,6 @@ def beside_the_code():
     (each name is asked for with getattr before it is used).
     """
     print("\nwhat the add-in says beside its code (row 5b-1901)")
-    sys.path.insert(0, os.path.join(ROOT, "brain"))
-    import heron_server_core as core                          # noqa: E402
 
     # 1. THE RUN'S ID A WAIT CARRIES, printed for heron_run_record.
     for code in ("awaiting_modeller", "still_running"):
@@ -329,49 +356,61 @@ def beside_the_code():
     check("heron_run_record" not in (explain(plain) or ""),
           "an older add-in's wait, with no id, says nothing of one")
 
-    # 2. WHETHER THE ROLLBACK HELD, in the outcome line.
-    said_outcome = getattr(core, "_said_outcome", None)
-    held_words = getattr(core, "ROLLED_BACK_HELD", None)
+    # 2. WHETHER THE ROLLBACK HELD, in the outcome line - read out of
+    # heron_server_core.py's source and run alone, because importing that
+    # module needs the MCP SDK and CI has none (test_outcome_line.py does the
+    # same for _companion_module). The pieces: the words, `_BY_FAILURE`,
+    # `_failure_outcome` and `_failure_ended`; `_outcome` is caught here.
+    core = core_pieces()
+    held_words = core.get("ROLLED_BACK_HELD")
     check(held_words is not None, "the server has words for a rollback the add-in said held")
+    said = []
+    core["_outcome"] = lambda word, answer=None, says=None: said.append((word, says))
 
-    def line(tool, reply):
+    def ended(reply):
         failure = analyse(reply, writes=True)
-        core._ctx.how = None
-        core._failure_ended(failure)
-        text = said_outcome(tool, "It stopped.", "failed", getattr(core._ctx, "how", None))
-        return text.split("\n")[1] if "\n" in text else text
+        del said[:]
+        try:
+            core["_failure_ended"](failure)
+        except Exception as exc:                              # noqa: BLE001 - one clean failure
+            return ("raised %s" % type(exc).__name__, None)
+        return said[-1] if said else (None, None)
 
     threw = {"ok": False, "error": "fragment_threw", "message": "The fragment threw."}
     held = dict(threw, rolledBack=True, rollbackReported=True)
     not_held = dict(threw, rolledBack=False, rollbackReported=True)
     unreported = dict(threw, rolledBack=False, rollbackReported=False)
-    got = line("revit_change", held)
-    check(got.startswith("outcome: ROLLED BACK - ") and held_words is not None
-          and held_words in got,
+    word, says = ended(held)
+    check(word == "ROLLED BACK" and held_words is not None and says == held_words,
           "a rollback the add-in said held is ROLLED BACK, and the line says it held "
-          "- found %r" % got[:90])
+          "- found %r" % ((word, (says or "")[:40]),))
     for name, reply in (("Revit said rolled back, the check found something standing",
                          not_held),
                         ("Revit did not say it rolled back", unreported)):
-        got = line("revit_change", reply)
-        check(got.startswith("outcome: OUTCOME UNKNOWN - "),
+        word, says = ended(reply)
+        check(word == "OUTCOME UNKNOWN" and says is None,
               "a rollback that did not hold is OUTCOME UNKNOWN (%s) - found %r"
-              % (name, got[:60]))
+              % (name, word))
     check("could not confirm the model is as it was"
           in (explain(analyse(not_held, writes=True)) or ""),
           "and the reply says why, in its own words")
-    got = line("revit_change", threw)
-    check(got.startswith("outcome: ROLLED BACK - ")
-          and (held_words is None or held_words not in got),
+    word, says = ended(threw)
+    check(word == "ROLLED BACK" and says is None,
           "an older add-in's refusal, with no field, is ROLLED BACK as before and does "
-          "not claim the rollback held")
-    got = line("revit_read", held)
-    check(got.startswith("outcome: NOT ANSWERED - ")
-          and (held_words is None or held_words not in got),
-          "on a read the held words are never printed - nothing of the modeller's was "
-          "rolled back")
-    got = line("revit_read", not_held)
-    check(got.startswith("outcome: OUTCOME UNKNOWN - "),
+          "not claim the rollback held - found %r" % ((word, says),))
+    # AT A READ DOOR the word ROLLED BACK is never printed, and its words go
+    # with it - `_said_outcome`'s own rule, which test_outcome_line.py runs
+    # where the SDK is; here its two lines are read.
+    source = core.get("__source__", "")
+    rule = source[source.find("def _said_outcome("):]
+    rule = rule[rule.find("if word == ROLLED_BACK and not _changes_model(tool):"):][:300]
+    check("if word == ROLLED_BACK and not _changes_model(tool):" in source
+          and "says = None" in rule,
+          "on a read the held words are never printed - the read door drops them with "
+          "ROLLED BACK itself")
+    failure = analyse(not_held, writes=True)
+    outcome = core.get("_failure_outcome")
+    check(outcome is not None and outcome(failure) == "OUTCOME UNKNOWN",
           "and a read whose scratch group did not roll back is OUTCOME UNKNOWN - a read "
           "may have changed the model")
 
