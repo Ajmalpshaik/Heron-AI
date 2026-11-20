@@ -43,6 +43,30 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
+# PRINTED AS UTF-8, WHEREVER THE OUTPUT GOES (row 5b-1642). On Windows a
+# redirected stdout is encoded in the ANSI code page - cp1252 on the owner's
+# PC, which has no arrow - and a register row holding one ended this sweep in
+# a UnicodeEncodeError half way down the WAITING list, its summary cut off and
+# its exit code the traceback's. The same block as tools/check-docs.py's;
+# `errors="replace"` is for a lone surrogate, the one thing UTF-8 cannot hold.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except AttributeError:
+        pass
+
+
+def child_env():
+    """The environment every suite and checker this runs is given: this
+    process's own, with PYTHONIOENCODING=utf-8. A child's output is captured
+    or discarded - redirected either way - so on Windows it too printed in
+    cp1252, and two suites that pass run alone (test_read_back.py,
+    test_sheet_list.py) were listed UNFINISHED. Asked at each run, not kept
+    from import, so it is the environment as it is then (row 5b-1642)."""
+    env = dict(os.environ)
+    env["PYTHONIOENCODING"] = "utf-8"
+    return env
+
 # A suite exits 3 when it could not run for want of an optional
 # dependency. Kept as a name in both files rather than as a bare 3.
 SKIPPED = 3
@@ -62,6 +86,23 @@ SKIPPED = 3
 # UNFINISHED, because a test that hangs is work somebody can do today - which
 # is exactly the line this whole tool is drawn along.
 SUITE_TIMEOUT = 300
+
+# A CEILING OF ITS OWN, FOR THE ONE SUITE MEASURED OVER THE ONE ABOVE (row
+# 5b-402). tests/test_mcp_serves.py starts the real MCP server and asks it
+# over stdio, and took 445 s on main and 562 s on a branch in a loaded cloud
+# container on 2026-10-09 - HUNG here at 300 s while it was passing - and
+# 44 s on an idle 4-CPU cloud container on 2026-11-19. Raising
+# SUITE_TIMEOUT for every suite would let a suite that really hangs wait as
+# long before it is named, so only this one is given more: 900 s, about one
+# and a half times the slowest run measured. A suite added here says why.
+SUITE_TIMEOUTS = {
+    "test_mcp_serves.py": 900,
+}
+
+
+def timeout_of(name):
+    """How long the suite NAME may run before this sweep names it HUNG."""
+    return SUITE_TIMEOUTS.get(name, SUITE_TIMEOUT)
 
 UNFINISHED = []      # could be done here, today
 WAITING = []         # genuinely needs a machine this is not
@@ -202,14 +243,14 @@ def check_tests():
             proc = subprocess.run([sys.executable, os.path.join(folder, name)],
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT, cwd=ROOT,
-                                  timeout=SUITE_TIMEOUT)
+                                  timeout=timeout_of(name), env=child_env())
         except subprocess.TimeoutExpired:
             # Named, not silent. The whole point of the bound is that the
             # reader learns WHICH suite stopped returning.
             print("  HUNG  %s - still running after %ds, gave up"
-                  % (name, SUITE_TIMEOUT), flush=True)
+                  % (name, timeout_of(name)), flush=True)
             unfinished("%s DOES NOT RETURN within %ds"
-                       % (name, SUITE_TIMEOUT))
+                       % (name, timeout_of(name)))
             continue
         took = time.time() - started
         if proc.returncode == 0:
@@ -287,7 +328,7 @@ def check_tools():
                  "check-package.py"):
         proc = subprocess.run([sys.executable, os.path.join(ROOT, "tools", name)],
                               stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL, cwd=ROOT)
+                              stderr=subprocess.DEVNULL, cwd=ROOT, env=child_env())
         if proc.returncode == 0:
             print("  ok    %s" % name)
         else:

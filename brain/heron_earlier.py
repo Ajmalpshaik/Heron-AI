@@ -381,9 +381,16 @@ def _undo(made):
             pass                    # not empty, so not only this attempt's
 
 
-def decide(project_key, earlier_key, answer, by="the modeller, in the chat"):
+#: Who the record says answered, as far as Heron can know it (row 5b-1162).
+#: The answer arrives in a tool call the AI makes; it may be the modeller's
+#: word or the AI's own, and a server cannot tell which - so the record says
+#: where it was given, never that a person decided.
+GIVEN_BY = "given in the chat"
+
+
+def decide(project_key, earlier_key, answer, by=GIVEN_BY):
     """
-    The modeller's answer: a model name from question(), or "none". Returns
+    The answer given in the chat: a model name from question(), or "none". Returns
     (ok, said). On a name, what was given under it is COPIED to this model's
     own files; on "none", nothing is. Either way the answer is recorded and
     the question is not asked again. Nothing under the shared id is touched.
@@ -431,9 +438,9 @@ def _decide(project_key, earlier_key, answer, by, made):
                      {"format": FORMAT, "project_key": project_key,
                       "earlier_key": earlier_key, "answer": "none", "when": _now(),
                       "by": by, "copied": [], "kept_back": []}, made)
-        return True, ("Recorded: none of the earlier answers is this model's. Nothing was "
-                      "copied, and Heron will not ask again for this model. The old files "
-                      "are as they were.")
+        return True, ("Recorded, as given in the chat: none of the earlier answers is this "
+                      "model's. Nothing was copied, and Heron will not ask again for this "
+                      "model. The old files are as they were.")
 
     matches = [n for n in names if n.lower() == said.lower()]
     if len(matches) != 1:

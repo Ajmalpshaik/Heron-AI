@@ -74,6 +74,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 import heron_flags as FLG                                      # noqa: E402
+import heron_secrets as SECRETS                                # noqa: E402
 
 # docs/21 s9's own list, and which half each belongs to. Nothing is added
 # to this by resemblance.
@@ -107,15 +108,11 @@ MACHINE_SHAPED = (
 )
 
 # Article 17. What a credential looks like when somebody pastes one into
-# a settings file.
-SECRET_SHAPED = (
-    ("sk-", "an API key prefix"),
-    ("ghp_", "a forge token prefix"),
-    ("github_pat_", "a forge token prefix"),
-    ("xox", "a chat-platform token prefix"),
-    ("-----BEGIN", "a PEM private key"),
-    ("AKIA", "a cloud access key id"),
-)
+# a settings file is heron_secrets.PATTERNS - the redactor's list, and since
+# D-143 the repository gate's. This file kept six prefixes of its own, matched
+# anywhere in the value, until 2026-11-19 (row 5b-1138): so `risk-assessment`
+# was refused as "an API key prefix" for the `sk-` inside it, and a bearer
+# header, which the redactor catches, was accepted. One list now.
 
 # Keys whose NAME says the value is a credential, whatever it looks like.
 SECRET_NAMED = ("key", "token", "secret", "password", "credential",
@@ -134,9 +131,9 @@ def _machine_shaped(value):
 def _secret_shaped(key, value):
     """(marker, what) if this looks like a credential, else None."""
     text = str(value)
-    for marker, what in SECRET_SHAPED:
-        if marker.lower() in text.lower():
-            return marker, what
+    for name, pattern in SECRETS.PATTERNS:
+        if pattern.search(text):
+            return name, "a %s" % name
     if not text.strip():
         return None
     # THE NAME IS A WORD, NOT A RUN OF LETTERS. This was `word in lowered`

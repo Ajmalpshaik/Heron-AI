@@ -449,6 +449,11 @@ def archive_relinked_case(AF, root):
                                    "| **2** | **Two.** It names [row 5b-%d](%s). |" % (row, last)))
     outside = os.path.join(copy, "docs", "ARCHIVE-LINKS.md")
     put(outside, "See [row 5b-%d](fragment-issues/%s)." % (row, last) + NL)
+    # A FILE IN THE REGISTER'S OWN FOLDER THAT THE REGISTER DOES NOT READ -
+    # fragment-issues/ISSUES.md is one. Until row 5b-1845 every file of the
+    # folder was skipped as a rows file, and its links stayed behind.
+    beside = os.path.join(folder, "ISSUES.md")
+    put(beside, "# Issues" + NL + NL + "| [row 5b-%d](%s) | [#1](https://example.invalid/1) |" % (row, last) + NL)
 
     archive = os.path.join(copy, "docs", AF.ARCHIVE_NAME)
     p = AF.plan(register=index_of(copy), archive=archive, today="2026-10-09")
@@ -463,6 +468,9 @@ def archive_relinked_case(AF, root):
           "a link to it in another row follows it to its band")
     check(read(outside) == "See [row 5b-%d](fragment-issues/%s)." % (row, beyond) + NL,
           "and so does a document outside the register")
+    check(read(beside) == "# Issues" + NL + NL + "| [row 5b-%d](%s) | [#1](https://example.invalid/1) |" % (row, beyond) + NL,
+          "and so does a file in the register's own folder the register does not read, "
+          "as ISSUES.md is (row 5b-1845)")
     moved_to = [n for n in os.listdir(archive) if n.endswith(".md") and n != "README.md"
                 and "It names [row 5b-%d]" % row in read(os.path.join(archive, n))]
     check(len(moved_to) == 1 and ("fragment-issues/%s)" % beyond) in read(os.path.join(archive, moved_to[0]))

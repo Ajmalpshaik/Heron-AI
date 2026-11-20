@@ -169,19 +169,18 @@ def audit_dir():
     way to read a trail on a machine with no %APPDATA% at all - the same
     reasoning, and the same escape hatch, as heron_config.config_path().
 
-    Python cannot call HeronPaths, which is C# and the only thing allowed to
-    build a Heron path. This is the documented seam rather than a second path
-    builder: it resolves ONE directory, it is the only place in brain/ that
-    does, and if HeronPaths ever moves the trail this is the single line that
-    follows it.
+    Python cannot call HeronPaths, which is C#. The folder is asked of
+    `heron_paths.addin_data()`, the brain's path agent, since row 5b-182 -
+    this read %APPDATA% itself, which tools/check-structure.py could not see.
+    If HeronPaths ever moves the trail, that function and this line follow it.
     """
     override = os.environ.get("HERON_AUDIT")
     if override:
         return override
-    appdata = os.environ.get("APPDATA")
-    if not appdata:
-        return None
-    return os.path.join(appdata, "Heron", "audit")
+    # ASKED OF THE PATH AGENT, not read here (row 5b-182).
+    import heron_paths as PATHS
+    data = PATHS.addin_data()
+    return os.path.join(data, "audit") if data else None
 
 
 def brain_audit_dir():

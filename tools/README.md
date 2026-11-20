@@ -2211,7 +2211,9 @@ python tools/open-defects.py --all      # every row, with its state
 ```
 
 Reads sections **5 and 5b** of [`docs/FRAGMENT-ISSUES.md`](../docs/FRAGMENT-ISSUES.md) and prints the
-**ids** of every row whose Status begins with *open*. Always exits 0 - it reports, it does not gate.
+**ids** of every row whose Status begins with *open*. Exits 0 when it read the register - it reports,
+it does not gate - and **2 when it could not read the register at all**, the *could not look* code
+`register-text.py` and `next-id.py` give; it exited 0 then too until row 5b-1587.
 
 **The two sections are counted apart, and that is the point.** Section 5 is what **proving against a
 model** found; **5b** is what **reading the repository file by file** found. They are re-tested
