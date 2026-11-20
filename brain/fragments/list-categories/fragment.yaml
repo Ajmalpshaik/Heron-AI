@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CAT-009
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -30,7 +30,23 @@ capability: LIST_CATEGORIES
 # identity, capability and domain, and without those words "show the object
 # style of Generic Annotations" reached TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS,
 # a write, on both re-ranked backends (measured in row 5b-630).
-version: 3
+# Version 4 (2026-11-20, FRAGMENT-ISSUES 5b-1427, the owner's yes of
+# 2026-11-20 on Ajmalpshaik/Heron-AI#926): every Object Styles row ends with
+# two more columns - the Material Object Styles shows ("-" on an annotation
+# row, "none" where none is set) and the category's kind, Model, Annotation
+# or Analytical, which says which tab holds it. The first five columns are
+# unchanged. "What material is set for generic models in object styles" had
+# no material to answer with. Those are every column Object Styles has.
+# THE PURPOSE DOES NOT SAY "material", ON PURPOSE - measured 2026-11-20 with
+# tools/score-routing.py, main against this branch: with material in the
+# purpose, in either of two wordings, "set the material of generic models in
+# object styles" left SET_OBJECT_STYLE for this read on the model backend.
+# Without it nothing moved the wrong way on lexical or model; the material
+# question still reaches this card on model and SET_OBJECT_STYLE on lexical,
+# as on main. The re-ranked backends were NOT ASKED - none here.
+# Version 3 was PROVEN (the proof block below, kept as its record); the C#
+# moved, so it is DRAFT until NEEDS-CHECKING Group OQ is run (D-30).
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -143,7 +159,8 @@ contract:
     - name: objectStyles
       # Object Styles, one row per line: "category > subcategory | projection
       # line colour R,G,B | projection line weight | cut line weight (- not
-      # cut) | projection line pattern", after a first line saying what the
+      # cut) | projection line pattern | material (- annotation) | category
+      # type" - the last two since version 4 - after a first line saying what the
       # rows are and what was left out. A STRING because a reply cuts a list
       # to three items of sixty characters.
       role: result
