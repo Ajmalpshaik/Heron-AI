@@ -86,8 +86,17 @@ purpose: >
      or one that could not read it, is followed by REPORT_PROJECT_UNITS, one
      call. SAVE FIRST WHEN IT HAS NO FILE: where REPORT_OPEN_DOCUMENTS lists
      the family in front as NEVER SAVED and the build is large, ask the
-     modeller once to save it (Ctrl+S) before the first write - Heron cannot
-     save the family in front itself, and closed with no file it is lost.
+     modeller once to save it (Ctrl+S) before the first write - closed with
+     no file it is lost. SAVE_DOCUMENT version 3 saves the family in front in
+     ONE call once its change is kept (D-171), but it is DRAFT until
+     NEEDS-CHECKING Group EN is run, so until then the modeller saves it.
+     NEVER MAKE A HELPER MODEL TO SAVE FROM: an empty "save-helper" family
+     made, activated and pinned so SAVE_DOCUMENT could save the real one as
+     "another document" cost five calls a save and an extra model on the
+     modeller's screen (issue #1028, Revit 2020, 2026-11-19). The refusal
+     that started it - SAVE_DOCUMENT refusing the pinned family - is version
+     2's: that PC's add-in was older than version 3, which `python
+     tools/heron-ready.py` brings up to date.
      A SAVE IS CHECKED, NEVER TRUSTED: ask the modeller to CLICK INSIDE THE
      REVIT WINDOW FIRST - the keys go to whichever window is in front, often
      the chat - then read REPORT_OPEN_DOCUMENTS (version 3) again: `fileTimes`
@@ -217,7 +226,25 @@ purpose: >
      Every one gives back its form's
      id, which every later step names it by. A FORM THAT WILL BE ARRAYED is
      sketched on a plane no parameter moves; a part in a row that a size
-     stretches is a nested family instead - step 10. MANY extrusions and
+     stretches is a nested family instead - step 10. IN A TWO-LEVEL FAMILY -
+     a column from Metric Column.rft - the base plane is `Lower Ref. Level`,
+     never `Ref. Level` (a work plane typed `Ref. Level` there is refused),
+     and the placed column's top drives `Upper Ref. Level`. A REVOLVE DRAWN
+     ABOVE THE UPPER REF. LEVEL RIDES UP WITH IT when the column is placed
+     taller - Revit does it, not Heron, which locks nothing to either level:
+     shown 2026-11-20 on Revit 2020 (row 5b-1876, issue #1044), a revolve
+     at Z 13500 to 13700 in a template whose Upper Ref. Level stands at
+     4000 floated 9700 mm above a column placed 13700 mm tall, while an
+     extrusion at the same height sketched on Lower Ref. Level, the shaft and
+     a revolve at Z 1100 to 1300 stayed where they were drawn. So TALL
+     GEOMETRY in a two-level family is drawn as extrusions or sweeps sketched
+     on Lower Ref. Level, or as CREATE_FAMILY_FREEFORM_SOLID shapes (seen to
+     stay too, 2026-11-18) - a ring or cap as two freeform half-rings - or
+     the modeller first moves Upper Ref. Level by hand to the family's real
+     height; Heron has no tool that moves a family's level. Geometry MEANT to
+     follow the top is locked to Upper Ref. Level on purpose
+     (LOCK_FORM_TO_PLANES). Not yet tried: a revolve that crosses the Upper
+     Ref. Level, and Revit 2024 or later. MANY extrusions and
      revolves - a family of dozens of parts - go in ONE call of CREATE_FAMILY_FORMS, a
      row per form written once to a file under %TEMP%\heron-work: one undo
      entry, every id given back in the order listed. Shapes are typed in
@@ -433,13 +460,13 @@ purpose: >
       read back right while a part sits on the wrong side, floats off the
       body or is missing - that is found here, never by the modeller. In
       this order, since a call between the select and the zoom clears what
-      the select left: OPEN_VIEW "View 1", the family's 3D view, through
-      revit_show; SET_VIEW_PROPERTIES views "View 1", visualStyle "Shaded
-      with Edges", detailLevel Fine, scale 0 (left as it is), through
+      the select left: OPEN_VIEW viewName=View 1, the family's 3D view, through
+      revit_show; SET_VIEW_PROPERTIES views=View 1, visualStyle=Shaded
+      with Edges, detailLevel=Fine, scale=0 (left as it is), through
       revit_change, so a part shown only at Fine is in the picture;
-      REPORT_FAMILY_FORMS which "solid" through revit_read; SET_SELECTION
-      through revit_show with expect_from "report-family-forms", show true
-      and keepSelection true, so the modeller's screen shows the whole family
+      REPORT_FAMILY_FORMS which=solid through revit_read; SET_SELECTION
+      through revit_show with expect_from "report-family-forms", show=true
+      and keepSelection=true, so the modeller's screen shows the whole family
       too (ZOOM_TO_ELEMENTS with alsoSelect false until it was merged into
       SET_SELECTION on 2026-11-01).
       revit_show changes only what is on screen and opens no transaction,
@@ -485,7 +512,8 @@ purpose: >
   closed with no file, it is lost with every form in it. Q-69 was answered
   on 2026-11-16 and SAVE_DOCUMENT version 3 can save the family Heron works
   in once a change is kept - but it is DRAFT, so until it is proved the
-  modeller saves it. Every save the modeller makes is checked
+  modeller saves it, and no helper model is ever made to save it from
+  (issue #1028). Every save the modeller makes is checked
   as step 0 checks it - REPORT_OPEN_DOCUMENTS' `fileTimes` and
   `staleFileCount` - never taken from "I pressed Ctrl+S".
 
