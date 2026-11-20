@@ -208,13 +208,13 @@ def main():
                 # The deciding value is the cross-encoder's. Only an exact tie
                 # lets the nudge decide.
                 tied = old[before[0]]["rerank_score"] == old[winner]["rerank_score"]
-                backend = "re-ranked"
+                backend = "%s+rerank" % EMBED.backend()[0]
             else:
                 # The deciding value is the fused score; a gap inside
                 # USAGE_SPAN is one the nudge may close.
                 tied = (old[before[0]]["score"] - old[winner]["score"]
                         < RETRIEVE.USAGE_SPAN)
-                backend = "fused"
+                backend = EMBED.backend()[0]
             expected = [winner, before[0]] if tied else before
             check(order == expected,
                   "on this machine's backend (%s), the two copies %s - so after "
