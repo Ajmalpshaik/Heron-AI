@@ -110,7 +110,52 @@ positive:
     expect: >
       changed 2, Part Type checked against Pipe Fittings and read back Elbow
 
+  # VERSION 5 (2026-11-20, row 5b-285) - changed counts only what was written.
+  - given: >
+      a new family from the metric Generic Model template after "Work
+      Plane-Based=yes; Always Vertical=no" was kept; settings "Work
+      Plane-Based=no; Always Vertical=yes"
+    expect: >
+      changed plus alreadySet is 2, never 3. If Revit turns Always Vertical on
+      by itself when Work Plane-Based goes off: "1 setting(s) changed and 1
+      already as asked", settingReport "Work Plane-Based Yes -> No; Always
+      Vertical No -> Yes (Revit's own change)" and a finding saying Always
+      Vertical already read as asked when its turn came. If it does not:
+      "2 setting(s) changed and 0 already as asked" with no tag. RECORD which
+      (NEEDS-CHECKING BS2), and Family Category and Parameters LOOKED AT
+
+  # VERSION 5, row 5b-437 - the OmniClass read-back is before Revit commits.
+  - given: >
+      a new family from the metric Pipe Accessory template; settings
+      "OmniClass Number=23.65.55.14.14"; kept, the family saved, then
+      REPORT_FAMILY_TEMPLATE run
+    expect: >
+      a finding saying the OmniClass Number was read back before Revit
+      commits the change and is trusted once REPORT_FAMILY_TEMPLATE still
+      reads it after the family is saved; that report's settings then read
+      OmniClass Number 23.65.55.14.14
+
+  # VERSION 5, row 5b-304's defect - the family named by the window's title.
+  - given: a new family from the metric Generic Model template, never saved; settings "Shared=yes"
+    expect: >
+      the closing finding reads 'on the family "Family1"' - the title on the
+      Family Editor's tab - never 'on the family ""'
+
 negative:
+  # VERSION 5 (row 5b-285).
+  - given: the call "Work Plane-Based=no; Always Vertical=yes" above, run again
+    expect: >
+      changed 0 and alreadySet 2 - "Every setting named already read as
+      asked." - nothing counted as changed and no "(Revit's own change)" row
+
+  - given: >
+      a new family from the metric Generic Model template; settings
+      "Shared=yes"
+    expect: >
+      changed 1, "Shared No -> Yes" with NO "(Revit's own change)" tag and no
+      finding about Revit's own change - a setting Heron wrote is never put
+      down to Revit
+
   - given: settings "Work Plane-Based=maybe"
     expect: refused - neither yes nor no - and nothing changed
 

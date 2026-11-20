@@ -70,7 +70,24 @@ positive:
       handle point)" - no value for it - and the finding naming 1 shape
       handle point not read; points 1 to 4 as above
 
+  # VERSION 5 (row 5b-304) - a family never saved is named by its Title.
+  - given: >
+      a new family from the metric Detail Item template, never saved - the
+      Family Editor's tab reads Family1 (or the next free number)
+    expect: >
+      templateReport beginning `Family "Family1"` and the first finding
+      `"Family1" is a ...` - the document's Title, with no ".rfa" - never
+      `Family ""` or `"" is a ...`
+
 negative:
+  # VERSION 5 (row 5b-304). A family with a name of its own keeps it.
+  - given: >
+      the same family saved as Heron Name Test.rfa, closed and opened again
+    expect: >
+      `Family "Heron Name Test"` and `"Heron Name Test" is a ...` - the name
+      without ".rfa", never `Family ""`, never "Family1", and never
+      "Heron Name Test.rfa"
+
   - given: >
       a new family from the plain metric Generic Model template - not hosted
     expect: >

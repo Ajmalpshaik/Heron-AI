@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `uidoc`, `form`, `count` and `step` are in
-// scope; leaves `arrayId`, `members`, `labelled`, `notAFamily`, `refused` and
-// `findings` behind.
+// scope; leaves `arrayId`, `members`, `memberForms`, `labelled`, `notAFamily`,
+// `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -9,9 +9,10 @@
 // the Family Editor: the Family Editor's Array, with its count LABELLED to an
 // Integer family parameter when the types must choose how many.
 //
-// ONE FORM PER ARRAY. Arraying several elements at once makes each member a
-// group, and a member that is a group is named by the group and not by the form
-// in it; a second form takes a second call, and both may follow one count.
+// ONE FORM PER ARRAY - a second form takes a second call, and both may follow
+// one count. Every member becomes a model group, the original included, even
+// for ONE form (measured 2026-10-07, row 5b-358): `members` names the copies'
+// groups, and `memberForms` (version 5) the form inside each one.
 //
 // OR ONE NESTED FAMILY (version 2, 2026-10-07) - a coil spring's turns, a
 // rack's brackets: a family placed in this one, arrayed the same way. Measured
@@ -74,10 +75,33 @@
 // the same way for the original and every copy. Its row runs in its view's
 // plane: a step along the view's own direction is refused before anything is
 // made. Every other form and nested family takes exactly the path it took.
+//
+// A FORM ON A PLANE A PARAMETER MOVES (version 5, 2026-11-20, row 5b-1261) -
+// SAID IN FINDINGS, NEVER REFUSED. Measured 2026-10-20 on Revit 2020: forms
+// sketched on reference planes a labelled dimension moves were arrayed, every
+// arrayed form then read its work plane as "<not associated>", and at another
+// type the copies stayed at the old length or drifted - the modeller undid 15
+// steps. The trial row measures only the type in front, so it saw nothing. Two
+// signals are now read and said: BEFORE the array, the reference plane the
+// form's sketch plane lies on, when a labelled dimension names that plane -
+// though the plane a size is measured from is named by the same dimension and
+// does not move, which this cannot tell apart; AFTER it, each form in the row
+// whose work plane now reads as not associated where the original's named a
+// plane - whether a form on a plane no parameter moves reads that way too is
+// not known. Neither stops the array: both say flex it with FLEX_FAMILY, and
+// that a part a size stretches is arrayed as a nested family (the
+// family-creation method, step 10). A plane moved only through a chain of
+// locks or formulas is not seen.
+//
+// THE FORM IN EACH COPY (version 5, row 5b-358): `memberForms` gives, for each
+// group in `members` and in the same order, the unique id of the form inside it
+// - or of the nested family, for a row of one - so a later tool can be given
+// the form itself. The original keeps the id it was given by.
 
 var findings = new List<string>();
 var arrayId = "";
 var members = "";
+var memberForms = "";
 var labelled = false;
 var notAFamily = false;
 string refused = null;
@@ -262,6 +286,61 @@ Func<Element, List<string>> heldBy = e =>
     }
     return said;
 };
+
+// VERSION 5 (row 5b-1261): the reference plane a form's sketch plane lies on,
+// with the parameter of every LABELLED dimension that names that plane - or
+// null when it lies on none a label names. A reference plane lying where the
+// sketch plane does is the one it is on; one of the same name is taken first.
+// Which end of the dimension moves is not read, so this is said, never judged.
+Func<GenericForm, Tuple<ReferencePlane, List<string>>> labelledPlaneOf = f =>
+{
+    var sketchPlane = sketchPlaneOf(f);
+    if (sketchPlane == null) return null;
+    Plane on;
+    try { on = sketchPlane.GetPlane(); } catch (Exception) { return null; }
+    if (on == null) return null;
+    var onName = (sketchPlane.Name ?? "").Trim();
+    var lying = new FilteredElementCollector(doc).OfClass(typeof(ReferencePlane)).Cast<ReferencePlane>()
+        .Where(rp =>
+        {
+            try
+            {
+                var p = rp.GetPlane();
+                return Math.Abs(Math.Abs(p.Normal.DotProduct(on.Normal)) - 1) < 1e-6
+                    && Math.Abs((p.Origin - on.Origin).DotProduct(on.Normal)) < 0.01 / 304.8;
+            }
+            catch (Exception) { return false; }
+        })
+        .OrderBy(rp =>
+        {
+            var name = (rp.Name ?? "").Trim();
+            return name.Length > 0 && (string.Equals(name, onName, StringComparison.OrdinalIgnoreCase)
+                || onName.EndsWith(": " + name, StringComparison.OrdinalIgnoreCase)) ? 0 : 1;
+        })
+        .ToList();
+    if (lying.Count == 0) return null;
+    var dimensions = new FilteredElementCollector(doc).OfClass(typeof(Dimension)).Cast<Dimension>().ToList();
+    foreach (var rp in lying)
+    {
+        var labels = new List<string>();
+        foreach (var dimension in dimensions)
+        {
+            FamilyParameter label = null;
+            try { label = dimension.FamilyLabel; } catch (Exception) { label = null; }
+            if (label == null) continue;
+            ReferenceArray refs = null;
+            try { refs = dimension.References; } catch (Exception) { refs = null; }
+            if (refs == null) continue;
+            foreach (Reference r in refs)
+                if (r != null && r.ElementId == rp.Id) { labels.Add(label.Definition.Name); break; }
+        }
+        if (labels.Count > 0) return Tuple.Create(rp, labels.Distinct().OrderBy(x => x).ToList());
+    }
+    return null;
+};
+// A work plane Revit names in angle brackets - "<not associated>" - is its own
+// word for none; a plane's own name cannot hold one.
+Func<SketchPlane, bool> unnamedPlane = p => p != null && (p.Name ?? "").Trim().StartsWith("<");
 
 // The form, or the nested family, the row is made of.
 Element original = null;
@@ -577,6 +656,25 @@ if (refused == null)
     var translation = direction * (stepMm / 304.8);
     var spacingMm = toLast ? stepMm / (n - 1) : stepMm;
     var startAt = lowest(original, axis);
+    // VERSION 5 (row 5b-1261): what the form is sketched on, read BEFORE the
+    // array - said after it, never a reason to refuse, so a reading that fails
+    // stops nothing.
+    Tuple<ReferencePlane, List<string>> labelledPlane = null;
+    var labelledPlaneName = "";
+    var planeBeforeName = "";
+    if (originalForm != null)
+    {
+        try
+        {
+            labelledPlane = labelledPlaneOf(originalForm);
+            if (labelledPlane != null) labelledPlaneName = (labelledPlane.Item1.Name ?? "").Trim();
+            var planeBefore = sketchPlaneOf(originalForm);
+            planeBeforeName = planeBefore == null ? "" : (planeBefore.Name ?? "").Trim();
+        }
+        catch (Exception) { labelledPlane = null; planeBeforeName = ""; }
+    }
+    // Only a work plane that named a plane before can be said to be lost.
+    var planeBeforeNamed = planeBeforeName.Length > 0 && !planeBeforeName.StartsWith("<");
 
     LinearArray array;
     try
@@ -645,9 +743,19 @@ if (refused == null)
     arrayId = array.UniqueId;
     // IN ORDER ALONG THE ROW, nearest the original first - Revit hands the
     // copies back in no order, and the last one is the one a plane holds.
-    members = string.Join(",", copies
-        .OrderBy(c => ((lowest(c, axis) ?? 0) - (startAt ?? 0)) * Math.Sign(spacingMm))
-        .Select(c => c.UniqueId));
+    var ordered = copies
+        .OrderBy(c => ((lowest(c, axis) ?? 0) - (startAt ?? 0)) * Math.Sign(spacingMm)).ToList();
+    members = string.Join(",", ordered.Select(c => c.UniqueId));
+    // VERSION 5 (row 5b-358): the form - or the nested family - inside each
+    // copy's group, in the same order. A copy that is no group is its own.
+    var inside = ordered.Select(c =>
+    {
+        var group = c as Group;
+        if (group == null) return new List<Element> { c };
+        return group.GetMemberIds().Select(id => doc.GetElement(id))
+            .Where(e => e != null && (originalForm != null ? e is GenericForm : e is FamilyInstance)).ToList();
+    }).ToList();
+    memberForms = string.Join(",", inside.SelectMany(held => held).Select(e => e.UniqueId));
     labelled = driver != null;
 
     findings.Add("Arrayed the " + describe(original) + ": " + n + " in all, " + plain(spacingMm) + " mm apart along "
@@ -664,9 +772,48 @@ if (refused == null)
             + "shows it in this family.");
     if (originalForm != null && !originalForm.IsSolid)
         findings.Add("The copies are voids, and cut nothing until COMBINE_FAMILY_FORMS combines each with its solid - "
-            + "their ids are in `members`.");
+            + "each copy's group id is in `members`, and the void inside it in `memberForms`.");
     if (labelled)
         findings.Add("When a type's count changes, Revit remakes the copies, and their ids change with it.");
+    if (inside.Any(held => held.Count != 1))
+        findings.Add("Not every copy holds exactly one " + (originalForm != null ? "form" : "nested family")
+            + ": `memberForms` lists the " + inside.Sum(held => held.Count) + " found in the " + ordered.Count
+            + " copies, so it does not pair with `members` one to one.");
+
+    // VERSION 5 (row 5b-1261): a plane a parameter may move, and work planes
+    // lost in the array - said, never refused.
+    var stretchWay = " A part in a row that a size stretches is arrayed as a nested family instead - the "
+        + "family-creation method, step 10.";
+    if (labelledPlane != null)
+        findings.Add("The " + describe(original) + " is sketched on the reference plane \"" + labelledPlaneName
+            + "\", which the dimension" + (labelledPlane.Item2.Count == 1 ? "" : "s") + " labelled \""
+            + string.Join("\", \"", labelledPlane.Item2) + "\" name" + (labelledPlane.Item2.Count == 1 ? "s" : "")
+            + " - a parameter may move it, and the row was made and read at this type only. On Revit 2020, forms "
+            + "sketched on planes a parameter moves were arrayed, and at another type the copies stayed at the old "
+            + "length or drifted (row 5b-1261). Flex the family with FLEX_FAMILY through its types' sizes before "
+            + "going on. If \"" + labelledPlaneName + "\" is the plane that size is measured from - a centre plane - "
+            + "it does not move, and this does not apply." + stretchWay);
+    if (originalForm != null && planeBeforeNamed)
+    {
+        try
+        {
+            var rowForms = new List<GenericForm> { originalForm }
+                .Concat(inside.SelectMany(held => held).OfType<GenericForm>()).ToList();
+            var lost = rowForms.Select(f => sketchPlaneOf(f)).Where(p => unnamedPlane(p)).ToList();
+            if (lost.Count > 0)
+                findings.Add("After the array, " + lost.Count + " of the " + rowForms.Count + " forms in the row read "
+                    + "their work plane as \"" + (lost[0].Name ?? "").Trim() + "\", where the original was sketched on \""
+                    + planeBeforeName + "\". That was seen before an array broke at another size: on Revit 2020 every "
+                    + "arrayed form read its work plane that way, and at another type the copies stayed at the old "
+                    + "length or drifted (row 5b-1261). Flex the family with FLEX_FAMILY through its types' sizes "
+                    + "before going on." + (labelledPlane == null ? stretchWay : ""));
+        }
+        catch (Exception)
+        {
+            findings.Add("The work planes of the forms in the row could not be read after the array, so whether any "
+                + "lost its plane is not known. Flex the family with FLEX_FAMILY before going on.");
+        }
+    }
 }
 
 if (refused != null) findings.Add(refused);

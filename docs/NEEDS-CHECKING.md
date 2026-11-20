@@ -1614,6 +1614,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-os.md`](needs-checking/group-os.md)
 
+## Group OT - thirteen family-editor tools repaired from issues #944, #945, #1029 and #1051, and five measurements the rows still owe - DRAFT until proved (2026-11-20)
+
+**Its own file:** [`needs-checking/group-ot.md`](needs-checking/group-ot.md)
+
 ## Group OU - model tools fixed on 2026-11-20 for issues #946-#950, #1005 and two rows of that day's Revit runs: links, shared parameter names, floors, doors, roofs, parts, loads, rooms and a level's rename - DRAFT until proved (2026-11-20)
 
 **Its own file:** [`needs-checking/group-ou.md`](needs-checking/group-ou.md)
