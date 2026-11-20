@@ -679,6 +679,18 @@ namespace Heron.Revit.Addin
             var sendsOut = string.Equals(Json.ReadString(request, "op"), "run_fragment_publish",
                                          StringComparison.Ordinal);
 
+            // AND WHAT A ROLLBACK CANNOT TAKE BACK, for the verdict (FRAGMENT-ISSUES
+            // row 5b-1594, the owner's "yes" on 2026-11-19): a Publish job's
+            // outward work, an Admin job's documents, and whatever a job that runs
+            // with no transaction open did - none of it is inside the group. Null
+            // when everything the job did is the group's to roll back.
+            var outsideTheGroup = sendsOut ? "a Publish job"
+                : string.Equals(Json.ReadString(request, "op"), "run_fragment_admin",
+                                StringComparison.Ordinal) ? "an Admin job"
+                : wantsNoTransaction ? "a job that runs with no transaction open "
+                                       + "(" + NoTransactionNeed + ")"
+                : null;
+
             // A keep from a chat that Revit counted no change in is kept without
             // the box, and the verdict says so (D-126). And whether the
             // modeller's own selection is as they left it after a Discard.
@@ -1212,7 +1224,8 @@ namespace Heron.Revit.Addin
             var verdict = WithVerdict(answer, apply, name, rolledBack, keptNote, said,
                                       nothingToAsk,
                                       answered != null && answered != Keep && answered != RestOfJob,
-                                      selectionRestored, keptUnderGrant, keptNothing, described);
+                                      selectionRestored, keptUnderGrant, keptNothing, described,
+                                      outsideTheGroup);
 
             // D-157: WHETHER HERON CAN STILL UNDO WHAT IT JUST KEPT, as the
             // guard holds it now - a field, for the chat's one line.
@@ -2334,8 +2347,12 @@ namespace Heron.Revit.Addin
             // byte for byte what it is: every proof record carries that shape
             // and heron_validate._as_count reads it as a quantity. So the
             // entries travel in a field of their own - EVERY entry of each,
-            // "key": "value", each side cut as a list item is - and
-            // the server prints them under the count. Measured 2026-10-22 on
+            // "key": "value", each side WHOLE to WholeTextLimit characters, as
+            // a list's items are below - and the server prints them under the
+            // count. Each side was cut at 60 characters, as a summary's sample
+            // is, until 2026-11-20 (FRAGMENT-ISSUES row 5b-194, the owner's
+            // delegation): DESCRIBE_ELEMENTS writes "Category | Family : Type |
+            // id N" and the cut took the id, the one part a modeller asks for. Measured 2026-10-22 on
             // Revit 2020 (session 78736): READ_ELEMENT_PARAMETERS asked for
             // one parameter on four connectors answered `values 4 entry(ies)`
             // and `resolvedFrom 4 entry(ies)`, and not one value reached the
@@ -2371,12 +2388,12 @@ namespace Heron.Revit.Addin
                     var keys = new HashSet<string>();
                     foreach (DictionaryEntry pair in dictionary)
                     {
-                        var key = ShortName(pair.Key);
+                        var key = Named(pair.Key, WholeTextLimit);
                         if (!keys.Add(key)) continue;
                         var held = pair.Value;
                         var shown = held is IDictionary || (held is ICollection && !(held is string))
                             ? Describe(held)
-                            : ShortName(held);
+                            : Named(held, WholeTextLimit);
                         rows.Add(Json.Str(key, shown));
                     }
                     if (rows.Count > 0)
@@ -2402,7 +2419,6 @@ namespace Heron.Revit.Addin
             // list of elements, or any list of ids, is a quantity, and sending
             // every name would carry the model in bulk (D-26).
             const int itemsSentPerList = 100;
-            const int itemTextLimit = 2000;
             var itemLists = new List<string>();
             foreach (var variable in state)
             {
@@ -2443,7 +2459,7 @@ namespace Heron.Revit.Addin
                         if (text.Length > 60) hidden = true;
                         if (rows.Count < itemsSentPerList)
                             rows.Add(Json.Str((rows.Count + 1).ToString(System.Globalization.CultureInfo.InvariantCulture),
-                                text.Length > itemTextLimit ? text.Substring(0, itemTextLimit) + "..." : text));
+                                text.Length > WholeTextLimit ? text.Substring(0, WholeTextLimit) + "..." : text));
                     }
                     if (allText && hidden && rows.Count > 0)
                         itemLists.Add("\"" + variable.Name + "\":" + Json.Obj(rows.ToArray()));
@@ -3459,7 +3475,8 @@ namespace Heron.Revit.Addin
                                           bool nothingToAsk, bool discardedByModeller,
                                           bool selectionRestored, string keptUnderGrant,
                                           bool keptNothing,
-                                          HeronChangeReport.Described changed)
+                                          HeronChangeReport.Described changed,
+                                          string outsideTheGroup)
         {
             if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
                 return answer;
@@ -3601,6 +3618,29 @@ namespace Heron.Revit.Addin
                 verdict = NothingChangedSentence(name);
                 kind = "unchanged";
             }
+            else if (held && outsideTheGroup != null)
+            {
+                // ROW 5b-1594 (the owner's "yes", 2026-11-19): NOT "NOTHING WAS
+                // KEPT" OF WORK A ROLLBACK CANNOT RETURN. A Publish, an Admin or
+                // a no-transaction job sent without apply - how a proof of one is
+                // taken (D-55) - did part of its work outside the group: a file
+                // exported, a document saved, opened or closed, a view or window
+                // changed. The rollback held for what was inside it, so the
+                // group's facts stand (`rolledBack` true, kind "rolledBack"), and
+                // `outsideStands` beside them says the rest. "Send it again with
+                // apply" is not said: it would do the outside part twice.
+                verdict = "A ROLLBACK CANNOT TAKE ALL OF THIS BACK. '" + name + "' ran for "
+                        + "real as " + outsideTheGroup + ", and Revit reported the transaction "
+                        + "group rolled back afterwards"
+                        + (rolledBack.Checked > 0 ? ", and " + rolledBack.NoneStanding() : "")
+                        + (rolledBack.ChangedChecked > 0 ? ", and " + rolledBack.ChangedReturned() : "")
+                        + " - but that takes back only what it changed inside the model. What it "
+                        + "did outside the group - a file written, a document saved, opened or "
+                        + "closed, a view or window changed - STILL STANDS, and no undo takes it "
+                        + "back. The counts above are what it actually did. Do not send it again "
+                        + "with apply to keep it: that would do the outside part a second time.";
+                kind = "rolledBack";
+            }
             else if (held)
             {
                 verdict = "NOTHING WAS KEPT. '" + name + "' ran for real and Revit reported the "
@@ -3722,6 +3762,10 @@ namespace Heron.Revit.Addin
                  + "," + Json.Bool("applied", applied)
                  + "," + Json.Bool("rolledBack", held)
                  + "," + Json.Bool("rollbackReported", rolledBack != null && rolledBack.Reported)
+                 // ROW 5b-1594: work outside the group stands - true only when it
+                 // was rolled back as `held && outsideTheGroup` says above.
+                 + "," + Json.Bool("outsideStands", !applied && held && outsideTheGroup != null
+                                                    && !discardedByModeller && !keptNothing)
                  + check
                  + "," + Json.Num("warnings", said == null ? 0 : said.DismissedCount)
                  + "," + Json.Arr("warningsDismissed", listed)
@@ -8055,7 +8099,30 @@ namespace Heron.Revit.Addin
             return value.GetType().Name;
         }
 
+        /// <summary>
+        /// One item of a summary's sample - "N item(s) [a, b, c, ...]" -
+        /// cut at 60 characters. The summary is the shape every proof record
+        /// carries and heron_validate reads, so this stays as it is; what the
+        /// chat is shown whole travels beside it, through Named.
+        /// </summary>
         private static string ShortName(object item)
+        {
+            return Named(item, 60);
+        }
+
+        /// <summary>
+        /// How much of one text the reply carries WHOLE beside a summary - a
+        /// list's items (`providesItems`, row 5b-1467) and a dictionary's keys
+        /// and values (`providesEntries`, row 5b-194). Past it a text is cut
+        /// and ends "...", so one runaway value cannot flood a reply.
+        /// </summary>
+        private const int WholeTextLimit = 2000;
+
+        /// <summary>
+        /// One item as text: an element by its name, anything else as it
+        /// prints, cut past `limit` characters with "...".
+        /// </summary>
+        private static string Named(object item, int limit)
         {
             if (item == null) return "(null)";
 
@@ -8069,7 +8136,7 @@ namespace Heron.Revit.Addin
 
             var text = Convert.ToString(item, System.Globalization.CultureInfo.InvariantCulture);
             if (text == null) return "(null)";
-            return text.Length > 60 ? text.Substring(0, 60) + "..." : text;
+            return text.Length > limit ? text.Substring(0, limit) + "..." : text;
         }
 
         /// <summary>

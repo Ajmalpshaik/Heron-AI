@@ -200,8 +200,16 @@ namespace Heron.BindingNote.TestHost
                   "and so is one marked optional: false");
             Check(HeronBindingNote.DeclaredAbsent("true", null) == null,
                   "an optional need with no absent: is AbsentValue's to decide, as before");
-            Check(HeronBindingNote.DeclaredAbsent("true", "   ") == null,
-                  "and a blank absent: says nothing, so it is not an empty default");
+            // Row 5b-1841, the owner's answer A (2026-11-20): an EMPTY
+            // `absent: ""` is the empty text, bound as if "" were typed - it
+            // returned null until then, and the seven cards that write it
+            // were refused for the value they say may be left out.
+            Check(HeronBindingNote.DeclaredAbsent("true", "") == "",
+                  "an optional need whose card says absent: \"\" is read as the empty text (row 5b-1841)");
+            Check(HeronBindingNote.DeclaredAbsent("true", "   ") == "",
+                  "and a blank absent: is the empty text too, once trimmed");
+            Check(HeronBindingNote.DeclaredAbsent(null, "") == null,
+                  "an empty absent: on a need NOT marked optional is still ignored");
 
             // FRAGMENT-ISSUES row 5b-322: WHAT AN UNFILLED ELEMENT LIST BINDS.
             // A card that says nothing selected is a fine answer gets an empty

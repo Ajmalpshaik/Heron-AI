@@ -286,8 +286,9 @@ def change_lines(runs):
           "a witnessed change names at most %d categories and counts the rest: %s"
           % (runs.CATEGORIES_SHOWN, said[:1]))
     check(said[-1] == "  record:  heron_run_record run=wf-20261009-133432-0042-a1b2 "
-                      "(every id and value)",
-          "and points to the record that holds every id")
+                      "(every id it changed, and each value as the add-in sent it)",
+          "and points to the record that holds every id - and says each value is there "
+          "as the add-in sent it, never \"every value\" (row 5b-194)")
     check(not any(line.startswith("  setup:") for line in said),
           "a setup that changed nothing gets no line")
 
