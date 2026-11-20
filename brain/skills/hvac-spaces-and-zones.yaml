@@ -120,9 +120,11 @@ purpose: >
      not placed, or that is not enclosed, is passed over with no line. Only
      the number and the name come across: a new space's top is Revit's own
      default, which is why step 5 follows.
-     READ THE ANSWER OUT: `created`, `renamed`, alreadyMatching, notPlaced
-     with each reason, and `report`, room by room. A LINE THAT SAYS A SPACE
-     READS BACK WITH NO AREA STOPS THE JOB HERE: that space is in the model
+     READ THE ANSWER OUT: `created`, `noArea`, `renamed`, alreadyMatching,
+     notPlaced with each reason, and `report`, room by room. Since version 2
+     of the card (row 5b-1125) a space made with no area is in `noArea`, NOT
+     in `created`. A LINE THAT SAYS A SPACE READS BACK WITH NO AREA - or any
+     id in `noArea` - STOPS THE JOB HERE: that space is in the model
      and bounded by nothing. Say so, take the call back with Revit's Undo -
      one entry - and go back to step 3 and to what the link shows before
      trying again. No zone is made on spaces with no area.

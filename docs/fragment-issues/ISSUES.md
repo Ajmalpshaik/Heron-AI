@@ -547,6 +547,9 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1865](row-5b-1865.md) | [#1082](https://github.com/Ajmalpshaik/Heron-AI/issues/1082) | Code fix | The add-in's ManyByCategory drops a category's elements without a word on a fault |
 | [row 5b-1866](row-5b-1866.md) | [#1083](https://github.com/Ajmalpshaik/Heron-AI/issues/1083) | Code fix | More than a hundred tool cards name the card-making agent as their own |
 | [row 5b-1868](row-5b-1868.md) | [#1081](https://github.com/Ajmalpshaik/Heron-AI/issues/1081) | Code fix | A full split-register run refuses while ISSUES.md sits in the register's folder |
+| [row 5b-1872](row-5b-1872.md) | [#1078](https://github.com/Ajmalpshaik/Heron-AI/issues/1078) | Code fix | "which links are room bounding" still reaches the Room Bounding write, though the link list answers it |
+| [row 5b-1873](row-5b-1873.md) | [#1078](https://github.com/Ajmalpshaik/Heron-AI/issues/1078) | Code fix | On lexical, three Object Styles questions still reach writes, though List Categories reads them |
+| [row 5b-1874](row-5b-1874.md) | [#1078](https://github.com/Ajmalpshaik/Heron-AI/issues/1078) | Code fix | "what letters does the revision numbering use" still reaches a write; List Revisions is the read |
 
 ## Found finished on 2026-11-16 - closed in the register, no issue
 
@@ -684,6 +687,7 @@ Each group's file starts with a line naming its issue. The checks still owed are
 | [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015) | Tidy-up: strike checks already done | [IZ](../needs-checking/group-iz.md), [NO](../needs-checking/group-no.md), [NQ](../needs-checking/group-nq.md) |
 | [#1036](https://github.com/Ajmalpshaik/Heron-AI/issues/1036) | Revit run: grids and levels against a link, the new QA reports and office checklists | [OJ](../needs-checking/group-oj.md) |
 | [#1059](https://github.com/Ajmalpshaik/Heron-AI/issues/1059) | Revit run: ASSIGN_LOCATION_DATA version 3 - room or space name and number, rooms in a link | [ON](../needs-checking/group-on.md) |
+| [#1077](https://github.com/Ajmalpshaik/Heron-AI/issues/1077) | Revit run: seven tools changed on the owner's answers of 2026-11-19/20 - tags, dashboard, links, spaces, Object Styles, revisions | [OQ](../needs-checking/group-oq.md) |
 
 ## Work-note items - [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) to [#1014](https://github.com/Ajmalpshaik/Heron-AI/issues/1014)
 

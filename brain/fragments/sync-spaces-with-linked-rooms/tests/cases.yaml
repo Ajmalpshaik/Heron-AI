@@ -11,7 +11,25 @@ positive:
       renamed 1 (the space over 102 now reads "Plant"), alreadyMatching 2,
       created 0
 
+  # VERSION 2 (2026-11-20) - row 5b-1125. NOT RUN. NEEDS-CHECKING Group OQ.
+  - given: >
+      the first case on a scratch copy, the link Room Bounding and the run
+      KEPT, then Revit's Space schedule read
+    expect: >
+      created 3, `noArea` EMPTY, no line saying NO AREA, and every space in
+      the schedule with an area. If one reads NO AREA here, the defect row
+      5b-1125 waits on stands even with the link bounding and kept
+
 negative:
+  # VERSION 2 - row 5b-1125. FAILS on version 1, which counted them in created.
+  - given: >
+      the same link with Room Bounding OFF, no walls in this model, no spaces
+      yet - so nothing bounds a space made here
+    expect: >
+      created EMPTY, `noArea` holding one space per placed room, each line
+      saying NO AREA, NOT counted as made, and that the link is NOT Room
+      Bounding. Version 1 answered created 2 on Project1 for two such spaces
+      and the run judged PASS
   - given: the first run again, straight after, updateNames false
     expect: >
       created 0, renamed 0, alreadyMatching 3 - nothing made twice
