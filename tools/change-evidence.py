@@ -116,6 +116,19 @@ RUNNABLE = {
 
 PASS, FAIL, NOT_RUN = "PASS", "FAIL", "NOT RUN"
 
+# HOW LONG A GATE MAY RUN, AND WHY check-gaps IS LONGER (row 5b-1822). Every
+# gate ran under one 1800-second cap, and check-gaps runs every suite: on
+# 2026-11-16 `--tests all` alone took about 40 minutes in a cloud container,
+# so `--gaps` recorded check-gaps as NOT RUN, timed out, for every change -
+# and check-change.py then ruled REVISE, "owed and not run". check-gaps bounds
+# each suite it runs itself (SUITE_TIMEOUT), so this cap is only the backstop
+# for a hang between suites: three hours, about four times that 40 minutes,
+# the same margin check-gaps gives its slowest suite.
+GATE_TIMEOUT = 1800
+GATE_TIMEOUTS = {
+    "check-gaps": 3 * 3600,
+}
+
 
 def w(s):
     sys.stdout.write(s.encode("ascii", "replace").decode("ascii"))
@@ -129,7 +142,7 @@ def w(s):
 TEXT = {"text": True, "encoding": "utf-8", "errors": "replace"}
 
 
-def run(cmd, timeout=1800):
+def run(cmd, timeout=GATE_TIMEOUT):
     try:
         out = subprocess.run(cmd, cwd=ROOT, capture_output=True,
                              timeout=timeout, **TEXT)
@@ -203,7 +216,7 @@ def gate_results(wanted):
                              "detail": "this tool cannot run it - record it "
                                        "with --stated if it ran elsewhere"}
             continue
-        code, tail = run(cmd)
+        code, tail = run(cmd, timeout=GATE_TIMEOUTS.get(name, GATE_TIMEOUT))
         # EXIT 3 IS "COULD NOT RUN" for a gate as for a suite (tests/README.md):
         # check-api-surface with no dotnet, check-fragments-compile with no SDK.
         results[name] = {

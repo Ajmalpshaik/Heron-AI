@@ -308,7 +308,7 @@ it (R-58) — and building them as three mechanisms produces three numbers that 
 
 ### J — What the field reading added, 2026-09-10
 
-**From** [`the field reading`](../../investigations/rag-state-of-the-art-2026-09-10.md) — LightRAG,
+**From** [the field reading, recorded in docs/34 §2.23](../../../34-patterns-adapted.md#223-built---a-chunk-carries-its-heading-path-read-off-the-document-and-a-rule-is-never-cut-from-its-exception) — LightRAG,
 RAGFlow, contextual retrieval, Docling, current chunking practice, CPU re-rankers and the embedded
 vector stores. **Re-authored, never imported** ([D-25](../../../DECISIONS.md)). Design in
 [`00-structure.md` §3.8](00-structure.md). **All five are chunker-time decisions**, which is why they

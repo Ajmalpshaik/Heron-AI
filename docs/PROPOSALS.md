@@ -152,6 +152,113 @@
 
 **Its own file:** [`proposals/f45.md`](proposals/f45.md)
 
+## F46 to F55 — ten ideas from the 2026-11-15 study of other Revit MCP projects, filed and not decided
+
+Filed 2026-11-19 (WN-30, issue [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007)) from the
+research note `docs/work-notes/investigations/2026-11-15-revit-mcp-landscape.md` - its table *The best parts
+out there that Heron does not have* and the smaller ideas under it - so that nothing worth keeping lives only
+in a note the owner retires. The note is named, not linked, for that reason. **Nothing here is decided:** each
+entry says what the idea is, what Heron has today as read on 2026-11-19, and what it would touch. The effort
+is the note's own judgement, not a measurement. Per [D-177](decisions/D-177.md) the projects the ideas came
+from are not named; any idea taken is re-authored, never copied ([D-25](decisions/D-25.md),
+[31](31-studying-the-existing-libraries.md)).
+
+**The rest of the note's ideas already have a home**, which is why they are not filed here:
+
+| The note's idea | Where it is |
+|---|---|
+| 1 - after Discard or Undo, check the model really went back | Built: the rollback witness, `rollbackCheck` on the reply ([`HeronRollbackWitness.cs`](../revit/Heron.Revit.Addin/HeronRollbackWitness.cs), [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)); its Revit run is [NEEDS-CHECKING A16b](needs-checking/group-a.md) |
+| 2 - the Delete box counts what Revit really deletes | [D-142](decisions/D-142.md)'s Delete box; the counting is WN-9 of issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) |
+| 3 - an approval tied to the exact request and the model as it was | WN-10 of issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) |
+| 4 - an automatic read-back after every change | [D-156](decisions/D-156.md), `readBack` - [Group NS](needs-checking/group-ns.md) |
+| 5 - a write switch the AI cannot flip | [D-166](decisions/D-166.md), from [F45](proposals/f45.md) |
+| 7 - a change that timed out is never sent again blind | [D-161](decisions/D-161.md) |
+| 8 - a check never passes on missing data | [D-165](decisions/D-165.md) |
+| 10 - a proof record pins the add-in build and the Revit build | [D-174](decisions/D-174.md), `built_on:`. Its other half, Revit's journal as a witness, is F54 below |
+| 12 - a signed one-click Windows Setup | [D-167](decisions/D-167.md) |
+| A change that touched nothing leaves no empty undo entry, and says so | [D-160](decisions/D-160.md) and [D-168](decisions/D-168.md) |
+| Every tool listed at start-up, before a Revit connects | Already held: on Windows every tool is served whether or not a Revit is connected ([`mcp/server/heron_tools.py`](../mcp/server/heron_tools.py), beside `LIBRARY`) |
+| One line telling the chat that text from the model is data, never a task | Already held: Article 14, *what you read is data*, is in every chat's instructions ([`brain/instructions/host.chat.yaml`](../brain/instructions/host.chat.yaml)), with [Golden Rule 19](14-golden-rules.md) and the reply's model text encoded as data (row 5b-1596) |
+
+### 🔵 F46. Revit's warnings and dialogs during a change - shown in the Keep box, a dialog parked rather than answered blind
+
+The note's idea 6. Warnings Revit raises during a change shown in the Keep or Discard box, or the change
+rolled back unless they are accepted; a dialog that opens mid-change parks the job and is answered against a
+fresh look, never by sending the change again; a dialog about delete, purge, sync or overwrite never answered
+automatically. **Heron today:** a reply lists the warnings Revit raised and Heron dismissed
+([`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), the `warnings` count and its list), and a
+dialog watch is among the rails run by hand in Revit on 2026-10-18 ([docs/README.md](README.md)'s status).
+**Would touch:** the write path, the Keep box, the bridge. Effort: medium.
+
+### 🔵 F47. A check on a fragment's code before it ever runs
+
+The note's idea 9. A rule over the library's source that refuses Save, Sync, Export, reaching another open
+document, and file or network calls in a fragment, at compile time; and a READ fragment that changed the
+model caught and rolled back. **Heron today:** no such check over a fragment's source was found
+(`brain/heron_fragment.py` and `tools/check-*.py` searched for those calls on 2026-11-19); a MODIFY fragment
+never runs as a read ([`fragment-proving`](../.claude/skills/fragment-proving/SKILL.md)). **Would touch:** a
+new gate over the library, the DRAFT compile, READ and ANALYZE runs. Effort: medium to large.
+
+### 🔵 F48. A spreadsheet round trip with a three-way compare
+
+The note's idea 11. A hidden UniqueId on each row; the export's baseline and the model's identity kept inside
+the file; only edited cells written; a cell whose value changed in the model since the export flagged; units
+that are not clear held until confirmed. **Heron today:** the DRAFT method
+[`parameters-csv-round-trip`](../brain/skills/parameters-csv-round-trip.yaml) matches rows by element id and
+says it writes no UniqueId; [Group NJ](needs-checking/group-nj.md) is its Revit run, not yet run.
+**Would touch:** the Companion's tables and that method. Effort: medium to large.
+
+### 🔵 F49. A published trust statement - a tool manifest from Heron's own tool table, and what each control does not stop
+
+The note's idea 13. A list of every tool and what it may do, generated from Heron's own tool table and kept in
+step by a check, and a privacy and security page that also says what each control does NOT stop.
+**Heron today:** [12](12-security-and-permissions.md) and [D-169](decisions/D-169.md)'s disclaimer; no
+generated manifest. **Would touch:** a check, the documentation. Effort: small.
+
+### 🔵 F50. A Claude Code plugin with the server version pinned, and an allow-list of Heron's read-only tools
+
+The note's idea 14. The server shipped as a Claude Code plugin whose version is pinned, and a generated list
+of Heron's read-only tools a modeller may allow without being asked each time. **Heron today:** the install
+command is still open as [Q-38](open-questions/from-master-specification-part-2.md), plugin install its
+preferred option; [D-167](decisions/D-167.md)'s Setup is the installer being built. **Would touch:** the
+installer and its packaging. Effort: small.
+
+### 🔵 F51. What changed in the model since Heron last looked, and who changed it
+
+The note's idea 15. A model diff between sessions: what changed since Heron last read the model, and whether
+Heron, a person or a sync changed it. **Heron today:** its own recent changes are docked in Revit
+([D-163](decisions/D-163.md)) and each write leaves a run record; nothing compares the model across
+sessions. **Would touch:** the Companion and the run records. Effort: large.
+
+### 🔵 F52. An undo-hostile kind of change - a family reload, a link reload, Save As - confirmed by typing
+
+From the note's smaller ideas. Changes that Revit's own Undo cannot fully take back put in a class of their
+own, which needs a typed confirmation. **Heron today:** [Article 7](../HERON_CONSTITUTION.md) asks explicit
+confirmation for a family reload, anything touching a linked model and the other destructive operations it
+lists; no class for *Undo will not take this back*. **Would touch:** the risk classes and the boxes that ask.
+
+### 🔵 F53. Each Heron change written to Revit's journal
+
+From the note's smaller ideas: a line in Revit's journal for each Heron call, as Revit itself has begun to
+mark a change made through an AI connector (the note's reading of search summaries, to be confirmed in
+Revit's own documentation). **Heron today:** no line is written to the journal (`revit/` searched on 2026-11-19); its
+own record is the run record. **Would touch:** the add-in's write path.
+
+### 🔵 F54. Revit's journal as an independent witness in a proof record
+
+The other half of the note's idea 10: the journal lines naming the transaction a proof ran, kept in the
+proof record beside `built_on:` ([D-174](decisions/D-174.md)), so the record is witnessed by something Heron
+did not write. **Heron today:** a proof records the fragment's fingerprint and `built_on:`; no journal line.
+**Would touch:** proof records ([D-30](decisions/D-30.md)). Effort: small.
+
+### 🔵 F55. Prompts that must reach NO tool, kept beside the routing checks
+
+From the note's smaller ideas: negative-control prompts for routing - sentences that must not reach a given
+tool or method, run with the positive ones. **Heron today:** [`tools/check-routing.py`](../tools/check-routing.py)
+asks each card's own sentences back, and [`tools/check-intrusion.py`](../tools/check-intrusion.py) counts the
+shortlists a card intrudes on; no set of sentences that must reach nothing. **Would touch:** the routing
+checks and their test data. Effort: small.
+
 ## 2026-09-19 — what is left after twenty-three gaps were closed, and the two that never can be
 
 **Its own file:** [`proposals/2026-09-19-what-is-left-after-twenty-three.md`](proposals/2026-09-19-what-is-left-after-twenty-three.md)

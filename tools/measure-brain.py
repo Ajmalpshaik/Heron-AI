@@ -124,7 +124,8 @@ would be used as though they were.
 THE STORE MUST HOLD THIS WORKING TREE, AND IT IS THE IDS THAT SAY SO
 --------------------------------------------------------------------
 Same rule and same reason as check-routing.py, which learned it the hard way:
-one store at %APPDATA%\\Heron\\knowledge serves every checkout on the machine,
+one store - %USERPROFILE%\\.heron\\knowledge since D-135, %APPDATA%\\Heron\\knowledge
+before - serves every checkout on the machine,
 so a COUNT can match while the store holds another session's library. Timings
 over the wrong library look completely normal. It is check-routing.py's guard
 that asks, store_for_this_tree() - the ids, every row's content, and never a

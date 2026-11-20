@@ -173,7 +173,10 @@ def main():
     for value, what in (("sk-" + "A1b2C3d4" * 3, "an API key prefix"),
                         ("ghp_" + "A1b2C3d4" * 3, "a forge token"),
                         ("github_pat_" + "x" * 20, "a fine-grained token"),
-                        ("xoxb-1-2-3", "a chat token"),
+                        # A token's length, as the redactor asks of one -
+                        # "xoxb-1-2-3" passed only the old six prefixes,
+                        # which read "xox" anywhere (row 5b-1138).
+                        ("xox" + "b-" + "1234567890-abcdef", "a chat token"),
                         # From pieces, like the four above, so the tree
                         # carries no literal of the shape (D-143).
                         ("-----BEGIN RSA " + "PRIVATE KEY-----",
@@ -201,6 +204,19 @@ def main():
           .get("refused") is None,
           "while an EMPTY value under a secret-named key is not a secret - "
           "there is nothing there to leak")
+
+    # ROW 5b-1138. ONE LIST SAYS WHAT A CREDENTIAL LOOKS LIKE - the
+    # redactor's, heron_secrets.PATTERNS. This file had six prefixes of its
+    # own, matched anywhere in the value: an ordinary word with `sk-` in it
+    # was refused as "an API key prefix", and a bearer header the redactor
+    # catches was accepted. Measured 2026-10-18 and again here.
+    for word in ("risk-assessment", "desk-top layout"):
+        answer = ask(settings(**{"ai-provider": word}))
+        check(answer.get("refused") != "SECRET_IN_CONFIGURATION",
+              "'%s' is a word, not a credential (%s)" % (word, answer.get("refused")))
+    answer = ask(settings(**{"ai-provider": "Bear" + "er " + "Ab1" * 12}))
+    check(answer.get("refused") == "SECRET_IN_CONFIGURATION",
+          "a bearer header is refused, as the redactor reads it (%s)" % answer.get("refused"))
 
     print()
     print("5b. A word that CONTAINS a secret word is not a secret")

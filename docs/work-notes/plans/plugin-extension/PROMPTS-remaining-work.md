@@ -103,8 +103,9 @@ Copy this block too. Each one cost real time.
 export HERON_KNOWLEDGE="$HOME/heron-kb" && mkdir -p "$HERON_KNOWLEDGE"
 ```
 
-You are a senior Revit add-in engineer working on Heron AI. Read `docs/NEEDS-CHECKING.md` — the last
-section, dated 2026-09-21, titled *"THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS"*. It
+You are a senior Revit add-in engineer working on Heron AI. Read `docs/needs-checking/group-ab.md` — the
+section dated 2026-09-21, titled *"THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS"* (the last
+section of `docs/NEEDS-CHECKING.md` when this was written; moved to Group AB's file on 2026-11-19). It
 records two things found but deliberately not fixed. Fix them.
 
 **[paste the rules block and the four traps block here]**

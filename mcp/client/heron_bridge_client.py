@@ -62,8 +62,8 @@ def local_app_data(environ=None, system=None):
     """
     The machine-local application-data folder, resolved the way .NET resolves
     Environment.SpecialFolder.LocalApplicationData - so that this file and
-    platform/Heron.Core/HeronPaths.cs, the two allowed to resolve a special
-    folder, name the SAME folder on every system.
+    platform/Heron.Core/HeronPaths.cs, two of the files allowed to resolve a
+    special folder, name the SAME folder on every system.
 
     On Windows: %LOCALAPPDATA%, and if it is somehow missing, the profile's
     AppData\\Local, which is where Windows keeps that folder.

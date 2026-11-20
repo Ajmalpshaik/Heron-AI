@@ -49,6 +49,11 @@ WHAT IT PROVES
      branches that both write row-5b-N.md collide in git before any suite
      runs: one name, two files.)
 
+  10. AND THE TOOL ITSELF SAYS SO IN ITS EXIT CODE (row 5b-1587). On a
+     scratch register with a row's file the reader refuses planted in it,
+     open-defects.py exits 2 and says nothing above is a count; on the same
+     register without it, 0. It used to exit 0 both times.
+
   A REGISTER THAT CANNOT BE READ FAILS HERE, IN A SENTENCE. Checks 5 to 7
   read the register as one text; when the reader refuses it - a row's own
   file that is not what its name says - this suite says so and names
@@ -158,6 +163,40 @@ def across_layouts():
         check(used_twice() == ["5b-4"],
               "as it names a number used twice in one rows file, which it always did: %s"
               % (", ".join(used_twice()) or "nothing repeated"))
+    finally:
+        OD.REGISTER = real
+        shutil.rmtree(top, ignore_errors=True)
+
+
+def could_not_look():
+    """Check 10. A register the reader refuses gives exit 2 and a line that
+    says nothing was counted; the same register, readable, gives 0."""
+    real, top = OD.REGISTER, tempfile.mkdtemp()
+    try:
+        OD.REGISTER = scratch_register(top, [1, 2], [3])
+        said = io.StringIO()
+        real_out, sys.stdout = sys.stdout, said
+        try:
+            code = OD.main()
+        finally:
+            sys.stdout = real_out
+        check(code == 0, "a register it read exits 0 (it exited %r)" % (code,))
+
+        # Planted the way row 5b-1587 found it: a copy beside a row's own
+        # file, named like one and not one.
+        folder = os.path.join(top, "docs", "fragment-issues")
+        shutil.copy(os.path.join(folder, "row-5b-3.md"), os.path.join(folder, "row-5b-3-copy.md"))
+        said = io.StringIO()
+        real_out, sys.stdout = sys.stdout, said
+        try:
+            code = OD.main()
+        finally:
+            sys.stdout = real_out
+        text = said.getvalue()
+        check("Could not read the register" in text, "a register it cannot read is named as such")
+        check(code == 2, "and it exits 2, could not look, not 0 (it exited %r)" % (code,))
+        check("NOT READ" in text and "TOTAL" not in text,
+              "and its last line says nothing above is a count, with no TOTAL line")
     finally:
         OD.REGISTER = real
         shutil.rmtree(top, ignore_errors=True)
@@ -296,7 +335,8 @@ def main():
     # (RegisterBroken), `OD.source()` is then None, and until 2026-11-12 the
     # next line called .index on it: this suite died with AttributeError and
     # named nothing. open-defects.py itself says "Could not read the
-    # register" and exits 0 (row 5b-1587), so this is where it turns red.
+    # register" and, since row 5b-1587, exits 2 (check 10); this suite turns
+    # red on it here.
     src = OD.source()
     if src is None:
         check(False, "the register could not be read, so checks 5 to 7 read nothing - "
@@ -322,6 +362,9 @@ def main():
           "a moved row's state does not begin with OPEN, so the open list leaves it out")
     check(bool(moved_word.match(state_of(moved_line))), "and the tool counts it as moved")
     check(not moved_word.match(state_of(open_line)), "an open row is not counted as moved")
+
+    print("\n10. a register it cannot read exits 2, not 0 (5b-1587)")
+    could_not_look()
 
     print()
     if FAILURES:

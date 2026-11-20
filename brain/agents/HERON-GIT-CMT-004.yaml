@@ -58,8 +58,8 @@ output:
   found:
     type: list
     description: >
-      On a refusal for a credential, what KIND was in the message. The
-      value never appears in any output of this agent.
+      On a refusal for a credential, what KIND was in the message or in a
+      staged file. The value never appears in any output of this agent.
   of:
     type: integer
     description: How many paths were read.
@@ -71,8 +71,8 @@ output:
     description: >
       Always non-empty. That the wording is not judged and why; that
       nothing measured whether these paths belong in one commit; what
-      the generated list was and where it came from; and that only the
-      file NAMES were checked - nothing here opened one.
+      the generated list was and where it came from; and that each staged
+      file was read for a credential and for nothing else (row 5b-1138).
 
 allowed-tools: []
 

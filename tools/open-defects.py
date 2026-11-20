@@ -12,7 +12,10 @@ How many of Heron's own defects are still open, and WHICH ones.
     python tools/open-defects.py            # the open ones, by id
     python tools/open-defects.py --all      # every row, with its state
 
-Always exits 0. This reports; it does not gate.
+Exits 0 when it read the register - this reports; it does not gate - and 2
+when it could not read the register at all, the code register-text.py and
+next-id.py give "could not look" (row 5b-1587: a report that found nothing
+and a report that could not look used to exit alike).
 
 WHY THIS EXISTS
 ---------------
@@ -295,7 +298,13 @@ def main():
         out("\n")
 
     if not seen:
-        return 0
+        # COULD NOT LOOK IS NOT "NOTHING TO REPORT" (row 5b-1587). With no
+        # section read there is no row, no id and no TOTAL line above, and an
+        # exit 0 told anything that runs this for its code that all was well.
+        out("NOT READ: the register could not be read, so nothing above is a "
+            "count.\nRun python tools/check-docs.py - it names the file that "
+            "is wrong.\n")
+        return 2
 
     # THE AGGREGATE, ON ITS OWN LINES AND NAMED SO IT CAN BE PARSED.
     # tools/balance-of-work.py reads this output with re.search, which takes

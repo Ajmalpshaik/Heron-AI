@@ -257,7 +257,7 @@ of it.
 
 #### And three more chunker-time decisions, added 2026-09-10
 
-All from [`the field reading`](../../investigations/rag-state-of-the-art-2026-09-10.md), all designed
+All from [the field reading, recorded in docs/34 §2.23](../../../34-patterns-adapted.md#223-built---a-chunk-carries-its-heading-path-read-off-the-document-and-a-rule-is-never-cut-from-its-exception), all designed
 in [`00-structure.md` §3.8](00-structure.md), and **all cheap here and expensive anywhere else.**
 
 | | Do | Test it with |
