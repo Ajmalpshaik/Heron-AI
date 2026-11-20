@@ -1630,6 +1630,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ow.md`](needs-checking/group-ow.md)
 
+## Group OX - a job that works only outside the model opens no transaction group in it (D-192): a new family from a chat, and an export of families - BUILT, NOT RUN IN REVIT (2026-11-20)
+
+**Its own file:** [`needs-checking/group-ox.md`](needs-checking/group-ox.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

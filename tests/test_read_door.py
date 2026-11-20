@@ -417,7 +417,10 @@ def disk_doors(text, cs):
     # declared - before the script runs.
     executor = read(FRAGMENT_CS)
     asked = executor.find("HeronSourceScan.OpensTransaction(source)")
-    gate = executor.find("opens != null && !ownsTransactions && (!writing || wantsNoTransaction)")
+    # D-192 added noGroupOpen to the same refusal - the one widening let here.
+    found = re.search(r"opens != null && !ownsTransactions && \(!writing \|\| wantsNoTransaction"
+                      r"(?: \|\| wantsNoGroup)?\)", executor)
+    gate = found.start() if found else -1
     first_run = executor.find("RunScript(script, globals, name, out state)")
     check(asked > 0 and gate > asked and first_run > gate,
           "RevitFragment reads the source for a transaction of its own and refuses it on "

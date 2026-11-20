@@ -14,7 +14,12 @@ capability: CREATE_FAMILY_DOCUMENT
 # DEPRECATED; see the merge block above `utterances`. Version 2's proof below
 # was kept as the record; it no longer described the code, so the card was
 # DRAFT at the time, until version 3 is proved on a real model (D-30).
-version: 3
+# VERSION 4 (2026-11-20, D-192, issue #1121): THE SAME CODE, AND THE SWITCH THAT
+# SAYS WHERE IT WORKS - `noGroupOpen`. Its C# did not move, so its proof stands,
+# as OPEN_VIEW's did when it took D-125's switch; the proof's positive case is
+# the branch that opens the family in a window in the same call, which is the
+# branch every run takes now. Not run in Revit since: NEEDS-CHECKING Group OX.
+version: 4
 source: OFFICIAL
 risk: ADMIN
 
@@ -44,9 +49,17 @@ purpose: >
   refused and left untouched, and the save itself is told never to overwrite,
   so a file that appears in between is still safe. No folder is created.
 
+  **SINCE VERSION 4 (D-192) HERON OPENS NO TRANSACTION GROUP IN THE MODEL IT
+  IS AIMED AT,** because nothing in that model changes - so the new family
+  opens in a window in this one call, the model in front or not. Heron counts
+  that model before and after, and refuses loudly if it moved. Not yet run in
+  Revit that way (NEEDS-CHECKING Group OX). Until then, and on an add-in built
+  before it, the paragraph below still describes what happens: the code checks
+  for itself and takes whichever branch is true.
+
   **WHEN HERON IS WORKING IN THE WINDOW IN FRONT, IT IS SAVED BUT NOT OPENED.**
   Revit opens no window while the active document is modifiable, and Heron's
-  own transaction makes it so. Measured 2026-10-06, Revit 2024: refused with
+  own transaction made it so before version 4. Measured 2026-10-06, Revit 2024: refused with
   "The active document is currently modifiable"; with only Heron's group open
   the window opened AND Revit threw an internal error; deferred to Revit's idle
   event it never fired. So the reply says so and gives `openNext`, the path
@@ -68,6 +81,11 @@ purpose: >
 
 contract:
   needs:
+    # D-192: run with no transaction group open in the model it is aimed at,
+    # which it changes nothing in. The add-in binds it true and runs this
+    # Admin job measured, with no Keep box - there is nothing there to keep.
+    - name: noGroupOpen
+      type: bool
     - name: app
       type: Application
     - name: uidoc

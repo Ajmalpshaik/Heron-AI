@@ -41,7 +41,7 @@ LOAD_FAMILY = os.path.join(ROOT, "brain", "fragments", "load-family")
 # The add-in's constants for the ambient needs it binds by name. `doc`, `uidoc`
 # and `app` are fields on the globals object and need no constant.
 CONSTANTS = ("EditScopeNeed", "FamilyLoadNeed", "NoTransactionNeed", "WaitsForModellerNeed",
-             "SaveWhenKeptNeed", "SaveOtherWhenKeptNeed")
+             "SaveWhenKeptNeed", "SaveOtherWhenKeptNeed", "NoGroupNeed")
 
 # Q-69 (2026-11-16): the card that asks the add-in for a save after the group.
 SAVE_DOCUMENT = os.path.join(ROOT, "brain", "fragments", "save-document")

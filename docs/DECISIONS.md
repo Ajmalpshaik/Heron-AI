@@ -259,6 +259,7 @@ an edit.
 | [D-188](#d-188--a-chat-the-claude-app-resumes-after-a-restart-is-the-same-conversation-to-revit-and-takes-back-its-own-model) | A chat the Claude app resumes after a restart is the same conversation to Revit, and takes back its own model | ✅ Accepted · 2026-11-20 |
 | [D-189](#d-189--a-development-session-never-pulls-into-the-main-heron-folder) | A development session never pulls into the main Heron folder | ✅ Accepted · 2026-11-20 |
 | [D-190](#d-190--the-readme-stops-asking-modellers-not-to-install-before-a-release-is-signed-and-says-plainly-the-build-is-unsigned-and-what-was-checked) | The README stops asking modellers not to install before a release is signed, and says plainly the build is unsigned and what was checked | ✅ Accepted · 2026-11-20 |
+| [D-192](#d-192--a-job-that-works-only-outside-the-model-it-is-aimed-at-declares-nogroupopen-and-an-admin-or-publish-job-then-opens-no-transaction-group-in-that-model) | A job that works only outside the model it is aimed at declares noGroupOpen, and an Admin or Publish job then opens no transaction group in that model | ⏳ Proposed · 2026-11-20 - **owner has not read this back** |
 
 ## Format
 
@@ -1712,3 +1713,12 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`README.md`](../README.md) - the notice becomes a short note and an Install section · [`docs/README.md`](README.md) · [`docs/guide/using-heron.md`](guide/using-heron.md) · [`WHAT-TO-INSTALL.md`](WHAT-TO-INSTALL.md) · D-173's index entry and record
 
 **Full record:** [`decisions/D-190.md`](decisions/D-190.md)
+
+## D-192 — A job that works only outside the model it is aimed at declares noGroupOpen, and an Admin or Publish job then opens no transaction group in that model
+
+**Status:** Proposed · **Date:** 2026-11-20 · **Taken by:** a cloud session overnight, on the owner's word of 2026-11-20 to keep working and fixing - for issues [#1121](https://github.com/Ajmalpshaik/Heron-AI/issues/1121) and [#941](https://github.com/Ajmalpshaik/Heron-AI/issues/941). **Not yet read by the owner:** his to accept, or to undo by taking the need off the two cards, which puts every run back as it was with no C# change.
+**Numbering:** D-192 is the id `tools/next-id.py` printed free on 2026-11-20, with `origin/main` at `dea262c6` ending at D-190 and D-191 held by pull request #1135.
+**Answers:** [D-125](decisions/D-125.md)'s question for a job that only makes a new document (row 5b-1912) · **Keeps:** D-125, D-112, Article 8, D-30, D-155 · **Leaves open:** row 99 and row 5b-1408, the owner's
+**Affects:** `RevitFragment.cs`, `HeronDialogNote.cs`, `heron_fragment.py`, `heron_failure.py`, `heron_bridge_client.py`, `check-revit-gate.py`, `create-family-document` (version 4), `export-families` (version 2)
+
+**Full record:** [`decisions/D-192.md`](decisions/D-192.md)

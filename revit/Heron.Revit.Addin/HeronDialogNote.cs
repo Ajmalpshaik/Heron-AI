@@ -272,6 +272,14 @@ namespace Heron.Revit.Addin
 
             /// <summary>Revit reported the group rolled back.</summary>
             RolledBack,
+            /// <summary>
+            /// D-192: an Admin or Publish job that works only outside the model
+            /// it was aimed at, run with no group open there. RevitFragment
+            /// counted that model before and after it and found it unchanged;
+            /// what the job did outside it before the dialog stands, and no
+            /// rollback takes it back.
+            /// </summary>
+            OutsideOnly,
 
             /// <summary>The rollback was asked for and Revit did not report it.</summary>
             RollbackUnconfirmed,
@@ -405,6 +413,12 @@ namespace Heron.Revit.Addin
                 case Outcome.RolledBack:
                     told += " The whole job was rolled back, so the model is exactly as it was.";
                     break;
+                case Outcome.OutsideOnly:
+                    told += " This job works only outside the model it was aimed at, and Heron "
+                          + "counted that model before and after it, so nothing in it was changed. "
+                          + "What it did outside the model before the dialog - a file written, a "
+                          + "document made or opened - stands.";
+                    break;
                 case Outcome.RollbackUnconfirmed:
                     told += " Heron asked Revit to roll the job back and Revit did not report that "
                           + "it had, so THE MODEL MAY STILL HOLD PART OF THIS CHANGE. Check it before "
@@ -424,7 +438,7 @@ namespace Heron.Revit.Addin
             // finds the codes the add-in can produce by reading Json.Error calls,
             // and holds mcp/server/heron_failure.py to every one.
             return outcome == Outcome.ReadOnly || outcome == Outcome.ReadUncounted
-                || outcome == Outcome.RolledBack
+                || outcome == Outcome.RolledBack || outcome == Outcome.OutsideOnly
                 ? Json.Error("dialog_refused", told)
                 : Json.Error("dialog_unconfirmed", told);
         }

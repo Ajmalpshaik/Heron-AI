@@ -315,7 +315,14 @@ def ask(fid, name, doc, raw, code):
     opens_own = code is not None and "new transaction(" in code.lower()
     edit_mode = "editScopeFailures" in names
     none_open = "noTransactionOpen" in names
-    if none_open and not opens_own:
+    no_group = "noGroupOpen" in names
+    if no_group and not opens_own:
+        say(BY_DESIGN,
+            "declares noGroupOpen - D-192: it works only outside the model it is "
+            "aimed at, so as an Admin or Publish job it runs with no transaction "
+            "group open there, measured before and after, and opens none of its "
+            "own")
+    elif none_open and not opens_own:
         say(BY_DESIGN,
             "declares noTransactionOpen - D-125: Revit refuses what it does "
             "inside a transaction, so it runs with none open on every path, "
