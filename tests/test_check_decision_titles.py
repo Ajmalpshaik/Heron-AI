@@ -26,11 +26,12 @@ WHAT IS PROVED
   4. THE WAY D-45 TO D-49 WERE LOST fails: two branches each write a number,
      and a merge keeps one side's log whole - so the lost side is found only by
      reading the history that was thrown away - whichever side wrote first;
-  5. a branch that renumbers its own decision after main took the number is
-     not failed against main's history, which is why CI passes --published
-     HEAD^1 - and what a branch shares with main is that history, where
-     HEAD^1 of a merge of main INTO the branch is not. A title main
-     published, changed on the branch, still fails against it;
+  5. a branch that renumbers its own decision after main took the number
+     FAILS its own pull request - CI's merge commit, read with --published
+     HEAD - until it carries the Numbering lines, and passes with them; once
+     merged, a later pull request stays green. Main's history alone, the
+     HEAD^1 CI read until issue #1056 (option 2, 2026-11-20), let it through
+     and turned every later pull request red;
   6. a decision record whose heading drifts from the log fails, and so does a
      record the log no longer holds;
   7. KNOWN can only shrink: an entry the history does not bear out, or one no
@@ -42,14 +43,14 @@ WHAT IS PROVED
      were first written under - and each FAILS the moment its line is taken
      away. A changed title in today's log fails;
  10. the real repository passes, where its history is whole - read against
-     what it shares with origin/main, as CI reads it, so a branch's own
-     renumbering is a draft here too;
+     HEAD, as CI reads it, so a branch's own renumbering counts here too;
  11. CI runs it, with the whole history fetched for it.
 """
 
 import importlib.util
 import io
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -183,16 +184,6 @@ def cli(repo, *args):
     return out.returncode, out.stdout.decode("utf-8", "replace")
 
 
-def published(repo, main="origin/main"):
-    """The history that counts as written, as CI's gates job reads it: what
-    HEAD shares with `main`. A branch's own commits are drafts - one that
-    renumbered its decision while open reads against them as a changed title
-    (section 5). Not HEAD^1, which is main only on CI's merge commit: a merge
-    of main INTO a branch has the branch first. On main itself, or with no
-    `main` to ask, it is HEAD, as before."""
-    return git(repo, "merge-base", "HEAD", main, may_fail=True) or "HEAD"
-
-
 LOG = "docs/DECISIONS.md"
 DAY = ["2026-08-%02dT12:00:00+00:00" % d for d in range(1, 31)]
 
@@ -307,7 +298,13 @@ def run(work):
           "and when main wrote the number first, the branch's decision is found lost too")
 
     print()
-    print("5. A branch that renumbers its own decision is judged against main, as CI does")
+    print("5. A branch that renumbers its own decision carries its Numbering lines before it merges (#1056)")
+    # Issue #1056, option 2, 2026-11-20. CI read main's history alone
+    # (HEAD^1), so a branch that renumbered its own decision passed - and once
+    # merged, main's history held both titles and EVERY later pull request
+    # failed on them (#871's D-167, D-168 and D-174). CI now reads HEAD, the
+    # pull request's merge commit: the branch that renumbers fails until it
+    # carries the lines, and main never goes red for it.
     repo = new_repo(work)
     commit(repo, DAY[0], {LOG: log_text([("D-01", "Alpha")])})
     git(repo, "checkout", "-q", "-b", "branch")
@@ -318,30 +315,50 @@ def run(work):
     git(repo, "merge", "-q", "-s", "ours", "--no-edit", "main", date=DAY[3])
     renumbered = [("D-01", "Alpha"), ("D-02", "Main's decision"), ("D-03", "The branch's decision")]
     commit(repo, DAY[4], {LOG: log_text(renumbered)})
-    report, why = audit(repo, "main")
-    check(report is not None and not report.failed,
-          "against main's history the renumbering is right, and passes (%s)" % (why or "clean"))
-    report, _ = audit(repo, "HEAD")
-    check(report is not None and report.failed,
-          "against the branch's own history its draft D-02 reads as a rewrite - why CI passes HEAD^1")
-    base = published(repo, "main")
-    report, _ = audit(repo, base)
-    check(base == git(repo, "rev-parse", "main") and report is not None and not report.failed,
-          "what the branch shares with main is main's tip, and passes - how section 10 reads this repository")
-    report, _ = audit(repo, "HEAD~1^1")
-    check(report is not None and report.failed,
-          "not HEAD^1 of the branch's merge of main: that parent is the branch's own side, and fails")
-    write(repo, LOG, log_text([("D-01", "Alpha, reworded")] + renumbered[1:]))
-    report, _ = audit(repo, base)
-    check(said(report, "D-01", '"Alpha"'), "and a title main published, changed on the branch, still fails")
-    write(repo, LOG, log_text(renumbered))
-    git(repo, "checkout", "-q", "main")
-    git(repo, "merge", "-q", "--no-ff", "--no-edit", "branch", date=DAY[5])
+
+    def pull_request():
+        """CI's checkout of the pull request: main with the branch merged in."""
+        git(repo, "checkout", "-q", "--detach", "main")
+        git(repo, "merge", "-q", "--no-ff", "--no-edit", "branch", date=DAY[5])
+        return git(repo, "rev-parse", "HEAD")
+
+    def ci_flag():
+        ci = io.open(os.path.join(ROOT, ".github", "workflows", "gates.yml"), encoding="utf-8").read()
+        found = re.search(r"check-decision-titles[.]py --published (\S+)", ci)
+        return found.group(1) if found else "HEAD"
+
+    merged = pull_request()
+    report, why = audit(repo, ci_flag())
+    check(report is not None and said(report, "D-02", "The branch's decision")
+          and said(report, "D-03", "D-02"),
+          "the pull request that renumbers without its Numbering lines FAILS, as CI reads it (%s)"
+          % (ci_flag() + ": " + (why or "; ".join(report.failed)[:160] if report else why or "")))
     report, _ = audit(repo, "HEAD^1")
     check(report is not None and not report.failed,
-          "and once merged, HEAD^1 - the base the merge went into - is main's history exactly")
-    check(published(repo, "main") == git(repo, "rev-parse", "HEAD") and published(repo, "nowhere") == "HEAD",
-          "on main itself, or with no main to ask, the history is HEAD's - as it always was")
+          "where main's history alone - the old HEAD^1 - passed it, and so let it through")
+    git(repo, "checkout", "-q", "branch")
+    lined = (log_text(renumbered)
+             .replace("## D-02 %s Main's decision" % DASH,
+                      "## D-02 %s Main's decision\n\n**Numbering:** the branch first wrote "
+                      "\"The branch's decision\" under this number." % DASH)
+             .replace("## D-03 %s The branch's decision" % DASH,
+                      "## D-03 %s The branch's decision\n\n**Numbering:** renumbered from D-02, "
+                      "because main had given D-02 to another decision first." % DASH))
+    commit(repo, DAY[6], {LOG: lined})
+    merged = pull_request()
+    report, why = audit(repo, ci_flag())
+    check(report is not None and not report.failed,
+          "with both lines on the branch, its pull request passes (%s)" % (why or "clean"))
+    git(repo, "checkout", "-q", "main")
+    git(repo, "merge", "-q", "--ff-only", merged)
+    commit(repo, DAY[7], {"other.txt": "a later pull request that touches no decision" + NL})
+    report, why = audit(repo, ci_flag())
+    check(report is not None and not report.failed,
+          "and once merged, a later pull request touching no decision stays green (%s)" % (why or "clean"))
+    write(repo, LOG, lined.replace("## D-01 %s Alpha" % DASH, "## D-01 %s Alpha, reworded" % DASH))
+    report, _ = audit(repo, ci_flag())
+    check(said(report, "D-01", '"Alpha"'), "and a title main published, changed later, still fails")
+    write(repo, LOG, lined)
 
     print()
     print("6. A decision record must open with the log's heading")
@@ -449,17 +466,18 @@ def run(work):
         print("  NOT RUN here - this clone is shallow, so its history is not whole. Section 9 ran")
         print("        today's log; the gates job runs this on the real history, fetched whole.")
     else:
-        base = published(ROOT)
-        out = subprocess.run([sys.executable, TOOL_PATH, "--published", base], capture_output=True)
-        check(out.returncode == 0, "check-decision-titles exits 0 on this repository, read against %s (exit %d)"
-              % ("HEAD - no origin/main to ask" if base == "HEAD" else base[:7], out.returncode))
+        # Against HEAD, as CI reads it since #1056: this branch's own history
+        # counts, so a renumbering it did without its lines fails here first.
+        out = subprocess.run([sys.executable, TOOL_PATH, "--published", "HEAD"], capture_output=True)
+        check(out.returncode == 0, "check-decision-titles exits 0 on this repository, read against HEAD (exit %d)"
+              % out.returncode)
 
     print()
     print("11. CI runs it, with the whole history fetched")
     ci = io.open(os.path.join(ROOT, ".github", "workflows", "gates.yml"), encoding="utf-8").read()
     job = ci[ci.index(NL + "  gates:"):ci.index(NL + "  compile:")]
-    check("python tools/check-decision-titles.py --published HEAD^1" in job,
-          "the gates job runs it against the base a pull request merges into")
+    check("python tools/check-decision-titles.py --published HEAD" + NL in job,
+          "the gates job runs it against the pull request's whole history - HEAD, never HEAD^1 (#1056)")
     check("fetch-depth: 0" in job, "and fetches the whole history first - a shallow checkout would be NOT RUN")
 
 

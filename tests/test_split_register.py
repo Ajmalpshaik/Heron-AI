@@ -702,6 +702,39 @@ def run(work):
     print("15. A row from the cut-over on has a file of its own")
     own_file_case(work)
 
+    print()
+    print("16. A full split re-bands a row past the last band with a file the register does not read beside it")
+    unread_file_case(work, original)
+
+
+def unread_file_case(work, original):
+    """Row 5b-1868. fragment-issues/ISSUES.md sits in the register's folder
+    and is not one of its files. The full split - the one that re-bands a
+    section 5 row appended past its last band - counted every .md in the
+    folder as the register's, so it refused: "the folder holds ISSUES.md,
+    which the new layout does not name"."""
+    root = make_root(work, original, "unread")
+    first = SPLIT.plan("fragment-issues", index_of(root), "2026-11-20", root)
+    check(SPLIT.write(first) == SPLIT.OK, "the register is split first")
+    folder = folder_of(root)
+    last = os.path.join(folder, "section-5-rows-026-050.md")
+    put(last, read(last) + "| **51** | **Appended past the last band.** Found 2026-11-20. | OPEN - new. |" + NL)
+    beside = os.path.join(folder, "ISSUES.md")
+    kept = "# Issues" + NL + NL + "Not one of the register's files." + NL
+    put(beside, kept)
+    p = SPLIT.plan("fragment-issues", index_of(root), "2026-11-20", root)
+    check(p.fatal is None and not p.problems,
+          "the full split plans clean beside a file the register does not read (%s)"
+          % (p.fatal or "; ".join(p.problems) or "clean"))
+    check("section-5-rows-051-075.md" in dict(p.banding).get(S5, []),
+          "and it is the split that re-bands row 51 (%s)" % dict(p.banding).get(S5))
+    check(SPLIT.write(p) == SPLIT.OK, "and writes")
+    band = os.path.join(folder, "section-5-rows-051-075.md")
+    check(os.path.exists(band) and "| **51** |" in read(band) and "| **51** |" not in read(last),
+          "row 51 is moved to its band")
+    check(read(beside) == kept, "and the file the register does not read is left exactly as it was")
+    check(whole(root).count("| **51** |") == 1, "and the register reads row 51 once, from its band")
+
 
 def four_digit_case(work):
     """Row 5b-1169. Rows 1001 to 1025 go to a file named with FOUR digits, and
