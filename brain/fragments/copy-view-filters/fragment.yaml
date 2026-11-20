@@ -58,9 +58,13 @@ contract:
       type: IList<View>
       source: request
     - name: onlyFilterNamed
+      # One filter, by its exact name. Left out, every filter on the source
+      # view is copied - the fragment copies all when this is empty (rows 101
+      # and 5b-227, 2026-11-20: optional with no absent was refused).
       type: string
       source: request
       optional: true
+      absent: ""
   provides:
     - name: viewsChanged
       role: result

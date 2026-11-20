@@ -16,7 +16,7 @@ What the plan taught - build the seam before the agent - is kept in `tools/new-a
 
 > Where this disagrees with [DECISIONS.md](../../DECISIONS.md), the
 > [Golden Rules](../../14-golden-rules.md) or the [Constitution](../../../HERON_CONSTITUTION.md),
-> **those win.** It continues [next-steps-2026-09-12](next-steps-2026-09-12.md) Track B item B4,
+> **those win.** It continues `next-steps-2026-09-12` (retired 2026-11-20) Track B item B4,
 > which said only *"keep building agents"* and left the order to whoever picked it up.
 
 ---

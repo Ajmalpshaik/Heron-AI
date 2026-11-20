@@ -62,10 +62,23 @@ namespace Heron.Bridge.TestHost
                     // it go as the job ends, as Execute does.
                     if (Json.ReadString(request, "op") == "test_awaiting_modeller")
                         return AwaitingModeller(request);
+                    // "test_big" stands in for a read whose answer is larger
+                    // than Heron passes back in one answer - row 5b-1167: it
+                    // answers `bytes` bytes of padding, with a run record named
+                    // when `run` is sent, and the bridge must refuse it whole.
+                    if (Json.ReadString(request, "op") == "test_big")
+                    {
+                        long bytes;
+                        long.TryParse(Json.ReadString(request, "bytes"), out bytes);
+                        var pad = new string('x', (int)Math.Max(0, Math.Min(bytes, 64L * 1024 * 1024)));
+                        var run = Json.ReadString(request, "run");
+                        return Json.Ok(Json.Str("pad", pad),
+                                       string.IsNullOrEmpty(run) ? null : Json.Str("run", run));
+                    }
                     if (Json.ReadString(request, "op") != "test_wait")
                         return Json.Error("unknown_op",
                             "No handler for that here. This host answers ping, info, test_wait, " +
-                            "test_model_in_use and test_awaiting_modeller.");
+                            "test_big, test_model_in_use and test_awaiting_modeller.");
                     int ms;
                     int.TryParse(Json.ReadString(request, "ms"), out ms);
                     Thread.Sleep(Math.Max(0, Math.Min(ms, 10000)));

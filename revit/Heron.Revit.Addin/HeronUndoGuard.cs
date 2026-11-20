@@ -172,12 +172,35 @@ namespace Heron.Revit.Addin
         private readonly Action<string> _log;
         private long _clock;
 
+        /// <summary>
+        /// WHERE A KEPT RUN'S UNDO AND REDO ARE TOLD - FRAGMENT-ISSUES 5b row
+        /// 1163. Called with the run's workflow id (Entry.Run), "undone" or
+        /// "redone", and the moment in UTC, when Revit is seen to undo the
+        /// entry a kept run left on top, or to redo it back on top. Null for
+        /// nowhere. Only the two moves this class is sure of are told: an
+        /// undo or redo it cannot tie to the run's own entry is Unsure, and
+        /// says nothing to the record. NEVER LETS AN EXCEPTION OUT - this runs
+        /// inside Revit's own DocumentChanged.
+        /// </summary>
+        internal Action<string, string, DateTime> RunMoved;
+
         internal HeronUndoGuard() : this(null) { }
 
         /// <param name="log">Where each transition is written, or null for nowhere.</param>
         internal HeronUndoGuard(Action<string> log)
         {
             _log = log;
+        }
+
+        private void TellRun(Entry entry, string what)
+        {
+            var told = RunMoved;
+            if (told == null || entry == null || string.IsNullOrEmpty(entry.Run)) return;
+            try { told(entry.Run, what, DateTime.UtcNow); }
+            catch (Exception ex)
+            {
+                if (_log != null) _log("Undo guard could not tell the run record: " + ex.Message);
+            }
         }
 
         /// <summary>Any model remembered - the listener's one cheap question on every edit.</summary>
@@ -334,6 +357,7 @@ namespace Heron.Revit.Addin
                         entry.State = Undone;
                         entry.Depth = 0;
                         entry.Redoable = true;
+                        TellRun(entry, "undone");
                     }
                     else
                     {
@@ -390,7 +414,11 @@ namespace Heron.Revit.Addin
                                   + "redo brought back";
                     }
                     else if (entry.Depth > 0) entry.Depth--;
-                    else if (Mine(names, entry.Label)) entry.State = OnTop;
+                    else if (Mine(names, entry.Label))
+                    {
+                        entry.State = OnTop;
+                        TellRun(entry, "redone");
+                    }
                     else
                     {
                         entry.State = Unsure;

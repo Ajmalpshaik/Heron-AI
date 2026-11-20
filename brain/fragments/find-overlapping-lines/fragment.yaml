@@ -7,7 +7,7 @@ heron-layer: brain
 id: FRG-QA-015
 semantic-identity: "find the lines drawn on top of each other"
 kind: filter
-domain: revit.quality
+domain: revit.qa
 capability: FIND_OVERLAPPING_LINES
 version: 1
 source: OFFICIAL

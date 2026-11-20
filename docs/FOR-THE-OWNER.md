@@ -188,8 +188,10 @@ clause number the plan has carried since the start.
 **A register row asks for it since 2026-11-19:** `OO1` in [Group OO](needs-checking/group-oo.md) of
 NEEDS-CHECKING, so `owner-queue.py` shows it under *ONE DOCUMENT* ([FRAGMENT-ISSUES row
 5b-1180](fragment-issues/section-5b-rows-1176-1200.md)). Until then it lived only in the plan
-[`work-notes/plans/next-steps-2026-09-12.md`](work-notes/plans/next-steps-2026-09-12.md) (A3, blocking
-its S-4 and W-7) — a work note, which §5 says is never the only home of an owner's item.
+`work-notes/plans/next-steps-2026-09-12.md` (A3, blocking its S-4 and W-7) — a work note, which §5 says
+is never the only home of an owner's item. That note was retired on 2026-11-20 (WN-22), and the GitHub
+issue that tracks the ask, [#1009](https://github.com/Ajmalpshaik/Heron-AI/issues/1009) (WN-38), now
+points at OO1.
 
 ---
 
