@@ -198,6 +198,13 @@ def warm():
 _PREPARING = threading.RLock()
 _STORE_WARM = [None]
 
+# SET BY THE WARM-UP THREAD ONCE IT HOLDS _PREPARING (row 5b-1522), so that
+# warm_store() returns only when a lookup arriving next is sure to wait.
+_STORE_HOLDING = threading.Event()
+
+#: How long warm_store() waits, at server start, for its thread to take the lock.
+STORE_HOLD_WAIT_S = 5
+
 #: How long the store warm-up waits for the encoder before going on without it.
 #: The encoder loads in about 1.5 s here; a minute means "something is wrong".
 ENCODER_WAIT_S = 60
@@ -362,21 +369,38 @@ def warm_store():
     except Exception:                                  # noqa: BLE001 - a head start, not a gate
         return
 
+    # THE LOCK IS HELD FROM BEFORE THE ENCODER WAIT, NOT FROM AFTER IT (row
+    # 5b-1522). Until 2026-11-19 it was taken only by the `_Open` below, so a
+    # first lookup that arrived while the encoder was still loading took the
+    # lock first and prepared the store itself - indexing with the fallback
+    # encoder, because heron_embed answers lexically on any thread but its own
+    # warm-up's - and then compared the trained encoder's question with those
+    # rows and called the answer "a trained model". Measured 2026-11-11: six
+    # fresh starts of seven ranked the runners-up as noise on the first lookup
+    # and properly on the second. Holding the lock across the wait makes that
+    # lookup wait, as the comment above _PREPARING always said it would - the
+    # lock is the wait; nothing new waits on a request thread.
     def run():
-        try:
-            import heron_embed as EMBED
-            EMBED.warmed(ENCODER_WAIT_S)
-        except Exception:                              # noqa: BLE001 - go on lexically
-            pass
-        try:
-            with _Open():
+        with _PREPARING:
+            _STORE_HOLDING.set()
+            try:
+                import heron_embed as EMBED
+                EMBED.warmed(ENCODER_WAIT_S)
+            except Exception:                          # noqa: BLE001 - go on lexically
                 pass
-        except Exception:                              # noqa: BLE001 - the first lookup says why
-            pass
+            try:
+                with _Open():
+                    pass
+            except Exception:                          # noqa: BLE001 - the first lookup says why
+                pass
 
     thread = threading.Thread(target=run, name="heron-store-warm", daemon=True)
     _STORE_WARM[0] = thread
     thread.start()
+    # AND THE SERVER STARTS SERVING ONLY ONCE THE THREAD HOLDS IT, so no lookup
+    # can slip in between the thread starting and the lock being taken.
+    # Bounded, and at start-up - never on a request.
+    _STORE_HOLDING.wait(STORE_HOLD_WAIT_S)
 
 
 # THE SOURCES ARE RECONCILED ONCE PER PROCESS, NOT ONCE PER REQUEST.

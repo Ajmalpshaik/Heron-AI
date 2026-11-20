@@ -324,6 +324,12 @@ def main():
           "and so it is not retried")
     check(analyse(None, writes=False).may_retry is True,
           "no reply to a READ is safe to ask again - it costs nothing")
+    # ROW 5b-1560: SAFE TO ASK AGAIN IS NOT "NEVER RAN". A request whose answer
+    # never came may have run, and revit_show's may have changed a selection.
+    lost_read = analyse(None, writes=False)
+    check(lost_read.outcome == fa.UNKNOWN and lost_read.touched_the_model is None,
+          "and it is filed as NOT KNOWN, never as never-ran: 'might it have changed?' "
+          "answers None - found %s, %r" % (lost_read.outcome, lost_read.touched_the_model))
 
     print()
     print("Still running is not failure, and asking again is the wrong move")
@@ -340,8 +346,16 @@ def main():
     check(novel.may_retry is False, "so it is not retried")
 
     novel_read = analyse(refusal("some_future_error"), writes=False)
-    check(novel_read.outcome == fa.REFUSED,
-          "the same code on a READ is only a refusal - no model to endanger")
+    # ROW 5b-1560: it was a refusal until 2026-11-19, which read as "nothing
+    # ran" - and `handler_failed` comes after the job may have run.
+    check(novel_read.outcome == fa.UNKNOWN and novel_read.touched_the_model is None,
+          "the same code on a READ is NOT KNOWN either, never a refusal - found %s"
+          % novel_read.outcome)
+    check(novel_read.may_retry is False and novel_read.next_step == fa.FIX_FIRST,
+          "and it is still not asked again unasked - what a read retries is unchanged")
+    handler = analyse(refusal("handler_failed"), writes=False)
+    check(handler.outcome == fa.UNKNOWN,
+          "handler_failed on a read - raised after the job may have run - is NOT KNOWN")
 
     print()
     print("Never ran means never ran - these are the only free retries")

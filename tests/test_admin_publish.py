@@ -647,6 +647,22 @@ def main():
               "`fragment %s --write` (%s) is sent as %s - sent %r"
               % (name, card_risk(name), want, bridge.sent))
 
+    # ROW 5b-1063: A PUBLISH RUN SENT WITHOUT --apply IS ROLLED BACK IN THE
+    # MODEL, AND ITS OUTWARD WORK STANDS. save-document closed a window and the
+    # only words under it were the add-in's "Send it again with apply to keep
+    # it". The fake answers every run rolled back, as that run was answered.
+    with fake_revit() as (bridge, asked, out):
+        CLIENT.cmd_fragment(publish_one, writing=True)
+    said = out.getvalue()
+    check("NOT TAKEN BACK" in said and "still stands" in said
+          and "do not send it again with --apply" in said,
+          "`fragment %s --write` rolled back says its outward work still stands and "
+          "not to send it again with --apply - printed %r" % (publish_one, said[-300:]))
+    with fake_revit() as (bridge, asked, out):
+        CLIENT.cmd_fragment(modify_one, writing=True)
+    check("NOT TAKEN BACK" not in out.getvalue(),
+          "and a MODIFY run rolled back is not told so: the rollback took all of it")
+
     with fake_revit() as (bridge, asked, out):
         code = CLIENT.cmd_fragment(read_one)
     check(code == 0 and bridge.sent == ["run_fragment_read"],

@@ -227,9 +227,29 @@ class _FakeServer(object):
         self.calls.append(("revit_read", capability, values, request))
         return "read"
 
-    def _through(self, tool, origin="chat"):
+    def _through(self, tool, reply_out=None, origin="chat"):
         self.calls.append(("origin", origin))
-        return tool
+
+        def body(*a, **k):
+            said = tool(*a, **k)
+            # THE BODY'S WORD, handed back as the real `_through` hands it
+            # (issue #1043) - what the stand-in door was told to say.
+            if reply_out is not None:
+                reply_out["ended"], reply_out["how"] = self.ended, self.how
+            return said
+        return body
+
+    # How the stand-in door says it ended: its label and its outcome word.
+    ended, how = "ok", "KEPT"
+
+    class core(object):
+        """The one function that sets the outcome line, as the real core's
+        `_said_outcome` does for a door: the second line, under the first."""
+        @staticmethod
+        def _said_outcome(tool, reply, label, how):
+            first, newline, rest = reply.partition("\n")
+            return first + "\n" + "outcome: %s - (%s)" % (how or "OUTCOME UNKNOWN", tool) \
+                + newline + rest
 
 
 def runner(home):
@@ -251,8 +271,19 @@ def runner(home):
     check(("revit_change", "CREATE_SECTION_VIEW", "levelName=Level 3\nprefix=SEC-",
            "Saved command 'Room Sections' from the Heron panel") in fake.calls,
           "ONE call to revit_change with the filled values")
-    check(said == "CREATE_SECTION_VIEW ran in Model." and fake.handed_back == 1,
+    check(said.split("\n")[0] == "CREATE_SECTION_VIEW ran in Model." and fake.handed_back == 1,
           "the answer is revit_change's own, and the models are handed back")
+    # ISSUE #1043: THE PANEL'S ANSWER CARRIES THE OUTCOME WORD, on the line a
+    # chat's carries it - the word the door's own body said, never a guess.
+    check(said.split("\n")[1:2] == ["outcome: KEPT - (revit_change)"],
+          "the panel's answer carries the door's outcome word on its second line - %r"
+          % said)
+    fake = _FakeServer(home)
+    fake.ended, fake.how = "refused", "NOTHING CHANGED"
+    said = RUN.run("Room Sections", "4242", {"level": "Level 3"}, server=fake)
+    check(said.split("\n")[1:2] == ["outcome: NOTHING CHANGED - (revit_change)"],
+          "a command that made nothing says NOTHING CHANGED on the panel, not KEPT - %r"
+          % said)
 
     gone = _FakeServer(home, live=())
     said = RUN.run("Room Sections", "4242", {}, server=gone)
