@@ -625,11 +625,6 @@ utterances:
   # indexed (row 5b-387's lesson). SELECT_BY_CATEGORIES answered it by ranking;
   # with that card retired, lexical sent it to CREATE_MEP_RUNS, a write.
   - all the ducts
-  # ADDED 2026-11-20, row 5b-1395 (GitHub issue #954). FILTER_ELEMENTS_BY_TYPE's
-  # routing table sends it here and nothing declared it, so without the
-  # host's question flag ranking took it to REMOVE_MEP_INSULATION and then
-  # SET_DUCT_LINING, both writes. "select all ducts" above is another key.
-  - select all the ducts
   # MOVED 2026-11-01 from SELECT_BY_LEVEL, merged into this card.
   - what is on level 2
   - select everything on this level
