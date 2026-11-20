@@ -809,8 +809,18 @@ if (refused == null)
     }
 
     settingReport = rows.Count == 0 ? "Every setting named already read as asked." : string.Join("; ", rows);
+    // VERSION 5 (row 5b-304's defect, found here 2026-11-20): the Family
+    // element's own name is empty in the Family Editor, so the family is named
+    // by the document's title, as REPORT_FAMILY_TEMPLATE now names it.
+    var familyWords = (family.Name ?? "").Trim();
+    if (familyWords.Length == 0)
+    {
+        familyWords = (doc.Title ?? "").Trim();
+        if (familyWords.EndsWith(".rfa", StringComparison.OrdinalIgnoreCase))
+            familyWords = familyWords.Substring(0, familyWords.Length - 4);
+    }
     findings.Add(changed + " setting(s) changed and " + alreadySet + " already as asked, on the family \""
-        + family.Name + "\" - read back: " + settingReport + ".");
+        + familyWords + "\" - read back: " + settingReport + ".");
     if (plans.Any(p => p.Item1.Item1 == "workplanebased" && p.Item2 == 1) && changed > 0)
         findings.Add("A Work Plane-Based family is placed on a plane or face and moves with it. Copies already "
             + "placed in a project or a family take it when this family is loaded there again.");
