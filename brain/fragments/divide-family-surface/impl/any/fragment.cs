@@ -23,8 +23,19 @@
 // chosen from the types Revit lists as valid for this surface.
 //
 // READ BACK, ALL OR NOTHING: the surface's host, each direction's layout,
-// number or distance and its gridline count, and its type are read again; one
-// that does not read as asked THROWS, and the host rolls the whole call back.
+// number or distance, and its type are read again; one that does not read as
+// asked THROWS, and the host rolls the whole call back.
+//
+// VERSION 2 (2026-11-20, row 5b-303): EACH RULE AS ASKED, AND REVIT'S GRIDLINE
+// COUNTS UNDER REVIT'S OWN NAMES - "U rule: Number 20; V rule: Number 4;
+// Revit counts 7 U-gridlines and 23 V-gridlines". Version 1 printed each count
+// beside a rule ("U number 20, 7 gridline(s)"), pairing USpacingRule with
+// NumberOfUGridlines; on a Revit 2024 mass each count moved with the OTHER
+// rule's value, so that pairing told the modeller something false. The rules
+// are still written uGrid to USpacingRule and vGrid to VSpacingRule, and read
+// back the same way. Which rule makes which gridlines, and whether Number
+// counts divisions or lines, is NEEDS-CHECKING BV21's to settle by eye; a
+// finding says so, and no count is paired with a rule until it is.
 
 var findings = new List<string>();
 var surfaceId = "";
@@ -227,33 +238,41 @@ if (refused == null)
     if (surface.Host == null || surface.Host.Id != host.Id)
         throw new InvalidOperationException("The divided surface does not read as hosted by the form named. The call "
             + "failed, and Heron rolls the whole call back.");
-    Func<SpacingRule, Tuple<bool, int, double>, string, int, string> readBack = (rule, asked, letter, lines) =>
+    // EACH RULE IN ITS OWN WORDS, WITH NO GRIDLINE COUNT BESIDE IT (version 2):
+    // which rule makes which of Revit's U- and V-gridlines is BV21's to settle.
+    Func<SpacingRule, Tuple<bool, int, double>, string, string> readBack = (rule, asked, letter) =>
     {
+        var reads = rule.Layout == SpacingRuleLayout.FixedNumber ? "Number " + rule.Number
+            : rule.Layout == SpacingRuleLayout.FixedDistance ? mm(rule.Distance) + " mm apart"
+            : rule.Layout.ToString();
         if (asked != null)
         {
             var right = asked.Item1
                 ? rule.Layout == SpacingRuleLayout.FixedNumber && rule.Number == asked.Item2
                 : rule.Layout == SpacingRuleLayout.FixedDistance && Math.Abs(rule.Distance - asked.Item3) < 0.5 / 304.8;
             if (!right)
-                throw new InvalidOperationException("The " + letter + " grid reads " + rule.Layout + ", not as asked. The "
-                    + "call failed, and Heron rolls the whole call back.");
+                throw new InvalidOperationException("The " + letter + " rule reads " + reads + ", not "
+                    + (asked.Item1 ? "Number " + asked.Item2 : mm(asked.Item3) + " mm apart") + " as asked. The call "
+                    + "failed, and Heron rolls the whole call back.");
         }
-        return letter + " " + (rule.Layout == SpacingRuleLayout.FixedNumber ? "number " + rule.Number
-            : rule.Layout == SpacingRuleLayout.FixedDistance ? mm(rule.Distance) + " mm apart"
-            : rule.Layout.ToString()) + ", " + lines + " gridline(s)";
+        return letter + " rule: " + reads;
     };
-    var uRow = readBack(surface.USpacingRule, uAsked, "U", surface.NumberOfUGridlines);
-    var vRow = readBack(surface.VSpacingRule, vAsked, "V", surface.NumberOfVGridlines);
+    var uRow = readBack(surface.USpacingRule, uAsked, "U");
+    var vRow = readBack(surface.VSpacingRule, vAsked, "V");
+    var countsRow = "Revit counts " + surface.NumberOfUGridlines + " U-gridlines and " + surface.NumberOfVGridlines
+        + " V-gridlines";
     var typeNow = doc.GetElement(surface.GetTypeId());
 
     surfaceId = surface.UniqueId;
-    divided = "Divided " + faceWords + " of form " + host.UniqueId + ": " + uRow + "; " + vRow
+    divided = "Divided " + faceWords + " of form " + host.UniqueId + ": " + uRow + "; " + vRow + "; " + countsRow
         + (typeNow == null ? "" : "; pattern " + (typeNow is FamilySymbol && ((FamilySymbol)typeNow).Family != null
             ? ((FamilySymbol)typeNow).Family.Name + " : " + typeNow.Name : typeNow.Name)) + " - surface " + surface.UniqueId
         + ", read back.";
     findings.Add(divided);
-    findings.Add("Whether Revit's Number counts the divisions or the lines between them is NEEDS-CHECKING BV21 - the "
-        + "gridline count above is what Revit made. A pattern-based panel family of the same tile pattern fills the "
+    findings.Add("Which rule makes which gridlines is not settled, so Revit's two counts are given under its own names "
+        + "and not beside a rule: on a test mass the U-gridline count moved with the V rule and the V-gridline count "
+        + "with the U rule. NEEDS-CHECKING BV21 settles it by eye in the Family Editor, and whether Number counts the "
+        + "divisions or the lines between them. A pattern-based panel family of the same tile pattern fills the "
         + "cells: PATTERN-BASED-FAMILY-CREATION builds one.");
 }
 

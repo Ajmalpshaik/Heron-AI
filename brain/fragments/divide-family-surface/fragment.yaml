@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,29 @@ semantic-identity: "divide a face of a form in a mass or conceptual family into 
 kind: action
 domain: revit.families
 capability: DIVIDE_FAMILY_SURFACE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-20) - EACH RULE AS ASKED, REVIT'S GRIDLINE COUNTS UNDER
+# ITS OWN NAMES, and back to DRAFT. FRAGMENT-ISSUES row 5b-303: on a Revit
+# 2024 Mass family, a 3000 x 2000 x 2500 mm form, the top face with uGrid=20
+# vGrid=4 read "U number 20, 7 gridline(s); V number 4, 23 gridline(s)", and
+# the front face with uGrid=3 vGrid=1000 mm and uGrid=6 vGrid=500 mm read 6
+# and 6, 9 and 9 - each count moving with the OTHER rule's value. Version 1
+# paired USpacingRule with NumberOfUGridlines and VSpacingRule with
+# NumberOfVGridlines, so "U number 20, 7 gridlines" told the modeller
+# something false. The impl was checked first: uGrid is written to
+# USpacingRule and vGrid to VSpacingRule, not crossed, so the words were the
+# defect. `divided` now reads "U rule: Number 20; V rule: Number 4; Revit
+# counts 7 U-gridlines and 23 V-gridlines" - each rule as asked, the counts
+# under Revit's own names and beside no rule - and a finding says which rule
+# makes which lines is NEEDS-CHECKING BV21's to settle by eye. A rule that
+# does not read back as asked still fails the call, its words now naming
+# what it read and what was asked. Version 1 was PROVEN (the proof block
+# below, kept as the record of what it proved); its C# moved, so it is DRAFT
+# again until NEEDS-CHECKING Group <TBD> is run (D-30) - on the owner's word
+# that a fragment found wrong may be changed even though it is proven.
 
 purpose: >
   DIVIDES A SURFACE in a mass, an adaptive component or a pattern-based panel
@@ -70,8 +90,9 @@ contract:
       role: result
       type: string
     - name: divided
-      # The face, each grid's layout and gridline count, and the pattern - read
-      # back, on ONE line.
+      # The face, each rule's layout and value as asked, Revit's U- and
+      # V-gridline counts under its own names and beside no rule (version 2,
+      # BV21), and the pattern - read back, on ONE line.
       role: result
       type: string
     - name: notAFamily
