@@ -41,6 +41,7 @@ WHAT IT PROVES
 
 import io
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -230,8 +231,43 @@ def main():
     check(good["folder"].endswith(FRAG.folder_for("COUNT_DUCTS")),
           "and the folder is heron_fragment.folder_for's: %s"
           % os.path.basename(good["folder"]))
-    check(good["card"]["heron-agent"] == "HERON-FRG-CRE-007",
-          "the card records which agent authored it")
+    # ROW 5b-205. This said "the card records which agent authored it" and
+    # pinned the generator's own id - the opposite of docs/29, where the
+    # field names the registry agent whose JOB the fragment does.
+    check(good["card"]["heron-agent"] == "HERON-REVIT-ELE-010",
+          "the card names the agent whose job it does - its domain's owner, "
+          "not this generator (%s)" % good["card"]["heron-agent"])
+    owner = getattr(CRE, "DOMAIN_AGENTS", None) or {}
+    check(CRE.author(draft(domain="revit.mep"), EMPTY, CASES)["card"]["heron-agent"]
+          == "HERON-REVIT-SYS-030", "a duct card from revit.mep names the MEP systems agent")
+    named = CRE.author(draft(**{"heron-agent": "HERON-REVIT-CMP-021"}), EMPTY, CASES)
+    check(named.get("card", {}).get("heron-agent") == "HERON-REVIT-CMP-021",
+          "a draft that names its agent keeps it")
+    unknown = CRE.author(draft(domain="revit.nowhere"), EMPTY, CASES)
+    reached.add(unknown.get("refused"))
+    check(unknown.get("refused") == "INCOMPLETE"
+          and "heron-agent" in (unknown.get("missing") or []),
+          "a domain with no owner and no agent named is refused, never "
+          "stamped with the generator's id")
+    library_domains, named_by = set(), {}
+    for card_path in sorted(os.listdir(os.path.join(ROOT, "brain", "fragments"))):
+        path = os.path.join(ROOT, "brain", "fragments", card_path, "fragment.yaml")
+        if not os.path.isfile(path):
+            continue
+        text = io.open(path, encoding="utf-8").read()
+        dom = re.search(r"^domain:\s*(\S+)", text, re.M)
+        who = re.search(r"^heron-agent:\s*(\S+)", text, re.M)
+        if dom:
+            library_domains.add(dom.group(1))
+            if who and who.group(1) != "HERON-FRG-CRE-007":
+                named_by.setdefault(dom.group(1), set()).add(who.group(1))
+    check(not library_domains - set(owner),
+          "every domain the library's cards use has an owner (%s)"
+          % (", ".join(sorted(library_domains - set(owner))) or "all"))
+    strangers = sorted(d for d, a in owner.items() if a not in named_by.get(d, set()))
+    check(not strangers,
+          "and every owner is an agent cards of that domain name (%s)"
+          % (", ".join(strangers) or "all"))
 
     print("\n7. the required fields are heron_fragment's")
     check(tuple(sorted(CRE.AUTHORS + CRE.WRITES))

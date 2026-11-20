@@ -641,15 +641,27 @@ def _documents(root):
     return found, "every file in the folder - there is no git here to ask what it tracks"
 
 
-def elsewhere(root, index, folder, moved, done):
+def elsewhere(root, index, folder, moved, done, register_files=None):
     """({path: (its text, its text re-pointed)}, how they were listed) - each
     document outside the register with a link that names a row MOVED moves,
-    pointing at the file the row is leaving."""
+    pointing at the file the row is leaving.
+
+    REGISTER_FILES names the files in FOLDER the register itself reads - its
+    sections' files, its rows files, its rows' own files - which the caller
+    re-points through the register as one text. Only those are skipped here
+    (row 5b-1845): a file of the folder the register does not read, as
+    fragment-issues/ISSUES.md, is a document like any other, and was skipped
+    with them until 2026-11-19, so a re-band left 225 of its links at the
+    file the rows had left. With no list, no file of the folder is skipped."""
     paths, how = _documents(root)
     labels = [label + "-" for label in moved if moved[label]]
+    read_by_register = set(register_files or ())
     out = {}
     for path in paths:
-        if AF._same(path, index) or AF._same(os.path.dirname(path), folder):
+        if AF._same(path, index):
+            continue
+        if (AF._same(os.path.dirname(path), folder)
+                and os.path.basename(path) in read_by_register):
             continue
         try:
             text = AF._read(path)
@@ -912,7 +924,8 @@ def plan(key="fragment-issues", index=None, today=None, root=ROOT, check_others=
         if before[name] != now.get(name):
             p.problems.append("%s would read the register differently" % name)
     if any(p.moved.values()):
-        p.others, p.others_listed = elsewhere(root, index, folder, p.moved, p.others_relinked)
+        p.others, p.others_listed = elsewhere(root, index, folder, p.moved, p.others_relinked,
+                                              set(p.files_after))
     if check_others:
         # A section's own '## ' heading stays on the page, so a link to it
         # still lands. Only the headings under it leave.
@@ -995,7 +1008,7 @@ def layout_relinked(index, joined, today=None, key=None, root=ROOT):
         after, files, trouble = layout_split(index, joined_after, today, key)
     others = {}
     if any(moved.values()):
-        others, _ = elsewhere(root, index, folder, moved, done)
+        others, _ = elsewhere(root, index, folder, moved, done, set(files))
     return after, files, trouble, joined_after, done, others, moved
 
 

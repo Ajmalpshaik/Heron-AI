@@ -725,6 +725,29 @@ def main():
         EVIDENCE.subprocess.run = real_run
 
     print()
+    print("change-evidence gives check-gaps longer than the other gates (5b-1822)")
+    # ROW 5b-1822. Every gate ran under one 1800 s cap and check-gaps runs
+    # every suite - about 40 minutes for the suites alone in a cloud container
+    # on 2026-11-16 - so `--gaps` always recorded it NOT RUN, timed out.
+    caps = {}
+    real_runner = EVIDENCE.run
+
+    def capped(cmd, timeout=None):
+        caps[os.path.basename(cmd[-1])] = timeout
+        return 0, "stand-in"
+
+    EVIDENCE.run = capped
+    try:
+        EVIDENCE.gate_results(["check-gaps", "check-docs"])
+    finally:
+        EVIDENCE.run = real_runner
+    gaps, docs = caps.get("check-gaps.py"), caps.get("check-docs.py")
+    check(isinstance(gaps, (int, float)) and gaps >= 2 * 2400,
+          "check-gaps may run well past the 40 minutes its suites took (cap %s s)" % (gaps,))
+    check(isinstance(docs, (int, float)) and isinstance(gaps, (int, float)) and docs < gaps,
+          "and every other gate keeps the shorter cap (check-docs %s s)" % (docs,))
+
+    print()
     print("change-evidence runs a child with the Python running it, and reads it as UTF-8")
     # ROW 5b-377. Every gate and every suite was spawned as "python3", and on
     # the owner's PC that name is the Microsoft Store's stub: it exists, so no

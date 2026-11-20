@@ -78,6 +78,50 @@ WRITES = tuple(field for field in FRAG.REQUIRED if field.startswith("heron-"))
 AUTHORS = tuple(field for field in FRAG.REQUIRED
                 if not field.startswith("heron-"))
 
+# THIS AGENT'S OWN ID, WHICH A CARD IT MAKES NEVER CARRIES (row 5b-205).
+GENERATOR = "HERON-FRG-CRE-007"
+
+# WHOSE JOB A CARD OF EACH DOMAIN DOES - the `heron-agent` a card is written
+# with. docs/29 gives that field one meaning, "which registry agent(s) this
+# implements", and every card made by hand names the Revit agent whose job it
+# does; until 2026-11-19 this agent wrote its own id on every card it made,
+# the author rather than the job (row 5b-205). Each owner is the agent the
+# library's own cards of that domain name most, read on 2026-11-19 with this
+# agent's id left out; tests/test_generate.py holds every domain the library
+# uses to an entry here, and every entry to an agent its cards name. A draft
+# that names its agent keeps it.
+DOMAIN_AGENTS = {
+    "revit.annotation": "HERON-REVIT-DIM-031",
+    "revit.datums": "HERON-REVIT-LVL-027",
+    "revit.document": "HERON-REVIT-DOC-004",
+    "revit.elements": "HERON-REVIT-ELE-010",
+    "revit.export": "HERON-REVIT-EXP-018",
+    "revit.families": "HERON-REVIT-FAM-012",
+    "revit.geometry": "HERON-REVIT-ELE-010",
+    "revit.levels": "HERON-REVIT-LVL-027",
+    "revit.mep": "HERON-REVIT-SYS-030",
+    "revit.parameters": "HERON-REVIT-PAR-011",
+    "revit.phases": "HERON-REVIT-PHS-032",
+    "revit.qa": "HERON-REVIT-CMP-021",
+    "revit.quality": "HERON-QA-BIM-011",
+    "revit.reporting": "HERON-REVIT-ELE-010",
+    "revit.rooms": "HERON-REVIT-RM-028",
+    "revit.schedules": "HERON-REVIT-SCH-026",
+    "revit.selection": "HERON-REVIT-SEL-008",
+    "revit.sheets": "HERON-REVIT-SHT-029",
+    "revit.views": "HERON-REVIT-VIE-013",
+}
+
+
+def agent_for(draft):
+    """The agent whose job the card does: the draft's own `heron-agent` when
+    it names one other than this generator, else its domain's owner - or None
+    when neither says."""
+    named = str(draft.get("heron-agent") or "").strip()
+    if named and named != GENERATOR:
+        return named
+    return DOMAIN_AGENTS.get(str(draft.get("domain") or "").strip())
+
 # HERON-RAG-FMT-004's two lists, and what each means for this gate.
 STOPS = (
     ("matched", "something already does this - Golden Rule 3, reuse "
@@ -194,8 +238,18 @@ def author(draft, report, cases=None, into=None):
                            "arbitrary."
                            % (str(card.get("id") or "").strip(), capability)}
 
+    agent = agent_for(draft)
+    if agent is None:
+        return {"authored": False, "refused": "INCOMPLETE",
+                "missing": ["heron-agent"],
+                "why": "no agent is known for the domain %r, and the draft "
+                       "names none. A card's heron-agent is the registry "
+                       "agent whose job it does (docs/29) - never this "
+                       "generator's own id - so name it in the draft."
+                       % draft.get("domain")}
+
     card = dict((field, draft[field]) for field in AUTHORS)
-    card["heron-agent"] = "HERON-FRG-CRE-007"
+    card["heron-agent"] = agent
     card["heron-status"] = ENTERS_AT
     card["heron-step"] = draft.get("heron-step") or 0
     card["heron-since"] = str(draft.get("heron-since") or "0.1.0")
