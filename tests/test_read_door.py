@@ -639,7 +639,7 @@ def dry_run_floor(text):
 # unloads its document, unloading does the same, and a rollback is not known to
 # load it again - so a dry run, a proof's trial, D-142's measured delete and a
 # Discard could each leave the link gone while saying the model is as it was.
-# Not run in Revit (NEEDS-CHECKING group OR, OR13). Every LIVE card whose C#
+# Not run in Revit (NEEDS-CHECKING group OS, OS13). Every LIVE card whose C#
 # does either is named here, with the reason it may stand; a new one fails
 # until somebody has looked. Each entry must still do it, or the list lies.
 KNOWN_LINK_REMOVERS = {
