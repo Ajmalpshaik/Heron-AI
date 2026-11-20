@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,10 +9,33 @@ semantic-identity: "repeat one form or one nested family in a row - a linear arr
 kind: action
 domain: revit.families
 capability: ARRAY_FAMILY_FORMS
-version: 4
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 5 (2026-11-20) - A FORM ON A PLANE A PARAMETER MOVES IS SAID, and
+# THE FORM IN EACH COPY IS GIVEN BACK, and back to DRAFT. FRAGMENT-ISSUES row
+# 5b-1261: measured 2026-10-20 on Revit 2020, forms sketched on reference
+# planes a labelled dimension moves were arrayed, every arrayed form then read
+# its work plane as `<not associated>` (REPORT_FAMILY_FORMS), and at another
+# type the copies stayed at the old length or drifted - the modeller undid 15
+# steps; the trial row measures only the type in front and saw nothing.
+# Version 5 REFUSES NOTHING NEW: it adds two FINDINGS - before the array, the
+# reference plane the form's sketch plane lies on when a labelled dimension
+# names it, with that parameter; after it, how many forms in the row now read
+# their work plane as not associated where the original's named a plane -
+# each saying flex it with FLEX_FAMILY, and that a part a size stretches is
+# arrayed as a nested family (the family-creation method, step 10). NOT
+# KNOWN, and why neither refuses: whether a form on a plane no parameter
+# moves also reads `<not associated>` after an array, and which end of a
+# labelled dimension moves - the centre plane a size is measured from is
+# named by the same dimension and stays put. Row 5b-358: a new output,
+# `memberForms`, the unique id of the form (or nested family) inside each
+# group `members` names, in the same order. Version 4 was PROVEN (the proof
+# block below, kept as the record of what it proved); its C# moved, so it is
+# DRAFT again until NEEDS-CHECKING Group <TBD> is run (D-30) - on the owner's
+# word that a fragment found wrong may be changed even though it is proven.
+#
 # VERSION 4 (2026-11-11) - A DETAIL ITEM NESTED IN A VIEW, and back to DRAFT.
 # Version 3 was PROVEN on 2026-10-18 (the proof block then below, kept as the
 # record of what it proved: a solid extrusion arrayed, and a row leaving its
@@ -75,6 +98,11 @@ purpose: >
   occurred". It is arrayed in the floor plan of the level it stands on, read by
   its insertion point - four arrows 200 mm apart in Ref. Level, read back.
 
+  **A FORM ON A PLANE A PARAMETER MOVES** (version 5, row 5b-1261) is arrayed
+  as before, and a finding names the plane and its parameter - and, after the
+  array, any form in the row whose work plane now reads not associated - with
+  FLEX_FAMILY as the next step. `memberForms` gives each copy's own form.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -114,6 +142,14 @@ contract:
       # The copies' model GROUPS' unique ids - each copy is a group, even
       # for one form (row 5b-358) - commas between, in order along the row;
       # the last is the far end. The original is not one of them.
+      role: result
+      type: string
+    - name: memberForms
+      # Version 5 (row 5b-358): the FORM inside each group `members` names -
+      # or the nested family, for a row of one - its unique id, commas
+      # between, in the same order, so a later tool can be given the form
+      # itself: COMBINE_FAMILY_FORMS a void copy. The original keeps the id
+      # it was given by. Empty when nothing was arrayed.
       role: result
       type: string
     - name: labelled
@@ -229,7 +265,9 @@ compatibility-note: >
   `View.ViewDirection`, `View.IsTemplate`, `Group.GetMemberIds`,
   `LocationPoint.Point` and `LinearArray.Create` with its `View` read the
   same 2020 through 2027 (`tools/api-surface --members --inherited`,
-  2026-11-11).
+  2026-11-11). Version 5's `ReferencePlane.GetPlane`, `SketchPlane.GetPlane`,
+  `Group.GetMemberIds` and `BaseArray.GetCopiedMemberIds` read the same 2020
+  through 2027 (`tools/api-surface --members`, 2026-11-20).
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
