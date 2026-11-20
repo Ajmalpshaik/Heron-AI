@@ -36,7 +36,37 @@ if (newZoneMethod == null)
 else
 {
     var asPhase = phase as Phase;
-    if (asPhase == null)
+
+    // VERSION 2: A NAME ANOTHER ZONE ALREADY HAS IS REFUSED BEFORE ANYTHING IS
+    // MADE. On Revit 2020 a second zone took the asked name, so two zones shared
+    // it and the only word was Revit's duplicate-name warning, which Heron
+    // dismisses (row 5b-1654). Compared ignoring capitals, across the project:
+    // Revit's warning is project-wide.
+    Element takenBy = null;
+    var askedName = (zoneName ?? "").Trim();
+    if (askedName.Length > 0)
+    {
+        foreach (var existingZone in new FilteredElementCollector(doc)
+            .OfCategory(BuiltInCategory.OST_HVAC_Zones).WhereElementIsNotElementType())
+        {
+            if (string.Equals((existingZone.Name ?? "").Trim(), askedName, StringComparison.OrdinalIgnoreCase))
+            {
+                takenBy = existingZone;
+                break;
+            }
+        }
+    }
+
+    if (takenBy != null)
+    {
+        var takenLevel = doc.GetElement(takenBy.LevelId) as Level;
+        refused.Add(string.Format("There is already an HVAC zone called '{0}' (id {1}{2}), so no zone was "
+            + "made and no space was moved. Nothing was changed. Ask again with a name no zone has - or, "
+            + "to put these spaces in that zone, add them to it in Revit (Analyze > Zone > Edit Zone): "
+            + "this tool only makes new zones",
+            takenBy.Name, takenBy.Id, takenLevel != null ? ", on " + takenLevel.Name : ""));
+    }
+    else if (asPhase == null)
     {
         refused.Add("a zone needs a Phase, and what was given is not one. The zone and its spaces must "
             + "share a phase - a mismatch is the usual reason a space is rejected");

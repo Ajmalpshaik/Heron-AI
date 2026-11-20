@@ -18,12 +18,29 @@ positive:
       it running THROUGH the accessory, end to end. A damper that is placed but
       not connected leaves the system severed while looking finished
 
+  - given: >
+      version 2, Revit 2020 - ONE LONE rectangular duct drawn by CREATE_DUCT
+      along Y (not the family's own X), nothing joined at either end, and
+      M_Balancing Damper - Rectangular, positionAlong 0.5 (row 5b-1119)
+    expect: >
+      placed 1, leftSevered 0, notTurned 0, and NO "opposite direction" error:
+      two ducts, the damper turned along the run between them, both its ends
+      joined. Then the same on a lone pipe with M_Gate Valve, and on a duct
+      drawn along X - and once more on a run joined at both ends, the case
+      version 1 was proved on
+
   - given: positionAlong 0.25
     expect: >
       the accessory a quarter of the way along, and the two halves in that
       proportion
 
 negative:
+  - given: a vertical duct (a riser) and a damper
+    expect: >
+      its run named in notTurned - a vertical run is not turned in plan - and
+      whatever Revit did with the joins reported in placed or leftSevered,
+      never a silent success
+
   - given: the accessory hosted on the run instead of breaking it first
     expect: >
       NOT what this does. That call looks like the Revit command, changes no

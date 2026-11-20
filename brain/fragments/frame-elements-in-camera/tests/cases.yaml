@@ -88,6 +88,13 @@ positive:
       the finding "The eye height is measured from ... not 'Foundation'"
 
 negative:
+  - given: >
+      version 7, Revit 2020 - the seven sheets of P1102 MEP handed in
+      (row 5b-1399)
+    expect: >
+      refused - none has model geometry to frame - noGeometry 7, framed 0,
+      and NO view made. Version 6 answered framed 7 and made a perspective
+
   - given: the heater selected, viewName naming the project's isometric {3D} view
     expect: >
       refused "is an isometric 3D view", NOTHING WAS CHANGED - {3D} keeps its

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,10 @@ semantic-identity: "put this tag exactly here, rather than wherever a rule decid
 kind: action
 domain: revit.annotation
 capability: MOVE_ANNOTATION
-version: 2
+# A TEXT NOTE IS MOVED BY ITS TEXT POSITION (version 3). It has no tag head
+# and no location point, and version 2 answered every one notMovable (row
+# 5b-1115).
+version: 3
 source: OFFICIAL
 risk: MODIFY
 

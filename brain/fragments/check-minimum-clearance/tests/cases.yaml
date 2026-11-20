@@ -48,6 +48,13 @@ positive:
 
 negative:
   - given: >
+      version 4, Revit 2020 - the seven sheets of P1102 MEP, defaultClearance
+      5000 (row 5b-1400)
+    expect: >
+      tooClose 0, and findings saying 7 elements were skipped, all 7 with no
+      model geometry - not checked, never passed. Version 3 reported 21 pairs
+
+  - given: >
       TWO SERVICES 120 mm APART, EACH WITH A 50 mm JACKET, includeInsulation
       true, clearance 100 mm
     expect: >

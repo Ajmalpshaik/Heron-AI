@@ -52,6 +52,15 @@ positive:
       both numbers on its row - "projection lines ... weight 1" before the bar,
       "projection weight 3" after it. The comparison is the answer
 
+  - given: >
+      version 4 - a plan whose view template leaves V/G Overrides Model out of
+      its control (unticked in the template's Include column), then the same
+      template with it ticked (row 5b-1854)
+    expect: >
+      first: the Model Categories rows carry NO "the view template sets this
+      tab" line - the plan sets them. Second: they carry it, naming the
+      template. Version 3 read the view's own list and could say either
+
 negative:
   - given: a view with NOTHING overridden at category level
     expect: >

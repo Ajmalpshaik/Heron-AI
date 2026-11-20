@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,16 @@ semantic-identity: "how many of these are in each room, when the elements carry 
 kind: action
 domain: revit.reporting
 capability: COUNT_BY_SPATIAL_CONTAINER
-version: 2
+# VERSION 3 (2026-11-20, row 5b-1858, issue #1060): on storeys stacked over one
+# another an element is counted on its own storey, not in the first room or
+# space found in plan - every container is asked, and one taken only when the
+# element is inside it, or in plan of it and between its floor and the next
+# storey level up (ASSIGN_LOCATION_DATA's rule; a container with no storey
+# level above or below has no top or bottom there, so a single-storey model
+# counts as before); a group reads the room's name once, not "Room 1 1";
+# and a link that is not loaded is named. Version 2's proof below is kept as
+# the record; its C# moved, so it is DRAFT until re-proved (D-30).
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -56,7 +65,7 @@ purpose: >
   a model full of them is the real finding.
 
   **IT IS AN ELEMENT-BY-CONTAINER SWEEP AND THAT COST IS STATED.** Every element
-  is tested against every container until one matches. On a large floor with
+  is tested against every container to find the one that matches. On a large floor with
   many rooms that is real work, and it is the price of an answer no parameter
   carries.
 

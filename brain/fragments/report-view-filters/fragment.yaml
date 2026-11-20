@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -38,7 +38,10 @@ capability: REPORT_VIEW_FILTERS
 # names the template and how many views follow it (a template no view follows
 # is said to be one - the filter is still kept out of the unused list). "Which
 # filters are unused" is FIND_PURGEABLE_ELEMENTS' question; it routes there.
-version: 4
+# A big plan's answer is narrowed and counted first (version 5): one category
+# or words in a name, and a short line each past 25 - a plan of 90 answered
+# 123,531 characters in version 4, more than the chat takes.
+version: 5
 source: OFFICIAL
 risk: READ
 
@@ -96,6 +99,29 @@ contract:
     - name: viewName
       type: string
       source: request
+    # VERSION 5 (issue #1058 A2). Only the filters that take this category,
+    # as Visibility/Graphics names it - "Duct Accessories". Left out, every
+    # filter.
+    - name: onlyCategory
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 5. Only the filters whose name holds one of these words, comma
+    # separated, ignoring capitals - "Supply, SA". Left out, every filter.
+    - name: nameContains
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 5. "brief" - one short line a filter; "full" - every line,
+    # pattern and colour; left out ("auto"), full up to 25 filters in a list
+    # and brief beyond, said in the heading.
+    - name: detail
+      type: string
+      source: request
+      optional: true
+      absent: auto
   provides:
     - name: findings
       type: IList<string>

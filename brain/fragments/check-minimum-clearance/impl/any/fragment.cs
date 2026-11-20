@@ -197,6 +197,23 @@ Func<double, double, double, double, double> axisGap = (aMin, aMax, bMin, bMax) 
     return 0.0;
 };
 
+// VERSION 4 (row 5b-1400): A MODEL BOX ONLY. A sheet, a view, a type or an
+// annotation element can answer a box with no model extent behind it, and
+// version 3 measured seven sheets as 21 pairs too close on Revit 2020. Such an
+// element has no box here: it is counted with the ones Revit gives none, and
+// said - not checked, which is not passing.
+var noModelGeometry = new HashSet<ElementId>();
+Func<Element, BoundingBoxXYZ> modelBox = e =>
+{
+    if (e == null) return null;
+    if (e is View || e is ElementType || e.Category == null || e.Category.CategoryType != CategoryType.Model)
+    {
+        noModelGeometry.Add(e.Id);
+        return null;
+    }
+    try { return e.get_BoundingBox(null); } catch { return null; }
+};
+
 // Boxes and jackets once per element, not once per pair.
 var targetInfo = new List<KeyValuePair<Element, BoundingBoxXYZ>>();
 var targetJacket = new Dictionary<ElementId, double>();
@@ -205,8 +222,7 @@ var measurable = new HashSet<ElementId>();
 foreach (var target in targets)
 {
     if (target == null) continue;
-    BoundingBoxXYZ box = null;
-    try { box = target.get_BoundingBox(null); } catch { }
+    var box = modelBox(target);
     if (box == null) { withoutBox.Add(target.Id); continue; }
     targetInfo.Add(new KeyValuePair<Element, BoundingBoxXYZ>(target, box));
     targetJacket[target.Id] = jacketOf(target);
@@ -224,8 +240,7 @@ var rows = new List<string>();
 foreach (var element in elements)
 {
     if (element == null) continue;
-    BoundingBoxXYZ sourceBox = null;
-    try { sourceBox = element.get_BoundingBox(null); } catch { }
+    var sourceBox = modelBox(element);
     if (sourceBox == null) { withoutBox.Add(element.Id); continue; }
     measurable.Add(element.Id);
 
@@ -331,8 +346,10 @@ if (insulationOn)
         + "outside space, so counting it would inflate every gap");
 }
 if (withoutBox.Count > 0)
-    findings.Add(string.Format("{0} element(s) had NO readable extent and were skipped. They were "
-        + "not checked, which is not the same as passing", withoutBox.Count));
+    findings.Add(string.Format("{0} element(s) had NO readable extent and were skipped{1}. They were "
+        + "not checked, which is not the same as passing", withoutBox.Count,
+        noModelGeometry.Count == 0 ? "" : string.Format(" - {0} of them have no model geometry at all (a sheet, "
+            + "a view, a type or annotation)", noModelGeometry.Count)));
 if (measurable.Count < 2)
     findings.Add("Fewer than two measurable elements, so no pair could be compared. That is NOT "
         + "every pair passing");
@@ -471,8 +488,7 @@ for (var i = 0; i < linkDocs.Count; i++)
         foreach (var element in elements)
         {
             if (element == null) continue;
-            BoundingBoxXYZ sourceBox = null;
-            try { sourceBox = element.get_BoundingBox(null); } catch { }
+            var sourceBox = modelBox(element);
             if (sourceBox == null) continue;
             var sourceJacket = jacketOf(element);
             var grow = reach + sourceJacket;

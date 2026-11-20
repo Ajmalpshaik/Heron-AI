@@ -1,6 +1,20 @@
 // NOT STANDALONE. Assumes `doc`, `linkName`, `phaseName` and `updateNames` are in
 // scope; leaves `created`, `renamed`, `alreadyMatching`, `orphans`,
-// `notPlaced`, `noArea`, `report` and `findings` behind.
+// `notPlaced`, `noArea`, `wrongPhase`, `report` and `findings` behind.
+//
+// VERSION 3 (2026-11-20) - THE PHASE ASKED FOR IS THE PHASE LOOKED IN, AND
+// THE PHASE A NEW SPACE LANDS IN IS READ BACK. Row 5b-1589: the spaces
+// already there were looked for with GetSpaceAtPoint's one-argument form,
+// which Revit's reference says "surveys only the spaces from the final
+// phase", and the link's rooms were read with no phase at all - so with any
+// phase but the last, a second run could not see what the first made. Now
+// both lookups take the phase: this model's asked phase, and in the link the
+// phase of the SAME NAME (the link's last phase where it has none, said in
+// findings), and only the link's rooms of that phase are read. Row 5b-1655:
+// on Revit 2020, asked for "Existing", the spaces read back "New
+// Construction" - the cause is not found. Each new space's phase is read
+// back; one in another phase leaves `created` for `wrongPhase`, and the
+// first line of findings says so.
 //
 // VERSION 2 (2026-11-20) - A SPACE WITH NO AREA IS NOT COUNTED AS MADE. Row
 // 5b-1125 (Ajmalpshaik/Heron-AI#921): on Project1, Revit 2020, both spaces
@@ -51,6 +65,11 @@ var orphans = new List<ElementId>();
 var notPlaced = new List<string>();
 // VERSION 2: spaces made that read back with no area - counted apart.
 var noArea = new List<ElementId>();
+// VERSION 3: spaces made that read back in another phase than asked.
+var wrongPhase = new List<ElementId>();
+// VERSION 3: the link's placed rooms of another phase, passed over - counted
+// and said, so an answer of nothing made is never silent about why.
+var otherPhaseRooms = 0;
 var lines = new List<string>();
 var findings = new List<string>();
 string refusal = null;
@@ -118,10 +137,32 @@ Func<SpatialElement, string> nameOf = s =>
     catch { return ""; }
 };
 
+// VERSION 3: the phase an element is in, by its Phase Id parameter.
+Func<Element, ElementId> phaseIdOf = e =>
+{
+    try
+    {
+        var p = e.get_Parameter(BuiltInParameter.ROOM_PHASE_ID);
+        return p == null ? ElementId.InvalidElementId : p.AsElementId();
+    }
+    catch { return ElementId.InvalidElementId; }
+};
+
 if (refusal == null)
 {
     var toHost = source.GetTotalTransform();
     var toLink = toHost.Inverse;
+
+    // VERSION 3: the link's phase of the same name, else its last.
+    Phase linkPhase = null;
+    foreach (Phase candidate in linked.Phases)
+        if (string.Equals(candidate.Name, onPhase.Name, StringComparison.OrdinalIgnoreCase)) linkPhase = candidate;
+    if (linkPhase == null && linked.Phases.Size > 0)
+    {
+        linkPhase = linked.Phases.get_Item(linked.Phases.Size - 1);
+        findings.Add("\"" + source.Name + "\" has no phase named \"" + onPhase.Name + "\", so its rooms were read in "
+            + "its last phase, \"" + linkPhase.Name + "\"");
+    }
 
     var levels = new List<Level>();
     foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(Level)))
@@ -134,6 +175,11 @@ if (refusal == null)
     {
         var room = element as Room;
         if (room == null || room.Area <= 0) continue;
+        if (linkPhase != null)
+        {
+            var roomPhase = phaseIdOf(room);
+            if (roomPhase != ElementId.InvalidElementId && roomPhase != linkPhase.Id) { otherPhaseRooms++; continue; }
+        }
         var at = room.Location as LocationPoint;
         if (at == null) continue;
 
@@ -143,7 +189,7 @@ if (refusal == null)
         var hostPoint = toHost.OfPoint(at.Point);
 
         Space space = null;
-        try { space = doc.GetSpaceAtPoint(hostPoint + new XYZ(0, 0, lift)); } catch { }
+        try { space = doc.GetSpaceAtPoint(hostPoint + new XYZ(0, 0, lift), onPhase); } catch { }
 
         if (space == null)
         {
@@ -229,6 +275,26 @@ if (refusal == null)
             : " reads back with NO AREA - placed where nothing bounds it, so NOT counted as made; "
               + bounding));
     }
+    // VERSION 3: the phase each new space is in, against the phase asked.
+    foreach (var id in created.ToList())
+    {
+        var space = doc.GetElement(id) as Space;
+        if (space == null) continue;
+        var landed = phaseIdOf(space);
+        if (landed == onPhase.Id) continue;
+        if (landed == ElementId.InvalidElementId)
+        {
+            lines.Add("space " + id + ": its phase could not be read back, so whether it is in \"" + onPhase.Name
+                + "\" is not known");
+            continue;
+        }
+        var landedPhase = doc.GetElement(landed) as Phase;
+        created.Remove(id);
+        wrongPhase.Add(id);
+        lines.Add("space " + id + " was made in phase \"" + (landedPhase == null ? landed.ToString() : landedPhase.Name)
+            + "\", NOT \"" + onPhase.Name + "\" as asked - NOT counted as made");
+    }
+
     // A renamed space is read back by its number and name, which is what was
     // written to it.
     foreach (var id in renamed.ToList())
@@ -242,16 +308,30 @@ if (refusal == null)
     {
         var space = element as Space;
         if (space == null || space.Area <= 0) continue;
-        if (created.Contains(space.Id) || noArea.Contains(space.Id)) continue;
+        if (created.Contains(space.Id) || noArea.Contains(space.Id) || wrongPhase.Contains(space.Id)) continue;
+        // VERSION 3: only the asked phase's spaces, against the link's rooms
+        // of its matching phase.
+        var spacePhase = phaseIdOf(space);
+        if (spacePhase != ElementId.InvalidElementId && spacePhase != onPhase.Id) continue;
         var at = space.Location as LocationPoint;
         if (at == null) continue;
         Room under = null;
-        try { under = linked.GetRoomAtPoint(toLink.OfPoint(at.Point + new XYZ(0, 0, lift))); } catch { }
+        try { under = linked.GetRoomAtPoint(toLink.OfPoint(at.Point + new XYZ(0, 0, lift)), linkPhase); } catch { }
         if (under == null) orphans.Add(space.Id);
     }
 
-    findings.Add("From \"" + source.Name + "\": " + created.Count + " space(s) made, "
+    if (otherPhaseRooms > 0)
+        findings.Insert(0, otherPhaseRooms + " room(s) in \"" + source.Name + "\" are in another phase than \""
+            + (linkPhase == null ? "(none)" : linkPhase.Name) + "\" and were passed over - no space was made or "
+            + "renamed for them. Name their phase as phaseName to sync those");
+    if (wrongPhase.Count > 0)
+        findings.Insert(0, wrongPhase.Count + " space(s) were made in ANOTHER PHASE than \"" + onPhase.Name
+            + "\", which was asked - each is named below and NOT counted as made. Discard this change "
+            + "unless that phase is wanted (row 5b-1655)");
+    findings.Add("From \"" + source.Name + "\", in phase \"" + onPhase.Name + "\" (the link's \""
+        + (linkPhase == null ? "(none)" : linkPhase.Name) + "\"): " + created.Count + " space(s) made, "
         + (noArea.Count > 0 ? noArea.Count + " made with NO AREA and not counted as made, " : "")
+        + (wrongPhase.Count > 0 ? wrongPhase.Count + " made in another phase and not counted as made, " : "")
         + renamed.Count
         + " renamed, " + alreadyMatching + " already matching, " + notPlaced.Count + " room(s) not "
         + "placed, " + orphans.Count + " space(s) with no linked room under them (listed, never deleted).");

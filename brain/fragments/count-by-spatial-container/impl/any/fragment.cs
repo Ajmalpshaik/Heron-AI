@@ -17,6 +17,30 @@
 // containment test at its own level, and a diffuser sits at ceiling height - so
 // testing the element's own Z reports everything as in no room.
 //
+// VERSION 3 (2026-11-20, row 5b-1858, issue #1060): ON STOREYS STACKED OVER ONE
+// ANOTHER, THE ELEMENT'S OWN STOREY. That test is a test IN PLAN, so a space on
+// Level 2 also said yes to a damper on Level 1 directly below it, and version 2
+// took the FIRST container that said yes, in element-id order. Now every
+// container is asked - ASSIGN_LOCATION_DATA version 3's rule: one is taken
+// when the element is INSIDE it (Revit's test at the element's own point), or
+// in plan of it and on its storey - not below its floor, not at or above the
+// next STOREY level up (Building Story ticked; with none ticked, every level).
+// Inside beats on-its-storey; between two on their storey, the one whose floor
+// is nearest below. Two edges keep a single-storey model as it was: a
+// container with no storey level above it has no top, and one with no storey
+// level below it has no bottom - so with one level every container is the
+// plan test version 2 made. Two equally good are counted in the first, as
+// version 2 did, and findings counts them. An element in plan only of
+// another storey's containers is counted in none, and findings counts those.
+// The host's containers are still asked first; a link's only where none of the
+// host's was taken.
+//
+// VERSION 3: A ROOM'S NAME IS ITS NAME PARAMETER. Revit's `Name` of a room or
+// space already carries its number, so version 2's label read "Room 1 1"
+// (its own proof). The label is ROOM_NAME and the number, as
+// ASSIGN_LOCATION_DATA reads them. And with includeLinks, a link that is NOT
+// LOADED is named in linkedMatches - version 2 skipped it without a word.
+//
 // A ZONE IS ONE HOP FURTHER: the containing space is found first, then that
 // space's zone. "No space" and "the space has no zone" are two different
 // failures for two different people, so they are two groups.
@@ -69,6 +93,7 @@ var linkBlocked = "";
 var linkTypes = new List<ElementId>();
 var linkDocs = new List<Document>();
 var linkPlacements = new List<List<RevitLinkInstance>>();
+var notLoaded = new List<string>();
 
 if (includeLinks)
 {
@@ -87,7 +112,15 @@ if (includeLinks)
         Document linked = null;
         try { linked = instance.GetLinkDocument(); }
         catch (Exception) { linked = null; }
-        if (linked == null) continue;
+        if (linked == null)
+        {
+            // VERSION 3: named, never skipped silently (row 5b-1858 (4)).
+            var unloadedName = "";
+            try { var linkType = doc.GetElement(typeId); unloadedName = linkType == null ? instance.Name : linkType.Name; }
+            catch (Exception) { unloadedName = instance.Name; }
+            if (!notLoaded.Contains(unloadedName)) notLoaded.Add(unloadedName);
+            continue;
+        }
 
         linkTypes.Add(typeId);
         linkDocs.Add(linked);
@@ -220,6 +253,122 @@ Func<Element, XYZ> pointOf = element =>
     return (box.Min + box.Max) * 0.5;
 };
 
+// VERSION 3: a room's or space's label - its Name PARAMETER and its number.
+Func<SpatialElement, string> labelOf = container =>
+{
+    var shownName = "";
+    try
+    {
+        var p = container.get_Parameter(BuiltInParameter.ROOM_NAME);
+        shownName = p == null ? "" : (p.AsString() ?? "");
+    }
+    catch (Exception) { shownName = ""; }
+    var shownNumber = "";
+    try { shownNumber = container.Number ?? ""; } catch (Exception) { }
+    return (shownName + " " + shownNumber).Trim();
+};
+
+// VERSION 3: THE STOREY each container's floor sits on, in its own document.
+// The levels with Building Story ticked - every level where none is - and for
+// a container the height to the next one up and whether one is below. A
+// DIFFERENCE of two elevations, so it means the same in a link.
+var tolerance = 1.0 / 304.8;
+Func<Document, List<double>> storeyElevationsIn = inDoc =>
+{
+    var every = new List<double>();
+    var storeys = new List<double>();
+    try
+    {
+        foreach (var level in new FilteredElementCollector(inDoc).OfClass(typeof(Level)).Cast<Level>())
+        {
+            every.Add(level.ProjectElevation);
+            Parameter flag = null;
+            try { flag = level.get_Parameter(BuiltInParameter.LEVEL_IS_BUILDING_STORY); } catch (Exception) { flag = null; }
+            if (flag != null && flag.HasValue && flag.AsInteger() == 1) storeys.Add(level.ProjectElevation);
+        }
+    }
+    catch (Exception) { }
+    return storeys.Count > 0 ? storeys : every;
+};
+var storeyCache = new Dictionary<Document, List<double>>();
+// Height up to the next storey level (-1: none above) and whether a storey
+// level is below - for one container.
+Func<SpatialElement, Tuple<double, bool>> storeyOf = container =>
+{
+    Level own = null;
+    try { own = container.Level; } catch (Exception) { own = null; }
+    if (own == null) return Tuple.Create(-1.0, false);
+    List<double> levels;
+    if (!storeyCache.TryGetValue(container.Document, out levels))
+    {
+        levels = storeyElevationsIn(container.Document);
+        storeyCache[container.Document] = levels;
+    }
+    var at = own.ProjectElevation;
+    double next = double.MaxValue;
+    var below = false;
+    foreach (var e in levels)
+    {
+        if (e > at + tolerance && e < next) next = e;
+        if (e < at - tolerance) below = true;
+    }
+    return Tuple.Create(next == double.MaxValue ? -1.0 : next - at, below);
+};
+
+var tiesTakenFirst = 0;
+var otherStoreyOnly = 0;
+
+// The container for one point among a list of them, each with the transform
+// INTO its document (null for this model's own): -1 when none is taken.
+// otherStorey is set when one was in plan of it and turned down for its height.
+Func<XYZ, List<SpatialElement>, List<Transform>, Tuple<int, bool>> chooseAmong = (point, containers, intoDocs) =>
+{
+    var best = -1;
+    var bestRank = 9;
+    var bestGap = double.MaxValue;
+    var tie = false;
+    var otherStorey = false;
+    for (var c = 0; c < containers.Count; c++)
+    {
+        var container = containers[c];
+        var local = intoDocs == null || intoDocs[c] == null ? point : intoDocs[c].OfPoint(point);
+        var asRoom = container as Room;
+        var asSpace = container as Space;
+        if (asRoom == null && asSpace == null) continue;
+        var at = container.Location as LocationPoint;
+        var floorZ = at != null && at.Point != null ? at.Point.Z : local.Z;
+
+        bool inside, inPlan;
+        try
+        {
+            inside = asRoom != null ? asRoom.IsPointInRoom(local) : asSpace.IsPointInSpace(local);
+            var atFloor = new XYZ(local.X, local.Y, floorZ);
+            inPlan = inside || (asRoom != null ? asRoom.IsPointInRoom(atFloor) : asSpace.IsPointInSpace(atFloor));
+        }
+        catch (Exception) { continue; }
+        if (!inPlan) continue;
+
+        var rank = 0;
+        var gap = 0.0;
+        if (!inside)
+        {
+            var storey = storeyOf(container);
+            var above = local.Z - floorZ;
+            if (above < -tolerance && storey.Item2) { otherStorey = true; continue; }        // below its floor
+            if (storey.Item1 >= 0 && above >= storey.Item1 - tolerance) { otherStorey = true; continue; } // above its storey
+            rank = above >= -tolerance ? 1 : 2;      // 2: below the lowest storey's floor
+            gap = Math.Abs(above);
+        }
+        if (rank < bestRank || (rank == bestRank && gap < bestGap - tolerance))
+        {
+            best = c; bestRank = rank; bestGap = gap; tie = false;
+        }
+        else if (rank == bestRank && Math.Abs(gap - bestGap) <= tolerance) tie = true;
+    }
+    if (best >= 0 && tie) tiesTakenFirst++;
+    return Tuple.Create(best, otherStorey);
+};
+
 Func<Element, string> groupFor = element =>
 {
     var point = pointOf(element);
@@ -227,61 +376,43 @@ Func<Element, string> groupFor = element =>
 
     if (kind == "room")
     {
-        foreach (var room in rooms)
-        {
-            // THE CONTAINER'S OWN Z, not the element's. See the header.
-            var at = room.Location as LocationPoint;
-            var z = at != null && at.Point != null ? at.Point.Z : point.Z;
-            if (room.IsPointInRoom(new XYZ(point.X, point.Y, z)))
-                return room.Name + " " + room.Number;
-        }
+        var inHost = chooseAmong(point, rooms.Cast<SpatialElement>().ToList(), null);
+        if (inHost.Item1 >= 0) return labelOf(rooms[inHost.Item1]);
 
-        // The links' rooms, after the host's - see the header.
-        for (var r = 0; r < linkedRooms.Count; r++)
+        // The links' rooms, only where none of the host's was taken.
+        var fromLink = chooseAmong(point, linkedRooms.Cast<SpatialElement>().ToList(), linkedRoomsTo);
+        if (fromLink.Item1 >= 0)
         {
-            var local = linkedRoomsTo[r].OfPoint(point);
-            var at = linkedRooms[r].Location as LocationPoint;
-            var z = at != null && at.Point != null ? at.Point.Z : local.Z;
-            if (linkedRooms[r].IsPointInRoom(new XYZ(local.X, local.Y, z)))
-            {
-                linkedLanded++;
-                return linkedRoomsFrom[r] + " :: " + linkedRooms[r].Name + " " + linkedRooms[r].Number;
-            }
+            linkedLanded++;
+            return linkedRoomsFrom[fromLink.Item1] + " :: " + labelOf(linkedRooms[fromLink.Item1]);
         }
+        if (inHost.Item2 || fromLink.Item2) otherStoreyOnly++;
         return "(in no room)";
     }
 
     Space containing = null;
-    foreach (var space in spaces)
-    {
-        var at = space.Location as LocationPoint;
-        var z = at != null && at.Point != null ? at.Point.Z : point.Z;
-        if (space.IsPointInSpace(new XYZ(point.X, point.Y, z))) { containing = space; break; }
-    }
-
-    // The links' spaces, after the host's - see the header.
     var containingFrom = "";
-    if (containing == null)
+    var hostSpace = chooseAmong(point, spaces.Cast<SpatialElement>().ToList(), null);
+    var turnedDown = hostSpace.Item2;
+    if (hostSpace.Item1 >= 0) containing = spaces[hostSpace.Item1];
+    else
     {
-        for (var s = 0; s < linkedSpaces.Count; s++)
+        // The links' spaces, only where none of the host's was taken.
+        var linkedSpace = chooseAmong(point, linkedSpaces.Cast<SpatialElement>().ToList(), linkedSpacesTo);
+        turnedDown = turnedDown || linkedSpace.Item2;
+        if (linkedSpace.Item1 >= 0)
         {
-            var local = linkedSpacesTo[s].OfPoint(point);
-            var at = linkedSpaces[s].Location as LocationPoint;
-            var z = at != null && at.Point != null ? at.Point.Z : local.Z;
-            if (linkedSpaces[s].IsPointInSpace(new XYZ(local.X, local.Y, z)))
-            {
-                containing = linkedSpaces[s];
-                containingFrom = linkedSpacesFrom[s] + " :: ";
-                linkedLanded++;
-                break;
-            }
+            containing = linkedSpaces[linkedSpace.Item1];
+            containingFrom = linkedSpacesFrom[linkedSpace.Item1] + " :: ";
+            linkedLanded++;
         }
     }
+    if (containing == null && turnedDown) otherStoreyOnly++;
 
     if (kind == "space")
     {
         return containing != null
-            ? containingFrom + containing.Name + " " + containing.Number
+            ? containingFrom + labelOf(containing)
             : "(in no space)";
     }
 
@@ -356,6 +487,14 @@ else
     }
 }
 
+if (otherStoreyOnly > 0)
+    findings.Add(string.Format("{0} element(s) were in plan only of a {1} on ANOTHER STOREY - below its floor or "
+        + "above its storey - and are counted in none: a {1} is taken only for an element inside it or on its "
+        + "own storey (version 3, row 5b-1858)", otherStoreyOnly, kind == "room" ? "room" : "space"));
+if (tiesTakenFirst > 0)
+    findings.Add(string.Format("{0} element(s) were equally in two {1}s - overlapping ones - and were counted in "
+        + "the first", tiesTakenFirst, kind == "room" ? "room" : "space"));
+
 if (skippedContainers > 0)
 {
     findings.Add(string.Format("{0} {1}(s) in this model are UNPLACED or UNENCLOSED and were not asked. "
@@ -365,7 +504,8 @@ if (skippedContainers > 0)
 }
 
 findings.Insert(0, string.Format("{0} element(s) counted by {1}: {2} landed in one, {3} did not. "
-    + "Containment is tested GEOMETRICALLY, at the container's own height - these elements carry no "
+    + "Containment is tested GEOMETRICALLY - in plan at the container's own height, then on the element's "
+    + "own storey (version 3) - these elements carry no "
     + "{1} parameter to group by, which is why a parameter lookup returns one large group of blanks",
     placed + unplaced,
     kind == "room" || kind == "space" || kind == "zone" ? kind : "(nothing)",
@@ -384,6 +524,10 @@ else if (linksSearched == 0)
 else
     linkedMatches.Insert(0, string.Format("{0} link(s) read: {1} element(s) landed in a linked "
         + "container", linksSearched, linkedTotal));
+
+if (includeLinks && notLoaded.Count > 0)
+    linkedMatches.Add(string.Format("{0} link(s) NOT LOADED, so their rooms and spaces were NOT asked: {1} - "
+        + "an element in one of those is counted in none", notLoaded.Count, string.Join(", ", notLoaded)));
 
 if (includeLinks && nestedLinks > 0)
     linkedMatches.Add(string.Format("{0} link placement(s) nested inside those links were NOT "

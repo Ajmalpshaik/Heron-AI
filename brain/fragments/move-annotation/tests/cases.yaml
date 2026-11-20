@@ -17,7 +17,18 @@ positive:
       "spread down" then spaces them evenly between the top and bottom one
       (version 2)
 
+  - given: >
+      version 3, Revit 2020 - one 3.5mm Arial text note made by
+      CREATE_TEXT_NOTE, target 1000,0,0 (row 5b-1115)
+    expect: >
+      moved 1, notMovable 0, and the note's text read back at the target.
+      Version 2 answered notMovable 1 here. Then two notes, arrange "align
+      left": both lined up, read back within 1 mm
+
 negative:
+  - given: version 3 - a text note and no target
+    expect: refused, nothing moved
+
   - given: a dimension handed in
     expect: >
       whatever actually happens, recorded rather than assumed. A dimension is
