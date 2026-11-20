@@ -13,10 +13,10 @@ The usage counter - which clauses helped, kept on this PC as numbers.
     python brain/heron_usage.py --helped <chunk id> --scope company
     python brain/heron_usage.py --forget --scope company
 
-D-70 decided that Heron keeps it; D-190 is the owner's yes, 2026-11-20, to its
+D-70 decided that Heron keeps it; D-191 is the owner's yes, 2026-11-20, to its
 four open parts. R-16 and R-25 of the RAG requirement note.
 
-WHAT IT KEEPS, AND NOTHING ELSE (D-190 clauses 1 and 4)
+WHAT IT KEEPS, AND NOTHING ELSE (D-191 clauses 1 and 4)
 --------------------------------------------------------
 Per clause - the chunk id a citation already carries:
 
@@ -29,7 +29,7 @@ shape was "QCS clause 21.4  helped 12 times", and the owner's reason for that
 shape - "if we keep everything by note that will be big" - is why this is one
 small file of counts that does not grow with use the way a log would.
 
-"HELPED" IS SAID, NEVER GUESSED (D-190 clause 2)
+"HELPED" IS SAID, NEVER GUESSED (D-191 clause 2)
 ------------------------------------------------
 Only helped() moves the helped count, and only the modeller's own word reaches
 it - the `heron_helped` tool, called when they say an answer was right, or this
@@ -37,7 +37,7 @@ command line. Nothing here infers it from a clause being cited, an answer being
 kept, or a question not being asked again. A guessed signal would teach the
 ranking whatever the guess got wrong.
 
-LESS THAN ONE RANK (D-190 clause 3)
+LESS THAN ONE RANK (D-191 clause 3)
 -----------------------------------
 rate() is helped / offered, a number from 0 to 1. heron_retrieve multiplies it
 by USAGE_SPAN, which is held below one fusion rank - so a clause that helped

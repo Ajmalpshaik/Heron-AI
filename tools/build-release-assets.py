@@ -336,7 +336,7 @@ WORKSPACE_NAME = "heron-project.zip"
 # download. A store can hold a client's specification and a standard bought per
 # seat, and a published download cannot be taken back. So a file of one of
 # these shapes STOPS the build, by name, rather than being skipped in silence.
-# "-usage.json" is the usage counter beside a store (D-70, D-190): what the
+# "-usage.json" is the usage counter beside a store (D-70, D-191): what the
 # modeller said helped, which D-70 says never leaves the PC.
 STORE_SHAPES = (".db", ".sqlite", ".sqlite3", ".heron-db", "-documents.jsonl",
                 "-usage.json")

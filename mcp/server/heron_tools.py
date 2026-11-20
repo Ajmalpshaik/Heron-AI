@@ -287,7 +287,7 @@ TOOLS = {
     # describe. What crosses between them is a number and a clause number.
     "heron_standards":          (READ,    None),
 
-    # The usage counter (D-70, D-190). READ, operation None, for every reason
+    # The usage counter (D-70, D-191). READ, operation None, for every reason
     # heron_hvac is: it reads no model and sends nothing to Revit. On the
     # modeller's word that an answer helped, it adds one to that clause's count
     # in a small file beside the knowledge store, in Heron's own folder - only

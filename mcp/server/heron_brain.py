@@ -1430,7 +1430,7 @@ def context(request, path=None, revit=None, full=False, depth=None,
         _audit().context(path=ctx.path,
                          depth=CONTEXT.DEPTH_NAMES[ctx.depth],
                          parts=len(ctx.parts), characters=ctx.size)
-        # D-190: each clause this packet shows the chat counts once as
+        # D-191: each clause this packet shows the chat counts once as
         # offered, in the counter beside the store it came from.
         _count_offered(getattr(store, "path", None),
                        [p.citation.get("chunk") for p in ctx.parts
@@ -2720,7 +2720,7 @@ def _with_text(asked, project=None):
 
 
 def _count_offered(store_path, chunk_ids):
-    """Count each clause shown to the chat once as OFFERED (D-70, D-190).
+    """Count each clause shown to the chat once as OFFERED (D-70, D-191).
 
     Never fails the answer it counts: a counter that could break a reply is
     worse than none, so an unwritable counter is left as it was. Nothing is
@@ -2738,7 +2738,7 @@ def _count_offered(store_path, chunk_ids):
 
 
 def helped(chunk, scope="global", project=None, project_name=None):
-    """The modeller said this clause helped: count it (D-190 clause 2).
+    """The modeller said this clause helped: count it (D-191 clause 2).
 
     Returns {chunk, scope, helped, offered, last_helped, said}. Raises
     ValueError for a scope or a clause this PC does not hold - said, never
@@ -2842,7 +2842,7 @@ def standards(request, scopes, project=None, limit=5,
                                    limit=limit, asked=asked,
                                    project_name=project_name)
 
-    # D-190: every clause shown counts once as offered, in its OWN scope's
+    # D-191: every clause shown counts once as offered, in its OWN scope's
     # counter - never pooled, the same wall the Librarian keeps.
     for one in asked:
         shown = [c.get("id") for c in

@@ -6327,7 +6327,7 @@ def heron_helped(chunk: str, scope: str = "global") -> str:
     Keeps a clause id and counts on this PC - never the question - and sends
     nothing. Touches nothing in the model.
     """
-    # D-190: "helped" is the modeller's word, never a guess, and it nudges that
+    # D-191: "helped" is the modeller's word, never a guess, and it nudges that
     # clause by less than one rank next time (heron_retrieve.USAGE_SPAN).
     try:
         got = brain.helped(chunk, scope=scope, project=pinned.project_key,

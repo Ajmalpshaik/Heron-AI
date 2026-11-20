@@ -84,7 +84,7 @@ RRF_K = 60
 # instead of against 0.0002 with nothing to compare it to.
 ONE_RANK = 1.0 / (RRF_K + 1) - 1.0 / (RRF_K + 2)
 
-# THE USAGE NUDGE, D-190 clause 3: "less than one rank - it settles a tie,
+# THE USAGE NUDGE, D-191 clause 3: "less than one rank - it settles a tie,
 # never beats a better match". A clause the modeller said helped every time it
 # was shown gets this much; half as often, half this. HALF A RANK, so even the
 # full nudge is narrower than the smallest difference either route can express.
@@ -167,7 +167,7 @@ class Candidate(object):
         # warm-up finishing after the search. See ran().
         self.vector_backend = None
         self.vector_why = None
-        # D-190: the clause's counts from heron_usage, when the modeller has
+        # D-191: the clause's counts from heron_usage, when the modeller has
         # ever said it helped - {offered, helped, last_helped}. None otherwise.
         self.usage = None
         # THE UTTERANCES A RE-RANKER READS, from the store's `rerank_said`.
@@ -296,7 +296,7 @@ class Contest(object):
         self.count = len(ranked)
         # HOW FAR THE NUDGE THAT MAY HAVE SET THIS ORDER CAN MOVE IT, and what
         # it is called. Fragments: status, QUALITY_SPAN. Clauses: the usage
-        # counter, USAGE_SPAN (D-190) - nudged only where it applied.
+        # counter, USAGE_SPAN (D-191) - nudged only where it applied.
         self.span = QUALITY_SPAN if span is None else span
         self.nudge_name = nudge_name
         self.eligible = eligible_count
@@ -929,7 +929,7 @@ def _until_filled_pairs(store, text, keep, pool, ceiling=20):
 
 
 def apply_usage(candidate, counts):
-    """The usage nudge on one clause (D-70, D-190): USAGE_SPAN times how often
+    """The usage nudge on one clause (D-70, D-191): USAGE_SPAN times how often
     the modeller said it helped over how often it was shown - or nothing, when
     nobody ever said. Returns the nudge added. Half a rank at most."""
     entry = (counts or {}).get(candidate.id)
@@ -1047,7 +1047,7 @@ def documents(store, text, limit=5, pool=20):
         # the nudge here would be borrowing a number that means something
         # else, which is how a ranking stops being explainable.
         #
-        # THE USAGE NUDGE IS THE ONE A CLAUSE GETS (D-70, D-190): how often
+        # THE USAGE NUDGE IS THE ONE A CLAUSE GETS (D-70, D-191): how often
         # the modeller SAID it helped, over how often it was shown, times
         # USAGE_SPAN - half a rank at most. Read from the counter beside this
         # store, never from inside it (Golden Rule 11).
@@ -1174,7 +1174,7 @@ def find_documents(store, text, limit=5):
                      "words_score": c.keyword_score,
                      "nearness_score": c.vector_score,
                      "rerank_score": c.rerank_score,
-                     # D-190: only where the modeller has said it helped.
+                     # D-191: only where the modeller has said it helped.
                      **({"usage": c.usage} if c.usage else {})}
                     for c in ranked],
         note=note, contest=contest,

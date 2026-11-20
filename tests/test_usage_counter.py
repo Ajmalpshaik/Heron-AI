@@ -11,7 +11,7 @@ The usage counter: numbers on this PC, "helped" only when said, under one rank.
 
     python tests/test_usage_counter.py
 
-D-70 decided Heron keeps a usage counter; D-190 is the owner's yes, 2026-11-20,
+D-70 decided Heron keeps a usage counter; D-191 is the owner's yes, 2026-11-20,
 to its four open parts. Issue #1006 WN-12, R-16 and R-25:
 
   1. offered counts a clause once per showing; nothing counts it as helped
@@ -201,7 +201,7 @@ def main():
                   "the counter file holds no word of the question")
             check(set(json.loads(raw)["clauses"][winner]) <= {"offered", "helped",
                                                               "last_helped"},
-                  "only the three numbers D-190 names, per clause")
+                  "only the three numbers D-191 names, per clause")
             store_path = store.path
         finally:
             store.close()
