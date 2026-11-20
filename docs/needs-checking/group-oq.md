@@ -7,6 +7,8 @@
 
 ## Group OQ - seven tools changed on the owner's answers of 2026-11-19/20: tag gaps on paper, the dashboard's subcategories, a link's settings, reloading with no undo, spaces with no area, Object Styles' material, revision numbers that do not move - DRAFT until proved (2026-11-20)
 
+**Tracked as GitHub issue [#1077](https://github.com/Ajmalpshaik/Heron-AI/issues/1077) since 2026-11-20** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Why:** on 2026-11-19 and 2026-11-20 the owner, Ajmal PS, answered decision rows on
 [#924](https://github.com/Ajmalpshaik/Heron-AI/issues/924), [#921](https://github.com/Ajmalpshaik/Heron-AI/issues/921) and
 [#926](https://github.com/Ajmalpshaik/Heron-AI/issues/926), with his standing word that a real defect in a
