@@ -12,6 +12,7 @@
 <p align="center">
   <a href="#what-it-is">What it is</a> ·
   <a href="#how-it-fits-together">How it fits together</a> ·
+  <a href="#install">Install</a> ·
   <a href="#where-to-go-next">Where to go next</a> ·
   <a href="docs/README.md">Documentation</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
@@ -19,21 +20,12 @@
 
 # Heron AI
 
-> [!IMPORTANT]
-> **Dear Modelers — please do not install this yet.**
+> [!NOTE]
+> **Modellers: Heron can be installed now.** It is an early build and it is **not signed yet**, so
+> Windows warns you the first time. What has been checked and what has not is under [Install](#install).
 >
-> This repo is public only so the work is open. **It is still not finished.**
-> Let me complete everything first. I will announce it on LinkedIn and on the
-> website when it is ready to install.
->
-> - **Until then, feel free to read and follow along.**
-> - The early build on the Releases page, [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0),
->   is **for testing only** and is **unsigned**. This notice still stands.
->
-> **Programmers and AI engineers — your thoughts are very welcome.**
-> Please read the code and share your suggestions, ideas or corrections
-> through an Issue or a Discussion. That help is what I am asking for now,
-> not installs.
+> **Programmers and AI engineers, your thoughts are very welcome.** Read the code and share your
+> suggestions, ideas or corrections through an Issue or a Discussion.
 
 **A modular, agent-based AI engineering platform for BIM.**
 
@@ -99,6 +91,38 @@ Revit -> the answer comes back to you
 **Heron reads your model freely and changes nothing until you turn the Changes switch on.** Every change
 it makes is one entry in Revit's Undo list. The full picture, part by part:
 [**How Heron works**](docs/guide/how-heron-works.md).
+
+## Install
+
+The latest release is **[v0.2.0](https://github.com/Ajmalpshaik/Heron-AI/releases/latest)**: one file,
+`HeronSetup-0.2.0-unsigned.exe`. It puts Heron into every Revit on your PC, 2020 to 2027, for your own
+Windows user, with **no administrator rights**.
+
+1. **Install Python once.** In Windows Terminal: `winget install Python.Python.3.12 --scope user`
+2. **Close Revit**, and close Claude too if you want Heron added to Claude Code in the same go.
+3. **Double-click `HeronSetup-0.2.0-unsigned.exe`.** Windows says *"Windows protected your PC"*
+   because it is not signed yet: **More info**, then **Run anyway**.
+4. In the **Heron Installer** window, leave the Revit years and both ticks on (*Set up Heron's AI
+   side too* and *Add Heron to Claude Code*), press **Install**, wait for the report, then **Close**.
+5. **Open Revit** and press **Heron** on the Heron tab. Then open Claude, **Code**, **This computer**,
+   and ask, for example, *"total duct length by size"*.
+
+**To remove it:** Settings › Apps › Installed apps › Heron AI › Uninstall. Your own Heron settings and
+history stay.
+
+**What has been checked, and what has not** (the release notes say the same):
+
+| | |
+|---|---|
+| **Run on the owner's PC, 2026-11-16** | The Setup installed Heron into Revit 2020, 2024, 2026 and 2027, its Python side said `READY`, and Uninstall took everything back out |
+| **Not checked yet** | Revit loading this exact build, and the *Add Heron to Claude Code* tick on a PC that is not a Heron developer's |
+| **Never run** | Revit 2021, 2022, 2023 and 2025 |
+| **Not signed** | No code-signing certificate yet ([D-190](docs/DECISIONS.md)). Every file on the release page is listed with its SHA-256 in `checksums.txt`, and the Setup's own SHA-256 is in the release notes |
+
+Heron starts **read-only**: it changes nothing until you turn **Changes** on in its Settings window.
+Everything a PC needs, step by step, and what is optional: [**What to install**](docs/WHAT-TO-INSTALL.md) ·
+the disk cost of each piece: [**System requirements**](docs/guide/system-requirements.md).
+Something wrong? Please [open an Issue](https://github.com/Ajmalpshaik/Heron-AI/issues).
 
 ## Where to go next
 
