@@ -54,7 +54,7 @@ risk: MODIFY
 # was cut is not read here, because what Revit answers for a part asked
 # about its own children is unmeasured. `partCountBefore` is new beside `partCountAfter`. Version 2 was PROVEN
 # on 2026-11-13 (the proof block below, kept as the record of what it
-# proved); its C# moved, so it is DRAFT until NEEDS-CHECKING Group OR is run.
+# proved); its C# moved, so it is DRAFT until NEEDS-CHECKING Group OU is run.
 # GetAssociatedParts was already called on every release; nothing new is
 # asked of the API.
 #

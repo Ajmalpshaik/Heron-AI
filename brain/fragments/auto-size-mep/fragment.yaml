@@ -25,7 +25,7 @@ risk: MODIFY
 # `refused` and sizes NOTHING. When the two agree the sizes are worked out
 # exactly as version 1 worked them out, and the line says the check passed.
 # Version 1 was PROVEN (the proof block below, kept as the record of what it
-# proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group OR
+# proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group OU
 # proves version 2 (D-30).
 
 purpose: >

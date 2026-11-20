@@ -32,7 +32,7 @@ risk: MODIFY
 #      - a round column's two half-circles - is now kept.
 # A room whose boundary is whole is built exactly as version 2 built it. The
 # card was DRAFT already (proof-held, below); the 2026-10-21 proof's
-# fingerprint no longer matches impl/ either. NEEDS-CHECKING Group OR.
+# fingerprint no longer matches impl/ either. NEEDS-CHECKING Group OU.
 
 # BACK TO DRAFT 2026-11-16, ON THE OWNER'S ANSWER (FRAGMENT-ISSUES row
 # 5b-1643). Signed PROVEN on 2026-10-21 on a FLOOR case - wantFinish false,

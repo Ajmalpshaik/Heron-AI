@@ -23,7 +23,7 @@ risk: READ
 # here. Autodesk's own words: the value is cached locally, as of the last time
 # this model talked to central, never a fresh look - said in the code and
 # below, never read as a guarantee. Not workshared: both empty. Every version 2
-# answer is unchanged. The card was DRAFT already; NEEDS-CHECKING Group OR.
+# answer is unchanged. The card was DRAFT already; NEEDS-CHECKING Group OU.
 
 purpose: >
   On a workshared model, who owns each element right now, who created it and who

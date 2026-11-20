@@ -85,7 +85,7 @@ positive:
 
   # VERSION 10 (row 5b-1221). NOT RUN. Revit 2020 first, on a scratch copy of
   # rac_basic_sample_project.rvt - Level 1 (id 311) with its floor plan "Level 1"
-  # (id 312) - every run rolled back. NEEDS-CHECKING Group OR, OR1 to OR3.
+  # (id 312) - every run rolled back. NEEDS-CHECKING Group OU, OU1 to OU3.
   - given: >
       VERSION 10. Level 1 handed in, field Name, mode replace, text "Level 1",
       replacement "Ground Floor", renameViews yes

@@ -25,7 +25,7 @@ capability: PLACE_HOSTED_FAMILY
 # own wrongRoom line word for word, and every case with a room is version 4's
 # run, statement for statement. Version 4 was PROVEN (the proof block below,
 # kept as the record of what it proved); its C# moved, so it is DRAFT until
-# NEEDS-CHECKING Group OR is run (D-30).
+# NEEDS-CHECKING Group OU is run (D-30).
 version: 5
 source: OFFICIAL
 risk: MODIFY

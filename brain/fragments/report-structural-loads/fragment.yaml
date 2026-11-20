@@ -59,7 +59,7 @@ risk: READ
 # NEEDS-CHECKING Group NX NX3 showed SubcategoryId reads on 2020. Revit naming
 # none reads "? (Revit named none)". Nothing else moved. Version 2 was PROVEN
 # (the proof block below, kept as the record of what it proved); its C# moved,
-# so it is DRAFT again until NEEDS-CHECKING Group OR proves version 3 (D-30).
+# so it is DRAFT again until NEEDS-CHECKING Group OU proves version 3 (D-30).
 
 purpose: >
   Answers which structural loads the model holds - the load natures, the load

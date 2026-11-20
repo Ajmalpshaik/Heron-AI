@@ -65,7 +65,7 @@ the biggest being **62 reading fragments that must be able to look inside linked
 them to** — which in Qatar MEP work is most of the time, because the architecture is a link, the
 structure is a link, and often the MEP you are checking is a link too. Every rule is already checked by
 a gate; none of the edits was guessed, because this container has no Revit and no `dotnet` and writing
-62 collector rewrites nobody could compile would have been worse than leaving a list. *(Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-7 and WN-8). Since 2026-11-20 WN-7's worklist has a row of its own, [row 5b-1892](fragment-issues/row-5b-1892.md), and is still open.)*
+62 collector rewrites nobody could compile would have been worse than leaving a list. *(Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-7 and WN-8). Since 2026-11-20 WN-7's worklist has a row of its own, [row 5b-1909](fragment-issues/row-5b-1909.md), and is still open.)*
 
 **To carry the ROLES work on, say:** *"Read the ROLES track entry in HANDOVER.md."* It is archived at
 [the ROLES track](handover-archive/2026-09-09-the-roles-track-989-provides-declared-and-nothing-reads-a-na.md). That track is

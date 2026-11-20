@@ -34,7 +34,7 @@
 // `levelNote` reads back, for each level renamed, the plan and ceiling views
 // that carried its old name before the write: renamed with it, or not. When
 // Revit renames them - at the write or at the commit - is NOT measured: the
-// read is taken after one regeneration, and NEEDS-CHECKING Group OR says what
+// read is taken after one regeneration, and NEEDS-CHECKING Group OU says what
 // it shows. Nothing else changes: every other element and field is version 9's
 // run.
 //

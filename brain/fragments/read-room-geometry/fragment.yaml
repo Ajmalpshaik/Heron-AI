@@ -21,7 +21,7 @@ risk: READ
 # `holes` is unchanged, edge for edge, so every caller that reads it - the
 # layout methods, SET_VIEW_CROP - gets exactly version 2's answer. Version 2
 # was PROVEN (the proof block below, kept as the record of what it proved);
-# its C# moved, so it is DRAFT again until NEEDS-CHECKING Group OR proves
+# its C# moved, so it is DRAFT again until NEEDS-CHECKING Group OU proves
 # version 3 (D-30).
 
 purpose: >

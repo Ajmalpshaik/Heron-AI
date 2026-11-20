@@ -23,7 +23,7 @@ risk: MODIFY
 # the answer names CREATE_FOUNDATION_SLAB. Every other type is version 3's
 # run, statement for statement. Version 3 was PROVEN (the proof block below,
 # kept as the record of what it proved); its C# moved, so it is DRAFT until
-# NEEDS-CHECKING Group OR is run (D-30).
+# NEEDS-CHECKING Group OU is run (D-30).
 #
 # VERSION 3 (2026-11-01) - CREATE_CEILING AND CREATE_ROOF WERE MERGED INTO THIS
 # CARD on the owner's instruction ("make sure there is no duplicate tools", then

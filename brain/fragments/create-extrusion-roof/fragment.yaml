@@ -52,7 +52,7 @@ capability: CREATE_EXTRUSION_ROOF
 # ROOF_CONSTRAINT_LEVEL_PARAM, the parameter COPY_ELEMENTS already reads for
 # an extrusion roof - and asks LevelId only when no Reference Level is read.
 # A refusal now names the level it read. What LevelId answers for an
-# extrusion roof is NOT MEASURED. Still DRAFT; NEEDS-CHECKING Group OR.
+# extrusion roof is NOT MEASURED. Still DRAFT; NEEDS-CHECKING Group OU.
 version: 2
 source: OFFICIAL
 risk: MODIFY

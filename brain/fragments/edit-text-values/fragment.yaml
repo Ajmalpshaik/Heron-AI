@@ -21,7 +21,7 @@ capability: EDIT_TEXT_VALUES
 # answers it, as SET_PARAMETER_VALUES_BY_ID does; see the comment above
 # `renameViews` below and the impl's header. The proof block below is version
 # 9's, kept as the record of what it proved; its C# moved, so the card is DRAFT
-# until NEEDS-CHECKING Group OR's OR1 to OR3 are run (D-30).
+# until NEEDS-CHECKING Group OU's OU1 to OU3 are run (D-30).
 #
 # VERSION 9, BACK TO DRAFT ON 2026-11-07 (FRAGMENT-ISSUES row 5b-1475), and
 # PROVEN AGAIN ON 2026-11-08 - the proof block below is version 9's. On the
