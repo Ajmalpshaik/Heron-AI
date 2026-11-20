@@ -1,5 +1,6 @@
-// NOT STANDALONE. Assumes `doc`, `elements`, `roomParameter`, `levelParameter`
-// and `useSpaces` are in scope; leaves `written`, `noRoomFound` and `refused`
+// NOT STANDALONE. Assumes `doc`, `elements`, `roomParameter`, `numberParameter`,
+// `levelParameter`, `useSpaces` and `includeLinks` are in scope; leaves
+// `written`, `noRoomFound`, `refused`, `linksSearched` and `linkedMatches`
 // behind.
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -7,24 +8,83 @@
 // This READS each element's position and derives what to write, per element -
 // nobody can hand in four hundred different room names.
 //
+// VERSION 3 (2026-11-19, FRAGMENT-ISSUES 5b-1856), from a real job stopped
+// before anything was written:
+//   1. THE NAME ALONE GOES INTO roomParameter. Version 2 wrote Element.Name,
+//      and for a room or a space Revit answers that with the name AND the
+//      number together - so a name column got the number glued on. The name is
+//      now the container's own Name parameter (ROOM_NAME, which a space carries
+//      too).
+//   2. numberParameter, new and optional, takes the Number on its own.
+//   3. A SPACE IS TESTED BY ITS BOUNDARY, NOT ITS BOUNDING BOX. Version 2 cast
+//      every container to Room; a Space is not one, so every space fell
+//      through to a box test - and an L-shaped space's box claims the corridor
+//      beside it. Now Space.IsPointInSpace, as Room.IsPointInRoom for a room.
+//   4. THE STOREY IS CHECKED - see below. Version 2 took the first container
+//      that had the element in plan, whatever floor it was on.
+//   5. includeLinks: rooms and spaces in loaded links, when asked - see below.
+// Every target is optional: left out, "none" (the card's word for left out) or
+// blank skips it.
+//
 // A TARGET NAME TWO PARAMETERS SHARE IS NOT FILLED. A shared or project
-// parameter can be bound beside a built-in one of the same name, and
-// LookupParameter then returns one of them - "determined at random", in
-// Autodesk's own reference - so the room name would land in a field no schedule
-// reads. Each target is checked on its own and counted apart (D-54 s3,
-// FRAGMENT-ISSUES 5b-203).
+// parameter can be bound beside a built-in one of the same name, and a lookup
+// by name then returns one of them - "determined at random", in Autodesk's own
+// reference - so the value would land in a field no schedule reads. Each target
+// is checked on its own and counted apart (D-54 s3, FRAGMENT-ISSUES 5b-203).
+// A target that is not a TEXT parameter is counted with the missing ones, and
+// every value written is read back: what Revit did not keep is counted.
 //
 // ROOM AND SPACE ARE NOT THE SAME THING and this is the commonest way a location
 // register comes out wrong. Architecture puts people in ROOMS; MEP calculates in
 // SPACES. A model can hold both, in the same place, with different names.
 //
-// THE PROBE POINT IS NUDGED TO THE ROOM'S OWN MID-HEIGHT. The room test needs a
-// point inside the room's VOLUME, and a ceiling-mounted diffuser sits above the
-// room's upper limit - so from its own position it tests false, and a register
-// built the obvious way has every terminal blank.
+// IN PLAN, THEN IN HEIGHT. A container has the element IN PLAN when Revit's own
+// test says yes at the container's mid-height or at its location point's height
+// (COUNT_BY_SPATIAL_CONTAINER asks at the second) - the element's own height
+// would miss a damper in the ceiling void above a room that stops at the
+// ceiling. But in plan alone a space on Level 1 also says yes to a damper on
+// Level 3 directly above it. So a container that has the element in plan is
+// taken only when the element is:
+//   - INSIDE its volume - Revit's own test at the element's own point, the test
+//     FILTER_ELEMENTS_IN_ROOM uses; or
+//   - ABOVE IT BUT STILL ON ITS STOREY - not below its floor, and below the
+//     container's own level plus the height to the next STOREY level up (a
+//     level with Building Story ticked, so a "ceiling" or slab level between
+//     two floors is passed over). That height is a DIFFERENCE of two levels'
+//     elevations, measured up from the container's location point, so it means
+//     the same in a link. The ceiling void case (row 5b-175's container-height
+//     side, as version 2 took it).
+// Anything else is NOT WRITTEN and is named with the container it was in plan
+// of and why: below its floor, above its storey (naming the storey level that
+// is its top), or a storey whose top is not known (no storey level above, or
+// the container has no level). A model with NO level ticked as a storey uses
+// every level, and a "ceiling" level then makes the storey short: ceiling void
+// elements above it go unwritten and named, never written to the wrong floor.
+// This can leave elements unwritten that COUNT_BY_SPATIAL_CONTAINER puts in a
+// space, because that count asks in plan alone.
 //
-// ROOMS AND SPACES ARE TOLD APART BY CATEGORY. The wrapper imports the base
-// namespace and the two spatial types are not both available as names.
+// TWO CONTAINERS EQUALLY GOOD ARE NOT WRITTEN. One the element is inside beats
+// one it is above; between two it is above, the nearer top wins; two it is
+// inside (overlapping rooms or spaces), or two equally near, are named and
+// left alone rather than written with a guess.
+//
+// ONE POINT PER ELEMENT: its location point, or the middle of its bounding box.
+//
+// ROOMS AND SPACES IN A LINK ARE ASKED ONLY WHEN `includeLinks` IS SET - D-59:
+// the modeller decides, job by job, and left out it is host only, as version 2
+// was. On a federated MEP job the ROOMS ARE IN THE ARCHITECTURAL LINK, and host
+// only answers "in no room" for every element. Set, each LOADED link's placed
+// and enclosed rooms (or spaces) are asked too - COUNT_BY_SPATIAL_CONTAINER's
+// mechanism: one entry per link FILE, every placement of it asked, the
+// element's point moved into the link through the placement's inverse
+// transform and tested there, with the link's own levels for the storey.
+// NESTED LINKS ARE NOT READ, and the answer counts them.
+//
+// THIS MODEL'S OWN CONTAINER WINS - but only one that passed the storey check.
+// When one of this model's rooms or spaces and a linked one both hold the
+// element, this model's is written, and the answer counts how often that
+// happened. A linked one is given only where no host container passed. The
+// ELEMENTS written are always this model's own; a linked room is only read.
 
 var written = 0;
 var noRoomFound = new List<ElementId>();
@@ -32,136 +92,572 @@ var refused = new List<string>();
 
 var wantedCategory = useSpaces ? BuiltInCategory.OST_MEPSpaces : BuiltInCategory.OST_Rooms;
 var label = useSpaces ? "SPACE" : "ROOM";
+var tolerance = 1.0 / 304.8;    // 1 mm, in Revit's feet
 
-// The spatial elements, with the volume each one occupies.
-var spatial = new List<Element>();
+// The targets. "none" - what the card says a value left out is read as - and
+// blank both mean skip it.
+var nameTarget = (roomParameter ?? "").Trim();
+if (string.Equals(nameTarget, "none", StringComparison.OrdinalIgnoreCase)) nameTarget = "";
+var numberTarget = (numberParameter ?? "").Trim();
+if (string.Equals(numberTarget, "none", StringComparison.OrdinalIgnoreCase)) numberTarget = "";
+var levelTarget = (levelParameter ?? "").Trim();
+if (string.Equals(levelTarget, "none", StringComparison.OrdinalIgnoreCase)) levelTarget = "";
+
+// The levels that are STOREYS in one document - Building Story ticked - so a
+// "ceiling" or slab level between two floors does not cut a storey short. A
+// document with none ticked (or none Revit can read) gives every level, and the
+// short storey is then the honest failure: named, never written to another
+// floor. REPORT_LEVEL_ELEVATIONS reads the same tick.
+Func<Document, List<Level>> storeyLevelsIn = (inDoc) =>
+{
+    var every = new List<Level>();
+    var storeys = new List<Level>();
+    try
+    {
+        foreach (var level in new FilteredElementCollector(inDoc).OfClass(typeof(Level)).Cast<Level>())
+        {
+            every.Add(level);
+            Parameter flag = null;
+            try { flag = level.get_Parameter(BuiltInParameter.LEVEL_IS_BUILDING_STORY); } catch (Exception) { flag = null; }
+            if (flag != null && flag.HasValue && flag.AsInteger() == 1) storeys.Add(level);
+        }
+    }
+    catch (Exception) { }
+    return storeys.Count > 0 ? storeys : every;
+};
+
+// The height from a container's level to the next storey level up in its own
+// document, and that level's name - or -1 and "" when there is none or the
+// container has no level. A difference of two elevations, so its origin never
+// matters.
+Func<SpatialElement, List<Level>, Tuple<double, string>> storeyOf = (container, levels) =>
+{
+    Level own = null;
+    try { own = container.Level; } catch (Exception) { own = null; }
+    if (own == null) return Tuple.Create(-1.0, "");
+    var at = own.ProjectElevation;
+    Level next = null;
+    foreach (var level in levels)
+        if (level.ProjectElevation > at + tolerance && (next == null || level.ProjectElevation < next.ProjectElevation))
+            next = level;
+    return next == null ? Tuple.Create(-1.0, "") : Tuple.Create(next.ProjectElevation - at, next.Name);
+};
+
+// The placed and enclosed containers, with the box each one occupies in its own
+// document. Zero area means unplaced or unenclosed, and such a container's test
+// means nothing - COUNT_BY_SPATIAL_CONTAINER's rule. The host's come first; a
+// linked one carries the transform INTO its link and the link's name.
+var spatial = new List<SpatialElement>();
+var spatialBox = new List<BoundingBoxXYZ>();
+var spatialStorey = new List<Tuple<double, string>>();   // height to the next storey level up and its name, or -1
+var spatialTo = new List<Transform>();      // null: this model's own
+var spatialFrom = new List<string>();       // "": this model's own
+var skippedContainers = 0;
+var hostLevels = storeyLevelsIn(doc);
 foreach (var element in new FilteredElementCollector(doc)
     .OfCategory(wantedCategory).WhereElementIsNotElementType())
 {
-    var box = element.get_BoundingBox(null);
-    if (box == null) continue;      // unplaced or unbounded: no volume to test against
-    spatial.Add(element);
+    var container = element as SpatialElement;
+    if (container == null) continue;
+    BoundingBoxXYZ box = null;
+    try { box = container.get_BoundingBox(null); } catch (Exception) { box = null; }
+    if (box == null || container.Area <= 0.0) { skippedContainers++; continue; }
+    spatial.Add(container);
+    spatialBox.Add(box);
+    spatialStorey.Add(storeyOf(container, hostLevels));
+    spatialTo.Add(null);
+    spatialFrom.Add("");
 }
 
-if (spatial.Count == 0)
+// ---- D-59: the links, only when asked for -----------------------------------
+var linksSearched = 0;
+var linkedMatches = new List<string>();
+var nestedLinks = 0;
+var linkedSkipped = 0;
+if (includeLinks)
 {
-    refused.Add(string.Format("this model has no placed {0}S with a boundary. If the {1}s are in a "
-        + "LINK, nothing here can see them and every element below will come back blank",
-        label, useSpaces ? "space" : "room"));
-}
-
-var missingRoomParameter = 0;
-var missingLevelParameter = 0;
-var ambiguousRoomParameter = 0;
-var ambiguousLevelParameter = 0;
-
-foreach (var element in elements)
-{
-    if (element == null || !element.IsValidObject) continue;
-
-    XYZ point = null;
-    var location = element.Location as LocationPoint;
-    if (location != null) point = location.Point;
-    if (point == null)
+    // One entry per link FILE, keyed by link type - a file placed twice is one
+    // model placed twice. LOADED IS ESTABLISHED BY ASKING FOR THE DOCUMENT.
+    var linkTypes = new List<ElementId>();
+    var linkDocs = new List<Document>();
+    var linkPlacements = new List<List<RevitLinkInstance>>();
+    foreach (var instance in new FilteredElementCollector(doc)
+        .OfClass(typeof(RevitLinkInstance)).Cast<RevitLinkInstance>())
     {
-        var box = element.get_BoundingBox(null);
-        if (box != null) point = (box.Min + box.Max) / 2.0;
-    }
-    if (point == null) continue;
+        if (instance == null) continue;
+        var typeId = instance.GetTypeId();
+        if (typeId == null || typeId == ElementId.InvalidElementId) continue;
 
-    // Which spatial element contains it. The probe Z is the ROOM's mid-height,
-    // not the element's - see the header.
-    Element found = null;
-    foreach (var candidate in spatial)
-    {
-        var box = candidate.get_BoundingBox(null);
-        if (box == null) continue;
-        if (point.X < box.Min.X || point.X > box.Max.X) continue;
-        if (point.Y < box.Min.Y || point.Y > box.Max.Y) continue;
+        var known = linkTypes.IndexOf(typeId);
+        if (known >= 0) { linkPlacements[known].Add(instance); continue; }
 
-        var midHeight = (box.Min.Z + box.Max.Z) / 2.0;
-        var probe = new XYZ(point.X, point.Y, midHeight);
+        Document linked = null;
+        try { linked = instance.GetLinkDocument(); }
+        catch (Exception) { linked = null; }
+        if (linked == null) continue;
 
-        var inside = false;
+        linkTypes.Add(typeId);
+        linkDocs.Add(linked);
+        linkPlacements.Add(new List<RevitLinkInstance> { instance });
+
         try
         {
-            var room = candidate as Room;
-            if (room != null) inside = room.IsPointInRoom(probe);
-            else inside = probe.Z >= box.Min.Z && probe.Z <= box.Max.Z;
+            nestedLinks += new FilteredElementCollector(linked)
+                .OfClass(typeof(RevitLinkInstance)).GetElementCount();
         }
-        catch
-        {
-            inside = probe.Z >= box.Min.Z && probe.Z <= box.Max.Z;
-        }
-
-        if (inside) { found = candidate; break; }
+        catch (Exception) { }
     }
 
-    var touched = false;
-
-    if (!string.IsNullOrEmpty(roomParameter))
+    for (var i = 0; i < linkDocs.Count; i++)
     {
-        var twice = element.GetParameters(roomParameter).Count > 1;
-        var target = twice ? null : element.LookupParameter(roomParameter);
-        if (twice) ambiguousRoomParameter++;
-        else if (target == null || target.IsReadOnly) missingRoomParameter++;
-        else if (found == null) noRoomFound.Add(element.Id);
-        else
+        var linked = linkDocs[i];
+        var linkLevels = storeyLevelsIn(linked);
+        var inLink = new List<SpatialElement>();
+        var inLinkBox = new List<BoundingBoxXYZ>();
+        var inLinkStorey = new List<Tuple<double, string>>();
+        try
         {
-            try { target.Set(found.Name); touched = true; }
-            catch { }
-        }
-    }
-
-    if (!string.IsNullOrEmpty(levelParameter))
-    {
-        var twice = element.GetParameters(levelParameter).Count > 1;
-        var target = twice ? null : element.LookupParameter(levelParameter);
-        if (twice) ambiguousLevelParameter++;
-        else if (target == null || target.IsReadOnly) missingLevelParameter++;
-        else
-        {
-            var levelId = element.LevelId;
-            var level = levelId == ElementId.InvalidElementId ? null : doc.GetElement(levelId);
-            if (level != null)
+            foreach (var element in new FilteredElementCollector(linked)
+                .OfCategory(wantedCategory).WhereElementIsNotElementType())
             {
-                try { target.Set(level.Name); touched = true; }
-                catch { }
+                var container = element as SpatialElement;
+                if (container == null) continue;
+                BoundingBoxXYZ box = null;
+                try { box = container.get_BoundingBox(null); } catch (Exception) { box = null; }
+                if (box == null || container.Area <= 0.0) { linkedSkipped++; continue; }
+                inLink.Add(container);
+                inLinkBox.Add(box);
+                inLinkStorey.Add(storeyOf(container, linkLevels));
             }
         }
+        catch (Exception) { }
+
+        foreach (var placement in linkPlacements[i])
+        {
+            Transform toLink = null;
+            try { toLink = placement.GetTotalTransform().Inverse; }
+            catch (Exception) { toLink = null; }
+            if (toLink == null) continue;
+
+            for (var c = 0; c < inLink.Count; c++)
+            {
+                spatial.Add(inLink[c]);
+                spatialBox.Add(inLinkBox[c]);
+                spatialStorey.Add(inLinkStorey[c]);
+                spatialTo.Add(toLink);
+                spatialFrom.Add(linked.Title);
+            }
+        }
+
+        linksSearched++;
+        linkedMatches.Add(string.Format("{0}: {1} placed and enclosed {2}(s) asked", linked.Title,
+            inLink.Count, label));
+    }
+}
+
+// A container's name and number as the answer shows them, and where it is.
+Func<int, string> named = (i) =>
+{
+    string name = null;
+    try
+    {
+        var parameter = spatial[i].get_Parameter(BuiltInParameter.ROOM_NAME);
+        if (parameter != null) name = parameter.AsString();
+    }
+    catch (Exception) { name = null; }
+    return string.Format("'{0} {1}'{2}", name ?? "", spatial[i].Number ?? "",
+        spatialTo[i] == null ? "" : " in the link " + spatialFrom[i]);
+};
+
+// Fills one text parameter and reads it back. 0 written, 1 the name is carried
+// by two or more parameters, 2 no writable text parameter by that name, 3 Revit
+// did not keep the value, 4 the parameter is fine but there is no value to write.
+Func<Element, string, string, int> fill = (element, target, value) =>
+{
+    IList<Parameter> carriers = null;
+    try { carriers = element.GetParameters(target); } catch (Exception) { carriers = null; }
+    if (carriers != null && carriers.Count > 1) return 1;
+    var parameter = carriers != null && carriers.Count == 1 ? carriers[0] : null;
+    if (parameter == null || parameter.IsReadOnly || parameter.StorageType != StorageType.String) return 2;
+    if (string.IsNullOrEmpty(value)) return 4;
+    try { parameter.Set(value); } catch (Exception) { return 3; }
+    return string.Equals(parameter.AsString() ?? "", value, StringComparison.Ordinal) ? 0 : 3;
+};
+
+// Picks among containers that passed the storey check: one the element is
+// INSIDE (kind 0) beats one it is above (kind 1); between two above, the nearer
+// top (smaller gap). Two equally good: -2, written by nobody. None: -1.
+Func<List<int>, List<int>, List<double>, int> pick = (which, kind, gap) =>
+{
+    if (which.Count == 0) return -1;
+    var best = -1;
+    var tie = false;
+    for (var k = 0; k < which.Count; k++)
+    {
+        if (best < 0) { best = k; tie = false; continue; }
+        if (kind[k] < kind[best] || (kind[k] == kind[best] && gap[k] < gap[best] - tolerance))
+        {
+            best = k;
+            tie = false;
+        }
+        else if (kind[k] == kind[best] && Math.Abs(gap[k] - gap[best]) <= tolerance)
+        {
+            tie = true;
+        }
+    }
+    return tie ? -2 : which[best];
+};
+
+var nameWritten = 0;
+var numberWritten = 0;
+var levelWritten = 0;
+var missingRoomParameter = 0;
+var missingNumberParameter = 0;
+var missingLevelParameter = 0;
+var ambiguousRoomParameter = 0;
+var ambiguousNumberParameter = 0;
+var ambiguousLevelParameter = 0;
+var notKept = 0;
+var containerWithoutValue = 0;
+var settledByStorey = 0;
+var overlapping = new List<ElementId>();
+var notOnItsStorey = new List<string>();
+var notOnItsStoreyCount = 0;
+var testFailed = 0;
+var noLevelFound = 0;
+var samples = new List<string>();
+var landedInHost = 0;
+var landedInLink = 0;
+var hostOverLink = 0;
+var landedPerLink = new Dictionary<string, int>();
+
+if (nameTarget.Length == 0 && numberTarget.Length == 0 && levelTarget.Length == 0)
+{
+    refused.Add("Nothing was named to fill - roomParameter, numberParameter and levelParameter were all "
+        + "left out, so NOTHING was written. Name at least one parameter");
+}
+else
+{
+    if (spatial.Count == 0 && (nameTarget.Length > 0 || numberTarget.Length > 0))
+    {
+        refused.Add(includeLinks
+            ? string.Format("neither this model nor any loaded link has a placed and enclosed {0}, so "
+                + "every element below comes back blank", label)
+            : string.Format("this model has no placed and enclosed {0}S of its own. If the {1}s are in a "
+                + "LINK, ask again with includeLinks - host only, nothing in a link was asked, and every "
+                + "element below comes back blank", label, useSpaces ? "space" : "room"));
     }
 
-    if (touched) written++;
+    foreach (var element in elements)
+    {
+        if (element == null || !element.IsValidObject) continue;
+
+        XYZ point = null;
+        var location = element.Location as LocationPoint;
+        if (location != null) point = location.Point;
+        if (point == null)
+        {
+            BoundingBoxXYZ own = null;
+            try { own = element.get_BoundingBox(null); } catch (Exception) { own = null; }
+            if (own != null) point = (own.Min + own.Max) / 2.0;
+        }
+        if (point == null) continue;
+
+        // Every container is asked - in plan, then in height - in its own
+        // document. None is taken just for being first. The host's and the
+        // links' are kept apart; the reasons a container in plan was turned
+        // down are kept for the answer.
+        var hostWhich = new List<int>(); var hostKind = new List<int>(); var hostGap = new List<double>();
+        var linkWhich = new List<int>(); var linkKind = new List<int>(); var linkGap = new List<double>();
+        var otherStoreyTurnedDown = false;
+        var turnedDown = "";
+        var turnedDownRank = 9;
+        if (nameTarget.Length > 0 || numberTarget.Length > 0)
+        {
+            for (var i = 0; i < spatial.Count; i++)
+            {
+                var local = spatialTo[i] == null ? point : spatialTo[i].OfPoint(point);
+                var box = spatialBox[i];
+                if (local.X < box.Min.X || local.X > box.Max.X) continue;
+                if (local.Y < box.Min.Y || local.Y > box.Max.Y) continue;
+
+                var asRoom = spatial[i] as Room;
+                var asSpace = spatial[i] as Space;
+                if (asRoom == null && asSpace == null) continue;
+
+                var inside = false;
+                var inPlan = false;
+                var baseZ = box.Min.Z;
+                try
+                {
+                    inside = asRoom != null ? asRoom.IsPointInRoom(local) : asSpace.IsPointInSpace(local);
+                    inPlan = inside;
+                    if (!inPlan)
+                    {
+                        var mid = new XYZ(local.X, local.Y, (box.Min.Z + box.Max.Z) / 2.0);
+                        inPlan = asRoom != null ? asRoom.IsPointInRoom(mid) : asSpace.IsPointInSpace(mid);
+                    }
+                    var at = spatial[i].Location as LocationPoint;
+                    if (at != null && at.Point != null)
+                    {
+                        baseZ = at.Point.Z;
+                        if (!inPlan)
+                        {
+                            var level = new XYZ(local.X, local.Y, at.Point.Z);
+                            inPlan = asRoom != null ? asRoom.IsPointInRoom(level) : asSpace.IsPointInSpace(level);
+                        }
+                    }
+                }
+                catch (Exception) { testFailed++; inside = false; inPlan = false; }
+
+                if (!inPlan) continue;
+
+                // In height. Inside: taken. Otherwise only above its floor and
+                // below the top of its storey - see the header. A container
+                // turned down keeps its reason, ranked so the one nearest the
+                // element's own storey is the one named: below its floor first,
+                // then above its storey, then a storey top not known.
+                var kind = -1;
+                var gap = 0.0;
+                var why = "";
+                var rank = 9;
+                if (inside) { kind = 0; }
+                else if (local.Z < box.Min.Z - tolerance)
+                {
+                    why = "it sits BELOW that " + label.ToLower() + "'s floor";
+                    rank = 0;
+                }
+                else if (spatialStorey[i].Item1 < 0)
+                {
+                    why = "that " + label.ToLower() + " has no storey level above its own, so the top of its storey "
+                        + "is not known";
+                    rank = 2;
+                }
+                else if (local.Z >= Math.Max(baseZ + spatialStorey[i].Item1, box.Max.Z) - tolerance)
+                {
+                    why = "it sits ABOVE that " + label.ToLower() + "'s storey, whose top is the storey level '"
+                        + spatialStorey[i].Item2 + "'";
+                    rank = 1;
+                }
+                else { kind = 1; gap = Math.Max(0.0, local.Z - box.Max.Z); }
+
+                if (kind < 0)
+                {
+                    if (rank <= 1) otherStoreyTurnedDown = true;
+                    if (rank < turnedDownRank)
+                    {
+                        turnedDownRank = rank;
+                        turnedDown = "in plan of the " + label + " " + named(i) + ", but " + why;
+                    }
+                    continue;
+                }
+                if (spatialTo[i] == null) { hostWhich.Add(i); hostKind.Add(kind); hostGap.Add(gap); }
+                else { linkWhich.Add(i); linkKind.Add(kind); linkGap.Add(gap); }
+            }
+        }
+
+        // This model's own first; a linked one only where no host container
+        // passed. A tie among the host's is not handed to the link.
+        var chosen = pick(hostWhich, hostKind, hostGap);
+        var fromHost = chosen != -1;
+        if (!fromHost) chosen = pick(linkWhich, linkKind, linkGap);
+        var tied = chosen == -2;
+
+        string nameValue = null;
+        string numberValue = null;
+        if (tied)
+        {
+            overlapping.Add(element.Id);
+            chosen = -1;
+        }
+        else if (chosen >= 0)
+        {
+            var container = spatial[chosen];
+            var nameParameter = container.get_Parameter(BuiltInParameter.ROOM_NAME);
+            if (nameParameter != null) nameValue = nameParameter.AsString();
+            numberValue = container.Number;
+            // Only where a container of another storey - below the floor or
+            // above the storey - was turned down for this one.
+            if (otherStoreyTurnedDown) settledByStorey++;
+
+            if (spatialTo[chosen] == null) landedInHost++;
+            else
+            {
+                landedInLink++;
+                var from = spatialFrom[chosen];
+                int already;
+                landedPerLink[from] = landedPerLink.TryGetValue(from, out already) ? already + 1 : 1;
+            }
+        }
+        else if (nameTarget.Length > 0 || numberTarget.Length > 0)
+        {
+            noRoomFound.Add(element.Id);
+            if (turnedDown.Length > 0)
+            {
+                notOnItsStoreyCount++;
+                if (notOnItsStorey.Count < 20) notOnItsStorey.Add(element.Id + ": " + turnedDown);
+            }
+        }
+
+        var touched = false;
+        var wroteName = false;
+        var wroteNumber = false;
+
+        if (nameTarget.Length > 0)
+        {
+            var outcome = fill(element, nameTarget, chosen >= 0 ? nameValue : null);
+            if (outcome == 0) { nameWritten++; touched = true; wroteName = true; }
+            else if (outcome == 1) ambiguousRoomParameter++;
+            else if (outcome == 2) missingRoomParameter++;
+            else if (outcome == 3) notKept++;
+            else if (chosen >= 0) containerWithoutValue++;
+        }
+
+        if (numberTarget.Length > 0)
+        {
+            var outcome = fill(element, numberTarget, chosen >= 0 ? numberValue : null);
+            if (outcome == 0) { numberWritten++; touched = true; wroteNumber = true; }
+            else if (outcome == 1) ambiguousNumberParameter++;
+            else if (outcome == 2) missingNumberParameter++;
+            else if (outcome == 3) notKept++;
+            else if (chosen >= 0) containerWithoutValue++;
+        }
+
+        if (levelTarget.Length > 0)
+        {
+            var levelId = element.LevelId;
+            var level = levelId == null || levelId == ElementId.InvalidElementId ? null : doc.GetElement(levelId);
+            var outcome = fill(element, levelTarget, level != null ? level.Name : null);
+            if (outcome == 0) { levelWritten++; touched = true; }
+            else if (outcome == 1) ambiguousLevelParameter++;
+            else if (outcome == 2) missingLevelParameter++;
+            else if (outcome == 3) notKept++;
+            else noLevelFound++;
+        }
+
+        if (touched) written++;
+        // Counted only where this model's own was really written over a
+        // linked one that also passed - never on a tie or a failed write.
+        if (fromHost && chosen >= 0 && linkWhich.Count > 0 && (wroteName || wroteNumber)) hostOverLink++;
+        if ((wroteName || wroteNumber) && samples.Count < 10)
+        {
+            samples.Add(string.Format("{0}: name \"{1}\" | number \"{2}\"{3}", element.Id,
+                wroteName ? nameValue : "(not written)", wroteNumber ? numberValue : "(not written)",
+                spatialTo[chosen] == null ? "" : " - from the link " + spatialFrom[chosen]));
+        }
+    }
 }
 
 if (missingRoomParameter > 0)
 {
-    refused.Add(string.Format("{0} element(s) have no writable '{1}' parameter. This fills parameters; "
-        + "it does not create them - bind a project or shared parameter first",
-        missingRoomParameter, roomParameter));
+    refused.Add(string.Format("{0} element(s) have no writable text parameter '{1}'. This fills parameters; "
+        + "it does not create them - bind a project or shared TEXT parameter first",
+        missingRoomParameter, nameTarget));
+}
+if (missingNumberParameter > 0)
+{
+    refused.Add(string.Format("{0} element(s) have no writable text parameter '{1}'",
+        missingNumberParameter, numberTarget));
 }
 if (missingLevelParameter > 0)
 {
-    refused.Add(string.Format("{0} element(s) have no writable '{1}' parameter",
-        missingLevelParameter, levelParameter));
+    refused.Add(string.Format("{0} element(s) have no writable text parameter '{1}'",
+        missingLevelParameter, levelTarget));
 }
 if (ambiguousRoomParameter > 0)
 {
     refused.Add(string.Format("{0} element(s) carry TWO OR MORE parameters called '{1}' - usually a "
         + "shared or project parameter bound beside a built-in one of the same name. Revit would pick "
-        + "one of them at random, so NEITHER was filled", ambiguousRoomParameter, roomParameter));
+        + "one of them at random, so NEITHER was filled", ambiguousRoomParameter, nameTarget));
+}
+if (ambiguousNumberParameter > 0)
+{
+    refused.Add(string.Format("{0} element(s) carry TWO OR MORE parameters called '{1}', so NEITHER "
+        + "was filled", ambiguousNumberParameter, numberTarget));
 }
 if (ambiguousLevelParameter > 0)
 {
     refused.Add(string.Format("{0} element(s) carry TWO OR MORE parameters called '{1}', so NEITHER "
-        + "was filled", ambiguousLevelParameter, levelParameter));
+        + "was filled", ambiguousLevelParameter, levelTarget));
+}
+if (notKept > 0)
+{
+    refused.Add(string.Format("{0} value(s) were written and did NOT read back as written - Revit did "
+        + "not keep them", notKept));
+}
+if (containerWithoutValue > 0)
+{
+    refused.Add(string.Format("{0} value(s) were not written because the {1} the element sits in has "
+        + "no name or no number - the field was left as it was", containerWithoutValue, label));
 }
 if (noRoomFound.Count > 0)
 {
-    refused.Add(string.Format("{0} element(s) sit in no {1} at all - outside the boundaries, or in an "
-        + "area where none is placed", noRoomFound.Count, label));
+    refused.Add(string.Format("{0} element(s) were given no {1} and were not written - {2} of them sit "
+        + "in plan of one but on another storey, below its floor, or where its storey's top is not known "
+        + "(named below), the rest in plan of none",
+        noRoomFound.Count, label, notOnItsStoreyCount));
+}
+if (notOnItsStoreyCount > 0)
+{
+    refused.Add(string.Format("NOT WRITTEN, rather than written with a {0} that may be another floor's: "
+        + "{1}{2}", label,
+        string.Join("; ", notOnItsStorey),
+        notOnItsStoreyCount > notOnItsStorey.Count
+            ? string.Format("; and {0} more", notOnItsStoreyCount - notOnItsStorey.Count) : ""));
+}
+if (overlapping.Count > 0)
+{
+    refused.Add(string.Format("{0} element(s) sit where two {1}S hold them equally - overlapping, or "
+        + "equally near - NOT written, rather than written with a guess: {2}", overlapping.Count, label,
+        string.Join(", ", overlapping.Take(20).Select(id => id.ToString()))));
+}
+if (settledByStorey > 0)
+{
+    refused.Add(string.Format("{0} element(s) were in plan of more than one {1} - another storey's - and "
+        + "were given the one on their own storey", settledByStorey, label));
+}
+if (noLevelFound > 0)
+{
+    refused.Add(string.Format("{0} element(s) carry no level Revit gives as theirs (Element.LevelId), so "
+        + "'{1}' was left as it was on them", noLevelFound, levelTarget));
+}
+if (testFailed > 0)
+{
+    refused.Add(string.Format("Revit could not answer the containment test {0} time(s); those {1}S were "
+        + "taken as NOT containing the element", testFailed, label));
+}
+if (skippedContainers > 0)
+{
+    refused.Add(string.Format("{0} {1}(S) in this model are UNPLACED or UNENCLOSED and were not asked",
+        skippedContainers, label));
+}
+if (hostOverLink > 0)
+{
+    refused.Add(string.Format("{0} element(s) sit in one of this model's own {1}S AND in a linked one - "
+        + "this model's own was written, never the link's", hostOverLink, label));
 }
 
-refused.Add(string.Format("{0} element(s) written, using {1}S. Architecture puts people in ROOMS and "
+// THE ANSWER SAYS WHAT IT READ - D-59's three cases read differently on purpose.
+if (!includeLinks)
+    linkedMatches.Insert(0, "Host model only - links not read");
+else if (linksSearched == 0)
+    linkedMatches.Insert(0, "Links asked for, NONE loaded - host only");
+else
+    linkedMatches.Insert(0, string.Format("{0} link(s) read: {1} element(s) found in a linked {2}, {3} in "
+        + "one of this model's own", linksSearched, landedInLink, label, landedInHost));
+foreach (var pair in landedPerLink)
+    linkedMatches.Add(string.Format("{0}: {1} element(s) found in a {2} of it", pair.Key, pair.Value, label));
+if (linkedSkipped > 0)
+    linkedMatches.Add(string.Format("{0} linked {1}(S) are UNPLACED or UNENCLOSED and were not asked",
+        linkedSkipped, label));
+if (includeLinks && nestedLinks > 0)
+    linkedMatches.Add(string.Format("{0} link placement(s) nested inside those links were NOT read",
+        nestedLinks));
+if (linksSearched > 0)
+    linkedMatches.Add("Linked rooms and spaces are only READ - every element written is this model's own");
+
+refused.Add(string.Format("{0} element(s) written, using {1}S - name {2}, number {3}, level {4}; "
+    + "{5} found in one of this model's own {1}S, {6} in a linked one. Architecture puts people in ROOMS and "
     + "MEP calculates in SPACES; a model can hold both in the same place with different names, and "
-    + "picking the wrong one is the commonest way a location register comes out wrong", written, label));
+    + "picking the wrong one is the commonest way a location register comes out wrong", written, label,
+    nameWritten, numberWritten, levelWritten, landedInHost, landedInLink));
