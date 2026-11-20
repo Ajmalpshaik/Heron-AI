@@ -55,7 +55,6 @@ purpose: >
   to be in use here binds an unrelated element (FRAGMENT-ISSUES row 75).
   Only model elements are read from a link, never its views or sheets.
   Links nested inside a link are not read, and are counted in the answer.
-  This is version 2, and DRAFT until proved.
 
 # "none" SELECTS WHAT NO CIRCUIT CARRIES (version 3) - a comment, not
 # `purpose`, because `purpose` is searched, and this paragraph there took
