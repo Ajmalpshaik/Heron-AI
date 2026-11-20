@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 15
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "make an HVAC zone and put spaces in it"
 kind: action
 domain: revit.mep
 capability: CREATE_HVAC_ZONE
-version: 1
+# A NAME ANOTHER ZONE ALREADY HAS IS REFUSED, AND NOTHING IS MADE. Version 2.
+# Version 1 made the zone anyway, and on Revit 2020 it took the asked name, so
+# two zones shared one and the only word was Revit's duplicate-name warning,
+# which Heron dismisses (row 5b-1654). Names are compared ignoring capitals,
+# across the project. This tool only makes new zones: spaces go into a zone
+# that is already there in Revit.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 

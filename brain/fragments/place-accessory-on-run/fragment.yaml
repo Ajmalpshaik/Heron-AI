@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,17 @@ semantic-identity: "put a damper in this duct and keep the run connected"
 kind: action
 domain: revit.mep
 capability: PLACE_ACCESSORY_ON_RUN
-version: 1
+# VERSION 2 (2026-11-20) - row 5b-1119. Version 1 paired nearest ends, but
+# both halves end at the cut and the accessory's two ends sit the same distance
+# either side of it, so "nearest" was a tie settled by Revit's list order - and
+# on a lone duct each half's far end is free too. On Revit 2020 every lone duct
+# and pipe was rolled back with "modified to be in the opposite direction"
+# (the cause read from the code, not yet watched). The accessory is now turned
+# in plan until its two ends lie along the run, and each half's end at the cut
+# is joined to the accessory end on that half's side; a vertical run is not
+# turned, and notTurned says so. Version 1's proof below is kept as the
+# record; its C# moved, so it is DRAFT until NEEDS-CHECKING Group OR runs.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -35,10 +45,10 @@ purpose: >
   left in two pieces - so a failure is reported per run with both ids, not
   swallowed.
 
-  **THE ENDS ARE PAIRED BY DISTANCE, NEVER BY ORDER.** Which connector on the
+  **THE ENDS ARE PAIRED BY SIDE, NEVER BY ORDER.** Which connector on the
   accessory faces which half depends on how the family was built and how the
-  duct was drawn; pairing by the nearest free end is the only rule that holds
-  for both.
+  duct was drawn; the accessory is turned to the run, and each half's end at
+  the cut is joined to the accessory end on that half's side.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so the
   break, the placement and both connections are one undo entry - which matters
@@ -79,6 +89,11 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: notTurned
+      # Version 2. Runs whose accessory was left as placed - a vertical run,
+      # or Revit refusing the turn - one line each, with the run's id (D-52).
+      role: accounting
+      type: IList<string>
 
 proof:
   date: '2026-11-14'

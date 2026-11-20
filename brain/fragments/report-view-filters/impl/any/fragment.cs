@@ -2,6 +2,22 @@
 // `findings`, `unusedFilters`, `filterCount`, `filterSettings`, `disabled`,
 // `hidden`, `blankOverride`, `nothingToActOn` and `templateOwned` behind.
 //
+// VERSION 5 (2026-11-20) - NARROWED, COUNTED FIRST, AND BOUNDED. Issue #1058
+// A2 (row 5b-1915): on a real Revit 2020 MEP plan with 90 filters the answer
+// was 123,531 characters - over the chat's limit - so "which filters touch
+// duct accessories on this view" could not be answered in the chat.
+// `onlyCategory` keeps only the filters that take that category (a rule's
+// categories; a saved set's members), and `nameContains` only those whose
+// name holds one of its words; both narrow the project list and every view's
+// list alike, and each heading says how many of how many it shows. `detail`
+// "brief" writes each filter in one short line - Enable Filter, Visibility,
+// its categories, what it catches - and the project list only for filters on
+// no view; "full" is version 4's whole row; left out ("auto"), full while a
+// list holds 25 or fewer, brief beyond, and the heading says which. Every
+// do-nothing finding is still read and said whatever the detail. Also row
+// 5b-1854: whether a template controls the filters is read FROM THE
+// TEMPLATE, see below.
+//
 // VERSION 4 (2026-11-01) - A FILTER A VIEW TEMPLATE CARRIES IS IN USE. Until
 // now the "used in" sweep read real views only, so a filter carried by a view
 // template - and drawn on every view that follows it - read "ON NO VIEW.
@@ -97,6 +113,67 @@ var filters = new FilteredElementCollector(doc).OfClass(typeof(FilterElement))
 
 var filterCount = filters.Count;
 
+// ---- VERSION 5: the narrowing, and how much is written ----------------------
+Func<string, bool> given = text =>
+{
+    var t = (text ?? "").Trim();
+    return t.Length > 0 && !string.Equals(t, "none", StringComparison.OrdinalIgnoreCase);
+};
+var narrowNotes = new List<string>();
+Category wantedCategory = null;
+var categoryAsked = given(onlyCategory);
+if (categoryAsked)
+{
+    foreach (Category candidate in doc.Settings.Categories)
+        if (string.Equals(candidate.Name, onlyCategory.Trim(), StringComparison.OrdinalIgnoreCase)) wantedCategory = candidate;
+    if (wantedCategory == null)
+        narrowNotes.Add(string.Format("No category is called '{0}' - type it as Visibility/Graphics shows it, "
+            + "\"Duct Accessories\". No filter was listed.", onlyCategory.Trim()));
+}
+var nameWords = given(nameContains)
+    ? nameContains.Split(',').Select(w => w.Trim()).Where(w => w.Length > 0).ToList()
+    : new List<string>();
+var detailWord = given(detail) ? detail.Trim().ToLowerInvariant() : "auto";
+if (detailWord != "full" && detailWord != "brief" && detailWord != "auto")
+{
+    narrowNotes.Add(string.Format("detail '{0}' is not full, brief or auto - auto was used", detail.Trim()));
+    detailWord = "auto";
+}
+const int FullUpTo = 25;
+var narrowing = new List<string>();
+if (categoryAsked) narrowing.Add("take " + (wantedCategory == null ? onlyCategory.Trim() : wantedCategory.Name));
+if (nameWords.Count > 0) narrowing.Add("have " + string.Join(" or ", nameWords.Select(w => "'" + w + "'")) + " in their name");
+var narrowText = narrowing.Count == 0 ? "" : " that " + string.Join(" and ", narrowing);
+
+// Whether one filter is kept by the narrowing.
+Func<FilterElement, bool> kept = filter =>
+{
+    if (filter == null) return narrowing.Count == 0;
+    if (nameWords.Count > 0
+        && !nameWords.Any(w => (filter.Name ?? "").IndexOf(w, StringComparison.OrdinalIgnoreCase) >= 0)) return false;
+    if (!categoryAsked) return true;
+    if (wantedCategory == null) return false;
+    var asRule = filter as ParameterFilterElement;
+    if (asRule != null) { try { return asRule.GetCategories().Contains(wantedCategory.Id); } catch { return false; } }
+    var asSet = filter as SelectionFilterElement;
+    if (asSet != null)
+    {
+        try
+        {
+            foreach (var memberId in asSet.GetElementIds())
+            {
+                var member = doc.GetElement(memberId);
+                if (member != null && member.Category != null && member.Category.Id == wantedCategory.Id) return true;
+            }
+        }
+        catch { }
+    }
+    return false;
+};
+var listed = filters.Where(f => kept(f)).ToList();
+var projectBrief = detailWord == "brief" || (detailWord == "auto" && listed.Count > FullUpTo);
+var usedNotListed = 0;
+
 // Real views - where a drawing is. Sheets and schedules have no filters.
 // TEMPLATES ARE KEPT APART (version 4): a filter a template carries is drawn
 // on every view that follows it, so it is IN USE - see the header.
@@ -140,7 +217,7 @@ foreach (var candidate in new FilteredElementCollector(doc).OfClass(typeof(ViewF
 }
 var byTemplateOnly = 0;
 
-foreach (var filter in filters)
+foreach (var filter in listed)
 {
     var kind = filter is ParameterFilterElement
         ? "a RULE, which keeps working as the model grows"
@@ -194,6 +271,11 @@ foreach (var filter in filters)
             + "own{2}. Deleting it changes every view that follows those templates", filter.Name, kind,
             templateText));
     }
+    else if (projectBrief)
+    {
+        // VERSION 5: brief - a filter on views is counted, not written.
+        usedNotListed++;
+    }
     else
     {
         findings.Add(string.Format("'{0}'  - {1}  - used in {2} view(s): {3}{4}",
@@ -204,10 +286,16 @@ foreach (var filter in filters)
     }
 }
 
-findings.Insert(0, string.Format("{0} filter(s) in this project, checked against {1} view(s) and {2} view "
+if (usedNotListed > 0)
+    findings.Insert(0, string.Format("{0} filter(s) on views are counted, not written one by one ({1}) - "
+        + "ask with detail full, or narrow with onlyCategory or nameContains, for each one's views",
+        usedNotListed, detailWord == "brief" ? "detail brief" : "more than " + FullUpTo + " to list"));
+findings.Insert(0, string.Format("{0} filter(s) in this project{5}, checked against {1} view(s) and {2} view "
     + "template(s). {3} are on no view and in no template; {4} more are on no view of their own and IN "
     + "USE through a template", filterCount, views.Count, templates.Count, unusedFilters.Count,
-    byTemplateOnly));
+    byTemplateOnly, narrowing.Count == 0 ? ""
+        : string.Format(" - {0} of them{1}, and only those are listed", listed.Count, narrowText)));
+findings.InsertRange(0, narrowNotes);
 
 // ---- the Filters tab of the views named ------------------------------------
 
@@ -504,12 +592,23 @@ if (asked.Count > 0)
             catch (Exception) { ordered.Clear(); orderKnown = false; }
             if (!orderKnown) ordered.AddRange(onView);
 
-            var head = string.Format("View '{0}' ({1}): {2} filter(s), {3}. Where two filters set the same thing "
+            // VERSION 5: the narrowing, keeping each filter's place number.
+            var places = new Dictionary<ElementId, int>();
+            for (var at = 0; at < ordered.Count; at++) places[ordered[at]] = at + 1;
+            var shown = ordered.Where(fid => kept(doc.GetElement(fid) as FilterElement)).ToList();
+            var brief = detailWord == "brief" || (detailWord == "auto" && shown.Count > FullUpTo);
+
+            var head = string.Format("View '{0}' ({1}): {2} filter(s){4}, {3}. Where two filters set the same thing "
                 + "on the same element, the one HIGHER in this list wins. 'catches' counts host elements this view "
                 + "draws - a filter also acts on linked models drawn By Host View, which are not counted.",
                 view.Name, view.ViewType, onView.Count,
                 orderKnown ? "in the order Visibility/Graphics lists them"
-                    : "in the order Revit returns them - this release cannot give the dialog's order");
+                    : "in the order Revit returns them - this release cannot give the dialog's order",
+                narrowing.Count == 0 ? "" : string.Format(" - showing the {0}{1}, each with its place in the whole list",
+                    shown.Count, narrowText));
+            if (brief)
+                head += string.Format(" Each filter in ONE SHORT LINE ({0}) - ask with detail full for its lines, "
+                    + "patterns and colours.", detailWord == "brief" ? "detail brief" : "more than " + FullUpTo);
 
             // A TEMPLATE THAT OWNS THE FILTERS is what makes a filter change
             // "not stick", so it is said once, at the top of the view.
@@ -517,10 +616,18 @@ if (asked.Count > 0)
             {
                 if (view.ViewTemplateId != ElementId.InvalidElementId)
                 {
-                    var own = new HashSet<ElementId>(view.GetNonControlledTemplateParameterIds());
+                    // VERSION 5 (row 5b-1854): the include list is read FROM
+                    // THE TEMPLATE. Revit's reference says it is the parameters
+                    // "not marked as included when this view is used as a
+                    // template" - a property of the template. Version 4 read it
+                    // off the view, whose own list means nothing here, so the
+                    // verdict could be wrong either way.
+                    var template = doc.GetElement(view.ViewTemplateId);
+                    var templateView = template as View;
+                    if (templateView == null) throw new InvalidOperationException("its view template could not be found");
+                    var own = new HashSet<ElementId>(templateView.GetNonControlledTemplateParameterIds());
                     if (!own.Contains(new ElementId(BuiltInParameter.VIS_GRAPHICS_FILTERS)))
                     {
-                        var template = doc.GetElement(view.ViewTemplateId);
                         head += string.Format(" Its view template '{0}' controls these - a change made "
                             + "on the view itself does not stick.", template == null ? "?" : template.Name);
                         // THE TEMPLATE-OWNED VERDICT (version 3).
@@ -531,16 +638,20 @@ if (asked.Count > 0)
                     }
                 }
             }
-            catch { }
+            catch (Exception thrown)
+            {
+                findings.Add(string.Format("Whether the view template of '{0}' controls its filters could not be "
+                    + "read - Revit says: {1}", view.Name, (thrown.InnerException ?? thrown).Message));
+            }
 
             if (getEnabled == null) head += " Revit 2020 has no Enable Filter tick; every filter here is in effect.";
             blocks.Add(head);
 
             HashSet<ElementId> drawnHere = null;
             var position = 0;
-            foreach (var id in ordered)
+            foreach (var id in shown)
             {
-                position++;
+                position = places[id];
                 var filter = doc.GetElement(id) as FilterElement;
                 var label = filter == null ? "filter " + id : filter.Name;
                 try
@@ -680,6 +791,22 @@ if (asked.Count > 0)
                         : "cut applies to " + string.Join(", ", cuttable)
                             + (notCuttable.Count == 0 ? "" : "; not to " + string.Join(", ", notCuttable)));
 
+                    if (brief)
+                    {
+                        // VERSION 5: the short line - on or off, what it takes, what it catches.
+                        var shortParts = new List<string>();
+                        foreach (var part in parts)
+                        {
+                            if (part.StartsWith("Enable Filter") || part.StartsWith("Visibility")
+                                || part.StartsWith("catches") || part.StartsWith("a saved set"))
+                                shortParts.Add(part);
+                            else if (part.StartsWith("categories ("))
+                                shortParts.Add(part.Length <= 90 ? part
+                                    : "categories (" + categoryIds.Count + ")");
+                        }
+                        if (s != null && isBlank(s)) shortParts.Add("EMPTY override");
+                        parts = shortParts;
+                    }
                     blocks.Add("  " + position + ". '" + label + "' - " + string.Join("; ", parts) + ".");
                 }
                 catch (Exception ex)

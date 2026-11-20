@@ -9,14 +9,27 @@ semantic-identity: "line these runs up on their tops instead of their centres"
 kind: action
 domain: revit.mep
 capability: SET_MEP_JUSTIFICATION
-version: 1
+# VERSION 2 (2026-11-20) - THE TWO PARAMETERS ARE THE JUSTIFICATION CHOICES,
+# NOT OFFSETS. Rows 18, 45, 5b-1112, 5b-1397 and 5b-1409. Version 1 wrote
+# millimetres into RBS_CURVE_HOR_OFFSET_PARAM and RBS_CURVE_VERT_OFFSET_PARAM,
+# which Revit's own API names "Horizontal Justification" and "Vertical
+# Justification" (RevitAPI.xml 2020 and 2024): choices stored as a whole
+# number, so every length was refused without a word and only 0 - Center or
+# Middle, already there - read back, and was counted as set. Version 2 takes
+# horizontal (Center, Left, Right) and vertical (Middle, Bottom, Top), keeps
+# the number Revit itself shows as that word, refuses a word Revit does not
+# show with the words it does, and counts a run already at the choice in
+# `unchanged`. Whether changing it moves a run already drawn - Revit's
+# Justification Editor is what lines drawn runs up - is NEEDS-CHECKING Group
+# OR's OR1.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Sets the horizontal and vertical offset that positions a duct or pipe within
-  its own section - the setting that decides whether a run of changing sizes
-  keeps its centres in line, its tops in line, or one side flat.
+  Sets the horizontal and vertical justification that positions a duct or pipe
+  within its own section - the setting that decides whether a run of changing
+  sizes keeps its centres in line, its tops in line, or one side flat.
 
   **It is what "align the tops" actually means on MEP.** A 400 deep duct
   reducing to a 250 keeps its CENTRELINE by default, so the top steps up and
@@ -25,14 +38,11 @@ purpose: >
   reason. ALIGN_ELEMENTS moves whole runs to a level; this decides where
   the pipe sits inside its own size.
 
-  **The offsets are set, not the dropdown.** Revit shows justification as a
-  choice - centre, top, bottom - and stores the result as a pair of offsets from
-  the curve's reference. This writes those offsets, which is the same fact
-  underneath. What it does NOT do is compute the offset that means "top" for a
-  given size; that depends on the run's own height, and handing in the number
-  keeps the arithmetic somewhere it can be seen.
+  **The choice is set, as the dropdown sets it.** Revit shows justification as
+  a choice - centre, top, bottom - and this sets that choice by the word Revit
+  shows for it, never a guessed number. A run already at it is counted apart.
 
-  **An element that carries neither offset is counted, not skipped.** Fittings,
+  **An element that carries neither choice is counted, not skipped.** Fittings,
   accessories and flex do not have them. A run that reports twelve set when nine
   could take the setting would leave three stepping and nothing saying which.
 
@@ -40,9 +50,9 @@ purpose: >
   returns without complaint on some element types.
 
   UNPROVEN AGAINST A MODEL. The two parameters were compiled on 2020 and on
-  2027, so they exist across the range; that they move the run the way Revit's
-  own justification dropdown does has NOT been watched here, and it is the first
-  thing to check when a model is in front of somebody.
+  2027, so they exist across the range; that changing them moves a run already
+  drawn has NOT been watched here, and it is the first thing to check when a
+  model is in front of somebody.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -52,18 +62,31 @@ contract:
       type: Document
     - name: elements
       type: IList<Element>
-    - name: horizontalOffsetMm
-      type: double
+    # Center, Left or Right ("centre" is read as Center). Left out, the
+    # horizontal choice is not touched.
+    - name: horizontal
+      type: string
       source: request
-    - name: verticalOffsetMm
-      type: double
+      optional: true
+      absent: leave
+    # Middle, Bottom or Top ("centre" is read as Middle). Left out, the
+    # vertical choice is not touched. One of the two must be given.
+    - name: vertical
+      type: string
       source: request
+      optional: true
+      absent: leave
   provides:
     - name: set
       role: result
       type: int
-    - name: withoutOffsets
-      # Elements carrying neither offset - fittings, accessories, flex. A
+    - name: unchanged
+      # Runs already at the choice asked - read, not written, and never
+      # counted as set (row 5b-1112).
+      role: accounting
+      type: int
+    - name: withoutJustification
+      # Elements carrying neither choice - fittings, accessories, flex. A
       # count of what it was GIVEN and could not set (D-52).
       role: accounting
       type: int
@@ -77,9 +100,10 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `MEPCurve`,
   `BuiltInParameter.RBS_CURVE_HOR_OFFSET_PARAM` and
-  `RBS_CURVE_VERT_OFFSET_PARAM` are present 2020 through 2027, compiled at both
-  ends. Millimetres become feet by dividing by 304.8 as plain arithmetic - no
-  units API, which is what changed shape at 2021.
+  `RBS_CURVE_VERT_OFFSET_PARAM` are present 2020 through 2027 - named
+  "Horizontal Justification" and "Vertical Justification" in RevitAPI.xml 2020
+  and 2024. No units are involved: the value is a choice, read and written as a
+  whole number and matched by the word Revit shows for it.
 
 # ROUTING - repeated in ALIGN_ELEMENTS, SET_MEP_SIZE and
 # MEASURE_DISTANCE.

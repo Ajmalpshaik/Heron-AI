@@ -9,7 +9,14 @@ semantic-identity: "make a perspective camera view that frames these elements, f
 kind: action
 domain: revit.views
 capability: FRAME_ELEMENTS_IN_CAMERA
-version: 6
+version: 7
+# VERSION 7, 2026-11-20 - row 5b-1399. On Revit 2020's P1102 MEP the seven
+# sheets handed in as a negative came back `framed 7` and a camera was made:
+# a sheet answers a box with no model extent behind it. Only an element of a
+# model category is framed now; a view or sheet, a type and annotation go to
+# noGeometry, and with nothing left the call is refused and no view made.
+# Still DRAFT (version 6 was never re-proved).
+#
 # VERSION 6, 2026-11-18 - row 5b-1850. On Revit 2020's 'Heron Tower - First
 # Build' (33 levels, 'Level 1' at 0 to 'Roof' at 126000 mm), 114 walls framed
 # with shot low-angle read back "eye 450 mm above 'Roof'" - Eye Elevation

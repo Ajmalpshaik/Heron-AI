@@ -16,7 +16,29 @@ positive:
       the back face divided and filled with the panel family, its type read
       back; each cell holds a panel
 
+  - given: >
+      VERSION 2 (row 5b-303). A new family from the metric Mass template with
+      a 3000 x 2000 x 2500 mm box made by create-conceptual-form; face "top",
+      uGrid "20", vGrid "4", pattern ""
+    expect: >
+      divided reads "U rule: Number 20; V rule: Number 4; Revit counts N
+      U-gridlines and M V-gridlines" - each rule as asked, and Revit's two
+      counts after them under its own names, beside no rule - and a finding
+      names NEEDS-CHECKING BV21 as what settles which rule makes which lines.
+      LOOKED AT in the Family Editor: RECORD which rule's lines each count
+      counted (BV21)
+
 negative:
+  - given: >
+      VERSION 2 (row 5b-303). The same mass, face "front", uGrid "3", vGrid
+      "1000 mm"
+    expect: >
+      no gridline count printed beside a rule - never "U number 3, 6
+      gridline(s)" - only "U rule: Number 3; V rule: 1000 mm apart" and the
+      counts in their own "Revit counts ..." part. A rule that does not read
+      back as asked still fails the whole call, naming what it read and what
+      was asked, and nothing is kept
+
   - given: face "front" again on the same form
     expect: refused - that face is already divided, naming its surface - nothing changed
 

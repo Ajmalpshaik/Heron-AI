@@ -685,6 +685,32 @@ Func<double, string> formatPressure = value =>
     catch (Exception) { return value.ToString("0.###") + " (Revit internal units)"; }
 };
 
+// VERSION 2: A PRESSURE DROP TOO SMALL FOR THE PROJECT'S PRECISION IS NEVER A
+// BARE ZERO. Revit holds a value above 0 and its own text, at the project's
+// in-wg or Pa precision, can read "0.00" - so a label said "Δp 0.00 in-wg" on
+// every run of a system Revit had calculated (row 5b-1488). A figure that reads
+// as zero for a value above zero becomes "< " and the smallest step that
+// precision shows: "0.00 in-wg" -> "< 0.01 in-wg", "0 Pa" -> "< 1 Pa". Revit's
+// own text is kept otherwise; nothing is rounded here.
+var belowPrecision = 0;
+Func<string, double, string> notZeroWhenAboveZero = (text, value) =>
+{
+    if (value <= 0 || string.IsNullOrEmpty(text)) return text;
+    var t = text.Trim();
+    var start = -1;
+    for (var i = 0; i < t.Length; i++) if (char.IsDigit(t[i])) { start = i; break; }
+    if (start < 0) return text;
+    var end = start;
+    while (end < t.Length && (char.IsDigit(t[end]) || t[end] == '.' || t[end] == ',')) end++;
+    var number = t.Substring(start, end - start);
+    foreach (var c in number) if (c != '0' && c != '.' && c != ',') return text;
+    var lastZero = number.LastIndexOf('0');
+    if (lastZero < 0) return text;
+    belowPrecision++;
+    return t.Substring(0, start) + "< " + number.Substring(0, lastZero) + "1"
+        + number.Substring(lastZero + 1) + t.Substring(end);
+};
+
 var zeroLossFittings = 0;
 // One labelled segment's three lines, and what was missing.
 Func<List<Element>, string> labelOf = group =>
@@ -733,7 +759,8 @@ Func<List<Element>, string> labelOf = group =>
                 + "loss method set in Revit - and are not in its \u0394p", zeroFittings));
         }
         if (count == 0) { dropText = "-"; missing.Add("no pressure drop - Revit holds none on its runs"); }
-        else dropText = count == 1 ? (single ?? formatPressure(sum)).Trim() : formatPressure(sum);
+        else dropText = notZeroWhenAboveZero(
+            count == 1 ? (single ?? formatPressure(sum)).Trim() : formatPressure(sum), sum);
     }
     if (flowText.Length == 0) { flowText = "-"; missing.Add("no flow - Revit holds 0 or none"); }
     if (missing.Count > 0)
@@ -1359,6 +1386,10 @@ if (refused.Length == 0 && view != null)
         findings.Add(string.Format("{0} fitting(s) or accessory(ies) hold a Pressure Drop of 0 - usually no loss "
             + "method set in Revit - and were left out of every \u0394p (labelsWithoutValue names the runs)",
             zeroLossFittings));
+    if (belowPrecision > 0)
+        findings.Add(string.Format("{0} run label(s) read \u0394p \"< ...\": Revit holds a pressure drop above 0 "
+            + "there that the project's pressure precision shows as 0 - the label gives the smallest step that "
+            + "precision shows, never a bare 0 (Manage > Project Units sets the precision)", belowPrecision));
     if (fittingOnly > 0)
         findings.Add(string.Format("{0} stretch(es) of fittings only have no label, so their pressure drop is in "
             + "no label (labelsWithoutValue)", fittingOnly));

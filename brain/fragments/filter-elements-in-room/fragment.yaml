@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,28 @@ semantic-identity: "which of these elements are inside this room"
 kind: filter
 domain: revit.elements
 capability: FILTER_ELEMENTS_IN_ROOM
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-11-20) - A DOOR OR WINDOW IN A WALL IS JUDGED BY ITS FROM
+# ROOM AND TO ROOM, and back to DRAFT. FRAGMENT-ISSUES row 5b-1485, the rooms
+# part: seen 2026-11-08 on Revit 2024, this put all 13 windows "outside" Room
+# 7, because a hosted window's (or door's) point sits in the wall, on the room
+# boundary, and the point test asked whether that point is in the room. A
+# family instance of Doors or Windows hosted in a wall now counts as in the
+# room when either its From Room or its To Room is that room, asked in the
+# room's own phase (its Phase, ROOM_PHASE_ID - this card names no phase, and
+# the point test always asked the room itself), and the new
+# `doorsAndWindows` says which side - "window W12 (id 351204): its To Room".
+# Where that cannot be asked - a Space, since From Room and To Room name
+# rooms; a room whose phase cannot be read; a room in another model; a From
+# and To Revit will not give - it keeps the point test and its line says why.
+# Every other element keeps the point test, unchanged. Version 1 was PROVEN
+# (the proof block below, kept as the record of what it proved); its C#
+# moved, so it is DRAFT again until NEEDS-CHECKING Group OT is run (D-30) -
+# on the owner's word that a fragment found wrong may be changed even though
+# it is proven.
 
 purpose: >
   Narrows a set of elements to the ones inside a given room. The filter every
@@ -34,6 +53,8 @@ purpose: >
   so an element above the ceiling can be genuinely inside it, and excluding by
   level would drop exactly the services somebody is asking about.
 
+  **Version 2: a door or window in a wall goes by its From and To instead.**
+
 contract:
   needs:
     - name: room
@@ -55,6 +76,14 @@ contract:
       # out. The evidence it looked, never a thing it found (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: doorsAndWindows
+      # VERSION 2. Each door and window in a wall handed in, one line each:
+      # which side made it this room's - "window W12 (id 351204): its To
+      # Room" - or that neither its From Room nor its To Room is, or why it
+      # was judged by its point instead. How each was judged, never a thing
+      # found (D-52); `elements` is the answer.
+      role: accounting
+      type: IList<string>
 
 proof:
   date: '2026-09-13'
@@ -82,7 +111,12 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `Room.IsPointInRoom`, `LocationPoint`
   and `LocationCurve` are unchanged 2020 to 2027, and no ElementId is built
-  from an integer.
+  from an integer. Version 2: `FamilyInstance.get_FromRoom(Phase)`,
+  `get_ToRoom(Phase)` and `Host`, `BuiltInParameter.ROOM_PHASE_ID` and
+  `ALL_MODEL_MARK`, and `Document.Equals(object)` are in the 2020 RevitAPI XML
+  and compile 2020 to 2027 (tools/check-fragments-compile.py, 2026-11-20);
+  categories are compared as `new ElementId(BuiltInCategory)`, never as
+  numbers.
 
 # TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
 #
@@ -99,7 +133,8 @@ compatibility-note: >
 # that element IN; CHECK_ROOM_MEP_COMPLETENESS asks the volume question like
 # this one while its purpose says the opposite. FRAGMENT-ISSUES 5b-175 records
 # the disagreement; NEEDS-CHECKING AJ5 settles it with evidence. A note only:
-# this fragment is PROVEN and its code is unchanged.
+# this fragment was PROVEN and its code unchanged when it was written; version
+# 2 changed only how a door or window in a wall is judged.
 
 # ROUTING - repeated in READ_ROOM_GEOMETRY and COUNT_ELEMENTS.
 #

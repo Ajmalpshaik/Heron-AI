@@ -10,7 +10,8 @@
 //   "spread across", "spread down" - spaced evenly between the outermost two.
 // Across and up are the annotation's own view's directions, not the model's.
 // A tag is placed by its head, a dimension by the middle of its line, a text
-// note or anything else by its location point; `target` is not used.
+// note by its text position (version 3), anything else by its location point;
+// `target` is not used.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). The target is internal FEET.
 //
@@ -40,6 +41,12 @@ Func<Element, XYZ> placeOf = element =>
     if (tag != null) return tag.TagHeadPosition;
     var dimension = element as Dimension;
     if (dimension != null) { try { return dimension.Origin; } catch { return null; } }
+    // VERSION 3: A TEXT NOTE BY ITS OWN POSITION. A text note has no tag head
+    // and no location point, so version 2 answered notMovable for every one,
+    // while its purpose promised to move them (row 5b-1115). TextNote.Coord is
+    // where its text sits; the note is then moved like any other annotation.
+    var note = element as TextNote;
+    if (note != null) { try { return note.Coord; } catch { return null; } }
     var spot = element.Location as LocationPoint;
     return spot != null ? spot.Point : null;
 };
@@ -80,7 +87,7 @@ else if (!arranging)
     foreach (var element in elements)
         if (element != null) putAt(element, target);
     findings.Add(string.Format(
-        "{0} moved - {1} by its tag head, {2} by its location point - and {3} "
+        "{0} moved - {1} by its tag head, {2} by its location point or text position - and {3} "
         + "had neither. What each tag POINTS AT is unchanged",
         moved.Count, byHead, byLocation, notMovable.Count));
 }

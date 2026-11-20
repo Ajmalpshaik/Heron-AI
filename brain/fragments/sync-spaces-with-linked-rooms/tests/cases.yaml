@@ -20,7 +20,25 @@ positive:
       the schedule with an area. If one reads NO AREA here, the defect row
       5b-1125 waits on stands even with the link bounding and kept
 
+  - given: >
+      version 3, Revit 2020 - a host from Mechanical-Default_Metric.rte
+      (phases Existing then New Construction) with an architect's link Room
+      Bounding, phaseName=Existing, run TWICE (NR9, rows 5b-1589 and 5b-1655)
+    expect: >
+      first run: each new space's Phase read back in Properties. Either
+      Existing, counted in created - or another phase, every such space in
+      wrongPhase and NOT in created, the top line of findings saying so.
+      Second run, where the first made spaces in Existing: alreadyMatching
+      that count and created 0 - the spaces of the asked phase are seen
+
 negative:
+  - given: >
+      version 3 - phaseName left out (the host's last phase) while the
+      architect's rooms are all in the link's "Existing"
+    expect: >
+      created 0, and the first finding naming how many rooms were passed over
+      for being in another phase - never a silent "0 made"
+
   # VERSION 2 - row 5b-1125. FAILS on version 1, which counted them in created.
   - given: >
       the same link with Room Bounding OFF, no walls in this model, no spaces

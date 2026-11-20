@@ -45,6 +45,7 @@ var noPlane = 0;
     if (inFront && doc.ActiveView != null) asked.Add(doc.ActiveView);
 
     var planeSeen = new HashSet<ElementId>();
+    var byLevelName = 0;
     foreach (var view in asked)
     {
         if (view == null || !view.IsValidObject) continue;
@@ -80,6 +81,28 @@ var noPlane = 0;
             }
         }
         catch (Exception) { }
+
+        // VERSION 2: A PLAN'S OWN LEVEL BY NAME. On Revit 2020 a floor plan's
+        // default work plane did not resolve through its reference to the
+        // Level, and version 1 named it in quotes - not the Work Plane
+        // dialog's "Level : Level 1" (row 5b-1480). A plan's default sketch
+        // plane carries its level's name, so when the reference does not
+        // resolve and the plane's name IS the plan's own level's, the level is
+        // named - and findings says it was matched by name.
+        if (whose == null)
+        {
+            try
+            {
+                var plan = view as ViewPlan;
+                var own = plan == null ? null : plan.GenLevel;
+                if (own != null && string.Equals(own.Name, sketch.Name, StringComparison.Ordinal))
+                {
+                    whose = "Level : " + own.Name;
+                    byLevelName++;
+                }
+            }
+            catch (Exception) { }
+        }
         if (whose == null) whose = "\"" + sketch.Name + "\"";
 
         var lies = "";
@@ -100,6 +123,9 @@ var noPlane = 0;
     }
 
     workPlanes = string.Join("  ||  ", rows.ToArray());
+    if (byLevelName > 0)
+        findings.Add(byLevelName + " plan(s) have their work plane named as their own level, matched by name: "
+            + "Revit did not hand back the level itself, and the plane carries the level's name");
     if (inFront)
         findings.Insert(0, withPlane + noPlane == 0
             ? "No view was named and none is in front, so no work plane was read."

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -14,7 +14,12 @@ capability: CHECK_MINIMUM_CLEARANCE
 # DEPRECATED; see the merge block above `utterances`. Version 2's proof below
 # was kept as the record; it no longer described the code, so the card was
 # DRAFT at the time, until version 3 is proved on a real model (D-30).
-version: 3
+# VERSION 4 (2026-11-20): row 5b-1400 - seven sheets handed in on Revit 2020
+# were measured as 21 pairs too close. Only an element of a model category is
+# measured now; a sheet, a view, a type or annotation is skipped and counted
+# with the elements that have no extent, and said. Version 3's proof below is
+# kept as the record; its C# moved, so it is DRAFT until re-proved (D-30).
+version: 4
 source: OFFICIAL
 risk: READ
 

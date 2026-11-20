@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -15,9 +15,38 @@ capability: SET_FAMILY_SETTINGS
 # combined call, read back with `wasCategory` and `parametersGained`. See the
 # merge block above `utterances`. DRAFT at the time, until version 4 is proved
 # (D-30); the version 3 proof below was kept as the record of what was run.
-version: 4
+# Version 4 was PROVEN on 2026-11-02; version 5 is under `risk:`.
+version: 5
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 5 (2026-11-20) - `changed` COUNTS ONLY WHAT THIS CALL WROTE, and
+# back to DRAFT. FRAGMENT-ISSUES row 5b-285: "already set" was judged when
+# each setting's turn came, after the earlier writes, and "changed" against
+# the snapshot taken before any. So asked "Work Plane-Based=no; Always
+# Vertical=yes", if writing the first makes Revit turn the second on by
+# itself, the second was counted as already set AND changed - "2 changed and
+# 1 already as asked" for two requests - and its row carried no "(Revit's own
+# change)" tag, which the purpose promises. Whether Revit does turn it on is
+# NEEDS-CHECKING BS2; nothing here claims it does. Now each setting asked for
+# is either written or already as asked at its turn, never both: `changed`
+# counts only the settings this call wrote, and one already as asked at its
+# turn but moved since the snapshot is reported "(Revit's own change)",
+# counted in `alreadySet`, with a finding saying so. A written setting that
+# ends as it began - Revit moved it, Heron set it back - is counted as
+# changed and its row says so. ALSO row 5b-437 (words only): the OmniClass
+# Number is read back inside the open transaction, so a value Revit takes
+# back at commit or at save would still read as kept; a finding now says the
+# read-back is before Revit commits and that the number is trusted once
+# REPORT_FAMILY_TEMPLATE still reads it after the family is saved. AND row
+# 5b-304's defect, found here the same day: the closing finding named the
+# family by the Family element's own name, which is empty in the Family
+# Editor ('on the family ""' in version 4's proof) - it now falls back to the
+# document's title without ".rfa", as REPORT_FAMILY_TEMPLATE does. Version 4
+# was PROVEN (the proof block below, kept as the record of what it proved);
+# its C# moved, so it is DRAFT again until NEEDS-CHECKING Group OT is run
+# (D-30) - on the owner's word that a fragment found wrong may be changed
+# even though it is proven.
 
 purpose: >
   Sets the switches in Family Category and Parameters for the family open in
@@ -123,7 +152,9 @@ contract:
       role: result
       type: int
     - name: alreadySet
-      # Asked for and already so: looked at, nothing done (D-52).
+      # Asked for and already so: looked at, nothing done (D-52). Version 5:
+      # judged when its turn came, so one Revit moved itself after an earlier
+      # write counts here, tagged "(Revit's own change)", never in `changed`.
       role: accounting
       type: int
     - name: notAFamily

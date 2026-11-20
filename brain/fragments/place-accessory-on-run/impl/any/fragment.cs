@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `accessorySymbol` and
 // `positionAlong` are in scope, and leaves `placed`, `leftSevered`,
-// `notARun` and `refused` behind.
+// `notARun`, `refused` and `notTurned` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). It matters more here than
 // usual: a half-done insert leaves a severed system, and one undo has to put
@@ -27,16 +27,30 @@
 // swallowed, because a severed system that nobody knows about is the worst
 // outcome available here.
 //
-// ENDS ARE PAIRED BY DISTANCE.
+// ENDS ARE PAIRED BY SIDE, NOT BY DISTANCE - VERSION 2.
 //
-// Which connector of the accessory faces which half depends on how the family
-// was built and which way the duct was drawn. Nearest free end is the only
-// rule that holds for both.
+// Version 1 paired each half's nearest free end with the accessory's nearest
+// free end. Both halves end at the cut, and the accessory's two ends sit the
+// same distance either side of it, so "nearest" was a tie, settled by the
+// order Revit lists connectors - and on a LONE duct each half also has its far
+// end free. A half joined to the accessory end on the OTHER half's side must
+// run back through the accessory, which is Revit's "modified to be in the
+// opposite direction causing the connections to be invalid" (row 5b-1119,
+// Revit 2020, every lone duct and pipe). Read from the code; the Revit run is
+// owed. Now each half's end AT THE CUT is joined to the accessory end lying on
+// that half's side of the cut.
+//
+// THE ACCESSORY IS TURNED TO THE RUN FIRST. A family is placed along its own
+// X axis whichever way the run goes; version 1 never turned it, so on a run
+// not drawn along that axis its ends did not lie on the run at all. It is
+// turned in plan about the cut until the line through its two ends is
+// parallel to the run. A vertical run is not turned - said in notTurned.
 
 var placed = new List<ElementId>();
 var leftSevered = new List<ElementId>();
 var notARun = new List<ElementId>();
 var refused = new List<ElementId>();
+var notTurned = new List<string>();
 
 double along = positionAlong;
 if (along <= 0 || along >= 1) along = 0.5;
@@ -150,36 +164,91 @@ foreach (var element in elements)
     doc.Regenerate();
 
     var accessoryEnds = freeConnectorsOf(accessory);
+
+    // Turn the accessory in plan until the line through its two ends is
+    // parallel to the run. Either way along the line will do: the ends are
+    // then paired by side, below.
+    XYZ runDirection = null;
+    try { runDirection = (line.GetEndPoint(1) - line.GetEndPoint(0)).Normalize(); } catch { }
+    if (runDirection != null && accessoryEnds.Count != 2)
+        notTurned.Add(string.Format("run {0}: the accessory has {1} free end(s), not 2 - not turned",
+            runId, accessoryEnds.Count));
+    if (runDirection != null && accessoryEnds.Count == 2)
+    {
+        var runFlat = new XYZ(runDirection.X, runDirection.Y, 0);
+        XYZ axis = null;
+        try { axis = accessoryEnds[1].Origin - accessoryEnds[0].Origin; } catch { }
+        var axisFlat = axis == null ? null : new XYZ(axis.X, axis.Y, 0);
+        if (runFlat.GetLength() < 1e-6 || axisFlat == null || axisFlat.GetLength() < 1e-6)
+        {
+            notTurned.Add(string.Format("run {0}: vertical, or the accessory's ends are one above the "
+                + "other - not turned in plan", runId));
+        }
+        else
+        {
+            var angle = Math.Atan2(runFlat.Y, runFlat.X) - Math.Atan2(axisFlat.Y, axisFlat.X);
+            if (Math.Abs(Math.Sin(angle)) > 1e-6)
+            {
+                try
+                {
+                    ElementTransformUtils.RotateElement(doc, accessory.Id,
+                        Line.CreateBound(point, point + XYZ.BasisZ), angle);
+                    doc.Regenerate();
+                    accessoryEnds = freeConnectorsOf(accessory);
+                }
+                catch (Exception ex)
+                {
+                    notTurned.Add(string.Format("run {0}: Revit would not turn the accessory - {1}",
+                        runId, ex.Message));
+                }
+            }
+        }
+    }
+
     int joins = 0;
 
     foreach (var half in new Element[] { halfOne, halfTwo })
     {
-        var halfEnds = freeConnectorsOf(half);
-        Connector bestHalf = null, bestAccessory = null;
-        double bestDistance = double.MaxValue;
-
-        foreach (var halfEnd in halfEnds)
+        // The half's end AT THE CUT - on a lone run its far end is free too,
+        // and is never the one to join.
+        Connector cutEnd = null;
+        double cutDistance = double.MaxValue;
+        foreach (var halfEnd in freeConnectorsOf(half))
         {
-            foreach (var accessoryEnd in accessoryEnds)
-            {
-                double distance;
-                try { distance = halfEnd.Origin.DistanceTo(accessoryEnd.Origin); }
-                catch { continue; }
-                if (distance < bestDistance)
-                {
-                    bestDistance = distance;
-                    bestHalf = halfEnd;
-                    bestAccessory = accessoryEnd;
-                }
-            }
+            double distance;
+            try { distance = halfEnd.Origin.DistanceTo(point); }
+            catch { continue; }
+            if (distance < cutDistance) { cutDistance = distance; cutEnd = halfEnd; }
         }
+        if (cutEnd == null) continue;
 
-        if (bestHalf == null || bestAccessory == null) continue;
+        // Which side of the cut this half lies on: from the cut towards the
+        // middle of the half.
+        XYZ side = null;
+        try
+        {
+            var halfCurve = ((LocationCurve)half.Location).Curve;
+            side = halfCurve.Evaluate(0.5, true) - point;
+        }
+        catch { }
+        if (side == null || side.GetLength() < 1e-9) continue;
 
-        try { bestHalf.ConnectTo(bestAccessory); joins++; }
+        // The accessory end lying furthest along that side.
+        Connector sameSide = null;
+        double best = 0;
+        foreach (var accessoryEnd in accessoryEnds)
+        {
+            double along2;
+            try { along2 = (accessoryEnd.Origin - point).DotProduct(side.Normalize()); }
+            catch { continue; }
+            if (along2 > best) { best = along2; sameSide = accessoryEnd; }
+        }
+        if (sameSide == null) continue;
+
+        try { cutEnd.ConnectTo(sameSide); joins++; }
         catch { continue; }
 
-        accessoryEnds.Remove(bestAccessory);
+        accessoryEnds.Remove(sameSide);
     }
 
     if (joins == 2) placed.Add(accessory.Id);
