@@ -2281,11 +2281,13 @@ namespace Heron.Revit.Addin
             // WHETHER THE MODEL READ IS THE ONE ON SCREEN. When it is not,
             // anything a fragment says about a selection or an active view is
             // about a window nobody is looking at - true, and easy to misread.
+            // Asked by Revit's own identity, not by title (row 5b-1926): a
+            // model of the same title in front read as "in front".
             var inFront = true;
             try
             {
                 inFront = active != null && active.Document != null
-                    && active.Document.Title == title;
+                    && active.Document.Equals(target);
             }
             catch { }
 
@@ -4431,14 +4433,19 @@ namespace Heron.Revit.Addin
             var fromRequest = new List<string>();
 
             // The selection, read ONCE. It belongs to the document on screen,
-            // so it is only a candidate when that is the document being read.
+            // so it is only a candidate when that is the document being read -
+            // THAT document, by Revit's own identity, not one of the same title
+            // (row 5b-1902). Two models of one title can be open at once, and a
+            // title match bound the selection in one to a run in the other,
+            // its ids then looked up there by number. Document.Equals is what
+            // InDocument already asks, 2020 to 2027.
             IList<ElementId> selected = null;
             if (uidoc != null)
             {
                 try
                 {
                     var active = uidoc.Document;
-                    if (active != null && active.Title == target.Title)
+                    if (active != null && active.Equals(target))
                     {
                         var ids = uidoc.Selection.GetElementIds();
                         if (ids != null && ids.Count > 0) selected = new List<ElementId>(ids);

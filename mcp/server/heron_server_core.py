@@ -422,11 +422,12 @@ _ctx = threading.local()
 #     promises no undo step - told to press Ctrl+Z after a run that wrote
 #     nothing, a modeller undoes what they did before it.
 #   - ROLLED BACK is said only by a door that opens a transaction group, and
-#     says what is known: Heron asked Revit to roll the whole job back. An
-#     error reply carries no field for whether that held (row 5b-1559: C#,
-#     and a real Revit), so the line does not say it did, and does not send
-#     the chat to the reply to find out - a reply whose rollback held says
-#     nothing about it at all. A DRY RUN (D-155) is ROLLED BACK too, and only
+#     says what is known: Heron asked Revit to roll the whole job back. Since
+#     2026-11-20 a refusal after a rollback says whether it held - the add-in's
+#     `rolledBack` (row 5b-1559) - so the line says the rollback held when that
+#     is true, and OUTCOME UNKNOWN when it is false (row 5b-1901). A reply that
+#     carries no such field, from an older add-in, still says only that the
+#     rollback was asked for. A DRY RUN (D-155) is ROLLED BACK too, and only
 #     when the add-in's own verdict says its rollback held: the door reads it
 #     with `_change_outcome`, as it reads a Discard. Until 2026-11-12 a dry
 #     run said no word at all, so a good one read OUTCOME UNKNOWN - "do not
@@ -505,10 +506,10 @@ OUTCOMES = (
      "it again only once what stopped it is fixed, or the modeller asks",
      "revit_change only: the job failed part way, Heron stopped it, the "
      "modeller pressed Discard, or it was asked as a dry run (D-155). What "
-     "is known is that the rollback was asked for - not, from an error "
-     "reply, that it held. A Discard and a dry run are given this word only "
-     "when the add-in said its rollback held; otherwise theirs is OUTCOME "
-     "UNKNOWN."),
+     "is known is that the rollback was asked for, and - where the add-in "
+     "says so - that it held. A rollback the add-in says did not hold is "
+     "OUTCOME UNKNOWN, and a Discard and a dry run are given this word only "
+     "when the add-in said their rollback held."),
     (STILL_RUNNING,
      "do not send it again; no id follows a run yet, so ask the modeller what "
      "Revit shows",
@@ -535,6 +536,15 @@ OUTCOMES = (
 ROLLED_BACK_AS_ASKED = (
     "it was asked as a dry run and Heron kept nothing: Revit's Heron said the "
     "rollback held; send it without dry_run only when the modeller asks")
+
+# AND OF A JOB THAT STOPPED, WHEN THE ADD-IN SAID ITS ROLLBACK HELD (row
+# 5b-1901). The table's own line says only that a rollback was asked for,
+# which is all an error reply could say until row 5b-1559 gave it the field.
+# The word is still the table's.
+ROLLED_BACK_HELD = (
+    "Heron did not keep it, and Revit's Heron said the rollback held - the "
+    "model is as it was; send it again only once what stopped it is fixed, or "
+    "the modeller asks")
 
 #: How every outcome line starts. One spelling, here.
 OUTCOME_LINE = "outcome: "
@@ -700,8 +710,18 @@ def _failure_outcome(failure):
     of that, filed as unknown on a read as on a change since row 5b-1560 (it
     was never-ran, beside the reason "Heron cannot tell whether Revit was
     reached"). It has no row either, so the one rule covers it.
+
+    AND A ROLLBACK THE ADD-IN SAYS DID NOT HOLD (row 5b-1901). A refusal
+    after a rollback carries `rolledBack` since row 5b-1559, and false there
+    means Revit did not say it rolled back, or Heron's rollback check found
+    something the job added still standing - so the model may not be as it
+    was, whatever the code. That is OUTCOME UNKNOWN at every door: on a read,
+    the group is Heron's own scratch one (capture_view rolls one back), and
+    one that did not roll back is a model a read changed.
     """
     if not failures.recognised(failure.code):
+        return UNKNOWN
+    if getattr(failure, "rollback_held", None) is False:
         return UNKNOWN
     return _BY_FAILURE.get(failure.outcome, UNKNOWN)
 
@@ -863,8 +883,12 @@ def _failure_ended(failure):
     asked, which the list calls failed.
 
     AND THE WORD FOR THE OUTCOME LINE, which keeps apart the four endings
-    that label folds into one (`_failure_outcome`, row 5b-1159)."""
-    _outcome(_failure_outcome(failure))
+    that label folds into one (`_failure_outcome`, row 5b-1159) - with
+    ROLLED_BACK_HELD's words when the add-in said the rollback held (row
+    5b-1901). `_said_outcome` drops them wherever ROLLED BACK is not printed."""
+    word = _failure_outcome(failure)
+    held = word == ROLLED_BACK and getattr(failure, "rollback_held", None) is True
+    _outcome(word, says=ROLLED_BACK_HELD if held else None)
     return "refused" if failure.outcome == FAILURE_REFUSED else "failed"
 
 

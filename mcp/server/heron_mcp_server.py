@@ -2427,6 +2427,26 @@ def _late_answer(failure, request_id):
             % request_id)
 
 
+def _counted_after_stop(failure):
+    """
+    A read that STOPPED - it threw, Heron's clock or a Revit dialog stopped
+    it, or the run guard refused it - said from the add-in's count, as an
+    answered read says it (row 5b-350): or "" when the add-in sent none.
+
+    Since row 5b-1559 such a refusal carries `elementsCounted`, sent only
+    once the count after the run matched the count before it (a read that
+    moved the count is refused read_changed_model instead). Until then the
+    reply could say only that no transaction was open, and the outcome line
+    NOT ANSWERED still says only that; this sentence is the count, said
+    where the add-in made one (row 5b-1901).
+    """
+    counted = getattr(failure, "elements_counted", None)
+    if counted is None or failure.code == "read_changed_model":
+        return ""
+    return ("\nNothing in the model was changed: Heron counted %s element(s) before "
+            "this read and the same after it." % "{:,}".format(counted))
+
+
 def _never_saved_line(reply):
     """
     The FIRST line of a kept change's reply when the model has no file on
@@ -3495,6 +3515,7 @@ def revit_read(capability: str = "", values: str = "",
     failure = analyse(reply, writes=tools.writes("revit_read"))
     if failure is not None:
         return (_ended(_failure_ended(failure), explain(failure))
+                + _counted_after_stop(failure)
                 + _what_to_type(failure, capability))
 
     # WHAT CAME FROM THE MODEL IS DATA, AT THIS DOOR AS AT THE OTHER TWO

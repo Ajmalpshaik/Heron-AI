@@ -1075,10 +1075,17 @@ def main():
                   "annotate-a-view: runs and fixtures are never handed to "
                   "one dimension call - it is refused whole")
             said = _steps_of("system-colours")
+            # LEFT OUT IS NO LONGER REFUSED (row 5b-1905): since 2026-11-20 the
+            # card declares `absent: ""`, so the method stops giving that as
+            # the reason - and still sends it typed empty, which works whether
+            # or not Group OS's OS11 has shown the card's empty text binds.
             check("onlyFilterNamed= typed with nothing" in said
-                  and "5b-227" in said,
+                  and "5b-227" in said
+                  and "LEFT OUT ALTOGETHER IS REFUSED" not in said
+                  and "OS11" in said,
                   "system-colours: COPY_VIEW_FILTERS is sent onlyFilterNamed= "
-                  "empty - left out, the call is refused (row 5b-227)")
+                  "empty, and left out is not called refused any more - the "
+                  "card copies every filter then too (rows 5b-227, 5b-1905)")
             check("wipes EVERY override" in said
                   and "insulation and lining it was never handed" in said
                   and "yes for THAT reset" in said,

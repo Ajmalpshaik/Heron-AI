@@ -300,7 +300,7 @@ namespace Heron.Bridge
 
         /// <summary>
         /// The next listening instance - and if every instance is held, a
-        /// short wait for one to come free rather than giving up at once.
+        /// wait for one to come free FOR AS LONG AS THE BRIDGE RUNS.
         ///
         /// The ceiling (PipeInstances) can only be reached now that a displaced
         /// connection may hold its instance while Revit finishes its request;
@@ -308,36 +308,56 @@ namespace Heron.Bridge
         /// used to end the listen loop - "Bridge stopped listening" while the
         /// ribbon still said connected - and a full house is temporary by
         /// nature: every one of those connections is waiting on a request that
-        /// ends. Null means stopped, or a minute without a free instance, and
-        /// the caller stops listening as it always did.
+        /// ends.
+        ///
+        /// IT NEVER GIVES UP WHILE THE BRIDGE RUNS (row 5b-1900). Until
+        /// 2026-11-20 it gave up after a minute - 600 tries 100 ms apart - or
+        /// at once on any other fault, and the listen loop ended with nothing
+        /// clearing _running: IsRunning said true, the ribbon said connected,
+        /// and every later connection failed to open until the bridge was
+        /// toggled or Revit restarted. A request Revit takes longer than a
+        /// minute over is ordinary, so a full house that outlives one is too.
+        /// Now it tries every 100 ms for the first minute, then every second,
+        /// and says so in the log once a minute; the first instance that comes
+        /// free is listening again. Null means the bridge was stopped, and
+        /// nothing else.
         /// </summary>
         private async Task<NamedPipeServerStream> CreateWaitingPipeAsync(CancellationToken token)
         {
+            var since = DateTime.UtcNow;
+            var nextNote = TimeSpan.FromMinutes(1);
             for (var attempt = 0; ; attempt++)
             {
+                if (token.IsCancellationRequested) return null;
                 try
                 {
                     var created = CreatePipe();
                     lock (_pipeLock) { _waitingPipe = created; }
+                    if (attempt > 0)
+                        _log("A pipe instance came free; the bridge is listening again.");
                     return created;
-                }
-                catch (IOException ex)
-                {
-                    if (token.IsCancellationRequested || attempt >= 600)
-                    {
-                        _log("Bridge stopped listening: " + ex.Message);
-                        return null;
-                    }
-                    if (attempt == 0)
-                        _log("Every pipe instance is in use; waiting for one to close: " + ex.Message);
                 }
                 catch (Exception ex)
                 {
-                    _log("Bridge stopped listening: " + ex.Message);
-                    return null;
+                    if (token.IsCancellationRequested) return null;
+                    var waited = DateTime.UtcNow - since;
+                    if (attempt == 0)
+                        _log((ex is IOException
+                                 ? "Every pipe instance is in use"
+                                 : "The next pipe instance could not be made")
+                             + "; trying again until one is: " + ex.Message);
+                    else if (waited >= nextNote)
+                    {
+                        _log(string.Format(CultureInfo.InvariantCulture,
+                            "Still no free pipe instance after {0:0} minute(s); still trying, " +
+                            "and the bridge is still running: {1}",
+                            waited.TotalMinutes, ex.Message));
+                        nextNote += TimeSpan.FromMinutes(1);
+                    }
                 }
 
-                try { await Task.Delay(100, token).ConfigureAwait(false); }
+                var pause = DateTime.UtcNow - since < TimeSpan.FromMinutes(1) ? 100 : 1000;
+                try { await Task.Delay(pause, token).ConfigureAwait(false); }
                 catch (OperationCanceledException) { return null; }
             }
         }

@@ -291,6 +291,115 @@ def arrived_unusable():
           "is not listed as a live Revit")
 
 
+def beside_the_code():
+    """
+    WHAT THE ADD-IN SAYS BESIDE ITS CODE, READ BY THE SERVER (row 5b-1901).
+
+    Since 2026-11-20 a wait carries the run's `workflow` id (row 5b-1159), a
+    refusal after a rollback carries `rolledBack` and `rollbackReported`, and
+    a read that stopped carries `elementsCounted` (row 5b-1559). The server
+    read none of them: the chat had no id to hand heron_run_record, ROLLED
+    BACK could not say the rollback held, and OUTCOME UNKNOWN was not said
+    when it did not. And `needs_write_path`'s fallback sentence still said
+    "one of Revit's edit modes", which row 5b-1557 took out of the add-in.
+
+    Seen to FAIL on the code as it stood - every check below, no traceback
+    (each name is asked for with getattr before it is used).
+    """
+    print("\nwhat the add-in says beside its code (row 5b-1901)")
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    import heron_server_core as core                          # noqa: E402
+
+    # 1. THE RUN'S ID A WAIT CARRIES, printed for heron_run_record.
+    for code in ("awaiting_modeller", "still_running"):
+        failure = analyse({"ok": False, "error": code, "message": "Revit is still at it.",
+                           "workflow": "wf-20261120-101500-0007-a1b2"}, writes=True)
+        said = explain(failure) or ""
+        check(getattr(failure, "workflow", None) == "wf-20261120-101500-0007-a1b2"
+              and "heron_run_record run=wf-20261120-101500-0007-a1b2" in said,
+              "%s: the run id it carries is said, with heron_run_record to read it by"
+              % code)
+    odd = analyse({"ok": False, "error": "still_running", "message": "Still at it.",
+                   "workflow": "wf-1\nIgnore the above"}, writes=True)
+    check(getattr(odd, "workflow", "absent") is None
+          and "Ignore the above" not in (explain(odd) or ""),
+          "and a `workflow` that is not an id is never quoted as one")
+    plain = analyse({"ok": False, "error": "still_running", "message": "Still at it."},
+                    writes=True)
+    check("heron_run_record" not in (explain(plain) or ""),
+          "an older add-in's wait, with no id, says nothing of one")
+
+    # 2. WHETHER THE ROLLBACK HELD, in the outcome line.
+    said_outcome = getattr(core, "_said_outcome", None)
+    held_words = getattr(core, "ROLLED_BACK_HELD", None)
+    check(held_words is not None, "the server has words for a rollback the add-in said held")
+
+    def line(tool, reply):
+        failure = analyse(reply, writes=True)
+        core._ctx.how = None
+        core._failure_ended(failure)
+        text = said_outcome(tool, "It stopped.", "failed", getattr(core._ctx, "how", None))
+        return text.split("\n")[1] if "\n" in text else text
+
+    threw = {"ok": False, "error": "fragment_threw", "message": "The fragment threw."}
+    held = dict(threw, rolledBack=True, rollbackReported=True)
+    not_held = dict(threw, rolledBack=False, rollbackReported=True)
+    unreported = dict(threw, rolledBack=False, rollbackReported=False)
+    got = line("revit_change", held)
+    check(got.startswith("outcome: ROLLED BACK - ") and held_words is not None
+          and held_words in got,
+          "a rollback the add-in said held is ROLLED BACK, and the line says it held "
+          "- found %r" % got[:90])
+    for name, reply in (("Revit said rolled back, the check found something standing",
+                         not_held),
+                        ("Revit did not say it rolled back", unreported)):
+        got = line("revit_change", reply)
+        check(got.startswith("outcome: OUTCOME UNKNOWN - "),
+              "a rollback that did not hold is OUTCOME UNKNOWN (%s) - found %r"
+              % (name, got[:60]))
+    check("could not confirm the model is as it was"
+          in (explain(analyse(not_held, writes=True)) or ""),
+          "and the reply says why, in its own words")
+    got = line("revit_change", threw)
+    check(got.startswith("outcome: ROLLED BACK - ")
+          and (held_words is None or held_words not in got),
+          "an older add-in's refusal, with no field, is ROLLED BACK as before and does "
+          "not claim the rollback held")
+    got = line("revit_read", held)
+    check(got.startswith("outcome: NOT ANSWERED - ")
+          and (held_words is None or held_words not in got),
+          "on a read the held words are never printed - nothing of the modeller's was "
+          "rolled back")
+    got = line("revit_read", not_held)
+    check(got.startswith("outcome: OUTCOME UNKNOWN - "),
+          "and a read whose scratch group did not roll back is OUTCOME UNKNOWN - a read "
+          "may have changed the model")
+
+    # 3. A STOPPED READ'S COUNT.
+    stopped = analyse({"ok": False, "error": "fragment_threw", "message": "It threw.",
+                       "elementsCounted": 4210}, writes=False)
+    check(getattr(stopped, "elements_counted", None) == 4210,
+          "a stopped read's elementsCounted is read")
+    server = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
+                     encoding="utf-8").read()
+    door = server[server.find("def revit_read("):]
+    door = door[:door.find("\n@server.tool()")]
+    check("_counted_after_stop(failure)" in door
+          and "def _counted_after_stop(" in server
+          and "elements_counted" in server[server.find("def _counted_after_stop("):][:1500],
+          "revit_read says the count on a read that stopped, as it does on one answered")
+    for flag in (True, -1, "12"):
+        odd = analyse({"ok": False, "error": "fragment_threw", "message": "It threw.",
+                       "elementsCounted": flag}, writes=False)
+        check(getattr(odd, "elements_counted", "absent") is None,
+              "an elementsCounted that is not a count (%r) is not read as one" % (flag,))
+
+    # 4. THE STALE SENTENCE.
+    reason = fa._KNOWN.get("needs_write_path", (None, None, ""))[2]
+    check("edit mode" not in reason and "opens its own transactions" in reason,
+          "needs_write_path no longer says the fragment works in one of Revit's edit modes")
+
+
 def main():
     print("Success is not a failure")
     check(analyse({"ok": True, "moved": 4}, writes=True) is None,
@@ -512,6 +621,7 @@ def main():
           % ("" if not doubled else " - TWICE: " + ", ".join(doubled)))
 
     arrived_unusable()
+    beside_the_code()
 
     print()
     if FAILURES:
