@@ -260,6 +260,78 @@ def envelope():
           "and hands its models back when the batch ends, rather than holding them three minutes")
 
 
+def resumed():
+    """Issue #1033, D-188: the same chat after an app restart is the same conversation."""
+    print("\n2b. a chat the host resumes is the same conversation (issue #1033, D-188)")
+    made = getattr(BRIDGE, "host_conversation", None)
+    adopt = getattr(BRIDGE, "adopt_host_conversation", None)
+    variable = getattr(BRIDGE, "HOST_SESSION_VARIABLE", "CLAUDE_CODE_SESSION_ID")
+    check(callable(made) and callable(adopt),
+          "the client can make a conversation from the host's session, and adopt it")
+    if not (callable(made) and callable(adopt)):
+        return
+    session = "3f2b8c1e-0000-4000-8000-00000000abcd"
+    one = made({variable: session})
+    check(isinstance(one, str) and re.match(r"^[0-9a-f]{32}$", one or "") is not None,
+          "it is a hex id, like the per-process one")
+    check(one == made({variable: session}),
+          "the same host session makes the same conversation - before and after a restart")
+    check(one != made({variable: session[:-1] + "e"}),
+          "two host sessions make two conversations - two chats are still two")
+    check(session not in (one or "") and session.replace("-", "") not in (one or ""),
+          "the host's session id is never sent as it is")
+    check(made({}) is None and made({variable: "   "}) is None,
+          "a host that names no session leaves the per-process conversation")
+    check(made({variable: session, "HERON_CONVERSATION_ID": "batch-of-fourteen"}) is None,
+          "HERON_CONVERSATION_ID still wins - batch-prove's jobs")
+
+    kept = BRIDGE.CONVERSATION_ID
+    try:
+        check(adopt({}) is False and BRIDGE.CONVERSATION_ID == kept,
+              "adopting with no host session changes nothing")
+        check(adopt({variable: session}) is True and BRIDGE.CONVERSATION_ID == one,
+              "adopting makes the host's chat this process's conversation")
+        bridge = BRIDGE.Bridge({"pid": 9, "pipeName": "heron-9", "token": "t"}, "x.json")
+        sent = _Pipe()
+        bridge._handle = sent
+        bridge.request("list_levels")
+        said = {}
+        try:
+            said = json.loads(sent.written.decode("utf-8").strip())
+        except ValueError:
+            pass
+        check(said.get("conversation") == one,
+              "and the next request carries it - the add-in's hold sees the same chat")
+    finally:
+        BRIDGE.CONVERSATION_ID = kept
+        getattr(BRIDGE, "_ASKED", {}).pop(9, None)
+
+    # A COMMAND LINE RUN FROM THE CHAT'S OWN SHELL inherits the variable and
+    # must NOT adopt it: it hands back what it held when it ends, and that
+    # would free the chat's own models.
+    env = dict(os.environ)
+    env.pop("HERON_CONVERSATION_ID", None)
+    env[variable] = session
+    env["PYTHONPATH"] = os.path.join(ROOT, "mcp", "client")
+    ask = [sys.executable, "-c", "import heron_bridge_client as b; print(b.CONVERSATION_ID)"]
+    first = subprocess.run(ask, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                           encoding="utf-8").stdout.strip()
+    second = subprocess.run(ask, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            encoding="utf-8").stdout.strip()
+    check(first and second and first != second and one not in (first, second),
+          "a command line keeps a conversation of its own, even inside the chat's shell")
+
+    server = read(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"))
+    cut = server.rfind('if __name__ == "__main__":')
+    main_block = server[cut:] if cut >= 0 else ""
+    check("bridge.adopt_host_conversation()" in main_block,
+          "the MCP server adopts it when it is RUN")
+    check(before(main_block, "bridge.adopt_host_conversation()", "brain.warm()"),
+          "before it starts serving")
+    check(cut >= 0 and "bridge.adopt_host_conversation()" not in server[:cut],
+          "and not when a suite or a tool only imports it")
+
+
 def failure():
     print("\n3. a refusal for a held model is NEVER RAN - nothing reached the model")
     for writes in (False, True):
@@ -360,6 +432,29 @@ def wiring():
     check(before(toggle, "bridge.Stop()", "HeronModelHold.Session.Clear()"),
           "disconnecting the bridge from the ribbon clears every hold")
 
+    print("\n7b. `info` says who holds the model in front, and claims nothing (row 5b-1645)")
+    server = read(os.path.join(ROOT, "revit", "Heron.Bridge", "BridgeServer.cs"))
+    start = server.find('if (op == "info")')
+    info = server[start:server.find("HANDING IT BACK", start)] if start >= 0 else ""
+    check("BridgeActiveModel.HoldOf" in info and "BridgeActiveModel.Key" in info,
+          "the bridge asks the add-in who holds the model in front, by its key")
+    check(all(name in info for name in ('"activeModelHeld"', '"activeModelMine"',
+                                        '"activeModelHoldSecondsRemaining"')),
+          "and says it in three optional fields, so the protocol version stands")
+    check(info and "HeronLease.Claim" not in info and before(server, 'if (op == "info")',
+                                                            "HeronLease.Claim("),
+          "in `info`, answered before any lease is claimed - looking is not claiming")
+    startup = NOTE_SUITE.body_of(application, "public Result OnStartup(")
+    check("BridgeActiveModel.HoldOf" in startup and "HeronModelHold.Session.Look(" in startup
+          and "Claim(" not in startup[startup.find("BridgeActiveModel.HoldOf"):][:600],
+          "the add-in tells the bridge to LOOK at the hold - never Claim it")
+    activated = NOTE_SUITE.body_of(application, "private static void OnViewActivated(")
+    check("RevitOperations.DocumentKey(document)" in activated,
+          "and keeps the key of the model in front beside its title")
+    forget = NOTE_SUITE.body_of(code(DISPATCHER), "public void ForgetActiveModel(")
+    check("BridgeActiveModel.Key = null" in forget,
+          "a closing model in front leaves no key behind")
+
     print("\n8. Free this model in the Heron button's menu (D-150)")
     raw_app = read(APPLICATION)
     check('typeof(FreeModelCommand).FullName' in raw_app
@@ -449,6 +544,7 @@ def rule():
 
 def main():
     envelope()
+    resumed()
     failure()
     registry()
     wiring()

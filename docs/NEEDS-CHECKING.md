@@ -1622,6 +1622,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ou.md`](needs-checking/group-ou.md)
 
+## Group OV - a resumed chat takes back its model, health names who holds it and which model a change goes to, the panel's outcome line, and two add-in fixes (2026-11-20)
+
+**Its own file:** [`needs-checking/group-ov.md`](needs-checking/group-ov.md)
+
 ## Group OW - what the add-in fixes of 2026-11-20 left behind, issue #1102: the bridge keeps listening when every pipe is in use, two models of one title are told apart, and the chat reads the run id, the rollback and the count the add-in now sends - BUILT, NOT RUN IN REVIT (2026-11-20)
 
 **Its own file:** [`needs-checking/group-ow.md`](needs-checking/group-ow.md)
