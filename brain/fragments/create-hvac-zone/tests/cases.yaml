@@ -4,10 +4,13 @@ positive:
       a zone holding all three - CHECKED by reading the zone's own space list
       back in a SEPARATE call, not from this fragment's count
 
-  - given: a zone name already used
-    expect: the zone still created under Revit's own name, and the clash reported
-
 negative:
+  - given: a zone name another zone already has (any capitals)
+    expect: >
+      refused before anything is made - no zone, no space moved, added 0 -
+      naming the zone that has the name and its level. Version 1 made a second
+      zone of the same name on Revit 2020 (row 5b-1654)
+
   - given: Revit 2027
     expect: >
       refused with the reason - the API has removed zone creation and the job has

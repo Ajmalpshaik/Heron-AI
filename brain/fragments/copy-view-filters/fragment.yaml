@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,14 @@ semantic-identity: "put this view's whole filter set onto other views"
 kind: action
 domain: revit.views
 capability: COPY_VIEW_FILTERS
-version: 1
+# IN THE SOURCE'S OWN ORDER, WITH ITS ENABLE FILTER TICK (version 2, row
+# 5b-1853). Where two filters set the same thing on one element the higher one
+# wins, so the order is part of the look. From Revit 2021 the source's order
+# is read and each copy carries its Enable Filter tick, read back; version 1
+# copied in the order the filters were made and left the tick behind. On Revit
+# 2020 the API cannot read the order: the copies go in the order the filters
+# were made, and the answer says so.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -73,6 +80,12 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<string>
+    - name: findings
+      # Version 2. The order the copies went in, filters that kept their
+      # place on a target, an Enable Filter tick that did not read back
+      # (D-52).
+      role: accounting
+      type: IList<string>
 
 proof:
   date: '2026-09-08'
@@ -103,10 +116,12 @@ compatibility-note: >
   One implementation for every release. `GetFilters`, `AddFilter`,
   `GetFilterOverrides`, `SetFilterOverrides`, `GetFilterVisibility` and
   `SetFilterVisibility` are all present on `View` from 2020 through 2027 - read
-  off the reference assemblies at both ends. `GetOrderedFilters` and
-  `SetIsFilterEnabled` are deliberately NOT used: both arrived at 2024, and
-  naming either would break the 2020 build for an ordering and an enable flag
-  this copy does not need.
+  off the reference assemblies at both ends. `GetOrderedFilters`,
+  `GetIsFilterEnabled` and `SetIsFilterEnabled` arrived at 2021 and are absent
+  from 2020 (`tools/api-surface --members View --inherited`, 2026-11-19; row
+  5b-1852 - this note said 2024 until then). Version 2 uses all three, reached
+  BY NAME so one source still builds on 2020, where they are null and the
+  copies go in id order.
 
 # ROUTING - repeated in APPLY_VIEW_FILTER and REPORT_VIEW_FILTERS.
 #

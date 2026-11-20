@@ -1606,6 +1606,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oq.md`](needs-checking/group-oq.md)
 
+## Group OR - MEP, view, filter and picture tools fixed for issues #942, #943, #951, #1053, #1058, #935 and #1060 - DRAFT until proved (2026-11-20)
+
+**Its own file:** [`needs-checking/group-or.md`](needs-checking/group-or.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

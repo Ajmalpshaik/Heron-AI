@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -28,7 +28,11 @@ capability: REPORT_CATEGORY_OVERRIDES
 # card left out a category with nothing in the model; and it does not depend
 # on `allCategories`. The proof below was version 1's and stale; the card was
 # DRAFT at the time, until version 3 is proved.
-version: 3
+# Whether the template sets a tab is read from the template (version 4, row
+# 5b-1854) - its own include list, as REPORT_VIEW_TEMPLATE_CONTROL reads it.
+# Version 3 read it off the view, so "the template sets this tab" could be
+# wrong either way.
+version: 4
 source: OFFICIAL
 risk: READ
 

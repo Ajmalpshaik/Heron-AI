@@ -89,6 +89,15 @@ positive:
       its connectors, so the system is drawn from ... instead"; the air handler
       in skipped. Never a view with one rectangle on it
 
+  - given: >
+      version 2 - the same supply air system on the Snowdon scratch copy, at
+      the project's in-wg precision of 0.01 (row 5b-1488)
+    expect: >
+      no run label reading a bare "Δp 0.00 in-wg" where the run's Pressure
+      Drop in Properties is above 0 - it reads "< 0.01 in-wg", and findings
+      counts the labels so marked. Compared against Properties of one duct
+      (1365662 in MW10) at a finer precision, set in Project Units and Undone
+
 negative:
   - given: >
       THE D-30 NEGATIVE - THE FIRST CASE TO RUN. systemName "ZZZ No Such

@@ -365,6 +365,14 @@ namespace Heron.Revit.Addin
                     + "Nothing was pictured, and nothing was made.");
             }
 
+            // WHICH STEP FAILED, SAID (issue #1058 A1, row 5b-1892). On a Revit
+            // 2020 floor plan `around` answered only .NET's "Object reference
+            // not set to an instance of an object" - nothing said what was
+            // missing, or where. The cause is not found here (no Revit); each
+            // step now names itself, a missing copy or crop box is named in
+            // words, and a null still thrown says the step and the call it came
+            // from, so the run on the owner's PC can pin it.
+            var step = "starting the temporary group";
             HeronRollbackWitness.Outcome after = null;
             using (var watch = RevitFragment.Watch(doc, Label, Label))
             using (var group = new TransactionGroup(doc, Label))
@@ -376,14 +384,22 @@ namespace Heron.Revit.Addin
                     View copy;
                     using (var transaction = new Transaction(doc, Label))
                     {
+                        step = "starting the copy's transaction";
                         transaction.Start();
                         var options = transaction.GetFailureHandlingOptions();
                         options.SetFailuresPreprocessor(new DismissWarnings());
                         options.SetClearAfterRollback(true);
                         transaction.SetFailureHandlingOptions(options);
 
-                        copy = doc.GetElement(view.Duplicate(how)) as View;
+                        step = "copying the plan (" + (detailing ? "with detailing" : "without detailing") + ")";
+                        var copyId = view.Duplicate(how);
+                        copy = copyId == null || copyId == ElementId.InvalidElementId
+                            ? null : doc.GetElement(copyId) as View;
+                        if (copy == null)
+                            throw new InvalidOperationException("Revit made no copy of the plan to crop");
+                        step = "cropping the copy round the region";
                         CropTo(copy, low, high, margin);
+                        step = "regenerating the cropped copy";
                         doc.Regenerate();
 
                         if (transaction.Commit() != TransactionStatus.Committed)
@@ -395,6 +411,7 @@ namespace Heron.Revit.Addin
                         }
                     }
 
+                    step = "picturing the cropped copy";
                     return Exported(doc, copy, width, clamped, "region",
                                     string.Join("; ", left.ToArray()), null, shown,
                                     ref after, group, watch,
@@ -403,9 +420,13 @@ namespace Heron.Revit.Addin
                 catch (Exception ex)
                 {
                     after = RevitFragment.RollBackAndCheck(group, doc, watch);
+                    var said = ex is NullReferenceException
+                        ? "something Revit should have handed back was missing while " + step
+                          + (ex.TargetSite == null ? "" : " (in " + ex.TargetSite.Name + ")")
+                        : ex.Message + " - while " + step;
                     return Json.Error("capture_failed",
-                        "Revit could not picture that region of '" + planName + "': " + ex.Message
-                        + ". " + Undone(after));
+                        "Revit could not picture that region of '" + planName + "': " + said
+                        + ". Picture the plan whole without `around` meanwhile. " + Undone(after));
                 }
             }
         }
@@ -453,6 +474,8 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static void CropTo(View copy, XYZ low, XYZ high, double margin)
         {
+            if (low == null || high == null)
+                throw new InvalidOperationException("no region was worked out to crop to");
             var scope = copy.get_Parameter(BuiltInParameter.VIEWER_VOLUME_OF_INTEREST_CROP);
             if (scope != null && !scope.IsReadOnly && scope.AsElementId() != ElementId.InvalidElementId)
                 scope.Set(ElementId.InvalidElementId);
@@ -469,6 +492,8 @@ namespace Heron.Revit.Addin
             if (annotation != null && !annotation.IsReadOnly) annotation.Set(0);
 
             var current = copy.CropBox;
+            if (current == null)
+                throw new InvalidOperationException("Revit gave the copy of the plan no crop box");
             var transform = current.Transform ?? Transform.Identity;
             var inverse = transform.Inverse;
             double minX = double.MaxValue, minY = double.MaxValue;

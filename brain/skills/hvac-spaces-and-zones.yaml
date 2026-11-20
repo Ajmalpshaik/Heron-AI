@@ -132,17 +132,16 @@ purpose: >
      deleted or moved in the architect's model. They are listed and NEVER
      deleted: a space carries loads and tags. Deleting one is a delete, the
      modeller's own, on a yes for that space (Article 7).
-     THE PHASE, READ OFF THE CARD'S CODE AND REVIT'S OWN API REFERENCE, NOT
-     SEEN IN REVIT (FRAGMENT-ISSUES row 5b-1589): the card looks for a space
-     already at each room's point without saying which phase, and Revit
-     answers that for the model's LAST phase only; and it takes every room
-     in the link whatever its phase. So with phaseName a phase that is not
-     the model's last, a second run does not see the spaces the first one
-     made - it renames none of them and may make each again - and a room of
-     an earlier phase in the architect's model may get a space. With a phase
-     other than the last, run this step ONCE - the rename call is not sent,
-     since it could not see those spaces - and read revit_rooms before any
-     second run.
+     THE PHASE (card version 3, rows 5b-1589 and 5b-1655): the card now
+     looks for the spaces already there, and reads the link's rooms, in the
+     phase asked - in the link, the phase of the same name, else the link's
+     last, and findings says which. It reads each new space's phase back: on
+     Revit 2020 spaces asked for in "Existing" were made in "New
+     Construction" (NR9, cause not found). A FIRST LINE OF FINDINGS SAYING
+     SPACES WERE MADE IN ANOTHER PHASE - or any id in `wrongPhase` - STOPS
+     THE JOB HERE: say so, take the call back with Revit's Undo, and ask the
+     modeller what to do; no zone is made on those spaces. Not yet run in
+     Revit with the version 3 code - NEEDS-CHECKING Group OR.
   5. WHERE EACH SPACE STOPS AT THE TOP, one level at a time.
      FILTER_ELEMENTS_BY_CATEGORY with category=Spaces and levelId that
      level; its count is said to the modeller with the top those spaces
@@ -165,13 +164,13 @@ purpose: >
      filter run again, then expect_from naming it. It answers `zone` and
      `added`.
      IT ALWAYS MAKES A NEW ZONE - it never adds to one that is there. A
-     zoneName another zone already has does not stop it: the zone is made
-     under whatever name Revit gave it, and the only word of that is a line
-     in `refused`. A space Revit turned away is a line in `refused` too,
+     zoneName another zone already has, in any capitals, is REFUSED before
+     anything is made: no zone, no space moved, and `refused` names the zone
+     that has the name (version 2, row 5b-1654). Say so to the modeller and
+     ask for another name; spaces go into a zone that is already there in
+     Revit, by hand. A space Revit turned away is a line in `refused` too,
      with Revit's reason - a phase that is not the zone's is the usual one.
-     So `refused` IS READ OUT EVERY TIME, whole, however the call ended; a
-     zone made under the wrong name is said to the modeller, and what is
-     done with it is theirs.
+     So `refused` IS READ OUT EVERY TIME, whole, however the call ended.
      movedFromAnotherZone IS READ OUT EVERY TIME: a space belongs to one
      zone only, and Revit takes it out of the zone it was in without asking.
      A new zone's AREA reads zero until Revit works it out - it is never
@@ -334,8 +333,8 @@ note: >
   spaces and every one read back with no area, on a link set Room Bounding
   inside a change that was then rolled back (FRAGMENT-ISSUES row 5b-1125) -
   so step 3 is kept before step 4 is sent, and step 4 stops on that line.
-  And the phase is not carried through its lookups (row 5b-1589, read off
-  the code, not seen in Revit).
+  And the phase: carried through its lookups and read back since version 3
+  (rows 5b-1589 and 5b-1655), not yet run in Revit - Group OR.
 
   DRAFT until the whole order has been run on a saved scratch copy with a
   real architect's link, and the spaces read back with their areas and

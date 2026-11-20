@@ -11,6 +11,17 @@ positive:
       for its real use. It is reported because the file cannot be got back
 
 negative:
+  - given: >
+      version 2 - schema typed "IFC 4x3" on Revit 2020, whose list has no
+      IFC4x3 (row 5b-1402)
+    expect: >
+      refused before anything is written, naming the schemas Revit 2020 has;
+      no file. Then "IFC2x3" on the same Revit: it binds (no bad_request_value)
+      and exports
+
+  - given: schema "Default"
+    expect: refused - the schema is never defaulted - listing the schemas
+
   - given: a plan view passed as the scope
     expect: >
       REFUSED. A plan cannot limit an IFC, and Revit would export the WHOLE

@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -30,7 +30,11 @@ semantic-identity: "which work plane a view is on - the level, reference plane o
 kind: action
 domain: revit.views
 capability: REPORT_VIEW_WORK_PLANE
-version: 1
+# Version 2: a plan's default work plane is named as its own level - "Level :
+# Level 1" - when Revit does not hand back the level but the plane carries
+# that level's name; findings says it was matched by name. Version 1 named it
+# in quotes on Revit 2020 (row 5b-1480).
+version: 2
 source: OFFICIAL
 risk: READ
 
