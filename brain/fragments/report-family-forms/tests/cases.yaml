@@ -112,6 +112,36 @@ positive:
 
   - given: the Generic Model family, which = the extrusion's id alone
     expect: formCount 1, twoDCount 0, no 2D finding - the findings read exactly as version 4's
+
+  # VERSION 6 (2026-11-20, issue #1051 item A1). Each FAILS on version 5,
+  # whose reply printed every form's line twice - in formList and again as a
+  # numbered list under `rows` - with no count or extents first and no bound.
+  - given: the first case's family (one solid, one void), which "all"
+    expect: >
+      formList's FIRST entry "2 form(s), 1 solid and 1 void, together reaching
+      X -150 to 150, Y -150 to 150, Z -10 to 510 mm", then the two forms' lines;
+      the reply holds each form's line ONCE - no numbered list of the same
+      lines under `rows`, and no `joins` beside combinationList
+
+  - given: >
+      a scratch metric Generic Model family with 70 small solid extrusions
+      built by create-family-forms in one call (70 rows of "rect" profiles on
+      Ref. Level, none touching), which "all"
+    expect: >
+      formCount 70; formList opens "70 form(s), 70 solid and 0 void, together
+      reaching ..."; 60 form lines; then ONE entry "and 10 more form(s), not
+      described here ..." naming those 10 ids; elements 70 - and the reply's
+      length in characters written down beside #1051 A1's 50,871 for 98
+
+  - given: >
+      the 70-form family, "all" carried into SET_SELECTION (expect_from
+      "report-family-forms where which=all"), then READ_SELECTION
+    expect: >
+      READ_SELECTION reads back 70 ids - the 10 not described are selected
+      too: the bound is on the words, never on what is handed on
+
+  - given: the 70-form family, which = the 10 ids from that last entry, as given
+    expect: formCount 10, every one of the ten described, no "more" entry, elements 10
 negative:
   - given: which "revolve" on the same family, which holds no revolve
     expect: formCount 0, formList empty, scanned 2 - the forms were looked at and none matched
@@ -182,6 +212,17 @@ negative:
     expect: >
       refused naming the region - "is an edge of the filled region ... name
       the region"; nothing read, elements 0 - an edge is never handed on alone
+
+  # VERSION 6 (2026-11-20, issue #1051 item A1).
+  - given: the 70-form family, which "void" - it holds none
+    expect: >
+      formCount 0 and formList EMPTY - no "0 form(s)" entry - scanned 70: a
+      kind that matched nothing still answers nothing found
+
+  - given: the 70-form family with ten forms deleted - exactly 60 - which "all"
+    expect: >
+      60 form lines after the count entry and NO "more form(s)" entry - the
+      bound cuts only past 60
 second_route:
   - >
       In the Family Editor, select each form and read its Properties and its

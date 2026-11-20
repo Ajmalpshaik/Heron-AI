@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -82,9 +82,27 @@ capability: PLACE_FAMILY_INSTANCES
 # block below, kept as the record of what it proved); its C# moved, so it is
 # DRAFT again until NEEDS-CHECKING Group OH is run (D-30) - on the owner's word
 # of 2026-11-16 to fix every issue from #852 to #854.
-version: 6
+version: 7
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 7 (2026-11-20) - A NESTED FAMILY'S OWN OFFSET IS READ BACK, NOT
+# REFUSED, and back to DRAFT. FRAGMENT-ISSUES row 5b-301 (issue
+# Ajmalpshaik/Heron-AI#944): on 2026-10-03, Revit 2024, in a family, the Work
+# Plane-Based `Round void : HWC 10 cm` placed on `Ref. Level` at 0,-1000,0
+# came in at 0,-1000,-200 - 200 mm below its plane, where the nested family's
+# own offset puts it - and version 6 refused it "The placed family stands at
+# 0, -1000, -200 mm, not 0, -1000, 0 mm" and rolled back. In the family being
+# edited each one is now read back at its point, as before, or at its point
+# moved along the plane's normal by the offset it carries itself - its Offset
+# from Host (on a level with none, its Elevation from Level), or a level-based
+# one's Elevation from Level, read by built-in id - and `readBack` says "sits
+# 200 mm below "Ref. Level": the family's own offset". Off within the plane,
+# or off it by anything but that offset, still fails the whole call. A
+# project's layout is unchanged. Version 6 was PROVEN (the proof block below,
+# kept as the record of what it proved); its C# moved, so it is DRAFT again
+# until NEEDS-CHECKING Group OT is run (D-30) - on the owner's word that a
+# fragment found wrong may be changed even though it is proven.
 
 purpose: >
   Places one family type at a list of points on a level, and reports every
@@ -249,7 +267,10 @@ contract:
       # 3000 mm above it - Host 'Level 1', Level 'Level 1', Schedule Level
       # 'Level 1', Offset from Host 3000 mm". VERSION 3 adds ", its insertion
       # point 150 mm below that" where a family's insertion point is not its
-      # own level. A STRING, because a reply cuts a
+      # own level. VERSION 7, in a family: "... sits 200 mm below "Ref.
+      # Level": the family's own offset (Offset from Host -200 mm)" where a
+      # nested family stands off its point by the offset it carries itself.
+      # A STRING, because a reply cuts a
       # list to three items. Accounting: it describes what `placed` counts.
       role: accounting
       type: string

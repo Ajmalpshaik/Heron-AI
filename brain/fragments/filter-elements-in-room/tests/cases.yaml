@@ -7,7 +7,29 @@ positive:
       it IS inside. A room is a volume with a height, and filtering by level
       would drop exactly the services somebody is asking about
 
+  # VERSION 2 (row 5b-1485) - a door or window in a wall by its From Room and To Room.
+  - given: >
+      a scratch project with Room 7 enclosed by four walls, two windows in its
+      outside wall and one door into Room 8; room Room 7, elements those three
+      and the windows of Room 8
+    expect: >
+      elements holding Room 7's two windows and the door, and doorsAndWindows
+      naming each with its side - "window W12 (id ...): its To Room" for a
+      window, "its From Room" or "its To Room" for the door as its swing has
+      it - checked against Properties > From Room / To Room - and Room 8's
+      windows in outside. Version 1 put windows like these outside (row
+      5b-1485)
+
 negative:
+  # VERSION 2 (row 5b-1485).
+  - given: >
+      the same project; room Room 7, elements Room 8's windows and a door
+      between Room 8 and Room 9
+    expect: >
+      every one in outside, and each line in doorsAndWindows saying neither
+      its From Room nor its To Room is this room - a door or window on another
+      room's wall is never counted in by being close
+
   - given: an L-SHAPED room and a diffuser in the neighbouring room that falls inside the L's bounding box
     expect: >
       it is OUTSIDE. A bounding-box test would include it, quietly, and the
