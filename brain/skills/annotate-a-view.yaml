@@ -261,7 +261,7 @@ preconditions:
   - a project is open in front, it is the model the modeller means, and the view named is a real view of it - not a view template
   - the modeller has said which view, which categories, the tag type for each or the project's default, and a leader or none - and none is assumed (D-33)
   - a tag family for each category asked for is loaded in the project
-  - the gap between tags, the smallest overlap that counts and every offset are given for THIS drawing, in millimetres on the paper - there is no default - and each is sent as it was given, never multiplied by the view's scale: every card here scales its own paper lengths (ARRANGE_TAGS since version 3, row 5b-240)
+  - the gap between tags, the smallest overlap that counts and every offset are given for THIS drawing, in millimetres on the paper - there is no default - and each is sent as it was given, never multiplied by the view's scale - every card here scales its own paper lengths (ARRANGE_TAGS since version 3, row 5b-240)
   - revit_health has said whether Ask to Keep is on for that Revit - or, where its line could not say, the modeller has - and the modeller has been told that with it off each change is kept at once
   - the owner has Changes on - a refusal that names the switch is the answer
   - on a workshared model, a view the modeller cannot edit is skipped and named - nothing is checked out or synchronised for them (Articles 10 and 12)

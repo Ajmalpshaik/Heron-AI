@@ -39,6 +39,9 @@ version raised, and set to DRAFT; each PROVEN card keeps its old proof block as 
   Bounding, Overlay or Attachment, nested or not, unloaded for this user only or not; each PLACEMENT:
   pinned, workset, and its name as Revit shows it (which ends with its shared position). A new `summary`
   string carries every line whole. Every member it reads is on 2020 to 2027 (`tools/api-surface`, 2026-11-20).
+  **While it is DRAFT, Heron's starter checklist** (`brain/heron_checklists.py` `STARTER`, whose checks are
+  PROVEN reads) **checks** *every linked file is loaded* **with `REPORT_EXTERNAL_REFERENCES`' `unloaded`**
+  instead of its `notLoaded`; put it back once OQ5 and OQ6 pass.
 - **`RELOAD_LINKS` v3** - when anything was done, the FIRST finding reads *"No undo: Revit's Undo and Discard
   cannot take this back."*; the card says to ask first, every time, on a real model, and that it is proved
   on a scratch copy of a sample model only.
