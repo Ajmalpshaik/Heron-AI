@@ -7,6 +7,8 @@
 
 ## Group OV - a resumed chat takes back its model, health names who holds it and which model a change goes to, the panel's outcome line, and two add-in fixes (2026-11-20)
 
+**Tracked as GitHub issue [#1123](https://github.com/Ajmalpshaik/Heron-AI/issues/1123) since 2026-11-20** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Why:** issues [#1033](https://github.com/Ajmalpshaik/Heron-AI/issues/1033), [#1031](https://github.com/Ajmalpshaik/Heron-AI/issues/1031),
 [#1043](https://github.com/Ajmalpshaik/Heron-AI/issues/1043), [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953),
 [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) and [#1082](https://github.com/Ajmalpshaik/Heron-AI/issues/1082),
