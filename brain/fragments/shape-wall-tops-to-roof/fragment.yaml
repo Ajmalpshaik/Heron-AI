@@ -64,6 +64,12 @@ purpose: >
   a corner at every point of the roof's underside, to 1 mm; if not, the
   profile is removed again and the wall is as it was.
 
+  **WHEN A ROOF WILL NOT JOIN.** Revit's API has no Join/Unjoin Roof on any
+  release, so no tool joins one roof to another (the `join-roofs` method).
+  Where the walls under the roof are what has to meet it, this is the other
+  way - offered, and run only on a yes. One roof joined to another is done by
+  hand: Modify > Join/Unjoin Roof.
+
 contract:
   needs:
     - name: doc
@@ -186,6 +192,13 @@ compatibility-note: >
 #   "reset the wall profile"             -> NOT HERE, and nowhere yet: by hand
 #                                           in Revit, Reset Profile
 #   "slope this roof"                    -> SLOPE_ROOF_EDGES
+#   "join the main roof to the wing roof"
+#                                        -> here, with the join-roofs method
+#                                           named beside it (row 5b-1671):
+#                                           Revit's API has no Join/Unjoin
+#                                           Roof, this is the other way for the
+#                                           walls, and roof to roof is done by
+#                                           hand. tests/test_brain_reachable.py
 
 utterances:
   - make the tops of these walls follow the roof above

@@ -1,0 +1,81 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: join-roofs
+name: Join one roof to another - Revit's API has no Join/Unjoin Roof
+domain: revit.elements
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  What Heron answers when the modeller asks to join one roof to another -
+  Revit's Join/Unjoin Roof, which extends a roof until it meets the face of
+  another roof or of a wall. The order below is the owner's answer to row
+  5b-1671 (issue #918, 2026-11-19).
+
+  **REVIT'S API HAS NO JOIN/UNJOIN ROOF, ON ANY RELEASE HERON SUPPORTS.** Read
+  on 2026-11-20 in the API documentation shipped with the Revit API reference
+  assemblies for 2020.2, 2021.1, 2022.1, 2023.1, 2024.3, 2025.4, 2026.4 and
+  2027.4: the only members that name a roof join are failure messages
+  (`CannotJoinRoof`, `JoinedRoofMissesTarget`), and `JoinGeometryUtils` is
+  Join Geometry - another command, which extends nothing. Revit's own
+  Join/Unjoin Roof command can be started from an add-in, but it then waits
+  for the modeller to pick the roof edge and the face, so an add-in cannot
+  finish it. No Heron tool does this job. CREATE_EXTRUSION_ROOF and
+  CREATE_FLOOR are not it: each makes a NEW roof.
+
+  0. SAY IT FIRST, with the release revit_health reports: "Revit <release>'s
+     API has no Join/Unjoin Roof, so Heron cannot make this join the
+     standard way."
+  1. LOOK FOR ANOTHER WAY TO THE SAME RESULT, and offer it only where it
+     really gets there. Where the WALLS under the roof are what has to meet
+     it: SHAPE_WALL_TOPS_TO_ROOF edits each wall's profile so its top follows
+     the underside of the roof above, measured along the wall (Revit 2022
+     on); ATTACH_WALLS attaches the wall tops to the roof as Attach Top/Base
+     does (Revit 2025 on). Name what it will change and ASK FIRST - run it
+     only on the modeller's yes for this one operation, through revit_change.
+  2. WHEN NO OTHER WAY GETS THERE - one roof meeting another roof is that
+     case today - say so, and say the job is done by hand in Revit: Modify >
+     Join/Unjoin Roof, then pick the edge of the roof to extend and the face
+     it is to meet. Never offer a tool that makes a new roof in its place.
+
+  A ROOF-TO-ROOF TOOL IS WANTED AND NOT BUILT: measure with a ray where one
+  roof's edge would meet the other roof, work out how far to extend it, and
+  extend it there. Recorded as row 5b-1869. Until it exists, step 2 is the
+  answer for roof to roof.
+
+# The words a modeller says. Kept to the roof join itself: a lookup names a
+# method by the words it shares with the request, beside an answer whose
+# capability the method needs.
+utterances:
+  - join the main roof to the wing roof
+  - join this roof to the other roof
+  - join/unjoin roof
+
+# CAPABILITIES, never fragment ids - the other ways step 1 offers. Nothing in
+# the library joins a roof to a roof, so nothing for step 2 is listed.
+needs:
+  - SHAPE_WALL_TOPS_TO_ROOF
+  - ATTACH_WALLS
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - the modeller has been told that Revit's API has no Join/Unjoin Roof on their release
+  - for step 1, the modeller has said yes to the other way, by name, for this one operation
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Built 2026-11-20 for FRAGMENT-ISSUES 5b-1671: on Villa 2, Revit 2024,
+  "join the main roof to the wing roof" reached CREATE_EXTRUSION_ROOF, which
+  makes a new roof, and the roof was rebuilt by hand. The owner's answer: say
+  plainly the API has no Join/Unjoin Roof, naming the release; look for
+  another way, offer it and ask; otherwise say it is done by hand. These
+  words now reach SHAPE_WALL_TOPS_TO_ROOF, the other way for walls, and
+  this method beside it - tests/test_brain_reachable.py holds both.
