@@ -2068,7 +2068,7 @@ Documentation should be generated and maintained automatically.
 > | 5 Revit integration | `tools/batch-prove.py` runs fragments against the open model and writes a proof draft that a person signs |
 > | 6 Version regression | every release compiled in CI; a proof on another release is an entry of `proof.releases` ([D-131](DECISIONS.md)); which releases the proofs name is [Group EQ](needs-checking/group-eq.md) |
 > | 7 Full workflow | rows of [NEEDS-CHECKING](NEEDS-CHECKING.md) run in Revit, such as the move ([Group D](needs-checking/group-d.md)) and Keep or Discard ([Group ET](needs-checking/group-et.md)) |
-> | 8 User acceptance | the owner's own runs, in the same register; the [README](../README.md) still asks modellers not to install |
+> | 8 User acceptance | the owner's own runs, in the same register; the [README](../README.md) still asks modellers not to install - *2026-11-20: no longer, since [D-190](decisions/D-190.md): it says how to install the unsigned v0.2.0 and what was checked* |
 
 ## 65. Reference Workflow — Simple BIM Task
 
@@ -2628,6 +2628,9 @@ Heron handles the technical workflow in the background.
 > lists both tags); with that Setup's *Add Heron to Claude Code* tick, a chat in any folder reaches Heron,
 > which has not yet run on a PC without a Heron checkout ([Group OA](needs-checking/group-oa.md) OA13).
 > The README still asks modellers not to install.
+> **2026-11-20, later:** it no longer does. On the owner's word the notice came out before any release is
+> signed ([D-190](decisions/D-190.md)); the README's [Install](../README.md#install) gives the v0.2.0
+> Setup's five steps and says plainly it is unsigned and what was and was not run.
 
 ## 75. Long-Term Expansion
 

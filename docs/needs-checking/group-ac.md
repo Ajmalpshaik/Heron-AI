@@ -151,6 +151,8 @@ public release: *"Publish v0.1.0 now"*. **Two written rules said a release is SI
 artefact rather than warning. Both still say so and neither was edited: this release is the owner's
 exception, made knowingly, and Stage 8 - signing - is still what closes it. The release notes say it is
 unsigned and that the README's *please do not install this yet* still stands.
+*2026-11-20: that notice came out of the README on the owner's word, before any release is signed -
+[D-190](../decisions/D-190.md). The README now says the build is unsigned and what was and was not run.*
 
 | | |
 |---|---|

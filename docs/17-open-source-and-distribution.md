@@ -150,7 +150,7 @@ MIT is the reasonable alternative if maximum familiarity matters more than the d
 | File | Purpose | Status |
 |---|---|---|
 | `LICENSE` | The licence text | ✅ **Apache 2.0, in place** ([D-08](DECISIONS.md), `Q-27` answered) |
-| `README.md` | What it is, install, quick start | ✅ exists. *As built (2026-10-18): it still asks modellers not to install yet, and points a tester at [`WHAT-TO-INSTALL.md`](WHAT-TO-INSTALL.md)* |
+| `README.md` | What it is, install, quick start | ✅ exists. *As built (2026-10-18): it still asks modellers not to install yet, and points a tester at [`WHAT-TO-INSTALL.md`](WHAT-TO-INSTALL.md). 2026-11-20: the notice is out ([D-190](decisions/D-190.md)) - its [Install](../README.md#install) section gives the unsigned v0.2.0 Setup's steps and what was checked* |
 | `CONTRIBUTING.md` | How to propose fragments, skills, agents | ✅ exists |
 | `CODE_OF_CONDUCT.md` | Standard | ✅ exists |
 | `SECURITY.md` | How to report a vulnerability privately | ✅ exists — and it stays **important**, because this tool writes to project models |
