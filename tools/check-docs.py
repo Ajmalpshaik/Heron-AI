@@ -60,8 +60,29 @@ out("markdown files: %d\n\n" % len(md))
 # number is what gave it away: a checker that suddenly condemns most of the
 # corpus is a broken checker, not a broken corpus - which is the rule
 # HANDOVER.md 4a states, arriving here the same day it was written.
-link = re.compile(r'\[([^\]]*)\]\(([^)]+)\)')
+#
+# TEXT GITHUB SHOWS AS CODE IS NOT A LINK, AND A LINK'S WORDS END AT A BLANK
+# LINE (row 5b-1907). Every link pattern in a file's whole text was checked,
+# code included, and the words matched anything but a closing square bracket,
+# line ends and all - so a row's placeholder written in backticks, the issue's
+# number in square brackets and then three dots in round ones, was reported as
+# a broken link, and so was a lone opening square bracket in a `grep` line in a
+# fenced block, paired with that placeholder's closing one 31 lines below. Each
+# was worked round by rewording. Now the links are read from
+# register-text.py's code_blanked() - the file with every fenced block and
+# inline code span turned to spaces, positions kept - and the words may still
+# run on to the next line, as GitHub renders a link a line break wraps (19 of
+# them on 2026-11-20, every one `[row` at a line's end and its number on the
+# next), but never past a blank line, which ends the paragraph a link is in. A
+# link written inside code is an example and is not judged.
+link = re.compile(r'\[((?:[^\]\n]|\n(?![ \t]*\n))*)\]\(([^)]+)\)')
 heading = re.compile(r'^#{1,6} (.+)$', re.M)
+
+import importlib.util
+_rt_spec = importlib.util.spec_from_file_location(
+    'register_text', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'register-text.py'))
+_rt = importlib.util.module_from_spec(_rt_spec)
+_rt_spec.loader.exec_module(_rt)
 
 
 def anchor_of(text):
@@ -93,7 +114,7 @@ _anchor_cache = {}
 for p in md:
     s = io.open(p, encoding='utf-8').read()
     base = os.path.dirname(p)
-    for text, href in link.findall(s):
+    for text, href in link.findall(_rt.code_blanked(s)):
         if href.startswith(('http://', 'https://', 'mailto:')):
             continue
 
@@ -136,11 +157,7 @@ failed = False
 # which holds none of them. A file the page names that is missing is said
 # and fails the run - a register that quietly drops a tier would pass
 # every count below with fewer questions.
-import importlib.util
-_rt_spec = importlib.util.spec_from_file_location(
-    'register_text', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'register-text.py'))
-_rt = importlib.util.module_from_spec(_rt_spec)
-_rt_spec.loader.exec_module(_rt)
+# (_rt, register-text.py, is loaded above section 1, which reads links with it.)
 try:
     oq_text = _rt.register_text(root + '/docs/OPEN-QUESTIONS.md',
                                 read=lambda p: allsrc.get(p.replace(os.sep, '/'))) or ''

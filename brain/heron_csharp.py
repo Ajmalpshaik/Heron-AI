@@ -83,6 +83,24 @@ So that check too became the part that does not tip: bare handlers remain
 a real share of the broad ones - at least a quarter - which only a
 deliberate rewrite of most of them would end.
 
+AND THAT QUARTER WAS A ONE-COMMIT CLAIM TOO, RESTATED ON 2026-11-20
+---------------------------------------------------------------------
+It was not the part that does not tip. By 2026-11-20 the share sat on
+its own line - 70 of 279 on one branch, against a quarter that is 69.75
+- and the deliberate rewrite it waited for is under way on purpose: row
+5b-110 asks for an empty `catch { }` to be made to say what it caught,
+which turns it into `catch (Exception ex)`. One such repair turned the
+suite red (row 5b-1913), so the check stood in the way of the very fix
+the register asks for, and row 5b-1865 was kept a bare `catch` that says
+less than it could.
+
+What the refusal rests on is the BROAD share, and that repair does not
+move it: a bare `catch` and `catch (Exception ex)` are both broad, so one
+becoming the other leaves the broad total where it was. So the suite now
+checks that - a bare catch and its repair each count as one broad
+handler - and only REPORTS how the broad ones divide between bare and
+catch (Exception), with no line for that split to cross.
+
 AND THE FIRST SET WAS WRONG FOR A DIFFERENT REASON
 ----------------------------------------------------
 A scratch expression written to survey the code before this module
