@@ -633,6 +633,74 @@ def dry_run_floor(text):
           "run_fragment_write for an EXECUTE card too")
 
 
+# A CARD THAT UNLOADS A LINK, OR DELETES ONE, CANNOT BE TRIED BY RUN-THEN-
+# ROLL-BACK (GitHub issue #1057, research note 51 section 4, 2026-11-20). A
+# link's document is not one of the model's transactions: deleting a link type
+# unloads its document, unloading does the same, and a rollback is not known to
+# load it again - so a dry run, a proof's trial, D-142's measured delete and a
+# Discard could each leave the link gone while saying the model is as it was.
+# Not run in Revit (NEEDS-CHECKING group OR, OR13). Every LIVE card whose C#
+# does either is named here, with the reason it may stand; a new one fails
+# until somebody has looked. Each entry must still do it, or the list lies.
+KNOWN_LINK_REMOVERS = {
+    "reload-links": "DRAFT v3: its first finding says Revit's Undo and Discard "
+                    "cannot take it back (row 73, Group OQ's OQ7 and OQ8), and "
+                    "Revit refuses it inside Heron's group (row 5b-1408, issue "
+                    "#941) - how it is ever run is the owner's",
+}
+
+# What "unloads or deletes a link" means in a card's C#, comments and strings
+# taken out first.
+_LINK_REMOVAL = (
+    re.compile(r"\.\s*Unload\s*\("),
+    re.compile(r"\.\s*UnloadLocally\s*\("),
+    re.compile(r"RevitLinkType[^;]{0,200}\.\s*Delete\s*\("),
+    re.compile(r"\.\s*Delete\s*\([^;]{0,120}(?:linkType|LinkType|linkInstance|LinkInstance)"),
+)
+
+
+def _code_only(text):
+    """C# with comments removed and string contents blanked."""
+    text = re.sub(r"/\*.*?\*/", " ", text, flags=re.S)
+    text = re.sub(r"//[^\n]*", " ", text)
+    return re.sub(r'"(?:\\.|[^"\\\n])*"', '""', text)
+
+
+def link_removers():
+    """14. No new card unloads or deletes a link unseen (#1057)."""
+    print()
+    print("14. A card that unloads or deletes a link is named, never slipped in (#1057)")
+    found = {}
+    for name in sorted(os.listdir(FRAGMENTS)):
+        card = os.path.join(FRAGMENTS, name, "fragment.yaml")
+        if not os.path.isfile(card):
+            continue
+        if (card_line(card, "heron-status") or "").upper() in ("DEPRECATED", "ARCHIVED"):
+            continue
+        impl = os.path.join(FRAGMENTS, name, "impl")
+        for folder, _, files in os.walk(impl):
+            for one in files:
+                if not one.endswith(".cs"):
+                    continue
+                code = _code_only(read(os.path.join(folder, one)))
+                if any(pattern.search(code) for pattern in _LINK_REMOVAL):
+                    found[name] = True
+    unnamed = sorted(n for n in found if n not in KNOWN_LINK_REMOVERS)
+    check(not unnamed,
+          "every live card whose C# unloads or deletes a link is named, with its reason "
+          "- unnamed: %s" % (", ".join(unnamed) or "none"))
+    stale = sorted(n for n in KNOWN_LINK_REMOVERS if n not in found)
+    check(not stale,
+          "and every card named still does it - stale: %s" % (", ".join(stale) or "none"))
+    planted = _code_only("// linkType.Unload(null);\nvar s = \"x.Unload(\";\n")
+    check(not any(p.search(planted) for p in _LINK_REMOVAL),
+          "a comment or a string that names it is not the call")
+    check(any(p.search(_code_only("try { linkType.Unload(null); } catch { }"))
+              for p in _LINK_REMOVAL)
+          and any(p.search(_code_only("doc.Delete(linkType.Id);")) for p in _LINK_REMOVAL),
+          "and the call itself is found, an unload and a delete of a link type alike")
+
+
 def main():
     # ASK BEFORE CALLING - heron-ship 2a. On the code as it stood these names
     # do not exist, and a traceback would replace every failure below.
@@ -1092,6 +1160,7 @@ def main():
     show_door(text, cs, door_refusal)
     change_floor(text, door_refusal)
     dry_run_floor(text)
+    link_removers()
 
     print()
     if FAILURES:
