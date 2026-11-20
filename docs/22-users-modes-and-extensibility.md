@@ -91,7 +91,10 @@ wording.~~ **Mode** must be granted. ~~Conflating the two would let a user talk 
 > ([D-106](DECISIONS.md#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on)).
 > *Ask to Keep* is off by default
 > ([D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)).
-> They are set in that window or in `heron.config` and read inside the add-in, never from a request, so
+> ~~They are set in that window or in `heron.config` and read~~ **Since [D-166](decisions/D-166.md)
+> (2026-11-16) Changes, Admin and Publish are set only in that window and held in this Revit's memory, off
+> whenever Revit starts; Ask to Keep is still kept in `heron.config` ([row 5b-1895](fragment-issues/row-5b-1895.md)).
+> All four are read** inside the add-in, never from a request, so
 > no text a chat sends can raise them ([Golden Rule 19](14-golden-rules.md)). There is no generic
 > execute capability: an `ADMIN` fragment from the library runs only while the Admin switch is on
 > ([04 §3](04-heron-mcp.md#3-note-tool-granularity--the-central-mcp-design-decision)).
