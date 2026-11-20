@@ -85,6 +85,34 @@ positive:
       connector read again: it stays at the ring's centre on Casing Right and
       reads the new Width and Height
 
+  # VERSION 6 (2026-11-20, issue #1029). NOT RUN. A scratch Pipe Accessories
+  # family on Revit 2020 shaped like the pump of the issue: a flange disc
+  # (Z 870 to 882, 200 mm across) with a raised face on it (Z 882 to 884,
+  # 150 mm across), each its own extrusion and joined to nothing; a small box
+  # "Lid Screw" 1 m away whose top is also at Z 884; reference planes
+  # "Discharge Face" at Z 884 and "Discharge Flange Top" at Z 882; a Length
+  # parameter "Discharge Dia" = 150. Each FAILS on version 5, which refuses
+  # both planes.
+  - given: >
+      facePlane "Discharge Face", system "Domestic Cold Water", sizeParameters
+      "Discharge Dia", form = the raised face extrusion's id
+    expect: >
+      a round pipe connector 150 mm at the raised face's centre, pointing up,
+      on the face lying on "Discharge Face"; findings "1 other face(s) lie on
+      "Discharge Face" and were left out by form=" - the screw's top
+  - given: >
+      facePlane "Discharge Flange Top", the same system and size, facing "up"
+    expect: >
+      the connector on the flange disc's top (pointing up), not on the raised
+      face's underside (pointing down); findings "1 other face(s) ... left out
+      by facing="
+  - given: the same as the first case with form and facing both left out
+    expect: >
+      refused as version 5 refused it - "2 solid faces lie on "Discharge Face"
+      (facing up, up)" - now also naming each face's form id, way and centre,
+      and saying to give form=; nothing made. The same call with form= that
+      id then makes the connector (the case above)
+
 negative:
   - given: system "Global" in a Generic Models family
     expect: refused - Global is a duct and a pipe system both; "Global pipe" or "Global duct" asked for
@@ -142,6 +170,32 @@ negative:
     expect: >
       refused, "The opening of the ring face on "Casing Right" is 600 x 400
       mm ...", nothing made - the port is the opening, never the flange
+
+  # VERSION 6 (2026-11-20, issue #1029). NOT RUN. The scratch pump family of
+  # the version 6 positives.
+  - given: >
+      facePlane "Discharge Face", form = the id of the reference plane
+      "Discharge Face" itself
+    expect: >
+      refused by name - "... given in form= is not a form - it is one of this
+      family's Reference Planes ..." - nothing made
+  - given: facePlane "Discharge Face", form = the id of a void extrusion in the family
+    expect: refused - "... is an extrusion that is a VOID - a connector goes on a solid's face" - nothing made
+  - given: >
+      facePlane "Discharge Face", form = the flange disc's id (whose top is at
+      Z 882, not on that plane)
+    expect: >
+      refused, "No solid face of the form named lies on "Discharge Face".
+      What does lie on it: ..." listing the raised face and the screw top
+      with their ids, ways and centres - nothing made, never the nearest face
+  - given: facePlane "Discharge Flange Top", facing "sideways"
+    expect: refused - "sideways" is not a way a face can point, the words that are listed - nothing made
+  - given: >
+      facePlane "Discharge Face", facing "up" - both faces on it point up
+    expect: >
+      still refused, "2 solid faces facing up lie on "Discharge Face" ...",
+      each listed with its form id and centre and form= asked for - a filter
+      that leaves two never picks one
 
 second_route:
   - >

@@ -152,6 +152,27 @@ positive:
       where version 5 wrote the height, so version 5 refused it "carries no
       Elevation from Level to correct that with"
 
+  # VERSION 7 (2026-11-20, FRAGMENT-ISSUES row 5b-301, issue #944). NOT RUN.
+  # In a scratch family from the metric Generic Model template, with a Work
+  # Plane-Based family loaded into it whose instance Offset from Host is not
+  # 0 when it is placed - `Round void : HWC 10 cm` (Revit's Structural
+  # Precast library) is the one it was found with. Each FAILS on version 6.
+  - given: >
+      symbol "Round void : HWC 10 cm", points "0,-1000,0", level "Ref. Level",
+      workPlane left out - the family's own offset puts it 200 mm below
+    expect: >
+      placed 1, NOT refused; `readBack` "... at 0, -1000, -200 mm - its point on
+      "Ref. Level" is 0, -1000, 0 mm, and it sits 200 mm below "Ref. Level":
+      the family's own offset (Offset from Host -200 mm)", and Offset from
+      Host reads -200 in Properties. Version 6 refused it "The placed family
+      stands at 0, -1000, -200 mm, not 0, -1000, 0 mm" and rolled back
+  - given: >
+      a nested Work Plane-Based family whose Offset from Host is 0 when placed
+      (`Heron Nested Box : 300`), the same point
+    expect: >
+      placed 1, `readBack` "... at 0, -1000, 0 mm" with no "sits ... below"
+      - word for word version 6's answer
+
 negative:
   - given: an empty point list
     expect: >
@@ -248,6 +269,26 @@ negative:
     expect: refused "'ninety' is not a rotation ... Nothing was placed" - placed 0
   - given: M_Rectangular Column, topLevelName "Level 1" - the base level itself
     expect: refused - the top is not above the base - placed 0
+
+  # VERSION 7 (2026-11-20, row 5b-301). NOT RUN. The offset explains only
+  # itself: a placement anywhere else is still refused and nothing kept.
+  - given: >
+      symbol "Round void : HWC 10 cm", points "0,-1000,300", level "Ref.
+      Level" - a point OFF the plane, where its own offset is 200 mm
+    expect: >
+      refused before anything is placed - "The point 0, -1000, 300 mm is 300 mm
+      off "Ref. Level" - a Work Plane-Based family sits ON its plane" -
+      placed 0. The family's own offset does not let a point off the plane
+      through
+  - given: >
+      the same family at "0,-1000,0" where Revit puts it anywhere but its
+      point or 200 mm straight below it - off within the plane, or off it by
+      some other distance (a scratch copy of the family whose insertion point
+      is not its own level shows it)
+    expect: >
+      the call FAILS - "The placed family stands at ..., not 0, -1000, 0 mm -
+      nor 0, -1000, -200 mm, where its own Offset from Host of -200 mm would
+      put it" - and Heron rolls the whole call back, as version 6 did
 
 second_route:
   - a schedule of that family, counted against the number asked for

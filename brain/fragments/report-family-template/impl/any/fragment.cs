@@ -46,6 +46,14 @@
 // (D-52). One finding says the placement points' Orientations together. A
 // family with no adaptive points prints none, as before. Nothing version 3
 // answered changed.
+//
+// VERSION 5 (2026-11-20, row 5b-304): THE FAMILY'S NAME FALLS BACK TO THE
+// DOCUMENT'S TITLE WHEN IT IS EMPTY, not only when there is no family. On six
+// new, never-saved families in Revit 2024 the family read an empty name, so
+// templateReport began `Family ""` and the finding `"" is a detail item`,
+// while the document's Title read Family1 to Family6. The name is now the
+// family's own when it has one, else the Title with any ".rfa" taken off.
+// Nothing else changed.
 
 var findings = new List<string>();
 var familyKind = "";
@@ -701,9 +709,19 @@ else
             + (failure.InnerException ?? failure).Message.TrimEnd('.') + ") - REPORT_PROJECT_UNITS reads them";
     }
 
+    // VERSION 5: an empty family name - a family never saved - reads as the
+    // document's Title, without ".rfa", the way the Family Editor's tab does.
+    var familyName = family == null ? "" : (family.Name ?? "").Trim();
+    if (familyName.Length == 0)
+    {
+        familyName = (doc.Title ?? "").Trim();
+        if (familyName.EndsWith(".rfa", StringComparison.OrdinalIgnoreCase))
+            familyName = familyName.Substring(0, familyName.Length - 4);
+    }
+
     var parts = new List<string>
     {
-        "Family \"" + (family == null ? doc.Title : family.Name) + "\"",
+        "Family \"" + familyName + "\"",
         "category " + categoryName,
         "kind: " + familyKind,
         uniLine,
@@ -721,7 +739,7 @@ else
     if (grid.Length > 0) parts.Insert(5, grid);
     templateReport = string.Join(" | ", parts);
 
-    findings.Add("\"" + (family == null ? doc.Title : family.Name) + "\" is " + familyKind + ". Category "
+    findings.Add("\"" + familyName + "\" is " + familyKind + ". Category "
         + categoryName + "; " + planeRows.Count + " reference plane(s), " + referenceLines + " reference line(s), "
         + pointRows.Count + " adaptive point(s), " + types + " type(s).");
     if (hostWords.Length > 0)

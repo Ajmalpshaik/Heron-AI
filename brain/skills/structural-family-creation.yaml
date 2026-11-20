@@ -22,8 +22,11 @@ purpose: >
      planes - the location line's ends, which the placement drives - and
      Member Left and Member Right, the geometry's ends, with a SAMPLE
      extrusion already locked to them. A column template carries a lower and
-     an upper reference level; a Generic Model changed to a column category
-     does NOT get them, so a column always starts from the column template.
+     an upper reference level - named `Lower Ref. Level` and `Upper Ref.
+     Level` in Metric Column.rft, so a work plane is `Lower Ref. Level`, never
+     `Ref. Level`, which is refused there (issue #1044); a Generic Model
+     changed to a column category does NOT get them, so a column always
+     starts from the column template.
      CHECK THE UNITS (FAMILY-CREATION step 0): a units line reading IMPERIAL
      where the modeller works in millimetres is said before anything is
      built, with SET_PROJECT_UNITS or the Metric template offered.
@@ -51,7 +54,17 @@ purpose: >
      DELETE_ELEMENTS removes the template's sample, its id from
      REPORT_FAMILY_FORMS. A COLUMN: EXTRUDE_BETWEEN_PLANES or an extrusion in
      plan, its bottom face locked to the lower reference level and its top to
-     the upper one, so Base and Top Level drive the height.
+     the upper one, so Base and Top Level drive the height. A REVOLVE DRAWN
+     ABOVE THE UPPER REF. LEVEL rides up with that level when the column is
+     placed taller - Revit's behaviour, not Heron's, shown 2026-11-20 on Revit
+     2020 (row 5b-1876, issue #1044: a ring at Z 13500 to 13700, Upper Ref.
+     Level at 4000, floated 9700 mm above a column placed 13700 mm tall,
+     while an extrusion at the same height on Lower Ref. Level stayed). Draw a
+     capital, a ring or a cap as an extrusion or sweep sketched on Lower Ref.
+     Level, or as a freeform solid, or have the modeller move Upper Ref. Level
+     by hand to the real height first (FAMILY-CREATION step 7 has the whole
+     of it). A part that is MEANT to follow the top is locked to Upper Ref.
+     Level on purpose with LOCK_FORM_TO_PLANES.
   5. SET_FAMILY_SETTINGS "Material for Model Behavior=Steel" (or Concrete,
      Precast Concrete, Wood, Other) - steel and wood get cutback and shape
      handles, concrete auto-joins - and "Section Shape=..." from Revit's own

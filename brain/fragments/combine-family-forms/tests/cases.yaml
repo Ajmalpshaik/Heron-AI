@@ -32,7 +32,34 @@ positive:
       separate takes it apart and both forms read back as still in the family
       (version 2)
 
+  - given: >
+      VERSION 3 (5b-358) - the plate "rect -300,-200 300,200" on Ref. Level, 0
+      to 20, and a VOID "circle -200,0 20" on Ref. Level, -10 to 30, arrayed by
+      ARRAY_FAMILY_FORMS count "3", step "X 200"; forms = the plate's id and
+      the FIRST id in the array's `members` (a model group)
+    expect: >
+      EITHER cut true - a finding saying that id is a model group and the void
+      inside it was named, one hole more than before taken away - OR, if Revit
+      will not combine a form inside a group, refused in plain words naming the
+      group and the way round (ungroup that copy, then the form's own id from
+      `memberForms`), and no combination left in the family. Which one is the
+      answer this case exists to find; record it
+
 negative:
+  - given: >
+      VERSION 3 - forms = the plate's id and the id of a model group that
+      holds no form (two model lines grouped by hand)
+    expect: >
+      refused before anything is combined - the group named as holding no
+      form - and no combination left in the family
+
+  - given: >
+      VERSION 3 - forms = the void array's group id from `members` and no
+      solid
+    expect: >
+      refused as every form a void, after the finding that the group's void
+      was named - a group is taken apart into its forms, not let through
+
   - given: the same solid with a VOID that misses it, "circle 1000,0 50"
     expect: refused as the void taking nothing away, cut false and no combination left in the family
 

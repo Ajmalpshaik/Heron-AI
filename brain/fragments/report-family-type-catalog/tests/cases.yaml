@@ -13,7 +13,22 @@ positive:
   - given: the same family with a formula "Depth = Width / 2"
     expect: Depth named in leftOut as formula-driven, and not a column
 
+  # VERSION 2 (row 5b-304) - a family never saved is named by its Title.
+  - given: >
+      a new family from the metric Generic Model template, never saved - the
+      Family Editor's tab reads Family1 (or the next free number) - with one
+      type and a Length type parameter Width
+    expect: >
+      fileName "Family1.txt" - the document's Title with .txt, no ".rfa" -
+      and the first finding naming "Family1"; never ".txt" alone or `""`
+
 negative:
+  # VERSION 2 (row 5b-304). A saved family keeps its own path.
+  - given: the same family saved as Heron Catalog Test.rfa
+    expect: >
+      fileName the saved path ending "Heron Catalog Test.txt" - never
+      "Family1.txt", never ".txt" alone, never "Heron Catalog Test.rfa.txt"
+
   - given: >
       a family whose only type parameter is a Material parameter - nothing a
       catalog spells

@@ -27,6 +27,13 @@
 //
 // THE FILE NAME is the family's own path with .txt, when the family has been
 // saved; otherwise its name, and a finding that it goes beside the .rfa.
+//
+// VERSION 2 (2026-11-20, row 5b-304): THE NAME FALLS BACK TO THE DOCUMENT'S
+// TITLE WHEN THE FAMILY'S IS EMPTY, not only when there is no family. On six
+// new, never-saved families in Revit 2024 the family read an empty name, so
+// fileName came back ".txt" and the finding named `""`, while the Title read
+// Family1 to Family6. The name is now the family's own when it has one, else
+// the Title with any ".rfa" taken off - "Family1.txt".
 
 var findings = new List<string>();
 var catalogText = "";
@@ -169,7 +176,15 @@ else
     leftOut = string.Join(", ", skipped);
 
     var saved = doc.PathName ?? "";
-    var familyName = doc.OwnerFamily == null ? doc.Title : doc.OwnerFamily.Name;
+    // VERSION 2: an empty family name - a family never saved - is the
+    // document's Title, without ".rfa".
+    var familyName = doc.OwnerFamily == null ? "" : (doc.OwnerFamily.Name ?? "").Trim();
+    if (familyName.Length == 0)
+    {
+        familyName = (doc.Title ?? "").Trim();
+        if (familyName.EndsWith(".rfa", StringComparison.OrdinalIgnoreCase))
+            familyName = familyName.Substring(0, familyName.Length - 4);
+    }
     fileName = saved.Length > 0 ? System.IO.Path.ChangeExtension(saved, ".txt") : familyName + ".txt";
 
     findings.Add(typeCount + " type(s) and " + columns.Count + " column(s) read into a type catalog for \"" + familyName
