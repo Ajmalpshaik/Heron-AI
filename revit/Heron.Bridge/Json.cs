@@ -126,6 +126,191 @@ namespace Heron.Bridge
                    Str("message", message) + "}";
         }
 
+        /// <summary>
+        /// A refusal that carries fields of its own beside the code and the
+        /// message - the workflow id of a run still going, whether a rollback
+        /// Revit was asked for held. A field that is null or empty is left out,
+        /// as Ok leaves it out, so a caller can pass what it knows and nothing
+        /// else. The code and the message always come first and are never
+        /// repeated: a field named "error" or "message" here would be a second
+        /// key, which a reader may take either way.
+        ///
+        /// Added 2026-11-20 for FRAGMENT-ISSUES 5b rows 1159 and 1559: until
+        /// then an error reply had room for nothing a program could read
+        /// except its code.
+        /// </summary>
+        public static string Error(string code, string message, params string[] fields)
+        {
+            var plain = Error(code, message);
+            if (fields == null || fields.Length == 0) return plain;
+
+            var sb = new StringBuilder(plain, 0, plain.Length - 1, plain.Length + 64);
+            foreach (var field in fields)
+            {
+                if (string.IsNullOrEmpty(field)) continue;
+                sb.Append(", ").Append(field);
+            }
+            return sb.Append('}').ToString();
+        }
+
+        /// <summary>
+        /// A REFUSAL AFTER A ROLLBACK, SAYING WHETHER THE ROLLBACK HELD - the
+        /// same two fields an answered write carries: `rolledBack` (Revit said
+        /// it rolled back AND the rollback check found nothing left standing,
+        /// for every rollback the job asked for) and `rollbackReported`
+        /// (Revit said so, for every one). FRAGMENT-ISSUES 5b row 1559: until
+        /// 2026-11-20 an error reply had no field for either, so the chat could
+        /// tell a rollback Revit confirmed from one it did not only by reading
+        /// a sentence.
+        ///
+        /// Changes nothing that is not one of the add-in's own refusals
+        /// (Error's opening), a job that asked for no rollback, or a reply that
+        /// already says either at its top level - the path that wrote it knew
+        /// more than a tally does, and two keys of one name may be read either
+        /// way. Pure text, so it is proved without Revit by
+        /// tests/Heron.FailureNote.TestHost.
+        /// </summary>
+        public static string WithRollback(string reply, int rollbacks, bool held, bool reported)
+        {
+            if (rollbacks <= 0 || string.IsNullOrEmpty(reply)) return reply;
+            if (!reply.StartsWith("{\"ok\": false, ", StringComparison.Ordinal)) return reply;
+            if (!reply.EndsWith("}", StringComparison.Ordinal)) return reply;
+            if (HasKey(reply, "rolledBack") || HasKey(reply, "rollbackReported")) return reply;
+
+            return reply.Substring(0, reply.Length - 1)
+                 + ", " + Bool("rolledBack", held)
+                 + ", " + Bool("rollbackReported", reported) + "}";
+        }
+
+        /// <summary>
+        /// The document with its top-level `key` set to `value` - raw JSON
+        /// text, as Obj or a quoted string writes it - replacing every earlier
+        /// top-level `key` rather than adding a second. Returned unchanged when
+        /// it does not parse as one object, or when key or value is missing.
+        ///
+        /// Added 2026-11-20 for FRAGMENT-ISSUES 5b row 1163: a run record is
+        /// written once when its job ends, and an undo of the run seen later is
+        /// stamped onto it - the latest only, so a record undone, redone and
+        /// undone again says undone. The separators between the fields it
+        /// keeps are rewritten as ", "; their text is kept whole.
+        /// </summary>
+        public static string Set(string json, string key, string value)
+        {
+            if (string.IsNullOrEmpty(json) || string.IsNullOrEmpty(key) || value == null) return json;
+
+            var without = Without(json, key);
+            if (without == null) return json;
+
+            var body = without.Substring(0, without.Length - 1);
+            var empty = body.TrimEnd().EndsWith("{", StringComparison.Ordinal);
+            return body + (empty ? "" : ", ") + "\"" + Escape(key) + "\": " + value + "}";
+        }
+
+        /// <summary>
+        /// The outermost object with every `key` at its top level taken out,
+        /// or null when it does not parse. Ends with its closing brace; what
+        /// follows that brace is not kept.
+        /// </summary>
+        private static string Without(string json, string key)
+        {
+            var i = SkipWhitespace(json, 0);
+            if (i >= json.Length || json[i] != '{') return null;
+
+            var sb = new StringBuilder(json.Length + 16);
+            sb.Append('{');
+            i++;
+            var first = true;
+
+            while (true)
+            {
+                i = SkipWhitespace(json, i);
+                if (i >= json.Length) return null;
+                if (json[i] == '}') return sb.Append('}').ToString();
+                if (json[i] != '"') return null;
+
+                var start = i;
+                string name;
+                i = ReadStringToken(json, i, out name);
+                if (i < 0) return null;
+
+                i = SkipWhitespace(json, i);
+                if (i >= json.Length || json[i] != ':') return null;
+                i = SkipWhitespace(json, i + 1);
+                if (i >= json.Length) return null;
+
+                if (json[i] == '"')
+                {
+                    string ignored;
+                    i = ReadStringToken(json, i, out ignored);
+                }
+                else
+                {
+                    i = SkipValue(json, i);
+                }
+                if (i < 0) return null;
+
+                if (!string.Equals(name, key, StringComparison.Ordinal))
+                {
+                    if (!first) sb.Append(", ");
+                    sb.Append(json, start, i - start);
+                    first = false;
+                }
+
+                i = SkipWhitespace(json, i);
+                if (i >= json.Length) return null;
+                if (json[i] == ',') { i++; continue; }
+                if (json[i] == '}') return sb.Append('}').ToString();
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Whether the outermost object holds `key`, whatever its value. The
+        /// same walk as ReadString - outermost object only - so a key inside
+        /// a nested value, or spelled inside a string, is not a match. False
+        /// for a document that does not parse as far as the key.
+        /// </summary>
+        public static bool HasKey(string json, string key)
+        {
+            if (string.IsNullOrEmpty(json) || string.IsNullOrEmpty(key)) return false;
+
+            var i = SkipWhitespace(json, 0);
+            if (i >= json.Length || json[i] != '{') return false;
+            i++;
+
+            while (true)
+            {
+                i = SkipWhitespace(json, i);
+                if (i >= json.Length || json[i] == '}') return false;
+                if (json[i] != '"') return false;
+
+                string name;
+                i = ReadStringToken(json, i, out name);
+                if (i < 0) return false;
+                if (string.Equals(name, key, StringComparison.Ordinal)) return true;
+
+                i = SkipWhitespace(json, i);
+                if (i >= json.Length || json[i] != ':') return false;
+                i = SkipWhitespace(json, i + 1);
+                if (i >= json.Length) return false;
+
+                if (json[i] == '"')
+                {
+                    string ignored;
+                    i = ReadStringToken(json, i, out ignored);
+                }
+                else
+                {
+                    i = SkipValue(json, i);
+                }
+                if (i < 0) return false;
+
+                i = SkipWhitespace(json, i);
+                if (i >= json.Length || json[i] != ',') return false;
+                i++;
+            }
+        }
+
         // ------------------------------------------------------------ reading
 
         /// <summary>
