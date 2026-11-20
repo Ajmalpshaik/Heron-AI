@@ -1,0 +1,38 @@
+# ASSIGN_LOCATION_DATA version 3 - NEEDS-CHECKING Group ON, rows ON1 and ON2.
+#
+#     python tools/batch-prove.py tools/jobs/assign-location-data-v3-on-2026-11-19.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/assign-location-data-v3-on-2026-11-19.yaml --session <pid>
+#
+# ON0 FIRST (docs/needs-checking/group-on.md): a SCRATCH COPY of Revit 2020's
+# rme_advanced_sample_project.rvt open as "on-mep", its counts measured, and two
+# TEXT instance project parameters, ID_Room Name and ID_Room Number, bound to
+# Air Terminals and Duct Accessories on it. Never a real job model.
+#
+# WHY AIR TERMINALS ON LEVEL 1: the sample's spaces are on Level 1 (proofs of
+# read-space-loads and report-room-space-data on a copy of the same sample), and
+# a ceiling diffuser is the element whose own height is outside the space's
+# volume - the case the container's-height test exists for. ON0 measures it; if
+# ON0 finds no air terminal in a space, change the category here to the one it
+# found and say so on the row.
+model: "on-mep (copy of rme_advanced_sample_project.rvt), Revit 2020"
+
+defaults:
+  in: on-mep
+  negative-in: on-mep
+  setup: [filter-elements-by-category, set-selection]
+
+jobs:
+  # ON1 positive: the name alone into ID_Room Name, the number alone into
+  # ID_Room Number. `written` is the result; `samples` shows each pair as
+  # written, and notKept 0 is the fragment's own read-back of every value.
+  #
+  # ON2 negative: the SAME selection, asked for ROOMS - the sample holds none
+  # (roomsSeen 0 in report-room-space-data's proof on a copy of it), so nothing
+  # may be written: written 0, every element in noRoomFound, and the no-rooms
+  # line in refused. A version that fell back to the spaces, or to a box, fails.
+  - fragment: assign-location-data
+    expect: written
+    set: {category: "Air Terminals", levelId: "Level 1", useSpaces: true,
+          roomParameter: "ID_Room Name", numberParameter: "ID_Room Number", levelParameter: "none"}
+    negative-set: {category: "Air Terminals", levelId: "Level 1", useSpaces: false,
+                   roomParameter: "ID_Room Name", numberParameter: "ID_Room Number", levelParameter: "none"}
