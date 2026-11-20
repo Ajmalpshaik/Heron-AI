@@ -31,7 +31,6 @@ through the bridge client's `try-once`, behind the same box ([D-119](../docs/DEC
 and `cmd_try_once` in [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py):
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart LR
     CH(["<b>The chat</b><br/>names a capability"])
     RD["<b>revit_read</b><br/>nothing above ANALYZE"]
@@ -50,10 +49,10 @@ flowchart LR
     CG --> OP --> RF
     TO -->|"apply: ask"| OW
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef draft fill:#F1F5F9,stroke:#94A3B8,stroke-width:1.5px,color:#334155,stroke-dasharray:4 3
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef draft fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10,stroke-dasharray:4 3
     class CH user
     class RD,SH,CG brain
     class TO draft

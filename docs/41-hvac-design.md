@@ -27,7 +27,6 @@
 values it is handed: it reads no model and changes nothing in one.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart LR
     U(["<b>Modeller</b><br/><i>how much air does<br/>this office need?</i>"])
     IN["<b>Values the modeller gave</b><br/>JSON, units in the names<br/>flow_ls · area_m2 · people"]
@@ -48,10 +47,10 @@ flowchart LR
     E ==> N
     BL -.->|monthly_load · heating_load<br/>supply_airflow| E
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef plat fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10,stroke-dasharray:4 3
     class U,IN,PS user
     class T host
     class E,BL brain

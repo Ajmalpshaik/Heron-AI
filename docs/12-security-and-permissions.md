@@ -67,7 +67,6 @@ This section adds pictures and tables beside the rule above. It does not change 
 [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), and `heron_tools.TOOLS`.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     R["<b>READ</b><br/>count, list, read values<br/><i>no switch</i>"]
     A["<b>ANALYZE</b><br/>work out from what was read<br/><i>no switch</i>"]
@@ -82,9 +81,9 @@ flowchart TD
     M -->|"and Publish on"| P
     M -->|"and Admin on"| AD
 
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef brain fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#F5A524,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#FF5A4E,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
     class R,A,S,E brain
     class M addin
     class P,AD revit
@@ -216,7 +215,6 @@ inside Revit. Checked against `revit_change` in
 [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs).
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     A(["A change asked for in a chat<br/><i>revit_change</i>"])
     D(["A DRAFT's one run<br/><i>try-once</i> · command line · D-119"])
@@ -246,10 +244,10 @@ flowchart TD
     B -->|"Keep"| KEEP
     B -->|"Discard · Esc · close"| RB
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:1.5px,color:#F7F5F2
     class A,D,X1,X2,RB user
     class P brain
     class C,L,T,K,B addin

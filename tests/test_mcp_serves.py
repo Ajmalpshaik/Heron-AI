@@ -978,6 +978,47 @@ def exercise_no_proof_words(module):
           "a proof the code DID move under is still said as that, in all three")
 
 
+def exercise_words_on_this_card(module):
+    """The words path runs a capability unasked only when THIS checkout's own
+    card declares the words - row 131. The identity table that matched them is
+    a cache, and a shared store can be built from another checkout's cards.
+    Nothing is sent anywhere: `_runs_as_matched` is asked for its sentence."""
+    print()
+    print("  the words must be on this checkout's own card (row 131)")
+    capability, folder = first_with("READ", "PROVEN")
+    check(bool(capability and folder), "the library has a PROVEN read to ask about")
+    if not (capability and folder):
+        return
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    import heron_fragment as HF
+    frag = HF.load(os.path.join(ROOT, "brain", "fragments", folder))
+    provider = frag.data.get("id")
+    own = (frag.utterances() or [frag.data.get("semantic-identity")])[0]
+    takes = getattr(module._runs_as_matched, "__code__", None)
+    check(takes is not None and takes.co_argcount >= 4,
+          "_runs_as_matched is handed the words that were matched")
+    if takes is None or takes.co_argcount < 4:
+        return
+    mine = module._runs_as_matched(folder, provider, capability, own)
+    check("does not declare" not in (mine or ""),
+          "words the card declares are not withheld for that reason: %r" % mine)
+    loud = module._runs_as_matched(folder, provider, capability, own.upper() + "?")
+    check("does not declare" not in (loud or ""),
+          "nor the same words in other case and punctuation: %r" % loud)
+    other = module._runs_as_matched(folder, provider, capability,
+                                    "words no card in this checkout declares")
+    check("does not declare those words" in (other or "")
+          and "row 131" in (other or ""),
+          "words the card here does not declare are handed back, naming row 131: %r"
+          % other)
+    check("not run unasked" in (other or ""), "and they are not run unasked")
+    body = module.tools.server_text().split("def _by_words(", 1)[-1]
+    call = body.split("_runs_as_matched(", 1)[-1].split("\n        if withheld", 1)[0]
+    check(call.rstrip().endswith("request)"),
+          "and the words path hands the request over: _runs_as_matched(%s)"
+          % " ".join(call.split()))
+
+
 def cards():
     """Each fragment's folder name with its capability, risk and heron-status."""
     folder = os.path.join(ROOT, "brain", "fragments")
@@ -4295,6 +4336,7 @@ def main():
         asyncio.run(exercise(server))
         exercise_waiting(server_module)
         exercise_no_proof_words(server_module)
+        exercise_words_on_this_card(server_module)
         exercise_served_from(server_module)
         asyncio.run(exercise_door(server_module))
         asyncio.run(exercise_show(server_module))

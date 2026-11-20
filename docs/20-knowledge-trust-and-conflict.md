@@ -40,7 +40,6 @@ to be discarded, which is the single most wasteful thing a retrieval pipeline ca
 **Adopted order**, combining the best of all three statements:
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     A["Intent → Domain → Knowledge Scope"]
     B["Metadata + version filter<br/><i>cheap, exact, enforces scope isolation</i>"]
@@ -59,10 +58,10 @@ flowchart TD
     C2 --> D
     D --> E --> F --> G --> H
 
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
     class A host
     class B addin
     class C1,C2,D brain
@@ -278,7 +277,6 @@ behaviour of every skill that depends on it.
 ## 8. Skill composition
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart LR
     MQ(["<b>MODEL QA SKILL</b>"])
     MQ --> S1["Element Validation Skill"]
@@ -288,8 +286,8 @@ flowchart LR
     MQ --> S5["Standard Checking Skill"]
     MQ --> S6["Reporting Skill"]
 
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
     class MQ brain
     class S1,S2,S3,S4,S5,S6 user
 ```

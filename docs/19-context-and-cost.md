@@ -152,7 +152,6 @@ which is a strong signal it is correct:
 Made concrete as an enforced pipeline order:
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     Q1{"1 · Utterance cache hit?"}
     Q1 -->|yes| X1["execute<br/><b>0 model calls</b>"]
@@ -162,11 +161,11 @@ flowchart TD
     Q3 -->|yes| X3["<b>1 T2 call</b> to confirm intent,<br/>then execute"]
     Q3 -->|no| X4["4 · full workflow<br/><i>expensive, tell the user</i>"]
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:2px,color:#4C1D95
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef plat fill:#FFFFFF,stroke:#0F0F10,stroke-width:2px,color:#0F0F10
     class Q1,Q2,Q3 addin
     class X1,X2 brain
     class X3 host
@@ -209,7 +208,6 @@ The order as it runs, in `find` in [`heron_retrieve.py`](../brain/heron_retrieve
 path. Set it beside the diagram above: no step executes off the cache, and no step calls a model.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     W(["<b>The modeller's words</b>, passed on by the host"])
     F["<b>1 · Filter first</b><br/>this Revit release and this scope only<br/>a question is never offered a change — D-128"]
@@ -229,10 +227,10 @@ flowchart TD
     CAND --> H
     S --> H
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
     class W user
     class F,CAND,S brain
     class I,C user

@@ -689,8 +689,17 @@ def nearest(store, text, limit=5, kind=FRAGMENT):
     for row in rows:
         got = _unpack(row["embedding"])
         if len(got) != len(want):
-            # A vector from a different backend or dimension. Not comparable,
-            # and quietly comparing it would produce a confident wrong number.
+            # A vector of a different DIMENSION. Not comparable, and quietly
+            # comparing it would produce a confident wrong number.
+            #
+            # THIS TESTS THE LENGTH ONLY - NOT THE BACKEND. The row's
+            # `backend` stamp is not read here, so a row another encoder wrote
+            # at the same dimension IS compared (FRAGMENT-ISSUES row 5b-107,
+            # measured: a model-stamped row of 256 floats scored against a
+            # lexical query). `index()` re-embeds a row whose stamp differs on
+            # every open, which closes most of that window; what a mismatch
+            # that slips through should return - nothing, or this - is the
+            # owner's decision, not this comment's (D-52).
             continue
         scored.append((row["id"], sum(a * b for a, b in zip(want, got))))
 

@@ -139,3 +139,11 @@ utterances:
   - set the view template
   - use the office template on this view
   - apply the template to all these views
+  # ADDED 2026-11-20, row 5b-1649 (GitHub issue #956). A modeller names both
+  # the template and the view, and "apply the view template HVAC Duct Plan to
+  # the view Level 3 HVAC Duct Plan" offered CREATE_VIEW_TEMPLATE_FROM_VIEW
+  # first and this card not at all. That shape, with other names - so the row's
+  # own sentence is still answered by ranking, not by these words. Sixth and
+  # seventh, inside the eight the re-ranker reads (D-134).
+  - apply the view template Mechanical Plan to the view Level 1 Mechanical Plan
+  - assign this view template to the floor plan

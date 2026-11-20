@@ -32,7 +32,6 @@ Read on 2026-10-18 from the Status table, the registers and the code. The colour
 got, not how much of it there is.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart LR
     subgraph A ["Phases 0 to 1"]
         direction TB
@@ -58,23 +57,23 @@ flowchart LR
     end
     A --> B --> C
 
-    classDef proven fill:#DCFCE7,stroke:#16A34A,color:#14532D
-    classDef measured fill:#FEF9C3,stroke:#CA8A04,color:#713F12
-    classDef built fill:#E0F2FE,stroke:#0284C7,color:#0C4A6E
-    classDef notbuilt fill:#F1F5F9,stroke:#94A3B8,color:#334155,stroke-dasharray:4 3
+    classDef proven fill:#3ECF8E,stroke:#0F0F10,color:#0F0F10
+    classDef measured fill:#F5A524,stroke:#0F0F10,color:#0F0F10
+    classDef built fill:#FFFFFF,stroke:#0F0F10,color:#0F0F10
+    classDef notbuilt fill:#F7F5F2,stroke:#0F0F10,color:#0F0F10,stroke-dasharray:4 3
     class P0 proven
     class P05,P1,P6 measured
     class P2,P3,P4,P5,P7 built
     class DF notbuilt
-    style A fill:#FFFFFF,stroke:#CBD5E1,color:#0F172A
-    style B fill:#FFFFFF,stroke:#CBD5E1,color:#0F172A
-    style C fill:#FFFFFF,stroke:#CBD5E1,color:#0F172A
+    style A fill:#F7F5F2,stroke:#0F0F10,color:#0F0F10
+    style B fill:#F7F5F2,stroke:#0F0F10,color:#0F0F10
+    style C fill:#F7F5F2,stroke:#0F0F10,color:#0F0F10
 ```
 
 **Green — proven:** a recorded run on a named real model, with a negative case ([D-30](DECISIONS.md)).
-**Yellow — measured:** part of it has run on a real Revit or the owner's PC, and the rest is owed or
-failed. **Blue — built:** the code exists and is tested, and the phase's goal has not been run in Revit.
-**Grey, dashed — not built.**
+**Amber — measured:** part of it has run on a real Revit or the owner's PC, and the rest is owed or
+failed. **White — built:** the code exists and is tested, and the phase's goal has not been run in Revit.
+**Pale, dashed — not built.**
 
 <details>
 <summary>Same thing as plain text</summary>
@@ -152,7 +151,6 @@ The path that goal runs, with who does each step as built: the host reads the in
 since Phase 2.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     A(["<i>Select all ducts.</i>"]) --> B["intent<br/><i>the host, Claude Code — D-01</i>"] --> C["skill lookup<br/><i>hard-coded in Phase 0 · capabilities since Phase 2</i>"]
     C --> D["MCP tool call"] --> E["named pipe"] --> F["add-in listener<br/><i>the bridge's pipe server</i>"]
@@ -160,11 +158,11 @@ flowchart TD
     H --> I["FilteredElementCollector (OST_DuctCurves)"] --> J["selection set"]
     J --> K["result"] --> L(["audit log entry"])
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:1.5px,color:#F7F5F2
     class A user
     class B,C host
     class D,E brain

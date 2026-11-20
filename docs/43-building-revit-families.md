@@ -69,7 +69,6 @@ two steps taken the other way round break a family in a way that looks fine unti
 The numbers are the method's own step numbers.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     S0(["<b>0 · The modeller opens the template</b> - Heron never chooses it<br/>REPORT_FAMILY_TEMPLATE reads the kind and the units"])
     S1["<b>1 · Category and settings</b><br/>SET_FAMILY_SETTINGS - the category first"]
@@ -89,8 +88,8 @@ flowchart TD
     S7 -.->|fixed-size| S10
     S13 -.->|a fixed-size family: nothing to flex| SV
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
     class S0,SV user
     class S1,S2,S5,S7,S8,S10,S11,S12,S13,S14 addin
 ```

@@ -171,7 +171,6 @@ things stop a stuck fragment, and both act at the fragment's next check. That ch
 `HeronStackGuard` puts at the top of every loop and every method in fragment code.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     CMD(["<b>stop</b> · heron_bridge_client.py<br/>--session N, always · Q-71"])
     FLAG["<b>Heron is stopped</b><br/>answered at once, before the queue"]
@@ -193,9 +192,9 @@ flowchart TD
     F -->|"inside Regenerate, LoadFamily, an export"| LONG
     LONG -->|"after operationTimeoutSeconds"| SR
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:1.5px,color:#F7F5F2
     class CMD,T1,T2,SR user
     class FLAG,CK,RB addin
     class F,LONG revit

@@ -9,7 +9,6 @@ through `revit_change`'s own body. [docs/40](../../docs/40-heron-companion.md#at
 page drawn for a modeller, with each panel's status.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     PG["<b>static/</b> - the page<br/>index.html · companion.js<br/>loads3d.js · sprinkler3d.js"]
     H["<b>heron_companion.py</b> - _Handler<br/>127.0.0.1 · Host · cookie<br/>X-Heron-Companion · Origin"]
@@ -32,10 +31,10 @@ flowchart TD
     SRV -.->|starts| KEEP
     KEEP -.->|publish| NOTE
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef plat fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10,stroke-dasharray:4 3
     class LIVE,NOTE user
     class PG,H,HOLD,KEEP plat
     class SRV,BR,WR brain

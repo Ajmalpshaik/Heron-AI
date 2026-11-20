@@ -168,7 +168,6 @@ An MCP server is a **separate process**. It cannot call the Revit API. Not from 
 Every single Revit operation must be **marshalled back onto the Revit main thread**. The standard mechanism is:
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     EP["External process<br/><i>the MCP server</i>"]
     LI["Heron Add-in listener<br/><i>background thread inside Revit.exe</i>"]
@@ -181,10 +180,10 @@ flowchart TD
     EV -->|"Revit calls back on the main thread, in API context"| HA
     HA --> RS
 
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:1.5px,color:#F7F5F2
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
     class EP host
     class LI,EV addin
     class HA revit

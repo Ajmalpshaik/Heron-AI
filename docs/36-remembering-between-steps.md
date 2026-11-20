@@ -42,7 +42,6 @@ or an expectation and never both, and the binder in
 order before anything binds.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     CALL["<b>A call that runs a fragment</b><br/>revit_read · revit_change · revit_show<br/>revit_edit_table · and the others"]
     Q0{{"Does it name what it expects<br/>with expect_from?"}}
@@ -66,18 +65,18 @@ flowchart TD
     Q2 -.->|no| NO
     Q3 -.->|no| NO
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#1B1B1F,stroke:#FD641A,stroke-width:1.5px,color:#F7F5F2
+    classDef revit fill:#FF5A4E,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
     class CALL host
     class Q0 brain
     class RESET,QT,Q1,Q2,Q3,BIND addin
     class NO revit
 ```
 
-**Green is the MCP side, which decides what to send; amber is the add-in inside Revit, which forgets,
+**Orange is the MCP side, which decides what to send; dark is the add-in inside Revit, which forgets,
 checks and binds.** The pair §6 asks for - the same carried
 values bound under a matching declaration and refused under a mismatched one - was run on a real model
 on 2026-09-16, as the note above says, and awaits a signature.
