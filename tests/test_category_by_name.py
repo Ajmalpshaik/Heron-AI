@@ -232,8 +232,10 @@ def main():
     check(many != "", "ManyByCategory is there to read")
     check(re.search(r"catch\s*\{\s*\}", many) is None,
           "it swallows no fault - no empty catch")
-    handler = many[many.find("catch (Exception"):] if "catch (Exception" in many else ""
-    check(handler and "problem =" in handler[:900] and "return null;" in handler[:900],
+    caught = re.search(r"\bcatch\b[^{]*\{", many)
+    handler = many[caught.end():] if caught else ""
+    handler = handler[:handler.find("}")] if "}" in handler else ""
+    check("problem =" in handler and "return null;" in handler,
           "a collector fault sets the problem and refuses, as an unknown category does")
 
     print()

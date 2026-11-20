@@ -41,6 +41,18 @@ namespace Heron.Bridge.TestHost
             var identity = new BridgeIdentity(revitVersion, "0.1.0-testhost");
             using (var bridge = new BridgeServer(identity, Console.WriteLine))
             {
+                // WHO HOLDS THE MODEL IN FRONT (row 5b-1645): the add-in tells the
+                // bridge how to ask HeronModelHold, and `info` says it. This host
+                // stands in for the add-in - a model held by the conversation
+                // "holding-chat" - so the suite reads the fields off the wire.
+                BridgeActiveModel.Key = "test-model-key";
+                BridgeActiveModel.HoldOf = (model, conversation) => new BridgeModelHold
+                {
+                    Held = model == "test-model-key",
+                    Mine = conversation == "holding-chat",
+                    SecondsRemaining = 90,
+                };
+
                 // "test_wait" stands in for Revit working on a request: it
                 // answers after `ms` milliseconds, so the suite can connect a
                 // newer chat while an answer is still owed - the case that lost

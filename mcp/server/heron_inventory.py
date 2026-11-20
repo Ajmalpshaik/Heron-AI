@@ -36,7 +36,7 @@ import base64
 import binascii
 
 from heron_server_core import (NEWLINE, _Image, _ended, _ended_by_reply,   # noqa: E402
-                               _other_model, _unbound, binding, pinned, server)
+                               NOT_RUN, _outcome, binding, pinned, server)
 from heron_session import NotBound                          # noqa: E402
 # heron_server_core has loaded heron_brain, which put brain/ on the path.
 from heron_install import install_line                      # noqa: E402
@@ -64,10 +64,12 @@ def revit_phases() -> str:
     It reads only. No view's phase is changed and no design option is made
     active — both of those change what everybody else on the job sees.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_phases")
     session.close()
@@ -81,7 +83,7 @@ def revit_phases() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _other_model("revit_phases", wrong_model)
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -150,10 +152,12 @@ def revit_levels() -> str:
     # project is set to, and an unlabelled 9.84 gets read as millimetres by the
     # next person who sees it. Moving a level drags every element hosted on it,
     # which is why this tool never does. Trimmed 2026-10-17 (docs/04 s8.8).
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_levels")
     session.close()
@@ -167,7 +171,7 @@ def revit_levels() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _other_model("revit_levels", wrong_model)
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -263,10 +267,12 @@ def revit_worksets() -> str:
     borrowed, and nothing is relinquished — relinquishing somebody's borrowed
     element loses their unsynchronised work.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_worksets")
     session.close()
@@ -280,7 +286,7 @@ def revit_worksets() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _other_model("revit_worksets", wrong_model)
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -392,10 +398,12 @@ def revit_views() -> str:
 
     It reads only. No template is applied and no visibility is changed.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_views")
     session.close()
@@ -409,7 +417,7 @@ def revit_views() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _other_model("revit_views", wrong_model)
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -688,6 +696,8 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280,
     if region and (elements or "").strip():
         return _ended("refused", REGION_WITH_ELEMENTS)
 
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -861,10 +871,12 @@ def revit_sheets() -> str:
     It reads only. No sheet is renumbered - renumbering breaks every drawing
     reference pointing at it, across the set and every consultant's copy.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_sheets")
     session.close()
@@ -878,7 +890,7 @@ def revit_sheets() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _other_model("revit_sheets", wrong_model)
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -977,10 +989,12 @@ def revit_rooms() -> str:
     It reads only. Nothing is placed, deleted or re-bounded - all three change
     somebody's area schedule, which on most jobs is a contractual document.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_rooms")
     session.close()
@@ -993,7 +1007,7 @@ def revit_rooms() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _other_model("revit_rooms", wrong_model)
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1066,10 +1080,12 @@ def revit_schedules() -> str:
     It reads only. No field is added and no filter is changed - both change
     what everybody downstream is pricing from.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_schedules")
     session.close()
@@ -1082,7 +1098,7 @@ def revit_schedules() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _other_model("revit_schedules", wrong_model)
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1149,10 +1165,12 @@ def revit_families() -> str:
 
     It reads only.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_families")
     session.close()
@@ -1165,7 +1183,7 @@ def revit_families() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _other_model("revit_families", wrong_model)
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1274,10 +1292,12 @@ def revit_export_check() -> str:
     # from it - which is why this answers beforehand the question nothing in
     # Revit answers until the file is written. The export itself needs a
     # destination, an overwrite decision and a person who meant it.
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("check_export")
     session.close()
@@ -1290,7 +1310,7 @@ def revit_export_check() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _other_model("revit_export_check", wrong_model)
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1345,10 +1365,12 @@ def revit_imports() -> str:
 
     It reads only. Nothing is imported, linked, reloaded or removed.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_imports")
     session.close()
@@ -1361,7 +1383,7 @@ def revit_imports() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _other_model("revit_imports", wrong_model)
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1420,10 +1442,12 @@ def revit_annotation() -> str:
     It reads only. No dimension is created, no override cleared and no tag
     deleted - all three change a drawing somebody may already have checked.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_annotation")
     session.close()
@@ -1436,7 +1460,7 @@ def revit_annotation() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _other_model("revit_annotation", wrong_model)
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1579,10 +1603,12 @@ def revit_systems() -> str:
 
     It reads only. Nothing is connected, renamed or put on a system.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_systems")
     session.close()
@@ -1596,7 +1622,7 @@ def revit_systems() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _other_model("revit_systems", wrong_model)
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1628,10 +1654,12 @@ def revit_parameters(category: str = "ducts", parameter: str = "") -> str:
 
     It reads only. No parameter is written, and nothing is created or deleted.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     # THE PIN TRAVELS WITH THE REQUEST, for the reason revit_select_by_category
     # gives at length: a guard checked on the reply is checked too late. This
@@ -1653,7 +1681,7 @@ def revit_parameters(category: str = "ducts", parameter: str = "") -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _other_model("revit_parameters", wrong_model)
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -1833,10 +1861,12 @@ def revit_groups(category: str = "") -> str:
 
     It reads only. Nothing is grouped, ungrouped or edited.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_groups",
                             op_args={"category": category or "",
@@ -1852,7 +1882,7 @@ def revit_groups(category: str = "") -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return _other_model("revit_groups", wrong_model)
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)

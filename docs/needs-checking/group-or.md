@@ -12,7 +12,7 @@
 [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) and [#1082](https://github.com/Ajmalpshaik/Heron-AI/issues/1082),
 worked in a cloud container with no Revit on 2026-11-20. **What is tested and not run:** every project
 compiles for Revit 2020 to 2027 (`tools/check-compile.py`); the hold's rule is run without Revit by
-`tests/Heron.ModelHold.TestHost`; the chat side by `tests/test_model_hold.py`, `tests/test_session_binding.py`,
+`tests/Heron.ModelHold.TestHost`; the bridge's `info` on the wire by `tests/test_bridge_roundtrip.py`; the chat side by `tests/test_model_hold.py`, `tests/test_session_binding.py`,
 `tests/test_outcome_line.py`, `tests/test_delete_box.py` and `tests/test_category_by_name.py`. **Nothing here
 has run in Revit.**
 

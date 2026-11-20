@@ -255,10 +255,12 @@ CLIENT = "roundtrip-a"
 OTHER_CLIENT = "roundtrip-b"
 
 
-def call(handle, op, client=CLIENT):
+def call(handle, op, client=CLIENT, conversation=None):
     body = {"op": op, "token": TOKEN}
     if client is not None:
         body["client"] = client
+    if conversation is not None:
+        body["conversation"] = conversation
     handle.write((json.dumps(body) + "\n").encode("utf-8"))
     line = b""
     while not line.endswith(b"\n"):
@@ -807,6 +809,23 @@ def main():
             print("  PASS  chat B can see it is taken, and that it is not theirs")
         else:
             failures.append("info for the second client returned %r" % reply)
+
+        # --- AND WHO HOLDS THE MODEL IN FRONT (row 5b-1645, D-141) ---
+        # The lease is per person, so it cannot say another of the owner's
+        # chats holds the model; `info` says that too now, from the add-in's
+        # hold - looked at, never claimed. This host stands in for the add-in:
+        # the model in front is held by "holding-chat".
+        held = call(handle, "info", client=OTHER_CLIENT, conversation="holding-chat")
+        other = call(handle, "info", client=OTHER_CLIENT, conversation="another-chat")
+        if (held.get("activeModelHeld") is True and held.get("activeModelMine") is True
+                and held.get("activeModelHoldSecondsRemaining") == 90):
+            print("  PASS  info says the model in front is held, by THIS chat, and for how long")
+        else:
+            failures.append("info for the holding chat returned %r" % held)
+        if other.get("activeModelHeld") is True and other.get("activeModelMine") is False:
+            print("  PASS  and to another chat, held - and not theirs")
+        else:
+            failures.append("info for another chat returned %r" % other)
 
         # Chat A still works. It never lost its hold.
         reply = call(handle, "ping", client=CLIENT)

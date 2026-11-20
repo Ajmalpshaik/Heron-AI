@@ -158,7 +158,7 @@ core.started(__name__ == "__main__")
 from heron_server_core import (                             # noqa: E402
     approval, binding, _companion_module, _Context, _ctx, _ended,
     _ended_by_reply, _failure_ended, NEWLINE, NO_REVIT_HERE, _note, _old_code,
-    _other_model, pinned, _refused_for_old_code, _revit_lock, server, _unbound)
+    pinned, _refused_for_old_code, _revit_lock, server)
 # HOW A DOOR'S CALL ENDED, IN ONE FIXED WORD (row 5b-1159): the words a door
 # says where the label it gives `_ended` is not a word by itself. The table,
 # and the line a reply carries the word on, are the core's.
@@ -518,10 +518,12 @@ def revit_select_by_category(category: str = "ducts") -> str:
     Equipment" - and the MEP words a modeller says for ducts and pipes:
     "ductwork", "dampers", "valves", "flex ducts".
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     # THE PIN TRAVELS WITH THE REQUEST, because checking it on the reply is
     # checking it too late. SelectByCategory calls SetElementIds before it
@@ -584,9 +586,8 @@ def revit_select_by_category(category: str = "ducts") -> str:
         if reply.get("selected"):
             # FAILED, NOT REFUSED, on the activity list (row 5b-389): a
             # refusal means nothing happened, and here a selection did - in
-            # a model this chat does not work on. Its word is OUTCOME UNKNOWN,
-            # the table's for a call that ran in such a model (row 5b-1563).
-            _outcome(UNKNOWN)
+            # a model this chat does not work on. "failed" is its word too:
+            # OUTCOME UNKNOWN, for a call that ran in such a model (5b-1563).
             _ended("failed")
             return ("Heron SELECTED %s %s in %s before it could tell that %s is not the "
                     "model this chat works on (%s) - the add-in's own check compares an id "
@@ -597,8 +598,6 @@ def revit_select_by_category(category: str = "ducts") -> str:
                     % ("{:,}".format(reply.get("selected")), reply.get("category"),
                        reply.get("document"), reply.get("document"), pinned.title,
                        reply.get("document")))
-        # NOTHING WAS SELECTED: Heron asked, and is not showing the answer.
-        _outcome(REFUSED)
         return _ended("refused", wrong_model)
 
     # Naming the document is not enough on its own. Two Revit sessions can
@@ -896,10 +895,12 @@ def revit_preview_move(category: str = "ducts", distance: str = "") -> str:
     except BadDistance as bad:
         return _ended("refused", str(bad))
 
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("preview_move", op_args={
         "category": category,
@@ -932,7 +933,7 @@ def revit_preview_move(category: str = "ducts", distance: str = "") -> str:
                       "there is nothing to approve.")
     if wrong_model is not None:
         approval.clear()
-        return _other_model("revit_preview_move", wrong_model)
+        return _ended("refused", wrong_model)
 
     summary = "%s %s in %s" % (
         "{:,}".format(reply.get("willMove", 0)) + " " + str(reply.get("category")),
@@ -3913,10 +3914,12 @@ def revit_isolate_temporary(ids: str = "", category: str = "") -> str:
     it, and so does closing the model. A sheet, a schedule or a legend has no
     temporary isolate and is refused.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     # THE PIN TRAVELS WITH THE REQUEST, for revit_select_by_category's reason:
     # the add-in checks it BEFORE the view changes.
@@ -3937,8 +3940,6 @@ def revit_isolate_temporary(ids: str = "", category: str = "") -> str:
     # here is an isolate that already happened in the wrong model's view.
     wrong_model = pinned.check(reply)
     if wrong_model is not None and reply.get("isolated"):
-        # Ran in a model this chat does not work on - OUTCOME UNKNOWN (5b-1563).
-        _outcome(UNKNOWN)
         _ended("failed")
         return ("Heron isolated elements in \"%s\" of %s before it could tell that %s is "
                 "not the model this chat works on (%s). Only that view's temporary "
@@ -3948,8 +3949,6 @@ def revit_isolate_temporary(ids: str = "", category: str = "") -> str:
                 % (reply.get("view"), reply.get("document"), reply.get("document"),
                    pinned.title, reply.get("document")))
     if wrong_model is not None:
-        # Nothing was isolated: REFUSED, the answer withheld (row 5b-1563).
-        _outcome(REFUSED)
         return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
@@ -3988,10 +3987,12 @@ def revit_reset_temporary() -> str:
     "undo the isolate" after revit_isolate_temporary or Revit's own isolate.
     When nothing is isolated or hidden temporarily it says so and does nothing.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("reset_temporary",
                             op_args={"expectProject": pinned.project_information_id or ""})
@@ -4021,9 +4022,6 @@ def revit_reset_temporary() -> str:
                     "move this chat onto %s."
                     % (reply.get("view"), reply.get("document"), reply.get("document"),
                        pinned.title, reply.get("document")))
-        # Nothing was reset: REFUSED, the answer withheld (row 5b-1563). A
-        # reset that ran, above, is the job done - ANSWERED, as the reply said.
-        _outcome(REFUSED)
         return _ended("refused", wrong_model)
 
     return "%s (%s, Revit %s, session %s)" % (
@@ -4955,10 +4953,12 @@ def revit_use_this_model() -> str:
     this one - "use this model", "I'm in the other project now". Only needed
     after Heron has refused because the model changed.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("count_elements")
     session.close()
@@ -5021,10 +5021,12 @@ def revit_release(model: str = "all") -> str:
         if pinned.document_path:
             args["documentPath"] = pinned.document_path
 
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return _unbound(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("release_models", op_args=args or None)
     session.close()

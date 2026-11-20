@@ -7057,12 +7057,12 @@ namespace Heron.Revit.Addin
                         elements.Add(element);
                     }
                 }
-                catch (Exception ex)
+                catch
                 {
                     problem = "Heron could not read every element of \"" + part + "\" in "
-                            + doc.Title + " for '" + need + "' - Revit stopped the read ("
-                            + ex.Message + "). Nothing was run, because a set read part way "
-                            + "would answer as if the model had fewer of them, or none.";
+                            + doc.Title + " for '" + need + "' - Revit stopped the read part "
+                            + "way. Nothing was run, because a set read part way would answer "
+                            + "as if the model had fewer of them, or none.";
                     return null;
                 }
             }

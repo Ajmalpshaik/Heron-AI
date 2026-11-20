@@ -581,10 +581,10 @@ STATES_OUTCOME = ("revit_change", "revit_read", "revit_show", "revit_undo_last",
                   # THE INVENTORY READS AND THE SINGLE-PURPOSE TOOLS (row
                   # 5b-1563, 2026-11-20): every return read against
                   # heron_server_core.OUTCOMES - ANSWERED for a good reply
-                  # (`_ended_by_reply`), NOT RUN with no Revit to ask
-                  # (`_unbound`), REFUSED for an answer from another model
-                  # that is withheld, OUTCOME UNKNOWN for a selection or an
-                  # isolate made there. revit_view_image answers with a
+                  # (`_ended_by_reply`), NOT RUN with no Revit to ask, REFUSED
+                  # for an answer from another model that is withheld, OUTCOME
+                  # UNKNOWN for a selection or an isolate made there (the
+                  # label `_ended` is given after the reply). revit_view_image answers with a
                   # picture, not text, so no line can carry its word.
                   "revit_phases", "revit_levels", "revit_worksets", "revit_views",
                   "revit_sheets", "revit_rooms", "revit_schedules", "revit_families",
