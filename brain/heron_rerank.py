@@ -128,6 +128,14 @@ MODEL_ENV = "HERON_RERANK_MODEL"
 # machine that can reach it is the command that confirms it.
 SIZE = "500 MB to 2 GB"
 
+# What would lift ABSENT to CROSS_ENCODER, said where the fallback is REPORTED
+# (R-73) - appended to backend()'s `why`, the way heron_embed.IMPROVED_BY is,
+# because every reporter prints `why` and a remedy behind a call nobody makes is
+# how this stayed PART. The size is in it because the remedy is the 2 GB one.
+IMPROVED_BY = ("to fix it: pip install --user sentence-transformers (%s, "
+               "mostly torch), then python brain/heron_rerank.py --fetch --yes, "
+               "which needs huggingface.co reachable once" % SIZE)
+
 _CACHE = []                      # [scorer] or [None] once it has been settled
 _WARMING = threading.Event()
 _WARM_THREAD = [None]
@@ -312,7 +320,8 @@ def backend():
         return CROSS_ENCODER, ("installed - it reads each (question, passage) "
                                "pair together on any shortlist that reaches it")
     return ABSENT, ("no re-ranker installed - the shortlist keeps the order "
-                    "fusion gave it, which is slower to be right and not broken")
+                    "fusion gave it, which is slower to be right and not broken. "
+                    + IMPROVED_BY)
 
 
 def scores(question, passages):
