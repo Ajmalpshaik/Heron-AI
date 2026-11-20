@@ -107,6 +107,22 @@
 // the rest of the dashboard is unaffected.
 //
 // ----------------------------------------------------------------------
+// VERSION 4 (2026-11-20) - A SUBCATEGORY IS NAMED BESIDE ITS PARENT
+// ----------------------------------------------------------------------
+//
+// Row 5b-1355 (Ajmalpshaik/Heron-AI#924, the owner's answer of 2026-11-19).
+// Every element is still counted under its own Category, as before - but a
+// Category with a Parent is a subcategory, and "Center line" is one name
+// under Ducts, Duct Fittings, Flex Ducts, Pipes, Cable Trays and more. On
+// Snowdon the dashboard showed three rows all named "Center line". Now such
+// a row is named "Center line (Ducts)", carries `parent`, and lists its
+// first few element ids in `sampleIds`, so the elements can be found; and
+// the categories are counted by the category each row belongs to, so the
+// three are not three more categories. elementTotal and every row's
+// `instances` keep their rule - which elements those are is still owed a
+// Revit run (NEEDS-CHECKING Group OQ).
+//
+// ----------------------------------------------------------------------
 // VERSION 3 (2026-11-01) - BREAKDOWNS, FOR THE COMPANION'S BOARDS
 // ----------------------------------------------------------------------
 //
@@ -414,6 +430,16 @@ var sectionsNotRead = 0;
         var categoryName = new Dictionary<ElementId, string>();
         var categoryCount = new Dictionary<ElementId, int>();
         var categoryTypes = new Dictionary<ElementId, HashSet<ElementId>>();
+        // VERSION 4 (row 5b-1355). A category with a parent is a SUBCATEGORY -
+        // "Center line" sits under Ducts, Duct Fittings, Flex Ducts, Pipes,
+        // Cable Trays and more, all one name. Its row is named with the
+        // parent beside it, carries `parent`, and the first few ids, and is
+        // not counted as a category of its own: `topOf` maps every row to
+        // the category it belongs to, and the categories are counted by that.
+        var categoryParent = new Dictionary<ElementId, string>();
+        var topOf = new Dictionary<ElementId, ElementId>();
+        var subcategoryIds = new Dictionary<ElementId, List<string>>();
+        const int subcategorySample = 5;
         var levelOf = new Dictionary<ElementId, Level>();
         var onLevel = new Dictionary<ElementId, int>();
         // KEYED BY THE WorksetId ITSELF, as COPY_ELEMENTS keys its worksets -
@@ -764,6 +790,11 @@ var sectionsNotRead = 0;
                     // element that throws half-way leaves no half a count.
                     var categoryId = category.Id;
                     var categoryLabel = category.Name;
+                    // VERSION 4: a subcategory is named beside its parent.
+                    var parentCategory = category.Parent;
+                    string parentLabel = parentCategory == null ? null : parentCategory.Name ?? "";
+                    var topId = parentCategory == null ? categoryId : parentCategory.Id;
+                    if (parentLabel != null) categoryLabel = (categoryLabel ?? "") + " (" + parentLabel + ")";
 
                     var at = levelIdOf(element);
 
@@ -785,9 +816,14 @@ var sectionsNotRead = 0;
                         categoryCount[categoryId] = 0;
                         categoryName[categoryId] = categoryLabel;
                         categoryTypes[categoryId] = new HashSet<ElementId>();
+                        categoryParent[categoryId] = parentLabel;
+                        topOf[categoryId] = topId;
+                        if (parentLabel != null) subcategoryIds[categoryId] = new List<string>();
                     }
                     categoryCount[categoryId] = categoryCount[categoryId] + 1;
                     if (hasType) categoryTypes[categoryId].Add(typeId);
+                    if (parentLabel != null && subcategoryIds[categoryId].Count < subcategorySample)
+                        subcategoryIds[categoryId].Add(element.Id.ToString());
 
                     int count;
                     if (at != null && at != ElementId.InvalidElementId && onLevel.TryGetValue(at, out count))
@@ -860,8 +896,22 @@ var sectionsNotRead = 0;
                     + "so elementTotal, categories, levels, worksets" + (fillAsked ? " and fill" : "")
                     + " are short by up to that many - first: " + firstUnreadable);
             elementTotalJson = whole(elementTotal);
+            // VERSION 4: categories counted by the category each row belongs
+            // to, so three "Center line" subcategories are not three more.
+            var categoriesCounted = topOf.Values.Distinct().Count();
+            var subRows = categoryCount.Keys.Where(id => categoryParent[id] != null)
+                .OrderByDescending(id => categoryCount[id])
+                .ThenBy(id => categoryName[id] ?? "", StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            var onSubcategories = subRows.Sum(id => categoryCount[id]);
             lines.Add("Elements: " + whole(elementTotal) + " placed model element(s) in "
-                + whole(categoryCount.Count) + " categor" + (categoryCount.Count == 1 ? "y" : "ies"));
+                + whole(categoriesCounted) + " categor" + (categoriesCounted == 1 ? "y" : "ies")
+                + (subRows.Count == 0 ? "" : " - " + whole(onSubcategories) + " of them on "
+                    + whole(subRows.Count) + " subcategor" + (subRows.Count == 1 ? "y" : "ies")
+                    + ", each named beside its parent: "
+                    + string.Join(", ", subRows.Take(10).Select(id => categoryName[id] + " "
+                        + whole(categoryCount[id])).ToArray())
+                    + (subRows.Count > 10 ? " and " + whole(subRows.Count - 10) + " more" : "")));
 
             // "types" is how many types the counted elements of the category
             // USE - not how many are loaded; the families part has those.
@@ -871,8 +921,12 @@ var sectionsNotRead = 0;
                     .OrderByDescending(id => categoryCount[id])
                     .ThenBy(id => categoryName[id] ?? "", StringComparer.OrdinalIgnoreCase)
                     .Select(id => "{" + esc("name") + ":" + esc(categoryName[id])
+                        + "," + esc("parent") + ":" + esc(categoryParent[id])
                         + "," + esc("instances") + ":" + whole(categoryCount[id])
-                        + "," + esc("types") + ":" + whole(categoryTypes[id].Count) + "}")
+                        + "," + esc("types") + ":" + whole(categoryTypes[id].Count)
+                        + (categoryParent[id] == null ? ""
+                            : "," + esc("sampleIds") + ":" + textList(subcategoryIds[id]))
+                        + "}")
                     .ToList();
                 categoriesJson = "[" + string.Join(",", rows.ToArray()) + "]";
             }

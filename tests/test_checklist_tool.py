@@ -75,7 +75,7 @@ class StandIn(object):
 
 
 def reply_with(**provides):
-    base = {"notLoaded": "0 item(s)", "unresolved": "0 item(s)", "unplaced": "0 item(s)",
+    base = {"notLoaded": "0 item(s)", "unloaded": "0 item(s)", "unresolved": "0 item(s)", "unplaced": "0 item(s)",
             "unenclosed": "0 item(s)", "elements": "0 item(s)"}
     base.update(provides)
     return {"ok": True, "document": "Project1", "documentPath": "C:/jobs/Project1.rvt",
@@ -127,7 +127,7 @@ def tool(home):
           "Heron's starter passes every check against today's cards - %r" % said[:300])
     check("Before issue - 5 check(s)" in body("list"), "it is listed with its checks")
     shown = body("show", name="before issue")
-    check("LIST_LINKED_MODELS, notLoaded == 0" in shown and "includeRooms=true" in shown,
+    check("REPORT_EXTERNAL_REFERENCES, unloaded == 0" in shown and "includeRooms=true" in shown,
           "show gives each check's capability, rule and values")
 
     real = S.binding.resolve
@@ -162,7 +162,7 @@ def tool(home):
         panel.end()
 
         S.pinned.forget()
-        revit.reply = reply_with(notLoaded="9 item(s) [21, 22, 23, ...]")
+        revit.reply = reply_with(unloaded="9 item(s) [21, 22, 23, ...]")
         rows = S._run_checklist(S.brain.checklists().find("Before issue"))["rows"]
         check(rows[0]["state"] == "fail" and rows[0]["select"] == "" and "3 of the 9" in rows[0]["why"],
               "a list of more than three ids: no Select in Revit, and why")
@@ -171,12 +171,12 @@ def tool(home):
         reads = [a[1] for a in revit.asked if a[0] == "run_fragment_read"]
         # A check with no ids output is saved with "" - it names nothing.
         wanted = [c.get("ids") or None for c in S.brain.checklists().find("Before issue")["checks"]]
-        check([r.get("sendIds") for r in reads] == wanted and wanted[0] == "notLoaded",
+        check([r.get("sendIds") for r in reads] == wanted and wanted[0] == "unloaded",
               "each check's read names its own ids output in sendIds, and one with none names "
               "nothing - found %r, wanted %r" % ([r.get("sendIds") for r in reads], wanted))
         S.pinned.forget()
-        revit.reply = dict(reply_with(notLoaded="9 item(s) [21, 22, 23, ...]"),
-                           providesIds={"notLoaded": {"total": 9,
+        revit.reply = dict(reply_with(unloaded="9 item(s) [21, 22, 23, ...]"),
+                           providesIds={"unloaded": {"total": 9,
                                                       "ids": [str(21 + i) for i in range(9)]}})
         rows = S._run_checklist(S.brain.checklists().find("Before issue"))["rows"]
         check(rows[0]["state"] == "fail" and rows[0]["select"] == "Select in Revit"
@@ -197,32 +197,32 @@ def tool(home):
         # THE REVIEW OF #866 (rows 5b-1614, 5b-1620), through the server.
         # A missing total beside the ids is never complete: no Select.
         S.pinned.forget()
-        revit.reply = dict(reply_with(notLoaded="9 item(s) [21, 22, 23, ...]"),
-                           providesIds={"notLoaded": {"ids": ["21", "22"]}})
+        revit.reply = dict(reply_with(unloaded="9 item(s) [21, 22, 23, ...]"),
+                           providesIds={"unloaded": {"ids": ["21", "22"]}})
         rows = S._run_checklist(S.brain.checklists().find("Before issue"))["rows"]
         check(rows[0]["state"] == "fail" and rows[0]["select"] == "" and rows[0]["ids"] == [],
               "ids sent with no total offer no Select in Revit - found %r" % rows[0]["select"])
         # The same saved model after Revit was closed and opened again: the
         # process id is new, the path is not - so it is compared.
         said = body("save", name="Restart", checks=json.dumps([
-            {"sentence": "every linked model is loaded", "capability": "LIST_LINKED_MODELS",
-             "rule": "notLoaded == 0", "ids": "notLoaded"}]))
+            {"sentence": "every linked file is loaded", "capability": "REPORT_EXTERNAL_REFERENCES",
+             "rule": "unloaded == 0", "ids": "unloaded"}]))
         check(said.startswith("Saved 'Restart'"), "a one-check list is saved - %r" % said[:120])
         real_pid = S.binding._pid
         try:
             S.binding._pid = 4242
             S.pinned.forget()
-            revit.reply = reply_with(notLoaded="2 item(s) [21, 22]")
+            revit.reply = reply_with(unloaded="2 item(s) [21, 22]")
             body("run", name="Restart")
             S.binding._pid = 9999
             S.pinned.forget()
-            revit.reply = reply_with(notLoaded="0 item(s)")
+            revit.reply = reply_with(unloaded="0 item(s)")
             said = body("run", name="Restart")
             check("Since the last run on Project1" in said and "1 fixed" in said and "[FIXED]" in said,
                   "the same model after Revit restarted is compared by its path - found %r"
                   % said.splitlines()[0][-160:])
             # A model never saved: no path, never compared, told to save.
-            unsaved = dict(reply_with(notLoaded="0 item(s)"), document="Project2", documentPath="")
+            unsaved = dict(reply_with(unloaded="0 item(s)"), document="Project2", documentPath="")
             S.pinned.forget()
             revit.reply = unsaved
             body("run", name="Restart")

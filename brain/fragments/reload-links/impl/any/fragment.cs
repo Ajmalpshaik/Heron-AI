@@ -20,12 +20,23 @@
 //   A RELOAD REVIT THREW ON is in `refused` too, beside its FAILED line, so a
 //   caller reading `refused` sees every link this did not do.
 //
+// VERSION 3 (2026-11-20) - THERE IS NO UNDO, AND THE REPLY SAYS SO FIRST.
+// FRAGMENT-ISSUES row 73, the owner's answer of 2026-11-20
+// (Ajmalpshaik/Heron-AI#921): measured on Snowdon-scratch, Revit 2024, an
+// unload INSIDE a transaction was refused for all six links, and OUTSIDE one
+// all six were really unloaded with nothing to roll back and no undo step.
+// So when anything was done, the first finding says Undo and Discard cannot
+// take it back - the first of a list is what a reply shows. On a real model
+// the chat asks first and says the same (the card's purpose); the proof runs
+// on a scratch copy of a sample model only (NEEDS-CHECKING Group OQ).
+//
 // OPENS NO TRANSACTION (Golden Rule 16), AND THIS ONE NEEDS SAYING TWICE.
 // Reloading is document management rather than a model edit - it reads a file
-// from disk. Whether Revit permits it INSIDE an open transaction is not proven
-// here, and it is the first thing to find out against a real model. If it
-// refuses, the answer is where the host's write path puts its transaction, not
-// a change to this fragment.
+// from disk. Row 73 measured the UNLOAD both ways: refused inside an open
+// transaction, done for real outside one. The RELOAD has not been measured
+// either way, and it is the first thing Group OQ finds out. If Revit refuses,
+// the answer is where the host's write path puts its transaction, not a
+// change to this fragment.
 //
 // NOTHING IS REMOVED. Unload drops a link from memory and from every view and
 // it returns with one click. Removing deletes it and everything hosted on it,
@@ -137,6 +148,10 @@ else
             findings.Add(string.Format("'{0}' FAILED: {1}", name, ex.Message));
         }
     }
+
+    // VERSION 3 (row 73): first, so it is the line a reply shows.
+    if (done > 0)
+        findings.Insert(0, "No undo: Revit's Undo and Discard cannot take this back.");
 
     findings.Add(string.Format("{0} of {1} link(s) {2}{3}", done, typeIds.Count,
         unload ? "unloaded" : "reloaded",

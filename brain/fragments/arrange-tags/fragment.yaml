@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,10 +9,22 @@ semantic-identity: "the tags are sitting on top of each other, spread them out"
 kind: action
 domain: revit.annotation
 capability: ARRANGE_TAGS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 3 (2026-11-20) - THE GAP AND THE FALLBACK SIZES ARE ON PAPER, and
+# back to DRAFT. FRAGMENT-ISSUES row 5b-240, the owner's yes of 2026-11-19
+# (Ajmalpshaik/Heron-AI#924): `minGapMm`, `fallbackTagWidthMm` and
+# `fallbackTagHeightMm` are paper millimetres, multiplied by the view's
+# scale - STACK_TAGS' rule. Version 2 took them as model millimetres, so the
+# 3 mm gap a caller typed was 0.04 mm on a 1:75 sheet. A size measured off a
+# leaderless tag is a model distance already and is not multiplied. The
+# proof block below is version 2's, kept as the record of what it proved;
+# its C# moved, so it is DRAFT until NEEDS-CHECKING Group OQ is run (D-30).
+# A caller who sent version 2 a model size now sends the paper one: 200 mm in
+# the model is 2 mm on a 1:100 view.
+#
 # VERSION 2 (2026-11-16) - ROOM, SPACE AND AREA TAGS TOO, and back to DRAFT.
 # FRAGMENT-ISSUES row 5b-1732 (Sruthina, Revit 2024, model `villa 2`,
 # Ajmalpshaik/Heron-AI#854 item c): version 1 kept only IndependentTag, so
@@ -84,8 +96,10 @@ contract:
       source: request
     - name: elements
       type: IList<Element>
-    # The clear gap to leave between two tags, on paper terms the reader
-    # judges. No default: what looks right at 1:100 is crowded at 1:50.
+    # The clear gap to leave between two tags, in PAPER millimetres - the
+    # distance the reader judges on the printed sheet. Multiplied by the
+    # view's scale (version 3). No default: what looks right on one drawing
+    # is crowded on another.
     - name: minGapMm
       type: double
       source: request
@@ -94,7 +108,9 @@ contract:
       type: int
       source: request
     # Used ONLY when every tag in the set has a leader, so nothing can be
-    # measured. Stated by the caller rather than assumed here.
+    # measured. Stated by the caller rather than assumed here, in PAPER
+    # millimetres - a tag's printed size - multiplied by the view's scale
+    # (version 3).
     - name: fallbackTagWidthMm
       type: double
       source: request
