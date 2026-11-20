@@ -3,7 +3,7 @@
 // `hidden`, `blankOverride`, `nothingToActOn` and `templateOwned` behind.
 //
 // VERSION 5 (2026-11-20) - NARROWED, COUNTED FIRST, AND BOUNDED. Issue #1058
-// A2 (row 5b-1893): on a real Revit 2020 MEP plan with 90 filters the answer
+// A2 (row 5b-1915): on a real Revit 2020 MEP plan with 90 filters the answer
 // was 123,531 characters - over the chat's limit - so "which filters touch
 // duct accessories on this view" could not be answered in the chat.
 // `onlyCategory` keeps only the filters that take that category (a rule's
