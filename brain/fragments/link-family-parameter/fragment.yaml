@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -21,9 +21,29 @@ capability: LINK_FAMILY_PARAMETER
 # yes to widening rather than a second card: "widen ... no duplicate tools,
 # same kind of work 2 tools no need". FRAGMENT-ISSUES row 5b-1497. Every other
 # path is version 3's, unchanged.
-version: 4
+version: 5
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 5 (2026-11-20) - A FORM'S EXTRUSION START AND END SAY WHICH WAY
+# THEY RUN, and back to DRAFT. FRAGMENT-ISSUES row 177, its second half
+# (issue Ajmalpshaik/Heron-AI#944). LINK_FAMILY_FORM_PARAMETER was merged into
+# this card; on 2026-10-04, Revit 2024, linking a form's Extrusion Start or
+# Extrusion End associated Revit's RAW value, which runs along the form's
+# SKETCH PLANE's normal, where CREATE_FAMILY_EXTRUSION takes start and end
+# along the model axis: on `Port Right`, whose plane faces -X, +1 at build is
+# raw -1, so a linked +1 put a thin cap on the other side and a connector made
+# on it pointed into the valve. Now, for every extrusion whose Extrusion Start
+# or End (EXTRUSION_START_PARAM, EXTRUSION_END_PARAM) is in the call,
+# `linkReport` says which way its sketch plane faces in model terms -
+# "Extrusion End runs along -X here: its sketch plane, on "Port Right", faces
+# -X, so a positive value goes left" - and, after the links and the
+# regenerate, where the form now reaches along that axis, read off its
+# geometry: "the form now runs X 48 to 49 mm". No new input or output; every
+# other path is version 4's. Version 4 was PROVEN (the proof block below, kept
+# as the record of what it proved); its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group <TBD> is run (D-30) - on the owner's word that a
+# fragment found wrong may be changed even though it is proven.
 
 purpose: >
   Links a parameter of elements ALREADY in the family open in the Family
@@ -172,6 +192,9 @@ contract:
       # Every link asked for, element by element, as it was before and as it
       # reads after, on ONE line - a list is cut to three entries before anyone
       # reads it, and the whole of this is the answer.
+      # VERSION 5: an extrusion whose Extrusion Start or End is in the call
+      # also says which way its sketch plane faces in model terms, and where
+      # the form reaches along that axis after the call.
       role: result
       type: string
     - name: changed
@@ -337,7 +360,12 @@ compatibility-note: >
   Element`, not a form) - are the same classes 2020 through 2027 (api-surface,
   read 2026-11-11). A filled region in a 3D family needs Revit 2023 and a
   masking region 2024 to exist at all (DRAW_FAMILY_FILLED_REGION); linking one
-  that exists has no release limit of its own.
+  that exists has no release limit of its own. Version 5 reads
+  `Extrusion.Sketch`, `Sketch.SketchPlane`, `SketchPlane.GetPlane()`,
+  `ReferencePlane.GetPlane()`, `Edge.Tessellate()` and the
+  EXTRUSION_START_PARAM and EXTRUSION_END_PARAM ids - the same on 2020 and
+  2027 (api-surface, read 2026-11-20), and built against all eight releases
+  the same day.
 
 # 2026-11-01 - LINK_FAMILY_FORM_PARAMETER, SET_FAMILY_FORM_MATERIAL AND
 # LINK_NESTED_TYPE_PARAMETER WERE MERGED INTO THIS CARD (version 3) on the
