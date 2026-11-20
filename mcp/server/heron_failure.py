@@ -36,6 +36,8 @@ A future operation added by someone who never read this file gets the safe
 answer by default rather than the convenient one.
 """
 
+import re
+
 
 # ------------------------------------------------------- what actually happened
 
@@ -65,6 +67,18 @@ class Failure(object):
         self.next_step = next_step
         self.reason = reason
         self.message = message
+        # WHAT THE ADD-IN SAID BESIDE ITS CODE, read once by `analyse` (row
+        # 5b-1901) - None where the reply said nothing, which an older add-in
+        # never does. `workflow`: the run's id, which a wait carries
+        # (awaiting_modeller, still_running - row 5b-1159) and its record is
+        # written under when the job ends. `rollback_held`: the add-in's
+        # `rolledBack` on a refusal after a rollback (row 5b-1559) - True when
+        # Revit said it rolled back and the rollback check found nothing left
+        # standing, False when either did not. `elements_counted`: a read
+        # that stopped, counted unchanged around the run.
+        self.workflow = None
+        self.rollback_held = None
+        self.elements_counted = None
 
     @property
     def may_retry(self):
@@ -303,10 +317,13 @@ _KNOWN = {
     "needs_unbound":     (REFUSED, FIX_FIRST,
                           "something the fragment needs was never supplied, and running "
                           "anyway would report 0 and read as 'nothing to find'"),
-    # D-112: an edit-mode fragment asked for as a read. Nothing ran.
+    # D-112, D-115, D-125: a fragment that opens its own transactions inside
+    # Heron's, asked for as a read. Nothing ran. Not "an edit mode": row
+    # 5b-1557 took that out of the add-in - CREATE_ASSEMBLY declares the
+    # switch and works in none (row 5b-1901).
     "needs_write_path":  (REFUSED, FIX_FIRST,
-                          "this fragment works in one of Revit's edit modes and opens its "
-                          "own transactions, so it runs only as a change - nothing ran"),
+                          "this fragment opens its own transactions inside Heron's, so it "
+                          "runs only as a change - never as a read - and nothing ran"),
     # A FRAGMENT THAT OPENS A TRANSACTION ITS DECLARATION DOES NOT ADMIT -
     # read off its source before anything ran (HeronSourceScan), so REFUSED.
     "opens_own_transaction": (REFUSED, STOP,
@@ -633,17 +650,17 @@ def analyse(reply, writes=False):
     known = _KNOWN.get(code) or _ARRIVED_UNUSABLE.get(code)
     if known is not None:
         outcome, next_step, reason = known
-        return Failure(code, outcome, next_step, reason, message)
+        return _beside(Failure(code, outcome, next_step, reason, message), reply)
 
     # FAIL CLOSED. An unrecognised code on an operation that writes is treated
     # as an unknown outcome, because this file cannot prove otherwise and the
     # cost of being wrong is the model.
     if writes:
-        return Failure(
+        return _beside(Failure(
             code, UNKNOWN, LOOK_AT_THE_MODEL,
             "Heron does not recognise this failure, and it came from an operation that "
             "can change the model, so it is treated as though the outcome is unknown",
-            message)
+            message), reply)
 
     # ON A READ IT IS NOT KNOWN EITHER - never a refusal (row 5b-1560). It was
     # REFUSED until 2026-11-19, which answered "may this be asked again" and
@@ -651,10 +668,38 @@ def analyse(reply, writes=False):
     # exception escapes the dispatch, comes after the job may have run, and
     # revit_show may have changed a selection or a view. FIX_FIRST is kept, so
     # nothing is asked again unasked - what a read retries is unchanged.
-    return Failure(code, UNKNOWN, FIX_FIRST,
-                   "Heron does not recognise this failure; the operation only reads, but "
-                   "whether it ran in Revit is not known",
-                   message)
+    return _beside(Failure(code, UNKNOWN, FIX_FIRST,
+                           "Heron does not recognise this failure; the operation only reads, "
+                           "but whether it ran in Revit is not known",
+                           message), reply)
+
+
+# A RUN'S ID AS THE ADD-IN WRITES IT - "wf-20261009-133432-0042-a1b2". Anything
+# else in the field is not repeated: an id is printed for the chat to hand
+# back, and text that is not one is never quoted as if it were.
+_RUN_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
+
+
+def _beside(failure, reply):
+    """
+    `failure` with what the add-in said beside its code (row 5b-1901), read
+    off the reply once and nowhere else: the run's id, whether a rollback
+    held, and a stopped read's count. Each is taken only when it is the
+    type the add-in writes - a bool is a bool, a count a whole number - so a
+    field from an add-in this server was not written against says nothing,
+    as an absent one does. Classification is unchanged: the outcome line and
+    the reply's words read these, never `outcome` or `next_step`.
+    """
+    workflow = reply.get("workflow")
+    if isinstance(workflow, str) and _RUN_ID.match(workflow):
+        failure.workflow = workflow
+    held = reply.get("rolledBack")
+    if isinstance(held, bool):
+        failure.rollback_held = held
+    counted = reply.get("elementsCounted")
+    if isinstance(counted, int) and not isinstance(counted, bool) and counted >= 0:
+        failure.elements_counted = counted
+    return failure
 
 
 def explain(failure):
@@ -671,11 +716,24 @@ def explain(failure):
 
     lines = [failure.message or ("It failed: %s." % failure.reason)]
 
+    # A ROLLBACK THE ADD-IN SAYS DID NOT HOLD (row 5b-1901): the outcome line
+    # says OUTCOME UNKNOWN, and this says why, in the reply's own words.
+    if failure.rollback_held is False:
+        lines.append("Heron asked Revit to roll this back, and the add-in could not confirm "
+                     "the model is as it was. Look at the model before anything is sent "
+                     "again.")
+
     if failure.next_step == LOOK_AT_THE_MODEL:
         lines.append("Heron will NOT try that again on its own - repeating it could do the "
                      "work twice. Check the model first.")
     elif failure.next_step == WAIT:
         lines.append("Do not ask again while it is still working.")
+        # AND THE RUN'S ID, which the wait carries (row 5b-1159) and its record
+        # is written under when it ends - so the chat has something to hand
+        # heron_run_record (row 5b-1901).
+        if failure.workflow:
+            lines.append("Its run is %s: once Revit has finished it, heron_run_record "
+                         "run=%s says how it ended." % (failure.workflow, failure.workflow))
     elif failure.next_step == START_OVER:
         lines.append("Ask for the change again and Heron will show a fresh preview.")
     elif failure.next_step == STOP:

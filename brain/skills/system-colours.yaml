@@ -127,8 +127,10 @@ purpose: >
   6. THE OTHER VIEWS. COPY_VIEW_FILTERS with sourceView the view just done,
      targetViews the others by name, and onlyFilterNamed= typed with nothing
      after the equals sign, which copies every filter - or a filter's name
-     there, for that one alone. onlyFilterNamed LEFT OUT ALTOGETHER IS
-     REFUSED and nothing is copied (FRAGMENT-ISSUES row 5b-227, open). Each
+     there, for that one alone. Since 2026-11-20 the card copies every
+     filter when onlyFilterNamed is left out as well (FRAGMENT-ISSUES rows
+     101 and 5b-227); that is not yet run in Revit (NEEDS-CHECKING OS11),
+     so send it typed empty, which works either way. Each
      filter goes over WITH its colour and its ticks. It answers
      viewsChanged and filtersApplied, and blockedByTemplate for every view
      whose template holds its filters - named, and left as they are. Never

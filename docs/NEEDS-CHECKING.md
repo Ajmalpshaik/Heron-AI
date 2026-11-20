@@ -1626,6 +1626,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ov.md`](needs-checking/group-ov.md)
 
+## Group OW - what the add-in fixes of 2026-11-20 left behind, issue #1102: the bridge keeps listening when every pipe is in use, two models of one title are told apart, and the chat reads the run id, the rollback and the count the add-in now sends - BUILT, NOT RUN IN REVIT (2026-11-20)
+
+**Its own file:** [`needs-checking/group-ow.md`](needs-checking/group-ow.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
