@@ -1598,6 +1598,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oo.md`](needs-checking/group-oo.md)
 
+## Group OP - the owner's answers of 2026-11-19/20 in code: an empty `absent:` binds, replies carry dictionary entries whole, three one-reason refusals become one string, and a rollback that cannot take a job back says so (2026-11-20)
+
+**Its own file:** [`needs-checking/group-op.md`](needs-checking/group-op.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
