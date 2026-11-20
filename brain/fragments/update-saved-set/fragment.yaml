@@ -39,7 +39,7 @@ purpose: >
   spelled differently, or on another model - so it is still refused. Creating
   one silently would leave two sets a letter apart, both half right. Mode
   "create" saves the elements as a new set, read back, applied to no view; a
-  name already in use is refused and points at "replace". DRAFT until proved.
+  name already in use is refused and points at "replace".
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 

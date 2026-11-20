@@ -73,6 +73,7 @@ import heron_relpath as RELPATH                                 # noqa: E402
 
 ADDIN = os.path.join(ROOT, "revit", "Heron.Revit.Addin")
 EXECUTOR = os.path.join(ADDIN, "RevitFragment.cs")
+MOVE = os.path.join(ADDIN, "RevitWrite.cs")
 DISPATCHER = os.path.join(ADDIN, "RevitDispatcher.cs")
 NOTE = os.path.join(ADDIN, "HeronFailureNote.cs")
 WITNESS = os.path.join(ADDIN, "HeronRollbackWitness.cs")
@@ -338,6 +339,76 @@ def wiring():
           and re.search(r"\b%s\s*\?\s*%s" % (re.escape(named.group(1)), reads), told) is not None,
           "for the fragment operations only, decided by the same test that names "
           "the fragment - the move path keeps its own record")
+
+    print("\n3b. the move quotes Revit when it refuses, under the job's own id")
+    # FRAGMENT-ISSUES 5b ROWS 1062 AND 1061, 2026-11-20. Read as text, like
+    # the rest of the wiring: the move's preprocessor and its refusal call the
+    # Revit API. Seen to FAIL on RevitWrite.cs as it stood - its preprocessor
+    # kept no words, its refusal was one fixed sentence, and it minted an id.
+    move = code_only(read(MOVE) or "")
+    check(bool(move), "RevitWrite.cs is there to read")
+    collect = body_of(move, "class CollectWarnings")
+    check(re.search(r"\bHeronFailureNote\s+Said\b", collect) is not None,
+          "the move's preprocessor keeps a HeronFailureNote of what Revit said")
+    check(re.search(r"Said\.RollsBack\(", collect) is not None,
+          "and records every refusing failure in it before it rolls back")
+    check(re.search(r"GetDescriptionText\(\)", collect) is not None
+          and re.search(r"GetFailingElementIds\(\)", collect) is not None,
+          "with Revit's own words and the number of elements each names")
+    execute = body_of(move, "static string ExecuteMove(")
+    check(re.search(r"handler\.Said\.RefusedSentence\(\)", execute) is not None,
+          "a commit Revit refused answers with Revit's words")
+    check("The move was rolled back completely, so nothing was moved" in (read(MOVE) or ""),
+          "and says the move was rolled back, not only that nothing moved")
+    check(re.search(r"workflow\s*=\s*RevitDispatcher\.RunningWorkflow\b", execute)
+          is not None,
+          "the move records under the job's own workflow id (5b row 1061)")
+    check(execute.count("HeronIdentity.NewWorkflowId()") <= 1
+          and re.search(r"RunningWorkflow\s*\?\?\s*HeronIdentity\.NewWorkflowId\(\)",
+                        execute) is not None,
+          "and mints one only where no job runs on the thread")
+    # 5b ROW 1060: the move's pin told two template-born models apart by the
+    # template's Project Information id alone. Seen to FAIL on the key as it stood.
+    key = body_of(move, "static string DocumentKey(Document doc)")
+    check(re.search(r"RevitOperations\.CreationGuid\(doc\)", key) is not None
+          and re.search(r"info\.UniqueId\s*\+\s*\"[^\"]*\"\s*\+\s*creation", key) is not None,
+          "the move's model key carries the model's own CreationGUID beside the "
+          "template's id (5b row 1060)")
+
+    print("\n3c. a refusal says in fields what an answer would (5b rows 1559 and 1159)")
+    # Read as text: the tally is kept on Revit's thread. The rule it writes,
+    # Json.WithRollback, is run in section 5. Seen to FAIL on the files as
+    # they stood - nothing tallied, nothing added, no id on either wait.
+    dispatcher = code_only(read(DISPATCHER) or "")
+    witness_call = body_of(code, "static HeronRollbackWitness.Outcome RollBackAndCheck(")
+    check(re.search(r"RevitDispatcher\.NoteRollback\(\s*after\.Held\s*,\s*after\.Reported\s*\)",
+                    witness_call) is not None,
+          "every rollback is tallied on the running job, held and reported")
+    ran_at = dispatcher.find("response = RevitOperations.Run(app, job.Request);")
+    tail = dispatcher[ran_at:ran_at + 900] if ran_at >= 0 else ""
+    check(re.search(r"response\s*=\s*Json\.WithRollback\(\s*response\s*,\s*job\.Rollbacks\s*,"
+                    r"\s*job\.RollbacksHeld\s*,\s*job\.RollbacksReported\s*\)", tail) is not None,
+          "and the job's refusal carries the tally, straight after the run")
+    for code_word in ("awaiting_modeller", "still_running"):
+        at = (read(DISPATCHER) or "").find('return Json.Error("%s",' % code_word)
+        reply = (read(DISPATCHER) or "")[at:at + 700] if at >= 0 else ""
+        check(re.search(r'Json\.Str\("workflow",\s*job\.WorkflowId\)', reply) is not None,
+              "%s carries the run's workflow id" % code_word)
+    check(re.search(r"if \(threw != null && !writing\) return WithCount\(threw, counted\);", code)
+          is not None,
+          "a read that threw says its model was counted unchanged")
+
+    print("\n3d. editScopeFailures is described as what it is (5b row 1557)")
+    # D-115 and D-125 gave the switch to any fragment Revit refuses inside a
+    # transaction, and CREATE_ASSEMBLY declares it in no edit mode. Seen to
+    # FAIL on the three sentences as they stood.
+    gate = read(os.path.join(ROOT, "tools", "check-revit-gate.py")) or ""
+    for where, text in (("RevitFragment.cs", raw or ""), ("check-revit-gate.py", gate)):
+        check("works in one of Revit's edit modes" not in text
+              and "because it works in one of Revit's" not in text,
+              "%s no longer says such a card works in one of Revit's edit modes" % where)
+    check("Heron's failure discipline, for the transactions " in (raw or ""),
+          "the binding note names the transactions the fragment opens itself")
 
     print("\n4. no writer in revit/ opens a transaction without a preprocessor")
     openers = 0

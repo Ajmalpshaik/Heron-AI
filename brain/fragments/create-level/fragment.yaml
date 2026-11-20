@@ -7,7 +7,7 @@ heron-layer: brain
 id: FRG-ELE-022
 semantic-identity: "add a new level at this height"
 kind: action
-domain: revit.levels
+domain: revit.datums
 capability: CREATE_LEVEL
 version: 1
 source: OFFICIAL

@@ -56,8 +56,7 @@ purpose: >
   from Revit 2026 - the one setting that takes text. Only a code the
   classification file files under this family's category is written, and any
   other is refused with the codes that file gives the category; blank, none or
-  clear empties it. Version 1's proof no longer describes the code and is kept
-  below as a record; the fragment is DRAFT until it is proved again.
+  clear empties it.
 
   **VERSION 3 (2026-10-21): LIGHT SOURCE** - "Light Source=yes" ticks the box
   a Lighting Fixtures family needs before SET_FAMILY_LIGHT_SOURCE can define
@@ -65,9 +64,7 @@ purpose: >
   named Light Source in its reference, so the tick is PROVED: after the write,
   Revit's lighting API must find a light source in the family, or the call
   fails and nothing is kept. Only yes is taken - unticking removes the light
-  source and every photometric value, and is left to the modeller. Version 2's
-  proof is kept below as a record; the fragment is DRAFT until it is proved
-  again.
+  source and every photometric value, and is left to the modeller.
 
   **VERSION 4 (2026-11-01): THE CATEGORY** - SET_FAMILY_CATEGORY's job,
   merged here: "Category=Air Terminals" makes a family started from a generic
@@ -84,8 +81,7 @@ purpose: >
   WRITTEN FIRST, because Part Type, the OmniClass Number and which switches
   the family has at all are checked against it; once it is written, a problem
   with any other setting fails the whole call rather than keeping the
-  category alone. Version 3's proof is kept below as a record; the fragment
-  is DRAFT until it is proved again.
+  category alone.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
