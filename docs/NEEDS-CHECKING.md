@@ -1630,6 +1630,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ow.md`](needs-checking/group-ow.md)
 
+## Group OY - EXTEND_ROOF_TO_ROOF, a roof by extrusion extended to meet another roof by rays: the owner's other way to Join/Unjoin Roof - DRAFT until proved (2026-11-20)
+
+**Its own file:** [`needs-checking/group-oy.md`](needs-checking/group-oy.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
