@@ -290,6 +290,39 @@ def main():
               "and not only the README")
         io.open(arch, "w", encoding="utf-8").write(kept)
 
+        print("\n4b. text GitHub shows as code is not a link, and a link's "
+              "words end at a blank line (row 5b-1907)")
+        fence = "`" * 3
+        io.open(arch, "w", encoding="utf-8").write(
+            kept + "\n\nA row's state reads `MOVED TO ISSUE [#N](...)` until "
+                   "it is written.\n\n"
+                   + fence + "bash\ngrep -n \"[\" docs/x.md\n" + fence + "\n\n"
+                   "Then [a dead link after the fence](no-such-file-1907-d.md)"
+                   ", and the placeholder `[#N](...)` again.\n\n"
+                   "A code span that `runs on\nto the next line` and then "
+                   "[a dead link beside it](no-such-file-1907-a.md).\n\n"
+                   "A dead link whose words [wrap\nthe line]"
+                   "(no-such-file-1907-b.md).\n\n"
+                   "[words a blank line ends\n\n](no-such-file-1907-c.md)\n")
+        code, out = run_guard(tree)
+        broken = section(out, "1. BROKEN LOCAL LINKS")
+        check(code != 0 and "no-such-file-1907-d.md" in broken
+              and "a dead link after the fence" in broken,
+              "a dead link after a fenced block that holds a lone opening "
+              "bracket is reported, with its own words")
+        check("no-such-file-1907-a.md" in broken,
+              "and one after a code span that runs on to the next line - the "
+              "span is read as GitHub reads it, not a line at a time")
+        check("no-such-file-1907-b.md" in broken,
+              "and one whose words a line break wraps")
+        check("(...)" not in broken and "-> ..." not in broken,
+              "but a placeholder written in backticks is not a link, and "
+              "neither is the bracket in the fenced block")
+        check("no-such-file-1907-c.md" not in broken,
+              "and square brackets a blank line splits are not one link's "
+              "words")
+        io.open(arch, "w", encoding="utf-8").write(kept)
+
         print("\n6. a tool and a skill no README names, and an MCP tool total "
               "nobody derived, are caught")
         stray_tool = os.path.join(tree, "tools", "stray-helper.sh")
