@@ -88,6 +88,17 @@ def main():
                       % (os.path.basename(path), key,
                          "" if not odd else " - not %r" % (odd[0],)))
 
+        # AND THE LOADER'S OWN validate() REFUSES IT, so a method written after
+        # this suite ran is refused too - planted here, as YAML reads it.
+        first = sorted(skills.values(), key=lambda s: s.id)[0]
+        for key in ("preconditions", "utterances"):
+            planted = dict(first.data)
+            planted[key] = list(first.data.get(key) or ["a sentence", "another"]) + [
+                {"a title block named like": "Family: Type"}]
+            refused = SKILL.validate(SKILL.Skill(planted, first.path))
+            check(any(key in p and "must be text" in p for p in refused),
+                  "validate() refuses a %s line YAML read as a mapping (5b-1584)" % key)
+
         print()
         print("2. A skill names CAPABILITIES, never fragments")
         fragments, _ = FRAG.load_all()

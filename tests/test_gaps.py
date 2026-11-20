@@ -231,6 +231,45 @@ def main():
               "and nothing timed stays None rather than becoming 0")
 
         print()
+        print("11. A knowledge store that would not open is said, never read as "
+              "'nothing recorded' (row 5b-1864)")
+        server_brain = None
+        try:
+            sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+            import heron_brain as server_brain                # noqa: E402
+        except Exception as exc:                              # noqa: BLE001
+            check(False, "the server's brain module imports - %s: %s"
+                  % (type(exc).__name__, exc))
+        if server_brain is not None:
+            real_brain, real_read = server_brain._brain, GAPS.read
+
+            def no_store():
+                raise RuntimeError("the store would not open")
+
+            server_brain._brain = no_store
+            GAPS.read = lambda directory=None: ([], 0)
+            try:
+                result = server_brain.gaps()
+            except Exception as exc:                          # noqa: BLE001
+                result = {"raised": "%s: %s" % (type(exc).__name__, exc)}
+            finally:
+                server_brain._brain, GAPS.read = real_brain, real_read
+            check("raised" not in result and result.get("wanted") == [],
+                  "the trail half still comes back when the store will not open - %r"
+                  % result.get("raised"))
+            check("the store would not open" in str(result.get("wanted_unread") or ""),
+                  "and why the wanted list could not be read comes back beside it")
+            server = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
+                             encoding="utf-8").read()
+            tool = server[server.find("def heron_gaps("):]
+            tool = tool[:tool.find("\n@server.tool()")]
+            said = tool.find('result.get("wanted_unread")')
+            check(0 <= said < tool.find("Nothing is recorded as wanted-but-unprovided")
+                  and "could not be read" in tool,
+                  "and heron_gaps says THAT in place of 'Nothing is recorded as "
+                  "wanted-but-unprovided'")
+
+        print()
         print("   (bonus) a directory that does not exist is not an error")
         entries, skipped = GAPS.read(os.path.join(workspace, "nope"))
         check(entries == [] and skipped == 0,

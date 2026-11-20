@@ -171,6 +171,37 @@ def main():
     check(bridge.availability(Reply({"ok": True})) == "(availability unknown)",
           "an older add-in that cannot report it says UNKNOWN, never (free)")
 
+    # --- and the MODEL in front, held by another chat (row 5b-1645, D-141) ---
+    # The lease is per person and the hold per chat, so a free lease said
+    # "(free)" of a Revit whose model in front another chat held, and the next
+    # request was refused. From the same lease-exempt `info`.
+    free_lease = {"ok": True, "inUse": False, "mine": False, "leaseSecondsRemaining": 0}
+    held = bridge.availability(Reply(dict(free_lease, activeModelHeld=True,
+                                          activeModelMine=False,
+                                          activeModelHoldSecondsRemaining=130)))
+    check("another chat" in held and "model in front" in held and "~3 min" in held,
+          "a free lease with the model in front held by another chat says so, and for how "
+          "long - %r" % held)
+    mine_lease = {"ok": True, "inUse": True, "mine": True, "leaseSecondsRemaining": 200}
+    check("another chat" in bridge.availability(Reply(dict(
+              mine_lease, activeModelHeld=True, activeModelMine=False,
+              activeModelHoldSecondsRemaining=60))),
+          "so does a lease this person holds - two of the owner's own chats share it")
+    check(bridge.availability(Reply(dict(free_lease, activeModelHeld=True, activeModelMine=True,
+                                         activeModelHoldSecondsRemaining=60)))
+          == "(in use by this chat)",
+          "the model in front held by THIS chat says so")
+    check(bridge.availability(Reply(dict(free_lease, activeModelHeld=False,
+                                         activeModelMine=False,
+                                         activeModelHoldSecondsRemaining=0))) == "(free)",
+          "a free lease and a free model read (free)")
+    check(bridge.availability(Reply(dict(free_lease))) == "(free)",
+          "an add-in that does not say who holds the model leaves the lease's own word")
+    check("another chat" in bridge.availability(Reply({
+              "ok": True, "inUse": True, "mine": False, "leaseSecondsRemaining": 120,
+              "activeModelHeld": False})),
+          "and another person's lease is still said, whatever the hold")
+
     # --- which model a free session has in front (5b-1470 c, issue #799) -----
     # From the same lease-exempt `info`: a title only, so naming it claims
     # nothing. An add-in from before the field sends none.
