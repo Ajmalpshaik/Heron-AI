@@ -93,15 +93,30 @@ foreach (var view in targetViews)
     if (view.Id == sourceView.Id) continue;
     if (toCopy.Count == 0) break;
 
-    // A view driven by a template cannot take its own filters - the template
-    // owns them. Named, not counted as a failure.
+    // A view whose template CONTROLS its filters cannot take its own - the
+    // template owns them. Named, not counted as a failure. VERSION 3 (row
+    // 5b-1917): read FROM THE TEMPLATE's include list, as REORDER_VIEW_FILTERS
+    // does - version 2 blocked every view with a template, even one whose
+    // template leaves V/G Overrides Filters free, and that view could take
+    // them. A list that cannot be read blocks, never passes.
     if (!view.IsTemplate && view.ViewTemplateId != ElementId.InvalidElementId)
     {
-        var template = doc.GetElement(view.ViewTemplateId);
-        blockedByTemplate.Add(string.Format("'{0}' is governed by template '{1}' - copy onto that "
-            + "template instead and every view using it changes at once",
-            view.Name, template == null ? "(unnamed)" : template.Name));
-        continue;
+        var template = doc.GetElement(view.ViewTemplateId) as View;
+        var controls = true;
+        try
+        {
+            if (template != null)
+                controls = !new HashSet<ElementId>(template.GetNonControlledTemplateParameterIds())
+                    .Contains(new ElementId(BuiltInParameter.VIS_GRAPHICS_FILTERS));
+        }
+        catch (Exception) { controls = true; }
+        if (controls)
+        {
+            blockedByTemplate.Add(string.Format("'{0}' is governed by template '{1}', which controls its "
+                + "filters - copy onto that template instead and every view using it changes at once",
+                view.Name, template == null ? "(unnamed)" : template.Name));
+            continue;
+        }
     }
 
     ICollection<ElementId> existing = null;

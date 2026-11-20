@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,15 @@ semantic-identity: "put that filter on this view and make it do something"
 kind: action
 domain: revit.views
 capability: APPLY_VIEW_FILTER
-version: 2
+# VERSION 3 (2026-11-20, row 5b-1916, issue #1114): a view whose view template
+# controls its filters is REFUSED before anything is written, naming the
+# template - read from the template's own include list, as CREATE_VIEW_FILTER
+# v6 and REORDER_VIEW_FILTERS read it (row 5b-1854). Version 2 put the filter
+# on and the template took it off again. A template named as the view is
+# still taken, and changes every view following it. Version 2's proof below
+# is kept as the record; its C# moved, so it is DRAFT until NEEDS-CHECKING
+# Group OR's OR27 runs (D-30).
+version: 3
 source: OFFICIAL
 risk: MODIFY
 # A settings change: after it runs from the chat, the Companion page offers its values

@@ -23,8 +23,9 @@ positive:
     expect: >
       removed holds D1's id and flexDucts one new id; report "Convert to flex
       duct with \"...\": 1 of 1 converted - Ducts '...' (id D1) (1200 mm)
-      removed and replaced by flex duct id ..., d200 on \"Supply Air\", joined
-      at both ends. Rigid duct(s) removed: D1"; selected in Revit the flex is
+      removed and replaced by flex duct id ..., d200 on \"Supply Air\" (read
+      from the system of the fittings it joins - Revit gives a new flex its own
+      when the change is kept), joined at both ends. Rigid duct(s) removed: D1"; selected in Revit the flex is
       200 mm, on Supply Air, joined to the takeoff and to the diffuser (no
       open-end mark at either), and the takeoff and the diffuser are still
       there. THIS IS THE FIRST POSITIVE TO RUN

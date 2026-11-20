@@ -32,6 +32,22 @@
 // boxes, matched one to one, at the same tolerance - and the findings say how
 // many were judged each way. A solid that is no array's member is never
 // matched by shape: its id changing is itself a change.
+//
+// EVERY NESTED FAMILY IS MEASURED TOO (version 3, 2026-11-20, row 5b-367).
+// Seen 2026-10-07 flexing a spring family on Revit 2024: every trial said
+// "across 4 solid(s)" - the family's own forms - while the 4 to 8 arrayed
+// one-turn families nested in it were never read, so a nested part that failed
+// to follow would have passed. Each trial now reads every nested family's own
+// box in model coordinates, as a solid's is read, and says how many beside the
+// solids. The same judgements hold for them: labelled planes that moved while
+// no nested family did is NOT HELD; and after the trials every nested family
+// must be back where it started, by its own id - or, for an array's copy Revit
+// remade with a new id, by the same box matched one to one, the version 2 rule
+// - or the call throws. With nested families and no solid, the solids' "no
+// solid did" is not said; with neither, it is said as before. A detail item or
+// an annotation has no extent outside its view: it is counted, not measured.
+// Like the solids, a single nested family that stays while others move is not
+// singled out - only all of them staying, and anything not coming back.
 
 var findings = new List<string>();
 var allHeld = false;
@@ -318,11 +334,42 @@ if (refused == null)
         return Tuple.Create(union, boxes, dimensionMisses, portMisses, checks, labels, arrayed);
     };
 
-    Func<double[], string> describe = box => box == null
-        ? "no solid geometry"
-        : "solid " + mm(box[3] - box[0]) + " x " + mm(box[4] - box[1]) + " x " + mm(box[5] - box[2])
+    // VERSION 3 (row 5b-367): each NESTED FAMILY's own box, by its unique id,
+    // in model coordinates - read as a solid's is. One with no extent to read -
+    // a detail item or an annotation, outside its view - is counted in
+    // `unmeasuredNested`, not measured.
+    var unmeasuredNested = 0;
+    Func<Dictionary<string, double[]>> measureNested = () =>
+    {
+        var boxes = new Dictionary<string, double[]>();
+        var none = 0;
+        foreach (var nested in new FilteredElementCollector(doc).OfClass(typeof(FamilyInstance)).Cast<FamilyInstance>())
+        {
+            BoundingBoxXYZ bounds = null;
+            try { bounds = nested.get_BoundingBox(null); } catch (Exception) { bounds = null; }
+            if (bounds == null) { none++; continue; }
+            boxes[nested.UniqueId] = new[] { bounds.Min.X, bounds.Min.Y, bounds.Min.Z, bounds.Max.X, bounds.Max.Y, bounds.Max.Z };
+        }
+        unmeasuredNested = none;
+        return boxes;
+    };
+    Func<Dictionary<string, double[]>, double[]> unionOf = boxes =>
+    {
+        double[] union = null;
+        foreach (var own in boxes.Values)
+        {
+            if (union == null) { union = (double[])own.Clone(); continue; }
+            for (var k = 0; k < 3; k++) union[k] = Math.Min(union[k], own[k]);
+            for (var k = 3; k < 6; k++) union[k] = Math.Max(union[k], own[k]);
+        }
+        return union;
+    };
+    Func<int, string> nestedFamilies = k => k + (k == 1 ? " nested family" : " nested families");
+
+    Func<double[], string> sizeOf = box => mm(box[3] - box[0]) + " x " + mm(box[4] - box[1]) + " x " + mm(box[5] - box[2])
           + " mm, centre X " + mm((box[0] + box[3]) / 2) + " Y " + mm((box[1] + box[4]) / 2)
           + ", base Z " + mm(box[2]);
+    Func<double[], string> describe = box => box == null ? "no solid geometry" : "solid " + sizeOf(box);
 
     Func<double[], double[], bool> sameBox = (first, second) =>
     {
@@ -331,25 +378,25 @@ if (refused == null)
         return true;
     };
 
-    // Every solid where it was, form by form - and none appearing or vanishing.
+    // Every one where it was, by its own id - and none appearing or vanishing.
     // Answers: the same or not; how many were compared by their own id; how
     // many array members Revit remade were matched by shape; and, when not the
-    // same, what differed in words.
-    Func<Tuple<double[], Dictionary<string, double[]>, List<string>, List<string>, int, Dictionary<string, double>, HashSet<string>>,
-         Tuple<double[], Dictionary<string, double[]>, List<string>, List<string>, int, Dictionary<string, double>, HashSet<string>>,
-         Tuple<bool, int, int, string>> compareForms = (before, after) =>
+    // same, what differed in words. `nested` (version 3) words it for nested
+    // families; the solids' words are version 2's.
+    Func<Dictionary<string, double[]>, Dictionary<string, double[]>, HashSet<string>, HashSet<string>, bool,
+         Tuple<bool, int, int, string>> compareBoxes = (first, second, arrayedBefore, arrayedAfter, nested) =>
     {
-        var first = before.Item2;
-        var second = after.Item2;
+        Func<int, string> some = k => nested ? nestedFamilies(k) : k + " solid(s)";
         if (first.Count != second.Count)
-            return Tuple.Create(false, 0, 0, second.Count + " solid(s) where there were " + first.Count);
+            return Tuple.Create(false, 0, 0, some(second.Count) + " where there were " + first.Count);
 
         var byId = 0;
         foreach (var entry in first)
         {
             if (!second.ContainsKey(entry.Key)) continue;
             if (!sameBox(entry.Value, second[entry.Key]))
-                return Tuple.Create(false, byId, 0, "the solid " + entry.Key + " is not where it was");
+                return Tuple.Create(false, byId, 0, (nested ? "the nested family " : "the solid ") + entry.Key
+                    + " is not where it was");
             byId++;
         }
 
@@ -358,10 +405,11 @@ if (refused == null)
         var gone = first.Keys.Where(k => !second.ContainsKey(k)).ToList();
         var made = second.Keys.Where(k => !first.ContainsKey(k)).ToList();
         if (gone.Count == 0) return Tuple.Create(true, byId, 0, "");
-        var loose = gone.Where(k => !before.Item7.Contains(k)).Concat(made.Where(k => !after.Item7.Contains(k))).ToList();
+        var loose = gone.Where(k => !arrayedBefore.Contains(k)).Concat(made.Where(k => !arrayedAfter.Contains(k))).ToList();
         if (loose.Count > 0)
-            return Tuple.Create(false, byId, 0, loose.Count + " solid(s) that are no array's member came back under a "
-                + "different id - " + string.Join(", ", loose.Take(3)) + (loose.Count > 3 ? ", ..." : ""));
+            return Tuple.Create(false, byId, 0, some(loose.Count) + (nested && loose.Count == 1 ? " that is" : " that are")
+                + " no array's member came back under a different id - " + string.Join(", ", loose.Take(3))
+                + (loose.Count > 3 ? ", ..." : ""));
 
         var unmatched = made.Select(k => second[k]).ToList();
         foreach (var key in gone)
@@ -369,11 +417,16 @@ if (refused == null)
             var match = unmatched.FirstOrDefault(box => sameBox(first[key], box));
             if (match == null)
                 return Tuple.Create(false, byId, 0, "an array member Revit remade is not where one was: "
-                    + describe(first[key]) + " has no match among the " + made.Count + " remade");
+                    + (nested ? "a nested family " + sizeOf(first[key]) : describe(first[key])) + " has no match among "
+                    + "the " + made.Count + " remade");
             unmatched.Remove(match);
         }
         return Tuple.Create(true, byId, gone.Count, "");
     };
+    Func<Tuple<double[], Dictionary<string, double[]>, List<string>, List<string>, int, Dictionary<string, double>, HashSet<string>>,
+         Tuple<double[], Dictionary<string, double[]>, List<string>, List<string>, int, Dictionary<string, double>, HashSet<string>>,
+         Tuple<bool, int, int, string>> compareForms = (before, after) =>
+        compareBoxes(before.Item2, after.Item2, before.Item7, after.Item7, false);
 
     // Writes every touched parameter: the trial's value where it names one,
     // the original everywhere else.
@@ -389,6 +442,8 @@ if (refused == null)
     };
 
     var start = measure();
+    var startNested = measureNested();
+    var notMeasured = unmeasuredNested;
     var every = true;
     var number = 0;
 
@@ -410,6 +465,7 @@ if (refused == null)
         }
 
         var now = measure();
+        var nowNested = measureNested();
 
         // A LABELLED DIMENSION THAT DID NOT REACH ITS PARAMETER is a size the
         // constraints cannot take. Revit may post it as a warning the host
@@ -422,21 +478,33 @@ if (refused == null)
 
         var misses = new List<string>(now.Item4);
         var formsMoved = !compareForms(start, now).Item1;
+        // VERSION 3 (row 5b-367): the nested families, judged as the solids are.
+        var anyNested = startNested.Count > 0 || nowNested.Count > 0;
+        var nestedMoved = !compareBoxes(startNested, nowNested, start.Item7, now.Item7, true).Item1;
 
-        // PLANES MOVED AND NO SOLID DID: the failure a flex exists for.
+        // PLANES MOVED AND NO SOLID DID: the failure a flex exists for. With
+        // nested families and no solid, it is theirs to answer, below.
         var planesMoved = now.Item6.Any(l => start.Item6.ContainsKey(l.Key)
                                           && Math.Abs(start.Item6[l.Key] - l.Value) > tolerance);
-        if (planesMoved && !formsMoved)
+        if (planesMoved && !formsMoved && (start.Item2.Count > 0 || !anyNested))
             misses.Add("the labelled planes moved and no solid did - the geometry is not locked to them");
+        if (planesMoved && anyNested && !nestedMoved)
+            misses.Add("the labelled planes moved and " + (startNested.Count == 1 ? "the one nested family did not"
+                : "none of the " + startNested.Count + " nested families did") + " - "
+                + (startNested.Count == 1 ? "it is" : "they are") + " not locked to them");
 
-        if (now.Item5 == 0 && !formsMoved)
+        if (now.Item5 == 0 && !formsMoved && !nestedMoved)
             misses.Add("nothing in this family is driven by these parameters - no labelled dimension, no "
-                + "tied connector, and no solid moved");
+                + "tied connector, and no solid " + (anyNested ? "or nested family " : "") + "moved");
 
         if (misses.Count > 0) every = false;
 
+        var nestedUnion = unionOf(nowNested);
         trialResults.Add("Trial " + number + " (" + said + "): " + describe(now.Item1) + " across "
-            + now.Item2.Count + " solid(s); " + (now.Item5 - now.Item4.Count) + " of " + now.Item5
+            + now.Item2.Count + " solid(s)"
+            + (anyNested ? " and " + nestedFamilies(nowNested.Count)
+                + (nestedUnion == null ? "" : " (together " + sizeOf(nestedUnion) + ")") : "")
+            + "; " + (now.Item5 - now.Item4.Count) + " of " + now.Item5
             + " driven sizes read their parameters"
             + (misses.Count > 0 ? " - NOT HELD: " + string.Join("; ", misses) : ""));
     }
@@ -454,6 +522,7 @@ if (refused == null)
     }
 
     var end = measure();
+    var endNested = measureNested();
     var valuesBack = touched.All(entry =>
     {
         var original = originals[entry.Key];
@@ -467,13 +536,18 @@ if (refused == null)
     });
 
     var back = compareForms(start, end);
-    restored = valuesBack && back.Item1;
+    // VERSION 3 (row 5b-367): every nested family back where it started too.
+    var hasNested = startNested.Count > 0 || endNested.Count > 0;
+    var nestedBack = compareBoxes(startNested, endNested, start.Item7, end.Item7, true);
+    restored = valuesBack && back.Item1 && nestedBack.Item1;
 
     if (!restored)
         throw new InvalidOperationException("After the flex the family did not come back as it was - "
             + (valuesBack ? "" : "a value did not return; ") + (back.Item1 ? "" : back.Item4 + "; ")
+            + (nestedBack.Item1 ? "" : nestedBack.Item4 + "; ")
             + "it started as " + describe(start.Item1) + " and ended as " + describe(end.Item1)
-            + " (every solid is compared, not only the whole). "
+            + (hasNested ? " (every solid and every nested family is compared, not only the whole). "
+                : " (every solid is compared, not only the whole). ")
             + "NOTHING from this flex was kept. Trials: " + string.Join(" / ", trialResults));
 
     allHeld = every && start.Item5 > 0;
@@ -484,11 +558,24 @@ if (refused == null)
             ? " - " + back.Item2 + " compared by their own ids, and " + back.Item3 + " array member(s) Revit remade "
               + "with new ids when the count changed compared by shape: the same boxes, matched one to one"
             : ", each compared by its own id")
+        + (hasNested
+            ? "; and " + (startNested.Count == 1 ? "the one nested family"
+                : "every one of the " + nestedFamilies(startNested.Count)) + " where it started"
+              + (nestedBack.Item3 > 0
+                  ? " - " + nestedBack.Item2 + " compared by their own ids, and " + nestedBack.Item3 + " in an array "
+                    + "Revit remade with new ids compared by shape, matched one to one"
+                  : ", each compared by its own id")
+            : "")
         + ", with every value read back.");
+    if (notMeasured > 0)
+        findings.Add(nestedFamilies(notMeasured) + " with no extent to read - a detail item or an annotation has none "
+            + "outside its view - " + (notMeasured == 1 ? "was" : "were") + " not measured, and "
+            + (notMeasured == 1 ? "is" : "are") + " not in the comparison.");
     findings.AddRange(trialResults);
     findings.Add(allHeld
         ? "Every labelled dimension and every tied connector read its parameter in every trial, and the "
-          + "solids moved with their planes. Compare the sizes above with the sizes tried - that "
+          + (hasNested ? "solids and nested families" : "solids") + " moved with their planes. Compare the sizes "
+          + "above with the sizes tried - that "
           + "comparison is the modeller's, and a square trial alone hides a width and depth swapped."
         : "NOT EVERYTHING HELD - see the trials marked NOT HELD. The family is back as it was.");
 }

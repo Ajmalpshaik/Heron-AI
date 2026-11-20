@@ -16,7 +16,12 @@ capability: COPY_VIEW_FILTERS
 # copied in the order the filters were made and left the tick behind. On Revit
 # 2020 the API cannot read the order: the copies go in the order the filters
 # were made, and the answer says so.
-version: 2
+# VERSION 3 (2026-11-20, row 5b-1917, issue #1114): a target view is blocked
+# only when its view template CONTROLS its filters, read from the template's
+# own include list - version 2 blocked every view with a template, even one
+# whose template leaves V/G Overrides Filters free. Still DRAFT; Group OR's
+# OR17 runs on version 3, with OR28 for this.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
