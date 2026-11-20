@@ -9,8 +9,10 @@
 
 ## Group OO - the owner's real specification for the knowledge store: the chunker, the citation and the refusal on a genuine one (2026-11-19)
 
+*Tracked as GitHub issue [#1009](https://github.com/Ajmalpshaik/Heron-AI/issues/1009) since 2026-11-16 (WN-38) - the owner gives the document there; the run and its result are written here.* WN-38 moved here on 2026-11-20 from the work note named below, retired that day (WN-22, issue [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007)).
+
 **Why this group exists.** The owner's ask for one real numbered specification lived only in a work note
-([`work-notes/plans/next-steps-2026-09-12.md`](../work-notes/plans/next-steps-2026-09-12.md) A3, tracked as
+(`work-notes/plans/next-steps-2026-09-12.md` A3, tracked as
 GitHub issue [#1009](https://github.com/Ajmalpshaik/Heron-AI/issues/1009)) and in
 [FOR-THE-OWNER](../FOR-THE-OWNER.md) section 4, so `python tools/owner-queue.py` never showed it - its *ONE
 DOCUMENT* bucket files only a row of this register ([FRAGMENT-ISSUES row 5b-1180](../fragment-issues/section-5b-rows-1176-1200.md)).
