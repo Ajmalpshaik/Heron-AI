@@ -32,8 +32,8 @@ purpose: >
   the caller, at each element's own location in ONE view. This takes the view,
   the type, the head and the leader from each OLD TAG, across every view, and
   takes pairs rather than elements. Folding that in would give one card two
-  jobs, and TAG_ELEMENTS is PROVEN - any change under its impl/ would make its
-  proof stale.
+  jobs, and TAG_ELEMENTS was PROVEN then - a change under its impl/ would make
+  its proof stale. It is retired now.
 
   **IT NEVER DELETES THE OLD TAGS.** Deleting the old element takes them with
   it, and that is the modeller's decision. Until then old and new tags sit side

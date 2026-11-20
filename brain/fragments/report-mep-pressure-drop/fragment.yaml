@@ -63,8 +63,7 @@ purpose: >
   model's own, so the host answer reads as before (FRAGMENT-ISSUES row 75).
   Only model elements are read from a link, never its views or sheets.
   Links nested inside a link are not read, and are counted in the answer.
-  This is version 2; version 1's proof no longer describes the code, and
-  the fragment is DRAFT until it is proved again.
+
 
 contract:
   needs:

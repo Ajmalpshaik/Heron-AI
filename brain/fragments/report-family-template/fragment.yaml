@@ -47,9 +47,7 @@ purpose: >
   **VERSION 2 (2026-10-11): THE OMNICLASS NUMBER AND TITLE** join the settings
   (Classification Number and Title from Revit 2026), and it lists the codes
   the classification file gives this family's category - what a family build
-  proposes the code from - or says why there are none. Version 1's proof no
-  longer describes the code and is kept below as a record; the fragment is
-  DRAFT until it is proved again.
+  proposes the code from - or says why there are none.
 
 # VERSION 3 (2026-10-12): THE LENGTH UNITS join templateReport - which units
 # the family shows a length in, its symbol and rounding, and whether that is

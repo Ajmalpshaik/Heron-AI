@@ -46,9 +46,7 @@ purpose: >
   number is refused; a sheet Revit will not create is said with Revit's own
   words, in `notCreated`. A title block may be named `Family: Type`, and a type
   name two families share is refused rather than guessed. Saying `none` makes
-  sheets with no title block, flagged in `noTitleblock`. Version 1's proof no
-  longer describes the code and is kept as a record; the card is DRAFT until it
-  is proved again.
+  sheets with no title block, flagged in `noTitleblock`.
 
   **VERSION 3 also makes copies of sheets handed in** (DUPLICATE_SHEETS merged
   in): each copy on its source's own title block, numbered as the source plus

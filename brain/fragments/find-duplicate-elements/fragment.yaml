@@ -7,7 +7,7 @@ heron-layer: brain
 id: FRG-QA-005
 semantic-identity: "which of these are the same thing placed twice in the same spot"
 kind: filter
-domain: revit.quality
+domain: revit.qa
 capability: FIND_DUPLICATE_ELEMENTS
 version: 1
 source: OFFICIAL
