@@ -5,7 +5,8 @@
 **Start with the door that fits you.** Each page is short and links to the next; nothing here needs
 reading top to bottom.
 
-> **Heron is not ready to install yet** — the notice on the [home page](../README.md) still stands.
+> **Heron can be installed now, as an early unsigned build** — [Install](../README.md#install) on the
+> home page has the steps, and what has and has not been checked ([D-190](DECISIONS.md)).
 > Where the work stands today is [What is proven](guide/what-is-proven.md), and
 > `python tools/check-gaps.py` is computed from disk on every run: **where a sentence and the tool
 > disagree, the tool is right.**

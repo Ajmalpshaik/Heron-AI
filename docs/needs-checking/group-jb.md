@@ -32,7 +32,7 @@ signs; version 2's proof is kept on the card as a record and is stale.
 **The family.** A scratch family, never the owner's: *Heron JB Flip.rfa* in `%TEMP%\heron-work\group-jb`,
 made from Revit 2020's *Metric Generic Model.rft* by `CREATE_FAMILY_DOCUMENT`. In it, with PROVEN tools: a
 front reference plane made by `CREATE_REFERENCE_PLANES` at Y -300 (normal +Y, the wrong way for a part on
-the front); and a scratch nested part *Heron JB Part.rfa*, Work Plane-Based = yes, one extrusion that stands
+the front); and a scratch nested part *Heron JB Part.rfa*, Work Plane-Based = yes **and Always Vertical = no** (`SET_FAMILY_SETTINGS work plane-based=yes; always vertical=no` - the template's default is Always Vertical Yes, and an Always Vertical part stays level on a vertical plane, so Revit will not flip its work plane: [row 5b-1883](../fragment-issues/row-5b-1883.md), added 2026-11-20), one extrusion that stands
 44 mm out of its work plane and runs 0 to 150 mm up it - so a wrong flip shows in Y and Z both - loaded with
 `LOAD_FAMILY` and placed with `PLACE_NESTED_FAMILY` on that plane. Read its box with `REPORT_BOUNDING_BOX`
 before each run. Every row is run once rolled back first.

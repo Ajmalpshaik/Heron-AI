@@ -9,20 +9,27 @@
 > | **Authority** | None of its own. [`requirements.txt`](../requirements.txt) and [`requirements-optional.txt`](../requirements-optional.txt) are the lists, [Q-39](open-questions/answered.md) settled what a user must install, [07](07-installation-and-update.md) is how Heron is installed, and [`brain/retrieval-history.md`](../brain/retrieval-history.md) holds every measurement. Where this page disagrees with them, **they win** |
 > | **Opened** | 2026-09-24, with the first measurement of the search add-ons on the owner's own questions |
 
-> [!IMPORTANT]
-> **Modellers: the [home page](../README.md) still asks you not to install Heron until it is announced.**
-> This page is for setting up a PC when that day comes, and for the people testing it now.
+> [!NOTE]
+> **Modellers: the quick way is one file, `HeronSetup-0.2.0-unsigned.exe`** — the five steps are under
+> [Install](../README.md#install) on the home page. This page is the whole picture: what each piece is,
+> what is optional, and how to check it. Since [D-190](decisions/D-190.md) (2026-11-20) the home page no
+> longer asks modellers to wait.
 
 ## The release, and where the installer is
 
+- **The latest release is [v0.2.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.2.0),
+  published on 2026-11-16.** It adds one file to install, `HeronSetup-0.2.0-unsigned.exe`: double-click it
+  and Heron's installer window opens, for every Revit on the PC, with no administrator rights
+  ([D-167](decisions/D-167.md)). Its notes say what was run on the owner's PC and what was not.
 - **The first release, [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0), was
   published on 2026-10-08**, on the owner's word, so a new teammate could install Heron.
 - **It is an early, unsigned build.** Since [D-173](decisions/D-173.md) — the owner's answer to
   [Q-77](open-questions/tier-2.md) on 2026-11-16 — a release is versioned and checksummed, says plainly
   that it is unsigned, and is signed before Heron is given to anyone outside.
-- **The installer is in that release, never in the code.** Searching the code will not find
-  `HeronInstaller.exe` — it is built, and [`.gitignore`](../.gitignore) keeps it out on purpose. It sits
-  at the top of `heron-project.zip` on the release page: row 6 below.
+- **The installer is in the release, never in the code.** Searching the code will not find
+  `HeronSetup` or `HeronInstaller.exe` — they are built, and [`.gitignore`](../.gitignore) keeps them out on
+  purpose. The Setup is on the v0.2.0 release page; the older way, `HeronInstaller.exe` at the top of
+  `heron-project.zip`, still works: row 6 below.
 - **With a `git clone` of the code**, `.\tools\setup.ps1` builds and installs Heron with no installer at
   all — [section 4](#4-only-to-build-heron-yourself).
 - **A downloaded copy is installed with the installer only** ([D-96](DECISIONS.md)): PowerShell's usual
@@ -37,9 +44,9 @@ flowchart TD
     RV[("<b>1 · Revit</b><br/>you have it already")]
     CC["<b>2 · Claude Code</b><br/>where you type"]
     PY["<b>3 · Python 3.11 to 3.14</b><br/>for your user · Heron never installs it"]
-    HI["<b>4 · HeronInstaller.exe</b> — close Revit first<br/>the add-in, for each Revit you tick<br/>+ Heron's Python packages <i>(next release)</i>"]
-    HR["<b>5 · python tools/heron-ready.py</b><br/>builds the knowledge store<br/>names anything missing"]
-    MC["<b>6 · Open the Heron folder in Claude Code</b><br/>/mcp says heron connected"]
+    HI["<b>4 · HeronSetup-0.2.0-unsigned.exe</b> — close Revit first<br/>the add-in, for each Revit you tick<br/>+ Heron's Python side and Claude Code · two ticks, both on"]
+    HR["<b>5 · python tools/heron-ready.py</b><br/>builds the knowledge store, names anything missing<br/><i>the Setup's Python tick runs it for you</i>"]
+    MC["<b>6 · Open Claude Code</b><br/>/mcp says heron connected<br/><i>any folder, with the Setup's Claude tick</i>"]
     SW{{"<b>7 · Heron's Settings window</b><br/>Changes · Admin · Publish · Ask to Keep<br/>all start off"}}
     M2["<i>model2vec</i><br/>reads meaning · optional"]
     RR["<i>re-ranker</i><br/>a second read · optional"]
@@ -68,10 +75,12 @@ flowchart TD
 1  Revit                          you have it already
 2  Claude Code                    where you type
 3  Python 3.11 to 3.14            for your user; Heron never installs Python itself
-4  HeronInstaller.exe             close Revit first; the add-in for each Revit ticked,
-                                  and Heron's Python packages (from the next release)
-5  python tools/heron-ready.py    builds the knowledge store, names anything missing
-6  Open the Heron folder in Claude Code; /mcp says heron connected
+4  HeronSetup-0.2.0-unsigned.exe  close Revit first; the add-in for each Revit ticked,
+                                  Heron's Python side and Claude Code (two ticks, both on)
+5  python tools/heron-ready.py    builds the knowledge store, names anything missing -
+                                  the Setup's Python tick runs it for you
+6  Open Claude Code; /mcp says heron connected - in any folder with the Setup's Claude tick,
+                                  in the Heron folder without it
 7  Heron's Settings window        Changes, Admin, Publish, Ask to Keep - all start off
 
 Optional, after 3:  model2vec (reads meaning; heron-ready loads it once)
@@ -83,8 +92,9 @@ Optional, after 3:  model2vec (reads meaning; heron-ready loads it once)
 **Where the range 3.11 to 3.14 comes from:** `LOCK_OLDEST_MINOR` and `LOCK_NEWEST_MINOR` in
 [`tools/heron-ready.py`](../tools/heron-ready.py), and `OldestMinor` and `NewestMinor` in
 [`PythonSetup.cs`](../platform/Heron.Installer/PythonSetup.cs) — the installer refuses a Python outside
-it by name. **Box 4's Python half is not in v0.1.0**: on that release, PyYAML and `mcp` are the lock line
-in [section 1](#1-what-every-pc-needs), by hand.
+it by name. **Box 4's Python half came with v0.2.0's Setup**, its *Set up Heron's AI side too* tick
+([D-167](decisions/D-167.md) 5a). Without it - or on v0.1.0 - PyYAML and `mcp` are the lock line in
+[section 1](#1-what-every-pc-needs), by hand, and box 5 is yours to run.
 
 **Box 7, the switches:** since [D-150](decisions/D-150.md) they are in Heron's **Settings** window — the
 Settings button on the Heron tab — not on the ribbon itself.
@@ -94,8 +104,8 @@ Settings button on the Heron tab — not on the ribbon itself.
 | **Revit** | Yes | You have it | `heron-install --list` names the releases Heron finds |
 | **Claude Code** | Yes | From Anthropic — a program of its own, no Node | In the Heron folder, `/mcp` lists `heron` |
 | **Python 3.11 to 3.14** | Yes | `winget install Python.Python.3.12 --scope user` | `python --version` in a **new** terminal |
-| **Heron's add-in** | Yes | `HeronInstaller.exe`, at the top of `heron-project.zip`, Revit closed — the one way a modeller installs it ([D-96](DECISIONS.md)) | The Heron tab, the next time Revit opens |
-| **PyYAML and `mcp`** | Yes | The installer, from the next release. On v0.1.0, the lock line in [section 1](#1-what-every-pc-needs) | `python tools/check-dependencies.py` |
+| **Heron's add-in** | Yes | `HeronSetup-0.2.0-unsigned.exe` from the release page, Revit closed ([D-167](decisions/D-167.md)). The older way, `HeronInstaller.exe` at the top of `heron-project.zip`, still works ([D-96](DECISIONS.md)) | The Heron tab, the next time Revit opens |
+| **PyYAML and `mcp`** | Yes | The Setup's *Set up Heron's AI side too* tick. By hand, the lock line in [section 1](#1-what-every-pc-needs) | `python tools/check-dependencies.py` |
 | **The first-chat set-up** | Yes, once per PC | `python tools/heron-ready.py` | `python tools/heron-ready.py --check` ends `READY` |
 | **model2vec** | No | `pip install --user model2vec` | `python brain/heron_embed.py` says `Backend: model` |
 | **The re-ranker** | No — read [section 2](#2-optional--the-two-search-add-ons) first | `pip install --user sentence-transformers`, then `python brain/heron_rerank.py --fetch --yes` | `python brain/heron_rerank.py` |
@@ -133,9 +143,9 @@ Settings button on the Heron tab — not on the ribbon itself.
 **Install both 4 and 5 — the one line does.**
 
 - Installing `mcp` on its own does not bring PyYAML with it (measured 2026-09-24).
-- **Not on v0.1.0:** its download has no `requirements-lock.txt`, which came on 2026-10-17. The next
-  release's download is built to carry it — run from a local build on the owner's laptop that evening,
-  not yet downloaded from a published release ([Group EP](needs-checking/group-ep.md)).
+- **Not on v0.1.0:** its download has no `requirements-lock.txt`, which came on 2026-10-17. v0.2.0
+  carries it: its Setup's Python side said READY on the owner's PC on 2026-11-16, as the release notes
+  say ([Group EP](needs-checking/group-ep.md) holds the earlier local-build runs).
 - Heron's setup check looked only for `mcp` until 2026-10-09 and asks for both since — changed in the
   script and **not yet run on Windows** ([row 5b-201](FRAGMENT-ISSUES.md)).
 - Without PyYAML, Heron still talks to Revit, but every question to its knowledge answers *"needs
@@ -144,7 +154,10 @@ Settings button on the Heron tab — not on the ribbon itself.
 **Why `mcp` is on the optional list:** Heron's own tools and tests run without it. You need it the
 moment you want to ask Heron something from Claude.
 
-**From the next release, the installer does rows 4 and 5 and section 1a for you.**
+**Since v0.2.0 (2026-11-16), the installer does rows 4 and 5 and section 1a for you.**
+
+- **Run from the published v0.2.0 Setup on the owner's PC on 2026-11-16:** installed into Revit 2020,
+  2024, 2026 and 2027, and its Python side said READY (the release notes).
 
 - **Built 2026-10-17, run on the owner's laptop that evening and again on 2026-10-18, each time from a
   local build**: READY, its Python half about 70 s on a PC that had none of the packages, and on
@@ -166,7 +179,7 @@ Once on every PC, after the list above, in the Heron folder:
 python tools/heron-ready.py
 ```
 
-From the next release the installer runs it for you, twice — to build, then `--check` as the verdict
+Since v0.2.0 the installer runs it for you, twice — to build, then `--check` as the verdict
 (above). By hand it is the same command, and still worth running after anything changes.
 
 It checks the list above and **builds what a first chat would otherwise build while you wait** —
@@ -475,7 +488,7 @@ After the first download, the search add-ons read their files from your own PC.
 
 ## 7. What is not decided yet
 
-- **Nothing installs Python itself for you.** From the next release the installer installs Heron's
+- **Nothing installs Python itself for you.** Since v0.2.0 the installer installs Heron's
   Python *packages* - asked, before Install is pressed, never unasked - and `tools/setup.ps1` still
   *tells* rather than installs. Python itself stays yours to install: [Q-39](open-questions/answered.md)'s
   words, pulling a runtime onto somebody's machine unasked is what a careful user and a corporate laptop

@@ -245,6 +245,21 @@ namespace Heron.Revit.Addin
                 application.ViewActivated += OnViewActivated;
                 application.ControlledApplication.DocumentClosing += OnDocumentClosing;
 
+                // AND WHO HOLDS THE MODEL IN FRONT, for the bridge's `info`
+                // (row 5b-1645, D-141): the bridge has no reference to the
+                // add-in, so it is told how to ask. Looked at, never claimed
+                // or renewed; asked from a listener thread, and
+                // HeronModelHold locks. Before the bridge can start, so no
+                // `info` is answered without it.
+                BridgeActiveModel.HoldOf = (model, conversation) =>
+                {
+                    bool mine;
+                    long left;
+                    var held = HeronModelHold.Session.Look(model, conversation, DateTime.UtcNow,
+                                                           RevitOperations.Quiet(), out mine, out left);
+                    return new BridgeModelHold { Held = held, Mine = mine, SecondsRemaining = left };
+                };
+
                 // A JOB'S KEEP-WITHOUT-ASKING GRANT RUNS OUT AFTER TEN QUIET
                 // MINUTES (D-138), and the ribbon must stop saying it is held
                 // when it has. Idling is Revit's own thread, as the ribbon needs.
@@ -409,6 +424,7 @@ namespace Heron.Revit.Addin
                 // dispatcher has already been dropped.
                 application.ViewActivated -= OnViewActivated;
                 application.ControlledApplication.DocumentClosing -= OnDocumentClosing;
+                BridgeActiveModel.HoldOf = null;
                 application.Idling -= OnIdling;
                 HeronRunGuard.Detach(application);
                 RevitFragment.StopListening(application.ControlledApplication);
@@ -798,7 +814,10 @@ namespace Heron.Revit.Addin
                 if (dispatcher == null) return;
 
                 var document = e == null ? null : e.Document;
-                dispatcher.NoteActiveModel(document == null ? null : document.Title);
+                // Its KEY too, for who holds it (row 5b-1645) - a string, as
+                // the title is; DocumentKey reads nothing it cannot afford.
+                dispatcher.NoteActiveModel(document == null ? null : document.Title,
+                                           RevitOperations.DocumentKey(document));
 
                 HeronLiveState.ViewActivated(sender);
             }

@@ -154,7 +154,9 @@ README before running it, the command is the same for everyone, and what it down
 release artefact** — not whatever the default branch happens to say today.
 
 > **As built (2026-10-18):** the one release, [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0),
-> is **not signed** — signing is the last stage and has not been done. What the installer does check is
+> is **not signed** — signing is the last stage and has not been done. **Since 2026-11-16 there are two:**
+> [v0.2.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.2.0) is published too, also unsigned, with
+> its Setup `HeronSetup-0.2.0-unsigned.exe` ([D-173](decisions/D-173.md), [row 5b-1894](fragment-issues/row-5b-1894.md)). What the installer does check is
 > every download against the release's `checksums.txt` before anything reaches the Addins folder
 > (`ReleaseAssets.cs`).
 >
@@ -672,7 +674,8 @@ none of them was attempted here:
   Revit 2026 then loaded Heron and connected from the ribbon.
 - **2026-10-18, the laptop again** ([Group EP](needs-checking/group-ep.md), EP3): a Python 3.10 and a 3.15,
   each put first on the path for one run, were refused by name with the command that fixes it. Still
-  from a local build: the only published release is v0.1.0, which carries no Python half.
+  from a local build: the only published release ~~is~~ **was then** v0.1.0, which carries no Python half.
 
-So the download half of the BIM user's path has run. An update to a newer version - there is none yet -
+So the download half of the BIM user's path has run. An update to a newer version - ~~there is none yet~~
+**v0.2.0 was published on 2026-11-16; its release notes record a fresh install and Uninstall on the owner's PC that day, and no update to it from v0.1.0 is recorded as run** ([row 5b-1894](fragment-issues/row-5b-1894.md)) -
 with its consent, a migration and version pinning have not.
