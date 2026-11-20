@@ -22,7 +22,7 @@ Row 5b-1164 took title-for-identity out of the chain; two places were left:
                              target.Title`, so the selection in one model
                              could be bound to a run in the other, its ids
                              looked up there by number.
-  THE ANSWER (row 5b-1926)   `Report`'s "is the model read the one in front"
+  THE ANSWER (row 5b-1927)   `Report`'s "is the model read the one in front"
                              asked `active.Document.Title == title`, so a
                              model of the same title in front read as this
                              one, and the answer said nothing of the window
@@ -83,7 +83,7 @@ def binder(source):
 
 
 def answer(source):
-    print("\n2. the answer says 'in front' only of the target model itself (5b-1926)")
+    print("\n2. the answer says 'in front' only of the target model itself (5b-1927)")
     block = between(source, "// WHETHER THE MODEL READ IS THE ONE ON SCREEN.", "var parts =")
     check(block != "", "the in-front block is found in Report")
     check("active.Document.Equals(target)" in block,

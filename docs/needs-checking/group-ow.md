@@ -13,7 +13,7 @@
 issues #932 to #934 and #1057 left: the bridge's listener gave up after a minute with every pipe instance
 in use and still said it was running ([row 5b-1900](../fragment-issues/row-5b-1900.md)); the binder took
 the selection from a model of the same title ([row 5b-1902](../fragment-issues/row-5b-1902.md)), and the
-answer called such a model *in front* ([row 5b-1926](../fragment-issues/row-5b-1926.md)); and the server
+answer called such a model *in front* ([row 5b-1927](../fragment-issues/row-5b-1927.md)); and the server
 did not read the run id, the rollback or the count the add-in now sends
 ([row 5b-1901](../fragment-issues/row-5b-1901.md)). Fixed in a cloud container with no Revit. The C# compiles
 for every release (`tools/check-compile.py`, the .NET 10 SDK); the server half runs here against stand-in
@@ -24,7 +24,7 @@ replies; **none of it has met a Revit**. The add-in must be rebuilt and Revit re
 |---|---|---|---|
 | The listener never gives up while the bridge runs | `BridgeServer.cs` | [5b-1900](../fragment-issues/row-5b-1900.md) | OW1 |
 | The selection is bound only from the target model itself | `RevitFragment.cs` (`BindNeeds`) | [5b-1902](../fragment-issues/row-5b-1902.md) | OW2 |
-| *In front* means the target model itself | `RevitFragment.cs` (`Report`) | [5b-1926](../fragment-issues/row-5b-1926.md) | OW3 |
+| *In front* means the target model itself | `RevitFragment.cs` (`Report`) | [5b-1927](../fragment-issues/row-5b-1927.md) | OW3 |
 | A wait's run id is said; a rollback that did not hold is OUTCOME UNKNOWN, one that held says so; a stopped read says its count | `heron_failure.py`, `heron_server_core.py`, `heron_mcp_server.py` | [5b-1901](../fragment-issues/row-5b-1901.md) | OW4, OW5, OW6 |
 
 **Proved off Revit, 2026-11-20:** `tests/test_bridge_listener.py` and `tests/test_document_identity.py`

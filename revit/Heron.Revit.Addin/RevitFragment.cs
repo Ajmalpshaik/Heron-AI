@@ -2281,7 +2281,7 @@ namespace Heron.Revit.Addin
             // WHETHER THE MODEL READ IS THE ONE ON SCREEN. When it is not,
             // anything a fragment says about a selection or an active view is
             // about a window nobody is looking at - true, and easy to misread.
-            // Asked by Revit's own identity, not by title (row 5b-1926): a
+            // Asked by Revit's own identity, not by title (row 5b-1927): a
             // model of the same title in front read as "in front".
             var inFront = true;
             try
