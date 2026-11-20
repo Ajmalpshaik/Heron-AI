@@ -7,7 +7,7 @@ heron-layer: brain
 id: FRG-QA-007
 semantic-identity: "which loaded family types have no instances placed anywhere"
 kind: filter
-domain: revit.quality
+domain: revit.qa
 capability: FIND_UNUSED_FAMILIES
 version: 1
 source: OFFICIAL

@@ -57,8 +57,7 @@ purpose: >
 
   Version 2 (2026-11-01): `circuitType` - power, data, fire alarm and the
   rest - makes one electrical circuit from the devices instead, on the
-  `panel` named, and reads back its number and the panel it landed on. DRAFT
-  until version 2 is proved.
+  `panel` named, and reads back its number and the panel it landed on.
 
 contract:
   needs:
