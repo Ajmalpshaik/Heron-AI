@@ -326,7 +326,22 @@ wherever a suite reads what a child printed. The same `PYTHONUTF8=1` re-run expo
 Measured 2026-09-22 on the owner's PC: the same `print` of a tick and an arrow succeeded in a console
 and died redirected, both to a file and to `/dev/null`; `test_decision_summary.py` as it stood before its
 block exits **1** redirected and **0** with it; and a redirected run of every suite on disk found no other
-that dies this way.
+that dies this way. **It came back on 2026-11-19** in `test_read_back.py` and `test_sheet_list.py`, two
+suites written after that sweep without the block (issue #1055) - so a new suite that prints model text
+carries the block from its first line.
+
+### On Windows, a suite that talks to 127.0.0.1 may be talking through a filter
+
+**The third Windows cause, after paths and encoding.** On the owner's PC a filtering program stands
+between programs and 127.0.0.1 and **rewrites headers** - a `Content-Security-Policy` sent as
+`default-src 'none'` arrives as the filter's own - and on the same machine about one connection in
+eight resets when the server closes it (the filter's part in that was not separated). A suite with a
+real server then dies with `ConnectionResetError [WinError 10054]` or `TimeoutError`, or fails a header
+check, at a different place each run, on `main` too
+([row 5b-1884](../../../docs/fragment-issues/row-5b-1884.md)). `test_companion.py` asks a bare server
+with no Heron code in it first and **waits (exit 3)** on its server sections where that does not come
+back whole every time; a new suite with a socket does the same, and never retries - a retried request
+that had already been served (a one-time pairing code) fails a check for a reason that is not there.
 
 ## 2a. A fix is not proved until its test has been seen to FAIL
 

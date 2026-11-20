@@ -456,7 +456,14 @@ utterances:
   # - several views, no point given - went here rather than to
   # PLACE_VIEWS_ON_SHEET on the owner's backend. Reordered - nothing added,
   # nothing removed.
+  # SEVERAL VIEWS ON A NAMED SHEET LEAD TOO (issue #958, row 5b-1882,
+  # 2026-11-20): since PLACE_VIEWS_ON_SHEET was merged in (2026-11-01) its
+  # sentences sat past the eighth, and on the owner's backend "place these views
+  # on sheet A-101" went to LIST_VIEWS_ON_SHEET. Two lines of that merge's block
+  # moved up - nothing added, nothing removed.
   - put this view on a sheet
+  - place the plans on sheet a-101
+  - put these views on a sheet
   - swap the NOTES legend for AS-BUILT NOTES on all sheets
   - replace this view on the sheets with that one
   - put this legend where the old one is
@@ -467,8 +474,6 @@ utterances:
   # MOVED 2026-11-01 from PLACE_VIEWS_ON_SHEET, merged into this card.
   - lay these views out on a sheet
   - place these on the drawing sheet
-  - place the plans on sheet a-101
-  - put these views on a sheet
   # VERSION 5, row 5b-1367 - carried with the split from PLACE_SCHEDULE_ON_SHEET.
   - split the schedule into two parts on the sheet
   - place the second segment of the split schedule on the sheet

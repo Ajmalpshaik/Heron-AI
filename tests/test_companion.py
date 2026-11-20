@@ -30,6 +30,12 @@ What each group holds:
     connected.
 
     python tests/test_companion.py
+
+IT EXITS 3 - NOT RUN, NEVER A PASS - where a bare server on 127.0.0.1, with no
+Heron code in it, does not come back unchanged every time: the four groups
+that talk to a real server wait, and every other group still runs and can
+fail. On the owner's PC a filtering program resets connections and rewrites
+the replies' headers (issue #1055, row 5b-1884); CI has none, and runs all.
 """
 
 import http.client
@@ -37,6 +43,7 @@ import io
 import json
 import os
 import re
+import socket
 import sys
 import tempfile
 import time
@@ -67,6 +74,10 @@ def check(condition, what):
         FAILURES.append(what)
 
 
+COULD_NOT_RUN = 3
+WAITED = []
+
+
 def ask(port, method, path, headers=None, body=None, host=None):
     conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
     sent = {"Host": host or "127.0.0.1:%d" % port}
@@ -77,6 +88,79 @@ def ask(port, method, path, headers=None, body=None, host=None):
     headers_out = {k.lower(): v for k, v in res.getheaders()}
     conn.close()
     return res.status, headers_out, data
+
+
+#: What the bare control server answers: a header the way the Companion sends
+#: one, so a program that rewrites the replies on this machine is seen too.
+CONTROL_REPLY = (b"HTTP/1.0 403 Forbidden\r\nContent-Security-Policy: default-src 'none'\r\n"
+                 b"Content-Length: 2\r\n\r\nno")
+
+
+def loopback_control(rounds=200):
+    """Can this machine carry the server checks at all? The same exchange with
+    no Heron code in it: a bare server on 127.0.0.1 reads each whole request,
+    answers, and closes. Returns (came back unchanged, dropped, changed).
+
+    WHY (issue #1055, row 5b-1884): on the owner's PC a filtering program
+    between programs and the network rewrites the Content-Security-Policy
+    header the Companion sends - the filter's own name is in what arrives -
+    and the CSP check failed on it every time the report section got that far.
+    On the same machine about one connection in eight resets when the server
+    closes it, measured 2026-11-20 as 177 of 200 here; that the filter causes
+    the resets too was not separated. Neither is the Companion, so neither may
+    read as a failure of it."""
+    srv = socket.socket()
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(1)
+    srv.settimeout(2)
+    port = srv.getsockname()[1]
+    whole = dropped = changed = 0
+    try:
+        for _ in range(rounds):
+            try:
+                cli = socket.create_connection(("127.0.0.1", port), timeout=2)
+                peer, _addr = srv.accept()
+                cli.sendall(b"GET / HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n")
+                got = b""
+                while b"\r\n\r\n" not in got:
+                    part = peer.recv(100)
+                    if not part:
+                        break
+                    got += part
+                peer.sendall(CONTROL_REPLY)
+                peer.shutdown(socket.SHUT_WR)
+                peer.close()
+                back = b""
+                while True:
+                    part = cli.recv(100)
+                    if not part:
+                        break
+                    back += part
+                cli.close()
+                if back == CONTROL_REPLY:
+                    whole += 1
+                else:
+                    changed += 1
+            except OSError:
+                dropped += 1
+    finally:
+        srv.close()
+    return whole, dropped, changed
+
+
+def server_section(sound, label, fn, *args):
+    """A group of checks that talks to a real Companion over 127.0.0.1. Run only
+    when the control found this machine's loopback sound; otherwise it waits,
+    and says why. A traceback is one FAIL line, not the end of the suite."""
+    if sound is not True:
+        WAITED.append("the %s checks: %s" % (label, sound))
+        print()
+        print("WAIT  the %s checks were not run: %s" % (label, sound))
+        return
+    try:
+        fn(*args)
+    except Exception as why:                    # noqa: BLE001 - reported, not hidden
+        check(False, "the %s checks ran to the end (they raised %r)" % (label, why))
 
 
 def write(path, payload):
@@ -2172,25 +2256,34 @@ def test_page_frame():
           "the workspace code runs no interval of its own, and asks Heron for nothing")
 
 
+def loopback_sound():
+    """True, or the reason the server checks cannot be believed on this machine."""
+    rounds = 200
+    whole, dropped, changed = loopback_control(rounds)
+    if whole == rounds:
+        return True
+    return ("a bare server on 127.0.0.1, with no Heron code in it, came back unchanged %d of %d "
+            "times (%d dropped, %d changed on the way) - something on this machine sits between "
+            "programs and 127.0.0.1" % (whole, rounds, dropped, changed))
+
+
 def main():
     tmp = tempfile.mkdtemp(prefix="heron-companion-")
     test_live_files(tmp)
-    test_server(tmp)
+    sound = loopback_sound()
+    server_section(sound, "server's protection", test_server, tmp)
     test_switch(tmp)
     test_activity()
     test_changes()
     test_tables()
     test_load_from_revit()
     test_model_guard()
-    test_loads()
+    server_section(sound, "Loads", test_loads)
     try:
         test_loads_recalculate_overtaken_by_a_fresh_read()
     except Exception as why:                    # noqa: BLE001 - reported, not hidden
         check(False, "the overtaken-Recalculate checks ran to the end (they raised %r)" % (why,))
-    try:
-        test_loads_report_page()
-    except Exception as why:                    # noqa: BLE001 - reported, not hidden
-        check(False, "the Loads report checks ran to the end (they raised %r)" % (why,))
+    server_section(sound, "Loads report", test_loads_report_page)
     try:
         test_switched_off_parts()
     except Exception as why:                    # noqa: BLE001 - reported, not hidden
@@ -2211,10 +2304,7 @@ def main():
         test_layout_panel()
     except Exception as why:                    # noqa: BLE001 - reported, not hidden
         check(False, "the Sprinkler Layout panel checks ran to the end (they raised %r)" % (why,))
-    try:
-        test_checklist_panel(tmp)
-    except Exception as why:                    # noqa: BLE001 - reported, not hidden
-        check(False, "the QA Checklist panel checks ran to the end (they raised %r)" % (why,))
+    server_section(sound, "QA Checklist panel", test_checklist_panel, tmp)
     test_page_frame()
     test_page_is_in_the_brand()
     test_workspace_tabs()
@@ -2228,6 +2318,11 @@ def main():
         for f in FAILURES:
             print("  - %s" % f)
         return 1
+    if WAITED:
+        print("NOT RUN in full (exit 3) - every check that ran passed, but:")
+        for w in WAITED:
+            print("  - %s" % w)
+        return COULD_NOT_RUN
     print("PASSED - the Companion shows, stays silent, and cannot be reached from elsewhere.")
     return 0
 
