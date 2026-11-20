@@ -30,6 +30,13 @@ positive:
 
 negative:
   - given: >
+      version 2 - a plan whose work plane was set by hand to a reference plane
+      named like another level
+    expect: >
+      named as that reference plane, never as "Level : ..." - only a plane
+      carrying the plan's OWN level's name is matched
+
+  - given: >
       the sheet "A101" named alone. THIS IS THE FIRST CASE TO RUN
     expect: >
       `workPlanes` empty, `withPlane` 0, `noPlane` 1, and `findings` names

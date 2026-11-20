@@ -30,6 +30,9 @@ positive:
       2020 cannot read the source's order - never claimed as the source's
 
 negative:
+  - given: version 2 - onlyFilterNamed a filter the source does not carry
+    expect: refused, naming what the source carries; filtersApplied 0, no findings of order
+
   - given: any source view at all
     expect: >
       the target views show the SOURCE'S COLOURS, not empty overrides. THIS IS

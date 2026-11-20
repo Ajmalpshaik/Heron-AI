@@ -136,6 +136,8 @@ else
         }
         catch (Exception ex)
         {
+            // Left exactly as it was: a horizontal choice already taken is put back.
+            if (hResult == "set") { try { hp.Set(hOld); } catch (Exception) { } }
             refused.Add(string.Format("id {0}: {1}", element.Id, ex.Message));
             continue;
         }

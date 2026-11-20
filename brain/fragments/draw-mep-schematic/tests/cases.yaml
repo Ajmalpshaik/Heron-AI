@@ -99,6 +99,9 @@ positive:
       (1365662 in MW10) at a finer precision, set in Project Units and Undone
 
 negative:
+  - given: version 2 - a run whose Pressure Drop in Properties is exactly 0
+    expect: its label still reads 0.00, never "< 0.01" - only a value above 0 is marked
+
   - given: >
       THE D-30 NEGATIVE - THE FIRST CASE TO RUN. systemName "ZZZ No Such
       System"

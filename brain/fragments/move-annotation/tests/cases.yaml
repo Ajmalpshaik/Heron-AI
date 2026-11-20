@@ -26,6 +26,9 @@ positive:
       left": both lined up, read back within 1 mm
 
 negative:
+  - given: version 3 - a text note and no target
+    expect: refused, nothing moved
+
   - given: a dimension handed in
     expect: >
       whatever actually happens, recorded rather than assumed. A dimension is

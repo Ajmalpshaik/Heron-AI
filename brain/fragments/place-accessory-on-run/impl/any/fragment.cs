@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `accessorySymbol` and
 // `positionAlong` are in scope, and leaves `placed`, `leftSevered`,
-// `notARun` and `refused` behind.
+// `notARun`, `refused` and `notTurned` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). It matters more here than
 // usual: a half-done insert leaves a severed system, and one undo has to put
@@ -44,7 +44,7 @@
 // X axis whichever way the run goes; version 1 never turned it, so on a run
 // not drawn along that axis its ends did not lie on the run at all. It is
 // turned in plan about the cut until the line through its two ends is
-// parallel to the run. A vertical run is not turned - said in refused.
+// parallel to the run. A vertical run is not turned - said in notTurned.
 
 var placed = new List<ElementId>();
 var leftSevered = new List<ElementId>();
@@ -170,6 +170,9 @@ foreach (var element in elements)
     // then paired by side, below.
     XYZ runDirection = null;
     try { runDirection = (line.GetEndPoint(1) - line.GetEndPoint(0)).Normalize(); } catch { }
+    if (runDirection != null && accessoryEnds.Count != 2)
+        notTurned.Add(string.Format("run {0}: the accessory has {1} free end(s), not 2 - not turned",
+            runId, accessoryEnds.Count));
     if (runDirection != null && accessoryEnds.Count == 2)
     {
         var runFlat = new XYZ(runDirection.X, runDirection.Y, 0);

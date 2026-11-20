@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `sourceView`, `targetViews` and
 // `onlyFilterNamed` are in scope; leaves `viewsChanged`, `filtersApplied`,
-// `blockedByTemplate` and `refused` behind.
+// `blockedByTemplate`, `refused` and `findings` behind.
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
 // ADDING THE FILTER IS NOT COPYING IT. AddFilter puts the filter on the view

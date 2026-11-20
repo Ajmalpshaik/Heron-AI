@@ -105,9 +105,9 @@ purpose: >
      model's lines. Nothing is moved by it. With pairs 0, step 4 is skipped.
   4. MOVE THEM APART, when step 3 found any. Collect the tags first: the
      overlap read's ids do not travel to the next step, so
-     FILTER_ELEMENTS_BY_CATEGORY with categoryName EVERY tag category step 3
-     named, as the model names them and comma separated - "Duct Tags, Air
-     Terminal Tags" - and inViewOnly the view, in ONE call: a tag of one
+     FILTER_ELEMENTS_BY_CATEGORY with `categories` - not categoryName, which
+     takes one - EVERY tag category step 3 named, comma separated - "Duct
+     Tags, Air Terminal Tags" - and inViewOnly the view, in ONE call: a tag of one
      category printing on a tag of another is seen only when both are handed
      in together, and one category a call never moved them (FRAGMENT-ISSUES
      row 5b-1652, NR1 - 40 of 42 overlaps left were a diffuser tag over a

@@ -42,6 +42,13 @@ positive:
 
 negative:
   - given: >
+      version 3 - an element in plan only of a Level 2 space, sitting below
+      that space's floor on Level 1 where Level 1 has no space
+    expect: >
+      counted in "(in no space)", and a finding saying it was in plan only of
+      another storey's space - never counted in Level 2's
+
+  - given: >
       version 3 - includeLinks with two links, one of them unloaded in Manage
       Links (row 5b-1858 (4))
     expect: >

@@ -448,8 +448,10 @@ if (refused == null && !typed)
             // answer a box with no model extent behind it - seven sheets were
             // "framed" and a camera made on Revit 2020. Only a model
             // category's element is framed; the rest go to noGeometry.
+            // A datum - grid, level, reference plane - is filed by Revit as
+            // annotation but stands in the model, so it is still framed as before.
             if (element is View || element is ElementType || element.Category == null
-                || element.Category.CategoryType != CategoryType.Model)
+                || (element.Category.CategoryType != CategoryType.Model && !(element is DatumPlane)))
             {
                 noGeometry.Add(element.Id);
                 continue;

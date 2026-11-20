@@ -61,7 +61,7 @@ else
     if (stem.ToLowerInvariant().EndsWith(".ifc")) stem = stem.Substring(0, stem.Length - 4);
 
     var full = System.IO.Path.Combine(target, stem + ".ifc");
-    overwrote = System.IO.File.Exists(full);
+    var existedBefore = System.IO.File.Exists(full);
 
     var said = (schema ?? "").Trim();
     var key = new string(said.Where(c => c != ' ' && c != '.' && c != '-' && c != '_').ToArray());
@@ -109,7 +109,8 @@ else
 
     if (refused == null)
     {
-        if (doc.Export(target, stem, options)) created = full;
+        // Version 2: `overwrote` only when the export ran - a refusal replaced nothing.
+        if (doc.Export(target, stem, options)) { created = full; overwrote = existedBefore; }
         else refused = "Revit declined the export - the commonest cause is the IFC "
                      + "exporter add-in not being installed on this machine";
     }

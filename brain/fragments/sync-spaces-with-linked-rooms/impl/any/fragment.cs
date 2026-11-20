@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `linkName`, `phaseName` and `updateNames` are in
 // scope; leaves `created`, `renamed`, `alreadyMatching`, `orphans`,
-// `notPlaced`, `noArea`, `report` and `findings` behind.
+// `notPlaced`, `noArea`, `wrongPhase`, `report` and `findings` behind.
 //
 // VERSION 3 (2026-11-20) - THE PHASE ASKED FOR IS THE PHASE LOOKED IN, AND
 // THE PHASE A NEW SPACE LANDS IN IS READ BACK. Row 5b-1589: the spaces
@@ -67,6 +67,9 @@ var notPlaced = new List<string>();
 var noArea = new List<ElementId>();
 // VERSION 3: spaces made that read back in another phase than asked.
 var wrongPhase = new List<ElementId>();
+// VERSION 3: the link's placed rooms of another phase, passed over - counted
+// and said, so an answer of nothing made is never silent about why.
+var otherPhaseRooms = 0;
 var lines = new List<string>();
 var findings = new List<string>();
 string refusal = null;
@@ -175,7 +178,7 @@ if (refusal == null)
         if (linkPhase != null)
         {
             var roomPhase = phaseIdOf(room);
-            if (roomPhase != ElementId.InvalidElementId && roomPhase != linkPhase.Id) continue;
+            if (roomPhase != ElementId.InvalidElementId && roomPhase != linkPhase.Id) { otherPhaseRooms++; continue; }
         }
         var at = room.Location as LocationPoint;
         if (at == null) continue;
@@ -317,6 +320,10 @@ if (refusal == null)
         if (under == null) orphans.Add(space.Id);
     }
 
+    if (otherPhaseRooms > 0)
+        findings.Insert(0, otherPhaseRooms + " room(s) in \"" + source.Name + "\" are in another phase than \""
+            + (linkPhase == null ? "(none)" : linkPhase.Name) + "\" and were passed over - no space was made or "
+            + "renamed for them. Name their phase as phaseName to sync those");
     if (wrongPhase.Count > 0)
         findings.Insert(0, wrongPhase.Count + " space(s) were made in ANOTHER PHASE than \"" + onPhase.Name
             + "\", which was asked - each is named below and NOT counted as made. Discard this change "
