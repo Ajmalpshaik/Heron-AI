@@ -249,7 +249,7 @@ def main():
           and "heron-agent" in (unknown.get("missing") or []),
           "a domain with no owner and no agent named is refused, never "
           "stamped with the generator's id")
-    library_domains, named_by = set(), {}
+    library_domains, named_by, by_generator = set(), {}, []
     for card_path in sorted(os.listdir(os.path.join(ROOT, "brain", "fragments"))):
         path = os.path.join(ROOT, "brain", "fragments", card_path, "fragment.yaml")
         if not os.path.isfile(path):
@@ -261,6 +261,8 @@ def main():
             library_domains.add(dom.group(1))
             if who and who.group(1) != "HERON-FRG-CRE-007":
                 named_by.setdefault(dom.group(1), set()).add(who.group(1))
+        if who and who.group(1) == "HERON-FRG-CRE-007":
+            by_generator.append(card_path)
     check(not library_domains - set(owner),
           "every domain the library's cards use has an owner (%s)"
           % (", ".join(sorted(library_domains - set(owner))) or "all"))
@@ -268,6 +270,11 @@ def main():
     check(not strangers,
           "and every owner is an agent cards of that domain name (%s)"
           % (", ".join(strangers) or "all"))
+    # ROW 5b-1866. The cards written before 5b-205 kept the generator's id -
+    # 117 of them on 2026-11-19, written by hand in the generator's shape.
+    check(not by_generator,
+          "no card in the library names the card-making agent as its own (%d: %s)"
+          % (len(by_generator), ", ".join(by_generator[:5]) or "none"))
 
     print("\n7. the required fields are heron_fragment's")
     check(tuple(sorted(CRE.AUTHORS + CRE.WRITES))
