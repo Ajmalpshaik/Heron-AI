@@ -117,6 +117,26 @@ READABLE = (".md", ".markdown", ".txt", ".text", ".docx", ".pdf")
 
 STATUSES = ("DRAFT", "REVIEWED", "RETIRED")     # GR 10 lifecycle, R-83
 
+# R-85. WHAT A DOCUMENT IS LICENSED FOR, recorded on every one - the four the
+# owner named on 2026-09-10: owned outright, licensed per seat, public, or
+# unknown. NEVER GUESSED: a document nobody described is UNKNOWN, which is a
+# true sentence, where "public" would be a convenient one. 34 s2.12 called
+# this "an inventory of what imported knowledge permits".
+OWNED = "owned"            # the company wrote it or bought it outright
+PER_SEAT = "per-seat"      # bought for named people - NFPA, ASHRAE, ISO
+PUBLIC = "public"          # published free for anyone
+UNKNOWN = "unknown"        # nobody said
+LICENCES = (OWNED, PER_SEAT, PUBLIC, UNKNOWN)
+
+# R-93. BIM STANDARDS ARE A FIRST-CLASS KIND OF DOCUMENT - ISO 19650, a company
+# BIM standard, Ashghal BIM requirements, LOD definitions, naming conventions.
+# Said by the person adding it, never inferred from a title: "BIM" in a file
+# name is a guess. UNSTATED is the honest default, as UNKNOWN is above.
+BIM_STANDARD = "bim-standard"
+OTHER = "other"            # said, and not a BIM standard
+UNSTATED = "unstated"      # nobody said
+CATEGORIES = (BIM_STANDARD, OTHER, UNSTATED)
+
 
 class RefusedByExtension(Exception):
     """A file D-26 says never enters the store. Named, never silently skipped."""
@@ -176,11 +196,14 @@ def ensure_tables(store):
     #
     # ADD COLUMN is the whole migration, the same one heron_search does for
     # `fingerprint` and heron_embed for `kind`.
-    try:
-        store.db.execute("ALTER TABLE documents ADD COLUMN replaced_by TEXT")
-    except sqlite3.OperationalError as exc:
-        if "duplicate column" not in str(exc):
-            raise
+    # R-85 and R-93 arrive the same way, and an older store gains both
+    # columns empty - read as UNKNOWN and UNSTATED, never as anything better.
+    for column in ("replaced_by", "licence", "category"):
+        try:
+            store.db.execute("ALTER TABLE documents ADD COLUMN %s TEXT" % column)
+        except sqlite3.OperationalError as exc:
+            if "duplicate column" not in str(exc):
+                raise
     store.db.commit()
 
 
@@ -728,6 +751,14 @@ def _read_docx(path):
     return "\n".join(out)
 
 
+# WHAT THE PDF READER COSTS ON DISK, MEASURED (R-77, R-79). 2026-11-20, a Linux
+# container, pypdf 6.17.0: 1.7 MB of its own files and 0.2 MB of the one
+# package it pulls in. This message said "about 1 MB" before it was measured.
+# tools/check-dependencies.py and docs/guide/system-requirements.md read this
+# one, so the size is typed in one place.
+PDF_READER_SIZE = "about 2 MB"
+
+
 def _read_pdf(path):
     """PDF text, IF a reader is installed - and a clear sentence if not.
 
@@ -753,8 +784,8 @@ def _read_pdf(path):
             "%s is a PDF, and reading one needs a PDF reader that is not "
             "installed. Everything else here works without it - .md, .txt "
             "and .docx need nothing. To read PDFs:  pip install --user pypdf "
-            "(about 1 MB, per-user, no administrator rights). Nothing else in "
-            "Heron changes either way." % path)
+            "(%s, per-user, no administrator rights). Nothing else in "
+            "Heron changes either way." % (path, PDF_READER_SIZE))
     try:
         reader = pypdf.PdfReader(path)
         return "\n".join(page.extract_text() or "" for page in reader.pages)
@@ -828,12 +859,17 @@ def file_hash(path):
 
 
 def ingest(store, path, added_by=None, source_trust="unknown", title=None,
-           status=None):
+           status=None, licence=None, category=None):
     """One file into ONE scope. Never a list of scopes (R-05, GR 5).
 
     `store` is already a single scope, which is how the wall is kept: there is
     no argument here that could take two, so a cross-scope ingest cannot be
     written by accident any more than a cross-scope query can.
+
+    `licence` is one of LICENCES (R-85) and `category` one of CATEGORIES
+    (R-93). None means "the caller did not say", exactly as for `status`: a
+    new document is then UNKNOWN and UNSTATED, and re-ingesting one keeps what
+    it already had rather than resetting it.
     """
     path = os.path.abspath(path)
     extension = os.path.splitext(path)[1].lower()
@@ -864,6 +900,15 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
     if status not in STATUSES:
         raise ValueError("status is one of %s, not %r"
                          % (", ".join(STATUSES), status))
+    asked_licence, asked_category = licence, category
+    licence = licence or UNKNOWN
+    category = category or UNSTATED
+    if licence not in LICENCES:
+        raise ValueError("licence is one of %s, not %r"
+                         % (", ".join(LICENCES), licence))
+    if category not in CATEGORIES:
+        raise ValueError("category is one of %s, not %r"
+                         % (", ".join(CATEGORIES), category))
 
     ensure_tables(store)
     document_id = file_hash(path)
@@ -872,8 +917,8 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
     # R-11. An unchanged file costs nothing to re-ingest, so re-indexing stays
     # something a person does freely rather than avoids.
     already = store.execute(
-        "SELECT id, path, title, status FROM documents WHERE id = ?",
-        (document_id,)).fetchone()
+        "SELECT id, path, title, status, licence, category FROM documents "
+        "WHERE id = ?", (document_id,)).fetchone()
     if already:
         count = store.execute(
             "SELECT COUNT(*) AS n FROM chunks WHERE document_id = ?",
@@ -890,6 +935,12 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
         if title and title != already["title"]:
             changes.append("title = ?")
             values.append(title)
+        if asked_licence and asked_licence != already["licence"]:
+            changes.append("licence = ?")
+            values.append(asked_licence)
+        if asked_category and asked_category != already["category"]:
+            changes.append("category = ?")
+            values.append(asked_category)
         moved = already["path"] != path
         if moved:
             # Same bytes, new location. The pointer moves; nothing is re-read.
@@ -939,6 +990,8 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
                 "title": title or already["title"],
                 "kind": extension.lstrip("."),
                 "status": asked_status or already["status"],
+                "licence": asked_licence or already["licence"] or UNKNOWN,
+                "category": asked_category or already["category"] or UNSTATED,
                 "added_by": added_by, "source_trust": source_trust,
                 "document": document_id})
         AUDIT.record("knowledge.ingest", True,
@@ -1001,10 +1054,11 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
 
     store.execute(
         "INSERT OR REPLACE INTO documents (id, scope, path, title, kind, "
-        "status, added_utc, added_by, source_trust) VALUES (?,?,?,?,?,?,?,?,?)",
+        "status, added_utc, added_by, source_trust, licence, category) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
         (document_id, store.scope, path, shown, extension.lstrip("."), status,
          datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-         added_by, source_trust))
+         added_by, source_trust, licence, category))
     store.execute("DELETE FROM chunks WHERE document_id = ?", (document_id,))
 
     keys = {}
@@ -1033,6 +1087,7 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
                             "title": shown, "kind": extension.lstrip("."),
                             "status": status, "added_by": added_by,
                             "source_trust": source_trust,
+                            "licence": licence, "category": category,
                             "document": document_id})
 
     # GR 14, R-84. Ingestion is an important autonomous operation and was
@@ -1041,7 +1096,8 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
     AUDIT.record("knowledge.ingest", True,
                  fields={"document": document_id, "scope": store.scope,
                          "path": path, "kind": extension.lstrip("."),
-                         "status": status, "trust": source_trust},
+                         "status": status, "trust": source_trust,
+                         "licence": licence, "category": category},
                  numbers={"chunks": len(chunks), "oversized": len(oversized)})
 
     return Ingested(document_id, shown, extension.lstrip("."), len(chunks),
@@ -1152,12 +1208,13 @@ def _restore_retired(store, line, out):
         return
     store.execute(
         "INSERT INTO documents (id, scope, path, title, kind, status, "
-        " added_utc, added_by, source_trust, replaced_by) "
-        "VALUES (?, ?, ?, ?, ?, 'RETIRED', ?, ?, ?, ?)",
+        " added_utc, added_by, source_trust, replaced_by, licence, category) "
+        "VALUES (?, ?, ?, ?, ?, 'RETIRED', ?, ?, ?, ?, ?, ?)",
         (document_id, store.scope, line.get("path") or "",
          line.get("title") or "", line.get("kind") or "",
          line.get("at") or "", line.get("added_by"),
-         line.get("source_trust"), line.get("replaced_by")))
+         line.get("source_trust"), line.get("replaced_by"),
+         line.get("licence") or UNKNOWN, line.get("category") or UNSTATED))
     store.db.commit()
     out.retired.append((document_id, line.get("title") or "",
                         line.get("replaced_by")))
@@ -1295,10 +1352,15 @@ def restore(store):
             # DIFFERENT NAME - and the name is half of every citation written
             # against it. The manifest recorded the title all along and this
             # call was not reading it. Found by a review 2026-09-11.
+            # AND THE LICENCE AND THE KIND (R-85, R-93). A store deleted and
+            # restored that came back with every per-seat standard UNKNOWN
+            # would lose the warning R-86 stands on, silently.
             got = ingest(store, path, added_by=line.get("added_by"),
                          source_trust=line.get("source_trust") or "unknown",
                          title=line.get("title") or None,
-                         status=line.get("status") or "DRAFT")
+                         status=line.get("status") or "DRAFT",
+                         licence=line.get("licence") or None,
+                         category=line.get("category") or None)
         except (RefusedByExtension, UnreadableDocument) as why:
             out.gone.append((path, str(why)))
             continue
@@ -1422,8 +1484,8 @@ def refresh(store):
     out = Refreshed()
 
     rows = store.execute(
-        "SELECT id, path, title, kind, status, added_by, source_trust "
-        "FROM documents WHERE status != 'RETIRED'").fetchall()
+        "SELECT id, path, title, kind, status, added_by, source_trust, "
+        "licence, category FROM documents WHERE status != 'RETIRED'").fetchall()
 
     for row in rows:
         if not os.path.isfile(row["path"]):
@@ -1443,7 +1505,8 @@ def refresh(store):
         # here. Found by a review 2026-09-11.
         fresh = ingest(store, row["path"], added_by=row["added_by"],
                        source_trust=row["source_trust"], status=row["status"],
-                       title=row["title"])
+                       title=row["title"], licence=row["licence"] or None,
+                       category=row["category"] or None)
         store.execute(
             "UPDATE documents SET status = 'RETIRED', replaced_by = ? "
             "WHERE id = ?", (fresh.document_id, row["id"]))
@@ -1477,6 +1540,8 @@ def refresh(store):
             "status": row["status"],
             "added_by": row["added_by"],
             "source_trust": row["source_trust"],
+            "licence": row["licence"] or UNKNOWN,
+            "category": row["category"] or UNSTATED,
             "replaced_by": fresh.document_id,
             "text_recoverable": False,
         })
@@ -1548,6 +1613,87 @@ def boundaries(store, document_id):
 # The command
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# What a modeller is told - before anything is read (R-89 to R-92)
+# ---------------------------------------------------------------------------
+
+# R-91. WHAT HERON DOES AND DOES NOT DO TO THE FILE, said BEFORE it does it.
+# The four sentences are the requirement note's, word for word, written there
+# "so they cannot drift into marketing". THEY MUST BE TRUE, NOT REASSURING:
+#
+#   not moved       ingest() stores a POINTER - Q-B - and reads in place
+#   not changed     every reader opens the file to read and nothing else
+#   not uploaded    embeddings are computed on this PC (heron_embed). A quoted
+#                   clause DOES travel with an answer - D-26 allows content in
+#                   the conversation - and the sentence says so rather than
+#                   claiming nothing leaves. If the cloud opt-in D-82 allows
+#                   is ever built, THIS SENTENCE CHANGES WITH IT, for a person
+#                   who switched it on
+#   nothing else    the store and its manifest are written in Heron's own
+#                   knowledge folder (heron_scope.knowledge_dir), and only there
+FOUR_SENTENCES = (
+    "Your file is not moved. Heron reads it where it is.",
+    "Your file is not changed, and not deleted. Heron only reads.",
+    "Your file is not uploaded. When Heron answers a question it quotes the "
+    "clause it used - that sentence travels with the answer, exactly as if "
+    "you had typed it yourself. The file never does.",
+    "Nothing outside Heron's own folder is touched.",
+)
+
+# R-92. TRUE ALREADY, NEVER SAID - the strongest safety promise this store can
+# make, because the index is derived (Golden Rule 11) and points at the file.
+DELETING_IS_SAFE = ("Deleting everything Heron stored leaves every original "
+                    "file untouched - Heron keeps only what it read from them.")
+
+
+def before_adding(scope, project=None):
+    """What a person is told BEFORE a document goes in (R-89, R-91, R-92).
+
+    Where it goes in their words - never the scope's name - then what Heron
+    does and does not do to the file. Lines, so a caller can print them or
+    hand them to a host unchanged.
+    """
+    lines = ["Adding to Heron's knowledge, %s." % SCOPE.in_plain_words(scope,
+                                                                       project)]
+    lines.extend("  " + said for said in FOUR_SENTENCES)
+    lines.append("  " + DELETING_IS_SAFE)
+    return lines
+
+
+def per_seat(store):
+    """(id, title) of every offered document in this store licensed PER SEAT."""
+    ensure_tables(store)
+    return [(row["id"], row["title"]) for row in store.execute(
+        "SELECT id, title FROM documents WHERE licence = ? "
+        "AND status != 'RETIRED' ORDER BY title", (PER_SEAT,)).fetchall()]
+
+
+def sharing_warning(store):
+    """R-86: the warning a store holding a per-seat document carries, or None.
+
+    "Copy company.db to the shared drive" was suggested on 2026-09-10 as the
+    way to share company knowledge - and it is exactly how a bought standard
+    reaches twenty people who did not buy it. Heron never copies a store
+    itself, so the warning is said where a person meets the store: after
+    every ingest into it, and by `--before-sharing`, before anybody copies it.
+    """
+    held = per_seat(store)
+    if not held:
+        return None
+    lines = ["BEFORE THIS KNOWLEDGE IS COPIED OR SHARED: %d document(s) in it "
+             "are licensed PER SEAT -" % len(held)]
+    for _id, title in held[:10]:
+        lines.append("    %s" % title)
+    if len(held) > 10:
+        lines.append("    ... and %d more" % (len(held) - 10))
+    lines.append("  A per-seat licence covers the people who bought it. Copying "
+                 "this store to a shared drive, or sending it to anyone, hands "
+                 "those documents to people who did not.")
+    lines.append("  Heron never copies a store on its own. This is said before "
+                 "anybody does.")
+    return lines
+
+
 class MissingFlagValue(Exception):
     """A flag that takes a value was given none. Refused, never defaulted."""
 
@@ -1593,6 +1739,20 @@ def _main(argv):
     project = _flag(argv, "--project")
     trust = _flag(argv, "--trust", "unknown")
     show = _flag(argv, "--boundaries")
+    licence = _flag(argv, "--licence")
+    category = _flag(argv, "--category")
+    before_sharing = "--before-sharing" in argv
+    if before_sharing:
+        argv.remove("--before-sharing")
+    # A WORD THAT IS NOT IN THE LIST IS REFUSED BEFORE ANY FILE IS OPENED, the
+    # way a stray flag is below: `--licence perseat` quietly stored as UNKNOWN
+    # would lose the one fact R-86 stands on.
+    for flag, value, allowed in (("--licence", licence, LICENCES),
+                                 ("--category", category, CATEGORIES)):
+        if value is not None and value not in allowed:
+            print("  %s is one of %s, not %r." % (flag, ", ".join(allowed), value))
+            print("  Nothing was ingested.")
+            return 2
     do_refresh = "--refresh" in argv
     if do_refresh:
         argv.remove("--refresh")
@@ -1642,10 +1802,13 @@ def _main(argv):
         print("    ... --scope %s            (and drop --project)" % scope)
         return 2
 
-    if not argv and not show and not do_refresh:
+    if not argv and not show and not do_refresh and not before_sharing:
         print('  python brain/heron_ingest.py <file> --scope global')
+        print('      [--licence %s]' % "|".join(LICENCES))
+        print('      [--category %s]' % "|".join(CATEGORIES))
         print('  python brain/heron_ingest.py --boundaries <document id>')
         print('  python brain/heron_ingest.py --refresh')
+        print('  python brain/heron_ingest.py --before-sharing --scope company')
         print("  a document is READ where it is. It is never moved, never")
         print("  changed, and never copied into Heron's folder.")
         return 2
@@ -1681,9 +1844,25 @@ def _main(argv):
             print("  for - and it will not announce itself later.")
             return 0
 
+        if before_sharing:
+            # R-86, asked for by name before a store is copied anywhere.
+            # Exit 1 when there is something to read first, so a script that
+            # copies a store can stop on it.
+            warned = sharing_warning(store)
+            if warned is None:
+                print("Nothing %s is licensed per seat. Check the documents' "
+                      "own terms all the same: a licence nobody recorded "
+                      "reads as unknown here, not as free."
+                      % SCOPE.in_plain_words(scope, project))
+                return 0
+            for line in warned:
+                print(line)
+            return 1
+
         if do_refresh:
             done = refresh(store)
-            print("Refreshed the %s scope." % scope)
+            print("Refreshed the knowledge kept %s."
+                  % SCOPE.in_plain_words(scope, project))
             print("  unchanged  %d - a file whose content has not changed "
                   "costs one hash" % len(done.unchanged))
             for old_id, new_id, title in done.changed:
@@ -1713,11 +1892,18 @@ def _main(argv):
                       "is free, which is why it may be run at any time.")
             return 0
 
+        # SAID BEFORE IT IS DONE (R-91), not after - and once for the whole
+        # run, because it is the same promise for every file in it.
+        for line in before_adding(scope, project):
+            print(line)
+        print()
+
         refused = 0
         ingested_any = False
         for path in argv:
             try:
-                got = ingest(store, path, source_trust=trust)
+                got = ingest(store, path, source_trust=trust,
+                             licence=licence, category=category)
                 ingested_any = True
             except (RefusedByExtension, UnreadableDocument) as why:
                 print("  REFUSED  %s" % why)
@@ -1726,6 +1912,13 @@ def _main(argv):
             print("%s  %s" % ("reused " if got.reused else "ingested", got.title))
             print("  id       %s" % got.document_id)
             print("  chunks   %d" % got.chunks)
+            kept = store.execute(
+                "SELECT licence, category FROM documents WHERE id = ?",
+                (got.document_id,)).fetchone()
+            if kept is not None:
+                print("  licence  %s" % (kept["licence"] or UNKNOWN))
+                if (kept["category"] or UNSTATED) == BIM_STANDARD:
+                    print("  kind     a BIM standard")
             if not got.remembered:
                 # DEGRADED, AND SAYING SO. The document is in and searchable;
                 # what failed is the append-only manifest beside the store,
@@ -1767,7 +1960,9 @@ def _main(argv):
 
         total = store.execute("SELECT COUNT(*) AS n FROM chunks").fetchone()["n"]
         print()
-        print("  %d chunk(s) in the %s scope." % (total, scope))
+        # R-89: where it went, in the modeller's words.
+        print("  %d chunk(s) kept %s." % (total,
+                                         SCOPE.in_plain_words(scope, project)))
         # R-70. Said while the number is small, so the day it approaches the
         # ceiling is a day somebody NOTICES rather than a day search gets slow.
         print("  D-23's sqlite-vec brute-force search stays fast below roughly")
@@ -1776,6 +1971,11 @@ def _main(argv):
             print("  NOTHING was ingested: every file given was refused. That "
                   "is a complete answer, and the exit code says so.")
         print("  Your file was not moved, not changed and not copied.")
+        warned = sharing_warning(store)
+        if warned:
+            print()
+            for line in warned:
+                print(line)
         return 2 if (refused and not ingested_any) else 0
     finally:
         store.close()

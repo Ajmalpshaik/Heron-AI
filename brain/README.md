@@ -225,9 +225,11 @@ pip install --user -r requirements.txt   # the required half off Windows; the MC
 
 **Do not install the optional half in one command.** One of them is large enough that a person is
 entitled to know first — and the figure is **not written here**, because the code that performs the
-download owns it: `heron_rerank.announcement()` prints the size before any network call rather than
-during, and `check-dependencies.py` above reads it from there. A size copied into a README is a size
-that goes stale in the one place it had to be right.
+download owns it: `heron_rerank.announcement()` and `heron_embed.announcement()` print the size before
+any network call rather than during, and `check-dependencies.py` above reads it from there. A size copied
+into a README is a size that goes stale in the one place it had to be right - which is why the one place
+that does type them, the [system requirements](../docs/guide/system-requirements.md) page, is held
+to these by `tests/test_check_dependencies.py`.
 
 Every optional package degrades rather than breaks: Heron answers without any of them and names the one
 that did not run.
@@ -245,8 +247,8 @@ then the knowledge store and `heron-ready --check`. It ran on the owner's laptop
 
 **What is still owed here, so nobody reads the above as more than it is:** the optional half never
 installs by itself ([R-74](../docs/work-notes/plans/rag/01-requirements.md), R-77), `tools/setup.ps1`
-deploys the add-in and no Python package, and *installed* to `check-dependencies.py` means *importable*,
-not *the right version* (R-78).
+deploys the add-in and no Python package. Since 2026-11-20 `check-dependencies.py` also checks that an
+installed version is the right one (R-78) - against a floor on the manifest line, and the lock's pin.
 
 ## Rules for this folder
 

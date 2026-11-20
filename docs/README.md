@@ -51,7 +51,7 @@ The owner                -> FOR-THE-OWNER
 | You are… | Start at | Then |
 |---|---|---|
 | **a BIM modeller or coordinator** | [**Using Heron**](guide/using-heron.md) | [What keeps the model safe](guide/safety.md) · [01 — Vision & Principles](01-vision-and-principles.md) |
-| **setting up a PC** | [**What to install**](WHAT-TO-INSTALL.md) | Python first, then what is optional |
+| **setting up a PC** | [**What to install**](WHAT-TO-INSTALL.md) | Python first, then what is optional · [System requirements](guide/system-requirements.md) - what each piece costs on disk |
 | **changing Heron** | [**Changing Heron**](guide/changing-heron.md) | [PROJECT-MAP](PROJECT-MAP.md) · [CONTRIBUTING](../CONTRIBUTING.md) · the [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) skill before a push |
 | **an AI agent** | [**AGENTS.md**](../AGENTS.md) — short, and the only file written for you | then [PROJECT-MAP](PROJECT-MAP.md) |
 | **checking what is proven** | [**What is proven**](guide/what-is-proven.md) | [NEEDS-CHECKING](NEEDS-CHECKING.md) · `python tools/check-gaps.py` |
