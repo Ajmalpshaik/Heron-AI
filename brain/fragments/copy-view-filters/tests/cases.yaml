@@ -14,7 +14,25 @@ positive:
       pushes a colour change out, so an existing filter is updated rather than
       skipped
 
+  - given: >
+      version 2, Revit 2021 or later - a source plan whose filters stand OUT
+      of id order on its Filters tab (one moved up with REORDER_VIEW_FILTERS),
+      one of them with Enable Filter unticked, copied onto a plan with no
+      filters (row 5b-1853)
+    expect: >
+      the target's Filters tab in the SOURCE's order, the unticked one still
+      unticked, and findings saying they went in the source's own order.
+      Version 1 put them in the order the filters were made, all ticked
+
+  - given: version 2 on Revit 2020, the same source
+    expect: >
+      the copies in the order the filters were made, and findings saying Revit
+      2020 cannot read the source's order - never claimed as the source's
+
 negative:
+  - given: version 2 - onlyFilterNamed a filter the source does not carry
+    expect: refused, naming what the source carries; filtersApplied 0, no findings of order
+
   - given: any source view at all
     expect: >
       the target views show the SOURCE'S COLOURS, not empty overrides. THIS IS

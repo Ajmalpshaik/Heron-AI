@@ -443,6 +443,19 @@ if (refused == null && !typed)
         foreach (var element in elements)
         {
             if (element == null) continue;
+            // VERSION 7 (row 5b-1399): NO MODEL GEOMETRY, NO FRAME. A sheet,
+            // a schedule or any view, a type, and an annotation element can
+            // answer a box with no model extent behind it - seven sheets were
+            // "framed" and a camera made on Revit 2020. Only a model
+            // category's element is framed; the rest go to noGeometry.
+            // A datum - grid, level, reference plane - is filed by Revit as
+            // annotation but stands in the model, so it is still framed as before.
+            if (element is View || element is ElementType || element.Category == null
+                || (element.Category.CategoryType != CategoryType.Model && !(element is DatumPlane)))
+            {
+                noGeometry.Add(element.Id);
+                continue;
+            }
             var box = element.get_BoundingBox(null);
             if (box == null) { noGeometry.Add(element.Id); continue; }
             var corners = new[] { box.Transform.OfPoint(box.Min), box.Transform.OfPoint(box.Max) };
@@ -454,7 +467,8 @@ if (refused == null && !typed)
             boxed.Add(element);
         }
         if (boxed.Count == 0)
-            refused = "None of the " + elements.Count + " element(s) has geometry to frame. NOTHING WAS CHANGED.";
+            refused = "None of the " + elements.Count + " element(s) has model geometry to frame - sheets, views, "
+                + "types and annotation have none. NOTHING WAS CHANGED.";
     }
 }
 
@@ -1446,5 +1460,6 @@ if (reachedCamera && windowAssumed)
     findings.Add("The view's crop shape could not be read, so its window was taken as drawn 30 mm (0.1 ft) in front of "
         + "the eye, as Revit 2020 draws it - the lens and `framed` above lean on that; look at the picture.");
 if (reachedCamera && farClipProblem != null) findings.Add(farClipProblem);
-if (noGeometry.Count > 0) findings.Add(noGeometry.Count + " element(s) have no geometry and were left out of the frame");
+if (noGeometry.Count > 0) findings.Add(noGeometry.Count + " element(s) have no model geometry - a sheet, a view, "
+    + "a type or annotation, or nothing Revit can box - and were left out of the frame");
 if (refused != null) findings.Add(refused);

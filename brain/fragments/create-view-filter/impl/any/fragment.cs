@@ -405,10 +405,44 @@ foreach (var oneName in names)
     if (oneName.Length > 0 && !NamingUtils.IsValidName(oneName)) { badName = oneName; break; }
 }
 
+// VERSION 6: A VIEW WHOSE TEMPLATE OWNS ITS FILTERS IS REFUSED, AS
+// COPY_VIEW_FILTERS BLOCKS ONE. Version 5 put the filters on it and read their
+// colours back off it, and said nothing of the template - though the template
+// takes them off when it reasserts (row 5b-1650). Whether the
+// template owns them is read FROM THE TEMPLATE, as REORDER_VIEW_FILTERS does:
+// the filters slot not among the parameters it leaves out of its control
+// (row 5b-1854). A test that cannot be read is a refusal, never a pass.
+string templateRefusal = null;
+if (view != null && !view.IsTemplate && view.ViewTemplateId != ElementId.InvalidElementId)
+{
+    try
+    {
+        var owner = doc.GetElement(view.ViewTemplateId) as View;
+        if (owner == null) throw new InvalidOperationException("its view template could not be found");
+        var leftFree = new HashSet<ElementId>(owner.GetNonControlledTemplateParameterIds());
+        if (!leftFree.Contains(new ElementId(BuiltInParameter.VIS_GRAPHICS_FILTERS)))
+            templateRefusal = string.Format("the view template '{0}' controls the filters on '{1}', so a filter "
+                + "put on the view itself would be taken off when the template reasserts. Nothing was made. "
+                + "Leave the view and the colour out to make the filter on no view, then put it on the "
+                + "template '{0}' with APPLY_VIEW_FILTER - every view following it gets it - or untick "
+                + "V/G Overrides Filters in that template first", owner.Name, view.Name);
+    }
+    catch (Exception thrown)
+    {
+        templateRefusal = string.Format("Heron could not read whether the view template of '{0}' controls its "
+            + "filters - Revit says: {1}. Nothing was made: a filter the template then takes off would not "
+            + "stay", view.Name, thrown.Message);
+    }
+}
+
 if (view != null && view.IsTemplate)
 {
     refused = "a filter is put on a real view - a template is not one. Leave the view out to make "
             + "the filter on no view";
+}
+else if (templateRefusal != null)
+{
+    refused = templateRefusal;
 }
 else if (perValue)
 {

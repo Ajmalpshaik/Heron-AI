@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 16
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -54,7 +54,13 @@ capability: CREATE_VIEW_FILTER
 # one short sentence only: version 4 measured that a paragraph there moved
 # owner question 67. Version 3's proof below was still the record; the card was
 # DRAFT at the time, until version 5 is proved.
-version: 5
+# A view whose template owns its filters is refused, and nothing is made
+# (version 6, row 5b-1650) - the template would take them off again. The
+# answer names the template: make the filter on no view and put it on the
+# template with APPLY_VIEW_FILTER, or untick V/G Overrides Filters there
+# first. Read from the template's own include list, as REORDER_VIEW_FILTERS
+# reads it.
+version: 6
 source: OFFICIAL
 risk: MODIFY
 

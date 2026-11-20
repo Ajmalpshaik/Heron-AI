@@ -105,10 +105,15 @@ purpose: >
      model's lines. Nothing is moved by it. With pairs 0, step 4 is skipped.
   4. MOVE THEM APART, when step 3 found any. Collect the tags first: the
      overlap read's ids do not travel to the next step, so
-     FILTER_ELEMENTS_BY_CATEGORY with categoryName the tag category as the
-     model names it - "Duct Tags" - and inViewOnly the view, one tag
-     category a call. Then ARRANGE_TAGS with view and expect_from naming that
-     filter. It moves only tags that clash, each as little as it can, and a
+     FILTER_ELEMENTS_BY_CATEGORY with `categories` - not categoryName, which
+     takes one - EVERY tag category step 3 named, comma separated - "Duct
+     Tags, Air Terminal Tags" - and inViewOnly the view, in ONE call: a tag of one
+     category printing on a tag of another is seen only when both are handed
+     in together, and one category a call never moved them (FRAGMENT-ISSUES
+     row 5b-1652, NR1 - 40 of 42 overlaps left were a diffuser tag over a
+     duct tag). ARRANGE_TAGS since version 4 spaces each tag by its own size,
+     never one median for all. Then ARRANGE_TAGS with view and expect_from
+     naming that filter. It moves only tags that clash, each as little as it can, and a
      tag whose leader is already bent stays where it is while the other one
      of the pair moves. FOUR VALUES, ALL ASKED FOR, NONE ASSUMED: minGapMm,
      the clear gap between two tags; maxPasses; and fallbackTagWidthMm and
@@ -277,8 +282,8 @@ note: >
 
   What only Revit can show is in NEEDS-CHECKING Group NR: that a filter
   carrying several tag categories at once hands ARRANGE_TAGS what it expects
-  (the cards' own proofs ran one category a call, which is what step 4
-  gives); that step 3 read again after step 4 comes back clear on a crowded
+  (NR3 saw one bind on Revit 2020; step 4 gives every category in one call
+  since row 5b-1652, and Group OR has the run it owes); that step 3 read again after step 4 comes back clear on a crowded
   plan; and what the answers read like on a view whose template owns its
   annotation categories.
 

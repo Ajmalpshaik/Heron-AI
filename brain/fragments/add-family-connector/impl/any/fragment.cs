@@ -1,6 +1,25 @@
-// NOT STANDALONE. Assumes `doc`, `facePlane`, `system` and `sizeParameters` are
-// in scope; leaves `connector`, `sizedBy`, `notAFamily`, `refused` and
-// `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `facePlane`, `system`, `sizeParameters`,
+// `form` and `facing` are in scope; leaves `connector`, `sizedBy`,
+// `notAFamily`, `refused` and `findings` behind.
+//
+// VERSION 6 (2026-11-20, Ajmalpshaik/Heron-AI#1029) - form= AND facing= PICK
+// THE FACE. Seen 2026-11-19, Revit 2020, a pump family: the discharge
+// flange's raised face was refused twice - "2 solid faces lie on "Discharge
+// Face" (facing up, up)", the second the top of four terminal-box lid screws
+// about 1 m away at the same Z; and on the flange top "(facing up, down)", the
+// second the raised face's own underside. Every solid face on the plane counts
+// anywhere in the family, as version 5 counted it. Now two optional inputs
+// narrow that: `form`, the unique id(s) of the form(s) whose face takes the
+// connector, commas between - only those forms' own faces count, and of
+// joined or cut geometry only a combination one of them is in; an id that is
+// not a solid form of this family is refused by name - and `facing`, the way
+// the face points (up, down, left, right, front, back, or +Z, -Z, -X, +X, -Y,
+// +Y), the words this card's own answer uses. When more than one face still
+// lies there, the refusal lists each with the form it is of, the way it faces
+// and its centre in millimetres, and says to give form= (or facing=), so one
+// more call settles it. Left out, both bind "none" and every face counts
+// exactly as in version 5; version 5's rules - a form's own face before a
+// joined one, a face with no reference, the size checks - are unchanged.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -185,6 +204,17 @@ GeomCombination faceIn = null;
 var alsoJoined = 0;
 var sizes = new List<FamilyParameter>();
 var faceName = (facePlane ?? "").Trim();
+// VERSION 6 (issue #1029): the forms and the way the face points, when said.
+// Left out, each binds "none" - version 5 exactly.
+Func<string, string> unlessNone = text =>
+{
+    var typed = (text ?? "").Trim();
+    return string.Equals(typed, "none", StringComparison.OrdinalIgnoreCase) ? "" : typed;
+};
+var formSaid = unlessNone(form);
+var facingSaid = unlessNone(facing);
+// Faces on the plane that form= and facing= left out, for the answer.
+var facesLeftOut = 0;
 
 if (!doc.IsFamilyDocument)
 {
@@ -271,6 +301,48 @@ else
                 + "connector against. SET_FAMILY_TYPE_VALUES makes the first type.");
     }
 
+    // VERSION 6 (issue #1029): THE FORMS NAMED, by the unique ids the form
+    // tools give back - only a SOLID form of this family; anything else is
+    // refused by name.
+    var onlyForms = new List<GenericForm>();
+    foreach (var formToken in formSaid.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0))
+    {
+        Element formElement = null;
+        try { formElement = doc.GetElement(formToken); } catch (Exception) { formElement = null; }
+        var asForm = formElement as GenericForm;
+        if (formElement == null)
+            problems.Add("No element in this family has the id \"" + formToken + "\" given in form=.");
+        else if (asForm == null)
+            problems.Add("\"" + formToken + "\" given in form= is not a form - it is one of this family's "
+                + (formElement.Category != null ? formElement.Category.Name : spaced(formElement.GetType().Name))
+                + ". Name an extrusion, blend, revolve, sweep or swept blend by the id its tool gave back.");
+        else if (!asForm.IsSolid)
+            problems.Add("\"" + formToken + "\" given in form= is " + kindOf(asForm) + " that is a VOID - a connector "
+                + "goes on a solid's face.");
+        else if (!onlyForms.Any(o => o.Id == asForm.Id)) onlyForms.Add(asForm);
+    }
+
+    // VERSION 6: WHICH WAY THE FACE POINTS, in the words this card's answer
+    // uses - up, down, right (+X), left (-X), back (+Y), front (-Y).
+    XYZ wantedFacing = null;
+    if (facingSaid.Length > 0)
+    {
+        var way = new string(facingSaid.ToLowerInvariant().Where(c => !char.IsWhiteSpace(c) && c != '(' && c != ')').ToArray());
+        var ways = new Dictionary<string, XYZ>
+        {
+            { "up", XYZ.BasisZ }, { "+z", XYZ.BasisZ }, { "up+z", XYZ.BasisZ },
+            { "down", XYZ.BasisZ.Negate() }, { "-z", XYZ.BasisZ.Negate() }, { "down-z", XYZ.BasisZ.Negate() },
+            { "right", XYZ.BasisX }, { "+x", XYZ.BasisX }, { "right+x", XYZ.BasisX },
+            { "left", XYZ.BasisX.Negate() }, { "-x", XYZ.BasisX.Negate() }, { "left-x", XYZ.BasisX.Negate() },
+            { "back", XYZ.BasisY }, { "+y", XYZ.BasisY }, { "back+y", XYZ.BasisY },
+            { "front", XYZ.BasisY.Negate() }, { "-y", XYZ.BasisY.Negate() }, { "front-y", XYZ.BasisY.Negate() },
+        };
+        if (ways.ContainsKey(way)) wantedFacing = ways[way];
+        else
+            problems.Add("\"" + facingSaid + "\" is not a way a face can point - say up, down, left, right, front or "
+                + "back, or +Z, -Z, -X, +X, -Y or +Y.");
+    }
+
     // THE FACE, by the plane it lies on.
     if (faceName.Length == 0) problems.Add("No face was named - the reference plane or level it lies on, \"Neck Top\".");
     else
@@ -298,18 +370,24 @@ else
                     && Math.Abs(along(flat.Origin, datum.Item1) - datum.Item2) < halfMillimetre;
             };
             var candidates = new List<PlanarFace>();
+            // VERSION 6: the form each face is of, beside it.
+            var candidateOf = new List<GenericForm>();
             var everything = new FilteredElementCollector(doc).WhereElementIsNotElementType().ToElements();
             var forms = everything.OfType<GenericForm>().Where(f => f.IsSolid).ToList();
-            foreach (var form in forms)
+            foreach (var solidForm in forms)
             {
-                var geometry = form.get_Geometry(new Options { ComputeReferences = true });
+                var geometry = solidForm.get_Geometry(new Options { ComputeReferences = true });
                 if (geometry == null) continue;
                 foreach (GeometryObject piece in geometry)
                 {
                     var solid = piece as Solid;
                     if (solid == null) continue;
                     foreach (Face each in solid.Faces)
-                        if (onDatum(each) && each.Reference != null) candidates.Add((PlanarFace)each);
+                        if (onDatum(each) && each.Reference != null)
+                        {
+                            candidates.Add((PlanarFace)each);
+                            candidateOf.Add(solidForm);
+                        }
                 }
             }
 
@@ -344,24 +422,100 @@ else
                 }
             }
 
-            if (candidates.Count == 0 && combined.Count == 0)
+            // VERSION 6 (issue #1029): EACH FACE SAID WITH ITS FORM, THE WAY IT
+            // POINTS AND ITS CENTRE, so a refusal names what form= and facing=
+            // choose between. A combination's face is said with the forms in it.
+            Func<GeomCombination, List<GenericForm>> membersOf = combination =>
+            {
+                var held = new List<GenericForm>();
+                try
+                {
+                    foreach (CombinableElement member in combination.AllMembers)
+                    {
+                        var asMember = member as GenericForm;
+                        if (asMember != null) held.Add(asMember);
+                    }
+                }
+                catch (Exception) { }
+                return held;
+            };
+            Func<PlanarFace, string> centreOf = f =>
+            {
+                var outlinePoints = new List<XYZ>();
+                try
+                {
+                    foreach (EdgeArray edgeLoop in f.EdgeLoops)
+                        foreach (Edge loopEdge in edgeLoop)
+                            outlinePoints.AddRange(loopEdge.Tessellate());
+                }
+                catch (Exception) { outlinePoints.Clear(); }
+                if (outlinePoints.Count == 0) return "its centre could not be read";
+                return "centred at X " + mm((outlinePoints.Min(q => q.X) + outlinePoints.Max(q => q.X)) / 2)
+                    + ", Y " + mm((outlinePoints.Min(q => q.Y) + outlinePoints.Max(q => q.Y)) / 2)
+                    + ", Z " + mm((outlinePoints.Min(q => q.Z) + outlinePoints.Max(q => q.Z)) / 2) + " mm";
+            };
+            Func<GenericForm, string> formWords = g => kindOf(g) + " " + g.UniqueId;
+            Func<int, string> ownFaceWords = i => "a face of " + formWords(candidateOf[i]) + ", facing "
+                + pointing(candidates[i].FaceNormal) + ", " + centreOf(candidates[i]);
+            Func<int, string> joinedFaceWords = i =>
+            {
+                // The SOLID forms in it - the ids form= takes; a void cuts it.
+                var inIt = membersOf(combinedIn[i]).Where(g => g.IsSolid).ToList();
+                return "a face of the joined or cut forms " + (inIt.Count == 0 ? "(none could be read)"
+                        : string.Join(", ", inIt.Select(formWords))) + ", facing " + pointing(combined[i].FaceNormal)
+                    + ", " + centreOf(combined[i]);
+            };
+            var everyFace = Enumerable.Range(0, candidates.Count).Select(ownFaceWords)
+                .Concat(Enumerable.Range(0, combined.Count).Select(joinedFaceWords)).ToList();
+            var settleIt = " Give form= the id of the form whose face takes the connector"
+                + (wantedFacing == null ? ", or facing= the way that face points (up, down, left, right, front, back)" : "")
+                + " - or name a plane only one face lies on.";
+
+            // VERSION 6: ONLY WHAT form= AND facing= SAY COUNTS. A form's own
+            // face counts when it is of a form named; a combination's when the
+            // combination holds one. Neither said, every face counts, as before.
+            Func<PlanarFace, bool> facesAsked = f => wantedFacing == null || f.FaceNormal.DotProduct(wantedFacing) > 0.9999;
+            if (onlyForms.Count > 0 || wantedFacing != null)
+            {
+                var keptOwn = Enumerable.Range(0, candidates.Count)
+                    .Where(i => facesAsked(candidates[i])
+                        && (onlyForms.Count == 0 || onlyForms.Any(o => o.Id == candidateOf[i].Id)))
+                    .ToList();
+                var keptJoined = Enumerable.Range(0, combined.Count)
+                    .Where(i => facesAsked(combined[i]) && (onlyForms.Count == 0
+                        || membersOf(combinedIn[i]).Any(m => onlyForms.Any(o => o.Id == m.Id))))
+                    .ToList();
+                facesLeftOut = candidates.Count + combined.Count - keptOwn.Count - keptJoined.Count;
+                candidates = keptOwn.Select(i => candidates[i]).ToList();
+                candidateOf = keptOwn.Select(i => candidateOf[i]).ToList();
+                combined = keptJoined.Select(i => combined[i]).ToList();
+                combinedIn = keptJoined.Select(i => combinedIn[i]).ToList();
+            }
+            var askedWords = (onlyForms.Count == 0 ? "" : onlyForms.Count == 1 ? " of the form named" : " of the forms named")
+                + (wantedFacing == null ? "" : " facing " + pointing(wantedFacing));
+
+            if (candidates.Count == 0 && combined.Count == 0 && everyFace.Count == 0)
                 problems.Add("No solid face lies on \"" + datum.Item3 + "\". Build the geometry to it first - "
                     + "EXTRUDE_BETWEEN_PLANES locks a box to named planes.");
+            else if (candidates.Count == 0 && combined.Count == 0)
+                problems.Add("No solid face" + askedWords + " lies on \"" + datum.Item3 + "\". What does lie on it: "
+                    + string.Join("; ", everyFace) + "." + settleIt);
             else if (candidates.Count > 1)
-                problems.Add(candidates.Count + " solid faces lie on \"" + datum.Item3 + "\" (facing "
+                problems.Add(candidates.Count + " solid faces" + askedWords + " lie on \"" + datum.Item3 + "\" (facing "
                     + string.Join(", ", candidates.Select(c => pointing(c.FaceNormal))) + "), so which one "
-                    + "the connector goes on is not clear. Name a plane only one face lies on - the top of a "
-                    + "neck, not the plane a neck stands on.");
+                    + "the connector goes on is not clear: " + string.Join("; ", Enumerable.Range(0, candidates.Count)
+                        .Select(ownFaceWords)) + "." + settleIt + " The top of a neck, not the plane a neck stands on.");
             else if (candidates.Count == 1)
             {
                 face = candidates[0];
                 alsoJoined = combined.Count;
             }
             else if (combined.Count > 1)
-                problems.Add(combined.Count + " faces of joined or cut forms lie on \"" + datum.Item3 + "\" (facing "
-                    + string.Join(", ", combined.Select(c => pointing(c.FaceNormal))) + "), so which one the "
-                    + "connector goes on is not clear. Name a plane only one face lies on - the outer face of a "
-                    + "flange, not a plane two bodies share.");
+                problems.Add(combined.Count + " faces of joined or cut forms" + askedWords + " lie on \"" + datum.Item3
+                    + "\" (facing " + string.Join(", ", combined.Select(c => pointing(c.FaceNormal))) + "), so which one "
+                    + "the connector goes on is not clear: " + string.Join("; ", Enumerable.Range(0, combined.Count)
+                        .Select(joinedFaceWords)) + "." + settleIt + " The outer face of a flange, not a plane two "
+                    + "bodies share.");
             // A FACE REVIT GIVES NO REFERENCE TO cannot take a connector - said
             // plainly, with the way round it, never left as "no face".
             else if (combined[0].Reference == null)
@@ -581,6 +735,11 @@ if (refused == null)
     findings.Add("Made a " + connector + " - read back from the connector." + (sizedBy.Count > 0
         ? " Its size follows the family: " + string.Join("; ", sizedBy) + "."
         : ""));
+    // VERSION 6: what form= and facing= left out on the same plane.
+    if (facesLeftOut > 0)
+        findings.Add(facesLeftOut + " other face(s) lie on \"" + faceName + "\" and were left out by "
+            + (formSaid.Length > 0 && facingSaid.Length > 0 ? "form= and facing="
+                : formSaid.Length > 0 ? "form=" : "facing=") + ".");
 
     findings.Add("Flow direction, description and electrical load are Revit's defaults - set them in "
         + "Properties. FLEX_FAMILY checks the connector follows its parameters through a resize.");

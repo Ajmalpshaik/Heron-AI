@@ -124,6 +124,30 @@ positive:
   - given: version 4, the symbolic line linked to Show Arrow, links "Visible=none"
     expect: changed 1, "Visible Show Arrow -> not linked", the Visible value kept
 
+  # VERSION 5 (2026-11-20, FRAGMENT-ISSUES row 177, issue #944). NOT RUN. A
+  # scratch family from the metric Generic Model template with a vertical
+  # reference plane "Port Right" at X 48 whose normal faces -X (drawn bottom
+  # to top), a thin extrusion sketched on it, and Length parameters "Cap
+  # Start" = 0 and "Cap End" = 1 mm. Each FAILS on version 4, which said
+  # nothing of the direction.
+  - given: >
+      forms = that extrusion's id, links "Extrusion Start=Cap Start; Extrusion
+      End=Cap End"
+    expect: >
+      changed 2, and linkReport "Extrusion id N: Extrusion Start not linked ->
+      Cap Start ...; Extrusion End not linked -> Cap End ... - Extrusion Start
+      and Extrusion End run along -X here: its sketch plane, on "Port Right",
+      faces -X, so a positive value goes left; the form now runs X 47 to 48
+      mm" - the cap on the LEFT of Port Right, as the words say, seen in the
+      Ref. Level plan
+  - given: >
+      the same, with a second extrusion sketched on Ref. Level (faces +Z) in
+      `forms` too, and "Extrusion End=Cap End" alone
+    expect: >
+      each extrusion says its own way - "runs along -X ... goes left" and
+      "runs along +Z ... goes up", each with its own "now runs X ..." and
+      "now runs Z ..." - every form linked in the call
+
 negative:
   - given: >
       the same family, category "Duct Connector", system "Supply Air", links
@@ -251,6 +275,22 @@ negative:
     expect: >
       refused naming the level, and the symbolic line NOT linked - a level is
       not one of the kinds accepted; Group NE, NE3's negative
+
+  # VERSION 5 (2026-11-20, row 177). NOT RUN.
+  - given: >
+      the version 5 family, forms = the extrusion's id, links "Visible=Show
+      Cap" (a Yes/No) - a field that is NOT Extrusion Start or End
+    expect: >
+      changed 1, linkReport "Extrusion id N: Visible not linked -> Show Cap
+      ..." with NO "runs along" sentence - the direction is said only for
+      Extrusion Start and Extrusion End
+  - given: >
+      the version 5 family, forms = the extrusion's id, links "Extrusion
+      End=Show Cap" - the Yes/No parameter, not a length
+    expect: >
+      refused naming both kinds and the Length parameters that could drive
+      Extrusion End; nothing linked, and no direction or extent read - the
+      checks run before anything, as in version 4
 
 second_route:
   - >

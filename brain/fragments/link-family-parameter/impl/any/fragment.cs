@@ -41,6 +41,22 @@
 // palette's own words now name these kinds in the answer ("Symbolic Line id
 // N") where version 3 said their Revit category.
 //
+// VERSION 5 (2026-11-20, FRAGMENT-ISSUES row 177, issue #944): A FORM'S
+// EXTRUSION START AND END SAY WHICH WAY THEY RUN. LINK_FAMILY_FORM_PARAMETER
+// was merged into this card, and linking a form's Extrusion Start or
+// Extrusion End associates Revit's RAW value, which runs along the form's
+// SKETCH PLANE's normal - not along the model axis CREATE_FAMILY_EXTRUSION
+// takes its start and end on. Found 2026-10-04, Revit 2024: on `Port Right`,
+// whose sketch plane faces -X, +1 at build is raw -1, so a linked +1 put a
+// thin cap on the other side and a connector made on it pointed into the
+// valve. So for every extrusion whose Extrusion Start or End is in the call
+// (EXTRUSION_START_PARAM, EXTRUSION_END_PARAM, by Revit's ids), `linkReport`
+// now says which way its sketch plane faces in model terms - "Extrusion End
+// runs along -X here: its sketch plane, on "Port Right", faces -X, so a
+// positive value goes left" - and, after the links and the regenerate, where
+// the form reaches along that axis, read back off its geometry: "the form
+// now runs X 48 to 49 mm". Every other path is version 4's, unchanged.
+//
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
 // THE "ASSOCIATE FAMILY PARAMETER" BUTTON, FOR ELEMENTS ALREADY IN THE FAMILY.
@@ -280,7 +296,9 @@ Func<FamilyParameter, string> nameOf = fp =>
 };
 
 // WHAT A PARAMETER READS, in Revit's own words - never a number re-derived
-// here, so no unit is named in this file.
+// here, so no unit is named for a parameter's value. (The one length this
+// file writes in millimetres itself is a form's extent read back off its
+// geometry, version 5.)
 Func<Parameter, string> reads = p =>
 {
     try
@@ -384,6 +402,26 @@ Func<ElementId, string> materialWords = id =>
     if (id == null || id == ElementId.InvalidElementId) return "<By Category>";
     var material = doc.GetElement(id) as Material;
     return material == null ? "<By Category>" : material.Name;
+};
+
+// VERSION 5 (row 177): A FORM'S EXTRUSION START AND END, by Revit's ids for
+// them. Their values run along the form's SKETCH PLANE's normal, not along a
+// model axis, so every form one is linked on is said which way that is.
+var extrusionStartField = new ElementId(BuiltInParameter.EXTRUSION_START_PARAM);
+var extrusionEndField = new ElementId(BuiltInParameter.EXTRUSION_END_PARAM);
+Func<Parameter, bool> isExtrusionField = p =>
+{
+    try { return p != null && (p.Id == extrusionStartField || p.Id == extrusionEndField); }
+    catch (Exception) { return false; }
+};
+// A direction in the model's words: its axis, which way that is in the
+// Family Editor, and the axis's index - null for one along no model axis.
+Func<XYZ, Tuple<string, string, int>> modelAxis = d =>
+{
+    if (Math.Abs(d.X) > 0.9999) return d.X > 0 ? Tuple.Create("+X", "right", 0) : Tuple.Create("-X", "left", 0);
+    if (Math.Abs(d.Y) > 0.9999) return d.Y > 0 ? Tuple.Create("+Y", "to the back", 1) : Tuple.Create("-Y", "to the front", 1);
+    if (Math.Abs(d.Z) > 0.9999) return d.Z > 0 ? Tuple.Create("+Z", "up", 2) : Tuple.Create("-Z", "down", 2);
+    return null;
 };
 
 if (!doc.IsFamilyDocument)
@@ -1002,6 +1040,96 @@ if (refused == null)
 
     if (any) doc.Regenerate();
 
+    // VERSION 5 (row 177): WHICH WAY A FORM'S EXTRUSION START AND END RUN, in
+    // the model's words, and where the form reaches along that axis now - read
+    // back off its geometry after the links, never worked out from the values.
+    // A positive value goes along its sketch plane's normal, so on a plane that
+    // faces -X a positive Extrusion End goes left, whatever the build tool's
+    // own start and end meant.
+    var mmFormat = System.Globalization.CultureInfo.InvariantCulture;
+    Func<double, string> extentMm = feet => (feet * 304.8).ToString("0.#", mmFormat);
+    Func<Extrusion, List<string>, string> extrusionNote = (form, fields) =>
+    {
+        var runs = string.Join(" and ", fields) + (fields.Count == 1 ? " runs" : " run");
+        Plane sketchPlane = null;
+        var planeLabel = "";
+        try
+        {
+            var onPlane = form.Sketch.SketchPlane;
+            sketchPlane = onPlane.GetPlane();
+            planeLabel = onPlane.Name ?? "";
+        }
+        catch (Exception) { sketchPlane = null; }
+        if (sketchPlane == null)
+            return " - which way " + runs + " could not be read: Revit gave back no sketch plane for this form";
+
+        // THE PLANE BY THE NAME THE MODELLER KNOWS: the one named reference
+        // plane it lies on, when exactly one does; else the sketch plane's own.
+        var normal = sketchPlane.Normal;
+        var onNamed = new List<string>();
+        foreach (var rp in new FilteredElementCollector(doc).OfClass(typeof(ReferencePlane)).Cast<ReferencePlane>())
+        {
+            try
+            {
+                var datum = rp.get_Parameter(BuiltInParameter.DATUM_TEXT);
+                var text = datum == null ? null : datum.AsString();
+                if (string.IsNullOrEmpty(text)) continue;
+                var its = rp.GetPlane();
+                if (Math.Abs(Math.Abs(its.Normal.DotProduct(normal)) - 1.0) < 1e-6
+                    && Math.Abs((its.Origin - sketchPlane.Origin).DotProduct(normal)) < 0.5 / 304.8)
+                    onNamed.Add(text);
+            }
+            catch (Exception) { }
+        }
+        if (onNamed.Distinct().Count() == 1) planeLabel = onNamed[0];
+
+        var axis = modelAxis(normal);
+        var facing = axis == null
+            ? "(" + Math.Round(normal.X, 3).ToString(mmFormat) + ", " + Math.Round(normal.Y, 3).ToString(mmFormat) + ", "
+              + Math.Round(normal.Z, 3).ToString(mmFormat) + ")"
+            : axis.Item1;
+        var said = " - " + runs + " along " + (axis == null ? "its sketch plane's normal, " + facing + ", along no model axis"
+                : axis.Item1) + " here: its sketch plane" + (planeLabel.Length > 0 ? ", on \"" + planeLabel + "\"," : "")
+            + " faces " + facing + (axis == null ? "" : ", so a positive value goes " + axis.Item2);
+
+        // WHERE IT REACHES NOW, along that axis - off its solid's edges, or its
+        // bounding box when it has none of its own (a joined or cut form).
+        Func<XYZ, double> measure = q => axis == null ? q.DotProduct(normal)
+            : axis.Item3 == 0 ? q.X : axis.Item3 == 1 ? q.Y : q.Z;
+        var lowest = double.MaxValue;
+        var highest = double.MinValue;
+        try
+        {
+            var geometry = form.get_Geometry(new Options());
+            if (geometry != null)
+                foreach (GeometryObject piece in geometry)
+                {
+                    var solid = piece as Solid;
+                    if (solid == null) continue;
+                    foreach (Edge edge in solid.Edges)
+                        foreach (var q in edge.Tessellate())
+                        {
+                            lowest = Math.Min(lowest, measure(q));
+                            highest = Math.Max(highest, measure(q));
+                        }
+                }
+            if (lowest > highest && axis != null)
+            {
+                var box = form.get_BoundingBox(null);
+                if (box != null)
+                {
+                    lowest = measure(box.Min);
+                    highest = measure(box.Max);
+                }
+            }
+        }
+        catch (Exception) { lowest = double.MaxValue; highest = double.MinValue; }
+        if (lowest > highest)
+            return said + "; where the form reaches now could not be read back - Revit gave back none of its geometry";
+        return said + "; the form now runs " + (axis == null ? "" : axis.Item1.Substring(1) + " ") + extentMm(lowest)
+            + " to " + extentMm(highest) + " mm" + (axis == null ? " along that normal" : "");
+    };
+
     var rows = new List<string>();
     foreach (var e in chosen)
     {
@@ -1067,7 +1195,12 @@ if (refused == null)
                 parts.Add(plan.Item4 + " " + nameOf(plan.Item5) + " -> " + nameOf(after) + tail);
             }
         }
-        rows.Add(describe(e) + ": " + string.Join("; ", parts));
+        // VERSION 5: an extrusion whose Extrusion Start or End was in the call.
+        var extrusionFields = plans.Where(p => p.Item1.Id == e.Id && isExtrusionField(p.Item2))
+            .Select(p => p.Item2.Definition.Name).Distinct().ToList();
+        var asExtrusion = e as Extrusion;
+        rows.Add(describe(e) + ": " + string.Join("; ", parts)
+            + (asExtrusion != null && extrusionFields.Count > 0 ? extrusionNote(asExtrusion, extrusionFields) : ""));
     }
     linkReport = string.Join("  ||  ", rows);
     linked = plans.Any(p => p.Item6 == null && p.Item3 != null);

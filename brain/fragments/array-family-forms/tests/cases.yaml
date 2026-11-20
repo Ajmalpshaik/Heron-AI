@@ -65,7 +65,47 @@ positive:
       arrayed in the 3D view as before, every copy read back by its box -
       version 4 changed nothing for a form
 
+  - given: >
+      VERSION 5 (5b-1261) - a scratch metric Generic Model family with
+      reference planes "Left" and "Leg End" 300 mm apart, a dimension between
+      them labelled length "Leg Length", and a solid extrusion 20 x 20 sketched
+      ON "Leg End" and extruded back to "Left", its far face locked to "Left"
+      (the heater's legs); form = its id, count "3", step "Z 80"
+    expect: >
+      ARRAYED, not refused - three in all, 80 mm apart up +Z, every copy read
+      back; a finding naming the reference plane "Leg End" and "Leg Length",
+      saying the row was read at this type only, to flex it with FLEX_FAMILY,
+      and that a part a size stretches is arrayed as a nested family (the
+      family-creation method, step 10). If REPORT_FAMILY_FORMS then reads the
+      arrayed forms on "<not associated>", a second finding says how many of
+      the three, and FLEX_FAMILY at Leg Length 500 shows whether the row broke
+
+  - given: >
+      VERSION 5 (5b-358) - the solid extrusion on Ref. Level, count "3", step
+      "Y 100"
+    expect: >
+      members two group ids and memberForms two extrusion ids, the same order
+      - each memberForms id is an Extrusion whose group is the members id
+      beside it; the void-copies finding, for a void, names memberForms
+
 negative:
+  - given: >
+      VERSION 5 (5b-1261) - the same Leg Length family, but the extrusion
+      sketched on Ref. Level (a level, no reference plane, no label names it);
+      form = its id, count "3", step "Y 100"
+    expect: >
+      arrayed, and NO finding naming a reference plane or "Leg Length"; if the
+      arrayed forms still read "Ref. Level" no work-plane finding either - if
+      they read "<not associated>", that is the answer to what was NOT
+      CHECKED, and the work-plane finding fires on every array: record it
+
+  - given: >
+      VERSION 5 - a vane on a FREE plane (its work plane already reads
+      "<not associated>" before the array), count "5", step "X 40"
+    expect: >
+      arrayed, and no work-plane finding - a plane that was not associated
+      before cannot be lost by the array
+
   - given: >
       VERSION 4 - the same nested Flow Arrow in "Ref. Level"; count "3", step
       "Z 100" - out of the view's plane

@@ -243,7 +243,17 @@ def main():
     # and a type-level question cannot supply one.
     refused = sorted(kind for kind in types
                      if kind != "Element" and not GJ.receivable(kind)[0])
-    check(refused, "some caller-supplied types are refused: %s" % refused)
+    # NO CARD MAY DECLARE ONE ANY MORE. EXPORT_MODEL_TO_IFC's `IFCVersion` was
+    # the last, and its version 2 takes the schema as a name (row 5b-1402,
+    # 2026-11-20). The rule below still holds for every type the binder
+    # refuses, so with none declared it is checked on one the binder refuses
+    # by name - so the section still RUNS, and fails if the refusal is lost.
+    if not refused:
+        print("  (no card declares a refused type - the rule is checked on IFCVersion, "
+              "which the binder refuses on purpose)")
+        check(not GJ.receivable("IFCVersion")[0],
+              "IFCVersion is still refused by the binder, so the rule has a type to test")
+        refused = ["IFCVersion"]
     for kind in refused:
         hint = HF.how_to_type(kind)
         check("CANNOT BE TYPED" in hint and "comma separated" not in hint,

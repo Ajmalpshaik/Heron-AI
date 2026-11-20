@@ -2,6 +2,18 @@
 // `formList`, `combinationList`, `scanned`, `notAFamily`, `elements`,
 // `twoDCount`, `twoDList`, `refused` and `findings` behind.
 //
+// VERSION 6 (2026-11-20, issue #1051 item A1) - ONE COPY OF THE LIST, AND A
+// BOUND ON IT. Version 5 kept each form's line in a list beside `formList`,
+// and the add-in sends such a list whole, so every line came twice: 98 forms
+// answered 50,871 characters and 130 answered 57,449, more than the chat can
+// show. The lines (and the joins') are now kept where they are read, and
+// `formList` opens with the count, solid and void, and how far the forms reach
+// together; then each form's line once, the first `formsDescribed` (60); past
+// that ONE line saying how many more, their ids (the first 240) and how to
+// read them. `elements` still hands on EVERY form read, so a selection or a
+// delete chained after this reaches all of them. Nothing matched, `formList`
+// stays empty, as before.
+//
 // VERSION 5 (2026-11-11, row 5b-1496) - THE FAMILY'S 2D SIDE TOO, on the
 // owner's word: no second tool for the same kind of job. Beside the forms,
 // every DETAIL LINE, SYMBOLIC LINE, FILLED and MASKING REGION and NESTED
@@ -151,8 +163,19 @@ Func<FamilyInstance, bool> isViewBased = fi =>
         || cat.Id == new ElementId(BuiltInCategory.OST_GenericAnnotation);
 };
 
-var rows = new List<string>();
-var joins = new List<string>();
+// VERSION 6: each form's line, and each join's, is kept INSIDE the block that
+// reads them below, not here. The add-in sends every list of text a fragment
+// leaves at this level whole beside the answer, so `rows` and `joins` here
+// printed every line of `formList` and `combinationList` a second time
+// (issue #1051 item A1).
+// THE FORMS DESCRIBED LINE BY LINE IN ONE ANSWER - past it the rest are one
+// line of ids. Issue #1051 item A1: 98 forms answered 50,871 characters and
+// 130 forms 57,449, every line twice, past what the chat can show; 60 lines
+// is about a third of that. A bound for the reply, not a limit of Revit's.
+const int formsDescribed = 60;
+// The ids named on that one line, at most - so a family of thousands of forms
+// still answers in a size the chat shows; past it, `which` narrows the read.
+const int idsNamedBeyond = 240;
 var named = new HashSet<string>();
 // The forms - and, since version 5, the 2D elements - named by id, in the
 // order named, each once - the order `elements` hands them on in
@@ -242,6 +265,13 @@ else if (problems.Count > 0)
 }
 else
 {
+    var rows = new List<string>();
+    var rowIds = new List<string>();
+    var joins = new List<string>();
+    // VERSION 6: how far the forms read reach together, X Y Z low then high.
+    var overall = new[] { double.MaxValue, double.MaxValue, double.MaxValue,
+                          double.MinValue, double.MinValue, double.MinValue };
+    var solids = 0;
     var forms = new FilteredElementCollector(doc).OfClass(typeof(GenericForm)).Cast<GenericForm>().ToList();
     scanned = forms.Count;
     foreach (var f in forms.OrderBy(x => kindOf(x)).ThenBy(x => x.UniqueId))
@@ -257,8 +287,17 @@ else
         var extent = "";
         var box = f.get_BoundingBox(null);
         if (box != null)
+        {
             extent = "X " + mm(box.Min.X) + " to " + mm(box.Max.X) + ", Y " + mm(box.Min.Y) + " to " + mm(box.Max.Y)
                 + ", Z " + mm(box.Min.Z) + " to " + mm(box.Max.Z) + " mm";
+            overall[0] = Math.Min(overall[0], box.Min.X);
+            overall[1] = Math.Min(overall[1], box.Min.Y);
+            overall[2] = Math.Min(overall[2], box.Min.Z);
+            overall[3] = Math.Max(overall[3], box.Max.X);
+            overall[4] = Math.Max(overall[4], box.Max.Y);
+            overall[5] = Math.Max(overall[5], box.Max.Z);
+        }
+        if (f.IsSolid) solids++;
 
         var volume = 0.0;
         if (f.IsSolid)
@@ -293,6 +332,7 @@ else
             + ", subcategory " + (f.Subcategory == null ? "(the family's own)" : f.Subcategory.Name)
             + (shows.Length > 0 ? ", " + shows : "")
             + (inJoin.Count > 0 ? ", in " + string.Join(" and ", inJoin) : ""));
+        rowIds.Add(f.UniqueId);
     }
 
     foreach (var c in new FilteredElementCollector(doc).OfClass(typeof(GeomCombination)).Cast<GeomCombination>())
@@ -571,7 +611,34 @@ else
     if (ids.Count > 0) foreach (var f in namedInOrder) elements.Add(f);
 
     formCount = rows.Count;
-    formList = string.Join("  ||  ", rows);
+    // VERSION 6 (issue #1051 item A1): THE COUNT AND HOW FAR THE FORMS REACH
+    // TOGETHER FIRST, then each form's line ONCE - the first `formsDescribed`
+    // of them. Past that, the rest are ONE line: how many, their ids, and how
+    // to read them. `elements` still hands on every form read, so a selection
+    // or a delete chained after this reaches all of them, described or not.
+    if (formCount > 0)
+    {
+        var listed = new List<string>();
+        listed.Add(formCount + " form(s), " + solids + " solid and " + (formCount - solids) + " void"
+            + (overall[0] <= overall[3]
+                ? ", together reaching X " + mm(overall[0]) + " to " + mm(overall[3]) + ", Y " + mm(overall[1])
+                  + " to " + mm(overall[4]) + ", Z " + mm(overall[2]) + " to " + mm(overall[5]) + " mm"
+                : ""));
+        listed.AddRange(rows.Take(formsDescribed));
+        if (formCount > formsDescribed)
+        {
+            var rest = rowIds.Skip(formsDescribed).ToList();
+            listed.Add("and " + rest.Count + " more form(s), not described here so that this answer stays short "
+                + "enough to be shown - their ids"
+                + (rest.Count > idsNamedBeyond ? ", the first " + idsNamedBeyond + " of them" : "") + ": "
+                + string.Join(", ", rest.Take(idsNamedBeyond))
+                + (rest.Count > idsNamedBeyond ? " (and " + (rest.Count - idsNamedBeyond) + " more, not named here)" : "")
+                + ". Read them by naming those ids, up to " + formsDescribed + " at a time, or by a kind or a side - "
+                + "\"void\", \"revolve\", \"solid, extrusion\" - to read fewer at once"
+                + (notNamed ? "" : ". Every one of the " + formCount + " is still handed on, to select or delete") + ".");
+        }
+        formList = string.Join("  ||  ", listed);
+    }
     combinationList = string.Join("  ||  ", joins);
     findings.Add(formCount + " form(s) of " + scanned + " in the family" + (words.Count > 0 ? " match \""
         + string.Join(", ", words) + "\"" : ids.Count > 0 ? ", by id" : "") + "; " + joins.Count + " join(s) or cut(s).");

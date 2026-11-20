@@ -281,13 +281,23 @@ if (allCategories && view.AreGraphicsOverridesAllowed())
         try
         {
             if (view.IsTemplate || view.ViewTemplateId == ElementId.InvalidElementId) return "";
-            var ownSlots = new HashSet<ElementId>(view.GetNonControlledTemplateParameterIds());
+            // VERSION 4 (row 5b-1854): the include list is read FROM THE
+            // TEMPLATE - Revit's reference: the parameters "not marked as
+            // included when this view is used as a template". Version 3 read
+            // it off the view, so "the template sets this tab" could be wrong
+            // either way.
+            var template = doc.GetElement(view.ViewTemplateId) as View;
+            if (template == null) return " Its view template could not be found, so who sets this tab is not known";
+            var ownSlots = new HashSet<ElementId>(template.GetNonControlledTemplateParameterIds());
             if (ownSlots.Contains(new ElementId(slot))) return "";
-            var template = doc.GetElement(view.ViewTemplateId);
             return string.Format(" The view template '{0}' sets this tab, so these rows are the template's - "
-                + "change them on the template", template == null ? "?" : template.Name);
+                + "change them on the template", template.Name);
         }
-        catch (Exception) { return ""; }
+        catch (Exception thrown)
+        {
+            return " Whether its view template sets this tab could not be read - Revit says: "
+                + (thrown.InnerException ?? thrown).Message;
+        }
     };
 
     // What the host draws, by category, and every per-element override, in

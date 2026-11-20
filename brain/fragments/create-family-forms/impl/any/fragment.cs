@@ -34,6 +34,22 @@
 // Every row's id is in `formIds`, so SET_FAMILY_SWEEP_PROFILE takes a
 // sweep's id from here as it took CREATE_FAMILY_SWEEP's `formId`.
 //
+// VERSION 4 (2026-11-20) refuses two things Revit could not finish, before
+// anything is made:
+//   LOOPS THAT TOUCH OR CROSS (row 5b-296, issue #944). In a row whose profile
+//   has more than one loop, every pair of loops is measured side against side
+//   from the profile's own numbers, and any pair nearer than a hundredth of a
+//   millimetre - a shared corner or side, a crossing - refuses the call naming
+//   the row and the two loops by their order in it. Revit's own answer was
+//   only "unexpected internal error: code 1". A ring is an outer loop with an
+//   inner one inside it, which touches nothing and passes; crossing strips
+//   are forms of their own. No Revit call answers it, so this reading half
+//   still touches no Revit geometry and makes nothing.
+//   MORE THAN `mostLoops` LOOPS IN ONE CALL (issue #1051 item A3). Every loop of
+//   every row is counted; over 600 the call is refused with the count, saying to
+//   split the rows across calls of about 300 loops. 600 is a budget from one
+//   measured run on Revit 2020, not a limit of Revit's.
+//
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one - so the
 // whole list is ONE entry in the Family Editor's undo list, and one Undo takes
 // every form back (Article 8).
@@ -390,6 +406,136 @@ Func<string, string, List<double[]>> pathOf = (text, where) =>
     return segments;
 };
 
+// VERSION 4 (row 5b-296, issue #944): HOW NEAR TWO SIDES OF A PROFILE COME,
+// in millimetres, each side a segment {kind, u0, v0, um, vm, u1, v1} as loopOf
+// writes it. Worked out from the profile's own numbers, never asked of Revit's
+// curve intersection - that is one call on 2020 to 2025 and another from 2026,
+// the first gone in 2027 - so this reading half touches no Revit geometry and
+// nothing is made to answer it.
+// Two sides nearer than this, a hundredth of a millimetre, are taken as
+// touching: a shared corner, a shared or overlapping side, or a crossing.
+var touchMm = 0.01;
+var fullTurn = 2 * Math.PI;
+// An arc as {centre u, centre v, radius, start angle, sweep}, always turning
+// anticlockwise from its start - the circle through its three points.
+Func<double[], double[]> arcOf = s =>
+{
+    var d = 2 * (s[1] * (s[4] - s[6]) + s[3] * (s[6] - s[2]) + s[5] * (s[2] - s[4]));
+    var cu = ((s[1] * s[1] + s[2] * s[2]) * (s[4] - s[6]) + (s[3] * s[3] + s[4] * s[4]) * (s[6] - s[2])
+        + (s[5] * s[5] + s[6] * s[6]) * (s[2] - s[4])) / d;
+    var cv = ((s[1] * s[1] + s[2] * s[2]) * (s[5] - s[3]) + (s[3] * s[3] + s[4] * s[4]) * (s[1] - s[5])
+        + (s[5] * s[5] + s[6] * s[6]) * (s[3] - s[1])) / d;
+    var anticlockwise = (s[3] - s[1]) * (s[6] - s[2]) - (s[4] - s[2]) * (s[5] - s[1]) > 0;
+    var startAngle = anticlockwise ? Math.Atan2(s[2] - cv, s[1] - cu) : Math.Atan2(s[6] - cv, s[5] - cu);
+    var endAngle = anticlockwise ? Math.Atan2(s[6] - cv, s[5] - cu) : Math.Atan2(s[2] - cv, s[1] - cu);
+    var sweep = ((endAngle - startAngle) % fullTurn + fullTurn) % fullTurn;
+    return new[] { cu, cv, Math.Sqrt(Math.Pow(s[1] - cu, 2) + Math.Pow(s[2] - cv, 2)), startAngle, sweep };
+};
+// Does the arc's own span hold the direction from its centre to this point?
+Func<double, double, double[], bool> withinArc = (pu, pv, arc) =>
+{
+    var turned = ((Math.Atan2(pv - arc[1], pu - arc[0]) - arc[3]) % fullTurn + fullTurn) % fullTurn;
+    return turned <= arc[4] + 1e-12;
+};
+// How far a point is from a side.
+Func<double, double, double[], double> pointToSide = (pu, pv, s) =>
+{
+    if (s[0] == 1.0)
+    {
+        var arc = arcOf(s);
+        if (withinArc(pu, pv, arc))
+            return Math.Abs(Math.Sqrt(Math.Pow(pu - arc[0], 2) + Math.Pow(pv - arc[1], 2)) - arc[2]);
+        return Math.Min(Math.Sqrt(Math.Pow(pu - s[1], 2) + Math.Pow(pv - s[2], 2)),
+            Math.Sqrt(Math.Pow(pu - s[5], 2) + Math.Pow(pv - s[6], 2)));
+    }
+    var du = s[5] - s[1];
+    var dv = s[6] - s[2];
+    var share = Math.Max(0.0, Math.Min(1.0, ((pu - s[1]) * du + (pv - s[2]) * dv) / (du * du + dv * dv)));
+    return Math.Sqrt(Math.Pow(pu - s[1] - share * du, 2) + Math.Pow(pv - s[2] - share * dv, 2));
+};
+// How near two sides come: 0 where they meet or cross. Every place the
+// nearest pair can be is tried - each end against the other side, every
+// crossing, and where one side runs square to the other's circle.
+Func<double, double, double, double, double, double, double> turnOf = (au, av, bu, bv, pu, pv) =>
+    (bu - au) * (pv - av) - (bv - av) * (pu - au);
+Func<double[], double[], double> sidesApart = (s, t) =>
+{
+    var best = Math.Min(Math.Min(pointToSide(s[1], s[2], t), pointToSide(s[5], s[6], t)),
+        Math.Min(pointToSide(t[1], t[2], s), pointToSide(t[5], t[6], s)));
+    if (s[0] == 0.0 && t[0] == 0.0)
+    {
+        // Two straight sides crossing inside both - their ends are counted above.
+        if (turnOf(s[1], s[2], s[5], s[6], t[1], t[2]) * turnOf(s[1], s[2], s[5], s[6], t[5], t[6]) < 0
+            && turnOf(t[1], t[2], t[5], t[6], s[1], s[2]) * turnOf(t[1], t[2], t[5], t[6], s[5], s[6]) < 0)
+            return 0.0;
+        return best;
+    }
+    if (s[0] == 0.0 || t[0] == 0.0)
+    {
+        var line = s[0] == 0.0 ? s : t;
+        var arc = arcOf(s[0] == 0.0 ? t : s);
+        var du = line[5] - line[1];
+        var dv = line[6] - line[2];
+        var squared = du * du + dv * dv;
+        var length = Math.Sqrt(squared);
+        // Where the straight side crosses the circle, inside both.
+        var fu = line[1] - arc[0];
+        var fv = line[2] - arc[1];
+        var half = fu * du + fv * dv;
+        var disc = half * half - squared * (fu * fu + fv * fv - arc[2] * arc[2]);
+        if (disc >= 0)
+            foreach (var sign in new[] { -1.0, 1.0 })
+            {
+                var at = (-half + sign * Math.Sqrt(disc)) / squared;
+                if (at >= 0 && at <= 1 && withinArc(line[1] + at * du, line[2] + at * dv, arc)) return 0.0;
+            }
+        // The arc's points square to the straight side, where it comes nearest.
+        foreach (var sign in new[] { -1.0, 1.0 })
+        {
+            var pu = arc[0] - sign * arc[2] * dv / length;
+            var pv = arc[1] + sign * arc[2] * du / length;
+            if (!withinArc(pu, pv, arc)) continue;
+            var at = ((pu - line[1]) * du + (pv - line[2]) * dv) / squared;
+            if (at >= 0 && at <= 1)
+                best = Math.Min(best, Math.Abs((pu - line[1]) * dv - (pv - line[2]) * du) / length);
+        }
+        return best;
+    }
+    var first = arcOf(s);
+    var second = arcOf(t);
+    var gapU = second[0] - first[0];
+    var gapV = second[1] - first[1];
+    var centres = Math.Sqrt(gapU * gapU + gapV * gapV);
+    if (centres > 1e-9)
+    {
+        var uu = gapU / centres;
+        var uv = gapV / centres;
+        // Where the two circles cross, inside both arcs.
+        if (centres <= first[2] + second[2] && centres >= Math.Abs(first[2] - second[2]))
+        {
+            var reach = (first[2] * first[2] - second[2] * second[2] + centres * centres) / (2 * centres);
+            var rise = Math.Sqrt(Math.Max(0.0, first[2] * first[2] - reach * reach));
+            foreach (var sign in new[] { -1.0, 1.0 })
+            {
+                var pu = first[0] + reach * uu - sign * rise * uv;
+                var pv = first[1] + reach * uv + sign * rise * uu;
+                if (withinArc(pu, pv, first) && withinArc(pu, pv, second)) return 0.0;
+            }
+        }
+        // The points on the line through both centres, where two arcs come nearest.
+        foreach (var sign in new[] { -1.0, 1.0 })
+        {
+            var au = first[0] + sign * first[2] * uu;
+            var av = first[1] + sign * first[2] * uv;
+            if (withinArc(au, av, first)) best = Math.Min(best, pointToSide(au, av, t));
+            var bu = second[0] + sign * second[2] * uu;
+            var bv = second[1] + sign * second[2] * uv;
+            if (withinArc(bu, bv, second)) best = Math.Min(best, pointToSide(bu, bv, s));
+        }
+    }
+    return best;
+};
+
 // ---- the planes -------------------------------------------------------------
 
 // (element, axis it faces, position along that axis in feet, name) for every
@@ -480,6 +626,17 @@ var kindOwned = new[] { "profile", "startMm", "endMm", "axisLine", "startDegrees
 Func<string, string> kindWords = k => k == "extrusion" ? "an extrusion" : k == "revolve" ? "a revolve"
     : k == "blend" ? "a blend" : k == "sweep" ? "a sweep" : "a swept blend";
 var mostRows = 200;
+// VERSION 4 - THE LOOP BUDGET, every loop of every row's profile counted
+// before anything is sent (a blend's or a swept blend's two profiles are a
+// loop each). GitHub issue #1051 item A3, the owner's PC, Revit 2020,
+// 2026-11-19: ONE call of 6 rows carrying about 1,800 loops (louvre slots) ran
+// past the 50-second limit on one operation and was rolled back whole; split
+// to one form a call, 180 to 270 loops took about 6 to 12 seconds each. 600 is
+// a BUDGET SET FROM THAT ONE MEASUREMENT, not a limit of Revit's - twice the
+// 300 a call that is advised, and well inside the time a call is given at the
+// rate measured. Change it only with a measurement of its own.
+const int mostLoops = 600;
+var loopsInCall = 0;
 Func<string, string> shortened = text =>
 {
     var flat = System.Text.RegularExpressions.Regex.Replace(text ?? "", @"\s+", " ").Trim();
@@ -629,6 +786,10 @@ else
                 + "a revolve, a blend, a sweep or a swept blend.");
             continue;
         }
+
+        // VERSION 4: the loops this row sends, toward the call's budget.
+        loopsInCall += kindIs == "blend" || kindIs == "swept blend" ? 2
+            : (field("profile") ?? "").Split('|').Count(p => p.Trim().Length > 0);
 
         var needed = kindFields[kindIs];
         var missing = needed.Where(n => string.IsNullOrEmpty(field(n))).ToList();
@@ -858,6 +1019,64 @@ else
             }
         }
 
+        // VERSION 4 (row 5b-296, issue #944) - LOOPS THAT TOUCH OR CROSS EACH
+        // OTHER ARE REFUSED HERE, before anything is made: a ring drawn as four
+        // rectangles sharing sides, or strips crossing a spine, reach Revit as
+        // one profile and it answers only "unexpected internal error: code 1".
+        // Every pair of the row's loops is tested, after a revolve's corners
+        // are put on its axis. Two whose extents lie apart cannot touch; any
+        // other pair is measured side against side, and two sides nearer than
+        // `touchMm` - a shared corner, a shared or overlapping side, a crossing
+        // - are a touch. A loop wholly inside another and touching it nowhere,
+        // a hole, passes. Skipped once the call is over its loop budget, which
+        // refuses it anyway, so an oversized list is not compared pair by pair.
+        if (problems.Count == problemsBefore && loops.Count > 1 && loops.Count == loopTexts.Count
+            && loopsInCall <= mostLoops)
+        {
+            // Each loop's extent {u low, v low, u high, v high}; an arc's is
+            // its whole circle's, which holds it whichever way it bulges.
+            var extents = loops.Select(loop =>
+            {
+                var box = new[] { double.MaxValue, double.MaxValue, double.MinValue, double.MinValue };
+                Action<double, double> reach = (one, two) =>
+                {
+                    box[0] = Math.Min(box[0], one); box[1] = Math.Min(box[1], two);
+                    box[2] = Math.Max(box[2], one); box[3] = Math.Max(box[3], two);
+                };
+                foreach (var s in loop)
+                {
+                    reach(s[1], s[2]);
+                    reach(s[5], s[6]);
+                    if (s[0] != 1.0) continue;
+                    var circle = arcOf(s);
+                    reach(circle[0] - circle[2], circle[1] - circle[2]);
+                    reach(circle[0] + circle[2], circle[1] + circle[2]);
+                }
+                return box;
+            }).ToList();
+            var touching = new List<string>();
+            for (var i = 0; i < loops.Count && touching.Count <= 6; i++)
+                for (var j = i + 1; j < loops.Count && touching.Count <= 6; j++)
+                {
+                    var p = extents[i];
+                    var q = extents[j];
+                    if (p[0] > q[2] + touchMm || q[0] > p[2] + touchMm
+                        || p[1] > q[3] + touchMm || q[1] > p[3] + touchMm) continue;
+                    var other = loops[j];
+                    if (loops[i].Any(a => other.Any(b => sidesApart(a, b) <= touchMm)))
+                        touching.Add((i + 1) + " and " + (j + 1));
+                }
+            if (touching.Count > 0)
+                problems.Add(where + ": loops " + touching[0] + " of the profile touch or cross each other - they "
+                    + "share a side or a corner, or one runs across the other - and Revit cannot build that; it "
+                    + "answers only \"unexpected internal error\""
+                    + (touching.Count == 1 ? ""
+                        : touching.Count <= 6 ? ". So do loops " + string.Join(", ", touching.Skip(1))
+                        : ". So do loops " + string.Join(", ", touching.Skip(1).Take(5)) + ", and more pairs besides")
+                    + " - a ring is drawn as an outer loop with an inner loop inside it, not as pieces that share "
+                    + "edges; crossing strips are forms of their own.");
+        }
+
         // A MATERIAL, IF ASKED: a family material parameter, a material in the
         // family, or "by category" - never guessed between them.
         FamilyParameter parameter = null;
@@ -956,6 +1175,16 @@ else
         rowTopLoop.Add(topLoop);
         rowPath.Add(route);
     }
+
+    // VERSION 4 (issue #1051 item A3): OVER THE LOOP BUDGET, NOTHING IS SENT -
+    // said first, so it is never among the problems cut from the refusal.
+    if (loopsInCall > mostLoops)
+        problems.Insert(0, "The list carries " + loopsInCall + " loops across its " + rowCount + " row(s), and one "
+            + "call sends at most " + mostLoops + ". Split the rows across several calls, about 300 loops a call - "
+            + "one row whose profile alone has more than " + mostLoops + " loops is drawn as several forms. Why: on "
+            + "Revit 2020 one call of 6 rows carrying about 1,800 loops ran past the 50-second limit on one operation "
+            + "and was rolled back, while 180 to 270 loops took about 6 to 12 seconds a call. " + mostLoops + " is "
+            + "Heron's own budget set from that one measurement, not a limit of Revit's.");
 
     if (problems.Count > 0)
         refused = (rowCount > 0 ? "Nothing was built - none of the " + rowCount + " row(s). " : "Nothing was built. ")
