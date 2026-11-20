@@ -313,6 +313,10 @@ def _ended(reply, word=None):
     kind = reply.get("verdictKind")
     if kind == "kept":
         return NOTHING_ENDED.get(word, "KEPT")
+    if kind == "rolledBack" and reply.get("outsideStands") is True:
+        # Row 5b-1594: a Publish, Admin or no-transaction run sent without
+        # apply - the group rolled back, and what it did outside it stands.
+        return "rolled back in the model - what it did outside the model still stands"
     if kind == "rolledBack":
         return "rolled back, nothing kept"
     if kind == "unchanged":
@@ -403,7 +407,12 @@ def change_lines(reply):
 
     run = reply.get("run")
     if is_run_id(run):
-        lines.append("  record:  heron_run_record run=%s (every id and value)" % run)
+        # NOT "every id and value" (row 5b-194, 2026-11-20): the record keeps
+        # the reply as it left the add-in, so a value is there as it was sent -
+        # a list or a dictionary as its summary, with the text items and the
+        # entries the add-in sent beside it - and every changed id whole.
+        lines.append("  record:  heron_run_record run=%s (every id it changed, and each "
+                     "value as the add-in sent it)" % run)
     return lines
 
 

@@ -424,6 +424,59 @@ def no_proof_at_all(names):
           "the card itself was never touched: read again, its proof still stands")
 
 
+def outside_verdict():
+    """Row 5b-1594 (the owner's "yes", 2026-11-19): a Publish, an Admin or a
+    no-transaction run sent without apply is not told "NOTHING WAS KEPT".
+
+    The add-in's verdict is read as TEXT - it needs Revit to run - and the run
+    record's words are run here on the real module. Its Revit run is owed in
+    NEEDS-CHECKING Group OP."""
+    print()
+    print("A rollback that cannot take a Publish, Admin or no-transaction job back "
+          "says so (row 5b-1594)")
+    raw = read(os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitFragment.cs"))
+    joined = re.sub(r'"\s*\+\s*"', "", raw)          # a sentence's pieces, joined
+    which = raw[raw.find("var outsideTheGroup = "):raw.find("var nothingToAsk = false;")]
+    check('"run_fragment_publish"' in raw[raw.find("var sendsOut = "):raw.find("var outsideTheGroup = ")]
+          and "sendsOut ? \"a Publish job\"" in which
+          and '"run_fragment_admin"' in which and "wantsNoTransaction ?" in which,
+          "the add-in names what a rollback cannot take back: a Publish run, an Admin run, "
+          "and a card declaring noTransactionOpen")
+    check(re.search(r"WithVerdict\([^;]*described,\s*outsideTheGroup\)", raw) is not None,
+          "and hands it to the verdict")
+    verdict = raw[raw.find("private static string WithVerdict("):]
+    verdict = verdict[:verdict.find("private static ", 10)]
+    outside = verdict.find("else if (held && outsideTheGroup != null)")
+    plain = verdict.find("else if (held)\n")
+    check(0 <= outside < plain,
+          "its own branch, taken before the plain rollback's")
+    branch = re.sub(r'"\s*\+\s*"', "", verdict[outside:plain]) if 0 <= outside < plain else ""
+    check("A ROLLBACK CANNOT TAKE ALL OF THIS BACK" in branch and "STILL STANDS" in branch,
+          "which says a rollback cannot take it all back, and that what it did outside "
+          "the group still stands")
+    check("NOTHING WAS KEPT" not in branch and "Send it again with apply to keep it" not in branch
+          and "Do not send it again with apply" in branch,
+          "and never NOTHING WAS KEPT, nor 'send it again with apply' - that would do the "
+          "outside part twice")
+    check('kind = "rolledBack";' in branch,
+          "the group's own facts stand: verdictKind rolledBack, so a proof still reads a "
+          "rolled-back run (D-55) and nothing it left is carried on")
+    check('Json.Bool("outsideStands", !applied && held && outsideTheGroup != null' in joined,
+          "and outsideStands beside them says the rest, true only for that branch")
+    try:
+        import heron_run_records as RUNS
+    except Exception as why:                         # noqa: BLE001 - one clean failure
+        check(False, "heron_run_records imports: %s" % why)
+        return
+    rolled = {"ok": True, "verdictKind": "rolledBack", "applied": False, "rolledBack": True}
+    check(RUNS._ended(dict(rolled, outsideStands=True))
+          == "rolled back in the model - what it did outside the model still stands",
+          "the run record's words say what still stands - found %r"
+          % RUNS._ended(dict(rolled, outsideStands=True)))
+    check(RUNS._ended(rolled) == "rolled back, nothing kept",
+          "and a plain rollback reads as it did")
+
+
 def main():
     switched_ops = getattr(CLIENT, "SWITCHED_OPERATIONS", None)
     write_operation = getattr(CLIENT, "write_operation", None)
@@ -663,6 +716,45 @@ def main():
     check("NOT TAKEN BACK" not in out.getvalue(),
           "and a MODIFY run rolled back is not told so: the rollback took all of it")
 
+    # ROW 5b-1594 (the owner's "yes", 2026-11-19): THE ADD-IN SAYS IT NOW. Its
+    # verdict for a Publish, Admin or no-transaction run sent without apply is
+    # "A ROLLBACK CANNOT TAKE ALL OF THIS BACK", with `outsideStands` beside it,
+    # so the client prints that verdict and does not say it a second time.
+    said_now = ("A ROLLBACK CANNOT TAKE ALL OF THIS BACK. 'X' ran for real as a Publish "
+                "job, and Revit reported the transaction group rolled back afterwards")
+    taker = getattr(CLIENT, "outward_not_taken_back", None)
+    check(taker is not None, "the client has outward_not_taken_back to ask")
+    if taker is not None:
+        new = {"ok": True, "rolledBack": True, "applied": False, "outsideStands": True,
+               "verdict": said_now}
+        check(taker("X", "run_fragment_publish", new) is None,
+              "a reply that carries outsideStands gets no second NOT TAKEN BACK line - "
+              "the add-in's own verdict already says what stands")
+        old = {"ok": True, "rolledBack": True, "applied": False,
+               "verdict": "NOTHING WAS KEPT. 'X' ran for real"}
+        check(taker("X", "run_fragment_publish", old) is not None,
+              "and an add-in from before the field still gets it, for a Publish run")
+    original = FakeBridge.request
+
+    def outside_request(self, op, **kwargs):
+        answer = original(self, op, **kwargs)
+        if op != "count_elements":
+            answer.update({"applied": False, "outsideStands": True, "verdict": said_now})
+        return answer
+
+    FakeBridge.request = outside_request
+    try:
+        with fake_revit() as (bridge, asked, out):
+            CLIENT.cmd_fragment(publish_one, writing=True)
+    finally:
+        FakeBridge.request = original
+    said = out.getvalue()
+    check(said_now in said and "NOT TAKEN BACK" not in said
+          and "NOTHING WAS KEPT" not in said,
+          "`fragment %s --write` prints the add-in's 'A ROLLBACK CANNOT TAKE ALL OF THIS "
+          "BACK' once, and nothing says NOTHING WAS KEPT - printed %r"
+          % (publish_one, said[-300:]))
+
     with fake_revit() as (bridge, asked, out):
         code = CLIENT.cmd_fragment(read_one)
     check(code == 0 and bridge.sent == ["run_fragment_read"],
@@ -826,6 +918,8 @@ def main():
           < capture.find('Json.Str("png", Convert.ToBase64String(picture))'),
           "the folder is deleted before the answer is built, and the picture "
           "travels in the reply")
+
+    outside_verdict()
 
     print()
     shutil.rmtree(_SCRATCH, ignore_errors=True)

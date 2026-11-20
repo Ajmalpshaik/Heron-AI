@@ -928,6 +928,36 @@ def main():
               and not any("1: x" in line for line in stray),
               "entries for a name the reply does not carry print nowhere, and that "
               "name's own dictionary is still NOT SENT")
+
+        # EACH ENTRY WHOLE, since 2026-11-20 (row 5b-194, the owner's
+        # delegation): DESCRIBE_ELEMENTS writes "Category | Family : Type | id
+        # N", and the add-in cut each side of an entry at 60 characters - the
+        # id went. The server prints what arrived as it arrived, and the
+        # add-in's Report now sends each side through Named(..., WholeTextLimit),
+        # the limit a list's items already had, never the summary's ShortName.
+        described = ("Mechanical Equipment | M_Fan Coil Unit - Horizontal : "
+                     "1200 CFM | id 926998")
+        long_entry = with_entries({"described": "1 entry(ies)"},
+                                  {"described": {"926998": described}})
+        check(any(line.strip() == "926998: " + described for line in long_entry),
+              "a dictionary entry longer than 60 characters prints whole, the id at its end "
+              "included (row 5b-194)")
+        executor = read(FRAGMENT_CS)
+        entries_at = executor.find("var entries = new List<string>();")
+        items_at = executor.find("var itemLists = new List<string>();")
+        block = executor[entries_at:items_at] if 0 <= entries_at < items_at else ""
+        check("Named(pair.Key, WholeTextLimit)" in block
+              and "Named(held, WholeTextLimit)" in block
+              and "ShortName(" not in block,
+              "the add-in sends each entry's key and value whole to WholeTextLimit, not cut "
+              "at 60 by ShortName as a summary's sample is (row 5b-194)")
+        check("text.Length > WholeTextLimit" in executor[items_at:items_at + 4000]
+              if items_at >= 0 else False,
+              "and a list's items keep the same limit, one rule for both")
+        check(re.search(r"private static string ShortName\(object item\)\s*\{\s*"
+                        r"return Named\(item, 60\);", executor) is not None,
+              "the summary's own sample is still cut at 60 - the shape every proof "
+              "record carries")
         none = with_entries({"values": "0 entry(ies)"}, {"values": {}})
         check(not any("NOT SENT" in line for line in none)
               and not any(":" in line.strip() and line.startswith("    ") for line in none),

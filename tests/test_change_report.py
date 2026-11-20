@@ -126,7 +126,8 @@ def wiring():
           "and the rollback that a Discard and a preview make comes after it too")
     check("Elements = described == null ? null : described.ElementsField();" in run,
           "the full element list is left for the dispatcher's record")
-    check(re.search(r"WithVerdict\([^;]*,\s*described\)", run) is not None,
+    # The argument after `described` is row 5b-1594's outsideTheGroup (2026-11-20).
+    check(re.search(r"WithVerdict\([^;]*,\s*described\s*(,\s*\w+\s*)?\)", run) is not None,
           "and the verdict is handed what changed")
 
     print("\n2. one collector: the handler counts a commit of the target, and reads nothing heavy")

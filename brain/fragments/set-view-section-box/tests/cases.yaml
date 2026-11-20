@@ -12,7 +12,9 @@ negative:
     expect: >
       viewRefused is true and nothing changes - named, not a silent no-op. Only
       a 3D view has a section box, and the user is watching for the view to
-      change
+      change. `refusalReasons` ARRIVES WHOLE in the reply, SET_VIEW_CROP and
+      ISOLATE_ELEMENTS named at its end - one string since version 2 (row
+      108); as a one-item list it was cut at 60 characters
 
   - given: a batch where one element has no bounding box at all
     expect: >
