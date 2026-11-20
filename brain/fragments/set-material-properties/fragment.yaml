@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "fill in a material's identity, graphics patterns, physical a
 kind: action
 domain: revit.elements
 capability: SET_MATERIAL_PROPERTIES
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 # A settings change: after it runs from the chat, the Companion page offers its
@@ -35,6 +35,19 @@ companion-subject: materialsNamed
 # Version 1's proof below no longer described the code (impl/ changed) and
 # was kept as the record; the card was DRAFT at the time, until version 2 is
 # proved on a real model (D-30).
+#
+# VERSION 3 (2026-11-20, FRAGMENT-ISSUES row 5b-1534 - row 5b-203's repair) -
+# BACK TO DRAFT. An Identity field found by its NAME - Keywords always, any
+# other where Revit's own parameter is missing - was looked up with
+# LookupParameter and no count, so where a material carries two parameters by
+# that name Revit's pick, "determined at random" in Autodesk's words, was the
+# one written (D-54 s3). The name is now counted with GetParameters first; a
+# material carrying it twice is NOT READ and the call is refused naming the
+# material and the field, before any value is written - this card's
+# all-or-nothing rule, so nothing from the call is kept. Every other field is
+# version 2's, statement for statement. Version 2 was PROVEN (the proof block
+# below, kept as the record); its C# moved, so it is DRAFT again until it is
+# run in Revit (D-30).
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.

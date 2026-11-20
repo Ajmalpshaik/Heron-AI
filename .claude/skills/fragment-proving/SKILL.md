@@ -461,6 +461,9 @@ entry. **The rules, all in [`heron_fragment.py`](../../../brain/heron_fragment.p
   expected. **Where the row goes is on that page, under *Add to this file*:** a defect in Heron's own
   code or documents (section 5b) is a file of its own, `docs/fragment-issues/row-5b-N.md`, with N from
   `python tools/next-id.py` - never a line appended to a rows file, which is where every merge of
-  parallel work used to stop.
+  parallel work used to stop. **And since 2026-11-20 every new row, and every check still owed, is a GitHub
+  issue in the same change ([D-187](../../../docs/DECISIONS.md))** - the owner works the issue, not the
+  register. The [`heron-issue-recorder`](../../agents/heron-issue-recorder.md) agent writes both and links
+  them, with `tools/open-issue.py`.
 - **Never record a phase that did not run.** A draft saying "with nothing selected it returned 0" when
   nothing checked is worse than no draft, because it looks like evidence.

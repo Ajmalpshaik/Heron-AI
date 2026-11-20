@@ -66,7 +66,7 @@ the biggest being **62 reading fragments that must be able to look inside linked
 them to** — which in Qatar MEP work is most of the time, because the architecture is a link, the
 structure is a link, and often the MEP you are checking is a link too. Every rule is already checked by
 a gate; none of the edits was guessed, because this container has no Revit and no `dotnet` and writing
-62 collector rewrites nobody could compile would have been worse than leaving a list. *(Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-7 and WN-8).)*
+62 collector rewrites nobody could compile would have been worse than leaving a list. *(Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-7 and WN-8). Since 2026-11-20 WN-7's worklist has a row of its own, [row 5b-1909](fragment-issues/row-5b-1909.md), and is still open.)*
 
 **To carry the ROLES work on, say:** *"Read the ROLES track entry in HANDOVER.md."* It is archived at
 [the ROLES track](handover-archive/2026-09-09-the-roles-track-989-provides-declared-and-nothing-reads-a-na.md). That track is
@@ -680,13 +680,13 @@ Four steps, in order, and step 1 is the one that gets skipped.
 
    | What it turned out to be | Where it goes |
    |---|---|
-   | Needs a real Revit, or Windows, to settle | A new row in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) — the single register |
+   | Needs a real Revit, or Windows, to settle | A new row in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) — the single register — and its GitHub issue, in the same change ([D-187](DECISIONS.md), `heron-issue-recorder`) |
    | A Revit behaviour worth never re-learning | §4 above, numbered, in the order learned |
    | A choice that could reasonably have gone the other way | [`docs/DECISIONS.md`](DECISIONS.md), with what was rejected and why |
    | Something a tool could have caught and did not | A checker in `tools/` — that is how §4 note 11 and the risk ladder both became permanent |
    | A defect in one fragment | That fragment, plus a **negative case** in its `tests/cases.yaml` |
 
-4. **If it needs Revit and Revit is not in front of you, it becomes a register row — not a half-fix.**
+4. **If it needs Revit and Revit is not in front of you, it becomes a register row and its GitHub issue — not a half-fix.**
    That is [D-97](DECISIONS.md): build it all out now, prove it in one concentrated pass later. A
    speculative fix to something nobody has watched fail is a change with no evidence behind it, and it
    costs more to unpick than to write.

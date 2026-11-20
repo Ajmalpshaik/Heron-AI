@@ -676,8 +676,10 @@ def elsewhere(root, index, folder, moved, done, register_files=None):
     return out, how
 
 
-def _served(index, index_text, files):
-    """A reader that serves the register from memory: the page, and FILES."""
+def _served(index, index_text, files, seen=None):
+    """A reader that serves the register from memory: the page, and FILES.
+    SEEN, when given, collects the name of every file of the folder the
+    register asked for - the files that are the register's."""
     folder = RT.path_in(index, "")
 
     def read(path):
@@ -685,6 +687,8 @@ def _served(index, index_text, files):
         if path == index.replace(os.sep, "/"):
             return index_text
         if path.startswith(folder):
+            if seen is not None:
+                seen.add(path[len(folder):])
             return files.get(path[len(folder):])
         return None
     return read
@@ -761,6 +765,7 @@ class Plan(object):
         self.eol = NL
         self.before = ""            # the page as it stands
         self.files_before = {}      # its files as they stand
+        self.read_before = set()    # the names of those the register read - its own
         self.joined = ""            # the register as one text
         self.joined_after = ""      # the same, with each link that names a moved row following it
         self.moved = {}             # {label: {row: (from, to)}} rows moved to another rows file
@@ -834,7 +839,7 @@ def plan(key="fragment-issues", index=None, today=None, root=ROOT, check_others=
     p.files_before = _files_in(folder)
     p.new_rows = new_rows
     try:
-        p.joined = RT.register_text(index, read=_served(index, p.before, p.files_before),
+        p.joined = RT.register_text(index, read=_served(index, p.before, p.files_before, p.read_before),
                                     listing=_listed(p.files_before)).replace(CR + NL, NL)
     except RT.RegisterBroken as broken:
         p.fatal = str(broken)
@@ -901,7 +906,12 @@ def plan(key="fragment-issues", index=None, today=None, root=ROOT, check_others=
             p.banding.append((heading, written))
     if p.after == p.before and all(p.files_after[n] == p.files_before.get(n) for n in p.files_after):
         return p
-    stale = sorted(set(p.files_before) - set(p.files_after))
+    # ONLY THE REGISTER'S OWN FILES CAN BE LEFT BEHIND - the ones it read.
+    # Every .md in the folder was counted until 2026-11-20, and
+    # fragment-issues/ISSUES.md, which the register never reads, is in it:
+    # so a full split - the one that re-bands a section 5 row appended past
+    # its last band - refused on the tree as it stood (row 5b-1868).
+    stale = sorted((set(p.files_before) & p.read_before) - set(p.files_after))
     if stale:
         p.problems.append("the folder holds %s, which the new layout does not name - look at %s by "
                           "hand before running this again" % (", ".join(stale), "it" if len(stale) == 1 else "them"))

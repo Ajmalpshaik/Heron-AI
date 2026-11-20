@@ -86,6 +86,34 @@ SCOPE_MEANING = {
     EXPERIMENTAL: "unproven knowledge, quarantined",
 }
 
+# THE SAME SIX, IN A MODELLER'S WORDS (R-89, Golden Rule 1). A person putting a
+# document in is told where it goes without learning what a scope is - never
+# `GLOBAL`, `COMPANY`, `PROJECT`. The first three phrases are the owner's own,
+# 2026-09-11: "just for me", "for the whole company", "for this project only".
+# The company one says where it is kept as well, because a store is a file on
+# THIS PC and "for the whole company" must not read as "sent to the company".
+IN_PLAIN_WORDS = {
+    GLOBAL:       "for every project on this PC",
+    COMPANY:      "for the whole company - on this PC, in Heron's company "
+                  "knowledge",
+    PROJECT:      "for this project only",
+    USER:         "just for me",
+    TEMPORARY:    "for this task only, then thrown away",
+    EXPERIMENTAL: "kept apart to try out - not trusted yet",
+}
+
+
+def in_plain_words(scope, project=None):
+    """Where knowledge goes, said the way a modeller would say it (R-89)."""
+    said = IN_PLAIN_WORDS.get(scope)
+    if said is None:
+        raise ValueError("'%s' is not a knowledge scope. There are: %s"
+                         % (scope, ", ".join(SCOPES)))
+    if scope == PROJECT and project:
+        said = "%s (%s)" % (said, project)
+    return said
+
+
 SCHEMA_VERSION = 1
 
 # Any statement that could reach a second database file. Checked as words, so

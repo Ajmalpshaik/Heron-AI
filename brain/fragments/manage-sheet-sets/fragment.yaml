@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -69,7 +69,20 @@ capability: MANAGE_SHEET_SETS
 # BACK TO DRAFT for version 4, that day: impl/ changed, and version 2's
 # proof below was kept as the record. NEEDS-CHECKING Group KA, rows KA12 to
 # KA17.
-version: 4
+#
+# VERSION 5 (2026-11-20, FRAGMENT-ISSUES row 5b-1534 - row 5b-203's repair) -
+# BACK TO DRAFT. By-parameter looked `parameterName` up on each sheet and view
+# with LookupParameter and no count, so where two parameters share the name -
+# a project parameter bound to Sheets beside a shared one of the same name -
+# Revit's pick, "determined at random" in Autodesk's words, decided which set a
+# sheet went into (D-54 s3). The name is now counted with GetParameters first;
+# a sheet or view carrying it twice is NOT READ, goes in `ambiguous`, and the
+# whole run is refused before the print manager is touched, naming them - a set
+# made, or brought in step by updateExisting, without that sheet would move it
+# out of a set nobody asked to change. Every other mode is version 4's,
+# statement for statement. The proof below was signed for version 4 and is
+# kept as the record; its fingerprint no longer matches this code.
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -263,6 +276,13 @@ contract:
       # Revit's reason; the others are still made. Not a thing found (D-52).
       role: accounting
       type: string
+    - name: ambiguous
+      # VERSION 5, by-parameter (5b-1534, 5b-203). Sheets and views carrying
+      # TWO OR MORE parameters called parameterName - NOT READ, and the run
+      # refused for them, nothing changed. Turned down, never found (D-52,
+      # D-54 s3).
+      role: accounting
+      type: IList<ElementId>
 
 proof:
   date: '2026-11-02'

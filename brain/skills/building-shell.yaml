@@ -185,7 +185,7 @@ purpose: >
      not yet been run in Revit. SELECT_BY_CATEGORY_NAME, which counted them by
      the name that day, was merged into FILTER_ELEMENTS_BY_CATEGORY on
      2026-11-01.
-  9. PLACE_HOSTED_FAMILY (PROVEN) for the doors and windows, after the rooms
+  9. PLACE_HOSTED_FAMILY (DRAFT again, version 5) for the doors and windows, after the rooms
      because each door is turned toward the room it opens into: for every one,
      a point on its wall's line, a point inside that room and a point at its
      hinge jamb. It finds the wall AT the point, so a door never ends up

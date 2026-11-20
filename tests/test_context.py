@@ -497,6 +497,84 @@ def main():
                   "forwards a question without the question")
 
             print()
+            print("8a. R-43: the packet carries its CONFIDENCE and what is MISSING")
+            print("-" * 62)
+            # The citation half of R-43 was built long ago (section 9 holds
+            # it). These are the other two halves, and a host that is told
+            # neither answers with the same face whether Heron was sure or
+            # guessing. Ask before calling - heron-ship 2a.
+            levels = getattr(CONTEXT, "CONFIDENCE_LEVELS", None)
+            check(levels is not None, "heron_context names its confidence levels")
+            exact = CONTEXT.assemble(store, "select all ducts", revit="2024")
+            said = getattr(exact, "confidence", {}).get("capability", {})
+            check(said.get("level") == getattr(CONTEXT, "EXACT", "exact"),
+                  "a fragment's own declared phrasing is EXACT: %r"
+                  % said.get("level"))
+            check(bool(said.get("said")),
+                  "and says so in words - S-3: the sentence is the contract")
+            missing = getattr(exact, "missing", None)
+            check(missing == [],
+                  "with a release stated and everything carried, nothing is "
+                  "missing - a complete packet says nothing extra: %r"
+                  % (missing,))
+
+            loose = CONTEXT.assemble(store, "make the air in my ducts flow "
+                                            "the right way round",
+                                     path=CONTEXT.SIMPLE)
+            said = getattr(loose, "confidence", {}).get("capability", {})
+            check(said.get("level") in (getattr(CONTEXT, "RANKED", "ranked"),
+                                        getattr(CONTEXT, "CONTESTED",
+                                                "contested")),
+                  "a ranked match is RANKED or CONTESTED, never EXACT: %r"
+                  % said.get("level"))
+            check("not proof" in (said.get("said") or ""),
+                  "and a ranked match always says a lead is not proof it "
+                  "answers - no floor separates a real question yet (A15)")
+            check(isinstance(said.get("measured"), dict)
+                  and "top_gap_ranks" in said.get("measured", {}),
+                  "and carries the numbers under the sentence, not only words")
+            gaps = getattr(loose, "missing", []) or []
+            check(any("Revit release" in line for line in gaps),
+                  "no release stated is named as MISSING, because it changes "
+                  "which fragments may be offered: %r" % (gaps,))
+
+            # THE LEVEL FOLLOWS THE CONTEST, AND THE CONTEST SAYS COIN TOSS
+            # IN WORDS. The two must never disagree.
+            import heron_retrieve as RETRIEVE
+            asked = RETRIEVE.find(store, "make the air in my ducts flow the "
+                                         "right way round")
+            contest = asked.contest
+            if contest is not None and hasattr(contest, "coin_toss"):
+                check(contest.coin_toss == ("COIN TOSS" in contest.sentence()),
+                      "Contest.coin_toss agrees with the sentence it sits "
+                      "beside")
+            else:
+                check(False, "a ranked answer carries a Contest with coin_toss")
+
+            # An absent capability is MISSING, and its level is NONE.
+            blank = CONTEXT.assemble(store, "zzqx qqzv vvxz", revit="2024",
+                                     path=CONTEXT.SIMPLE)
+            said = getattr(blank, "confidence", {}).get("capability", {})
+            if said.get("level") == getattr(CONTEXT, "NO_MATCH", "none"):
+                check(any("capability" in line
+                          for line in getattr(blank, "missing", [])),
+                      "nothing matched: the capability is named as missing")
+            else:
+                check(True, "(the nonsense words still matched something - "
+                            "the level says %r, not NONE)" % said.get("level"))
+
+            # A CUT part is missing too: the host is carrying less than all of it.
+            shallow = CONTEXT.assemble(store, "make a new duct type",
+                                       path=CONTEXT.GENERATION,
+                                       depth=CONTEXT.ABSTRACT, revit="2024")
+            cut = [line for line in getattr(shallow, "missing", [])
+                   if "depth" in line]
+            check(bool(cut) == bool(shallow.reduced),
+                  "a part carried at less than all of itself is named as "
+                  "missing, and only then (%d reduced, %d said)"
+                  % (len(shallow.reduced), len(cut)))
+
+            print()
             print("9. R-45: the STANDARDS refusal NARROWS, and then stops")
             # LAST ON PURPOSE - it ingests and indexes, which changes the
             # store for anything after it.
@@ -584,6 +662,13 @@ def main():
             check(cited and all(part.source for part in cited),
                   "and every clause carries a citation - docs/05 s8 calls an "
                   "uncited standards answer a bug, not a weak answer")
+            clauses = (getattr(packet, "confidence", {}) or {}).get("clauses", {})
+            check(clauses.get("level") in (getattr(CONTEXT, "RANKED", "ranked"),
+                                           getattr(CONTEXT, "CONTESTED",
+                                                   "contested")),
+                  "R-43: the clauses carry a confidence of their own, and a "
+                  "cited clause is never more than RANKED: %r"
+                  % clauses.get("level"))
 
             print()
             print("10. Golden Rule 19 on a clause that talks back - R-82")

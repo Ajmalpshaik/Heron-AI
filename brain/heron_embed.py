@@ -243,11 +243,11 @@ def _load_model():
         # meant to remove.
         return None
 
-    name = os.environ.get("HERON_EMBED_MODEL")
+    name = os.environ.get(MODEL_ENV)
 
     try:
         from model2vec import StaticModel
-        which = name or "minishlab/potion-base-8M"
+        which = name or DEFAULT_MODEL
         folder = _on_disk(which)
         try:
             model = StaticModel.from_pretrained(folder or which)
@@ -346,6 +346,48 @@ def stamp():
 # the failure this repository has already written down twice.
 IMPROVED_BY = ("to fix it: pip install --user model2vec, which also needs "
                "huggingface.co reachable once to fetch the weights")
+
+# The trained model used when nothing else is named, and the variable that
+# names another. heron_rerank keeps the same pair for its own model.
+DEFAULT_MODEL = "minishlab/potion-base-8M"
+MODEL_ENV = "HERON_EMBED_MODEL"
+
+# WHAT THE TRAINED BACKEND COSTS ON DISK - MEASURED, NOT ESTIMATED (R-77, R-79).
+# 2026-11-20, a Linux container, model2vec 0.10.0: the package and everything it
+# pulls in measured 102 MB installed (numpy alone 56 MB), and DEFAULT_MODEL's
+# weights 29 MB in the Hugging Face cache. NOT measured on Windows, where
+# numpy's wheel is a different size - so it is stated as "about", and the
+# Windows figure is NEEDS-CHECKING rather than a guess. Re-measure on a machine
+# that has it with importlib.metadata over model2vec's requirements, and du on
+# the cache folder. heron_rerank.SIZE is the same kind of statement for the
+# re-ranker, and tools/check-dependencies.py reads both rather than typing them.
+SIZE = "about 130 MB on disk - the package with what it pulls in, and the weights"
+
+
+def announcement():
+    """What installing the trained backend means, and how big - before any download.
+
+    R-77: each package named, with what it is for and how large it is, before
+    the download starts - the only moment at which saying no is any use. Needs
+    no network to produce, the way heron_rerank.announcement() does not.
+    """
+    return "\n".join([
+        "THE TRAINED EMBEDDING IS OPTIONAL.",
+        "",
+        "  package   model2vec",
+        "  model     %s" % (os.environ.get(MODEL_ENV) or DEFAULT_MODEL),
+        "  size      %s" % SIZE,
+        "  for       matching a question on what it MEANS - a grille and a",
+        "            diffuser - not only on how it is spelled",
+        "  needs     huggingface.co reachable, once, to fetch the weights",
+        "",
+        "  install   pip install --user model2vec",
+        "",
+        "Per-user, no administrator rights (D-01, R-42).",
+        "",
+        "WITHOUT IT HERON STILL ANSWERS, on its built-in character n-grams:",
+        "tolerant of spelling and word order, not of meaning.",
+    ])
 
 
 def backend():
@@ -670,6 +712,11 @@ def main(argv):
     try:
         name, why = backend()
         did, skipped = index(store)
+        if name == LEXICAL:
+            # The fallback names its remedy in `why`; what that remedy costs is
+            # said here too, before anybody runs it (R-77).
+            print(announcement())
+            print()
         print("Backend: %s - %s" % (name, why))
         print("Indexed: %d embedded, %d unchanged" % (did, skipped))
         if not argv:

@@ -328,6 +328,21 @@ WORKSPACE_NEVER = ("__pycache__", ".git", "bin", "obj")
 
 WORKSPACE_NAME = "heron-project.zip"
 
+# R-87: NO KNOWLEDGE STORE IS EVER SHIPPED WITH HERON - a rule, where it was
+# held only by the file layout: stores live in Heron's home, outside the
+# checkout (D-135), so none is normally under brain/ or docs/. But this zips
+# what is ON THE DISK, not what git tracks, and a store a session made inside
+# the checkout - HERON_KNOWLEDGE pointed at a folder in it - would ride in the
+# download. A store can hold a client's specification and a standard bought per
+# seat, and a published download cannot be taken back. So a file of one of
+# these shapes STOPS the build, by name, rather than being skipped in silence.
+STORE_SHAPES = (".db", ".sqlite", ".sqlite3", ".heron-db", "-documents.jsonl")
+
+# AND NO SOURCE DOCUMENT EITHER - D-186: no standard is ever bundled with Heron.
+# The same shapes .gitignore blocks from the repository, for the same reason:
+# NFPA and ASHRAE are bought per seat, and a client's specification is theirs.
+DOCUMENT_SHAPES = (".pdf", ".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt")
+
 
 def installer_name(csproj):
     """
@@ -431,6 +446,20 @@ def workspace(out_dir, installers_dir=None):
                     if name.endswith(".pyc"):
                         continue
                     one = os.path.join(base, name)
+                    if name.lower().endswith(STORE_SHAPES):
+                        raise IOError(
+                            "R-87: %s is shaped like a knowledge store, and no "
+                            "store is ever shipped with Heron - it can hold a "
+                            "client's documents and a standard bought per "
+                            "seat (D-186). Move it out of the checkout and "
+                            "build again. Nothing was published."
+                            % os.path.relpath(one, ROOT))
+                    if name.lower().endswith(DOCUMENT_SHAPES):
+                        raise IOError(
+                            "D-186: %s is a document, and no standard or "
+                            "client document is ever bundled with Heron. Move "
+                            "it out of the checkout and build again. Nothing "
+                            "was published." % os.path.relpath(one, ROOT))
                     zf.write(one, os.path.relpath(one, ROOT))
 
     return path

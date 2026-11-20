@@ -1,5 +1,5 @@
 // NOT STANDALONE. Assumes `doc` and `toleranceMm` are in scope; leaves
-// `coordinates`, `mismatched`, `agreeing` and `findings` behind.
+// `coordinates`, `mismatched`, `agreeing`, `notChecked` and `findings` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -17,12 +17,23 @@
 //
 // A link placed origin to origin on purpose will disagree, and that is true
 // information: it is not where the survey says it is.
+//
+// VERSION 2 (FRAGMENT-ISSUES row 5b-1122). A LINK THAT WAS NOT CHECKED IS NOT
+// IN THE RESULT. Version 1 wrote "not loaded - not checked." into
+// `coordinates`, so a run that checked nothing still returned a result and
+// read as a pass. Now `coordinates` holds a line only for a link whose
+// coordinates were compared; a link not loaded, or whose project location
+// could not be read, goes in `notChecked` with why, and findings says how
+// many were not checked - and, when links exist and none was checked, that
+// nothing here says the links agree.
 
 const double MmPerFoot = 304.8;
 var lines = new List<string>();
 var mismatched = new List<string>();
 var agreeing = 0;
 var findings = new List<string>();
+var notChecked = new List<string>();
+var linksSeen = 0;
 var tolerance = (toleranceMm <= 0 ? 1.0 : toleranceMm) / MmPerFoot;
 
 ProjectLocation here = null;
@@ -32,12 +43,13 @@ foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(RevitLi
 {
     var link = element as RevitLinkInstance;
     if (link == null) continue;
+    linksSeen++;
     var linked = link.GetLinkDocument();
-    if (linked == null) { lines.Add(link.Name + ": not loaded - not checked."); continue; }
+    if (linked == null) { notChecked.Add(link.Name + ": not loaded - NOT CHECKED."); continue; }
 
     ProjectLocation there = null;
     try { there = linked.ActiveProjectLocation; } catch { }
-    if (here == null || there == null) { lines.Add(link.Name + ": a project location could not be read."); continue; }
+    if (here == null || there == null) { notChecked.Add(link.Name + ": a project location could not be read - NOT CHECKED."); continue; }
 
     var placed = link.GetTotalTransform();
     var probes = new[] { XYZ.Zero, new XYZ(30000.0 / MmPerFoot, 0, 0) };
@@ -68,6 +80,23 @@ foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(RevitLi
 }
 
 var coordinates = string.Join("\n", lines);
-findings.Add(lines.Count == 0 ? "The model has no Revit links."
-    : agreeing + " link(s) agree with this model's shared coordinates; " + mismatched.Count + " do not"
-      + (mismatched.Count == 0 ? "." : ": " + string.Join(", ", mismatched) + "."));
+if (linksSeen == 0)
+{
+    findings.Add("The model has no Revit links.");
+}
+else if (lines.Count == 0)
+{
+    findings.Add("NO LINK WAS CHECKED - " + notChecked.Count + " Revit link(s), none of them could be compared, "
+        + "so nothing here says the links agree with this model's shared coordinates. Reload them "
+        + "(RELOAD_LINKS) and check again.");
+}
+else
+{
+    findings.Add(agreeing + " link(s) agree with this model's shared coordinates; " + mismatched.Count + " do not"
+        + (mismatched.Count == 0 ? "." : ": " + string.Join(", ", mismatched) + "."));
+}
+if (notChecked.Count > 0 && lines.Count > 0)
+    findings.Add(notChecked.Count + " link(s) NOT CHECKED, and not counted as agreeing: "
+        + string.Join(" ", notChecked));
+else if (notChecked.Count > 0)
+    findings.Add(string.Join(" ", notChecked));

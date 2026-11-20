@@ -2,6 +2,10 @@
 // `extrusionStartMm` and `extrusionEndMm` are in scope, and leaves `roof`,
 // `planeDrawn`, `report`, `refused` and `findings` behind.
 //
+// VERSION 2 (2026-11-20, FRAGMENT-ISSUES row 5b-1648) - the read-back asks the
+// roof's Reference Level, not Element.LevelId, which failed every time on Revit
+// 2020; LevelId is asked only when no Reference Level reads. See the read-back.
+//
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
 // WHAT IT DOES. Revit's Architecture > Roof > Roof by Extrusion: a roof
@@ -370,12 +374,37 @@ if (refused == null)
     var gotType = doc.GetElement(made.GetTypeId()) as RoofType;
     var profileBack = made.GetProfile();
     var edgesBack = profileBack == null ? 0 : profileBack.Size;
-    if (!extentsHold || gotType == null || gotType.Id != type.Id || made.LevelId != host.Id
+    // VERSION 2 (2026-11-20, FRAGMENT-ISSUES row 5b-1648) - THE LEVEL IS READ
+    // AS THE ROOF'S REFERENCE LEVEL. Version 1 compared Element.LevelId with
+    // the level the roof was made on, and on Revit 2020 that failed every time
+    // - Revit made the roof and this read-back threw it away. NewExtrusionRoof
+    // takes the level as the roof's Reference Level, so that is what is read:
+    // ROOF_CONSTRAINT_LEVEL_PARAM, the parameter COPY_ELEMENTS reads for an
+    // extrusion roof. Only when it gives no level is LevelId asked. What
+    // LevelId answers for an extrusion roof is NOT MEASURED.
+    var levelBack = ElementId.InvalidElementId;
+    var levelHow = "its Reference Level";
+    try
+    {
+        var reference = made.get_Parameter(BuiltInParameter.ROOF_CONSTRAINT_LEVEL_PARAM);
+        if (reference != null && reference.StorageType == StorageType.ElementId) levelBack = reference.AsElementId();
+    }
+    catch (Exception) { levelBack = ElementId.InvalidElementId; }
+    if (levelBack == null || levelBack == ElementId.InvalidElementId)
+    {
+        levelHow = "its level (no Reference Level read)";
+        try { levelBack = made.LevelId; } catch (Exception) { levelBack = ElementId.InvalidElementId; }
+    }
+    var levelHolds = levelBack != null && levelBack == host.Id;
+    var levelSeen = levelBack == null || levelBack == ElementId.InvalidElementId ? null : doc.GetElement(levelBack);
+    if (!extentsHold || gotType == null || gotType.Id != type.Id || !levelHolds
         || edgesBack != points.Count - 1)
         throw new InvalidOperationException("The roof did not read back as asked: Extrusion Start " + mm(gotStart)
             + " and End " + mm(gotEnd) + " mm (asked " + mm(startFeet) + " and " + mm(endFeet) + " along the plane's "
             + "normal), type " + (gotType == null ? "none" : "\"" + typeLabel(gotType) + "\"") + ", "
-            + edgesBack + " profile edge(s) of " + (points.Count - 1) + (made.LevelId != host.Id ? ", another level" : "")
+            + edgesBack + " profile edge(s) of " + (points.Count - 1)
+            + (levelHolds ? "" : ", " + levelHow + " " + (levelSeen == null ? "reads no level" : "is \"" + levelSeen.Name + "\"")
+                + ", not \"" + host.Name + "\"")
             + ". NOTHING from this call was kept.");
 
     roof = made.Id;

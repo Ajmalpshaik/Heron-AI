@@ -14,7 +14,31 @@ positive:
       an EMPTY cell in that column, and the row still present with every other
       column filled. Every row has the same columns or the file is not a table
 
+  # VERSION 2 (rows 5b-203 and 5b-1551). NOT RUN.
+  - given: >
+      version 2 - walls exported with "Mark" blank on every one of them and
+      "Comments" filled on some; each name carried once
+    expect: >
+      both columns written as version 1 wrote them; "Mark" in
+      `blankEverywhere` and named in findings as FOUND on the elements and
+      EMPTY on every one - "not a wrong name"; `notCarried` and `ambiguous`
+      EMPTY. Version 1 called that Mark column "a parameter name that does not
+      exist on these" (row 5b-1551)
+
 negative:
+  # VERSION 2, row 5b-203. NOT RUN - it needs a model that carries a
+  # duplicated name.
+  - given: >
+      version 2 - walls exported on "Comments" with "Comments" bound to Walls a
+      second time as a project parameter (or a curtain wall type's "Interior
+      Type", shown twice), beside a column each carries once
+    expect: >
+      every such wall in `ambiguous`, its Comments cell EMPTY - no value from
+      either parameter, and no marker - and findings naming it NOT READ, two or
+      more parameters sharing the name; the other column written for every
+      row; `rows` one per element as before. A value in that cell is the first
+      match Revit returned (row 5b-203)
+
   - given: a Comments value containing a comma
     expect: >
       that field QUOTED, and the row still parsing into the right number of
@@ -29,7 +53,9 @@ negative:
     expect: >
       the column present but empty, AND named in the report as empty
       everywhere. A column of blanks and a misspelled parameter look identical
-      in the file
+      in the file. VERSION 2: the name is in `notCarried`, NOT in
+      `blankEverywhere`, and findings says it is on NO element given - the
+      one case where a wrong name is the right thing to say (row 5b-1551)
 
   - given: a path that cannot be written
     expect: >

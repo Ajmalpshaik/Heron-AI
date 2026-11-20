@@ -103,7 +103,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 | [`HeronRevit.ps1`](HeronRevit.ps1) | which Revits are installed, which are open, where each one's add-ins go | never by hand - the install scripts dot-source it |
 | [`heron-folders.py`](heron-folders.py) | `platform/heron-folders.json`, the folders the install scripts read, written from `HeronPaths` and checked against it - exit 1 on a hand edit | after any change to `HeronPaths.cs`: `--write`, then commit; `tests/test_heron_folders.py` runs the check |
 | [`heron-ready.py`](heron-ready.py) | a PC made ready before its first chat: Python, packages, the store, the search model | once per PC, and after an update |
-| [`check-dependencies.py`](check-dependencies.py) | which packages are present and what each buys; exit 1 only for a required one | when Heron seems weaker than it should be |
+| [`check-dependencies.py`](check-dependencies.py) | which packages are present, what each buys, and whether each version is the right one; exit 1 for a missing required one or an out-of-date one | when Heron seems weaker than it should be |
 | [`lock-python.py`](lock-python.py) | `requirements-lock.txt` regenerated, and its advisories audited | when a pinned version must move; CI's weekly run audits it |
 | [`cloud-setup.sh`](cloud-setup.sh) | pasted into a Claude Code cloud environment's setup box | when setting up a cloud environment |
 | [`build-release-assets.py`](build-release-assets.py) | every product for every release, laid out as a release's assets | the Release workflow runs it; by hand to check a build |
@@ -132,6 +132,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 | [`next-id.py`](next-id.py) | the free group, 5b row, `Q-nn` and `D-nnn` on main, every branch, open pull request and worktree | before taking any id, and again before merging |
 | [`renumber.py`](renumber.py) | renames an id this branch took that somebody else took first | when `next-id.py` says HELD TWICE or TAKEN ON MAIN |
 | [`open-defects.py`](open-defects.py) | the ids of the FRAGMENT-ISSUES rows still open | before picking up a defect |
+| [`open-issue.py`](open-issue.py) | a new row, check or question as a GitHub issue, its number written back into the register | the same change that writes the entry ([D-187](../docs/DECISIONS.md)) |
 | [`review-ledger.py`](review-ledger.py) | which files have been read word by word, and which marks went stale | during a reading sweep |
 | [`register-text.py`](register-text.py) | FRAGMENT-ISSUES, PROPOSALS or OPEN-QUESTIONS read as one text | to search a whole register |
 | [`needs-checking-register.py`](needs-checking-register.py) | NEEDS-CHECKING read as one text | to search the whole register |
@@ -1931,8 +1932,13 @@ at the top of this file is about a number going stale; this is the same failure 
 
 **Not in CI, on purpose ([PROPOSALS F6](../docs/PROPOSALS.md), decided 2026-11-15 on the owner's delegation).** It reports on the machine, not on the change: a runner with every package installed passes it whatever a change does, so it is run on a PC, after a fresh clone or a change to either requirements file.
 
-**Exits 1 only when a REQUIRED package is missing.** A missing optional one exits 0, because that is
-what optional means and a checker that failed on it would be arguing with R-42's silent degradation.
+**Exits 1 when a REQUIRED package is missing, or when an installed one is NOT THE RIGHT VERSION.** A
+missing optional one exits 0, because that is what optional means and a checker that failed on it would
+be arguing with R-42's silent degradation. An installed one older than its floor - written on its own
+manifest line - or older than the version [`requirements-lock.txt`](../requirements-lock.txt) pins is
+reported `NEEDS AN UPDATE` with the `--upgrade` line, and exits 1: an old version that half-works is
+worse than an absent one (R-78, 2026-11-20). Newer than the pin is said and not failed; a package with
+neither floor nor pin is said to have been checked for presence only.
 
 It reads [`requirements.txt`](../requirements.txt) and
 [`requirements-optional.txt`](../requirements-optional.txt) — **the same two files `pip` reads**, not a
@@ -1945,8 +1951,9 @@ the instructions exactly got the weaker retrieval backend and was told nothing. 
 correct; silent degradation plus an install list nobody can follow is how a person stays on the weaker
 backend believing they are on the better one.**
 
-**It does not install anything**, and it does not check that an installed version is the right one.
-Saying so is better than a tool that half-installs.
+**It does not install anything.** Saying so is better than a tool that half-installs. Every size it
+prints is read from the code that owns the download - `heron_rerank.SIZE`, `heron_embed.SIZE`,
+`heron_ingest.PDF_READER_SIZE` - never typed in it.
 
 ## `heron-ready.py` — a new PC made as quick as the old one, before the first chat
 
@@ -2449,6 +2456,42 @@ own ids onto main - no network.
 
 ---
 
+## `open-issue.py` - a new finding is a GitHub issue in the same change, linked both ways
+
+```bash
+python tools/open-issue.py 5b-1884                  # print the issue it would open - sends and writes nothing
+python tools/open-issue.py 5b-1884 --kind revit-run --title "..." --happened "..." --expected "..."
+python tools/open-issue.py 5b-1884 --create         # open it, then write #N into the row
+python tools/open-issue.py 5b-1884 --into 1078 --create   # add it to open issue #1078 instead
+python tools/open-issue.py 5b-1884 --record 1092    # opened another way: write #1092 back, send nothing
+```
+
+**The owner's rule since 2026-11-20 ([D-187](../docs/DECISIONS.md)):** every mistake or owed check an AI finds
+is a GitHub issue at once, not only a register entry somebody turns into one later. The register stays the
+permanent record - this tool and `next-id.py`, `open-defects.py` and the archive all read it - so the entry is
+written there and its issue opened **in the same change**. It reads a FRAGMENT-ISSUES row (`5b-N`, `5-N`), a
+NEEDS-CHECKING group (`OQ`) or one check (`OQ15`), or an open question (`Q-N`), prints the issue in the shape of
+the owner's own - what happened, what is expected, the kind line, a checkbox linking the entry, a ready prompt,
+*Close this issue when* - and with `--create` opens it, or adds the checkbox to an open issue with `--into N`.
+Then it writes the number back in the register's own form: a row's state begins
+`MOVED TO ISSUE #N <date>` (the number a link to the issue), its old state kept after `Was:`; a group or a question gets
+*Tracked as GitHub issue #N since <date>* under its heading; one check in a group another issue tracks gets a
+plain line, so its bold id is still written once. The words the owner reads are given with `--title`,
+`--happened` and `--expected`; with none it uses the row's bold lead and its *Owed* part, which read like a
+register. The [`heron-issue-recorder`](../.claude/agents/heron-issue-recorder.md) agent decides the kind and
+which open issue, if any, shares the subject.
+
+**It sends only the entry's text and the words given** - nothing from a model or the PC - and refuses, before
+gh is asked anything, an issue carrying any credential shape `brain/heron_secrets.py` removes from a log, an
+e-mail address, or a user's own folder (`C:\Users\<name>`, `/Users/<name>`; `<you>` is a placeholder, not a
+person). It refuses a row whose state does not begin `OPEN`, an entry already tracked, a closed issue or a pull
+request for `--into`, and a new issue for an id an open issue already names. It talks to GitHub through
+`gh api`'s REST routes, because `gh issue create` asks GraphQL, which a Claude Code cloud session refuses.
+**Exit 3 is NOT RUN, never a pass**: GitHub could not be reached, nothing was sent and nothing written, and the
+pull request lists the issue under **Issues to open** for the session that runs `--record N`. Exit 1 refused, 2
+could not read a register file. It adds no line to `docs/fragment-issues/ISSUES.md`: its tables map what was
+moved before 2026-11-20. Tested by `tests/test_open_issue.py`, against registers it writes and a stand-in gh.
+
 ## `split-register.py` - one file per section, the register's page as its index
 
 ```bash
@@ -2585,7 +2628,7 @@ python tools/check-decision-titles.py                        # against HEAD's hi
 python tools/check-decision-titles.py --published origin/main # against what main has published
 ```
 
-**A gate: CI's gates job runs it, with `--published HEAD^1`.** It reads every decision heading in
+**A gate: CI's gates job runs it, with `--published HEAD`** - on a pull request the merge commit, so a branch that renumbers or rewords its own decision carries the `**Numbering:**` lines before it merges, not after (issue #1056, option 2; it was `HEAD^1` until 2026-11-20, and a renumbering branch then turned every later pull request red). It reads every decision heading in
 [`docs/DECISIONS.md`](../docs/DECISIONS.md) and the git history of that file, and fails when a number's heading
 no longer carries the title the number was first written with, when a title turns up under a number it was not
 first written under, when a number leaves the log, or when a `decisions/D-NN.md` record stops opening with its

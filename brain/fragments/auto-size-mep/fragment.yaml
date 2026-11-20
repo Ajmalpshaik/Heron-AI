@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,24 @@ semantic-identity: "size these ducts from the air they actually carry"
 kind: action
 domain: revit.mep
 capability: AUTO_SIZE_MEP
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-20, WN-2 - work note FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07
+# C02, GitHub issue #1005) - THE UNIT CHECK STOPS THE RUN, and back to DRAFT.
+# Version 1 printed "UNIT CHECK ... If those disagree, STOP" and then wrote
+# every size anyway, so the check was the reader's, after the model had
+# changed. Now the first readable flow is converted twice before any duct is
+# touched - by this card's factor and by Revit's own
+# UnitUtils.ConvertFromInternalUnits to litres per second (DisplayUnitType on
+# Revit 2020, UnitTypeId from 2021) - and a disagreement of more than one part
+# in a million, or a conversion Revit will not give, puts the reason in
+# `refused` and sizes NOTHING. When the two agree the sizes are worked out
+# exactly as version 1 worked them out, and the line says the check passed.
+# Version 1 was PROVEN (the proof block below, kept as the record of what it
+# proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group OU
+# proves version 2 (D-30).
 
 purpose: >
   Sizes duct from the airflow it already carries, by the velocity method:
@@ -128,9 +143,12 @@ compatibility-note: >
   One implementation for every release. `BuiltInParameter.RBS_DUCT_FLOW_PARAM`,
   `RBS_CURVE_DIAMETER_PARAM`, `RBS_CURVE_WIDTH_PARAM` and
   `RBS_CURVE_HEIGHT_PARAM` are present 2020 through 2027 - read off the
-  reference assemblies at both ends rather than remembered. No units API is
-  touched: every conversion here is plain arithmetic, which is what keeps it
-  working across the 2021 units change.
+  reference assemblies at both ends rather than remembered. Every size is
+  plain arithmetic. Since version 2 one units call is made, for the unit check
+  alone: UnitUtils.ConvertFromInternalUnits with DisplayUnitType.
+  DUT_LITERS_PER_SECOND on Revit 2020 (#if REVIT2020) and UnitTypeId.
+  LitersPerSecond from 2021 - both read off the 2020 and 2024 reference
+  assemblies on 2026-11-20 - in one adapter at the top of the file.
 
 # THE UNIT ASSUMPTION IS PRINTED, SO A WRONG ONE CANNOT HIDE.
 #

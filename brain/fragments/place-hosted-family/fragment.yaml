@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,24 @@ semantic-identity: "put a door, a window, a skylight or any hosted family into i
 kind: action
 domain: revit.elements
 capability: PLACE_HOSTED_FAMILY
-version: 4
+# VERSION 5 (2026-11-20, FRAGMENT-ISSUES row 5b-294) - A DOOR PLACED BEFORE ANY
+# ROOM EXISTS HAS ITS SWING SET FROM THE POINT GIVEN, and back to DRAFT.
+# Version 4 kept a door with no room at `toRoomAt` as Revit placed it and said
+# so only afterwards, in `wrongRoom`; measured 2026-10-02 in Project2, two of
+# three doors placed before the rooms swung the wrong way. The swing rule is
+# version 4's - the side the door's FacingOrientation points to is the side it
+# swings into, the side roomFaced reads a room on - so with no room that side
+# is decided by the point itself: flipped once when the facing points away
+# from it (a plan dot product), then read again; a point on the wall's line is
+# not guessed. The hinge needs no room and is set as before. The To Room
+# cannot be set with no room: the door is counted in the new `noRoomYet`, not
+# in `wrongRoom`, and the FIRST finding says so and to run the same values
+# again once rooms are placed. A window keeps version 4's outward rule and its
+# own wrongRoom line word for word, and every case with a room is version 4's
+# run, statement for statement. Version 4 was PROVEN (the proof block below,
+# kept as the record of what it proved); its C# moved, so it is DRAFT until
+# NEEDS-CHECKING Group OU is run (D-30).
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -341,8 +358,16 @@ contract:
       type: int
     - name: wrongRoom
       # Doors still swinging into another room - or another wall-hosted family
-      # still facing one - and doors and windows whose room point was in no
-      # room. Named, never counted as right (D-52).
+      # still facing one - and windows whose room point was in no room. Since
+      # version 5 a door with no room is here only when its swing could not be
+      # set from the point. Named, never counted as right (D-52).
+      role: accounting
+      type: IList<string>
+    - name: noRoomYet
+      # VERSION 5 (row 5b-294). Doors - and other wall-hosted families, not
+      # windows - placed where no room exists yet at the point they open into:
+      # the swing set from that point, the To Room not set. Named, and said
+      # first in findings.
       role: accounting
       type: IList<string>
     - name: toRoomWrong

@@ -1,6 +1,6 @@
 ---
 name: heron-ship
-description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the twelve CI actually decides on, the reports whose findings are questions, how to measure what a card's routing words moved - main against the branch on a named backend, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, where a new 5b defect row is written (a file of its own), and how to resolve a merge conflict in the NEEDS-CHECKING group index or between two branches that took the same id.
+description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the twelve CI actually decides on, the reports whose findings are questions, how to measure what a card's routing words moved - main against the branch on a named backend, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, where a new 5b defect row is written (a file of its own, and its GitHub issue in the same change), and how to resolve a merge conflict in the NEEDS-CHECKING group index or between two branches that took the same id.
 allowed-tools:
   - Bash
   - Read
@@ -170,8 +170,13 @@ with `python brain/heron_scope.py --rebuild`.
 **`check-decision-titles` needs the whole git history** and exits **2** in a shallow clone, saying so:
 it reads what each decision was FIRST written as, and a clone cut short cannot show that. A cloud
 session starts from one - measured 2026-09-23, 51 commits - so run `git fetch --unshallow` first. CI's
-gates job fetches the whole history for it, and passes `--published HEAD^1` so that a title a branch
-changed before it was merged counts as a draft.
+gates job fetches the whole history for it, and passes `--published HEAD` - on a pull request the merge
+commit, so **the branch's own history counts** (issue #1056, option 2, since 2026-11-20). A branch that
+renumbers its decision because main took the number - `tools/renumber.py`, §6a - or rewords a title it
+wrote, fails its own pull request until the `**Numbering:**` lines are there: the moved decision names the
+number it had (renumber.py writes that one), and the decision now under the old number quotes the branch's
+title if the branch wrote first. Run it with no flag on the branch, main merged in, and you see what CI
+sees. It was `HEAD^1` until then, which let such a branch pass and turned every pull request after it red.
 
 ## 2. The tests
 
@@ -590,14 +595,27 @@ two others four times each. A typed count is a merge conflict with every other p
 that comes back is still held to the truth; a dated measurement (*"measured 2026-10-02: 163"*) stays
 legal, because it is a record and nobody needs to update it.
 
-### Adding a 5b row: a file of its own, in two steps
+### Adding a 5b row: a file of its own and its GitHub issue, in three steps
 
 ```bash
 python tools/next-id.py     # take the 5b `next` it prints - free on main, every branch, every open pull request, every worktree
 # write docs/fragment-issues/row-5b-<that number>.md: copy the newest row-5b-*.md, change its number (heading and first cell), its defect and its state
+python tools/open-issue.py 5b-<that number> --kind fix --title "..." --happened "..." --expected "..." --create   # or --into N
 ```
 
-**That is all of it. No other file is touched, and no index line is added** - the folder is the list, and
+**The third step is the owner's rule since 2026-11-20 ([D-187](../../../docs/DECISIONS.md)):** every new row -
+and every new NEEDS-CHECKING check or group, and every new open question - is a GitHub issue **in the same
+change**, and its line names the issue from the day it is written. The
+[`heron-issue-recorder`](../../agents/heron-issue-recorder.md) agent takes all three steps, including whether
+an open issue of the same subject and kind should take the row (`--into`). **Where GitHub cannot be reached,
+`open-issue.py` exits 3 and writes nothing** - that is NOT RUN, never a pass: the row stays `OPEN`, the pull
+request lists it under **Issues to open**, and the session that opens it runs
+`python tools/open-issue.py <id> --record N`. A pull request that adds a row carries its issue's number or that
+list - never neither. No line is added to the tables of
+[`docs/fragment-issues/ISSUES.md`](../../../docs/fragment-issues/ISSUES.md): the row's own state is its link,
+for the same reason as the paragraph below.
+
+**That is all of the row. No other file is touched, and no index line is added** - the folder is the list, and
 [`tools/register-text.py`](../../../tools/register-text.py) reads every `row-5b-N.md` back into the
 register, in number order, for `open-defects.py` and every other reader. The file holds a heading that
 names the row (`row 5b-1585` - the reader refuses a heading that names another), the note under it, the table's two header lines and the row's ONE line -

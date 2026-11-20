@@ -40,7 +40,7 @@ purpose: >
      their exact names. WHEN THE WALLS ARE IN A LINKED MODEL - the usual case
      for an MEP model - rooms and spaces stop at them only while that link is
      Room Bounding: LIST_LINKED_MODELS (PROVEN), then SET_LINK_ROOM_BOUNDING
-     (PROVEN, version 2) with linkName and roomBounding on. It is the link
+     (DRAFT, version 3 since 2026-11-20; version 2 is the one proved) with linkName and roomBounding on. It is the link
      TYPE's setting and touches a linked model, so the modeller is asked for
      that one change first (Constitution Article 7).
   2. ASK WHAT IS WANTED, ONCE (D-33): rooms or spaces; which levels and which
