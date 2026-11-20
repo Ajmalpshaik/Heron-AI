@@ -677,5 +677,5 @@ none of them was attempted here:
   from a local build: the only published release ~~is~~ **was then** v0.1.0, which carries no Python half.
 
 So the download half of the BIM user's path has run. An update to a newer version - ~~there is none yet~~
-**v0.2.0 was published on 2026-11-16, and no update to it is recorded as run** ([row 5b-1894](fragment-issues/row-5b-1894.md)) -
+**v0.2.0 was published on 2026-11-16; its release notes record a fresh install and Uninstall on the owner's PC that day, and no update to it from v0.1.0 is recorded as run** ([row 5b-1894](fragment-issues/row-5b-1894.md)) -
 with its consent, a migration and version pinning have not.
