@@ -405,6 +405,16 @@ def data_home(environ=None, system=None):
     return os.path.join(profile, HOME_FOLDER)
 
 
+def addin_data(environ=None):
+    """%APPDATA%\\Heron - HeronPaths.Data, where the add-in keeps its settings
+    and its audit trail - or None where there is no %APPDATA%, off Windows,
+    where no add-in writes. The brain asks here rather than reading the
+    variable itself (row 5b-182)."""
+    env = os.environ if environ is None else environ
+    roaming = (env.get("APPDATA") or "").strip()
+    return os.path.join(roaming, "Heron") if roaming else None
+
+
 def old_homes(environ=None):
     """Where the Python side kept its DATA before D-135 - each Store Claude's
     private copy of %APPDATA%\\Heron first, then %APPDATA%\\Heron as this
@@ -430,9 +440,9 @@ def old_homes(environ=None):
                 folder = os.path.join(packages, name, "LocalCache", "Roaming", "Heron")
                 if os.path.isdir(folder):
                     found.append(folder)
-    roaming = (env.get("APPDATA") or "").strip()
-    if roaming and os.path.isdir(os.path.join(roaming, "Heron")):
-        found.append(os.path.join(roaming, "Heron"))
+    roaming = addin_data(env)
+    if roaming and os.path.isdir(roaming):
+        found.append(roaming)
     return found
 
 
