@@ -14,66 +14,75 @@
 #     east-west at y = 4000.
 #   - THE WING ROOF: a roof by extrusion, "Generic - 400mm", on a reference
 #     plane "Wing" drawn in Level 2 from 4000,-6000 to 8000,-6000 mm, profile
-#     a gable "0,0; 2000,1155; 4000,0" (30 degrees), Extrusion Start 0 and
-#     End 3000 mm - so it runs north from y = -6000 toward the main roof and
-#     stops 3000 mm short of its south eave. Its ridge runs north-south at
-#     x = 6000. (CREATE_EXTRUSION_ROOF makes it, or Roof by Extrusion by hand.)
+#     a gable "0,500; 2000,1655; 4000,500" (30 degrees, its eaves 500 mm
+#     ABOVE Level 2, so no ray from them just grazes the main roof's eave),
+#     Extrusion Start 0 and End 3000 mm. Made by CREATE_EXTRUSION_ROOF with
+#     those values it runs NORTH from y = -6000 toward the main roof and stops
+#     about 3000 mm short of its south eave; drawn by hand, set Start and End
+#     so it does. Its ridge runs north-south at x = 6000.
 #   - A FAR ROOF: a second roof by extrusion like the wing, on a plane "Far"
-#     from 20000,-6000 to 24000,-6000 mm - it faces nothing.
-# Which way Revit measures Extrusion Start and End from the plane is not
-# known: write down the wing's two values as Properties shows them before
-# the first run. EVERY RUN ROLLED BACK unless the case says kept.
+#     from 20000,0 to 24000,0 mm, Start 0 and End 3000 - it runs north beside
+#     the main roof, and neither end faces it.
+#   - A COPY of the main roof 30000 mm north (y 30000 to 38000), for the
+#     two-footprint case.
+# Write down the wing's Extrusion Start and End as Properties shows them
+# before the first run. EVERY RUN ROLLED BACK unless the case says kept.
 
 positive:
   - given: >
       the wing roof and the main roof selected (select-in-region over both,
-      Roofs only), view3d {3D}, maxExtendMm left out - "extend the wing roof
-      to meet the main roof" - THE FIRST CASE TO RUN
-    expect: >
-      extended 0, extendedRoof invalid, nothing changed; needMm about the
-      distance from the wing's north end to the main roof's south slope at
-      the wing's ridge (the farthest point), more than 3000; refused begins
-      "MEASURED, NOTHING CHANGED: roof by extrusion ... has to extend ... mm
-      for its end to meet roof by footprint ..."; report has two lines for
-      the wing - its north end meeting the main roof, its south end meeting
-      nothing (0 of N points). MEASURE needMm against a dimension in a
-      section through x = 6000 before trusting it
-
-  - given: >
-      the same, maxExtendMm 10000
+      Roofs only), view3d {3D}, maxExtendMm 10000 - "lengthen the extruded
+      roof so its end reaches the sloped roof"
     expect: >
       extended 1, extendedRoof the wing's id; report "EXTENDED: roof by
       extrusion ...'s Extrusion End (or Start) is ... mm (was ... mm), and
       its end moved <needMm> mm toward roof by footprint ... - read back
-      off the roof's geometry, its other end where it was"; findings say the
-      end runs into the main roof by (farthest - nearest) mm and offer
-      JOIN_GEOMETRY; in a section through x = 6000 the wing's ridge reaches
-      the main roof's slope and no gap shows anywhere along the end. The
-      wing's south end has not moved
+      off the roof's geometry, its other end where it was"; needMm more than
+      3000 (the gap to the main roof's eave) and less than 7000 (the main
+      roof's ridge line) - the distance to where the wing's RIDGE meets the
+      main roof's south slope; a finding
+      that the flat end went further elsewhere - through the main roof and
+      on under it - offering JOIN_GEOMETRY; in a section through x = 6000
+      the wing's ridge reaches the main roof's slope with no gap; in a
+      section through x = 4500 the end passes through the main roof's slope
+      and on under it, as the finding says. The wing's south end has not
+      moved
 
 negative:
   - given: >
-      the same pair, maxExtendMm 500 - a limit below the distance needed
+      the same pair, maxExtendMm 500 - a limit below the distance needed -
+      THE FIRST CASE TO RUN
     expect: >
       extended 0; refused "... has to extend <needMm> mm to meet ..., more
       than the 500 mm allowed. Nothing was changed"; the wing's Extrusion
       Start and End as written down before the run
 
   - given: >
+      the same pair, maxExtendMm left out - asked to measure only
+    expect: >
+      extended 0; refused begins "MEASURED, NOTHING CHANGED: roof by
+      extrusion ... has to extend <needMm> mm for its end to meet roof by
+      footprint ..." with the same needMm as the positive; report has two
+      lines for the wing - its north end meeting the main roof's upper face,
+      its south end 0 points
+
+  - given: >
       the far roof and the main roof selected, maxExtendMm 50000 - a pair
       where no end faces the other roof
     expect: >
       extended 0; refused begins "NOTHING MET: no ray from either end of a
-      roof by extrusion met the other roof in the 3D view '{3D}'"; report
-      lists both ends of the far roof with 0 points meeting; nothing changed
+      roof by extrusion met the upper face of the other roof in the 3D view
+      '{3D}'"; report lists both ends of the far roof with 0 points meeting;
+      nothing changed
 
   - given: >
-      the main roof and a second roof by footprint selected (copy the main
-      roof 30000 mm east), maxExtendMm 10000
+      the main roof and its copy 30000 mm north selected, maxExtendMm 10000 -
+      two roofs by footprint
     expect: >
-      extended 0; refused "Both roofs are roofs by footprint, and Revit
-      <release>'s API cannot extend one ... Modify > Join/Unjoin Roof ...
-      Nothing was changed", naming the release Revit reports
+      extended 0; refused "Both roofs are roofs by footprint, and this tool
+      does not extend a roof by footprint on Revit <release> ... Modify >
+      Join/Unjoin Roof ... Nothing was changed", naming the release Revit
+      reports
 
 second_route:
   - given: >
@@ -81,7 +90,7 @@ second_route:
       Join/Unjoin Roof by hand on a second copy of the model as saved before
       it: pick the wing's north end edge, then the main roof's south slope
     expect: >
-      the wing's Extrusion End (or Start) by hand equals the card's to within
-      the difference between the nearest and farthest hit - Revit's own join
-      cuts the end to the slope, the card's reaches the farthest point; write
-      down both values and the difference
+      the wing's Extrusion End (or Start) by hand against the card's: Revit's
+      own join cuts the end to the slope, the card's flat end reaches the
+      farthest point - write down both values, and whether the difference is
+      the card's nearest-to-farthest spread

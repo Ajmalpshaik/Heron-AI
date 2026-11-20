@@ -1,7 +1,7 @@
 # NEEDS-CHECKING Group OY - EXTEND_ROOF_TO_ROOF (DRAFT), a roof by extrusion's
-# end extended until it meets another roof, measured with rays - the owner's
-# other way to Join/Unjoin Roof (row 5b-1877, issue #1087). Built 2026-11-20
-# in a cloud session with no Revit. NOT RUN.
+# end extended until it meets another roof's upper face, measured with rays -
+# the owner's other way to Join/Unjoin Roof (row 5b-1877, issue #1087). Built
+# 2026-11-20 in a cloud session with no Revit. NOT RUN.
 #
 #     python tools/batch-prove.py tools/jobs/extend-roof-to-roof-oy-2026-11-20.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/extend-roof-to-roof-oy-2026-11-20.yaml --session <pid>
@@ -10,19 +10,28 @@
 # project from the default metric architectural template, saved under
 # %TEMP%\heron-work, never a working model - the arrangement in
 # brain/fragments/extend-roof-to-roof/tests/cases.yaml: a gable roof by
-# footprint 0,0 to 12000,8000 mm on Level 2 (3000 mm), and a gable wing
-# roof by extrusion on the reference plane "Wing" (4000,-6000 to
-# 8000,-6000), Extrusion Start 0 and End 3000 mm, running north and stopping
-# 3000 mm short of the main roof's south eave. The 3D view {3D}, nothing
-# hidden, no section box.
+# footprint 0,0 to 12000,8000 mm on Level 2 (3000 mm); a gable wing roof by
+# extrusion on the reference plane "Wing" (4000,-6000 to 8000,-6000), its
+# eaves 500 mm above Level 2, running north and stopping about 3000 mm short
+# of the main roof; a far roof by extrusion on "Far" (20000,0 to 24000,0)
+# that faces nothing; and a copy of the main roof 30000 mm north. The 3D view
+# {3D}, nothing hidden, no section box.
 #
-# THE ARRANGEMENT. select-in-region picks BOTH roofs by a box round the pair,
-# roofs only, so the binding note should read `elements from the selection
-# (2)` (fragment-proving, rule 5). Positive: maxExtendMm 10000. Negative: the
-# SAME pair with maxExtendMm 500 - a limit below the distance needed, so the
-# card must measure, refuse and change nothing (a different value, not an
-# empty selection, rule 3). The write is ROLLED BACK.
-model: "roofjoin-oy: a scratch project, a gable footprint roof and a wing roof by extrusion stopping 3000 mm short of it"
+# THE ARRANGEMENT. The positive: select-in-region picks
+# the wing and the main roof by a box round the pair, roofs only, so the
+# binding note should read `elements from the selection (2)`
+# (fragment-proving, rule 5), with maxExtendMm 10000. The negative is the
+# same pair with maxExtendMm 500 - a DIFFERENT value, not an empty selection
+# (rule 3) - and it carries
+# EVERY value - the region, the view and the limit - because a negative-set
+# replaces the positive's values rather than adding to them
+# (heron_bridge_client.py, `chosen = values if using is None else using`).
+# Every write is ROLLED BACK. ONE job: a run's record is kept per card
+# (brain/proof-drafts/runs/extend-roof-to-roof.json), so a second job here
+# would replace the one the proof is signed from. The other negatives - the
+# measure-only run, a pair that faces nothing, two footprint roofs - are
+# commands in group-oy.md (OY3, OY4), each with an output of its own.
+model: "roofjoin-oy: a scratch project, a gable footprint roof, a wing roof by extrusion stopping short of it, a far roof facing nothing and a copy of the main roof"
 defaults:
   write: true
   in: "roofjoin-oy"
@@ -38,12 +47,17 @@ jobs:
       view3d: "{3D}"
       maxExtendMm: "10000"
     negative-set:
+      minMm: "-500,-6500,2500"
+      maxMm: "12500,8500,9000"
+      exact: "false"
+      categories: Roofs
+      view3d: "{3D}"
       maxExtendMm: "500"
     note: >
-      OY2 and OY3. Negative FIRST: maxExtendMm 500 - extended 0, refused
+      OY2 then OY3. Negative FIRST: maxExtendMm 500 - extended 0, refused
       "... has to extend <needMm> mm ..., more than the 500 mm allowed.
       Nothing was changed". Positive: extended 1, extendedRoof the wing's
       id, report "EXTENDED: ... its end moved <needMm> mm toward roof by
       footprint ... read back off the roof's geometry, its other end where
-      it was". Write down needMm and check it against a dimension in a
-      section through x = 6000.
+      it was". Write down needMm; check it against a dimension in a section
+      through x = 6000, and look at a section through x = 4500.

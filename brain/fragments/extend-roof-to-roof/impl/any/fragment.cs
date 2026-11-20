@@ -18,35 +18,48 @@
 //   ROOF BY EXTRUSION  its extent is its "Extrusion Start" and "Extrusion End"
 //                      (EXTRUSION_START_PARAM, EXTRUSION_END_PARAM) on every
 //                      release - so its end CAN be moved, and this moves it.
-//   ROOF BY FOOTPRINT  its edges are its sketch, and FootPrintRoof exposes no
-//                      sketch to edit on any release (no SketchId; only
-//                      GetProfiles and each edge's Offset, Overhang,
-//                      SlopeAngle, DefinesSlope and ExtendIntoWall), and
-//                      Overhang is documented "only applicable when the
-//                      FootPrintRoof is created with Pick Walls". So a
-//                      footprint roof is NEVER the one extended here: the
-//                      answer says so, naming the release, and the join is
-//                      done by hand. It can be the roof that is MET.
+//   ROOF BY FOOTPRINT  its edges are its sketch. FootPrintRoof has no SketchId;
+//                      from 2022 its sketch can be found (Sketch.OwnerId) and
+//                      edited only in a SketchEditScope, which cannot start
+//                      while a transaction is open - and this card always runs
+//                      inside one. Overhang is documented "only applicable when
+//                      the FootPrintRoof is created with Pick Walls". So THIS
+//                      CARD never extends a footprint roof (row 5b-1930 holds
+//                      the ways not built); it can be the roof that is MET.
 //
-// WHICH WAY REVIT MEASURES EXTRUSION START AND END is not written anywhere
-// (CREATE_EXTRUSION_ROOF's note says the same). So it is not assumed: the
-// roof's own geometry says where its two ends are along the profile plane's
-// normal, the two parameters are matched to them - either sign - and after
-// the write the geometry is READ BACK. An end that did not move by the
-// distance measured, or an other end that moved at all, puts the parameter
-// back and is said; nothing is called extended off the write alone.
+// WHICH WAY START AND END GO. NewExtrusionRoof's reference says both are
+// "measured from refPlane in the direction of the plane normal" - but the
+// profile's own sketch plane is what this can read, and its normal may point
+// the other way from the reference plane's. So the direction is read off the
+// roof's own geometry: its two ends along the profile plane's normal are
+// matched to the two parameters, either sign, and after the write the
+// geometry is READ BACK. An end that did not move by the distance measured,
+// or an other end that moved at all, puts the parameter back - read back
+// too - and is said; nothing is called extended off the write alone.
 //
 // THE RAYS SEE ONLY WHAT THE 3D VIEW SHOWS (MOVE_TO_RAY_HIT learned it). They
 // are aimed at the OTHER ROOF ALONE - ReferenceIntersector given that roof's
 // id - so nothing else in the view can be hit by mistake; but if that roof is
 // hidden or cut away in the view, every ray misses and nothing changes.
 //
-// THE FARTHEST HIT IS THE DISTANCE. The end's outline points are each cast
-// toward the other roof, and the end is moved by the FARTHEST of them, so no
-// part of the end stops short of the other roof's face; where the face is
-// nearer, the end then runs into the other roof by the difference, which is
-// said. JOIN_GEOMETRY is the next step that cleans that overlap - offered,
-// never run from here.
+// ONLY THE OTHER ROOF'S UPPER FACE COUNTS (review of 2026-11-20). A ray from
+// low on the end can pass UNDER the near slope and meet the underside of the
+// far slope, or the far eave, a whole roof away; taken as the farthest hit, it
+// would move the end across the roof. So a hit counts only on a face that
+// looks up (its normal's Z above 0.05) and toward the ray. A ray that meets no
+// such face is a miss, and the misses are counted and said.
+//
+// THE FARTHEST HIT IS THE DISTANCE, AND IT OVERSHOOTS. The end is flat, and
+// it is moved by the FARTHEST of its points' hits, so no part of it stops
+// short of the other roof's face. Every other part of the end goes further
+// than it needs: through the other roof, and below the ridge on into the space
+// UNDER it. JOIN_GEOMETRY cleans only where the two roofs overlap; the part
+// under the other roof stays, hidden from outside and seen in a section.
+// Revit's own Join/Unjoin Roof cuts the end to the face instead. Both are said.
+//
+// THE POINTS ARE THE END'S CORNERS AND EDGE POINTS, as Revit tessellates the
+// edges: a straight edge gives its two ends. Against a curved roof, or across
+// a valley of the other roof, the farthest gap can lie between two points.
 //
 // NOTHING CHANGES WITHOUT A LIMIT. maxExtendMm left out, the distance is
 // measured and said and nothing is changed - the owner's "offered first, and
@@ -70,8 +83,12 @@ var lines = new List<string>();
 Func<Element, string> labelOf = e => string.Format("{0} {1} '{2}'",
     e is ExtrusionRoof ? "roof by extrusion" : (e is FootPrintRoof ? "roof by footprint" : "roof"),
     e.Id, e.Name);
+var noFootprint = string.Format("this tool does not extend a roof by footprint on Revit {0}: its "
+    + "edges are its sketch, and Heron edits a roof's sketch nowhere yet (row 5b-1930). Join it by "
+    + "hand: Modify > Join/Unjoin Roof, then pick the edge of the roof to extend and the face it "
+    + "is to meet", release);
 
-// EVERY POINT OF A ROOF'S EDGES, from its geometry as Revit holds it now.
+// EVERY CORNER AND EDGE POINT OF A ROOF, from its geometry as Revit holds it now.
 Func<Element, List<XYZ>> pointsOf = e =>
 {
     var found = new List<XYZ>();
@@ -112,13 +129,27 @@ Func<List<XYZ>, XYZ, List<XYZ>> endOf = (points, toward) =>
     return end;
 };
 
+// WHETHER A HIT IS ON THE OTHER ROOF'S UPPER FACE, looking back at the ray.
+Func<RoofBase, ReferenceWithContext, XYZ, XYZ, bool> onUpperFace = (other, hit, from, toward) =>
+{
+    var reference = hit.GetReference();
+    if (reference == null || reference.ElementId != other.Id) return false;
+    var face = other.GetGeometryObjectFromReference(reference) as Face;
+    if (face == null) return false;
+    var at = face.Project(from.Add(toward.Multiply(hit.Proximity)));
+    if (at == null) return false;
+    var normal = face.ComputeNormal(at.UVPoint);
+    return normal.Z > 0.05 && normal.DotProduct(toward) < 0;
+};
+
 var roofs = new List<RoofBase>();
 foreach (var element in elements ?? new List<Element>())
 {
     var roof = element as RoofBase;
     if (roof != null) roofs.Add(roof);
     else if (element != null)
-        findings.Add(string.Format("{0} {1} is not a roof and was left alone",
+        findings.Add(string.Format("{0} {1} is not a roof by extrusion or by footprint - an in-place "
+            + "roof, or not a roof - and was left alone",
             element.Category == null ? "element" : element.Category.Name, element.Id));
 }
 
@@ -134,30 +165,31 @@ else if (roofs.Count != 2)
         + "{0} roof(s) were handed in{1}. Nothing was changed", roofs.Count,
         roofs.Count == 0 ? "" : ": " + string.Join(", ", roofs.Select(r => labelOf(r))));
 }
-else if (roofs.Any(r => r.GroupId != ElementId.InvalidElementId))
-{
-    var grouped = roofs.First(r => r.GroupId != ElementId.InvalidElementId);
-    refused = string.Format("{0} is in a group, and a roof in a group is changed by editing the "
-        + "group. Nothing was changed", labelOf(grouped));
-}
 else if (!roofs.Any(r => r is ExtrusionRoof))
 {
-    refused = string.Format("Both roofs are roofs by footprint, and Revit {0}'s API cannot extend "
-        + "one: a footprint roof's edges are its sketch, and the API gives no way to edit that "
-        + "sketch from an add-in (Overhang moves an edge only on a roof made with Pick Walls). Join "
-        + "them by hand: Modify > Join/Unjoin Roof, then pick the edge of the roof to extend and the "
-        + "face it is to meet. Nothing was changed: {1}", release,
-        string.Join(", ", roofs.Select(r => labelOf(r))));
+    refused = string.Format("Both roofs are roofs by footprint, and {0}. Nothing was changed: {1}",
+        noFootprint, string.Join(", ", roofs.Select(r => labelOf(r))));
 }
 else
 {
-    // EVERY WAY ONE ROOF'S END COULD MEET THE OTHER: each roof by extrusion,
-    // each of its two ends, its rays aimed at the other roof alone.
+    var wanted = (extend ?? "").Trim();
+    var named = wanted.Length == 0 ? null : roofs.FirstOrDefault(r => r.Id.ToString() == wanted);
+    if (wanted.Length > 0 && named == null)
+        refused = string.Format("extend names roof {0}, and the two roofs handed in are {1}. Nothing "
+            + "was changed", wanted, string.Join(", ", roofs.Select(r => labelOf(r))));
+    else if (named != null && !(named is ExtrusionRoof))
+        refused = string.Format("extend names {0}, and {1}. Nothing was changed", labelOf(named),
+            noFootprint);
+
+    // EVERY WAY ONE ROOF'S END COULD MEET THE OTHER: each roof by extrusion
+    // (only the one named, when one is), each of its two ends, its rays aimed
+    // at the other roof alone.
     var tries = new List<Tuple<ExtrusionRoof, RoofBase, XYZ, double, double, int, int>>();
     foreach (var roof in roofs)
     {
+        if (refused != null) break;
         var moving = roof as ExtrusionRoof;
-        if (moving == null) continue;
+        if (moving == null || (named != null && named.Id != roof.Id)) continue;
         var other = roofs.First(r => r.Id != roof.Id);
         ModelCurve firstEdge = null;
         foreach (ModelCurve curve in moving.GetProfile()) { firstEdge = curve; break; }
@@ -182,8 +214,7 @@ else
                 var best = double.MaxValue;
                 if (hits != null)
                     foreach (var h in hits)
-                        if (h.GetReference() != null && h.GetReference().ElementId == other.Id
-                            && h.Proximity < best)
+                        if (h.Proximity < best && onUpperFace(other, h, from, toward))
                             best = h.Proximity;
                 if (best == double.MaxValue) { miss++; continue; }
                 hit++;
@@ -191,21 +222,12 @@ else
                 farthest = Math.Max(farthest, best);
             }
             lines.Add(string.Format(invariant, "{0}, its end toward ({1:0.###}, {2:0.###}, {3:0.###}): {4} of {5} "
-                + "point(s) of its end meet {6}{7}", labelOf(moving), toward.X, toward.Y, toward.Z,
-                hit, end.Count, labelOf(other),
+                + "point(s) of its end meet the upper face of {6}{7}", labelOf(moving), toward.X,
+                toward.Y, toward.Z, hit, end.Count, labelOf(other),
                 hit == 0 ? "" : ", nearest " + mm(nearest) + " mm, farthest " + mm(farthest) + " mm away"));
             if (hit > 0)
                 tries.Add(Tuple.Create(moving, other, toward, nearest, farthest, hit, miss));
         }
-    }
-
-    var wanted = (extend ?? "").Trim();
-    if (wanted.Length > 0)
-    {
-        if (!roofs.Any(r => r.Id.ToString() == wanted))
-            refused = string.Format("extend names roof {0}, and the two roofs handed in are {1}. "
-                + "Nothing was changed", wanted, string.Join(", ", roofs.Select(r => labelOf(r))));
-        tries = tries.Where(t => t.Item1.Id.ToString() == wanted).ToList();
     }
 
     if (refused != null)
@@ -215,17 +237,21 @@ else
     else if (tries.Count == 0)
     {
         refused = string.Format("NOTHING MET: no ray from either end of a roof by extrusion met the "
-            + "other roof in the 3D view '{0}'. Is the other roof showing in that view - not hidden, "
-            + "not cut away by a section box - and does the end face it? Nothing was changed",
-            view3d.Name);
+            + "upper face of the other roof in the 3D view '{0}'. Is the other roof showing in that "
+            + "view - not hidden, not cut away by a section box - and does the end face it? Nothing "
+            + "was changed", view3d.Name);
     }
     else if (tries.Count > 1)
     {
+        var oneRoof = tries.All(t => t.Item1.Id == tries[0].Item1.Id);
         refused = "MORE THAN ONE END MEETS THE OTHER ROOF, and which one to extend is the modeller's "
             + "to say: " + string.Join("; ", tries.Select(t => string.Format(invariant, "{0}, toward "
             + "({1:0.###}, {2:0.###}, {3:0.###}), {4} mm", labelOf(t.Item1), t.Item3.X, t.Item3.Y,
-            t.Item3.Z, mm(t.Item5)))) + ". Name the roof to extend with extend, or select a pair "
-            + "where only one end faces the other roof. Nothing was changed";
+            t.Item3.Z, mm(t.Item5)))) + (oneRoof
+                ? ". Both ends of the same roof meet it, which naming the roof cannot settle - extend "
+                  + "it by hand, or select a pair where only one end faces the other roof"
+                : ". Name the roof to extend with extend")
+            + ". Nothing was changed";
     }
     else
     {
@@ -236,10 +262,15 @@ else
         var distance = chosen.Item5;
         needMm = distance * MillimetresPerFoot;
         if (chosen.Item7 > 0)
-            findings.Add(string.Format("{0} of the {1} point(s) of the end met no face of {2}: those "
-                + "parts of the end pass beside or under it, and do not reach it however far the end "
-                + "goes", chosen.Item7, chosen.Item6 + chosen.Item7, labelOf(other)));
-        if (distance <= oneMillimetre)
+            findings.Add(string.Format("{0} of the {1} point(s) of the end met no upper face of {2}: "
+                + "those parts of the end pass beside or under it, and do not reach it however far "
+                + "the end goes", chosen.Item7, chosen.Item6 + chosen.Item7, labelOf(other)));
+        if (roof.GroupId != ElementId.InvalidElementId)
+        {
+            refused = string.Format("{0} is in a group, and a roof in a group is changed by editing the "
+                + "group. Its end has to move {1} mm. Nothing was changed", labelOf(roof), mm(distance));
+        }
+        else if (distance <= oneMillimetre)
         {
             refused = string.Format("{0} already meets {1} - its farthest point is {2} mm from it. "
                 + "Nothing was changed", labelOf(roof), labelOf(other), mm(distance));
@@ -305,6 +336,7 @@ else
                     var finishAt = origin + k * e0;
                     var useStart = sign * startAt >= sign * finishAt;
                     var which = useStart ? start : finish;
+                    var name = useStart ? "Extrusion Start" : "Extrusion End";
                     var was = useStart ? s0 : e0;
                     var wasSet = which.Set(was + sign * k * distance);
                     doc.Regenerate();
@@ -318,22 +350,33 @@ else
                         refused = null;
                         lines.Add(string.Format("EXTENDED: {0}'s {1} is {2} mm (was {3} mm), and its "
                             + "end moved {4} mm toward {5} - read back off the roof's geometry, its "
-                            + "other end where it was", labelOf(roof),
-                            useStart ? "Extrusion Start" : "Extrusion End",
-                            mm(which.AsDouble()), mm(was), mm(hereAfter - hereBefore), labelOf(other)));
+                            + "other end where it was", labelOf(roof), name, mm(which.AsDouble()),
+                            mm(was), mm(hereAfter - hereBefore), labelOf(other)));
                         if (chosen.Item5 - chosen.Item4 > oneMillimetre)
-                            findings.Add(string.Format("The end now runs up to {0} mm into {1} where "
-                                + "that roof was nearest. JOIN_GEOMETRY on the two roofs cuts the "
-                                + "overlap - offered, not run", mm(chosen.Item5 - chosen.Item4),
-                                labelOf(other)));
+                            findings.Add(string.Format("The end is flat and went to its FARTHEST point, "
+                                + "so elsewhere it goes up to {0} mm further than it needed: through {1}, "
+                                + "and below the ridge on into the space under it. JOIN_GEOMETRY on the "
+                                + "two roofs cleans where they overlap - offered, not run - and the part "
+                                + "under the other roof stays: look at it in a section. Revit's own "
+                                + "Join/Unjoin Roof cuts the end to the face instead",
+                                mm(chosen.Item5 - chosen.Item4), labelOf(other)));
                         break;
                     }
-                    which.Set(was);
+                    // PUT BACK, AND READ BACK THAT IT WAS. A put-back that did not take is not
+                    // "nothing changed": thrown, so the whole call is rolled back.
+                    var putBack = which.Set(was);
                     doc.Regenerate();
+                    var again = pointsOf(roof);
+                    if (!putBack || again.Count == 0
+                        || !near(again.Max(p => p.DotProduct(toward)), hereBefore)
+                        || !near(again.Max(p => p.DotProduct(toward.Negate())), backBefore))
+                        throw new InvalidOperationException(string.Format("{0}'s {1} was changed and "
+                            + "could not be put back as it was, so NOTHING from this call was kept",
+                            labelOf(roof), name));
                     refused = string.Format("Revit did not move {0}'s end by changing its {1}: read "
                         + "back, the end moved {2} mm and its other end {3} mm, where {4} mm and 0 "
-                        + "were asked. It was put back. Nothing was changed", labelOf(roof),
-                        useStart ? "Extrusion Start" : "Extrusion End",
+                        + "were asked. It was put back, and read back as it was. Nothing was changed",
+                        labelOf(roof), name,
                         double.IsNaN(hereAfter) ? "?" : mm(hereAfter - hereBefore),
                         double.IsNaN(backAfter) ? "?" : mm(backAfter - backBefore), mm(distance));
                 }
@@ -354,5 +397,6 @@ else
 {
     findings.Insert(0, "Nothing was changed - see refused for why");
     findings.Add(string.Format("Revit {0}'s API has no Join/Unjoin Roof; this tool extends a roof "
-        + "by extrusion's end to meet another roof, measured by rays, and nothing else", release));
+        + "by extrusion's end to meet another roof's upper face, measured by rays, and nothing else",
+        release));
 }
