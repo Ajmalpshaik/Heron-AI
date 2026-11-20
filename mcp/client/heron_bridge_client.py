@@ -2485,6 +2485,14 @@ def save_sentence(reply):
 # add-in's sentence is its own and stays; this line, under it, says what a
 # rollback cannot take back. Only for a run sent as `run_fragment_publish`
 # without --apply that the add-in did not keep.
+#
+# AND ONLY FOR AN ADD-IN THAT DOES NOT SAY IT ITSELF (row 5b-1594, the owner's
+# "yes" on 2026-11-19). Since 2026-11-20 the add-in's verdict for a Publish, an
+# Admin or a no-transaction run sent without apply says "A ROLLBACK CANNOT TAKE
+# ALL OF THIS BACK" instead of "NOTHING WAS KEPT", and sends `outsideStands`
+# beside it - so a reply carrying that field already says what stands, for all
+# three, and this line would only say it twice. An add-in from before still
+# gets it, for a Publish run as before.
 OUTWARD_NOT_TAKEN_BACK = (
     "NOT TAKEN BACK  '%s' is a Publish job: what it did outside the model - a file "
     "written, a document saved, a window closed - still stands; the rollback took back "
@@ -2494,10 +2502,11 @@ OUTWARD_NOT_TAKEN_BACK = (
 
 
 def outward_not_taken_back(name, operation, reply):
-    """The line saying a Publish run's outward work stands, or None."""
+    """The line saying a Publish run's outward work stands, or None - None as
+    well when the add-in's own verdict said it (`outsideStands`, row 5b-1594)."""
     if operation != "run_fragment_publish" or not isinstance(reply, dict):
         return None
-    if reply.get("applied"):
+    if reply.get("applied") or "outsideStands" in reply:
         return None
     return OUTWARD_NOT_TAKEN_BACK % name
 

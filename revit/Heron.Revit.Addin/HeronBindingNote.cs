@@ -191,14 +191,24 @@ namespace Heron.Revit.Addin
         /// Both keys or neither: `absent:` on a need not marked optional is
         /// ignored, because the card has not said the value may be left out.
         /// The text is as written on the card, unquoted.
+        ///
+        /// AN EMPTY `absent: ""` IS EMPTY TEXT, NOT "NOTHING SAID" (FRAGMENT-
+        /// ISSUES row 5b-1841, the owner's answer A on 2026-11-20). Seven
+        /// cards write `absent: ""` beside words saying what left out means -
+        /// REPORT_PATHS_OF_TRAVEL's `room`, "left out, every path in the plan"
+        /// - and until then an empty text here returned null, so the need fell
+        /// to AbsentValue, which binds no string, and the value the card said
+        /// could be left out was refused as the caller's to supply. Now the
+        /// card's empty text is bound, as if the caller had typed "". Only a
+        /// card with NO `absent:` (null here) still leaves it to AbsentValue.
+        /// heron_fragment.need_absent_text answers the same.
         /// </summary>
         internal static string DeclaredAbsent(string optional, string absent)
         {
             if (!string.Equals((optional ?? "").Trim(), "true", System.StringComparison.OrdinalIgnoreCase))
                 return null;
 
-            var text = (absent ?? "").Trim();
-            return text.Length == 0 ? null : text;
+            return absent == null ? null : absent.Trim();
         }
 
         /// <summary>

@@ -1262,7 +1262,8 @@ def _provides_lines(provides, entries=None, items=None):
     THE ENTRIES THEMSELVES TRAVEL BESIDE THE COUNT, SINCE 2026-10-22. The
     add-in's `Report` sends `providesEntries` - for every dictionary that
     holds something, EVERY entry as "key": "value" (its first twelve until
-    2026-10-28, row 5b-1341), each side cut as a list item is - and
+    2026-10-28, row 5b-1341), each side whole to 2,000 characters (cut at 60,
+    as a summary's sample is, until 2026-11-20 - row 5b-194) - and
     `Describe` is left byte for byte as it was.
     `entries` is that field. Each entry prints on its own line under the
     count, "    14194: Yes", and a dictionary larger than what arrived says
@@ -6785,8 +6786,8 @@ def heron_gaps(days: int = 0) -> str:
 def heron_run_record(run: str = "", offset: int = 0, limit: int = 40,
                      request: str = "") -> str:
     """
-    Read back what a change did in full - every element id it added, modified
-    or deleted, and every value it left - a page at a time.
+    Read back what a change did - every element id it added, modified or
+    deleted, and every value it left as the add-in sent it - a page at a time.
 
     `revit_change` replies in short: counts by category and a `record:` line
     naming the run, e.g. run=wf-20261009-133432-0042-a1b2. Pass that run here.

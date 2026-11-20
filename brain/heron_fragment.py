@@ -276,13 +276,21 @@ def need_absent_text(entry):
     REPORT_FAMILY_FORMS' `which`, where left out means "all" (FRAGMENT-ISSUES
     row 5b-488). `absent:` without `optional: true` is ignored there, so it is
     ignored here.
+
+    AN EMPTY `absent: ""` IS EMPTY TEXT, NOT "NOTHING SAID" (FRAGMENT-ISSUES
+    row 5b-1841, the owner's answer A on 2026-11-20): it returns "", so the
+    need may be left out and binds as if "" were typed - what the seven cards
+    that write it say leaving it out means. Only a need with no `absent:` at
+    all returns None, as the add-in's does.
     """
     if need_source(entry) != "request":
         return None
     if str(entry.get("optional")).strip().lower() != "true":
         return None
-    text = str(entry.get("absent") if entry.get("absent") is not None else "").strip()
-    return text or None
+    absent = entry.get("absent")
+    if absent is None:
+        return None
+    return str(absent).strip()
 
 
 def need_may_be_absent(entry):
