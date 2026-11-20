@@ -65,9 +65,10 @@ purpose: >
   profile is removed again and the wall is as it was.
 
   **WHEN A ROOF WILL NOT JOIN.** Revit's API has no Join/Unjoin Roof on any
-  release, so no tool joins one roof to another (the `join-roofs` method).
-  Where the walls under the roof are what has to meet it, this is the other
-  way - offered, and run only on a yes. One roof joined to another is done by
+  release, so no tool makes that join (the `join-roofs` method). Where the
+  walls under the roof are what has to meet it, this is the other way -
+  offered, and run only on a yes. A roof by extrusion is brought to another
+  roof by EXTEND_ROOF_TO_ROOF; a roof by footprint is joined to another by
   hand: Modify > Join/Unjoin Roof.
 
 contract:
@@ -197,8 +198,10 @@ compatibility-note: >
 #                                           named beside it (row 5b-1671):
 #                                           Revit's API has no Join/Unjoin
 #                                           Roof, this is the other way for the
-#                                           walls, and roof to roof is done by
-#                                           hand. tests/test_brain_reachable.py
+#                                           walls; a roof by extrusion to a roof
+#                                           is EXTEND_ROOF_TO_ROOF (row 5b-1877),
+#                                           a footprint roof to a roof is done
+#                                           by hand. tests/test_brain_reachable.py
 
 utterances:
   - make the tops of these walls follow the roof above
