@@ -551,6 +551,10 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1872](row-5b-1872.md) | [#1078](https://github.com/Ajmalpshaik/Heron-AI/issues/1078) | Code fix | "which links are room bounding" still reaches the Room Bounding write, though the link list answers it |
 | [row 5b-1873](row-5b-1873.md) | [#1078](https://github.com/Ajmalpshaik/Heron-AI/issues/1078) | Code fix | On lexical, three Object Styles questions still reach writes, though List Categories reads them |
 | [row 5b-1874](row-5b-1874.md) | [#1078](https://github.com/Ajmalpshaik/Heron-AI/issues/1078) | Code fix | "what letters does the revision numbering use" still reaches a write; List Revisions is the read |
+| [row 5b-1877](row-5b-1877.md) | [#1087](https://github.com/Ajmalpshaik/Heron-AI/issues/1087) | Build | No tool joins one roof to another the other way, by measuring where they meet |
+| [row 5b-1878](row-5b-1878.md) | [#1088](https://github.com/Ajmalpshaik/Heron-AI/issues/1088) | Your decision | Three pairs of QA and datum tools are one job made as two |
+| [row 5b-1879](row-5b-1879.md) | [#1088](https://github.com/Ajmalpshaik/Heron-AI/issues/1088) | Your decision | Five rules two QA, opening and datum tools disagree on |
+| [row 5b-1880](row-5b-1880.md) | [#1089](https://github.com/Ajmalpshaik/Heron-AI/issues/1089) | Code fix | score-routing gives one sentence two answers on the same tree, long run against short |
 
 ## Found finished on 2026-11-16 - closed in the register, no issue
 
