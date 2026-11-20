@@ -151,7 +151,9 @@ CELL = re.compile(r"(?<!\\)\|")
 # stays here and its full text is in fragment-issues-archive/, moved there by
 # archive-fragment-issues.py like a finished row's. A count of zero open would then read as nothing left
 # to do, so the moved rows are counted on a line of their own and the map is
-# named: docs/fragment-issues/ISSUES.md.
+# named: docs/fragment-issues/ISSUES.md. Since 2026-11-20 (D-187) a new row is
+# moved the day it is written and its own state is its link; that page maps
+# only the rows moved before.
 MOVED = re.compile(r"^moved to issue\b", re.I)
 
 
@@ -266,8 +268,8 @@ def report(label, found, show_all):
         % ", ".join(ident(label, n) for n, _ in is_open))
     moved = [n for n, s in found if MOVED.match(s)]
     if moved:
-        out("  moved to an issue   : %d - open on GitHub, mapped in"
-            " docs/fragment-issues/ISSUES.md\n" % len(moved))
+        out("  moved to an issue   : %d - open on GitHub; each row's state names"
+            " its issue\n" % len(moved))
     out("\n")
     if arguing:
         out("  ROWS THAT ARGUE WITH THEMSELVES - the state begins with OPEN\n"
@@ -320,9 +322,10 @@ def main():
     out("  OPEN across both sections : %d\n" % total)
     out("  MOVED TO A GITHUB ISSUE   : %d\n\n" % moved)
     if moved:
-        out("A moved row is still owed: it is open as a GitHub issue, and\n"
-            "docs/fragment-issues/ISSUES.md says which. Its line stays here;\n"
-            "its full text may be in docs/fragment-issues-archive/.\n\n")
+        out("A moved row is still owed: it is open as a GitHub issue, and its\n"
+            "state names which - docs/fragment-issues/ISSUES.md maps the rows\n"
+            "moved before 2026-11-20 (D-187). Its line stays here; its full\n"
+            "text may be in docs/fragment-issues-archive/.\n\n")
     out("Read the ids, not the count. A row can say OPEN after a later row\n"
         "has closed it - four did on 2026-09-16 - and no pattern sees that.\n")
     return 0

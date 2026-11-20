@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,24 @@ semantic-identity: "turn these family instances round using their own flip contr
 kind: action
 domain: revit.elements
 capability: FLIP_ELEMENTS
-version: 3
+# VERSION 4 (2026-11-20, FRAGMENT-ISSUES row 5b-1881) - A DOOR'S ROOMS ARE
+# READ ON A PHASE IT STANDS IN, AND THAT PHASE IS NAMED; back to DRAFT.
+# Versions 2 and 3 read every door's From and To Room on the model's LAST
+# phase only. Seen 2026-11-20 on Revit 2020 (House Scratch 1042, a copy of
+# rac_basic_sample_project.rvt): its rooms are on 'Working Drawings' and its
+# last phase is 'Learning Content', so door 422466 flipped on its facing
+# answered "no room on either side, so nothing was swapped" with Hall 105 and
+# Bath 103 either side of it - REPORT_DOOR_ROOM_LINKS on 'Working Drawings'
+# named both. Now each door is read on its own Phase Created first, then on
+# each later phase it still stands in (before its Phase Demolished), in the
+# model's order; the first with a room on either side is used, and version
+# 2's test runs unchanged on it. Every roomsSwapped and roomsLeft line names
+# the phase read; "no room on either side" names every phase tried. A door
+# whose Phase Created cannot be read is read on the last phase, as before,
+# and its line says so. FlipFromToRoom is not bound to a phase. Version 3 was
+# PROVEN (the proof block below, kept as the record); its C# moved, so it is
+# DRAFT until the NEEDS-CHECKING run of this version (D-30).
+version: 4
 source: OFFICIAL
 risk: MODIFY
 

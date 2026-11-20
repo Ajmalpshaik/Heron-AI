@@ -31,7 +31,25 @@ positive:
       sketch plane was read by Revit after all: a defect, recorded with what
       was seen. One Ctrl+Z takes back the division and its work plane together
 
+  # VERSION 3, added 2026-11-20 (row 5b-1515). NOT RUN.
+  - given: >
+      version 3 - Group DQ's five wall parts and the grid "HERON CUT", which
+      crosses three of the five walls
+    expect: >
+      divided 3, not 5; partCountBefore 5 and partCountAfter 8; findings say
+      "3 of 5 part(s) divided" and name the two parts not crossed as left as
+      they were
+
 negative:
+  # VERSION 3, added 2026-11-20 (row 5b-1515). NOT RUN. Version 2 answered
+  # divided 5 beside partCountAfter 5 here on Revit 2024 (DQ3c).
+  - given: >
+      version 3 - the same five parts, cutterNames "HERON HIGH", the level kept
+      above every wall
+    expect: >
+      refused - "no part was cut ... NOTHING WAS DIVIDED."; divided 0,
+      partCountBefore 5 and partCountAfter 5; no work plane left in the model
+      (the refusal does not say it "could not be taken back")
   - given: cutterNames "Z9", a name no datum has
     expect: >
       refused naming it, nothing divided

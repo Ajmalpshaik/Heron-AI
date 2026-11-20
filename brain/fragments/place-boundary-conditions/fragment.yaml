@@ -29,8 +29,16 @@ semantic-identity: "put a fixed, pinned or roller support on these columns, beam
 # HOSTED ONLY ON THE ANALYTICAL ELEMENT OF THE ELEMENT NAMED. An element with
 # none is named in noAnalytical and gets nothing.
 #
-# ONLY 2020-2022 AND 2027, ON PURPOSE - see compatibility-note. On 2023 to 2026
-# the C# refuses with the reason rather than try a reference nobody documents.
+# EVERY RELEASE CLAIMED SINCE 2026-11-20, BUT IT PLACES ON 2020-2022 AND 2027
+# ONLY - see compatibility-note. On 2023 to 2026 the C# refuses with the reason
+# rather than try a reference nobody documents. The owner's answer on
+# FRAGMENT-ISSUES row 5b-1381, 2026-11-20: "yes refuse there". Until then the
+# card did not claim 2023-2026, so on those releases "add a pinned boundary
+# condition at these column bases" reached ATTACH_COLUMNS, a write that
+# attaches column bases to a footing. Now the card is offered there and says
+# why it cannot place one. Only the release list changed - the refusal was
+# already the C#'s #else - so no fingerprint moved and the proof stands for
+# what it ran; the refusal's own run is NEEDS-CHECKING Group OU, OU24.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 kind: action
@@ -156,8 +164,8 @@ proof:
     none
   fingerprint: de49a96b093675cb
 
-revit: ["2020", "2021", "2022", "2027"]
-runtime: [net472, net48, net10.0-windows]
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
@@ -174,8 +182,9 @@ compatibility-note: >
   releases have only the Document.Create methods, whose documentation still
   asks for an analytical line end's Reference, and AnalyticalModel - which
   gave it - is gone at 2023; no documented member gives an AnalyticalMember's
-  end as a Reference. The card claims those releases when a run in Revit
-  shows a route. Fixity is passed as TranslationRotationValue Fixed or
+  end as a Reference. Since 2026-11-20 the card claims those releases and
+  refuses there with the reason (the owner, row 5b-1381); it places there
+  when a run in Revit shows a route. Fixity is passed as TranslationRotationValue Fixed or
   Release, present 2020-2027; whether Revit's preset then reads Fixed, Pinned
   or Roller is read back, not seen in Revit.
 

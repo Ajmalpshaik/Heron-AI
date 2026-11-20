@@ -1,5 +1,5 @@
 // NOT STANDALONE. Assumes `room` is in scope; leaves `boundary`, `holes`,
-// `area`, `height`, `unbounded` and `heightKnown` behind.
+// `holeLoops`, `area`, `height`, `unbounded` and `heightKnown` behind.
 //
 // EVERYTHING IS IN REVIT'S INTERNAL FEET. Not millimetres. The conversion
 // belongs at the edge where a person reads the number (D-20), and a fragment
@@ -30,9 +30,17 @@ options.SpatialElementBoundaryLocation = SpatialElementBoundaryLocation.Finish;
 // layout built on it treated the shaft's edge as part of the room's outline
 // and laid terminals across the void. It went unnoticed because a room with no
 // hole in it - most rooms - gives the same answer either way.
+//
+// VERSION 3 (2026-11-20, WN-3): EACH HOLE IS ALSO KEPT AS ITS OWN LOOP.
+// `holes` is every hole's edges in one list, so two shafts in one room could
+// not be told apart - which edge closes which hole was lost. `holeLoops` keeps
+// one list of edges per hole, in Revit's loop order, beside `holes`, which is
+// unchanged: a caller that reads `holes` gets exactly what version 2 gave. A
+// hole whose edges Revit returns no curve for is in neither.
 
 var boundary = new List<Curve>();
 var holes = new List<Curve>();
+var holeLoops = new List<IList<Curve>>();
 var segments = room.GetBoundarySegments(options);
 
 if (segments != null)
@@ -40,11 +48,17 @@ if (segments != null)
     for (int loopIndex = 0; loopIndex < segments.Count; loopIndex++)
     {
         var into = loopIndex == 0 ? boundary : holes;
+        var thisHole = new List<Curve>();
         foreach (var segment in segments[loopIndex])
         {
             var curve = segment.GetCurve();
-            if (curve != null) into.Add(curve);
+            if (curve != null)
+            {
+                into.Add(curve);
+                if (loopIndex > 0) thisHole.Add(curve);
+            }
         }
+        if (loopIndex > 0 && thisHole.Count > 0) holeLoops.Add(thisHole);
     }
 }
 
