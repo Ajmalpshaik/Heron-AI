@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,32 @@ semantic-identity: "build extrusions, revolves, blends, sweeps and swept blends 
 kind: action
 domain: revit.families
 capability: CREATE_FAMILY_FORMS
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 4 (2026-11-20) - LOOPS THAT TOUCH, AND A LOOP BUDGET, and back to
+# DRAFT. Two refusals before anything is made, each naming what to do instead:
+# (1) FRAGMENT-ISSUES row 5b-296 (issue #944): in a row whose profile has more
+# than one loop, two loops that share a corner or a side, or cross - a ring
+# drawn as four rectangles sharing edges, strips crossing a spine - refuse the
+# call naming the row and the two loops by their order in it. Version 3 sent
+# them, and Revit answered only "unexpected internal error: code 1". Each pair
+# is measured side against side from the profile's own numbers, nearer than
+# 0.01 mm a touch (not Revit's `Curve.Intersect`, whose call changes at 2026
+# and 2027); a loop wholly inside another without touching it - a hole, the
+# right way to draw a ring - still passes. (2) GitHub issue #1051 item A3:
+# every loop of every row is counted,
+# and over `mostLoops`, 600, the call is refused with the count, saying to
+# split the rows across calls of about 300 loops. One call of 6 rows with about
+# 1,800 loops ran past the 50-second limit and was rolled back; 180 to 270
+# loops a call took about 6 to 12 s (Revit 2020, the owner's PC, 2026-11-19).
+# 600 is a budget set from that one measurement, not a limit of Revit's. A call
+# within both answers exactly as version 3 did, and no output changed. Version
+# 3 was PROVEN (the proof block below, kept as the record of what it proved);
+# its C# moved, so it is DRAFT again until NEEDS-CHECKING Group <TBD> is run
+# (D-30) - on the owner's word that a fragment found wrong may be changed even
+# though it is proven.
 
 purpose: >
   Builds FORMS in the family open in the Family Editor - one extrusion or one
@@ -67,6 +90,13 @@ purpose: >
 
   **A VOID CUTS NOTHING BY BEING MADE** - COMBINE_FAMILY_FORMS cuts it into
   a solid, by the ids given back.
+
+  **LOOPS THAT TOUCH ARE REFUSED, AND SO IS AN OVERSIZED CALL (version 4,
+  2026-11-20).** Loops of one profile that share a corner or a side, or
+  cross, are named by row and loop before anything is made: a ring is an
+  outer loop with an inner one inside it, crossing strips are forms of their
+  own. More than 600 loops in one call is refused with the count - about 300
+  a call builds well inside the time one call is given.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -234,6 +264,15 @@ compatibility-note: >
   `Element.IsValidObject`, `PlanarFace.FaceNormal` and `Origin`,
   `Face.EdgeLoops` and `Edge.Tessellate`. Built on all eight releases on
   2026-11-01 (tools/check-fragments-compile.py).
+  Version 4 calls nothing new of Revit's. Two loops that touch are told
+  apart from the profile's own numbers, deliberately not with
+  `Curve.Intersect`: `Intersect(Curve)` is on 2020 to 2026, obsolete in 2026
+  and gone in 2027, and the call taking a `CurveIntersectResultOption` is on
+  2026 and 2027 only (tools/api-surface, read 2026-11-20). Worked out here,
+  one text serves every release, and the half that reads the rows still
+  needs no Revit geometry - tests/test_family_forms_rows.py compiles that
+  half against stand-ins and reads every row Group DA sends through it.
+  Built on all eight releases on 2026-11-20 (tools/check-fragments-compile.py).
 
 # 2026-11-01 - CREATE_FAMILY_EXTRUSION AND CREATE_FAMILY_REVOLUTION WERE MERGED
 # INTO THIS CARD (version 2) on the owner's instruction ("make sure there is no
