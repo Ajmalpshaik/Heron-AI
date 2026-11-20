@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `linkName`, `roomBounding` and `pathType` are
-// in scope; leaves `changed`, `alreadyThat`, `refused`, `report` and
-// `findings` behind.
+// in scope; leaves `changed`, `alreadyThat`, `refused`, `report`, `findings`
+// and - since version 3 - `ambiguous` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One call is one undo entry.
 //
@@ -20,8 +20,18 @@
 // Either may be left out ("unchanged"), never both. Every change is READ
 // BACK, after the model is regenerated (SET_LINK_PATH_TYPE's rule), and a
 // setting already as asked is never written again.
+//
+// VERSION 3 (2026-11-20, FRAGMENT-ISSUES 5b-1534 - row 5b-203's repair, D-54
+// s3). A link type with no built-in Room Bounding had its setting found by
+// LookupParameter("Room Bounding") with no count - and where two parameters
+// carry that name (a project parameter called Room Bounding bound to RVT
+// Links, say) Revit hands back whichever it meets first, "determined at
+// random". The name is now counted with GetParameters first; a type carrying
+// it twice is NOT READ, goes in `ambiguous`, is named in `refused` and left
+// alone - nothing on it is written, its path type included.
 
 var changed = 0;
+var ambiguous = new List<ElementId>();
 var alreadyThat = 0;
 var refused = new List<string>();
 var lines = new List<string>();
@@ -69,11 +79,19 @@ if (refusal != null)
 }
 else
 {
+    // Null when the type has no Room Bounding - or carries the name twice,
+    // and then it is in `ambiguous`.
     Func<RevitLinkType, Parameter> boundingOf = type =>
     {
         var p = type.get_Parameter(BuiltInParameter.WALL_ATTR_ROOM_BOUNDING);
-        if (p == null) p = type.LookupParameter("Room Bounding");
-        return p;
+        if (p != null) return p;
+        var named = type.GetParameters("Room Bounding").Count;
+        if (named > 1)
+        {
+            if (!ambiguous.Contains(type.Id)) ambiguous.Add(type.Id);
+            return null;
+        }
+        return type.LookupParameter("Room Bounding");
     };
 
     // Per link type: what it was asked, what it was written, what is already so.
@@ -85,6 +103,17 @@ else
     foreach (var type in types)
     {
         var allAlready = true;
+
+        // A NAME CARRIED TWICE STOPS THIS TYPE BEFORE ANYTHING ON IT IS
+        // WRITTEN (version 3): its path type is not switched either, so a type
+        // is changed whole or not at all.
+        if (askBounding && boundingOf(type) == null && ambiguous.Contains(type.Id))
+        {
+            refused.Add(type.Name + ": carries TWO OR MORE parameters called 'Room Bounding' and no built-in one - "
+                + "NOT READ, because Revit hands back whichever of them it meets first. Nothing on this link type "
+                + "was changed; rename one of the two parameters first.");
+            continue;
+        }
 
         // PATH TYPE (from SET_LINK_PATH_TYPE).
         if (askPath)

@@ -44,12 +44,12 @@ def check(condition, what):
 
 
 def add(store, fid, capability, status="DRAFT", risk="READ",
-        revit="2020,2024", kind="filter", domain="test"):
+        revit="2020,2024", kind="filter", domain="test", folder="x"):
     store.execute(
         "INSERT OR REPLACE INTO fragments (id, capability, semantic_identity, "
         "kind, status, domain, risk, folder, revit) VALUES (?,?,?,?,?,?,?,?,?)",
         (fid, capability, "does %s" % capability, kind, status, domain,
-         risk, "x", revit))
+         risk, folder, revit))
     store.db.commit()
 
 
@@ -251,6 +251,35 @@ def main():
                 check(stale is not None and
                       stale.rows[0]["status"] == "DRAFT",
                       "and the provider row says DRAFT too")
+
+            print()
+            print("8. Two providers at one status: the newer version first, "
+                  "then the id (5b-1862)")
+            # The docstring says trust, then version newest first, then id;
+            # the sort had no version in it, so FRG-VER-001 at version 2 came
+            # before FRG-VER-002 at version 5 on the id alone.
+            cards = {}
+            for fid, version in (("FRG-VER-001", "2"), ("FRG-VER-002", "5"),
+                                 ("FRG-VER-003", None)):
+                folder = os.path.join(home, "cards", fid)
+                os.makedirs(folder)
+                with open(os.path.join(folder, "fragment.yaml"), "w") as handle:
+                    handle.write("heron-status: PROVEN\nid: %s\n" % fid
+                                 + ("version: %s\n" % version if version else ""))
+                cards[fid] = folder
+                add(store, fid, "VERSIONED_CASE", status="PROVEN", folder=folder)
+            add(store, "FRG-VER-000", "VERSIONED_CASE", status="DRAFT",
+                folder=cards["FRG-VER-002"])
+            got = CAP.resolve(store, "VERSIONED_CASE")
+            order = got.providers if got else []
+            check(order[:1] == ["FRG-VER-002"],
+                  "version 5 is chosen over version 2 at the same status (%s)"
+                  % ", ".join(order))
+            check(order == ["FRG-VER-002", "FRG-VER-001", "FRG-VER-003",
+                            "FRG-VER-000"],
+                  "then version 2, then the card with no version, and the "
+                  "DRAFT last whatever its version - trust first (%s)"
+                  % ", ".join(order))
         finally:
             store.close()
     finally:

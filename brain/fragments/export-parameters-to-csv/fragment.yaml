@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,36 @@ semantic-identity: "get these parameters out into a spreadsheet"
 kind: action
 domain: revit.parameters
 capability: EXPORT_PARAMETERS_TO_CSV
-version: 1
+version: 2
 source: OFFICIAL
 risk: PUBLISH
+
+# VERSION 2 (2026-11-20, FRAGMENT-ISSUES rows 5b-203 and 5b-1551) - back to
+# DRAFT. Two repairs, both in what is read and said; the file's shape, its
+# quoting and its id column are version 1's, statement for statement.
+#
+#   A NAME TWO PARAMETERS SHARE IS NOT READ (row 5b-203, D-54 s3). Version 1
+#   took LookupParameter's first match, which Autodesk's reference says "is
+#   determined at random" when an element carries two parameters by one name -
+#   a shared or project parameter bound beside a built-in one, or a curtain
+#   wall type's doubled mullion settings. The name is now counted with
+#   GetParameters on the element, and on its type where the read falls
+#   through; carried twice, that cell is left EMPTY - never a marker, which a
+#   file brought back would carry into the model - and the element goes in
+#   `ambiguous`, named in findings as NOT READ.
+#
+#   A COLUMN BLANK ON EVERY ELEMENT IS NOT A NAME THAT DOES NOT EXIST (row
+#   5b-1551). Version 1 called every column with no value anywhere "a parameter
+#   name that does not exist on these" - so a Mark exported in order to be
+#   filled in was reported as a wrong name. Each column is now counted on how
+#   many elements the parameter was found (instance or type) and on how many it
+#   held a value: found on none is `notCarried`, found and empty on every one
+#   is `blankEverywhere`, and findings says each in its own words.
+#
+# Version 1 was PROVEN on 2026-09-13 (the proof block below, kept as the record
+# of what it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING
+# runs it (D-30). Until then revit_change refuses it, so the
+# parameters-csv-round-trip method's export step waits on that proof.
 
 purpose: >
   Writes chosen parameters of a set of elements to a CSV file - one row per
@@ -58,6 +85,24 @@ contract:
       role: result
       type: int
     - name: findings
+      type: IList<string>
+    # VERSION 2 (5b-203). Elements on which a column's name is carried by TWO
+    # OR MORE parameters - on the element, or on its type when the read reached
+    # it - so that cell was NOT READ and left empty. Turned down, never found
+    # (D-52, D-54 s3).
+    - name: ambiguous
+      role: accounting
+      type: IList<ElementId>
+    # VERSION 2 (5b-1551). Columns no element given carries, on itself or on
+    # its type - a name to check the spelling of.
+    - name: notCarried
+      role: accounting
+      type: IList<string>
+    # VERSION 2 (5b-1551). Columns found on the elements and empty on every
+    # one - the parameter is there, the values are blank. Never called a wrong
+    # name.
+    - name: blankEverywhere
+      role: accounting
       type: IList<string>
 
 proof:

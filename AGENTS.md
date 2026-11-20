@@ -76,7 +76,10 @@ framing and the specification disagree, **the specification wins**.
 tool already owns the answer. Tool output beats a typed sentence, always.
 
 **Make the smallest safe change.** A defect you find while doing something else is **recorded, not
-fixed** — widening a reviewable change is how it stops being reviewable.
+fixed** — widening a reviewable change is how it stops being reviewable. **Recorded means a register row
+AND a GitHub issue, in the same change** — a defect, an owed Revit or PC check, a question for the owner.
+The [`heron-issue-recorder`](.claude/agents/heron-issue-recorder.md) agent writes both and links them
+([D-187](docs/DECISIONS.md)).
 
 **Run the gates before you claim anything.** The [`heron-ship`](.claude/skills/heron-ship/SKILL.md)
 skill has the order and, more importantly, which failures are the machine rather than your change:

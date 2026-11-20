@@ -18,7 +18,28 @@ positive:
       changed 1 - one link type, both settings read back - and the findings
       naming both
 
+  # VERSION 3, row 5b-1534 (row 5b-203's repair). NOT RUN.
+  - given: >
+      VERSION 3. One link whose type carries the built-in Room Bounding (every
+      ordinary link), OFF, roomBounding true
+    expect: >
+      exactly version 2's answer - changed 1, read back ON, `ambiguous`
+      EMPTY: the count is asked only when the built-in one is missing
+
 negative:
+  # VERSION 3, row 5b-1534. NOT RUN - it needs a link type with no built-in
+  # Room Bounding and two parameters called "Room Bounding"; if Revit gives
+  # every link type the built-in one, write down that this case cannot be
+  # arranged.
+  - given: >
+      VERSION 3. A link type carrying TWO parameters called "Room Bounding"
+      and no built-in one, roomBounding true, pathType relative
+    expect: >
+      changed 0 for it, its id in `ambiguous`, `refused` naming it as carrying
+      TWO OR MORE parameters called 'Room Bounding' - NOT READ - and NEITHER
+      setting written: its path type as it was. A value written here went to
+      whichever parameter Revit returned first (row 5b-203)
+
   - given: VERSION 2. The two links straight after, pathType relative
     expect: >
       changed 0 and alreadyThat 2 - nothing written twice

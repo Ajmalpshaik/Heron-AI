@@ -43,7 +43,26 @@ positive:
       -3000 to 0 mm north of the plane ..."; in Revit a gable whose ridge
       runs north-south at x 6000, from 3000 mm south of North Face up to it
 
+  # VERSION 2, added 2026-11-20 (row 5b-1648). NOT RUN. Version 1 threw
+  # "... another level" here on Revit 2020 every time.
+  - given: >
+      version 2 - Revit 2020 first: the job file's positive, level "Level 2",
+      roofType "Generic - 400mm", plane "A", profile "0,0; arc 6000,2000
+      12000,0", extrusionStartMm 0, extrusionEndMm 6000
+    expect: >
+      roof 1 id and the report as above; NO "did not read back" refusal; the
+      roof's Reference Level in Properties reads "Level 2"
+
 negative:
+  # VERSION 2, added 2026-11-20 (row 5b-1648). NOT RUN.
+  - given: >
+      version 2 - the same profile with level "Level 9", a level the model has
+      not got
+    expect: >
+      refused before anything is made, naming the level, as version 1 did;
+      roof the invalid id; no roof and no reference plane left in the model -
+      the level read-back is never reached, so it cannot turn a refusal into a
+      roof
   - given: >
       the first positive's values with the profile CLOSED - "0,0; arc
       6000,2000 12000,0; 0,0" - the job file's negative

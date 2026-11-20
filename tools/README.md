@@ -132,6 +132,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 | [`next-id.py`](next-id.py) | the free group, 5b row, `Q-nn` and `D-nnn` on main, every branch, open pull request and worktree | before taking any id, and again before merging |
 | [`renumber.py`](renumber.py) | renames an id this branch took that somebody else took first | when `next-id.py` says HELD TWICE or TAKEN ON MAIN |
 | [`open-defects.py`](open-defects.py) | the ids of the FRAGMENT-ISSUES rows still open | before picking up a defect |
+| [`open-issue.py`](open-issue.py) | a new row, check or question as a GitHub issue, its number written back into the register | the same change that writes the entry ([D-187](../docs/DECISIONS.md)) |
 | [`review-ledger.py`](review-ledger.py) | which files have been read word by word, and which marks went stale | during a reading sweep |
 | [`register-text.py`](register-text.py) | FRAGMENT-ISSUES, PROPOSALS or OPEN-QUESTIONS read as one text | to search a whole register |
 | [`needs-checking-register.py`](needs-checking-register.py) | NEEDS-CHECKING read as one text | to search the whole register |
@@ -2449,6 +2450,42 @@ own ids onto main - no network.
 
 ---
 
+## `open-issue.py` - a new finding is a GitHub issue in the same change, linked both ways
+
+```bash
+python tools/open-issue.py 5b-1884                  # print the issue it would open - sends and writes nothing
+python tools/open-issue.py 5b-1884 --kind revit-run --title "..." --happened "..." --expected "..."
+python tools/open-issue.py 5b-1884 --create         # open it, then write #N into the row
+python tools/open-issue.py 5b-1884 --into 1078 --create   # add it to open issue #1078 instead
+python tools/open-issue.py 5b-1884 --record 1092    # opened another way: write #1092 back, send nothing
+```
+
+**The owner's rule since 2026-11-20 ([D-187](../docs/DECISIONS.md)):** every mistake or owed check an AI finds
+is a GitHub issue at once, not only a register entry somebody turns into one later. The register stays the
+permanent record - this tool and `next-id.py`, `open-defects.py` and the archive all read it - so the entry is
+written there and its issue opened **in the same change**. It reads a FRAGMENT-ISSUES row (`5b-N`, `5-N`), a
+NEEDS-CHECKING group (`OQ`) or one check (`OQ15`), or an open question (`Q-N`), prints the issue in the shape of
+the owner's own - what happened, what is expected, the kind line, a checkbox linking the entry, a ready prompt,
+*Close this issue when* - and with `--create` opens it, or adds the checkbox to an open issue with `--into N`.
+Then it writes the number back in the register's own form: a row's state begins
+`MOVED TO ISSUE #N <date>` (the number a link to the issue), its old state kept after `Was:`; a group or a question gets
+*Tracked as GitHub issue #N since <date>* under its heading; one check in a group another issue tracks gets a
+plain line, so its bold id is still written once. The words the owner reads are given with `--title`,
+`--happened` and `--expected`; with none it uses the row's bold lead and its *Owed* part, which read like a
+register. The [`heron-issue-recorder`](../.claude/agents/heron-issue-recorder.md) agent decides the kind and
+which open issue, if any, shares the subject.
+
+**It sends only the entry's text and the words given** - nothing from a model or the PC - and refuses, before
+gh is asked anything, an issue carrying any credential shape `brain/heron_secrets.py` removes from a log, an
+e-mail address, or a user's own folder (`C:\Users\<name>`, `/Users/<name>`; `<you>` is a placeholder, not a
+person). It refuses a row whose state does not begin `OPEN`, an entry already tracked, a closed issue or a pull
+request for `--into`, and a new issue for an id an open issue already names. It talks to GitHub through
+`gh api`'s REST routes, because `gh issue create` asks GraphQL, which a Claude Code cloud session refuses.
+**Exit 3 is NOT RUN, never a pass**: GitHub could not be reached, nothing was sent and nothing written, and the
+pull request lists the issue under **Issues to open** for the session that runs `--record N`. Exit 1 refused, 2
+could not read a register file. It adds no line to `docs/fragment-issues/ISSUES.md`: its tables map what was
+moved before 2026-11-20. Tested by `tests/test_open_issue.py`, against registers it writes and a stand-in gh.
+
 ## `split-register.py` - one file per section, the register's page as its index
 
 ```bash
@@ -2585,7 +2622,7 @@ python tools/check-decision-titles.py                        # against HEAD's hi
 python tools/check-decision-titles.py --published origin/main # against what main has published
 ```
 
-**A gate: CI's gates job runs it, with `--published HEAD^1`.** It reads every decision heading in
+**A gate: CI's gates job runs it, with `--published HEAD`** - on a pull request the merge commit, so a branch that renumbers or rewords its own decision carries the `**Numbering:**` lines before it merges, not after (issue #1056, option 2; it was `HEAD^1` until 2026-11-20, and a renumbering branch then turned every later pull request red). It reads every decision heading in
 [`docs/DECISIONS.md`](../docs/DECISIONS.md) and the git history of that file, and fails when a number's heading
 no longer carries the title the number was first written with, when a title turns up under a number it was not
 first written under, when a number leaves the log, or when a `decisions/D-NN.md` record stops opening with its

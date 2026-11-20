@@ -254,6 +254,7 @@ an edit.
 | [D-183](#d-183--sheets-made-from-a-spreadsheet-keep-four-choices-as-built-a-blank-cell-writes-nothing-a-date-goes-in-as-iso-a-refused-value-is-listed-and-its-sheet-kept-and-1000-rows-is-the-most) | Sheets made from a spreadsheet keep four choices as built: a blank cell writes nothing, a date goes in as ISO, a refused value is listed and its sheet kept, and 1,000 rows is the most | ✅ Accepted · 2026-11-20 |
 | [D-184](#d-184--before-heron-acts-on-a-parameter-by-its-name-it-checks-where-that-name-lives-in-the-model-and-asks-the-modeller-which-one-when-more-than-one-place-carries-it) | Before Heron acts on a parameter by its name, it checks where that name lives in the model, and asks the modeller which one when more than one place carries it | ✅ Accepted · 2026-11-19 |
 | [D-185](#d-185--reload-latest-and-sync-with-central-stay-the-modellers-own-clicks-and-heron-builds-no-route-for-either) | Reload Latest and Sync with Central stay the modeller's own clicks, and Heron builds no route for either | ✅ Accepted · 2026-11-19 |
+| [D-187](#d-187--every-new-finding-is-a-github-issue-at-once-the-register-entry-and-its-issue-are-written-in-the-same-change-linked-both-ways) | Every new finding is a GitHub issue at once: the register entry and its issue are written in the same change, linked both ways | ✅ Accepted · 2026-11-20 |
 | [D-189](#d-189--a-development-session-never-pulls-into-the-main-heron-folder) | A development session never pulls into the main Heron folder | ✅ Accepted · 2026-11-20 |
 
 ## Format
@@ -1658,6 +1659,17 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** nothing in code - `SYNC_WITH_CENTRAL` stays as found
 
 **Full record:** [`decisions/D-185.md`](decisions/D-185.md)
+
+## D-187 — Every new finding is a GitHub issue at once: the register entry and its issue are written in the same change, linked both ways
+
+**Status:** Accepted · **Date:** 2026-11-20 · **Accepted:** Ajmal PS, 2026-11-20, in conversation with the coordinating session, which gave his words in summary: *from now on, every new finding must become a GitHub issue at once ... make it automatic, with an agent for issue creation*
+**Extends:** the 2026-11-16 move of every open row to GitHub issues ([`fragment-issues/ISSUES.md`](fragment-issues/ISSUES.md)) - from then on, for every new entry, the day it is written
+**Keeps:** [`FRAGMENT-ISSUES`](FRAGMENT-ISSUES.md), [`NEEDS-CHECKING`](NEEDS-CHECKING.md) and [`OPEN-QUESTIONS`](OPEN-QUESTIONS.md) as the permanent record · [D-30](decisions/D-30.md) - a proof is a recorded run
+**Affects:** [`tools/open-issue.py`](../tools/open-issue.py) (new) · [`heron-issue-recorder`](../.claude/agents/heron-issue-recorder.md) (new agent) · the rules for adding to the three registers · `AGENTS.md`, `heron-ship`, `fragment-proving`, `skill-recorder`, `heron-fragment-author`, `heron-fragment-merger`
+
+**Numbering:** D-187 is the id `tools/next-id.py` printed free on 2026-11-20, with `origin/main` at `f9c188f0` ending at D-185 and D-186 held by open pull request #1096 and by `claude/clever-ritchie-0sy1nr`. It was first written here as D-186 and renamed with `tools/renumber.py` before this branch was pushed.
+
+**Full record:** [`decisions/D-187.md`](decisions/D-187.md)
 
 ## D-189 — A development session never pulls into the main Heron folder
 

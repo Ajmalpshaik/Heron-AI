@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LNK-015
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "make the linked model room bounding, so rooms and spaces see
 kind: action
 domain: revit.document
 capability: SET_LINK_ROOM_BOUNDING
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -31,6 +31,20 @@ risk: MODIFY
 # was opposite. Version 1's proof below no longer described the code and was
 # kept as the record; DRAFT at the time, until version 2 is proved on a real
 # model (D-30).
+#
+# VERSION 3 (2026-11-20, FRAGMENT-ISSUES row 5b-1534 - row 5b-203's repair) -
+# BACK TO DRAFT. A link type with no built-in Room Bounding had the setting
+# found by LookupParameter("Room Bounding") with no count, so where two
+# parameters carry the name - a project parameter called Room Bounding bound
+# to RVT Links, say - Revit's pick, "determined at random" in Autodesk's
+# words, was what got written (D-54 s3). The name is now counted with
+# GetParameters first; a type carrying it twice is NOT READ, goes in
+# `ambiguous`, is named in `refused`, and NOTHING on it is written - its path
+# type included, so a type is changed whole or not at all. The built-in
+# parameter, where the type has it, is version 2's route unchanged. Version 2
+# was PROVEN on 2026-11-02 (the proof block below, kept as the record); its C#
+# moved, so it is DRAFT again until it is run in Revit (D-30). Whether any
+# Revit link type can lack the built-in one in practice is not known here.
 
 purpose: >
   Switches Room Bounding on or off for one Revit link or every link - the
@@ -96,6 +110,12 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+    - name: ambiguous
+      # VERSION 3 (5b-1534, 5b-203). Link types with no built-in Room Bounding
+      # that carry TWO OR MORE parameters called "Room Bounding" - NOT READ,
+      # nothing on them written. Turned down, never found (D-52, D-54 s3).
+      role: accounting
+      type: IList<ElementId>
 
 proof:
   date: '2026-11-02'

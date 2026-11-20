@@ -418,6 +418,67 @@ def test_a_sentence_result_at_the_signing_gate():
         shutil.rmtree(workspace)
 
 
+def test_accept_and_batch_prove_rescue_the_same_records():
+    print("accept rescues a positive only where batch-prove does: a thing made (row 5b-1863)")
+
+    # Row 5b-1863. `accept` rescued a POSITIVE UNREADABLE whenever a declared
+    # value was text in the positive and empty in the negative - any text.
+    # batch-prove's judge, since row 5b-1114, rescues only a value rendered
+    # as a type name: the thing a creator made. One record, two verdicts.
+    listed = SAMPLE.replace(
+        "    - name: elements\n      type: IList<Element>\n",
+        "    - name: elements\n      type: IList<ElementId>\n")
+    loose = SAMPLE.replace(
+        "    - name: elements\n      type: IList<Element>\n",
+        "    - name: summary\n      type: string\n")
+    made = SAMPLE.replace(
+        "    - name: elements\n      type: IList<Element>\n",
+        "    - name: created\n      type: MechanicalSystemType\n")
+
+    def signed(folder_text, positive, negative, negative_ok=True):
+        workspace = tempfile.mkdtemp()
+        original = HV.DRAFTS_DIR
+        try:
+            frag = make_fragment(os.path.join(workspace, "sample"), folder_text)
+            HV.DRAFTS_DIR = os.path.join(workspace, "drafts")
+            HV.write_draft("sample", {"fragment": "sample", "proof-draft": {
+                "date": "2026-11-20", "by": "", "model": "a test model",
+                "positive_case": "returned something",
+                "negative_case": "returned nothing",
+                "second_route": "none exists",
+                "fingerprint": frag.fingerprint()}})
+            runs = os.path.join(workspace, "drafts", "runs")
+            os.makedirs(runs)
+            with io.open(os.path.join(runs, "sample.json"), "w", encoding="utf-8") as fh:
+                fh.write(json.dumps({"fragment": "sample", "phases": [
+                    {"phase": "positive", "ok": True, "provides": positive},
+                    {"phase": "negative", "ok": negative_ok, "provides": negative}]}))
+            return HV.accept("sample", "A Person", library=[frag])
+        finally:
+            HV.DRAFTS_DIR = original
+            shutil.rmtree(workspace)
+
+    check(callable(getattr(HV, "things_made", None)),
+          "heron_validate has the one question both judges ask (things_made)")
+
+    code, message = signed(listed, {"elements": "three ducts"}, {"elements": "0 item(s)"})
+    check(code != 0, "a sentence where a list was declared is refused, as batch-prove "
+          "refuses it: %s" % message)
+    code, message = signed(loose, {"summary": "three ducts sized"}, {"summary": ""})
+    check(code != 0, "an undeclared string holding words is refused, as batch-prove "
+          "refuses it: %s" % message)
+
+    # The rescue the rule exists for still stands: create-mep-system-type,
+    # measured 2026-09-13 - the type it made, against (null).
+    code, message = signed(made, {"created": "MechanicalSystemType"}, {"created": "(null)"})
+    check(code == 0, "a thing made in the positive and gone in the negative is signable: %s"
+          % message)
+    code, message = signed(made, {"created": "MechanicalSystemType"}, {"created": "(null)"},
+                           negative_ok=False)
+    check(code != 0, "but not when the negative did not run - nothing back is not 'gone': %s"
+          % message)
+
+
 def test_an_unsigned_draft_cannot_pass_validation():
     print("The last line of defence")
     workspace = tempfile.mkdtemp()
@@ -582,6 +643,7 @@ def main():
                  test_the_write_refusals,
                  test_accept_records_a_proof_and_leaves_the_status_alone,
                  test_a_sentence_result_at_the_signing_gate,
+                 test_accept_and_batch_prove_rescue_the_same_records,
                  test_an_unsigned_draft_cannot_pass_validation,
                  test_restamp_refuses_a_genuinely_stale_proof,
                  test_the_fingerprint_is_about_content_only,

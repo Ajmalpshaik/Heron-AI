@@ -168,12 +168,13 @@ def needs_checking():
     src = needs_checking_text()
     if src is None:
         return []
-    out, group = [], ""
+    out = []
+    # EACH ROW READ WITH ITS OWN GROUP'S HEADING - the register's one reader
+    # of it, which check-gaps.py asks too. The last `## Group` heading passed
+    # was taken here until 2026-11-20, so the dated groups AC to AF, which
+    # have none, were read with whichever group was written last (row 5b-1861).
+    heading_of = NCR.headings_of(src)
     for line in src.split("\n"):
-        g = re.match(r"^## (Group [A-Z].*)$", line)
-        if g:
-            group = g.group(1)
-            continue
         # [A-Z], not [AR]. It was [AR] until 2026-09-15 and the queue was
         # showing 10 of 61 open rows: groups B, C, D, E, F, G, H, J and K
         # matched nothing and were dropped before `classify` ever saw them,
@@ -195,7 +196,8 @@ def needs_checking():
         what = re.sub(r"[`*~]", "", what)
         # The group's heading and the whole row - check-gaps.py reads the
         # same text, so the two cannot file one row two ways (row 5b-1173).
-        out.append((m.group(2), what[:110], classify(group + " " + line), "NEEDS-CHECKING.md"))
+        out.append((m.group(2), what[:110], classify(heading_of.get(m.group(2), "") + " " + line),
+                    "NEEDS-CHECKING.md"))
 
     # PROVE THE PATTERN SAW WHAT IS THERE. Counted independently of the
     # walk above, so a narrower pattern is reported rather than obeyed -

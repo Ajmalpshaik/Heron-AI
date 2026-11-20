@@ -99,6 +99,10 @@ DRAFT fragment rather than inventing one:
 - `fragment.yaml` - the card the author returned. Take the next free id in its area at the moment you
   write (`grep -h '^id:' brain/fragments/*/fragment.yaml`). Utterances are what the modeller actually
   said, and a write may declare a question only if answering it needs the write ([D-86](../../docs/DECISIONS.md)).
+  Its `heron-agent:` is the agent whose JOB the tool does - the one the author wrote, from
+  `heron_generate.DOMAIN_AGENTS` for its domain - **never `HERON-FRG-CRE-007`**, this agent's own id: a card
+  names what it implements, not who made it ([29](../../docs/29-metadata-standard.md), rows 5b-205 and
+  5b-1866). Writing a card by hand, take the same field from that table.
 - `impl/any/fragment.cs` - a snippet, not a program: its `needs` are in scope, its `provides` are left
   behind, it assumes an open transaction and never opens one (Golden Rule 16). Millimetres become feet
   by `/ 304.8` ([D-20](../../docs/DECISIONS.md)); an `ElementId` is never read as a number. **Before
@@ -135,7 +139,9 @@ or a test until it passes.
 NEEDS-CHECKING group of its own under `docs/needs-checking/`, taking the group `python tools/next-id.py`
 prints as free at the moment you write - it reads main, every branch and every open pull request, which
 your own checkout cannot - with its entry in [`docs/NEEDS-CHECKING.md`](../../docs/NEEDS-CHECKING.md),
-naming the test model to run it on. The proof is run by the owner, never by you.
+naming the test model to run it on - and its GitHub issue, opened in the same change by `heron-issue-recorder`
+(`python tools/open-issue.py <group> --create`, [D-187](../../docs/DECISIONS.md)), so the owner sees the run he
+owes. The proof is run by the owner, never by you.
 
 **7. Offer the one run, and start it only on a yes.** A MODIFY tool can be tried once on the modeller's
 own model: they save it, bring a view that will show the change to the front, and choose Keep or Discard
@@ -152,7 +158,8 @@ you choose Keep or Discard - or, if it was tried, what you chose and that its pr
 rolled-back negative case.
 
 For the reviewer: the files written, each check with PASS, FAIL or NOT RUN and why, anything a check
-reported that you judged, and the register rows owed. Never call it tested, working or proven: a
+reported that you judged, and the register entries written with the issue each is in - or listed under
+*Issues to open* where GitHub could not be reached. Never call it tested, working or proven: a
 compile is not a proof.
 
 ## Never

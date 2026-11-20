@@ -151,9 +151,30 @@ def question_ceiling():
     print()
 
 
+def set_reranker_aside():
+    """EVERY CHECK HERE IS ABOUT FUSION'S OWN ORDER - the spread of its scores,
+    which ids its shortlist holds, the quality nudge settling a tie - so the
+    re-ranker is set aside, the state every machine without one is in
+    (test_rerank.py's absent()). Installed, it re-orders the top twenty by its
+    own scores after fusion (D-134), and these checks then read fusion's
+    numbers off a list fusion did not order: on the owner's PC, model2vec
+    0.9.0 with the cross-encoder, five failed that pass on the model alone
+    (issue #958, rows 5b-348 and 5b-1293). What the re-ranker does is asked by
+    tests/test_rerank.py, and on real sentences by tests/test_routing_phrases.py.
+    CI has no re-ranker, so nothing changes there."""
+    import heron_embed as EMBED
+    import heron_rerank as RERANK
+    was, _why = RERANK.backend()
+    RERANK._CACHE[:] = [None]
+    print("Asked on the %s embedding; the re-ranker (%s here) is set aside - "
+          "fusion's order is what this suite checks" % (EMBED.backend()[0], was))
+    print()
+
+
 def main():
     home = tempfile.mkdtemp(prefix="heron-retrieve-")
     os.environ["HERON_KNOWLEDGE"] = home
+    set_reranker_aside()
 
     import heron_scope as SCOPE
     import heron_search as SEARCH
