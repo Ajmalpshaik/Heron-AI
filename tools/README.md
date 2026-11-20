@@ -629,6 +629,12 @@ card's words. **`--sentences`** asks a frozen set instead of the two above, and 
   the trained model asked for and lexical answering, a re-ranker on a run asked for without one (row 481),
   a shortlist of two or more the cross-encoder did not re-read — is refused: **not written with `--out`,
   and not compared when it is read back**.
+- **Every run says which cards it was asked on** (`Cards:`, a fingerprint of every file under
+  `brain/fragments`, kept in the record as each run's `cards`), and a run whose cards changed while it was
+  asked is refused, naming them - every lookup re-reads the cards, so a card edited during a long run
+  answers its later sentences from another tree. Two runs "on the branch" with different `Cards:` are two
+  trees: [row 5b-1880](../docs/fragment-issues/row-5b-1880.md) read such a pair as one tree giving two
+  answers. Ask a branch from a worktree of its commit when a long run and an edit could overlap.
 - **`--compare`** lists every sentence whose answer changed against an earlier record, per backend,
   tagged **want**, **bad** or **neutral**, with the questions reaching a write and the wanted answers
   reached, before and after. Sentences are matched by their words, so a set that grew still compares.

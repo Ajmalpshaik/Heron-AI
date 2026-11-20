@@ -1622,6 +1622,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ou.md`](needs-checking/group-ou.md)
 
+## Group OV - a resumed chat takes back its model, health names who holds it and which model a change goes to, the panel's outcome line, and two add-in fixes (2026-11-20)
+
+**Its own file:** [`needs-checking/group-ov.md`](needs-checking/group-ov.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

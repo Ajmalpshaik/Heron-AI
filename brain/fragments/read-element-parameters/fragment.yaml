@@ -291,7 +291,10 @@ compatibility-note: >
 utterances:
   - what is the Mark on these
   - what is the system name on these
-  - read the mark values
+  # MOVED UP 2026-11-20 (row 5b-1882 part 1): a question about insulation reached
+  # SET_MEP_INSULATION on every backend; the re-ranker reads only a card's first
+  # eight sentences (D-134). "read the mark values" moved below.
+  - what is the insulation thickness of this duct
   - get the size parameter
   - which ones have no value
   # ADDED 2026-09-20. Measured: this sentence reached REPOINT_VIEW_REFERENCE, a
@@ -331,6 +334,7 @@ utterances:
   - what is the flow rate in this pipe
   - what level are they on
   - which level is each duct on
+  - read the mark values
   # REMOVED 2026-11-01 - "what parameters does this duct have". This card's
   # own routing table sends it to REPORT_PARAMETER_INVENTORY, which declares
   # it too, so the two declarations tied in the identity table and the

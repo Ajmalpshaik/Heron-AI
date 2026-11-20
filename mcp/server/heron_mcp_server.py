@@ -402,9 +402,20 @@ def revit_health() -> str:
             # AND THE SAME FOR A MODEL (D-141): the count is sent "claim": "no",
             # so asking whether Heron works never takes the model in front
             # from another chat - which still refuses it, and that is said.
+            pin_line = None
             if b.pid == binding.pid:
-                detail = _describe(b, b.request("count_elements",
-                                                op_args={"claim": "no"}))[1:]
+                counted = b.request("count_elements", op_args={"claim": "no"})
+                detail = _describe(b, counted)[1:]
+                # AND THE MODEL THIS CHAT WORKS ON, when it is not the one in
+                # front (issue #1031): a change goes to the pinned model (D-74),
+                # so health names it too, and the two never say different
+                # things. Said here, it is not refused again before the write.
+                front = counted.get("document") if isinstance(counted, dict) \
+                    and counted.get("ok") else None
+                if pinned.title and front and front != pinned.title:
+                    pin_line = _front_sentence(pinned.title, front) + (
+                        " Say 'use this model' to move this chat onto %s." % front)
+                    _said_front(pinned.title, front)
             else:
                 detail = "  Revit %s, session %s - %s" % (
                     b.revit_version, b.pid, bridge.availability(b))
@@ -416,6 +427,8 @@ def revit_health() -> str:
                     detail += " - open model: %s" % named
 
             lines.append("  %d)%s%s" % (index, detail, mark))
+            if pin_line:
+                lines.append("      " + pin_line)
 
             # AND WHETHER THIS REVIT WILL ASK KEEP OR DISCARD, as its own
             # add-in read the owner's Ask to Keep switch at this moment -
@@ -505,6 +518,8 @@ def revit_select_by_category(category: str = "ducts") -> str:
     Equipment" - and the MEP words a modeller says for ducts and pipes:
     "ductwork", "dampers", "valves", "flex ducts".
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -571,7 +586,8 @@ def revit_select_by_category(category: str = "ducts") -> str:
         if reply.get("selected"):
             # FAILED, NOT REFUSED, on the activity list (row 5b-389): a
             # refusal means nothing happened, and here a selection did - in
-            # a model this chat does not work on.
+            # a model this chat does not work on. "failed" is its word too:
+            # OUTCOME UNKNOWN, for a call that ran in such a model (5b-1563).
             _ended("failed")
             return ("Heron SELECTED %s %s in %s before it could tell that %s is not the "
                     "model this chat works on (%s) - the add-in's own check compares an id "
@@ -879,6 +895,8 @@ def revit_preview_move(category: str = "ducts", distance: str = "") -> str:
     except BadDistance as bad:
         return _ended("refused", str(bad))
 
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -1482,6 +1500,80 @@ def _aim_at_pin(args):
             args["documentPath"] = pinned.document_path
 
 
+# THE PAIRS OF MODELS THIS CHAT HAS ALREADY BEEN TOLD ABOUT - issue #1031. A
+# pinned model and a different model in front, said once, by revit_health or
+# by revit_change refusing before its first write. Kept as long as this server,
+# which is as long as the chat, like the pin itself.
+_FRONT_SAID = set()
+
+
+def _pin_and_front(session):
+    """
+    (pinned title, title in front) when the model in front of this Revit is
+    not the one this chat is pinned to - or None: nothing pinned yet, the
+    add-in names no model in front, the two names agree, or `info` could not
+    be read.
+
+    Issue #1031: revit_health named the model in front, "Project1", and the
+    next change ran in the real project the chat was pinned to - by D-74, on
+    purpose, since a write is aimed at the pinned model whatever is in front.
+    Health and the pin said two different things, and the modeller learned
+    which model was meant only after a transaction had been opened in a job
+    model nobody chose.
+
+    BY TITLE, FROM `info`, which is lease-exempt and claims no model, so
+    asking claims nothing. Two titles that differ are two models; two that
+    agree may still be two (two Project1s), and then nothing is said here -
+    the pin's own identity check stays the cover for that, as before.
+    """
+    if not pinned.title:
+        return None
+    try:
+        front = bridge.open_model_named(session)
+    except Exception:                             # noqa: BLE001 - says nothing, never stops a call
+        return None
+    if not front or front == pinned.title:
+        return None
+    return pinned.title, front
+
+
+def _front_sentence(pin, front):
+    """The words for a chat pinned to `pin` while `front` is in front."""
+    return ("This chat works on %s, and %s is in front in Revit now. A change from this "
+            "chat goes to %s, not to the model in front (D-74)." % (pin, front, pin))
+
+
+def _said_front(pin, front):
+    """Remember that this chat was told about this pin and this model in front."""
+    _FRONT_SAID.add((pinned.key or pin, front))
+
+
+def _front_refusal(session):
+    """
+    The refusal revit_change gives BEFORE its first write while the pinned
+    model is not the one in front - issue #1031, "say so before any write" -
+    or None.
+
+    ONCE FOR EACH PAIR OF MODELS. D-74 is the owner's own design - pin
+    project 1, look at project 3, and Heron still works on project 1 - so
+    this never stops that work: it says it, once, before anything is sent,
+    and the same request sent again goes to the pinned model as D-74 says.
+    A pair revit_health has already named is not refused again.
+    """
+    pair = _pin_and_front(session)
+    if pair is None:
+        return None
+    pin, front = pair
+    if (pinned.key or pin, front) in _FRONT_SAID:
+        return None
+    _said_front(pin, front)
+    return ("%s Nothing was sent to Revit.\n\n"
+            "Ask the modeller which model they mean before anything is changed. To change "
+            "%s, say 'use this model' first (revit_use_this_model). To go on in %s, send "
+            "the same request again - this is said once for these two models."
+            % (_front_sentence(pin, front), front, pin))
+
+
 def _missing_values(folder, values):
     """The `source: request` values this fragment cannot run without and the
     caller did not give - [] when none are missing, None when its contract
@@ -2017,6 +2109,16 @@ def revit_change(capability: str = "", values: str = "",
         # send it to (none connected, several and none chosen, or closed).
         _outcome(NOT_RUN)
         return _ended("refused", str(unbound))
+
+    # THE PINNED MODEL IS NOT THE ONE IN FRONT - said BEFORE the write, once
+    # for each pair of models (issue #1031). A chat's own call only: the
+    # Commands panel and the Companion page are the modeller's own clicks in
+    # Revit, and stop for nothing here that they did not stop for before.
+    if _from_chat():
+        not_in_front = _front_refusal(session)
+        if not_in_front:
+            session.close()
+            return _ended("refused", not_in_front)
 
     args = {
         "name": folder,
@@ -3812,6 +3914,8 @@ def revit_isolate_temporary(ids: str = "", category: str = "") -> str:
     it, and so does closing the model. A sheet, a schedule or a legend has no
     temporary isolate and is refused.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -3883,6 +3987,8 @@ def revit_reset_temporary() -> str:
     "undo the isolate" after revit_isolate_temporary or Revit's own isolate.
     When nothing is isolated or hidden temporarily it says so and does nothing.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -4100,6 +4206,10 @@ def revit_offer_settings(capability: str, values: str) -> str:
                 "on.")
     folder, _status = _fragment_for(capability)
     if folder is None:
+        # NOT RUN, not REFUSED: nothing said no - there is no capability by
+        # that name (row 5b-1563). Every other return above the offer is a
+        # refusal, which the label says by itself.
+        _outcome(NOT_RUN)
         return ("Heron has nothing that does '%s', so nothing was offered." % (capability or ""))
     subject = _settings_card(folder)
     if not subject:
@@ -4135,6 +4245,9 @@ def revit_offer_settings(capability: str, values: str) -> str:
             webbrowser.open(companion.pairing_address(), new=2)
         except Exception:                            # noqa: BLE001 - the button still works
             pass
+    # ANSWERED: it ran, and nothing in the model was kept - the table waits on
+    # the page, and its Apply is revit_change's own call (row 5b-1563).
+    _outcome(ANSWERED)
     _ended("ok")
     return ("Offered on the Heron Companion page: %s, %d value(s), to adjust and apply "
             "there. Nothing in the model was changed." % (capability, len(supplied)))
@@ -4840,6 +4953,8 @@ def revit_use_this_model() -> str:
     this one - "use this model", "I'm in the other project now". Only needed
     after Heron has refused because the model changed.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -4906,6 +5021,8 @@ def revit_release(model: str = "all") -> str:
         if pinned.document_path:
             args["documentPath"] = pinned.document_path
 
+    # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -6798,10 +6915,19 @@ def heron_gaps(days: int = 0) -> str:
                      "not blamed." % found["unnamed_fragment_runs"])
         lines.append("")
 
+    # WHEN THE KNOWLEDGE STORE COULD NOT BE READ, NOTHING WAS - so the sentence
+    # below would say "nothing is recorded" of a list nobody looked at (row
+    # 5b-1864). Said instead, with why; the trail half above stands either way.
+    unread = result.get("wanted_unread")
     if wanted:
         lines.append("Written down as needed, with nothing to do it:")
         for name, why in wanted:
             lines.append("  %-30s %s" % (name, why))
+    elif unread:
+        lines.append("What is written down as wanted-but-unprovided could not be read: "
+                     "Heron's knowledge store did not open (%s). So this report "
+                     "cannot say whether anything is recorded as missing. The part "
+                     "above, from the audit trail, is unaffected." % unread)
     else:
         lines.append("Nothing is recorded as wanted-but-unprovided. That is "
                      "only what somebody wrote down, so it is not proof that "
@@ -7558,6 +7684,13 @@ if __name__ == "__main__":
             "to reach, and the server was about to offer its Revit tools anyway. "
             "Nothing was served. Start it with:  python mcp/server/heron_mcp_server.py\n")
         raise SystemExit(2)
+    # THIS CHAT'S CONVERSATION IS THE HOST'S CHAT, when the host names one -
+    # issue #1033, D-188: a chat the Claude app resumes after a restart is then
+    # the same conversation to Revit, and takes back its own model rather than
+    # being refused by itself for three quiet minutes. Before any request is
+    # sent. Here and not at import, so a suite or a tool that imports this file
+    # keeps the per-process conversation the client made.
+    bridge.adopt_host_conversation()
     if core.LIBRARY_ONLY:
         # The bridge is a Windows named pipe, and Revit is Windows-only - so
         # the library alone, never a server that waits on a Revit that cannot

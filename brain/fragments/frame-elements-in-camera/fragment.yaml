@@ -9,7 +9,16 @@ semantic-identity: "make a perspective camera view that frames these elements, f
 kind: action
 domain: revit.views
 capability: FRAME_ELEMENTS_IN_CAMERA
-version: 7
+version: 8
+# VERSION 8, 2026-11-20 - row 5b-1870. Version 6's stray-few pass compared the
+# bottom level with the NEXT one only; on Revit 2020's sample house the next
+# one up ('Level 1 Living Rm.', 1 wall) is a stray too, so 'Foundation' (1
+# wall) kept the eye against 22 walls on 'Level 1' and 31 on 'Level 2'. Now
+# every bottom level holding fewer than a quarter as many as the BUSIEST level
+# is passed over, stopping at the first that is not, and the finding names
+# each one passed. Whether the tower of row 5b-1850 still reads 'Level 1' is for the re-run. Still DRAFT - the
+# re-run is the test plan's sample-house case (issue #1042, row 5b-1870).
+#
 # VERSION 7, 2026-11-20 - row 5b-1399. On Revit 2020's P1102 MEP the seven
 # sheets handed in as a negative came back `framed 7` and a camera was made:
 # a sheet answers a box with no model extent behind it. Only an element of a

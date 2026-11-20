@@ -308,11 +308,56 @@ namespace Heron.Bridge
     public static class BridgeActiveModel
     {
         private static volatile string _title;
+        private static volatile string _key;
+        private static volatile Func<string, string, BridgeModelHold> _holdOf;
 
         public static string Title
         {
             get { return _title; }
             set { _title = string.IsNullOrEmpty(value) ? null : value; }
         }
+
+        /// <summary>
+        /// The model in front by its KEY - RevitOperations.DocumentKey, the key
+        /// a model hold is kept by (D-141) - written beside its title. Null when
+        /// no model is in front. Never shown: a title is for people, this is
+        /// for asking who holds the model.
+        /// </summary>
+        public static string Key
+        {
+            get { return _key; }
+            set { _key = string.IsNullOrEmpty(value) ? null : value; }
+        }
+
+        /// <summary>
+        /// WHO HOLDS A MODEL, as the add-in's HeronModelHold knows it - set by
+        /// the add-in once at start-up, since this project has no reference to
+        /// it. Called with (model key, the asking request's conversation) from
+        /// a listener thread, for `info` (row 5b-1645); HeronModelHold locks.
+        /// Null before the add-in sets it, and then `info` says nothing of a
+        /// hold, as an older add-in did not.
+        /// </summary>
+        public static Func<string, string, BridgeModelHold> HoldOf
+        {
+            get { return _holdOf; }
+            set { _holdOf = value; }
+        }
+    }
+
+    /// <summary>
+    /// One model's hold, as `info` says it (row 5b-1645): looked at, never
+    /// claimed or renewed. Asking who holds a model must not be the act of
+    /// holding it - the lease's own rule for `info`.
+    /// </summary>
+    public sealed class BridgeModelHold
+    {
+        /// <summary>True when a chat holds the model now.</summary>
+        public bool Held;
+
+        /// <summary>True when the chat holding it is the one asking.</summary>
+        public bool Mine;
+
+        /// <summary>The most the hold can still last, in whole seconds - 0 when free.</summary>
+        public long SecondsRemaining;
     }
 }

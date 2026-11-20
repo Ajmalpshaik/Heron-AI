@@ -13,7 +13,7 @@ people who actually do BIM work are worth more than contributions from people wh
 > not written back. Which release each proof names is on the cards, and the command that counts it is
 > the first block of [Group EQ](docs/needs-checking/group-eq.md) - it reads the whole `proof:` block,
 > because a `model:` line can wrap, and a one-line `grep` printed here until 2026-11-11 missed those.
-> The [README's Status](README.md#status) says what else has met a real Revit.
+> The [What is proven](docs/guide/what-is-proven.md#where-things-stand) page says what else has met a real Revit.
 >
 > **Most fragments are `PROVEN`** — each on a recorded run against a named model. **The rest are
 > `DRAFT`**, which is Heron's word for *not proven as it stands* - most of those have never met a
