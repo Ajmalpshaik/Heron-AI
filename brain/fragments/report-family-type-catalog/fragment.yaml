@@ -22,7 +22,7 @@ risk: READ
 # the Title with any ".rfa" taken off, so an unsaved family's fileName reads
 # "Family1.txt". A saved family's fileName is still its path with .txt.
 # Version 1 was PROVEN (the proof block below, kept as the record of what it
-# proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group <TBD>
+# proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group OT
 # is run (D-30) - on the owner's word that a fragment found wrong may be
 # changed even though it is proven.
 

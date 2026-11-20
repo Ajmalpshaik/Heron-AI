@@ -1606,6 +1606,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oq.md`](needs-checking/group-oq.md)
 
+## Group OT - thirteen family-editor tools repaired from issues #944, #945, #1029 and #1051, and five measurements the rows still owe - DRAFT until proved (2026-11-20)
+
+**Its own file:** [`needs-checking/group-ot.md`](needs-checking/group-ot.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

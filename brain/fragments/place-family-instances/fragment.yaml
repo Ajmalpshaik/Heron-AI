@@ -101,7 +101,7 @@ risk: MODIFY
 # or off it by anything but that offset, still fails the whole call. A
 # project's layout is unchanged. Version 6 was PROVEN (the proof block below,
 # kept as the record of what it proved); its C# moved, so it is DRAFT again
-# until NEEDS-CHECKING Group <TBD> is run (D-30) - on the owner's word that a
+# until NEEDS-CHECKING Group OT is run (D-30) - on the owner's word that a
 # fragment found wrong may be changed even though it is proven.
 
 purpose: >
