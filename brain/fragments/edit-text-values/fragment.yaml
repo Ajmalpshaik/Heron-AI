@@ -76,8 +76,7 @@ purpose: >
   parameter can be bound beside a built-in one of the same name, and Revit's
   lookup by name then returns one of them at random, in Autodesk's own words.
   Such an element goes in `ambiguous`, untouched (D-54 s3, FRAGMENT-ISSUES
-  5b-203). This is version 2; version 1's proof no longer describes the code and
-  is kept as a record, and the fragment is DRAFT until it is proved again.
+  5b-203).
 
   **RE-RUNNING IT MUST NOT STACK, AND A TYPE IS EDITED ONCE** (version 6, when
   EDIT_PARAMETER_TEXT was merged in). A prefix or suffix already on the value
@@ -85,8 +84,7 @@ purpose: >
   `AJ_AJ_M-01`. A field that lives on the TYPE - Type Mark, Manufacturer,
   Model - is written once however many of its instances are handed in, and
   the types changed are named in `typesEdited`, because every other instance
-  of them changed too. Version 5's proof no longer describes the code and is
-  kept as a record; the fragment is DRAFT until it is proved again.
+  of them changed too.
 
   **A RENAME IS CHECKED WHOLE BEFORE ONE NAME IS WRITTEN** (version 7, when
   RENAME_ELEMENTS was merged in). With field Name - a view, a sheet, a

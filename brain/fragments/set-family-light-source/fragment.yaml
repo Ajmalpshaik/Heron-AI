@@ -61,8 +61,6 @@ purpose: >
   read again through the lighting API and through each type's own Type
   Properties, and the report gives every light value each type changed holds,
   with the family's shape, distribution, IES file, tilt, position and aim.
-  Version 1's proof (below) no longer describes the code; this is DRAFT until
-  it is proved again.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 

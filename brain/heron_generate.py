@@ -89,7 +89,9 @@ GENERATOR = "HERON-FRG-CRE-007"
 # library's own cards of that domain name most, read on 2026-11-19 with this
 # agent's id left out; tests/test_generate.py holds every domain the library
 # uses to an entry here, and every entry to an agent its cards name. A draft
-# that names its agent keeps it.
+# that names its agent keeps it. revit.levels and revit.quality left on
+# 2026-11-20 with their last cards (row 5b-472: one QA domain, revit.qa, and
+# the level and grid cards under revit.datums).
 DOMAIN_AGENTS = {
     "revit.annotation": "HERON-REVIT-DIM-031",
     "revit.datums": "HERON-REVIT-LVL-027",
@@ -98,12 +100,10 @@ DOMAIN_AGENTS = {
     "revit.export": "HERON-REVIT-EXP-018",
     "revit.families": "HERON-REVIT-FAM-012",
     "revit.geometry": "HERON-REVIT-ELE-010",
-    "revit.levels": "HERON-REVIT-LVL-027",
     "revit.mep": "HERON-REVIT-SYS-030",
     "revit.parameters": "HERON-REVIT-PAR-011",
     "revit.phases": "HERON-REVIT-PHS-032",
     "revit.qa": "HERON-REVIT-CMP-021",
-    "revit.quality": "HERON-QA-BIM-011",
     "revit.reporting": "HERON-REVIT-ELE-010",
     "revit.rooms": "HERON-REVIT-RM-028",
     "revit.schedules": "HERON-REVIT-SCH-026",
