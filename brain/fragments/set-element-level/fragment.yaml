@@ -22,8 +22,12 @@ risk: MODIFY
 # level, the offset and a column's two ends from the element's OWN parameter
 # set; the level parameter must hold a level (one holding none is passed over,
 # row 5b-335's rule); and an offset that does not read back as written is not
-# a write - put back and refused. Walls read as version 3 read them. The
-# delete question of row 5b-1831 is not touched here. Version 2's proof below
+# a write - put back and refused. An element whose only level is its Schedule
+# Level is refused and nothing written: a Schedule Level holds no height, and a
+# work plane-based family's offset is from its host plane, so writing both
+# would drop it by the levels' difference while the read-back said moved.
+# Walls read as version 3 read them. The delete question of row 5b-1831 is not
+# touched here. Version 2's proof below
 # stays the record; DRAFT until NEEDS-CHECKING Group OE and the version 4 cases
 # are run (D-30).
 

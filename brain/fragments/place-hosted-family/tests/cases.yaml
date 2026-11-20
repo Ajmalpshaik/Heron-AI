@@ -224,15 +224,10 @@ negative:
   # VERSION 4's case, SUPERSEDED BY VERSION 5 (row 5b-294) and kept as the
   # record: version 5 sets the swing from the point and counts the door in
   # `noRoomYet` - the version 5 cases below replace it.
-  - given: >
-      UP TO VERSION 4 - a door point on a wall as usual, with its `toRoomAt`
-      point in no room - outside the building, or in a space where no room is
-      placed
-    expect: >
-      the door PLACED in its wall and left exactly as Revit placed it: that
-      point in `wrongRoom` - "no room at the point it should open into" - and
-      nothing flipped, re-hung or swapped for it. A room point in no room is
-      never taken as leave to guess which way the door opens
+  #   UP TO VERSION 4 - a door point on a wall as usual, with its `toRoomAt`
+  #   point in no room: the door PLACED and left exactly as Revit placed it,
+  #   that point in `wrongRoom` - "no room at the point it should open into" -
+  #   and nothing flipped, re-hung or swapped for it.
 
   # VERSION 5, added 2026-11-20 (row 5b-294). NOT RUN. A door point whose
   # toRoomAt lies ON the wall's line - no side to read.

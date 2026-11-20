@@ -2,6 +2,11 @@
 // leaves `values`, `blank`, `absent`, `resolvedFrom` and `noteWording` - and,
 // since version 7, `ambiguous`.
 //
+// VERSION 8 (2026-11-20, FRAGMENT-ISSUES row 5b-342) - "Level" asks the level
+// parameters in turn and the first that HOLDS a level answers; an empty
+// phantom Family Level no longer answers `absent` for an element whose level
+// is in its Schedule Level. See the Level read below.
+//
 // THREE OUTCOMES, NOT TWO, and this is the whole point of the fragment.
 //
 //   values   the parameter is there and has something in it

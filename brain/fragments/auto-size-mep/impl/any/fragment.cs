@@ -82,6 +82,11 @@ else
         var flowParameter = element == null ? null : element.get_Parameter(BuiltInParameter.RBS_DUCT_FLOW_PARAM);
         if (flowParameter == null || !flowParameter.HasValue) continue;
         var raw = flowParameter.AsDouble();
+        // A duct carrying no flow cannot test the unit: 0 agrees with 0 under
+        // any factor. Checked on the first duct that carries some - the same
+        // test the sizing loop below uses to leave a duct alone (the review of
+        // 2026-11-20).
+        if (raw * cubicMetresPerCubicFoot <= 1e-9) continue;
         var shown = "";
         try { shown = flowParameter.AsValueString(); } catch { }
         var ours = raw * cubicMetresPerCubicFoot * 1000.0;

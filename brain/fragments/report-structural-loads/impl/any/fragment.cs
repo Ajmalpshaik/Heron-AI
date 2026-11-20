@@ -2,6 +2,11 @@
 // scope, and leaves `loadCount`, `caseCount`, `combinationCount`,
 // `boundaryCount`, `report`, `names`, `noAnalytical` and `findings` behind.
 //
+// VERSION 3 (2026-11-20, FRAGMENT-ISSUES row 5b-1640) - each load case's
+// category is read from LoadCase.SubcategoryId, CREATE_LOAD_CASE version 2's
+// categoryOf, never LOAD_CASE_SUBCATEGORY's string, which printed "?" on Revit
+// 2020. See the load cases block below.
+//
 // READ ONLY. Opens no transaction and needs none.
 //
 // WHAT IT READS. Revit's Analyze > Loads and Boundary Conditions, and Analyze >

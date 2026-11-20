@@ -5,7 +5,8 @@
 // below; the points are internal feet, converted by the add-in (D-67).
 // Corrected 2026-11-20 (FRAGMENT-ISSUES row 5b-204): this line said distances
 // were internal feet with no conversion here, above the line that converts.
-// The card is DEPRECATED, so no proof moved.
+// The card is DEPRECATED: its fingerprint moved, and no live proof
+// rests on it.
 //
 // THE THING THAT MAKES THIS FRAGMENT LIE, IF NOBODY SAYS IT OUT LOUD:
 //

@@ -3,6 +3,11 @@
 // `withHoles`, `unenclosed`, `refused`, `finishWalls`, `finishSummary`,
 // `skippedEdges`, `skippedSummary` and `notJoined` behind.
 //
+// VERSION 3 (2026-11-20, WN-1 of issue #1005) - before Revit 2022 a floor is
+// made from one loop, so a room with a hole is refused BEFORE anything is built;
+// and on every release a room whose boundary loop does not close is refused,
+// never built with the loop dropped. See the floor route below.
+//
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). Every length a caller types -
 // `heightAboveLevel` and `baseOffset` - is MILLIMETRES, divided by 304.8 once,
 // below, before it is used for anything (D-71). Until version 2 this header

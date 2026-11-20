@@ -29,9 +29,11 @@ positive:
       EITHER linked 1, its line "linked, origin to origin, its model attached
       - \"<the file's title>\", N model element(s)" with N above 0, and the
       building seen in the Level 1 plan; OR linked 0, notAttached naming the
-      file and its link id, the line "Revit made the link ... but its model
-      did NOT attach - nothing of it shows, and it is NOT counted as linked".
-      Never "Loaded" with an empty plan. Which one came back is the answer to
+      file and its link id, the line "Revit made the link ... but no linked
+      model could be read from it during this run - check the plan after
+      Keep", AND after Keep the plan shows nothing of it - if the plan shows
+      the building, the read inside the run is what failed, not the link,
+      and the card is wrong. Never "Loaded" with an empty plan. Which one came back is the answer to
       whether GetLinkDocument() reads inside the transaction. NOT RUN
 
 negative:

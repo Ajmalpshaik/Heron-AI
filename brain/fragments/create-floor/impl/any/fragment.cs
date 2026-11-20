@@ -2,6 +2,10 @@
 // `heightAboveLevel` are in scope; leaves `created`, `edges`, `measuredMm` and
 // `findings` behind.
 //
+// VERSION 4 (2026-11-20, FRAGMENT-ISSUES row 5b-1383) - a floor type whose
+// FloorType.IsFoundationSlab is true is refused before anything is made,
+// naming CREATE_FOUNDATION_SLAB. Every other type runs as version 3.
+//
 // VERSION 3 (2026-11-01) - CREATE_CEILING AND CREATE_ROOF MERGED IN. One closed
 // boundary on a level, at the level's PROJECT elevation, made into whatever
 // the type is: a floor type a floor (versions 1 and 2, word for word), a

@@ -532,6 +532,27 @@ else
         }
         if (levelParameter == null) levelParameter = levelParameterEmpty;
 
+        // VERSION 4, THE REVIEW OF 2026-11-20: A SCHEDULE LEVEL HOLDS NO HEIGHT.
+        // Only a Reference Level (RBS_START_LEVEL_PARAM) or a family's Level
+        // (FAMILY_LEVEL_PARAM) is what an element's offset is measured from. An
+        // element whose only level is its Schedule Level - a work plane-based
+        // family, whose offset is from its host plane - would be given a new
+        // Schedule Level and an offset lowered by the levels' difference, and
+        // really drop by it, while the arithmetic read-back below said moved.
+        // Version 3 refused such an element by accident, off an empty phantom
+        // Level; version 4 refuses it on purpose, and writes nothing.
+        if (levelParameter != null)
+        {
+            var levelDefinition = levelParameter.Definition as InternalDefinition;
+            if (levelDefinition == null
+                || (levelDefinition.BuiltInParameter != BuiltInParameter.RBS_START_LEVEL_PARAM
+                    && levelDefinition.BuiltInParameter != BuiltInParameter.FAMILY_LEVEL_PARAM))
+            {
+                refused.Add(element.Id);
+                continue;
+            }
+        }
+
         if (levelParameter == null)
         {
             refused.Add(element.Id);

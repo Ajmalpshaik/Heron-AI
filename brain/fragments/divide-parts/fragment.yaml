@@ -38,8 +38,8 @@ risk: MODIFY
 # next run measures (NEEDS-CHECKING Group DQ, DQ3a to DQ3d). The evidence for
 # the plane is on row 5b-1418.
 #
-# VERSION 3 (2026-11-20, FRAGMENT-ISSUES row 5b-1515) - ONLY A PART THAT WAS
-# CUT IS COUNTED, and back to DRAFT. Version 2 set `divided` to every part
+# VERSION 3 (2026-11-20, FRAGMENT-ISSUES row 5b-1515) - A PART COUNTS AS
+# DIVIDED ONLY WHEN ITS ELEMENT GAINED PARTS, and back to DRAFT. Version 2 set `divided` to every part
 # handed in as soon as Revit handed back a part maker; measured 2026-11-13 on
 # Revit 2024 (NEEDS-CHECKING Group DQ, DQ3c), a level above every wall
 # answered "5 part(s) divided" beside partCountAfter 5 - Revit makes the
@@ -49,7 +49,10 @@ risk: MODIFY
 # it was made from gained parts. When none did, the step is taken back whole -
 # division and work plane - and the answer is NOTHING WAS DIVIDED. Parts a
 # datum missed while others were cut are named in findings and left as they
-# were. `partCountBefore` is new beside `partCountAfter`. Version 2 was PROVEN
+# were. THE COUNT IS BY ELEMENT, NOT BY PART: two parts of one wall handed in,
+# the datum cutting one, both count as divided - which part of an element
+# was cut is not read here, because what Revit answers for a part asked
+# about its own children is unmeasured. `partCountBefore` is new beside `partCountAfter`. Version 2 was PROVEN
 # on 2026-11-13 (the proof block below, kept as the record of what it
 # proved); its C# moved, so it is DRAFT until NEEDS-CHECKING Group OR is run.
 # GetAssociatedParts was already called on every release; nothing new is

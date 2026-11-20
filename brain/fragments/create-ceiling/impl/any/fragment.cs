@@ -5,7 +5,8 @@
 // MILLIMETRES (D-71) and is divided into internal feet below; the boundary's
 // points are internal feet, converted by the add-in (D-67). Corrected
 // 2026-11-20 (FRAGMENT-ISSUES row 5b-204): this line said "Lengths are internal
-// FEET". The card is DEPRECATED, so no proof moved.
+// FEET". The card is DEPRECATED: its fingerprint moved, and no live proof
+// rests on it.
 //
 // ===========================================================================
 // THE CREATE METHOD DOES NOT EXIST ON EVERY RELEASE, SO IT IS NOT WRITTEN DOWN.

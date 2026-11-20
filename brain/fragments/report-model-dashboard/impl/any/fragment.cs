@@ -1,6 +1,11 @@
 // NOT STANDALONE. Assumes `doc`, `parameters` and `breakdowns` are in scope, and
 // leaves `dashboardJson`, `elementTotal`, `sectionsNotRead` and `findings` behind.
 //
+// VERSION 5 (2026-11-20, FRAGMENT-ISSUES row 5b-342) - an element's level asks
+// FILTER_ELEMENTS_BY_CATEGORY's level parameters in order and passes over one
+// that holds no level, so a diffuser on a level's plane is no longer counted on
+// no level. See levelIdOf below.
+//
 // READS ONLY. No transaction is opened and nothing is set.
 //
 // THE COMPANION'S MODEL DASHBOARD IN ONE READ (docs/40). What the open project

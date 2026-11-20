@@ -131,10 +131,10 @@ negative:
       "Offset from Host" and a "Level" it has not got - with newLevel Level 2
     expect: >
       no write lands in a parameter it has not got. Read its Properties palette
-      first and write down its level and offset parameters. With no writable
-      offset of its own it is in `refused`, moved 0, and nothing on it changed;
-      with one, it is moved with heightChanged empty and the same place in a
-      section. Never `moved` with its own offset unchanged. Version 3 took the
+      first and write down its level and offset parameters. Its only level is
+      its Schedule Level, which holds no height, so it is in `refused`, moved
+      0, and nothing on it changed - not its Schedule Level, not its offset -
+      and it is in the same place in a section. Never `moved`. Version 3 took the
       first parameter get_Parameter returned - here an "Offset from Host" whose
       Set says true and keeps nothing - so its answer depended on parameters
       the element does not carry

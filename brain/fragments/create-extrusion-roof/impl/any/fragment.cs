@@ -2,6 +2,10 @@
 // `extrusionStartMm` and `extrusionEndMm` are in scope, and leaves `roof`,
 // `planeDrawn`, `report`, `refused` and `findings` behind.
 //
+// VERSION 2 (2026-11-20, FRAGMENT-ISSUES row 5b-1648) - the read-back asks the
+// roof's Reference Level, not Element.LevelId, which failed every time on Revit
+// 2020; LevelId is asked only when no Reference Level reads. See the read-back.
+//
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
 // WHAT IT DOES. Revit's Architecture > Roof > Roof by Extrusion: a roof

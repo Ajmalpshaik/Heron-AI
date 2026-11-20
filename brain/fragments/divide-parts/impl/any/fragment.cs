@@ -30,8 +30,8 @@
 // with every division - and the answer says a work plane was added.
 // COMPILED ONLY, NOT RUN IN REVIT: that Revit takes this plane is not measured.
 //
-// VERSION 3 (2026-11-20, FRAGMENT-ISSUES row 5b-1515) - ONLY A PART THAT WAS
-// CUT IS COUNTED. Version 2 set `divided` to every part handed in as soon as
+// VERSION 3 (2026-11-20, FRAGMENT-ISSUES row 5b-1515) - A PART COUNTS AS
+// DIVIDED ONLY WHEN ITS ELEMENT GAINED PARTS. Version 2 set `divided` to every part handed in as soon as
 // Revit handed back a part maker. Measured 2026-11-13 on Revit 2024 (Group DQ,
 // DQ3c): a level above every wall answered "5 part(s) divided" beside
 // partCountAfter 5 - Revit makes the division whether or not a datum crosses a
@@ -42,7 +42,10 @@
 // taken back whole - the division and its work plane - and the answer says
 // NOTHING WAS DIVIDED, naming the datum(s). Parts a datum missed while others
 // were cut are counted apart and left as they were. Both counts are answered:
-// `partCountBefore` and `partCountAfter`.
+// `partCountBefore` and `partCountAfter`. THE COUNT IS BY ELEMENT: two parts
+// of one wall handed in, the datum cutting one, both count - which part of an
+// element was cut is not read, because what Revit answers for a part asked
+// about its own children is unmeasured (the review of 2026-11-20).
 
 var divided = 0;
 var partCountBefore = 0;
@@ -139,6 +142,10 @@ if (refusal == null)
     catch (Exception ex)
     {
         try { if (step.HasStarted() && !step.HasEnded()) step.RollBack(); } catch { }
+        // Nothing was kept, so nothing counts as divided.
+        divided = 0;
+        gained.Clear();
+        notCrossed.Clear();
         refusal = "Revit refused the division: " + ex.Message + ". NOTHING WAS DIVIDED.";
     }
     doc.Regenerate();

@@ -254,8 +254,12 @@ foreach (var file in files)
             if (linkDocument == null)
             {
                 notAttached.Add(name + " (link " + made + ")");
-                lines.Add(name + ": Revit made the link (id " + made + ") but its model did NOT attach - "
-                    + "nothing of it shows, and it is NOT counted as linked" + told + ".");
+                // Worded as what was READ, not as what the plan shows: whether
+                // GetLinkDocument() answers inside the open transaction is not
+                // measured (the review of 2026-11-20) - see the header.
+                lines.Add(name + ": Revit made the link (id " + made + ") but no linked model could be read "
+                    + "from it during this run - check the plan after Keep: if nothing of it shows, it did not "
+                    + "attach. It is NOT counted as linked" + told + ".");
                 continue;
             }
             var modelElements = 0;
@@ -304,6 +308,6 @@ foreach (var file in files)
 if (alreadyLinked.Count > 0) lines.Add("Already linked, left out: " + string.Join(", ", alreadyLinked) + ".");
 var report = string.Join(" | ", lines);
 findings.Add(linked + " file(s) linked and read back; " + alreadyLinked.Count + " already linked."
-    + (notAttached.Count == 0 ? "" : " " + notAttached.Count + " Revit link(s) made whose model did NOT attach, "
+    + (notAttached.Count == 0 ? "" : " " + notAttached.Count + " Revit link(s) made with no linked model read during this run, "
        + "not counted as linked: " + string.Join(", ", notAttached) + "."));
 findings.AddRange(lines);

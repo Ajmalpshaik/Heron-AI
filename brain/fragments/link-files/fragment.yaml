@@ -21,8 +21,9 @@ capability: LINK_FILES
 # once. Now, after the regeneration, the INSTANCE's GetLinkDocument() is read
 # and its model elements counted; a Revit link counts in `linked` and
 # `linkedIds` only when its model attached. One whose document reads null is
-# named in `notAttached`, its line says "its model did NOT attach - nothing of
-# it shows", and it is never called Loaded. It is not removed - Keep or
+# named in `notAttached`, its line says no linked model could be read from it
+# during this run and to check the plan after Keep, and it is never called
+# Loaded. It is not removed - Keep or
 # Discard is the modeller's. WHETHER GetLinkDocument() ANSWERS INSIDE THE OPEN
 # TRANSACTION IS NOT KNOWN: nothing has read it there, so the NEEDS-CHECKING
 # run of this version says, beside the same file linked by hand. Reloading is

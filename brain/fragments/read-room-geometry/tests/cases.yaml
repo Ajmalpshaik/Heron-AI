@@ -14,6 +14,15 @@ positive:
       MORE THAN ONE loop, and every loop's curves present. A fragment that read
       only the first loop would return a plausible outline and the wrong area
 
+  # VERSION 3 (WN-3) - NOT RUN. Revit 2020 first.
+  - given: >
+      VERSION 3 - a room wrapping TWO separate shafts (two room separation
+      boxes, 4 lines each), on a scratch copy
+    expect: >
+      `holeLoops` holds 2 lists of 4 curves each, in Revit's loop order, and
+      `holes` holds the same 8 curves in one list, exactly as version 2 gave.
+      One list of 8, or `holes` changed, is the failure
+
 negative:
   - given: a room whose bounding walls do not close
     expect: >
@@ -32,15 +41,6 @@ negative:
       both in one list. Version 1 flattened them, and a layout built on that
       laid terminals across the void - it went unnoticed because a room with no
       hole gives the same answer either way
-
-  # VERSION 3 (WN-3) - NOT RUN. Revit 2020 first.
-  - given: >
-      VERSION 3 - a room wrapping TWO separate shafts (two room separation
-      boxes, 4 lines each), on a scratch copy
-    expect: >
-      `holeLoops` holds 2 lists of 4 curves each, in Revit's loop order, and
-      `holes` holds the same 8 curves in one list, exactly as version 2 gave.
-      One list of 8, or `holes` changed, is the failure
 
   - given: >
       VERSION 3 - a plain rectangular room with no hole (the negative for the

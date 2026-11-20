@@ -4,7 +4,8 @@
 // READ ONLY. Opens no transaction and needs none. `sizeTolerance` arrives in
 // MILLIMETRES (D-71) and is divided into internal feet below. Corrected
 // 2026-11-20 (FRAGMENT-ISSUES row 5b-204): this line said "Sizes are internal
-// FEET". The card is DEPRECATED, so no proof moved.
+// FEET". The card is DEPRECATED: its fingerprint moved, and no live proof
+// rests on it.
 //
 // THE UNCONNECTED SPIGOTS ARE USUALLY THE BIGGER FINDING. An AHU with four
 // connectors and two joined to nothing is a coordination gap no clash test and
