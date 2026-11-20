@@ -113,6 +113,32 @@ go to a record (`--out`) - never to brain/retrieval-history.md, which holds
 the two frozen sets above and nothing else. See "A session's own sentences"
 below.
 
+ONE TREE IS ONE SET OF CARDS, AND A RUN SAYS WHICH (row 5b-1880)
+-----------------------------------------------------------------
+On 2026-11-20 one sentence, "how many rows does this schedule have", came
+back with a write in a 2,568-sentence run on a branch and with the read when
+the same branch was asked again in short runs, and it was recorded as one tree
+giving two answers. It was two trees. Asked alone on the branch's commits, the
+write comes back on each commit before the one that took a stale sentence out
+of a card's purpose, and the read on every commit from it on - the words route
+ranked READ_SCHEDULE_CONTENTS third where it had been second, on both
+backends. A worker carries nothing from one sentence to the next that moves an
+answer (nothing the search reads is written by a lookup), but every lookup
+re-reads the cards on disk, so a card edited while a run is asked is answered
+from two trees in one run. So each worker now takes a fingerprint of its
+tree's cards - every file under brain/fragments - before the first sentence and
+after the last, refuses the run when the two differ and names the cards that
+moved, and records the fingerprint in the run (`cards`). The report prints it
+beside the commit, so two runs on "the branch" are seen to be one tree, or
+two, before anybody reads a difference as the search's.
+
+HOW AN EXACT TIE IS BROKEN. heron_retrieve.retrieve sorts on the fused score,
+then on the words route's rank - the stronger route - and then on the card's
+id; the re-ranker, where it runs, reads that order and only reorders it. So
+two cards with the same fused score go to the one the words route put higher:
+in the model run above, SET_SCHEDULE_FILTERS (words 1st, nearness 3rd) beat
+READ_SCHEDULE_CONTENTS (words 3rd, nearness 1st) on exactly equal scores.
+
 A NUMBER FROM HERE IS A SAMPLE OF ONE STORE
 -------------------------------------------
 The knowledge store is one file every worktree on a machine writes (row 116),
@@ -1380,6 +1406,41 @@ def tree_head(tree):
         return None, None
 
 
+def cards_of(tree):
+    """{path under brain/fragments: sha256 of the file} for every file of
+    TREE's cards - what a store built from TREE reads (row 5b-1880). A file
+    that cannot be read is listed with None, so it still counts as moved
+    when it becomes readable."""
+    base = os.path.join(tree, "brain", "fragments")
+    found = {}
+    for here, dirs, files in os.walk(base):
+        dirs[:] = sorted(d for d in dirs if d != "__pycache__")
+        for name in sorted(files):
+            path = os.path.join(here, name)
+            key = os.path.relpath(path, base).replace(os.sep, "/")
+            try:
+                with io.open(path, "rb") as handle:
+                    found[key] = hashlib.sha256(handle.read()).hexdigest()
+            except (IOError, OSError):
+                found[key] = None
+    return found
+
+
+def cards_fingerprint(cards):
+    """One short digest of cards_of()'s answer - equal for equal cards."""
+    whole = hashlib.sha256()
+    for key in sorted(cards):
+        whole.update(("%s %s\n" % (key, cards[key])).encode("utf-8"))
+    return whole.hexdigest()[:16]
+
+
+def cards_moved(before, after):
+    """The card folders whose files differ between two cards_of() answers."""
+    return sorted(set(key.split("/", 1)[0]
+                      for key in set(before) | set(after)
+                      if before.get(key) != after.get(key)))
+
+
 def ask_tree(tree, backend, items, shortlists=False, revit=None):
     """Ask every sentence on one backend, with `tree`'s own search code over a
     store built from `tree`'s cards. Returns the worker's run.
@@ -1539,6 +1600,10 @@ def _worker(job_path, out_path):
         return refuse("%s's heron_retrieve has no _rerank to read a shortlist "
                       "at" % tree)
 
+    # THE CARDS BEFORE THE FIRST SENTENCE AND AFTER THE LAST (row 5b-1880).
+    # Every lookup re-reads the cards on disk, so a card edited while the run
+    # is asked answers its later sentences from another tree.
+    cards = cards_of(tree)
     answers = []
     for i, say in enumerate(job["sentences"], 1):
         if i % 25 == 0:
@@ -1569,15 +1634,25 @@ def _worker(job_path, out_path):
             "shortlist": (held[-1] if held else None)
             if job.get("shortlists") else None})
 
+    moved = cards_moved(cards, cards_of(tree))
+    if moved:
+        return refuse("THE CARDS CHANGED WHILE THIS RUN WAS ASKED, so its later "
+                      "sentences were answered from another tree than its "
+                      "first: %s. Ask again on a tree nothing is editing - a "
+                      "worktree of the commit - and nothing was recorded "
+                      "(row 5b-1880)" % ", ".join(moved[:8])
+                      + (" and %d more" % (len(moved) - 8)
+                         if len(moved) > 8 else ""))
     store = SCOPE.open_scope(SCOPE.GLOBAL)
     try:
-        cards = [[r["capability"], r.get("risk")] for r in store.fragments()
-                 if r.get("capability")]
+        held_caps = [[r["capability"], r.get("risk")]
+                     for r in store.fragments() if r.get("capability")]
         fragments = store.count()
     finally:
         store.close()
     write({"tree": tree, "asked": job["backend"], "available": have,
-           "fragments": fragments, "capabilities": cards,
+           "fragments": fragments, "capabilities": held_caps,
+           "cards": cards_fingerprint(cards),
            "shortlists": bool(job.get("shortlists")), "answers": answers})
     return 0
 
@@ -2073,6 +2148,21 @@ def sentences_main(args, rung, threshold):
             if not runs:
                 err("COULD NOT RUN: no backend asked for could be asked\n")
                 return 2
+            # ONE TREE FOR EVERY BACKEND (row 5b-1880): each is asked in a
+            # process of its own, one after another, and a card edited between
+            # two of them makes the backends' answers two trees' answers.
+            seen_cards = sorted(set(str(run.get("cards")) for run in
+                                    runs.values()))
+            if len(seen_cards) > 1:
+                err("COULD NOT RUN: the cards changed between one backend's "
+                    "run and the next (%s), so the runs measured different "
+                    "trees. Ask again on a tree nothing is editing\n"
+                    % ", ".join("%s %s" % (label, run.get("cards"))
+                                for label, run in sorted(runs.items())))
+                return 2
+            print("Cards: %s - every file under brain/fragments, the same "
+                  "before the first sentence and after the last"
+                  % seen_cards[0])
     except CouldNotAsk as why:
         err("COULD NOT RUN: %s\n" % why)
         return 2
@@ -2100,6 +2190,10 @@ def sentences_main(args, rung, threshold):
             args.compare, earlier["tree"].get("path"),
             (earlier["tree"].get("head") or "no git")[:12],
             earlier.get("date"), earlier["sentences"].get("fingerprint")))
+        print("  its cards: %s" % (", ".join(sorted(set(
+            str(run.get("cards") or "not recorded (a record from before "
+                "row 5b-1880)") for run in earlier["runs"].values())))
+            or "no run"))
         for label, run in runs.items():
             if label in wrong:
                 print("\nNOT COMPARED ON %s - this run is not a run on it"

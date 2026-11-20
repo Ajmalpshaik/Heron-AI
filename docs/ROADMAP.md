@@ -7,13 +7,13 @@
 > [D-10](DECISIONS.md)), and Phase 0 is complete. What remains open, and whether any of it gates a
 > phase, is in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) — derive it there rather than reading a count here.
 >
-> **Where each phase stands is kept by the Status table in the root [README](../README.md#status), not by
-> this page**, and what is genuinely unfinished is `python tools/check-gaps.py`. The step-by-step state —
+> **Where each phase stands is kept by the table on the [What is proven](guide/what-is-proven.md#where-things-stand)
+> page, not by this page**, and what is genuinely unfinished is `python tools/check-gaps.py`. The step-by-step state —
 > Phase 0 proven, Step 6's move measured in Revit 2024 with a failure forced mid-move still owed, Phase 2
 > built with the fragment library mostly `PROVEN` and every skill still `DRAFT` — is read from there.
 > This page is the route, not the progress: the one picture of progress on it,
 > [the phases at a glance](#the-phases-at-a-glance), is a reading dated 2026-10-18 with each box's
-> evidence named, and where it disagrees with the Status table or the tool, they win.
+> evidence named, and where it disagrees with the What is proven table or the tool, they win.
 >
 > **The build did not keep to this order, and that is recorded rather than smoothed over.** Pieces of
 > later phases were built while Phase 1 was still being proved: Phase 6's installer (in the
@@ -143,7 +143,7 @@ Those eight named components map onto the phases below:
 
 ---
 
-## Phase 0 — Prove the bridge *(complete — see the [README Status](../README.md#status); this heading said "the only phase that matters right now" when it was written)*
+## Phase 0 — Prove the bridge *(complete — see [What is proven](guide/what-is-proven.md#where-things-stand); this heading said "the only phase that matters right now" when it was written)*
 
 **Goal:** one sentence typed by a human changes the selection in a running Revit.
 

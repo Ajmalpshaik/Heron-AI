@@ -63,6 +63,11 @@ Section 10, added 2026-10-17: on a store the run has just built, the index
 block printed beside the numbers counts it (row 5b-980) - it said "COULD NOT
 BE READ" on every fresh scratch store until the store was prepared first.
 
+Section 11, added 2026-11-20: one sentence asked alone and asked after every
+other sentence its fixture's cards declare gets one answer on one tree, each
+run records the fingerprint of the cards it was asked on, and a run during
+which a card is edited is refused and names the card (row 5b-1880).
+
 Exit 0 passed, 1 failed, 3 could not run for want of PyYAML.
 """
 
@@ -1121,6 +1126,109 @@ def fresh_store_fingerprint(tool):
           % (" ".join(block.split())[:160],))
 
 
+# THE TEST'S EDITOR, appended to a fixture's heron_brain.py: the card
+# find-views changes on disk after the first sentence is asked, as a card a
+# session edits while its long run is still being asked (row 5b-1880).
+EDITOR = '''
+_HERON_TEST_ASKED = [0]
+_heron_test_lookup = lookup
+
+
+def lookup(request, revit=None, question=False):
+    """THE TEST'S EDITOR - a card changes after the first sentence."""
+    import io as _io
+    _HERON_TEST_ASKED[0] += 1
+    if _HERON_TEST_ASKED[0] == 2:
+        top = os.path.dirname(os.path.dirname(os.path.dirname(
+            os.path.abspath(__file__))))
+        with _io.open(os.path.join(top, "brain", "fragments", "find-views",
+                                   "fragment.yaml"), "a",
+                      encoding="utf-8") as handle:
+            handle.write("\\n# edited while the run was asked\\n")
+    return _heron_test_lookup(request, revit=revit, question=question)
+'''
+
+ONE_TREE_CARDS = FIXTURE_CARDS + ("read-schedule-contents",
+                                  "set-schedule-options",
+                                  "set-schedule-filters",
+                                  "add-key-schedule-rows")
+ALONE_OR_AFTER = "how many rows does this schedule have"
+
+
+def one_tree_one_answer(tool):
+    """Section 11. Row 5b-1880: "one sentence, one tree, two answers" was two
+    trees. A worker carries nothing between sentences, and a run says which
+    cards it was asked on and refuses one whose cards moved under it."""
+    import yaml
+
+    names = ("cards_of", "cards_fingerprint", "cards_moved", "ask_tree",
+             "CouldNotAsk")
+    missing = [n for n in names if not hasattr(tool, n)]
+    for name in names:
+        check(name not in missing, "the tool has %s" % name)
+    if missing:
+        return
+    work = tempfile.mkdtemp(prefix="heron-score-one-tree-")
+    try:
+        tree = _fixture_tree(os.path.join(work, "tree"), ONE_TREE_CARDS)
+        many = []
+        for card in ONE_TREE_CARDS:
+            with io.open(os.path.join(tree, "brain", "fragments", card,
+                                      "fragment.yaml"),
+                         encoding="utf-8") as handle:
+                doc = yaml.safe_load(handle) or {}
+            many += [{"say": " ".join(str(u).split())}
+                     for u in doc.get("utterances") or []
+                     if " ".join(str(u).split()) != ALONE_OR_AFTER]
+        try:
+            alone = tool.ask_tree(tree, "lexical", [{"say": ALONE_OR_AFTER}])
+            after = tool.ask_tree(tree, "lexical",
+                                  many + [{"say": ALONE_OR_AFTER}])
+        except tool.CouldNotAsk as why:
+            check(False, "the fixture is asked alone and after %d sentences: "
+                         "%s" % (len(many), why))
+            return
+        first, last = alone["answers"][-1], after["answers"][-1]
+        check(len(many) >= 20 and first.get("say") == ALONE_OR_AFTER
+              and last.get("say") == ALONE_OR_AFTER,
+              "one sentence is asked alone, and again after the %d other "
+              "sentences its cards declare" % len(many))
+        check(first.get("capability") == last.get("capability")
+              and first.get("order") == last.get("order")
+              and first.get("route") == last.get("route"),
+              "and gets ONE answer, in one order: %s %s alone, %s %s after"
+              % (first.get("capability"), first.get("order"),
+                 last.get("capability"), last.get("order")))
+        check(bool(alone.get("cards")) and alone.get("cards") ==
+              after.get("cards") == tool.cards_fingerprint(tool.cards_of(tree)),
+              "and both runs record the same fingerprint of the cards they "
+              "were asked on: %s, %s" % (alone.get("cards"), after.get("cards")))
+
+        moving = _fixture_tree(os.path.join(work, "moving"), ONE_TREE_CARDS)
+        with io.open(os.path.join(moving, "mcp", "server", "heron_brain.py"),
+                     "a", encoding="utf-8") as handle:
+            handle.write("\n\n" + EDITOR)
+        try:
+            tool.ask_tree(moving, "lexical", many[:3])
+            refused = None
+        except tool.CouldNotAsk as why:
+            refused = str(why)
+        check(refused is not None and "CARDS CHANGED" in refused
+              and "find-views" in refused,
+              "a run during which a card is edited is refused, naming the "
+              "card - its later sentences were another tree's: %s"
+              % (refused or "it was answered")[:200])
+        before = {"a/fragment.yaml": "1", "b/fragment.yaml": "2"}
+        check(tool.cards_moved(before, dict(before)) == []
+              and tool.cards_moved(before, {"a/fragment.yaml": "1"}) == ["b"]
+              and tool.cards_moved(before, dict(before, **{
+                  "c/impl/any/fragment.cs": "3"})) == ["c"],
+              "and a card counts as moved when a file of it is changed, "
+              "removed or added")
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
 def main():
     print(__doc__.strip().splitlines()[0])
     print()
@@ -1499,6 +1607,12 @@ def main():
     print("10. The index it ran against is counted on a store it has just "
           "built - row 5b-980")
     fresh_store_fingerprint(tool)
+
+    # ------------------------------------------------------------------
+    print()
+    print("11. One sentence, one tree, one answer - alone or after many, and "
+          "a run whose cards moved is refused - row 5b-1880")
+    one_tree_one_answer(tool)
 
     return finish()
 

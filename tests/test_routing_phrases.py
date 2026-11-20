@@ -308,6 +308,8 @@ NO_TOOL = []
 # so the repair is one line in that READ's utterances, and identity answers it
 # before ranking runs (rows 116 and 146). (sentence, the READ, why)
 DECLARED = [
+    ("what is the insulation thickness of this duct", "READ_ELEMENT_PARAMETERS",
+     "5b-1882: answered SET_MEP_INSULATION on all four backends, 2026-11-20"),
     ("how high is this off the floor", "READ_ELEMENT_LEVEL",
      "146: answered SET_ROOM_LIMITS on the model, MOVE_TO_RAY_HIT on spelling"),
     # SELECT_BY_FAMILY was merged into SELECT_BY_PARAMETER_VALUE on 2026-11-01.
