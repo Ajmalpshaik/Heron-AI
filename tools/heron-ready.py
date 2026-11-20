@@ -43,8 +43,9 @@ model once when `model2vec` is installed, and compiles Heron's Python. It
 INSTALLS NOTHING - pulling a runtime onto a machine unasked is what a careful
 user and a corporate laptop are both right to refuse (Q-39) - so a missing
 package is named with its command. It never touches a Revit setting: Changes,
-Admin and Publish are the owner's switches on the ribbon, and this only reads
-them.
+Admin and Publish are the owner's switches in Heron's Settings window, held in
+Revit's memory and off whenever Revit starts (D-166), so this cannot read them
+and says so; Ask to Keep it only reads from heron.config.
 
 THE STORE IS BUILT ONLY WHERE A CHAT'S OWN START-UP WOULD BUILD IT - a private
 store, an install with no git, or the main checkout on branch main
