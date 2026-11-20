@@ -441,8 +441,8 @@ retires into this page. Per [D-177](decisions/D-177.md) the project it studied i
 ### 2.23 BUILT - a chunk carries its heading path, read off the document, and a rule is never cut from its exception
 
 *Recorded 2026-11-19, from a second reading of 2026-09-10, wider than one project, and not counted in §1.*
-It is the work note `docs/work-notes/investigations/rag-state-of-the-art-2026-09-10.md` - named, not linked,
-because this section is where it retires. Per [D-177](decisions/D-177.md) no project it read is named here.
+It was the work note `docs/work-notes/investigations/rag-state-of-the-art-2026-09-10.md`, retired on 2026-11-20
+once this section held it (WN-28). Per [D-177](decisions/D-177.md) no project it read is named here.
 
 | | |
 |---|---|
