@@ -55,6 +55,17 @@ negative:
       placed 0; refused asks for start or end and gives C2's base and top -
       the end left out is never read as a value called "none" (row 5b-1432)
 
+  # 2026-11-20 (row 5b-1381, the owner's "yes refuse there"). NOT RUN.
+  - given: >
+      Revit 2024 (any of 2023 to 2026), a scratch structural project, C2
+      selected, kind point, at "base", fixity "pinned"
+    expect: >
+      placed 0; refused "Boundary conditions cannot be placed by Heron on
+      this Revit (2023 to 2026) ... Place them with Analyze > Boundary
+      Conditions. Nothing was placed."; no boundary condition in the model,
+      and C2's base not attached to anything. Before 2026-11-20 this
+      sentence reached ATTACH_COLUMNS on these releases
+
 second_route:
   - >
     Revit's own Properties palette on each boundary condition placed, and its

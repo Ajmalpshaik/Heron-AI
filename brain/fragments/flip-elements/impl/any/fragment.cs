@@ -52,6 +52,22 @@
 // each in `workPlaneFlips`. One that cannot is named in `cannotFlipWorkPlane`
 // and never forced. The setter is not caught: a throw ends the call, and the
 // transaction group rolls the whole of it back.
+//
+// VERSION 4 (FRAGMENT-ISSUES row 5b-1881) - A DOOR'S ROOMS ARE READ ON A PHASE
+// IT STANDS IN, AND THAT PHASE IS NAMED. Versions 2 and 3 read every door on
+// the model's LAST phase only. Seen 2026-11-20 on Revit 2020, a copy of
+// rac_basic_sample_project.rvt: its rooms are on 'Working Drawings', its last
+// phase is 'Learning Content', so a door flipped on its facing answered "no
+// room on either side, so nothing was swapped" while Hall 105 and Bath 103
+// were either side of it. Now each door is read first on its own Phase
+// Created, then on each later phase it still stands in (before its Phase
+// Demolished), in the model's order, and the first of those with a room on
+// either side is the one used - the version 2 test (the room ahead along its
+// facing is its From Room and the room behind its To Room) unchanged on it.
+// Every line names the phase read, and "no room on either side" names every
+// phase tried. FlipFromToRoom is not bound to a phase; the read-back after it
+// is on the same phase. A door whose Phase Created cannot be read is read on
+// the last phase, as before, and the line says so.
 
 var flipped = 0;
 var cannotFlip = new List<ElementId>();
@@ -171,12 +187,19 @@ if (toCheck.Count > 0)
     var doc = toCheck[0].Document;
     doc.Regenerate();                                    // the facing just flipped
 
-    // The bare To Room answers for the LAST phase, so that is the one asked.
-    Phase phase = null;
+    // VERSION 4 (row 5b-1881): the model's phases in their order, and for
+    // each door the phases it stands in - its Phase Created first.
+    var phases = new List<Phase>();
     foreach (Phase candidate in doc.Phases)
     {
-        if (candidate != null) phase = candidate;
+        if (candidate != null) phases.Add(candidate);
     }
+    Func<ElementId, int> phaseIndex = id =>
+    {
+        if (id == null || id == ElementId.InvalidElementId) return -1;
+        for (var k = 0; k < phases.Count; k++) if (phases[k].Id == id) return k;
+        return -1;
+    };
 
     Func<Room, string> nameOf = r => r == null ? "(outside)" : "'" + r.Name + "'";
     Func<Room, Room, bool> same = (a, b) => a == null ? b == null : b != null && a.Id == b.Id;
@@ -184,18 +207,50 @@ if (toCheck.Count > 0)
     foreach (var door in toCheck)
     {
         var label = labelOf(door);
-        if (phase == null)
+        if (phases.Count == 0)
         {
             roomsLeft.Add(label + " - this model has no phases, so From and To Room cannot be read");
             continue;
         }
 
-        Room from = null, to = null;
-        try { from = door.get_FromRoom(phase); to = door.get_ToRoom(phase); } catch { }
-
-        if (from == null && to == null)
+        var created = -1;
+        var demolished = phases.Count;
+        try { created = phaseIndex(door.CreatedPhaseId); } catch { }
+        try
         {
-            roomsLeft.Add(label + " - no room on either side, so nothing was swapped");
+            var gone = phaseIndex(door.DemolishedPhaseId);
+            if (gone >= 0) demolished = gone;
+        }
+        catch { }
+        var tried = new List<Phase>();
+        var createdNote = "";
+        if (created < 0)
+        {
+            tried.Add(phases[phases.Count - 1]);
+            createdNote = " (its Phase Created could not be read, so the model's last phase was used)";
+        }
+        else
+        {
+            for (var k = created; k < demolished && k < phases.Count; k++) tried.Add(phases[k]);
+            if (tried.Count == 0) tried.Add(phases[created]);
+        }
+
+        Phase phase = null;
+        Room from = null, to = null;
+        foreach (var candidate in tried)
+        {
+            Room f = null, t = null;
+            try { f = door.get_FromRoom(candidate); t = door.get_ToRoom(candidate); } catch { }
+            if (f != null || t != null) { phase = candidate; from = f; to = t; break; }
+        }
+
+        if (phase == null)
+        {
+            var names = new List<string>();
+            foreach (var candidate in tried) names.Add("'" + candidate.Name + "'");
+            roomsLeft.Add(label + " - no room on either side on phase " + string.Join(", ", names)
+                + (tried.Count > 1 ? " (every phase it stands in)" : "") + createdNote
+                + ", so nothing was swapped");
             continue;
         }
 
@@ -207,7 +262,8 @@ if (toCheck.Count > 0)
         if (at == null)
         {
             roomsLeft.Add(label + " - it has no point location, so the sides could not be read and "
-                + "From and To Room were left as " + nameOf(from) + " -> " + nameOf(to));
+                + "From and To Room were left as " + nameOf(from) + " -> " + nameOf(to)
+                + " on phase '" + phase.Name + "'" + createdNote);
             continue;
         }
         var wall = door.Host as Wall;
@@ -226,7 +282,7 @@ if (toCheck.Count > 0)
         if (same(to, ahead) && same(from, behind))
         {
             roomsLeft.Add(label + " - already right: " + nameOf(from) + " -> " + nameOf(to)
-                + " on phase '" + phase.Name + "'");
+                + " on phase '" + phase.Name + "'" + createdNote);
             continue;
         }
 
@@ -234,7 +290,8 @@ if (toCheck.Count > 0)
         {
             roomsLeft.Add(label + " - Revit says " + nameOf(from) + " -> " + nameOf(to)
                 + ", the rooms found are " + nameOf(behind) + " behind and " + nameOf(ahead)
-                + " on the side it faces. A swap would not make them agree, so it was left");
+                + " on the side it faces, on phase '" + phase.Name + "'" + createdNote
+                + ". A swap would not make them agree, so it was left");
             continue;
         }
 
@@ -252,9 +309,10 @@ if (toCheck.Count > 0)
         if (refused == null && same(nowTo, ahead) && same(nowFrom, behind))
             roomsSwapped.Add(label + " - From -> To was " + nameOf(from) + " -> " + nameOf(to)
                 + ", now " + nameOf(nowFrom) + " -> " + nameOf(nowTo) + " on phase '" + phase.Name
-                + "'");
+                + "'" + createdNote);
         else
             roomsLeft.Add(label + " - the swap did not take: To Room reads " + nameOf(nowTo)
-                + ", not " + nameOf(ahead) + (refused == null ? "" : ". Revit said: " + refused));
+                + ", not " + nameOf(ahead) + ", on phase '" + phase.Name + "'"
+                + (refused == null ? "" : ". Revit said: " + refused));
     }
 }

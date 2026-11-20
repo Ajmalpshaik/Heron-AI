@@ -18,6 +18,10 @@
 // `elevationsMm` held ProjectElevation and called it the level head. Here the
 // level head is Elevation, as the header below has always said.
 //
+// VERSION 5 (2026-11-20, FRAGMENT-ISSUES rows 5b-1365 and 5b-342) - the level an
+// element stands on, for the Building Story count, is FILTER_ELEMENTS_BY_CATEGORY's
+// lookup: five level parameters, and one that holds no level is passed over.
+//
 // READ ONLY. Opens no transaction and needs none.
 //
 // A LEVEL HAS TWO HEIGHTS.
@@ -166,10 +170,15 @@ bool typesDisagree = basesSeen.Count > 1;
 // nothing on it is common and harmless, and whether one with elements on it
 // matters is the modeller's call.
 //
-// THE LEVEL OF AN ELEMENT IS LOOKED UP THE WAY SELECT_WITHOUT_LEVEL DOES, in the
-// same four steps and the same order - wall, LevelId, the family's level
-// parameter, then an MEP curve's START level, which is the only place a duct or
-// pipe keeps one. Only MODEL elements are counted: views, sheets and annotation
+// THE LEVEL OF AN ELEMENT IS LOOKED UP THE WAY FILTER_ELEMENTS_BY_CATEGORY
+// DOES (version 5, FRAGMENT-ISSUES rows 5b-335 and 5b-1365) - wall, LevelId,
+// then five level parameters in turn, an MEP curve's START level last, which
+// is the only place a duct or pipe keeps one. A PARAMETER THAT HOLDS NO LEVEL
+// IS PASSED OVER, NEVER ANSWERED WITH: version 4 asked the family's level
+// parameter and then the start level, SELECT_WITHOUT_LEVEL's four steps (that
+// card is retired into FILTER_ELEMENTS_BY_CATEGORY), so a work plane-based
+// diffuser whose "Level" is empty and whose Schedule Level is Level 1 counted
+// on no level. Only MODEL elements are counted: views, sheets and annotation
 // carry a level too, and none of them goes into a storey.
 //
 // THIS MODEL'S LEVELS ONLY. A link's levels are not read for this, with or
@@ -191,6 +200,17 @@ foreach (var element in levels)
     else unticked.Add(level);
 }
 
+// Version 5: FILTER_ELEMENTS_BY_CATEGORY's five, in its order - the first that
+// holds a LEVEL answers (row 5b-335).
+var levelParameterOrder = new[]
+{
+    BuiltInParameter.FAMILY_LEVEL_PARAM,
+    BuiltInParameter.SCHEDULE_LEVEL_PARAM,
+    BuiltInParameter.LEVEL_PARAM,
+    BuiltInParameter.INSTANCE_REFERENCE_LEVEL_PARAM,
+    BuiltInParameter.RBS_START_LEVEL_PARAM,
+};
+
 var onLevel = new Dictionary<ElementId, int>();
 foreach (var level in unticked) onLevel[level.Id] = 0;
 var modelElementsRead = 0;
@@ -205,20 +225,23 @@ if (unticked.Count > 0)
         if (category == null || category.CategoryType != CategoryType.Model) continue;
         modelElementsRead++;
 
-        // SELECT_WITHOUT_LEVEL's four steps, in its order.
+        // FILTER_ELEMENTS_BY_CATEGORY's lookup, in its order (version 5).
         var at = ElementId.InvalidElementId;
         var wall = element as Wall;
         if (wall != null) at = wall.LevelId;
         if (at == ElementId.InvalidElementId) at = element.LevelId;
         if (at == ElementId.InvalidElementId)
         {
-            var parameter = element.get_Parameter(BuiltInParameter.FAMILY_LEVEL_PARAM);
-            if (parameter != null && parameter.HasValue) at = parameter.AsElementId();
-        }
-        if (at == ElementId.InvalidElementId)
-        {
-            var parameter = element.get_Parameter(BuiltInParameter.RBS_START_LEVEL_PARAM);
-            if (parameter != null && parameter.HasValue) at = parameter.AsElementId();
+            foreach (var candidate in levelParameterOrder)
+            {
+                Parameter parameter = null;
+                try { parameter = element.get_Parameter(candidate); } catch (Exception) { parameter = null; }
+                if (parameter == null || !parameter.HasValue || parameter.StorageType != StorageType.ElementId) continue;
+                ElementId held = null;
+                try { held = parameter.AsElementId(); } catch (Exception) { held = null; }
+                if (held == null || held == ElementId.InvalidElementId) continue;
+                if (doc.GetElement(held) is Level) { at = held; break; }
+            }
         }
 
         int count;

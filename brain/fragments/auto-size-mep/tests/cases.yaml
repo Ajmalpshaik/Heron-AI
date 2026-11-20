@@ -10,6 +10,16 @@ positive:
       the height grown to the next standard size and the width untouched, with
       the resulting velocity at or below 5 m/s
 
+  - given: >
+      VERSION 2 (WN-2) - NOT RUN. Revit 2020 first, then 2024: the 500 L/s
+      branch above, target 4 m/s
+    expect: >
+      the first finding reads "UNIT CHECK on <id>: internal ... read as 500.0
+      L/s, the same as Revit's own conversion, and Revit itself shows '500.0
+      L/s' - checked before any size was written" (or the project's own flow
+      unit in the quotes), and the duct sized to 400 mm exactly as version 1
+      sized it; `refused` empty
+
 negative:
   - given: the UNIT CHECK line in the report
     expect: >
@@ -38,6 +48,19 @@ negative:
     expect: >
       flagged as FLAT in the row. It fits the arithmetic and it is not buildable
       in a ceiling void, and a report that stays silent about it has done half a job
+
+  - given: >
+      VERSION 2 (WN-2) - NOT RUN. A disagreement cannot be arranged on a real
+      Revit (the factor is exact), so the negative is a change to the card's
+      factor in a SCRATCH copy of impl/any/fragment.cs - cubicMetresPerCubicFoot
+      set to 0.03 - run through the fragment command line on a scratch model,
+      rolled back, and the copy thrown away
+    expect: >
+      `sized` 0, every duct at its old size, `refused` reads "UNIT CHECK on
+      <id>: internal ... reads ... L/s by this card's factor but ... L/s by
+      Revit's own conversion ... so NOTHING was sized", and the last finding
+      "NOTHING was sized: the unit check above failed ...". A single size
+      written here is the failure version 1 had
 
 second_route:
   - the same duct sized by hand from a duct sizer or a ductulator, at the same velocity

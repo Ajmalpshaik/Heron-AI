@@ -2,7 +2,7 @@
 // `level`, `sillHeight` and `rotation` are in scope; leaves `placed`,
 // `alreadyThere`, `failed`, `noWall`, `twoWalls`, `noHost`, `twoHosts`,
 // `hostedIn`, `offPoint`, `flipped`, `handFlipped`, `toRoomSwapped`,
-// `turnedOut`, `wrongRoom`, `wrongHinge`, `toRoomWrong`, `facingWrong`,
+// `turnedOut`, `wrongRoom`, `noRoomYet`, `wrongHinge`, `toRoomWrong`, `facingWrong`,
 // `rotationWrong`, `sills`, `sillWrong`, `noSillParameter`, `sillTooHigh`,
 // `readBack` and `findings` behind.
 //
@@ -16,6 +16,20 @@
 // that is face-based goes ON a face, not into a host, and is refused here with
 // PLACE_FAMILY_ON_FACE named; one that is not hosted at all is refused with
 // PLACE_FAMILY_INSTANCES named. Nothing is placed either way.
+//
+// VERSION 5 (2026-11-20, FRAGMENT-ISSUES row 5b-294) - A DOOR PLACED BEFORE ANY
+// ROOM EXISTS HAS ITS SWING SET FROM THE POINT GIVEN. Version 4 kept such a door
+// as Revit placed it and said so only in `wrongRoom` afterwards; measured
+// 2026-10-02 in Project2, two of three doors placed that way swung the wrong
+// way. The swing rule is unchanged - the side a door's FacingOrientation points
+// to is the side it swings into, the side `roomFaced` reads a room on - so with
+// no room at `toRoomAt` that side is decided by the point itself: the door is
+// flipped once when its facing points away from the point (a plan dot product
+// with the line from the door to the point), then read again. The hinge needs
+// no room and is set as before. The To Room cannot be set while there is no
+// room: such a door is counted in `noRoomYet`, not in `wrongRoom`, and the
+// FIRST finding says so, and what to do once the rooms are placed. A window
+// keeps version 4's outward rule and its own wrongRoom line, word for word.
 //
 // IN A WALL - doors, windows and every other wall-hosted family, as version 3.
 //
@@ -158,6 +172,8 @@ var handFlipped = 0;
 var toRoomSwapped = 0;
 var turnedOut = 0;
 var wrongRoom = new List<string>();
+// VERSION 5 (row 5b-294): placed with no room at the point it opens into.
+var noRoomYet = new List<string>();
 var wrongHinge = new List<string>();
 var toRoomWrong = new List<string>();
 var facingWrong = new List<string>();
@@ -699,17 +715,58 @@ else if (inWall)
         }
         catch { }
 
-        if (wanted == null)
+        var noRoom = wanted == null;
+        if (noRoom && isWindow)
         {
-            wrongRoom.Add(label + (isWindow
-                ? " - no room at the point given for it, so its To Room was left as Revit set it"
-                : " - no room at the point it should open into, so it was left as Revit placed it"));
+            wrongRoom.Add(label + " - no room at the point given for it, so its To Room was left as Revit set it");
             continue;
         }
 
         // 1. THE SWING - the facing side. A door's, and the side of the wall
         // any other wall-hosted family sits on; never a window's.
-        if (!isWindow)
+        if (!isWindow && noRoom)
+        {
+            // VERSION 5 (row 5b-294): no room yet - the side the point is on.
+            XYZ standing = null;
+            try { standing = ((LocationPoint)made.Location).Point; } catch { }
+            Func<double> towards = () =>
+            {
+                var facing = made.FacingOrientation;
+                return facing.X * (into.X - standing.X) + facing.Y * (into.Y - standing.Y);
+            };
+            if (standing == null)
+            {
+                wrongRoom.Add(label + " - no room at the point it should open into, and where it stands could not "
+                    + "be read, so it was left as Revit placed it");
+            }
+            else
+            {
+                var side = towards();
+                if (Math.Abs(side) <= Slack)
+                {
+                    wrongRoom.Add(label + " - no room at the point it should open into, and that point is on the "
+                        + "wall's line, so which side it " + (isDoor ? "swings into" : "faces") + " is not guessed");
+                }
+                else
+                {
+                    if (side < 0 && made.CanFlipFacing)
+                    {
+                        made.flipFacing();
+                        doc.Regenerate();
+                        flipped++;
+                        side = towards();
+                    }
+                    if (side < 0)
+                        wrongRoom.Add(label + " - no room at the point it should open into, and it still "
+                            + (isDoor ? "swings" : "faces") + " away from that point");
+                    else
+                        noRoomYet.Add(label + " - placed before any room exists: "
+                            + (isDoor ? "swing" : "side") + " set from the point given"
+                            + (isDoor ? ", To Room not set" : ""));
+                }
+            }
+        }
+        else if (!isWindow)
         {
             var faced = roomFaced(made, host);
             if ((faced == null || faced.Id != wanted.Id) && made.CanFlipFacing)
@@ -762,8 +819,9 @@ else if (inWall)
         }
 
         // 3. THE TO ROOM - a separate setting the swing does not move. A
-        // door's and a window's; no other family has one.
-        if (isDoor || isWindow)
+        // door's and a window's; no other family has one. With no room there
+        // is no To Room to set (version 5): `noRoomYet` says so.
+        if ((isDoor || isWindow) && !noRoom)
         {
             Room to = null;
             try { to = made.get_ToRoom(phase); } catch { }
@@ -796,6 +854,14 @@ else if (inWall)
         placed.Count, alreadyThere.Count, symbol.Name, level.Name, flipped, handFlipped,
         toRoomSwapped, noWall.Count, twoWalls.Count, failed, wrongRoom.Count, wrongHinge.Count,
         toRoomWrong.Count, phase == null ? "(none)" : phase.Name));
+
+    // VERSION 5 (row 5b-294): said FIRST, because it is what to do next.
+    if (noRoomYet.Count > 0)
+        findings.Insert(0, string.Format(
+            "{0} placed before any room exists at the point it opens into: the swing was set from the point "
+            + "given, and the To Room was NOT set - there is no room to set it to. Once the rooms are placed, "
+            + "run this again with the same values: a door already there is checked and its To Room set",
+            noRoomYet.Count));
 
     if (isWindow)
         findings.Add(string.Format(

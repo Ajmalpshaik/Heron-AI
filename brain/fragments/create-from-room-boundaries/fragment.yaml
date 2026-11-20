@@ -9,9 +9,30 @@ semantic-identity: "put a ceiling or a floor in every room, the shape of the roo
 kind: action
 domain: revit.elements
 capability: CREATE_FROM_ROOM_BOUNDARIES
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 3 (2026-11-20, WN-1 - work note FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07
+# C01, GitHub issue #1005). A ROOM WHOSE WHOLE BOUNDARY CANNOT BE BUILT GETS
+# NOTHING, SAID BEFORE ANYTHING IS MADE. Two changes on the floor and ceiling
+# path; wall finishes are untouched.
+#   1. Before Revit 2022 a floor is made from ONE loop. Version 2 built a room
+#      with a hole from its outline alone - a slab over the shaft, kept and
+#      counted in `created` - and then added "its hole was NOT cut" to
+#      `refused`. Now that room is refused before anything is built, the
+#      reason naming its holes and the release. Cutting the hole afterwards
+#      with an opening is a route no Revit run has checked, so it is not taken.
+#   2. A loop of the boundary that cannot be made - CurveLoop.Create refuses it,
+#      it does not close, or Revit reads no edge of it - stops that room, named
+#      in `refused` with the loop (its outline, or hole n). Version 2 passed
+#      over such a loop, and over any loop of fewer than three curves, and built
+#      from the rest: a dropped hole was a slab over it, a dropped outline made
+#      the first hole the floor's edge. A loop of one or two curves that closes
+#      - a round column's two half-circles - is now kept.
+# A room whose boundary is whole is built exactly as version 2 built it. The
+# card was DRAFT already (proof-held, below); the 2026-10-21 proof's
+# fingerprint no longer matches impl/ either. NEEDS-CHECKING Group OU.
 
 # BACK TO DRAFT 2026-11-16, ON THE OWNER'S ANSWER (FRAGMENT-ISSUES row
 # 5b-1643). Signed PROVEN on 2026-10-21 on a FLOOR case - wantFinish false,
