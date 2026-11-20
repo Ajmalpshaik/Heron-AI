@@ -1110,7 +1110,9 @@ var faceKeeper = new[] { keepFace }.Select(asked =>
 // rest. All or nothing is the safer of the two rules.
 //
 // A BLANK CELL IS ASKED, NEVER GUESSED: `blankCells` skip leaves it as it is
-// and counts it in `blankCellsSkipped`; clear empties a TEXT parameter and
+// and counts it in `blankCellsSkipped` - since VERSION 10 (row 5b-1526) before
+// its parameter is looked for, so a column its element has not got, or has on
+// its type, stops nothing for a blank; clear empties a TEXT parameter and
 // counts it in `cellsCleared`, and a blank for a number, a tick box or a
 // reference stops the run - WRITE_ELEMENT_PARAMETERS clear=true is Revit's own
 // clear for those. Neither word, and a CSV is refused before anything is read.
@@ -1210,6 +1212,10 @@ if (csvMode)
 
         var built = new List<string>();
         var seenCells = new HashSet<string>();
+        // Version 10: the columns whose parameter was looked for on at least
+        // one element - a column every cell of which was blank and skipped is
+        // said, never passed over in silence.
+        var columnFound = new HashSet<string>();
         for (var r = 1; r < table.Count; r++)
         {
             var line = table[r];
@@ -1239,7 +1245,22 @@ if (csvMode)
                     csvStale.Add(rowId + ": " + parameterName + " is given twice in the file");
                     continue;
                 }
+                // VERSION 10 (row 5b-1526): under skip a blank cell is left
+                // as it is BEFORE its parameter is looked for. A file mixing
+                // kinds of element - ducts and air terminals - has columns
+                // some of its elements have not got, or have on their type,
+                // and the small file of the comparison step leaves blank
+                // every cell its element did not change. Version 9 refused
+                // the whole file for such a blank, a cell nobody asked it to
+                // write. A cell with a value still needs its parameter, and
+                // under clear so does a blank: there is something to empty.
+                var blankCell = cell.Trim().Length == 0;
+                if (blankCell)
+                {
+                    if (blankHow == "skip") { blankCellsSkipped++; continue; }
+                }
                 var matches = parametersCalled(target, parameterName);
+                columnFound.Add(parameterName);
                 if (matches.Count == 0)
                 {
                     Element itsType = null;
@@ -1251,9 +1272,8 @@ if (csvMode)
                     continue;
                 }
                 var p = theOne(target, parameterName);
-                if (cell.Trim().Length == 0)
+                if (blankCell)
                 {
-                    if (blankHow == "skip") { blankCellsSkipped++; continue; }
                     if (p != null && p.StorageType != StorageType.String)
                     {
                         csvStale.Add(rowId + ": a blank cannot clear " + parameterName + ", which is not text - "
@@ -1269,6 +1289,14 @@ if (csvMode)
                     .Select(x => Uri.EscapeDataString(x ?? "")).ToArray()));
             }
         }
+        var wholeBlank = new List<string>();
+        for (var col = 1; col < heading.Count; col++)
+            if (col != uniqueColumn && heading[col].Length > 0 && !columnFound.Contains(heading[col])
+                && !wholeBlank.Contains(heading[col]))
+                wholeBlank.Add(heading[col]);
+        if (wholeBlank.Count > 0 && rowsMatched > 0 && csvStale.Count == 0)
+            findings.Add("Every cell under " + string.Join(", ", wholeBlank.Select(h => "'" + h + "'").ToArray())
+                + " was blank and skipped: no element was looked at for it, and nothing in it was written.");
         rows = string.Join(";", built.ToArray());
         if (built.Count == 0 && csvStale.Count == 0)
             findings.Add("The file named elements but no cell to write - every blank was skipped.");

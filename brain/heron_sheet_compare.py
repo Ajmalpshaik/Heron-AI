@@ -74,7 +74,7 @@ Each list is cut at MOST_LINES in what is printed, "... and N more".
 
 WHAT IT CANNOT SEE: a value changed in Revit since the export, in a cell the
 modeller ALSO edited here - only a read of the model, or a UniqueId column
-in the export (Q-87 question c, the owner's), reaches that. Nor whether the
+in the export (Q-87 question c - not built for now, D-182), reaches that. Nor whether the
 return then takes the file: that is Revit's, NEEDS-CHECKING Group NJ.
 """
 

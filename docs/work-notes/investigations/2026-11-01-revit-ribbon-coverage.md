@@ -66,7 +66,9 @@ mostly covered.
 >   direction third of the item is `place-span-direction-symbols`.
 > - **Item 19, Reload Latest - not built.** Revit refuses it while any transaction group is open, and
 >   every Heron door that may change a model runs inside one:
->   [row 5b-1423](../../fragment-issues/section-5b-rows-1401-1425.md), OPEN, the owner's to choose.
+>   [row 5b-1423](../../fragment-issues/section-5b-rows-1401-1425.md). **Answered 2026-11-19: by hand** - Reload
+>   Latest and Sync with Central stay the modeller's own clicks on the Collaborate tab, and no card is built
+>   ([D-185](../../DECISIONS.md)).
 >
 > **A fragment that names an item's Revit member is not that item built as a modeller would ask for
 > it**, and the first reading of 2026-11-11 said *"a fragment was found for every item but these"* of

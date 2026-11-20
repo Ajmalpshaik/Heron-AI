@@ -77,10 +77,15 @@
 #     - one instance of the family "Heron Two Bodies" (below) on Level 1, its
 #       type's "Show B" unticked
 #     - ONE SHEET (View, Sheet), any title block or none
-#     - LAST, two project parameters (Manage, Project Parameters), both Text,
-#       Instance: "Comments" bound to Walls, and "Keywords" bound to Materials.
-#       Every wall then carries Comments twice and every material Keywords
-#       twice. On material "Heron A", Identity tab, Keywords typed "probe"
+#     - LAST, Text, Instance: a "Comments" bound to Walls (Manage, Project
+#       Parameters), and TWO SHARED parameters named "Keywords" bound to
+#       Materials from a scratch shared parameter file - the first (group
+#       HERON NK) bound, "probe" written into it on material "Heron A" while
+#       it is the only one, then the second (group HERON NK 2) bound. Every
+#       wall then carries Comments twice and every material Keywords twice.
+#       NOT the Material Browser's Keywords box on the Identity tab: it is no
+#       parameter (FRAGMENT-ISSUES row 5b-1627; reworded 2026-11-20 on the
+#       owner's answer of 2026-11-19, as the run of 2026-11-13 arranged it)
 #     - Save. Save As "Heron Reads Test - earlier.rvt" in the same folder,
 #       then open "Heron Reads Test" again, change W3's Mark to "D" and type
 #       the built-in Comments of W3, Save. CLOSE the "earlier" file - Revit
@@ -285,8 +290,8 @@ jobs:
       REVIT 2024 ONLY - withAllTabs crashed inside Revit 2020 (row 5b-1404).
       READ materialList: Heron A's identity must read "keywords NOT READ - 2
       parameters share that name", never 'probe', and `ambiguous` holds it.
-      NK8 then removes the project parameter by hand and asks again:
-      keywords 'probe'.
+      NK8 then deletes the SECOND shared Keywords (group HERON NK 2) by
+      hand and asks again: keywords 'probe'.
 
   - fragment: report-material-takeoff
     set: {category: "Walls", inViewOnly: "FloorPlan: Level 1"}
