@@ -7,7 +7,7 @@ heron-layer: brain
 id: FRG-DOC-008
 semantic-identity: "add storeys to the project"
 kind: action
-domain: revit.document
+domain: revit.datums
 capability: CREATE_LEVELS
 version: 2
 source: OFFICIAL

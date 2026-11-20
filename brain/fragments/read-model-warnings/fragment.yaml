@@ -7,7 +7,7 @@ heron-layer: brain
 id: FRG-QA-004
 semantic-identity: "what warnings is this model carrying, and which elements cause them"
 kind: filter
-domain: revit.quality
+domain: revit.qa
 capability: READ_MODEL_WARNINGS
 # VERSION 2 (2026-11-01): SELECT_WITH_WARNINGS was merged into this card on the
 # owner's instruction - "make sure there is no duplicate tools" - and is
