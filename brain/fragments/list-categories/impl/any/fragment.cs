@@ -51,6 +51,17 @@
 //
 // A comma splits the names, so a subcategory whose own name holds a comma
 // cannot be asked for by name; leave `categories` out to see it.
+//
+// VERSION 4 (2026-11-20) - OBJECT STYLES' MATERIAL, AND THE CATEGORY'S KIND.
+// Row 5b-1427, the owner's yes of 2026-11-20 (Ajmalpshaik/Heron-AI#926):
+// "what material is set for generic models in object styles" was answered
+// with no material. Every row now ends with two more columns, after the five
+// it had, so a reader of the first five is unchanged: the Material Object
+// Styles shows (Category.Material, read on 2020 to 2027 - tools/api-surface,
+// 2026-11-20), "-" on an annotation row, which has no Material column,
+// "none" where none is set; and the category's kind - Model, Annotation or
+// Analytical - which says which tab of Object Styles holds the row. Those
+// are all the columns Object Styles has; nothing else there was missing.
 
 var names = new List<string>();
 var bindable = 0;
@@ -150,7 +161,33 @@ else
             }
         }
         catch (Exception) { pattern = "unreadable"; unreadable++; }
-        return label + " | " + colourText + " | " + projection + " | " + cut + " | " + pattern;
+        // VERSION 4 (row 5b-1427) - Object Styles' Material column, and what
+        // kind of category the row is. Annotation Objects carry no material,
+        // so "-" as for cut; "none" is a model row with no material set.
+        // A subcategory with no kind of its own is read as its parent's.
+        string material, kind;
+        CategoryType type = CategoryType.Invalid;
+        try
+        {
+            type = category.CategoryType;
+            if (type == CategoryType.Invalid && category.Parent != null) type = category.Parent.CategoryType;
+            kind = type == CategoryType.Model ? "Model"
+                : type == CategoryType.Annotation ? "Annotation"
+                : type == CategoryType.AnalyticalModel ? "Analytical" : type.ToString();
+        }
+        catch (Exception) { kind = "unreadable"; unreadable++; }
+        try
+        {
+            if (type == CategoryType.Annotation) material = "-";
+            else
+            {
+                var m = category.Material;
+                material = m == null ? "none" : (m.Name ?? "none");
+            }
+        }
+        catch (Exception) { material = "unreadable"; unreadable++; }
+        return label + " | " + colourText + " | " + projection + " | " + cut + " | " + pattern
+            + " | " + material + " | " + kind;
     };
 
     Func<Category, List<Category>> subcategoriesOf = category =>
@@ -184,7 +221,7 @@ else
 
     // THE COLUMNS, one line under the first in either answer below.
     var columns = "category > subcategory | projection line colour R,G,B | projection line weight | "
-        + "cut line weight (- not cut) | projection line pattern";
+        + "cut line weight (- not cut) | projection line pattern | material (- annotation) | category type";
 
     if (narrowed)
     {

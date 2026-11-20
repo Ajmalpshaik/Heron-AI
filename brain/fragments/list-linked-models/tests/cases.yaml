@@ -7,7 +7,31 @@ positive:
       ONE row saying "placed 2 times", not two rows. Counting instances would
       report a project with four linked models as having nine
 
+  # VERSION 2 (2026-11-20) - row 5b-474. FAILS on version 1. NOT RUN.
+  # NEEDS-CHECKING Group OQ.
+  - given: >
+      the Snowdon HVAC copy, its six links loaded; before the run, read
+      Manage Links (Reference, Path Type, Saved Path) and one link type's
+      Room Bounding box in its Type Properties, and one placement's Pinned
+      and Workset in Properties
+    expect: >
+      `summary` names all six files, each with the path type, saved path,
+      Room Bounding, Overlay or Attachment and nested Manage Links shows;
+      each placement pinned or NOT pinned and its workset as Properties
+      shows. Not one setting reads NOT READ on a loaded link
+
 negative:
+  # VERSION 2 - the settings are READ, never set.
+  - given: >
+      the same copy after a run, with one link type's Room Bounding turned
+      off by hand first
+    expect: >
+      that file reads "Room Bounding: no" and the others as they read before;
+      Manage Links and every Type Properties box exactly as before the run -
+      nothing was changed, and no transaction was opened
+  - given: a project with no link (Project1)
+    expect: >
+      `summary` EMPTY, `elements` empty, `notLoaded` empty
   - given: a link that has been unloaded
     expect: >
       its row says NOT LOADED and its type id is in `notLoaded`. This is the

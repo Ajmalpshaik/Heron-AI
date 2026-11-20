@@ -1,6 +1,17 @@
 // NOT STANDALONE. Assumes `doc`, `linkName`, `phaseName` and `updateNames` are in
 // scope; leaves `created`, `renamed`, `alreadyMatching`, `orphans`,
-// `notPlaced`, `report` and `findings` behind.
+// `notPlaced`, `noArea`, `report` and `findings` behind.
+//
+// VERSION 2 (2026-11-20) - A SPACE WITH NO AREA IS NOT COUNTED AS MADE. Row
+// 5b-1125 (Ajmalpshaik/Heron-AI#921): on Project1, Revit 2020, both spaces
+// made read back with NO AREA and still counted in `created`, so the run
+// judged PASS. The read-back below said it would "drop any that did not
+// hold" and only wrote a line. Now a space made that reads back with no area
+// leaves `created` and goes to `noArea`: it is still in the model, where the
+// linked model has a room, and takes the room's shape once something bounds
+// it - its line says whether the link's type is Room Bounding, read, never
+// guessed. A space is still made only where the linked model has a placed
+// room; nowhere else (the owner's word, 2026-11-20).
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One call is one undo entry.
 //
@@ -38,6 +49,8 @@ var renamed = new List<ElementId>();
 var alreadyMatching = 0;
 var orphans = new List<ElementId>();
 var notPlaced = new List<string>();
+// VERSION 2: spaces made that read back with no area - counted apart.
+var noArea = new List<ElementId>();
 var lines = new List<string>();
 var findings = new List<string>();
 string refusal = null;
@@ -189,13 +202,39 @@ if (refusal == null)
 
     doc.Regenerate();
 
-    // READ BACK what was made and renamed, and drop any that did not hold.
-    foreach (var id in created.Concat(renamed).ToList())
+    // VERSION 2: whether the link's type is Room Bounding, read once for the
+    // lines below - the parameter SET_LINK_ROOM_BOUNDING writes.
+    string bounding = "its link's Room Bounding could not be read";
+    try
+    {
+        var linkType = doc.GetElement(source.GetTypeId());
+        var flag = linkType == null ? null : linkType.get_Parameter(BuiltInParameter.WALL_ATTR_ROOM_BOUNDING);
+        if (flag != null && flag.HasValue && flag.StorageType == StorageType.Integer)
+            bounding = flag.AsInteger() == 1
+                ? "its link IS Room Bounding in this model, so what keeps it open is not established"
+                : "its link is NOT Room Bounding in this model - SET_LINK_ROOM_BOUNDING turns it on";
+    }
+    catch { }
+
+    // READ BACK what was made and drop any that did not hold (version 2: it
+    // only said so before). A space made with no area leaves `created`.
+    foreach (var id in created.ToList())
     {
         var space = doc.GetElement(id) as Space;
-        if (space == null || space.Area <= 0)
-            lines.Add("space " + id + " reads back with NO AREA - placed where nothing bounds it. "
-                + "Its link may not be Room Bounding in this model");
+        if (space != null && space.Area > 0) continue;
+        created.Remove(id);
+        if (space != null) noArea.Add(id);
+        lines.Add("space " + id + (space == null
+            ? " was made and is gone on the read-back - NOT counted as made"
+            : " reads back with NO AREA - placed where nothing bounds it, so NOT counted as made; "
+              + bounding));
+    }
+    // A renamed space is read back by its number and name, which is what was
+    // written to it.
+    foreach (var id in renamed.ToList())
+    {
+        var space = doc.GetElement(id) as Space;
+        if (space == null) { renamed.Remove(id); lines.Add("space " + id + " is gone on the read-back - NOT counted as renamed"); }
     }
 
     // ORPHANS: spaces here with no linked room under them.
@@ -203,7 +242,7 @@ if (refusal == null)
     {
         var space = element as Space;
         if (space == null || space.Area <= 0) continue;
-        if (created.Contains(space.Id)) continue;
+        if (created.Contains(space.Id) || noArea.Contains(space.Id)) continue;
         var at = space.Location as LocationPoint;
         if (at == null) continue;
         Room under = null;
@@ -211,7 +250,9 @@ if (refusal == null)
         if (under == null) orphans.Add(space.Id);
     }
 
-    findings.Add("From \"" + source.Name + "\": " + created.Count + " space(s) made, " + renamed.Count
+    findings.Add("From \"" + source.Name + "\": " + created.Count + " space(s) made, "
+        + (noArea.Count > 0 ? noArea.Count + " made with NO AREA and not counted as made, " : "")
+        + renamed.Count
         + " renamed, " + alreadyMatching + " already matching, " + notPlaced.Count + " room(s) not "
         + "placed, " + orphans.Count + " space(s) with no linked room under them (listed, never deleted).");
 }

@@ -44,6 +44,16 @@ positive:
       `refused` with Revit's own words about the missing transaction and what
       it would have changed. Nothing changes
 
+  # VERSION 3 (2026-11-20) - row 5b-414. FAILS on version 2. NOT RUN.
+  - given: >
+      per-project numbering, the list AA, BB, CC, D, E, revisions AA, BB and
+      CC ISSUED and D not; customSequence=AA, BB, CC, DD, EE
+    expect: >
+      the list changed, `changed` saying the issued revisions print exactly
+      what they printed before - AA, BB, CC - and every sheet's revision
+      schedule reading AA, BB, CC as before; the unissued one now DD.
+      Version 2 refused it
+
 negative:
   - given: >
       Revit 2020, Project2, name=Alphanumeric, customSequence=AA, BB, CC, AA -
@@ -69,9 +79,18 @@ negative:
     expect: >
       `refused` - 2020 has no names to change and no minimum digits; nothing changed
 
-  - given: name=Alphanumeric, customSequence=AA, BB while an ISSUED revision uses alphanumeric numbering
+  - given: >
+      name=Alphanumeric, customSequence=AA, BB while an ISSUED revision prints
+      A (the list was A, B, C)
     expect: >
-      `refused` naming that revision; nothing changed
+      `refused` naming that revision and "'A' -> 'AA'"; nothing changed
+
+  # VERSION 3 (2026-11-20) - row 5b-414. NOT RUN. NEEDS-CHECKING Group OQ.
+  # The positive is above, under positive.
+  - given: the same project set to number revisions PER SHEET, the same change
+    expect: >
+      `refused` - per-sheet numbering, so what each sheet prints is not
+      worked out; nothing changed
 
   - given: name=Numeric, minimumDigits=2, while an ISSUED revision uses 'Numeric', 2022 or later
     expect: >

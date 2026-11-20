@@ -36,10 +36,16 @@
 // a numeric scheme has no custom list, an alphanumeric one has no minimum digits
 // or starting number.
 //
-// A NUMBERING AN ISSUED REVISION USES KEEPS ITS SETTINGS. Changing them changes
-// the number that revision prints, on drawings that have gone out - so a
-// settings change is refused while any issued revision uses it, naming each. A
-// RENAME changes no printed number and is allowed. Which revisions use which
+// AN ISSUED REVISION KEEPS THE NUMBER IT PRINTS (version 3, row 5b-414). A
+// settings change that would change the number an issued revision prints, on
+// drawings that have gone out, is refused, naming each and both numbers. One
+// that leaves every issued revision printing what it printed - a custom list
+// AA, BB, CC, D, E turned into AA, BB, CC, DD, EE while only AA to CC are
+// issued - goes ahead, and says so. Where the printed number cannot be worked
+// out (numbering per sheet, a number the settings would not print), it is
+// refused as version 2 refused every such change. Version 2 refused all of
+// them, whether a printed number moved or not. A RENAME changes no printed
+// number and is allowed. Which revisions use which
 // numbering is never changed here: that is EDIT_REVISION's `numbering`.
 //
 // COMPARED FIRST, READ BACK AFTER. A field already at the value asked is named
@@ -359,21 +365,93 @@ var refused = "";
         if (renaming && writeName != null) plan.Add("name '" + targetLabel + "' -> '" + renameTo + "'");
 
         // ---- the issued revisions whose printed number a settings change moves --------
+        //
+        // VERSION 3 (row 5b-414, the owner's yes of 2026-11-20): REFUSED ONLY WHEN AN
+        // ISSUED REVISION'S PRINTED NUMBER WOULD REALLY CHANGE. Each issued revision's
+        // number as Revit prints it now (Revision.RevisionNumber) is placed in the
+        // numbering as it stands - its value in the custom list, or its number less
+        // the starting number - and printed again under the settings asked for. The
+        // same text both times is no change; a different one refuses, naming both.
+        // Where it cannot be worked out - numbering per SHEET, where each sheet prints
+        // its own; a printed number the current settings would not print; a list
+        // value held twice or past the new list's end - it refuses as version 2 did,
+        // and says why: never a guess in favour of a change to an issued drawing.
+        Func<string, string> printedUnder = null;     // null: cannot be worked out
+        string unknownWhy = null;
+        var perSheet = true;
+        try { perSheet = RevisionSettings.GetRevisionSettings(doc).RevisionNumbering == RevisionNumbering.PerSheet; }
+        catch (Exception) { unknownWhy = "this project's per-project or per-sheet numbering could not be read"; }
+        if (perSheet && unknownWhy == null)
+            unknownWhy = "this project numbers revisions PER SHEET, so each sheet prints its own number and "
+                       + "what they would print is not worked out here";
+        Func<string, string, string, string> core = (printed, front, back) =>
+        {
+            if (printed == null || printed.Length < front.Length + back.Length) return null;
+            if (!printed.StartsWith(front, StringComparison.Ordinal) || !printed.EndsWith(back, StringComparison.Ordinal)) return null;
+            return printed.Substring(front.Length, printed.Length - front.Length - back.Length);
+        };
+        if (unknownWhy == null && isNumeric && numeric != null)
+        {
+            var nowNumeric = readNumeric();
+            var nowDigits = minimumDigitsProperty == null ? 1 : (int)minimumDigitsProperty.GetValue(nowNumeric, null);
+            var newDigits = minimumDigitsProperty == null ? 1 : (int)minimumDigitsProperty.GetValue(numeric, null);
+            printedUnder = printed =>
+            {
+                var middle = core(printed, nowNumeric.Prefix ?? "", nowNumeric.Suffix ?? "");
+                int value;
+                if (string.IsNullOrEmpty(middle) || !middle.All(char.IsDigit) || !int.TryParse(middle, out value)) return null;
+                if (value.ToString().PadLeft(nowDigits, '0') != middle || value < nowNumeric.StartNumber) return null;
+                return (numeric.Prefix ?? "") + (numeric.StartNumber + (value - nowNumeric.StartNumber)).ToString().PadLeft(newDigits, '0')
+                     + (numeric.Suffix ?? "");
+            };
+        }
+        else if (unknownWhy == null && !isNumeric && alphanumeric != null)
+        {
+            var nowAlphanumeric = readAlphanumeric();
+            var nowList = nowAlphanumeric.GetSequence().ToList();
+            var newList = alphanumeric.GetSequence().ToList();
+            printedUnder = printed =>
+            {
+                var middle = core(printed, nowAlphanumeric.Prefix ?? "", nowAlphanumeric.Suffix ?? "");
+                if (string.IsNullOrEmpty(middle)) return null;
+                var at = new List<int>();
+                for (var i = 0; i < nowList.Count; i++) if (string.Equals(nowList[i], middle, StringComparison.Ordinal)) at.Add(i);
+                if (at.Count != 1 || at[0] >= newList.Count) return null;
+                return (alphanumeric.Prefix ?? "") + newList[at[0]] + (alphanumeric.Suffix ?? "");
+            };
+        }
+
         var users = new List<string>();
-        var issuedUsers = new List<string>();
+        var issuedMoved = new List<string>();
+        var issuedKept = new List<string>();
+        var issuedUnknown = new List<string>();
         foreach (var id in Revision.GetAllRevisionIds(doc))
         {
             var revision = doc.GetElement(id) as Revision;
             if (revision == null || !usesIt(revision)) continue;
             var label = "Seq. " + revision.SequenceNumber + " " + quoted(revision.Description);
             users.Add(label);
-            if (revision.Issued) issuedUsers.Add(label);
+            if (!revision.Issued || fieldsAsked.Count == 0) continue;
+            string printedNow = null;
+            try { printedNow = revision.RevisionNumber; } catch (Exception) { printedNow = null; }
+            var printedNext = printedUnder == null ? null : printedUnder(printedNow);
+            if (printedNext == null) issuedUnknown.Add(label + (printedNow == null ? "" : " (prints " + quoted(printedNow) + ")"));
+            else if (printedNext == printedNow) issuedKept.Add(label + " " + quoted(printedNow));
+            else issuedMoved.Add(label + " " + quoted(printedNow) + " -> " + quoted(printedNext));
         }
-        if (fieldsAsked.Count > 0 && issuedUsers.Count > 0)
-            problems.Add("'" + targetLabel + "' numbers ISSUED revision(s) "
-                       + string.Join(", ", issuedUsers.ToArray()) + ", and changing its "
-                       + string.Join(", ", fieldsAsked.ToArray()) + " would change the number they print on "
-                       + "drawings already sent out" + (writeName != null ? ". A rename is allowed; the settings are not" : ""));
+        if (issuedMoved.Count > 0)
+            problems.Add("'" + targetLabel + "' numbers ISSUED revision(s) whose printed number would change - "
+                       + string.Join(", ", issuedMoved.ToArray()) + " - on drawings already sent out, if its "
+                       + string.Join(", ", fieldsAsked.ToArray()) + " changed"
+                       + (writeName != null ? ". A rename is allowed; this settings change is not" : ""));
+        if (issuedUnknown.Count > 0)
+            problems.Add("'" + targetLabel + "' numbers ISSUED revision(s) " + string.Join(", ", issuedUnknown.ToArray())
+                       + ", and what they would print after changing its " + string.Join(", ", fieldsAsked.ToArray())
+                       + " cannot be worked out - "
+                       + (unknownWhy ?? "the number each prints now is not one the current settings print in that place")
+                       + " - so it is refused, as a change to an issued drawing is never guessed at");
+        if (issuedKept.Count > 0)
+            plan.Add("issued revision(s) " + string.Join(", ", issuedKept.ToArray()) + " print exactly what they printed before");
 
         if (renameTo.Length == 0 && digitsText.Length == 0 && startText.Length == 0 && listText.Length == 0
             && wantedPrefix == null && wantedSuffix == null && problems.Count == 0)

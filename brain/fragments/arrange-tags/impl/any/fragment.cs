@@ -3,6 +3,9 @@
 // scope, and leaves `moved`, `measuredFrom`, `bothHadToMove`,
 // `stillOverlapping`, `notTags`, `refused` and `keptInPlace` behind.
 //
+// VERSION 3 (2026-11-20) - `minGapMm` and both fallback sizes are on PAPER,
+// multiplied by the view's scale (row 5b-240). See where `gap` is set.
+//
 // VERSION 2 (2026-11-16) - ROOM, SPACE AND AREA TAGS TOO (row 5b-1732, issue
 // #854 item c, villa 2 on Revit 2024). Version 1 kept an element only as an
 // IndependentTag, so a room tag - a SpatialElementTag - went to `notTags`,
@@ -59,7 +62,15 @@ var refused = new List<ElementId>();
 // VERSION 2 (row 5b-1732): room, space and area tags held still on request.
 var keptInPlace = new List<ElementId>();
 
-double gap = minGapMm * MmToFeet;
+// VERSION 3 (2026-11-20, row 5b-240, Ajmalpshaik/Heron-AI#924) - THE GAP AND
+// THE FALLBACK SIZES ARE PAPER MILLIMETRES, multiplied by the view's scale, as
+// STACK_TAGS takes its gap. Version 2 took them as model millimetres: 3 mm
+// asked for came out 0.04 mm on a 1:75 sheet. A measured size is read off
+// a tag in the view, is a model distance already, and is not multiplied.
+int scale = 1;
+try { scale = Math.Max(1, view.Scale); } catch { }
+
+double gap = minGapMm * MmToFeet * scale;
 
 var right = view.RightDirection;
 var up = view.UpDirection;
@@ -220,10 +231,10 @@ Func<List<double>, double> medianOf = numbers =>
 
 double halfWidth = measuredFrom > 0
     ? medianOf(measuredWidths) / 2.0
-    : fallbackTagWidthMm * MmToFeet / 2.0;
+    : fallbackTagWidthMm * MmToFeet * scale / 2.0;
 double halfHeight = measuredFrom > 0
     ? medianOf(measuredHeights) / 2.0
-    : fallbackTagHeightMm * MmToFeet / 2.0;
+    : fallbackTagHeightMm * MmToFeet * scale / 2.0;
 
 double needX = 2 * halfWidth + gap;
 double needY = 2 * halfHeight + gap;

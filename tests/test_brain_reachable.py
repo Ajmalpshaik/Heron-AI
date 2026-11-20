@@ -1061,12 +1061,16 @@ def main():
                 return " ".join(got.get("purpose", "").split())
 
             said = _steps_of("annotate-a-view")
-            check("MODEL MILLIMETRES" in said and "5b-240" in said
-                  and "TIMES THE VIEW'S SCALE" in said,
-                  "annotate-a-view: ARRANGE_TAGS' gap is sent in MODEL "
-                  "millimetres, the paper gap times the view's scale (row "
-                  "5b-240) - the card's own words say paper and its code "
-                  "does not scale")
+            # Row 5b-240, FIXED 2026-11-20 on the owner's yes: ARRANGE_TAGS
+            # version 3 scales its own paper lengths, so the method sends the
+            # paper figure as given - a figure multiplied first, as this check
+            # demanded until then, would now be scaled twice.
+            check("PAPER MILLIMETRES, AS THEY STAND" in said and "5b-240" in said
+                  and "NEVER multiply them first" in said
+                  and "TIMES THE VIEW'S SCALE" not in said,
+                  "annotate-a-view: ARRANGE_TAGS' gap is sent as the paper "
+                  "figure, never multiplied by the view's scale first - the "
+                  "card scales it since version 3 (row 5b-240)")
             check("ONE STRING, ONE KIND" in said,
                   "annotate-a-view: runs and fixtures are never handed to "
                   "one dimension call - it is refused whole")
