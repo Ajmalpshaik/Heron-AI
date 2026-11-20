@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,24 @@ semantic-identity: "join solid forms, or cut a solid form with a void, in the fa
 kind: action
 domain: revit.families
 capability: COMBINE_FAMILY_FORMS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 3 (2026-11-20) - AN ARRAY'S COPY BY ITS GROUP'S ID, and back to
+# DRAFT. FRAGMENT-ISSUES row 5b-358: every member of an ARRAY_FAMILY_FORMS
+# row is a model group, even for one form, and that tool's `members` gives
+# the groups' ids - so a void copy named by it was refused as "not a form".
+# Version 3 takes the form(s) inside a model group named (`Group.GetMemberIds`)
+# and says so in a finding; a group holding no form is refused by name. Whether
+# Revit combines a form inside a group at all is UNTRIED: if it refuses, the
+# call throws in plain words - the form is inside an array's group; ungroup
+# that copy, then name the form by its own id (ARRAY_FAMILY_FORMS
+# `memberForms`) - and nothing is kept. "separate" is unchanged. Version 2 was
+# PROVEN (the proof block below, kept as the record of what it proved); its C#
+# moved, so it is DRAFT again until NEEDS-CHECKING Group <TBD> is run (D-30) -
+# on the owner's word that a fragment found wrong may be changed even though
+# it is proven.
 
 purpose: >
   CUTS a solid form with a void, or JOINS solid forms, in the family open in
@@ -45,6 +60,11 @@ purpose: >
   merge two; it is refused with the combination's id. A void may cut several -
   run this once per body to cut two bodies with one void and keep them apart.
 
+  **AN ARRAY'S COPY MAY BE NAMED BY ITS GROUP** (version 3, row 5b-358) - the
+  id ARRAY_FAMILY_FORMS gives in `members` stands for the form inside it, and
+  a finding says so. If Revit will not combine a form inside a group, the call
+  is refused in plain words and nothing is kept.
+
   Nothing from a call that fails is kept, and Undo, Unjoin Geometry or Uncut
   Geometry take a combination apart again.
 
@@ -60,6 +80,7 @@ contract:
     # `selected` for what is selected in the family's own window.
     # The forms' ids, commas between, or "selected"; "list" says every
     # combination; "separate <ids>" takes apart the ones named (version 2).
+    # Version 3: an array copy's model group id stands for the form in it.
     - name: forms
       type: string
       source: request
@@ -131,7 +152,9 @@ compatibility-note: >
   every release 2020 to 2027 (tools/check-fragments-compile.py, 2026-10-08);
   how it behaves was measured on Revit 2024 only. The spare directions a ray
   Revit cannot cast is replaced by (5b-1001) compile on every release too
-  (the same tool, 2026-10-17); measured on Revit 2024 only.
+  (the same tool, 2026-10-17); measured on Revit 2024 only. Version 3's
+  `Group.GetMemberIds` and `Element.GroupId` read the same 2020 through 2027
+  (`tools/api-surface --members`, 2026-11-20).
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
