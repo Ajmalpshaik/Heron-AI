@@ -406,17 +406,19 @@ namespace Heron.Revit.Addin
 
                         if (transaction.Commit() != TransactionStatus.Committed)
                         {
-                            var after = RevitFragment.RollBackAndCheck(group, doc, watch);
-                            var undone = after.Held;
                             // WHAT REVIT OBJECTED TO, IN ITS OWN WORDS, and
                             // that the move was rolled back - as the fragment
                             // path has said since package C3. This was one
                             // fixed sentence until 2026-11-20 that named
-                            // neither (FRAGMENT-ISSUES 5b row 1062).
+                            // neither (FRAGMENT-ISSUES 5b row 1062). Read
+                            // before the rollback: the preprocessor wrote it
+                            // at the commit.
                             var refused = handler.Said.RefusedSentence();
                             var why = refused.Length == 0
                                 ? "Revit did not accept the change."
                                 : refused;
+                            var after = RevitFragment.RollBackAndCheck(group, doc, watch);
+                            var undone = after.Held;
                             return Failed(workflow, preview, handler, why + " " + (undone
                                 ? "The move was rolled back completely, so nothing was moved and the model is as it was."
                                 : NotHeld(after))
