@@ -314,7 +314,7 @@ CLIENT_ID = os.environ.get("HERON_CLIENT_ID") or uuid.uuid4().hex[:12]
 CONVERSATION_ID = os.environ.get("HERON_CONVERSATION_ID") or uuid.uuid4().hex
 
 # THE HOST'S OWN NAME FOR THIS CHAT, for the MCP server alone - issue #1033,
-# D-186. A fresh uuid per process made the SAME chat a stranger to its own
+# D-188. A fresh uuid per process made the SAME chat a stranger to its own
 # model after the Claude app restarted: the restarted server was a new
 # process, so a new conversation, and every call was refused "in use by
 # another chat" for three minutes - by itself, before the restart (seen

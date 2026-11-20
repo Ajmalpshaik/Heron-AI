@@ -7662,7 +7662,7 @@ if __name__ == "__main__":
             "Nothing was served. Start it with:  python mcp/server/heron_mcp_server.py\n")
         raise SystemExit(2)
     # THIS CHAT'S CONVERSATION IS THE HOST'S CHAT, when the host names one -
-    # issue #1033, D-186: a chat the Claude app resumes after a restart is then
+    # issue #1033, D-188: a chat the Claude app resumes after a restart is then
     # the same conversation to Revit, and takes back its own model rather than
     # being refused by itself for three quiet minutes. Before any request is
     # sent. Here and not at import, so a suite or a tool that imports this file

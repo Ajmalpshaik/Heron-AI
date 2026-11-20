@@ -261,8 +261,8 @@ def envelope():
 
 
 def resumed():
-    """Issue #1033, D-186: the same chat after an app restart is the same conversation."""
-    print("\n2b. a chat the host resumes is the same conversation (issue #1033, D-186)")
+    """Issue #1033, D-188: the same chat after an app restart is the same conversation."""
+    print("\n2b. a chat the host resumes is the same conversation (issue #1033, D-188)")
     made = getattr(BRIDGE, "host_conversation", None)
     adopt = getattr(BRIDGE, "adopt_host_conversation", None)
     variable = getattr(BRIDGE, "HOST_SESSION_VARIABLE", "CLAUDE_CODE_SESSION_ID")
