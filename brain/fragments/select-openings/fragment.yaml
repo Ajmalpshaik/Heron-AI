@@ -15,15 +15,12 @@ capability: SELECT_OPENINGS
 # means the whole model" below described a null nothing could hand it, and
 # the call was refused without a view. The same change as
 # SELECT_BY_CATEGORIES, where it was measured. The code under version 2's
-# proof is unchanged; the absent case was never measured. DRAFT at the
-# time, until NEEDS-CHECKING Group IT proves version 3 (D-30);
-# `proof-held:` says so.
+# proof is unchanged; the absent case was not measured then. DRAFT at the
+# time, until NEEDS-CHECKING Group IT proves version 3 (D-30). The proof of
+# 2026-11-02 below ran with `inViewOnly` not given - null - on both cases, so
+# the `proof-held:` field that said this was taken out on 2026-11-20 (row
+# 5b-1548 item 6).
 version: 3
-proof-held: >
-  Version 3 (2026-10-22, row 5b-1320) made inViewOnly optional - absent or
-  empty binds the whole model through the add-in's binder - which the
-  proof never measured. NEEDS-CHECKING Group IT proves it, on the add-in
-  rebuilt.
 source: OFFICIAL
 risk: READ
 
@@ -61,8 +58,7 @@ purpose: >
   **NOTHING FROM A LINK IS EVER SELECTED OR CARRIED** - `elements` and `byKind` stay this model's own; the chain
   revives ids against this model, and a linked id that happens to be in
   use here binds an unrelated element (FRAGMENT-ISSUES row 75). Links
-  nested inside a link are not read, and are counted in the answer. This
-  is version 2, and like version 1 it is DRAFT - it has never been proved.
+  nested inside a link are not read, and are counted in the answer.
 
 contract:
   needs:

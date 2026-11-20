@@ -53,7 +53,7 @@ purpose: >
   | Ducts, pipes, conduit, cable tray | **this fragment** - their centrelines |
   | Grids, or levels in a section or elevation | `CREATE_LINEAR_DIMENSION` - "grid A, grid B" |
   | Air terminals, fixtures, equipment - any family instance | **this fragment**, axis x or y - built-in centre references, which a run does not have |
-  | Rooms - "dimension the rooms", "put the room sizes on the plan" | `DIMENSION_ROOMS`; to know them, `MEASURE_ROOM_DIMENSIONS` |
+  | Rooms - "dimension the rooms", "put the room sizes on the plan" | `DIMENSION_ROOMS`; to know them, `REPORT_ROOM_SPACE_DATA` |
 
 contract:
   needs:

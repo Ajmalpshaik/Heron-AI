@@ -121,18 +121,16 @@ purpose: >
   in one pass, `perCategory` shows each - one asked for and empty at 0 - and
   `inViewOnly` narrows it to what one view draws. `categoryName` takes a
   category by the name the model holds - an imported CAD file's too - and a
-  name that matches none comes back with its near misses, nothing read. This is version 4; version
-  3's proof no longer describes the code, and the fragment is DRAFT until it
-  is proved again.
+  name that matches none comes back with its near misses, nothing read.
 
   **A LEVEL OR A VIEW WITHOUT A CATEGORY, AND WHAT IS NOT THERE (version 5).**
   "What is on level 2" and "what is showing on this view" need no category.
   `withoutLevel` gives the elements on no level; `notShowingIn` what the model
-  holds that a view does not show. Version 5 is DRAFT until proved.
+  holds that a view does not show.
 
   **WHAT HAS NO LEVEL, ACROSS THE MODEL (version 6).** `withoutLevel` with no
   category is answered over the model categories alone - never the views,
-  sheets and materials that rightly have no level. DRAFT until proved.
+  sheets and materials that rightly have no level.
 
 contract:
   needs:

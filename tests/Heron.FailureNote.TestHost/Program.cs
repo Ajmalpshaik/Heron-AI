@@ -286,6 +286,64 @@ namespace Heron.FailureNote.TestHost
                   && Json.ReadLong("{\"warnings\": 1}", null) == null,
                   "no object, no document or no key reads as null");
 
+            // A REFUSAL AFTER A ROLLBACK SAYS WHETHER IT HELD - 5b row 1559,
+            // 2026-11-20. Json.Error with fields, Json.HasKey and
+            // Json.WithRollback: pure text, run here.
+            var plain = Json.Error("fragment_threw", "It threw.");
+            Check(Json.Error("fragment_threw", "It threw.", new string[0]) == plain,
+                  "an error given no fields is the plain error, byte for byte");
+            var carried = Json.Error("still_running", "Still going.",
+                                     Json.Str("workflow", "wf-1"), null, "");
+            Check(carried == "{\"ok\": false, \"error\": \"still_running\", \"message\": \"Still going.\", \"workflow\": \"wf-1\"}",
+                  "an error carries its fields after the code and the message, and skips an empty one: " + carried);
+            Check(Json.ReadString(carried, "workflow") == "wf-1"
+                  && Json.ReadString(carried, "error") == "still_running",
+                  "and every field reads back");
+
+            var held = Json.WithRollback(plain, 1, true, true);
+            Check(held == "{\"ok\": false, \"error\": \"fragment_threw\", \"message\": \"It threw.\", \"rolledBack\": true, \"rollbackReported\": true}",
+                  "a refusal after a rollback that held says so in two fields: " + held);
+            var notHeld = Json.WithRollback(plain, 2, false, true);
+            Check(notHeld.EndsWith("\"rolledBack\": false, \"rollbackReported\": true}", StringComparison.Ordinal),
+                  "one that did not hold says rolledBack false - it is never read as held");
+            Check(Json.WithRollback(plain, 0, true, true) == plain,
+                  "a job that asked for no rollback is unchanged");
+            var answered = Json.Ok(Json.Num("moved", 3));
+            Check(Json.WithRollback(answered, 1, false, false) == answered,
+                  "an answer that is not a refusal is unchanged");
+            var already = Json.Error("x", "y", Json.Bool("rolledBack", false));
+            Check(Json.WithRollback(already, 1, true, true) == already,
+                  "a refusal that already says is unchanged - its writer knew more than the tally");
+            var spelled = Json.Error("x", "\"rolledBack\": true", Json.Str("inner", "{\"rolledBack\": true}"));
+            Check(Json.WithRollback(spelled, 1, false, false).EndsWith("\"rolledBack\": false, \"rollbackReported\": false}", StringComparison.Ordinal),
+                  "the key spelled inside a string is not the key");
+            Check(Json.HasKey("{\"a\": {\"rolledBack\": true}, \"b\": 1}", "rolledBack") == false
+                  && Json.HasKey("{\"a\": [1, 2], \"rolledBack\": null}", "rolledBack")
+                  && !Json.HasKey("not json", "rolledBack") && !Json.HasKey(null, "a"),
+                  "HasKey answers the outermost object only, and false for what does not parse");
+
+            // A RUN RECORD STAMPED WITH ITS UNDO - 5b row 1163. Json.Set keeps
+            // one top-level key, the latest, and every other field whole.
+            var record = Json.Obj(Json.Num("record", 1), Json.Str("workflow", "wf-1"),
+                                  "\"reply\": " + Json.Ok(Json.Str("verdictKind", "kept"),
+                                                         Json.Str("note", "a } and a \"quote\"")));
+            var undone = Json.Set(record, "undo", Json.Obj(Json.Str("state", "undone"), Json.Str("at", "T1")));
+            Check(undone == record.Substring(0, record.Length - 1)
+                            + ", \"undo\": {\"state\": \"undone\", \"at\": \"T1\"}}",
+                  "a record is stamped at its end, every field kept whole: " + undone);
+            var redone = Json.Set(undone, "undo", Json.Obj(Json.Str("state", "redone"), Json.Str("at", "T2")));
+            Check(redone.Split(new[] { "\"undo\":" }, StringSplitOptions.None).Length == 2
+                  && redone.EndsWith("\"undo\": {\"state\": \"redone\", \"at\": \"T2\"}}", StringComparison.Ordinal),
+                  "stamped again, it holds the latest only - one undo key, not two: " + redone);
+            Check(Json.ReadString(redone, "workflow") == "wf-1"
+                  && Json.ReadString(Json.Set(redone, "x", "1"), "workflow") == "wf-1",
+                  "and the fields before it still read back");
+            Check(Json.Set("{}", "undo", "1") == "{\"undo\": 1}"
+                  && Json.Set("not json", "undo", "1") == "not json"
+                  && Json.Set("{\"a\": 1", "undo", "1") == "{\"a\": 1"
+                  && Json.Set(record, "undo", null) == record,
+                  "an empty object takes it, and what does not parse is returned unchanged");
+
             Console.WriteLine();
             if (Failures.Count > 0)
             {

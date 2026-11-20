@@ -24,9 +24,11 @@ namespace Heron.Bridge
     ///
     /// Design notes, from docs/25 and the field notes:
     ///
-    ///   * TWO pipe instances, never one. One is servicing the connected
-    ///     chat; the other is already waiting, which is what makes the next
-    ///     connection instant instead of queued.
+    ///   * SEVERAL pipe instances, never one - PipeInstances, 16 since row
+    ///     458 (it was two). One is servicing the connected chat; another is
+    ///     already waiting, which is what makes the next connection instant
+    ///     instead of queued; and a displaced one finishing its answer holds
+    ///     its own until the answer is written.
     ///
     ///   * A CHAT THAT CONNECTS TAKES THE PIPE, but not the right to use it.
     ///     The newest connection still displaces the older pipe - that part is
@@ -71,6 +73,16 @@ namespace Heron.Bridge
         // against a line that never ends, not a budget anybody should be
         // tuning. See ReadBoundedLineAsync.
         private const int MaxRequestChars = 1024 * 1024;
+
+        // THE LARGEST ANSWER HERON WRITES ON ONE LINE, in UTF-8 bytes -
+        // FRAGMENT-ISSUES 5b row 1167. The client's REPLY_LIMIT_BYTES
+        // (mcp/client/heron_bridge_client.py) is the same number, and
+        // tests/test_bridge_roundtrip.py fails when the two differ. Until
+        // 2026-11-20 this end had no limit: an answer of any size crossed to
+        // the client before the client refused it, with only the size that
+        // had arrived to say. A backstop, not a budget - the largest answer on
+        // record is a 6.2 MB read (row 5b-489).
+        internal const int MaxReplyBytes = 16 * 1024 * 1024;
 
         // NOT 1: preemption needs one instance servicing the current chat AND
         // a second already listening for the next one, at the same time.
@@ -386,7 +398,7 @@ namespace Heron.Bridge
             //     SYSTEM / Administrators / me  Allow  full
             //
             // Read is not Write, so no stranger could ever send a request and
-            // the token still guards every command - but PipeInstances is 2 and
+            // the token still guards every command - but PipeInstances is more than one and
             // the newest connection takes the pipe, so anyone able to CONNECT
             // can displace the chat using Revit without sending a byte. The
             // Framework branch above was already right; this branch trusted a
@@ -606,6 +618,9 @@ namespace Heron.Bridge
                             response = Json.Error("handler_failed", ex.Message);
                         }
 
+                        // Never more than the client reads - 5b row 1167.
+                        response = Bounded(response);
+
                         await writer.WriteLineAsync(response).ConfigureAwait(false);
 
                         // A newer connection took the session while Revit was
@@ -621,6 +636,44 @@ namespace Heron.Bridge
                 // connection), cancelled, or a client that vanished. All three
                 // mean the same thing here: stop serving this one.
             }
+        }
+
+        /// <summary>
+        /// The answer, or - when it is larger than MaxReplyBytes - a refusal
+        /// that knows the real size and names the run record that holds the
+        /// whole answer, when the add-in wrote one. FRAGMENT-ISSUES 5b row
+        /// 1167. Counted in UTF-8 bytes, which is what crosses to the client;
+        /// a string short enough that it cannot reach the limit is not
+        /// counted at all. Its words never say pipe: to an MEP modeller a pipe
+        /// is in the model.
+        /// </summary>
+        internal static string Bounded(string response)
+        {
+            if (response == null || response.Length <= MaxReplyBytes / 3) return response;
+
+            var bytes = Encoding.UTF8.GetByteCount(response);
+            if (bytes <= MaxReplyBytes) return response;
+
+            string run = null;
+            try { run = Json.ReadString(response, "run"); } catch (Exception) { run = null; }
+
+            var size = (bytes / (1024.0 * 1024.0)).ToString("0.0", CultureInfo.InvariantCulture);
+            var limit = (MaxReplyBytes / (1024 * 1024)).ToString(CultureInfo.InvariantCulture);
+            var message =
+                "Revit finished the request, but its answer is " + size + " MB - more than the "
+                + limit + " MB Heron passes back in one answer - so the answer was not sent. "
+                + "If you asked for a change, it stands as Revit left it: look at the model "
+                + "before asking again, and do not send it again. "
+                + (string.IsNullOrEmpty(run)
+                    ? "If you asked only to read, ask for less - fewer elements, or one view or "
+                      + "one category at a time."
+                    : "The whole answer is in Heron's run record " + run
+                      + " - read it a page at a time with heron_run_record.");
+
+            return Json.Error("reply_too_large", message,
+                              Json.Num("replyBytes", bytes),
+                              Json.Num("limitBytes", MaxReplyBytes),
+                              string.IsNullOrEmpty(run) ? null : Json.Str("run", run));
         }
 
         private string Dispatch(string request)

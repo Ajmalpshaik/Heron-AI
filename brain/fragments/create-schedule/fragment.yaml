@@ -82,9 +82,7 @@ purpose: >
   both with their own fields and a sort; and a KEY SCHEDULE - a table of
   definitions elements point at, so one choice fills several fields - with
   its key parameter named and no rows yet. Sheets and views are not model
-  elements, so the category route alone cannot make either. Version 1's proof
-  no longer describes the code and is kept as a record; the card is DRAFT
-  until it is proved again.
+  elements, so the category route alone cannot make either.
 
 contract:
   needs:

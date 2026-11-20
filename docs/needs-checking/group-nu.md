@@ -9,6 +9,8 @@
 
 **Tracked as GitHub issue [#969](https://github.com/Ajmalpshaik/Heron-AI/issues/969) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
+**Also tracked as GitHub issue [#1057](https://github.com/Ajmalpshaik/Heron-AI/issues/1057) since 2026-11-19**, its item *Undo names*: whether `HeronUndoGuard` compares against the right name, since Revit's `DocumentChanged` reports the inner transaction's name at commit and not the group's name after Assimilate. Part of it may only be settled by this group's run; its result is written here.
+
 [D-157](../decisions/D-157.md) lets a chat post Revit's own Undo for Heron's last kept change, only while it
 is still the top of the undo list. **It compiles for 2020 to 2027, every Revit member it calls exists in
 every release (`tools/check-api-surface.py`), and the guard runs without Revit** (`tests/test_undo_last.py`,

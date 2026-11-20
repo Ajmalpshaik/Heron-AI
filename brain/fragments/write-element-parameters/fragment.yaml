@@ -36,9 +36,7 @@ purpose: >
   lookup by name then returns one of them - at random, in Autodesk's own words -
   and the read-back, looking the name up the same way, would have confirmed
   whichever it was. Such an element is reported in `ambiguous` and nothing on it
-  is touched (D-54 s3, FRAGMENT-ISSUES 5b-203). Version 2's proof was taken
-  before this and no longer describes the code, so it is kept as a record and
-  the fragment is DRAFT until it is proved again.
+  is touched (D-54 s3, FRAGMENT-ISSUES 5b-203).
 
   **Version 4 writes a Yes/No parameter.** Revit keeps a tick box as the
   number 1 or 0, so version 3 sent it through `SetValueString`, which returned
@@ -60,8 +58,7 @@ purpose: >
   kind, and never a 0 written. A text built-in Revit will not clear takes the
   empty string instead; a type parameter reached from instances is refused,
   because clearing it empties every other instance too; one already empty is
-  `alreadyEmpty`, and every clear is read back. Version 5's proof no longer
-  describes the code and is kept as a record; DRAFT until it is proved again.
+  `alreadyEmpty`, and every clear is read back.
 
   ASSUMES AN OPEN TRANSACTION and does not open one. Golden Rule 16 puts the
   TransactionGroup at the OPERATION, so that one user action is one undo; a

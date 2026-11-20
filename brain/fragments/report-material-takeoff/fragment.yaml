@@ -81,9 +81,7 @@ purpose: >
   READ_ELEMENT_MATERIAL was merged in): `materials` names every material of
   each element, painted ones included, `noMaterial` the elements carrying
   none, and the totals come in cubic and square metres beside Revit's own
-  units. An element handed in twice is taken off once. Version 1's proof no
-  longer describes the code and is kept as a record; DRAFT until it is proved
-  again.
+  units. An element handed in twice is taken off once.
 
   **AND THE EMBODIED CARBON, WHEN A FACTOR IS NAMED** (version 3): each
   material's volume times the carbon factor stored on the material, grouped
