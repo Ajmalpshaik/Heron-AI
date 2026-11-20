@@ -21,10 +21,12 @@ semantic-identity: "create new drawing sheets in one go from the rows handed in,
 # card. And its lists cannot carry a spreadsheet: an IList<string> crosses as
 # ONE comma-separated value (RevitFragment.Parts) that DROPS EMPTY ENTRIES, so
 # a blank name, or a name with a comma in it ("Ground Floor, Zone A"), moves
-# every later name onto the wrong sheet. SET_PARAMETER_VALUES_BY_ID (PROVEN)
-# can fill the sheets' parameters afterwards, keyed by Sheet Number - but that
-# is a second call and a second entry in the undo list. The overlap with both,
-# and the merge planned once this is proved: FRAGMENT-ISSUES row 5b-1486.
+# every later name onto the wrong sheet. SET_PARAMETER_VALUES_BY_ID (PROVEN
+# then; DRAFT at version 10 since 2026-11-20, row 5b-1526) can fill the
+# sheets' parameters afterwards, keyed by Sheet Number - but that is a second
+# call and a second entry in the undo list. The overlap with both, and the
+# merge planned now this is proved (signed 2026-11-13): FRAGMENT-ISSUES row
+# 5b-1486, and the duplicate check of row 5b-1875.
 #
 # HOW THE TABLE REACHES REVIT - the repo's own way, not a new one. `sheets` is
 # ONE value: rows separated by ";", cells by "|", and a ";", "|" or "%" inside
