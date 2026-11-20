@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,27 @@ semantic-identity: "flex the family through these sizes, read the geometry back,
 kind: action
 domain: revit.families
 capability: FLEX_FAMILY
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 3 (2026-11-20) - EVERY NESTED FAMILY IS MEASURED, and back to
+# DRAFT. FRAGMENT-ISSUES row 5b-367: seen 2026-10-07 flexing a spring family
+# on Revit 2024, every trial reported "across 4 solid(s)" - the family's own
+# forms - while 4 to 8 arrayed one-turn nested families were never measured,
+# so a nested part that failed to follow would have passed. Version 3 reads
+# each nested family's own box per trial, in model coordinates as a solid's
+# is, says how many beside the solids ("across 4 solid(s) and 6 nested
+# families"), marks NOT HELD a trial whose labelled planes moved while no
+# nested family did, and checks that every nested family comes back where it
+# started - by its own id, or for an array's copy Revit remade with a new id
+# by the same box matched one to one (version 2's rule). A detail item or
+# annotation with no extent outside its view is counted, not measured. A family
+# with no nested family reads exactly as before. Version 2 was PROVEN (the
+# proof block below, kept as the record of what it proved); its C# moved, so it
+# is DRAFT again until NEEDS-CHECKING Group <TBD> is run (D-30) - on the
+# owner's word that a fragment found wrong may be changed even though it is
+# proven.
 
 purpose: >
   FLEXES the family open in the Family Editor: tries it at each set of sizes
@@ -28,6 +46,10 @@ purpose: >
   dimension and every connector tied to a parameter is compared with what that
   parameter holds. When the labelled planes moved and no solid did, that is
   said in those words.
+
+  **AND EVERY NESTED FAMILY** (version 3, row 5b-367) - each one's own extent
+  is read beside the solids, judged the same way, and must come back where it
+  started; a spring's arrayed turns are measured, not only its end forms.
 
   **EACH TRIAL STARTS FROM THE FAMILY AS IT WAS**, plus only the values that
   trial names. Use sizes that are really different and not square - a square
@@ -59,7 +81,8 @@ contract:
   provides:
     - name: allHeld
       # Every labelled dimension and every tied connector read its parameter
-      # in every trial, and the solid moved whenever its planes did. A
+      # in every trial, and the solid moved whenever its planes did - and,
+      # from version 3, a nested family did too, where there are any. A
       # statement about the checks this made, not a proof of anything else.
       role: result
       type: bool
@@ -72,7 +95,8 @@ contract:
       # first trial - each solid by its own id, and an array's copies that
       # Revit remade with new ids when a trial changed the count by shape:
       # the same boxes, matched one to one (version 2, 5b-373). The findings
-      # say how many were judged each way.
+      # say how many were judged each way. Version 3 (5b-367): every nested
+      # family's own extent too, by the same rule.
       role: result
       type: bool
     - name: notAFamily
@@ -128,7 +152,9 @@ compatibility-note: >
   same way SET_FAMILY_TYPE_VALUES reads it. Version 2 also reads
   `BaseArray.GetOriginalMemberIds / GetCopiedMemberIds` and
   `Group.GetMemberIds`, present in every reference assembly 2020 through
-  2027 (read 2026-10-08).
+  2027 (read 2026-10-08). Version 3 reads a nested `FamilyInstance` by the
+  same `Element.get_BoundingBox(null)` (`tools/api-surface --members`,
+  2020 through 2027, 2026-11-20).
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
