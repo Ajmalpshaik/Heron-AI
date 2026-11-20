@@ -29,7 +29,7 @@ Every issue has a ready prompt that points here. Its kind is in its title: **Fix
 
 **A QUESTION OR PROPOSAL issue** - [#962](https://github.com/Ajmalpshaik/Heron-AI/issues/962) to [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967); the owner answers in the issue's comments, one line each:
 
-4. First check the entry is still open: its heading does not start ✅, and it has no **Answer:** paragraph. An entry marked *In progress* in the issue is decided by open pull request [#871](https://github.com/Ajmalpshaik/Heron-AI/pull/871): once that merges, check the decision is in the file and tick the line, naming where it is.
+4. First check the entry is still open: its heading does not start ✅, and it has no **Answer:** paragraph. An entry that was marked *In progress* in the issue was decided by pull request [#871](https://github.com/Ajmalpshaik/Heron-AI/pull/871), merged 2026-11-17: check the decision is in the file and tick the line, naming where it is.
 5. Otherwise write his answer under the entry, dated and in his words, the way the top of [`OPEN-QUESTIONS.md`](../OPEN-QUESTIONS.md) or [`PROPOSALS.md`](../PROPOSALS.md) says - a question's answer is an **Answer:** paragraph, a proposal's heading turns ✅ - and promote it into [`DECISIONS.md`](../DECISIONS.md) where it is a rule. If the answer needs a change, make the smallest one (the FIX rules). Tick the line.
 
 **A NEEDS-CHECKING issue** - [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968) to [#1004](https://github.com/Ajmalpshaik/Heron-AI/issues/1004), and [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015); on the owner's Windows PC for a run:
@@ -253,7 +253,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-395](section-5b-rows-401-425.md) | [#947](https://github.com/Ajmalpshaik/Heron-AI/issues/947) | Code fix | Two routing notes send 'what is this wall made of' to different tools |
 | [row 5b-423](section-5b-rows-401-425.md) | [#920](https://github.com/Ajmalpshaik/Heron-AI/issues/920) | Your decision | On Revit 2026 and 2027 no OmniClass code can be set: Autodesk ships only a sample file |
 | [row 5b-424](section-5b-rows-401-425.md) | [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) | Code fix | 'Set the keynote of this type' reaches a read, not the tool that sets type values |
-| [row 5b-427](section-5b-rows-426-450.md) | [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | The server adds the Companion folder to Python's path again on every tool call - *in progress in #871* |
+| [row 5b-427](section-5b-rows-426-450.md) | [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | The server adds the Companion folder to Python's path again on every tool call - *done in #871, merged* |
 | [row 5b-428](section-5b-rows-426-450.md) | [#927](https://github.com/Ajmalpshaik/Heron-AI/issues/927) | Your decision | Each change or read call re-reads every card file to find one capability |
 | [row 5b-434](section-5b-rows-426-450.md) | [#909](https://github.com/Ajmalpshaik/Heron-AI/issues/909) | Revit run on your PC | 'How many furniture are there' was answered by a room counter or a write |
 | [row 5b-437](section-5b-rows-426-450.md) | [#945](https://github.com/Ajmalpshaik/Heron-AI/issues/945) | Code fix | An OmniClass number Heron set and read back was blank again minutes later |
@@ -303,7 +303,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1125](section-5b-rows-1101-1125.md) | [#921](https://github.com/Ajmalpshaik/Heron-AI/issues/921) | Your decision | Spaces made from linked rooms come back with no area but are still counted as made |
 | [row 5b-1126](section-5b-rows-1126-1150.md) | [#917](https://github.com/Ajmalpshaik/Heron-AI/issues/917) | Your decision | Moving a Revit link answers moved 0 though it did move, inviting a second move |
 | [row 5b-1130](section-5b-rows-1126-1150.md) | [#913](https://github.com/Ajmalpshaik/Heron-AI/issues/913) | Your decision | HVAC and fire design contracts name refusal words the code never sends |
-| [row 5b-1131](section-5b-rows-1126-1150.md) | [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | Two places choose which tool provides a capability by different rules - *in progress in #871* |
+| [row 5b-1131](section-5b-rows-1126-1150.md) | [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | Two places choose which tool provides a capability by different rules - *#871 merged, the row is still open* |
 | [row 5b-1132](section-5b-rows-1126-1150.md) | [#927](https://github.com/Ajmalpshaik/Heron-AI/issues/927) | Your decision | The which-Revit list shows process numbers and no project name |
 | [row 5b-1134](section-5b-rows-1126-1150.md) | [#937](https://github.com/Ajmalpshaik/Heron-AI/issues/937) | Code fix | Four code comments still describe Heron as it was before D-129, D-132 and D-135 |
 | [row 5b-1136](section-5b-rows-1126-1150.md) | [#937](https://github.com/Ajmalpshaik/Heron-AI/issues/937) | Code fix | Group EQ's command counts a Revit 2022 proof that does not exist |
@@ -314,27 +314,27 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1157](section-5b-rows-1151-1175.md) | [#927](https://github.com/Ajmalpshaik/Heron-AI/issues/927) | Your decision | When the only Revit closes, Heron quietly binds to another, against Article 12a |
 | [row 5b-1158](section-5b-rows-1151-1175.md) | [#912](https://github.com/Ajmalpshaik/Heron-AI/issues/912) | Your decision | Some reads hand back lengths and areas in feet and square feet with no unit |
 | [row 5b-1159](section-5b-rows-1151-1175.md) | [#934](https://github.com/Ajmalpshaik/Heron-AI/issues/934) | Code fix | Still-running answers carry no workflow id and wrongly say the run is not recorded |
-| [row 5b-1161](section-5b-rows-1151-1175.md) | [#927](https://github.com/Ajmalpshaik/Heron-AI/issues/927) | Your decision | revit_change runs reads as writes; select all ducts sits on a read that selects nothing - *in progress in #871* |
+| [row 5b-1161](section-5b-rows-1151-1175.md) | [#927](https://github.com/Ajmalpshaik/Heron-AI/issues/927) | Your decision | revit_change runs reads as writes; select all ducts sits on a read that selects nothing - *#871 merged, the row is still open* |
 | [row 5b-1162](section-5b-rows-1151-1175.md) | [#936](https://github.com/Ajmalpshaik/Heron-AI/issues/936) | Code fix | Values the AI passes are filed as the modeller's own word and never asked again |
 | [row 5b-1163](section-5b-rows-1151-1175.md) | [#934](https://github.com/Ajmalpshaik/Heron-AI/issues/934) | Code fix | A run record still says KEPT after the modeller undid the change |
 | [row 5b-1164](section-5b-rows-1151-1175.md) | [#933](https://github.com/Ajmalpshaik/Heron-AI/issues/933) | Code fix | Values carried between tool steps are matched to a model by title, which files can share |
-| [row 5b-1166](section-5b-rows-1151-1175.md) | [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) | Code fix | Proof validate runs of changes and publishes are resent when an answer is lost - *in progress in #871* |
+| [row 5b-1166](section-5b-rows-1151-1175.md) | [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) | Code fix | Proof validate runs of changes and publishes are resent when an answer is lost - *done in #871, merged* |
 | [row 5b-1167](section-5b-rows-1151-1175.md) | [#932](https://github.com/Ajmalpshaik/Heron-AI/issues/932) | Code fix | The add-in can send an answer of any size over the pipe; a lost read is still called safe |
 | [row 5b-1168](section-5b-rows-1151-1175.md) | [#927](https://github.com/Ajmalpshaik/Heron-AI/issues/927) | Your decision | Developer files load in a modeller's chat, and tool descriptions sit at their size limit |
-| [row 5b-1170](section-5b-rows-1151-1175.md) | [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | check-docs passes links to emoji headings that GitHub does not resolve - *in progress in #871* |
-| [row 5b-1171](section-5b-rows-1151-1175.md) | [#957](https://github.com/Ajmalpshaik/Heron-AI/issues/957) | Code fix | The vector search speed-up is never loaded, though D-23 says it is used - *in progress in #871* |
-| [row 5b-1172](section-5b-rows-1151-1175.md) | [#936](https://github.com/Ajmalpshaik/Heron-AI/issues/936) | Code fix | The rebuild command says it restores every store, but it restores only the global one - *in progress in #871* |
-| [row 5b-1173](section-5b-rows-1151-1175.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | Two register tools file the same row under different needs - *in progress in #871* |
-| [row 5b-1174](section-5b-rows-1151-1175.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | prove-agent's own usage line for track cannot run: it leaves out a required option - *in progress in #871* |
+| [row 5b-1170](section-5b-rows-1151-1175.md) | [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | check-docs passes links to emoji headings that GitHub does not resolve - *done in #871, merged* |
+| [row 5b-1171](section-5b-rows-1151-1175.md) | [#957](https://github.com/Ajmalpshaik/Heron-AI/issues/957) | Code fix | The vector search speed-up is never loaded, though D-23 says it is used - *#871 merged, the row is still open* |
+| [row 5b-1172](section-5b-rows-1151-1175.md) | [#936](https://github.com/Ajmalpshaik/Heron-AI/issues/936) | Code fix | The rebuild command says it restores every store, but it restores only the global one - *done in #871, merged* |
+| [row 5b-1173](section-5b-rows-1151-1175.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | Two register tools file the same row under different needs - *done in #871, merged* |
+| [row 5b-1174](section-5b-rows-1151-1175.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | prove-agent's own usage line for track cannot run: it leaves out a required option - *done in #871, merged* |
 | [row 5b-1175](section-5b-rows-1151-1175.md) | [#915](https://github.com/Ajmalpshaik/Heron-AI/issues/915) | Your decision | Code already runs on two decisions still marked Proposed: D-112 and D-113 |
 | [row 5b-1176](section-5b-rows-1176-1200.md) | [#915](https://github.com/Ajmalpshaik/Heron-AI/issues/915) | Your decision | D-138 says two different things about asking before a publish when Ask to Keep is off |
 | [row 5b-1177](section-5b-rows-1176-1200.md) | [#937](https://github.com/Ajmalpshaik/Heron-AI/issues/937) | Code fix | Three places still word Heron as it was before D-27 and the standards tool |
-| [row 5b-1178](section-5b-rows-1176-1200.md) | [#937](https://github.com/Ajmalpshaik/Heron-AI/issues/937) | Code fix | The needs-checking index page still holds rows that belong in group files - *in progress in #871* |
-| [row 5b-1179](section-5b-rows-1176-1200.md) | [#937](https://github.com/Ajmalpshaik/Heron-AI/issues/937) | Code fix | Two struck checks said the emergency stop could not be set; since D-129 it can - *in progress in #871* |
+| [row 5b-1178](section-5b-rows-1176-1200.md) | [#937](https://github.com/Ajmalpshaik/Heron-AI/issues/937) | Code fix | The needs-checking index page still holds rows that belong in group files - *#871 merged, the row is still open* |
+| [row 5b-1179](section-5b-rows-1176-1200.md) | [#937](https://github.com/Ajmalpshaik/Heron-AI/issues/937) | Code fix | Two struck checks said the emergency stop could not be set; since D-129 it can - *done in #871, merged* |
 | [row 5b-1180](section-5b-rows-1176-1200.md) | [#937](https://github.com/Ajmalpshaik/Heron-AI/issues/937) | Code fix | The owner's ask for one numbered specification document has no register row |
 | [row 5b-1181](section-5b-rows-1176-1200.md) | [#937](https://github.com/Ajmalpshaik/Heron-AI/issues/937) | Code fix | The register file holds rows far outside its band of 25 |
 | [row 5b-1201](section-5b-rows-1201-1225.md) | [#903](https://github.com/Ajmalpshaik/Heron-AI/issues/903) | Revit run on your PC | Placing beams at points made broken zero-length beams and reported them as placed |
-| [row 5b-1220](section-5b-rows-1201-1225.md) | [#937](https://github.com/Ajmalpshaik/Heron-AI/issues/937) | Code fix | The decision log's preamble cites the wrong Golden Rule for its append-only rule - *in progress in #871* |
+| [row 5b-1220](section-5b-rows-1201-1225.md) | [#937](https://github.com/Ajmalpshaik/Heron-AI/issues/937) | Code fix | The decision log's preamble cites the wrong Golden Rule for its append-only rule - *done in #871, merged* |
 | [row 5b-1221](section-5b-rows-1201-1225.md) | [#907](https://github.com/Ajmalpshaik/Heron-AI/issues/907) | Revit run on your PC | Renaming a level always rolled back: Heron declined Revit's rename-views question |
 | [row 5b-1242](section-5b-rows-1226-1250.md) | [#904](https://github.com/Ajmalpshaik/Heron-AI/issues/904) | Revit run on your PC | Flipping a door to face its room left its From and To Room the old way round |
 | [row 5b-1261](section-5b-rows-1251-1275.md) | [#944](https://github.com/Ajmalpshaik/Heron-AI/issues/944) | Code fix | Arraying family forms on planes a parameter moves breaks the array at other sizes |
@@ -441,18 +441,18 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1522](section-5b-rows-1501-1525.md) | [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | First lookup after the server starts ranks badly and still claims the trained model |
 | [row 5b-1523](section-5b-rows-1501-1525.md) | [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | When a door hands back candidates it shows their risk but not whether they are proven |
 | [row 5b-1524](section-5b-rows-1501-1525.md) | [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) | Code fix | Asking to bring an edited spreadsheet back can reach the export or a family card |
-| [row 5b-1525](section-5b-rows-1501-1525.md) | [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | Bringing a CSV back writes every cell unchecked, overwriting newer values in the model - *in progress in #871* |
+| [row 5b-1525](section-5b-rows-1501-1525.md) | [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | Bringing a CSV back writes every cell unchecked, overwriting newer values in the model - *#871 merged, the row is still open* |
 | [row 5b-1526](section-5b-rows-1526-1550.md) | [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | A file the export wrote can be refused whole when brought straight back |
 | [row 5b-1527](section-5b-rows-1526-1550.md) | [#907](https://github.com/Ajmalpshaik/Heron-AI/issues/907) | Revit run on your PC | The CSV file route of a proven parameter card has never been run in real Revit |
-| [row 5b-1528](section-5b-rows-1526-1550.md) | [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | The round-trip CSV has no fixed encoding, so accented or Arabic names may be written wrong - *in progress in #871* |
+| [row 5b-1528](section-5b-rows-1526-1550.md) | [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | The round-trip CSV has no fixed encoding, so accented or Arabic names may be written wrong - *#871 merged, the row is still open* |
 | [row 5b-1529](section-5b-rows-1526-1550.md) | [#919](https://github.com/Ajmalpshaik/Heron-AI/issues/919) | Your decision | No Heron tool makes a structural floor; Create Floor always passes not-structural |
 | [row 5b-1530](section-5b-rows-1526-1550.md) | [#919](https://github.com/Ajmalpshaik/Heron-AI/issues/919) | Your decision | Insulation cannot be added to duct or pipe fittings, accessories or flex runs |
 | [row 5b-1531](section-5b-rows-1526-1550.md) | [#903](https://github.com/Ajmalpshaik/Heron-AI/issues/903) | Revit run on your PC | Slanted column placement exists in code but no tool offers it and it was never run |
 | [row 5b-1532](section-5b-rows-1526-1550.md) | [#919](https://github.com/Ajmalpshaik/Heron-AI/issues/919) | Your decision | No Heron tool makes a structural plan view; Create Plan View takes floor or ceiling only |
 | [row 5b-1533](section-5b-rows-1526-1550.md) | [#915](https://github.com/Ajmalpshaik/Heron-AI/issues/915) | Your decision | Constitution Article 9 still says Ask to Keep is on the ribbon; it moved to Settings |
 | [row 5b-1534](section-5b-rows-1526-1550.md) | [#947](https://github.com/Ajmalpshaik/Heron-AI/issues/947) | Code fix | Three proven change tools pick a parameter by name at random when two share the name |
-| [row 5b-1540](section-5b-rows-1526-1550.md) | [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | The module-reach tool skips every bin folder, so it never sees the hooks that import code - *in progress in #871* |
-| [row 5b-1541](section-5b-rows-1526-1550.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The review-ledger tool crashes with a traceback on a machine with no git - *in progress in #871* |
+| [row 5b-1540](section-5b-rows-1526-1550.md) | [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | The module-reach tool skips every bin folder, so it never sees the hooks that import code - *done in #871, merged* |
+| [row 5b-1541](section-5b-rows-1526-1550.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The review-ledger tool crashes with a traceback on a machine with no git - *done in #871, merged* |
 | [row 5b-1545](section-5b-rows-1526-1550.md) | [#913](https://github.com/Ajmalpshaik/Heron-AI/issues/913) | Your decision | Nothing runs the build-matrix agent, so its baseline drifts from the tree unseen |
 | [row 5b-1546](section-5b-rows-1526-1550.md) | [#913](https://github.com/Ajmalpshaik/Heron-AI/issues/913) | Your decision | 120 built agents are called by nothing, and agent proofs name no Revit release |
 | [row 5b-1548](section-5b-rows-1526-1550.md) | [#926](https://github.com/Ajmalpshaik/Heron-AI/issues/926) | Your decision | Proven cards' descriptions still say DRAFT; removing the text moved routing answers |
@@ -474,10 +474,10 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1584](row-5b-1584.md) | [#960](https://github.com/Ajmalpshaik/Heron-AI/issues/960) | Code fix | A method precondition with a colon is served to the chat as a dictionary, not text |
 | [row 5b-1587](row-5b-1587.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The open-defects tool exits 0 even when it could not read the register at all |
 | [row 5b-1589](row-5b-1589.md) | [#951](https://github.com/Ajmalpshaik/Heron-AI/issues/951) | Code fix | Syncing spaces in a non-final phase looks up existing spaces and rooms in the last phase |
-| [row 5b-1590](row-5b-1590.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The next-id tool reports dozens of false double holds from helper worktrees - *in progress in #871* |
+| [row 5b-1590](row-5b-1590.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The next-id tool reports dozens of false double holds from helper worktrees - *done in #871, merged* |
 | [row 5b-1594](row-5b-1594.md) | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | The add-in runs an export or admin job sent without apply and says nothing was kept |
 | [row 5b-1611](row-5b-1611.md) | [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | The heron-guard hook wrongly blocks Revit code edits made inside a worktree |
-| [row 5b-1612](row-5b-1612.md) | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | A dry run replaces values the chat carried between steps, though nothing was kept - *in progress in #871* |
+| [row 5b-1612](row-5b-1612.md) | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | A dry run replaces values the chat carried between steps, though nothing was kept - *fixed in code in #871, merged; its Revit run is owed in Group NT* |
 | [row 5b-1626](row-5b-1626.md) | [#915](https://github.com/Ajmalpshaik/Heron-AI/issues/915) | Your decision | Two decisions were marked accepted on leave to build, not on being read back |
 | [row 5b-1627](row-5b-1627.md) | [#916](https://github.com/Ajmalpshaik/Heron-AI/issues/916) | Your decision | A Needs-Checking setup relies on material Keywords, which is not a parameter at all |
 | [row 5b-1632](row-5b-1632.md) | [#916](https://github.com/Ajmalpshaik/Heron-AI/issues/916) | Your decision | A Needs-Checking row expects views to be ambiguous when nothing carries the name twice |
@@ -561,7 +561,7 @@ Each row's state was corrected that day with the evidence, and its old state kep
 | [row 5b-1310](section-5b-rows-1301-1325.md) | SWITCH_ACTIVE_PROJECT is DEPRECATED, merged into ACTIVATE_DOCUMENT (PROVEN), which does not carry viewName (activate-document/fragment.yaml: "viewName NOT CARRIED ... (row 5b-1310)"); OPEN_VIEW, PROVEN, opens the view |
 | [row 5b-1401](section-5b-rows-1401-1425.md) | row 5b-1412, FIXED 2026-11-02: "the three roles, in the cards' own text; row 5b-1401 with it" - networkJson is role: accounting, and REPORT_SPRINKLER_NETWORK is PROVEN on its 2026-11-02 proof |
 | [row 5b-1568](section-5b-rows-1551-1575.md) | row 5b-1580 ran the probe on 2026-11-12 on Revit 2024 and recorded it as an API LIMIT - "closed, nothing to build" |
-| [row 5b-1217](section-5b-rows-1201-1225.md) | The same defect as row 5b-1219, FIXED 2026-10-19: `tests/test_mcp_serves.py` reads the card's own `heron-status` instead of a typed DRAFT. **Its state is left as it was** because open pull request #871 edits that line. |
+| [row 5b-1217](section-5b-rows-1201-1225.md) | The same defect as row 5b-1219, FIXED 2026-10-19: `tests/test_mcp_serves.py` reads the card's own `heron-status` instead of a typed DRAFT. Its state was left as it was because pull request #871 edited that line; #871 merged 2026-11-17, and the state now begins `CLOSED 2026-11-14`. |
 
 ## Done by pull requests merged on 2026-11-16
 
@@ -575,56 +575,59 @@ These rows were in progress when the issues were made, and the pull requests bel
 
 ## Left as they were, for open pull requests
 
-These rows still begin `OPEN` here: an open pull request already edits each one, and changing the same line twice would only make a merge conflict. Each is in its issue above, marked *In progress*. (Row 5b-1217 is also edited by #871; it is finished, above, and has no issue. Row 5b-1672 is listed here too, but #890 has done it.)
+None is left. On 2026-11-16 the rows below still began `OPEN` because open pull request [#871](https://github.com/Ajmalpshaik/Heron-AI/pull/871) edited each one. #871 merged on 2026-11-17, and on 2026-11-19 each row was checked again on `main`:
 
-- **[#871](https://github.com/Ajmalpshaik/Heron-AI/pull/871)** - 5b-427, 5b-1131, 5b-1161, 5b-1166, 5b-1170, 5b-1171, 5b-1172, 5b-1173, 5b-1174, 5b-1178, 5b-1179, 5b-1220, 5b-1525, 5b-1528, 5b-1540, 5b-1541, 5b-1590, 5b-1612, 5b-1672
+- **Finished, and ticked in its issue** - each state cell begins `FIXED` or `CLOSED`: 5b-427, 5b-1166, 5b-1170, 5b-1172, 5b-1173, 5b-1174, 5b-1179, 5b-1220, 5b-1540, 5b-1541, 5b-1590. Also 5b-1612, whose state begins `FIXED IN CODE`: it is ticked as the section above ticks such rows, and its Revit run is owed in [Group NT](../needs-checking/group-nt.md), NT12 to NT15.
+- **Still `OPEN` on `main`, not ticked** - 5b-1131, 5b-1161, 5b-1171, 5b-1178, 5b-1525, 5b-1528. #871 repaired part of some of them; each row says what is left, and each stays in its issue.
+- **5b-1672** was listed here too, but [#890](https://github.com/Ajmalpshaik/Heron-AI/pull/890) had done it; it is ticked in [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918).
+- Row 5b-1217, also edited by #871, is closed (above) and has no issue.
 
 ## Questions and proposals - [#962](https://github.com/Ajmalpshaik/Heron-AI/issues/962) to [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967)
 
-Each stays in full where it is. On 2026-11-16 open pull request [#871](https://github.com/Ajmalpshaik/Heron-AI/pull/871) records a decision for all but one of them (*In progress* below); none got a tracking line in its file, because #871 edits those same entries.
+Each stays in full where it is. Pull request [#871](https://github.com/Ajmalpshaik/Heron-AI/pull/871), merged 2026-11-17, recorded a decision for every one of them but F43. On 2026-11-19 each was checked on `main` - its heading starts ✅, and it has an **Answer:** paragraph or a DECIDED mark - and ticked in its issue. None got a tracking line in its file, because #871 was editing those same entries.
 
-| Entry | Issue | File | State on 2026-11-16 |
+| Entry | Issue | File | State on 2026-11-19 |
 |---|---|---|---|
-| Q-69 | [#962](https://github.com/Ajmalpshaik/Heron-AI/issues/962) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-88 | [#962](https://github.com/Ajmalpshaik/Heron-AI/issues/962) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-89 | [#962](https://github.com/Ajmalpshaik/Heron-AI/issues/962) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| F44 | [#962](https://github.com/Ajmalpshaik/Heron-AI/issues/962) | [`proposals/f44.md`](../proposals/f44.md) | In progress - #871 decides it |
-| Q-72 | [#962](https://github.com/Ajmalpshaik/Heron-AI/issues/962) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-73 | [#962](https://github.com/Ajmalpshaik/Heron-AI/issues/962) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-60 | [#963](https://github.com/Ajmalpshaik/Heron-AI/issues/963) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-71 | [#963](https://github.com/Ajmalpshaik/Heron-AI/issues/963) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-78 | [#963](https://github.com/Ajmalpshaik/Heron-AI/issues/963) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-86 | [#963](https://github.com/Ajmalpshaik/Heron-AI/issues/963) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| F1 | [#963](https://github.com/Ajmalpshaik/Heron-AI/issues/963) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
-| Q-70 | [#963](https://github.com/Ajmalpshaik/Heron-AI/issues/963) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-58 | [#964](https://github.com/Ajmalpshaik/Heron-AI/issues/964) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-61 | [#964](https://github.com/Ajmalpshaik/Heron-AI/issues/964) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-77 | [#964](https://github.com/Ajmalpshaik/Heron-AI/issues/964) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-79 | [#964](https://github.com/Ajmalpshaik/Heron-AI/issues/964) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-80 | [#964](https://github.com/Ajmalpshaik/Heron-AI/issues/964) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-81 | [#964](https://github.com/Ajmalpshaik/Heron-AI/issues/964) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| F6 | [#964](https://github.com/Ajmalpshaik/Heron-AI/issues/964) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
-| Q-74 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-75 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-76 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| F10 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
-| F19 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
-| F20 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
-| F23 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
-| F22 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
-| Q-87 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| F11 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
-| F12 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
-| F13 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
-| F14 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
-| F4 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
-| F2 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
-| Q-82 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| Q-85 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | In progress - #871 decides it |
-| F7 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
-| F9 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
-| F42 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`proposals/f42.md`](../proposals/f42.md) | In progress - #871 decides it |
-| F43 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`proposals/f43.md`](../proposals/f43.md) | Open |
+| Q-69 | [#962](https://github.com/Ajmalpshaik/Heron-AI/issues/962) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ answered 2026-11-16 by the owner; ticked |
+| Q-88 | [#962](https://github.com/Ajmalpshaik/Heron-AI/issues/962) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; read back and answered 2026-11-16 by the owner, D-175; ticked |
+| Q-89 | [#962](https://github.com/Ajmalpshaik/Heron-AI/issues/962) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| F44 | [#962](https://github.com/Ajmalpshaik/Heron-AI/issues/962) | [`proposals/f44.md`](../proposals/f44.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| Q-72 | [#962](https://github.com/Ajmalpshaik/Heron-AI/issues/962) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| Q-73 | [#962](https://github.com/Ajmalpshaik/Heron-AI/issues/962) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ answered 2026-11-16 by the owner; ticked |
+| Q-60 | [#963](https://github.com/Ajmalpshaik/Heron-AI/issues/963) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ answered 2026-11-16 by the owner; ticked |
+| Q-71 | [#963](https://github.com/Ajmalpshaik/Heron-AI/issues/963) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| Q-78 | [#963](https://github.com/Ajmalpshaik/Heron-AI/issues/963) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| Q-86 | [#963](https://github.com/Ajmalpshaik/Heron-AI/issues/963) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| F1 | [#963](https://github.com/Ajmalpshaik/Heron-AI/issues/963) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| Q-70 | [#963](https://github.com/Ajmalpshaik/Heron-AI/issues/963) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| Q-58 | [#964](https://github.com/Ajmalpshaik/Heron-AI/issues/964) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| Q-61 | [#964](https://github.com/Ajmalpshaik/Heron-AI/issues/964) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ answered 2026-11-16 by the owner; ticked |
+| Q-77 | [#964](https://github.com/Ajmalpshaik/Heron-AI/issues/964) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ answered 2026-11-16 by the owner; ticked |
+| Q-79 | [#964](https://github.com/Ajmalpshaik/Heron-AI/issues/964) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ answered 2026-11-16 by the owner; ticked |
+| Q-80 | [#964](https://github.com/Ajmalpshaik/Heron-AI/issues/964) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| Q-81 | [#964](https://github.com/Ajmalpshaik/Heron-AI/issues/964) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| F6 | [#964](https://github.com/Ajmalpshaik/Heron-AI/issues/964) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| Q-74 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| Q-75 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| Q-76 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| F10 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| F19 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| F20 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| F23 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ answered 2026-11-16 by the owner; ticked |
+| F22 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| Q-87 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| F11 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| F12 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| F13 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| F14 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| F4 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| F2 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| Q-82 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| Q-85 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| F7 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| F9 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| F42 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`proposals/f42.md`](../proposals/f42.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
+| F43 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`proposals/f43.md`](../proposals/f43.md) | Open - 🟠; F43-1 and F43-4 decided 2026-11-15, the owner answered F43-2, 3, 5 and 6 on 2026-11-16, and still owed are F43-2's six answers and the copies F43-3 and F43-6 wait for. #967 stays open for it |
 | Q-93 | [#1038](https://github.com/Ajmalpshaik/Heron-AI/issues/1038) | [`open-questions/tier-3.md`](../open-questions/tier-3.md) | Open since 2026-11-17, held for a discussion with the owner |
 
 ## NEEDS-CHECKING groups - [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968) to [#1004](https://github.com/Ajmalpshaik/Heron-AI/issues/1004)
@@ -702,7 +705,7 @@ Each item's line in its note ends with *(Tracked as GitHub issue ...)* and its W
 | WN-20 | [#1006](https://github.com/Ajmalpshaik/Heron-AI/issues/1006) | [`work-notes/plans/rag/01-requirements.md`](../work-notes/plans/rag/01-requirements.md) | R-89 to R-92: tell a modeller in plain words where knowledge goes and that files are safe |
 | WN-21 | [#1006](https://github.com/Ajmalpshaik/Heron-AI/issues/1006) | [`work-notes/plans/rag/01-requirements.md`](../work-notes/plans/rag/01-requirements.md) | R-93: BIM standards as a first-class document kind |
 | WN-22 | [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007) | [`work-notes/README.md`](../work-notes/README.md) | Retire next-steps note: every open step already has a register home |
-| WN-23 | [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007) | [`work-notes/README.md`](../work-notes/README.md) | Retire the-sweep-2026-09-13 map: its backlog table is overtaken *(no tracking line yet: open pull request #871 edits the lines beside it)* |
+| WN-23 | [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007) | [`work-notes/README.md`](../work-notes/README.md) | Retire the-sweep-2026-09-13 map: its backlog table is overtaken *(no tracking line yet: #871 edited the lines beside it, and merged 2026-11-17)* |
 | WN-24 | [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007) | [`work-notes/README.md`](../work-notes/README.md) | Retire project-review-2026-10-08: what waves 3-6 owe is in register rows |
 | WN-25 | [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007) | [`work-notes/README.md`](../work-notes/README.md) | Give the four FINAL loads and sprinkler plans a retirement condition, or retire them |
 | WN-26 | [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007) | [`work-notes/README.md`](../work-notes/README.md) | Bring stale work-notes README rows up to date (building-loads, family-2d) |
@@ -762,8 +765,8 @@ Each item's line in its note ends with *(Tracked as GitHub issue ...)* and its W
 ## Found finished on 2026-11-16 - in the other registers
 
 - **Group [MQ](../needs-checking/group-mq.md)** - the group says *"Every MQ row has now held"* (Revit 2024, 2026-11-07) and both cards read PROVEN. Its ids were struck here, and it has no issue.
-- **Groups [BW](../needs-checking/group-bw.md), [IO](../needs-checking/group-io.md) and [JA](../needs-checking/group-ja.md)** - every check has run and held, and open pull request [#871](https://github.com/Ajmalpshaik/Heron-AI/pull/871) strikes every one of their ids. No issue.
-- **Groups [IZ](../needs-checking/group-iz.md), [NO](../needs-checking/group-no.md) and [NQ](../needs-checking/group-nq.md)** - run and held; #871 strikes some of their ids and [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015) holds the rest, to strike after it merges. NO6 there needs the owner's word: it ran on a connector Heron placed, not one placed by hand.
+- **Groups [BW](../needs-checking/group-bw.md), [IO](../needs-checking/group-io.md) and [JA](../needs-checking/group-ja.md)** - every check has run and held, and pull request [#871](https://github.com/Ajmalpshaik/Heron-AI/pull/871), merged 2026-11-17, struck every one of their ids. No issue.
+- **Groups [IZ](../needs-checking/group-iz.md), [NO](../needs-checking/group-no.md) and [NQ](../needs-checking/group-nq.md)** - run and held; #871, merged 2026-11-17, struck some of their ids and [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015) holds the rest, to strike after it merges. NO6 there needs the owner's word: it ran on a connector Heron placed, not one placed by hand.
 - **Group [IS](../needs-checking/group-is.md)** - not finished after all: its own note says whether IS0 to IS7 are what the signed proof ran is *"for the owner"*. Added to [#979](https://github.com/Ajmalpshaik/Heron-AI/issues/979).
-- **Proposals F8, F16, F18 and F21** - each found finished (F5 closed; docs/28 and docs/09 carry the clauses they asked for), and open pull request #871 closes all four. No issue.
+- **Proposals F8, F16, F18 and F21** - each found finished (F5 closed; docs/28 and docs/09 carry the clauses they asked for), and pull request #871, merged 2026-11-17, closed all four - each heading starts ✅. No issue.
 - **WN-14** - the note says citations are not built; they are (`brain/heron_context.py`). Its issue line asks only for the confidence and *what is missing* parts.
