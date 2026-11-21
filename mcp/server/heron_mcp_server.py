@@ -326,6 +326,10 @@ def revit_health() -> str:
     When the user asked only whether it is connected, say what this found and
     stop: it is not a request to read the model or check anything else.
     """
+    # NOT RUN until the report is made (row 5b-1945): Heron could not read its
+    # own list of sessions, so it asked no Revit anything. The report itself,
+    # "No Revit is connected" included, is ANSWERED.
+    _outcome(NOT_RUN)
     try:
         live, starting, stale, mismatched = bridge.discover()
     except Exception as exc:                      # never let the tool itself fail
@@ -490,6 +494,7 @@ def revit_health() -> str:
 
     # A REPORT THAT WAS MADE ENDED OK, whatever it reports - "No Revit is
     # connected" is this tool answering, not this tool failing (row 5b-389).
+    _outcome(ANSWERED)
     return _ended("ok", "\n".join(lines))
 
 
@@ -642,6 +647,9 @@ def revit_links() -> str:
     unloaded stays unloaded and its element count comes back as not known
     rather than as zero.
     """
+    # NOT RUN until a reply says otherwise (row 5b-1945), as the inventory
+    # reads say it: no Revit to ask.
+    _outcome(NOT_RUN)
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -827,6 +835,10 @@ def revit_use_session(session: str) -> str:
     The choice sticks for the rest of the conversation. If that Revit closes,
     Heron stops and says so rather than moving to another model on its own.
     """
+    # NOT RUN for no such session, or none connected (row 5b-1945): nothing
+    # said no - there was nowhere to send it. A Revit chosen is ANSWERED,
+    # whatever its count said: the choice is what was asked, and it is kept.
+    _outcome(NOT_RUN)
     try:
         chosen = binding.choose(session)
     except NotBound as unbound:
@@ -866,6 +878,7 @@ def revit_use_session(session: str) -> str:
 
     # THE CHOICE IS THE WORK, so it ended ok whether or not the count above
     # answered - that only names the model (row 5b-389).
+    _outcome(ANSWERED)
     _ended("ok")
     return ("Now working with Revit %s (session %s) - %s.\n"
             "Every request goes there until you say otherwise. If it closes, Heron will stop "

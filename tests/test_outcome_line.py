@@ -207,7 +207,11 @@ SINGLE = ("revit_select_by_category", "revit_isolate_temporary",
 PANELS = ("revit_edit_table", "revit_building_loads", "revit_sprinkler_hydraulics",
           "revit_sprinkler_layout", "revit_model_dashboard")
 CHECKLIST_TOOL = "heron_checklist"
-SAYS = DOORS + (UNDO_TOOL, MOVE_TOOL) + INVENTORY + SINGLE + PANELS + (CHECKLIST_TOOL,)
+# AND THE THREE ROW 5b-1563 NEVER LISTED, since 2026-11-21 (row 5b-1945).
+# Section 5i walks them.
+CONNECT = ("revit_health", "revit_links", "revit_use_session")
+SAYS = DOORS + (UNDO_TOOL, MOVE_TOOL) + INVENTORY + SINGLE + PANELS + (CHECKLIST_TOOL,) \
+    + CONNECT
 WORDS = ("KEPT", "NOTHING CHANGED", "ANSWERED", "NOT ANSWERED", "REFUSED", "NOT RUN",
          "ROLLED BACK", "STILL RUNNING", "OUTCOME UNKNOWN")
 
@@ -1196,7 +1200,10 @@ def never_more_than_known(stage, core, cases, replies):
           == "OUTCOME UNKNOWN",
           "ROLLED BACK said at a door that opens no transaction is never printed: "
           "NOT ANSWERED at revit_read, OUTCOME UNKNOWN at revit_show")
-    check(said("revit_health", "Connected.", "ok", None) == "Connected."
+    # THE TOOL NOT ON THE LIST was revit_health until 2026-11-21, when it
+    # joined (row 5b-1945); heron_version stays off it - it reports this
+    # server's own checkout and reaches no Revit.
+    check(said("heron_version", "Connected.", "ok", None) == "Connected."
           and said("revit_read", ["words", object()], "ok", None)[0] == "words",
           "a tool that is not on the list, and an answer that is not text, are "
           "handed back untouched")
@@ -2069,6 +2076,86 @@ def the_panels_and_the_checklist_say_it_too(stage, picked):
     stage.fresh(dict(READ_OK))
 
 
+def connecting_says_it_too(stage):
+    """
+    ROW 5b-1945: revit_health, revit_links and revit_use_session label how
+    they ended and were on no list, so they carried no outcome line.
+    revit_links is an inventory read and ends as they do. revit_use_session:
+    no such session, or none connected, is NOT RUN - nothing said no, there
+    was nowhere to send it; a Revit chosen is ANSWERED, whatever its count
+    said, because the choice is what was asked. revit_health: its report is
+    ANSWERED - "no Revit is connected" is an answer to "is Revit there" - and
+    Heron unable to read its own list of sessions is NOT RUN.
+    """
+    print()
+    print("5i. revit_health, revit_links and revit_use_session say a word too (row 5b-1945)")
+    module = stage.module
+    from heron_session import NotBound
+    OTHER = {"document": "Project2", "documentPath": "C:/jobs/Project2.rvt",
+             "projectKey": "key-2", "creationGuid": "guid-2"}
+    PINNED = dict(MODEL, creationGuid="guid-1")
+
+    def none():
+        raise NotBound("No Revit is connected, so nothing has been sent to Revit.")
+
+    def call(name, reply, arguments=None, pin=PINNED, setup=None):
+        stage.fresh(reply, None)
+        if pin is not None:
+            module.pinned.check(dict(pin))
+        if setup is not None:
+            setup()
+        had, sys.stderr = sys.stderr, io.StringIO()
+        try:
+            said = getattr(module, name)(**(arguments or {}))
+        except Exception as exc:                                # noqa: BLE001
+            said = "(%s raised %s: %s)" % (name, type(exc).__name__, exc)
+        finally:
+            sys.stderr = had
+            stage.unpatch()
+        return said if isinstance(said, str) else repr(said)
+
+    def unbound():
+        module.binding.resolve = none
+
+    def no_such():
+        stage.patch(module.binding, "choose", lambda session: none())
+
+    def chosen():
+        stage.patch(module.binding, "choose", lambda session: stage.revit)
+
+    def nobody():
+        stage.patch(module.bridge, "discover", lambda *a, **k: ([], [], [], []))
+
+    def broken(*a, **k):
+        raise OSError("the discovery folder could not be read")
+
+    good = dict(PINNED, ok=True, links=[], hostElements=12, linkTypes=0, placements=0)
+    counted = dict(PINNED, ok=True, count=1234)
+    cases = [("revit_links", "a good reply", dict(good), {}, None, "ANSWERED"),
+             ("revit_links", "no Revit to send it to", dict(good), {}, unbound, "NOT RUN"),
+             ("revit_links", "no answer at all", None, {}, None, "OUTCOME UNKNOWN"),
+             ("revit_links", "Revit busy", error("revit_busy"), {}, None, "NOT RUN"),
+             ("revit_links", "an answer from another model", dict(good, **OTHER), {}, None,
+              "REFUSED"),
+             ("revit_use_session", "a Revit chosen", dict(counted), {"session": "1"}, chosen,
+              "ANSWERED"),
+             ("revit_use_session", "chosen, its count not answered", None, {"session": "1"},
+              chosen, "ANSWERED"),
+             ("revit_use_session", "no such session", dict(counted), {"session": "9"},
+              no_such, "NOT RUN"),
+             ("revit_health", "no Revit connected", None, {}, nobody, "ANSWERED"),
+             ("revit_health", "its own list of sessions unreadable", None, {},
+              lambda: stage.patch(module.bridge, "discover", broken), "NOT RUN")]
+    wrong = []
+    for name, what, reply, arguments, setup, want in cases:
+        said = call(name, reply, arguments, setup=setup)
+        if stated(said) != want:
+            wrong.append("%s, %s: %s (%r)" % (name, what, stated(said), said[:90]))
+    check(not wrong, "each of the three says the word true of each of its endings - not: %s"
+          % ("; ".join(wrong[:4]) or "none"))
+    stage.fresh(dict(READ_OK))
+
+
 def the_panel_says_it_too(stage, cases, replies, core):
     """
     ISSUE #1043: Revit's Commands panel runs revit_change's and revit_read's
@@ -2339,13 +2426,14 @@ async def through_the_sdk(stage, cases, picked):
 
     stage.fresh(dict(READ_OK))
     try:
-        health = await server.call_tool("revit_health", {})
+        # heron_version: revit_health joined the list (row 5b-1945).
+        health = await server.call_tool("heron_version", {})
         _text, structured, _flag = parts(health)
         check(isinstance(structured, dict) and "outcome" not in structured,
               "a tool that is not a door gets no `outcome` in its structured "
               "content")
     except Exception as exc:                                    # noqa: BLE001
-        check(False, "revit_health could not be called: %s: %s"
+        check(False, "heron_version could not be called: %s: %s"
               % (type(exc).__name__, exc))
 
 
@@ -2398,8 +2486,9 @@ def nothing_else_moved(stage, cases, replies, picked):
           % ("; ".join(wrong[:3]) or "none"))
 
     stage.fresh(dict(READ_OK))
-    said = module.revit_health()
-    check(not lines_of(said), "revit_health carries no outcome line")
+    # heron_version: revit_health joined the list (row 5b-1945).
+    said = module.heron_version()
+    check(not lines_of(said), "heron_version, a tool not on the list, carries no outcome line")
     levels = getattr(module, "revit_levels", None)
     if levels is None:
         import heron_inventory
@@ -2719,6 +2808,7 @@ def main():
         the_pin_and_the_model_in_front(stage, picked)
         the_other_tools_say_it_too(stage)
         the_panels_and_the_checklist_say_it_too(stage, picked)
+        connecting_says_it_too(stage)
         a_keep_that_made_nothing_closes_on_its_word(cases, replies)
         the_page_labels_what_the_body_said(stage, picked)
         asyncio.run(through_the_sdk(stage, cases, picked))

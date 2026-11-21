@@ -2952,10 +2952,13 @@ async def exercise_single_purpose(module, server, newest):
     structured = (result[1] if isinstance(result, tuple) and len(result) == 2
                   else getattr(result, "structured_content", None)
                   or getattr(result, "structuredContent", None))
+    # "...and still carries no `outcome` - it is not a door" until 2026-11-21:
+    # revit_health says ANSWERED since row 5b-1945, as an inventory read does.
     check(isinstance(structured, dict) and structured.get("result") == said
-          and "Ask to Keep" in said and "outcome" not in structured,
+          and "Ask to Keep" in said and structured.get("outcome") == "ANSWERED",
           "revit_health: the structured content is the same reply whole, those lines "
-          "included, and still carries no `outcome` - it is not a door")
+          "included, and its `outcome` is ANSWERED (row 5b-1945) - found %r"
+          % ((structured or {}).get("outcome") if isinstance(structured, dict) else None))
 
     await settings_said_by_each_revit(module, server, Says)
 

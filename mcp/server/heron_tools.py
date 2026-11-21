@@ -614,7 +614,11 @@ STATES_OUTCOME = ("revit_change", "revit_read", "revit_show", "revit_undo_last",
                   # ANSWERED. A checklist run says its checks' word.
                   "revit_edit_table", "revit_building_loads",
                   "revit_sprinkler_hydraulics", "revit_sprinkler_layout",
-                  "revit_model_dashboard", "heron_checklist")
+                  "revit_model_dashboard", "heron_checklist",
+                  # AND THE THREE ROW 5b-1563 NEVER LISTED (row 5b-1945): a
+                  # report or a choice made ANSWERED, nowhere to send it NOT RUN;
+                  # revit_links ends as the inventory reads do.
+                  "revit_health", "revit_links", "revit_use_session")
 
 
 class NotDeclared(Exception):
