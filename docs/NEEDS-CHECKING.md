@@ -1682,6 +1682,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pl.md`](needs-checking/group-pl.md)
 
+## Group PP - a central model opened beside is not saved, a nested part kept upright says so, the session list names a wait, and the camera's eye on the sample house - BUILT, NOT RUN IN REVIT (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pp.md`](needs-checking/group-pp.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
