@@ -1698,6 +1698,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pn.md`](needs-checking/group-pn.md)
 
+## Group PO - ADD_FAMILY_CONNECTOR version 7: only a face that faces out, and at the point given, counts - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-po.md`](needs-checking/group-po.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
