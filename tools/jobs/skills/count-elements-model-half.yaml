@@ -13,17 +13,8 @@
 #   nothing in it.
 #
 # THE WORDS IT CLAIMS, AND WHERE EACH ONE ACTUALLY LANDED:
-#   reach     how many ducts are there                 -> FILTER_ELEMENTS_BY_CATEGORY (identity)
-#   reach     count the air terminals                  -> COUNT_ELEMENTS (identity)
-#   reach     how many sprinklers on level 2           -> COUNT_ELEMENTS (identity)
-#   reach     give me the number of fire dampers       -> COUNT_ELEMENTS (identity)
-#
-# A `miss` is not automatically a defect - a skill composes several
-# capabilities and `lookup` returns ONE, so the single best answer sitting
-# outside the plan may mean the plan is short a capability or that the
-# sentence names a composition no fragment can win. A `crossing` is not that:
-# it is a question answered by something that changes the model, and it is the
-# line to read first.
+#   NOT MEASURED on this run - see --plan-only. Run without it
+#   before trusting the order below to be the thing Ajmal asked for.
 #
 # EVERY VALUE BELOW IS BLANK AND THAT IS DELIBERATE. Which category this model
 # has, which view holds a small number of them, and what makes the answer
@@ -43,17 +34,18 @@
 #   ALREADY  count-elements                 PROVEN
 #   ALREADY  filter-elements-by-category    PROVEN
 #
-# THE COMPOSITION IS WHAT IS STILL OWED, AND NOTHING HERE RUNS ONE. `prove` in
-# mcp/client/heron_bridge_client.py runs several fragments in ONE process on
-# ONE lease - the first resets the chain and the rest continue it, which IS a
-# skill's plan - but it calls run_fragment_read only, so it cannot run a
-# MODIFY step, and it judges nothing: no negative case, no draft.
-# FRAGMENT-ISSUES row 141.
+# THE COMPOSITION IS WHAT IS STILL OWED, AND THIS FILE DOES NOT RUN ONE:
+# batch-prove proves fragments one at a time. The composition runs through
+# tools/run-skill.py, from a skill plan job
+# (tools/jobs/skills/count-elements-plan.yaml is one) - every step in order on
+# one chain, changes rolled back, a positive and a negative leg, judged by
+# brain/heron_plan_proof.py into a draft a person signs. FRAGMENT-ISSUES row
+# 141.
 #
 #     python mcp/client/heron_bridge_client.py prove \
 #         filter-elements-by-category \
 #         count-elements \
-#         --set categoryName=FILL-IN --set inViewOnly=FILL-IN
+#         --set categories=FILL-IN --set inViewOnly=FILL-IN
 #
 # `write: true` is not typed here by hand - it is the fragment's own `risk:`
 # against the risk run_fragment_write carries in the operation registry, which
@@ -68,7 +60,7 @@ defaults:
   # Only the first step resets the chain - step two consumes what step
   # one left. The order of these two is not interchangeable.
   setup:
-    - select-by-category-name
+    - filter-elements-by-category
     - set-selection
 
   set:
@@ -76,7 +68,7 @@ defaults:
     # number of them - a heavy write on a big selection is not a stronger
     # test, it is a slower one, and a timeout says nothing about the
     # fragment. Rule 1.
-    categoryName: "FILL IN"
+    categories: "FILL IN"
     inViewOnly: "FILL IN"
 
   negative-set:
@@ -84,7 +76,7 @@ defaults:
     # `elements` unbound and the executor refuses, which proves nothing.
     # It must be a category that IS visible in the view named, and one
     # the model genuinely has nothing of for this fragment. Rules 3 and 5.
-    categoryName: "FILL IN"
+    categories: "FILL IN"
     inViewOnly: "FILL IN"
 
 jobs:
@@ -92,18 +84,30 @@ jobs:
     # STEP 1 of 2 in count-elements's plan, which is FILTER_ELEMENTS_BY_CATEGORY
     setup: []          # it needs nothing another fragment provides
     set:
-      category: "FILL IN"   # BuiltInCategory - resolved BY NAME in Revit; a name matching twice is refused
-      levelId:  "FILL IN"   # ElementId
+      category:     "FILL IN"   # BuiltInCategory - resolved BY NAME in Revit; a name matching twice is refused
+      # categories (IList<BuiltInCategory>) comes from the shared arrangement above
+      categoryName: "FILL IN"   # string
+      levelId:      "FILL IN"   # ElementId - the NAME of the thing, never its number - "Level 1" for a levelId. The field's own name says which kind
+      # inViewOnly (View) comes from the shared arrangement above
+      notShowingIn: "FILL IN"   # View - resolved BY NAME in Revit; a name matching twice is refused
+      withoutLevel: "FILL IN"   # bool - true or false
+      cutByView:    "FILL IN"   # bool - true or false
+      includeLinks: "FILL IN"   # bool - true or false
     negative-set:
       # FILL IN. The negative may be driven by the VALUE rather than the
       # selection - a parameter no element carries, a name the model has not
       # got. If it answers anyway it is falling back, and that is a finding.
-      category: "FILL IN"   # BuiltInCategory - resolved BY NAME in Revit; a name matching twice is refused
-      levelId:  "FILL IN"   # ElementId
+      category:     "FILL IN"   # BuiltInCategory - resolved BY NAME in Revit; a name matching twice is refused
+      categoryName: "FILL IN"   # string
+      levelId:      "FILL IN"   # ElementId - the NAME of the thing, never its number - "Level 1" for a levelId. The field's own name says which kind
+      notShowingIn: "FILL IN"   # View - resolved BY NAME in Revit; a name matching twice is refused
+      withoutLevel: "FILL IN"   # bool - true or false
+      cutByView:    "FILL IN"   # bool - true or false
+      includeLinks: "FILL IN"   # bool - true or false
     # expect: names the one result that has to move off zero, and it beats
     # every pattern the runner has. Left off because choosing it is
     # knowledge of the fragment, not of the library. This one declares:
-    # elements
+    # elements, found, findings
 
   - fragment: count-elements
     # STEP 2 of 2 in count-elements's plan, which is COUNT_ELEMENTS

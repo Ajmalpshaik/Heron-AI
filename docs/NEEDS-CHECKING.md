@@ -1670,6 +1670,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pg.md`](needs-checking/group-pg.md)
 
+## Group PH - the skill runner's first runs: a job method's plan run whole, both legs, judged and signed by a person (2026-11-21)
+
+**Its own file:** [`needs-checking/group-ph.md`](needs-checking/group-ph.md)
+
 ## Group PI - CREATE_GRIDS version 4: what was made is said in findings, and refused holds a refusal and nothing else - DRAFT until proved (2026-11-21)
 
 **Its own file:** [`needs-checking/group-pi.md`](needs-checking/group-pi.md)
