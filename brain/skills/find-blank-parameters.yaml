@@ -16,6 +16,14 @@ purpose: >
   A QA sweep: which elements have a parameter attached but empty. The report a
   model gets checked with before it is issued.
 
+  Two reads answer a blank on their own (row 132): CHECK_MODEL_STANDARDS, with
+  the parameters the project requires named, says which elements leave them
+  empty; READ_MEP_SYSTEM says which MEP elements are on no system - the System
+  Name a modeller calls blank. For any other parameter the elements are
+  collected (FILTER_ELEMENTS_BY_CATEGORY), their values read
+  (READ_ELEMENT_PARAMETERS), and DESCRIBE_BLANK_PARAMETERS says which are
+  empty; REPORT_FINDINGS turns the result into the report.
+
 # The words Ajmal actually says, not the words the technique is named after.
 utterances:
   - which ducts have no system name
@@ -36,6 +44,11 @@ needs:
   # FRAGMENT-ISSUES row 116 already named this capability "the right owner it
   # had previously hidden"; the skill had still not claimed it.
   - DESCRIBE_BLANK_PARAMETERS
+  # ADDED 2026-11-21, row 132: the two reads that find a blank on their own,
+  # and the ones this skill's own sentences reach - "check for empty values"
+  # and "which ducts have no system name".
+  - CHECK_MODEL_STANDARDS
+  - READ_MEP_SYSTEM
 
 # What must be true BEFORE it runs, so it fails early with something
 # useful instead of deep inside a transaction (docs/09 s2).
