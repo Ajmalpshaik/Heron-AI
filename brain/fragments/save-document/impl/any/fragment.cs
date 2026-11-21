@@ -3,6 +3,12 @@
 // scope; leaves `saveAsked`, `saveAskedTo`, `closeAsked`, `refused` and
 // `findings`.
 //
+// VERSION 4, 2026-11-21 - A CENTRAL MODEL OPENED DIRECTLY IS REFUSED AS ANOTHER
+// OPEN DOCUMENT TOO (row 5b-1833). Version 3 asked only the model Heron works
+// in whether it is the central model itself; another open document that was one
+// was saved, writing the central file, while the reply said "local copy only".
+// It is refused now in the run, and again by the add-in before it saves.
+//
 // VERSION 3, 2026-11-16 - AND THE DOCUMENT HERON WORKS IN, SAVED BY THE ADD-IN
 // ONCE ITS UNDO ENTRY HAS CLOSED. OPEN-QUESTIONS Q-69, answered by Ajmal PS that
 // day: save after the group closes, from the add-in, only when the modeller
@@ -131,6 +137,41 @@ else
     else if (found.IsReadOnly)
     {
         refused = string.Format("'{0}' is open read-only and cannot be saved", found.Title);
+    }
+    else if (found.IsWorkshared)
+    {
+        // VERSION 4 (row 5b-1833): A CENTRAL MODEL OPENED DIRECTLY IS REFUSED
+        // HERE TOO. Until then only the model Heron works in was asked, so
+        // another open document that was the central model itself was handed
+        // on to be saved - writing the file everybody on the job works from,
+        // under a reply that said "local copy only". The add-in asks again
+        // before it saves (CentralItself).
+        string otherCentral = null;
+        try
+        {
+            var centralPath = found.GetWorksharingCentralModelPath();
+            otherCentral = centralPath == null
+                ? "" : ModelPathUtils.ConvertModelPathToUserVisiblePath(centralPath) ?? "";
+        }
+        catch (Exception) { otherCentral = null; }
+
+        var otherFile = "";
+        try { otherFile = found.PathName ?? ""; }
+        catch (Exception) { otherFile = ""; }
+
+        if (otherCentral == null)
+        {
+            refused = string.Format("'{0}' is workshared and Heron could not tell whether it "
+                + "is the central model itself, so it will not save it", found.Title);
+        }
+        else if (otherCentral.Length > 0
+                 && string.Equals(canonical(otherCentral), canonical(otherFile),
+                                  StringComparison.OrdinalIgnoreCase))
+        {
+            refused = string.Format("'{0}' is the CENTRAL model itself, opened directly: "
+                + "saving it writes the file everybody on the job works from. Open a local "
+                + "copy, or Synchronize with Central yourself - Heron never syncs", found.Title);
+        }
     }
 }
 
