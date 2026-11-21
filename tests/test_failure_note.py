@@ -410,6 +410,26 @@ def wiring():
     check("Heron's failure discipline, for the transactions " in (raw or ""),
           "the binding note names the transactions the fragment opens itself")
 
+    print("\n3e. each failure carries the elements it named to the reply (5b row 1889)")
+    # Read as text: Read(message) calls the Revit API. What HeronFailureNote
+    # then does with the ids is the host's to prove, in section 5 (its 12).
+    # Seen to FAIL on RevitFragment.cs as it stood - the count was read, the
+    # ids were not, and the reply wrote each entry itself.
+    reader = body_of(pre, "static HeronFailureNote.Posted Read(")
+    check(re.search(r"GetFailingElementIds\(\)", reader) is not None
+          and re.search(r"\bforeach\s*\(\s*var\s+(\w+)\s+in\s+ids\s*\)[^}]*\b\1\.ToString\(\)",
+                        reader) is not None,
+          "the preprocessor reads each failing id as Revit prints it, ElementId.ToString()")
+    check(re.search(r"new\s+HeronFailureNote\.Posted\(\s*severity\s*,\s*text\s*,\s*elements\s*,\s*\w+\s*\)",
+                    reader) is not None,
+          "and hands them to the note with the count, not the count alone")
+    check(re.search(r"CouldNotDismiss\([^;]*batch\[i\]\.Ids", pre) is not None,
+          "a warning Revit will not let go of takes its ids to the refusal")
+    check(re.search(r"listed\.Add\(\s*HeronFailureNote\.Listed\(\s*one\s*\)\s*\)", verdict) is not None
+          and "Json.Num(\"elements\"" not in (body_of(raw or "", "string WithVerdict(") or ""),
+          "the reply's warningsDismissed entries are written by HeronFailureNote.Listed, "
+          "the one writer the host runs")
+
     print("\n4. no writer in revit/ opens a transaction without a preprocessor")
     openers = 0
     for path in sources(os.path.join(ROOT, "revit")):

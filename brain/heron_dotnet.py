@@ -167,6 +167,11 @@ PROJECTS = [
     # refused, and what frees it - linked by source like the Keep question.
     # tests/test_model_hold.py builds and runs it.
     "tests/Heron.ModelHold.TestHost/Heron.ModelHold.TestHost.csproj",
+    # A picture's two rules (row 5b-1890) - when a tall one is taken again
+    # fitted on its height, and what reaches out of a family's section box -
+    # linked by source like the failure note; tests/test_picture_fit.py
+    # builds and runs it.
+    "tests/Heron.Picture.TestHost/Heron.Picture.TestHost.csproj",
     # Each changed element's values before and after a write (D-156) - the
     # comparing, linked by source like the change report; tests/test_read_back.py
     # builds and runs it.

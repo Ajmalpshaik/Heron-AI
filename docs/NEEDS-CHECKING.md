@@ -1678,6 +1678,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pl.md`](needs-checking/group-pl.md)
 
+## Group PM - a dismissed warning names its elements, and a picture's longest side is the width asked - BUILT, NOT RUN IN REVIT (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pm.md`](needs-checking/group-pm.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
