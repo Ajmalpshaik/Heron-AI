@@ -45,11 +45,11 @@ source: OFFICIAL
 risk: READ
 
 purpose: >
-  Reports how steep each roof is, as a read only. A roof by footprint is read
-  edge by edge: whether each footprint line defines slope and, where it does,
-  its slope as an angle and as a rise over a run. A roof by extrusion is read
-  from its profile: the angle of each straight line from level. The roofs
-  selected are read, or every roof in the model when none is selected.
+  Reports how steep each roof is, as a read only. Each line of the roof's
+  outline is read for whether it defines slope and, where it does, its angle
+  and its rise over a run; a roof by extrusion is read from its profile, each
+  straight line from level. The roofs selected are read, or every roof in the
+  model when none is selected.
 
 contract:
   needs:
