@@ -344,7 +344,7 @@ def main():
 
     print()
     print("10. A METHOD NEVER SERVES A GAP OR A WAIT A CARD HAS CLOSED")
-    # ROW 5b-1962. The other direction to section 9, held sentence by
+    # ROW 5b-1981. The other direction to section 9, held sentence by
     # sentence rather than by a rule, so that signing a card never turns
     # this red. Each sentence below was served by heron_method after the
     # card beside it had done the job: replace-in-place-family said nothing

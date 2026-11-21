@@ -291,7 +291,7 @@ utterances:
 
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 #
-# THE GUID WRITE IS SET_PARAMETER_VALUES_BY_ID, listed below (row 5b-1962).
+# THE GUID WRITE IS SET_PARAMETER_VALUES_BY_ID, listed below (row 5b-1981).
 # Until 2026-11-21 this comment said a GUID write was a gap left out of these
 # needs on purpose, and step 7 said nothing provides it, while that card had
 # taken "Name {GUID}" since its version 6 of 2026-10-28 (row 5b-1344).
@@ -355,7 +355,7 @@ note: >
   because PLACE_FAMILY_INSTANCES stood the new one at the wrong height. Its
   lessons are in steps 2, 6, 9 and 10. Since the first version, tags are
   COPY_TAGS_TO_REPLACEMENTS and steps 1 and 8 are REPORT_PARAMETER_INVENTORY,
-  and step 7 writes by GUID through SET_PARAMETER_VALUES_BY_ID (row 5b-1962).
+  and step 7 writes by GUID through SET_PARAMETER_VALUES_BY_ID (row 5b-1981).
   Neither swap has been watched working
   through this method, so it stays DRAFT (D-30); its proof plan is Group GC of
   docs/NEEDS-CHECKING.md, on a NEW project.

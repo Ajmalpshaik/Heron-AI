@@ -28,7 +28,7 @@ its old one's workset, copies the tags with `COPY_TAGS_TO_REPLACEMENTS`, and nam
 delete takes before asking for it. **The GUID write was written as a gap** on 2026-10-17, from
 `SET_PARAMETER_VALUES_BY_ID` version 2, which found a parameter by name only. Its version 6 (2026-10-28,
 row 5b-1344) takes `"<name> {<its GUID>}"`, and step 7 of the method writes by it since 2026-11-21
-([row 5b-1962](../fragment-issues/row-5b-1962.md)) - not yet run in Revit through this method.
+([row 5b-1981](../fragment-issues/row-5b-1981.md)) - not yet run in Revit through this method.
 
 **What is measured and what is not run.** The method validates (`python brain/heron_skill.py`); every
 capability it names has a provider; which methods `heron_lookup` names beside every declared sentence and the routing phrase lists was
