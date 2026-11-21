@@ -291,6 +291,112 @@ def arrived_unusable():
           "is not listed as a live Revit")
 
 
+def lost_after_sent():
+    """
+    A READ WHOSE ANSWER WAS LOST AFTER IT WAS SENT IS TOLD APART FROM A REVIT
+    NEVER REACHED (FRAGMENT-ISSUES 5b-1167, part (b)). Both came back None
+    from the client until 2026-11-21, so nothing after it could say whether
+    the request had left. Asked of the client's own `request` with only the
+    pipe replaced, then of the classification.
+    """
+    print()
+    print("A read sent whose answer never came, and a Revit never reached (5b-1167 b)")
+    import heron_bridge_client as bridge
+
+    class StandIn(bridge.Bridge):
+        def __init__(self, *pipes):
+            super(StandIn, self).__init__(
+                {"pid": 4243, "pipeName": "heron-5b-1167b", "revitVersion": "2024",
+                 "protocolVersion": bridge.PROTOCOL_VERSION, "token": "stand-in"}, None)
+            self.pipes = list(pipes)
+
+        def _connect(self, timeout):
+            self._wrong_server = None
+            return self.pipes.pop(0) if self.pipes else None
+
+    def error_of(reply):
+        return reply.get("error") if isinstance(reply, dict) else None
+
+    attempts = getattr(bridge, "RETRY_ATTEMPTS", 3)
+
+    # Every attempt is written and the far end closes without a word.
+    pipe = _Pipe()
+    reply = StandIn(*([pipe] * attempts)).request("run_fragment_read", response_timeout=2.0)
+    check(error_of(reply) == "answer_lost",
+          "a READ that was sent and whose answer never came is NOT None, the same as a "
+          "Revit never reached - it has a code of its own: %r" % (reply,))
+    check(len(pipe.sent) == attempts,
+          "and what a read resends is unchanged: sent %d time(s), as before (found %d)"
+          % (attempts, len(pipe.sent)))
+    message = (reply.get("message") or "") if isinstance(reply, dict) else ""
+    check("reached Revit" in message and "not known" in message
+          and "pipe" not in message.lower() and "costs nothing" not in message,
+          "its sentence says the request reached Revit and whether it ran is not known - "
+          "never 'pipe', never 'costs nothing': %s" % message[:160])
+    check(("%d time" % attempts) in message,
+          "and how many times it was sent, since the client resends a read: %s"
+          % message[:160])
+
+    # Sent once and lost, then the second and third attempts never connect.
+    pipe = _Pipe()
+    reply = StandIn(pipe).request("run_fragment_read", response_timeout=2.0)
+    check(error_of(reply) == "answer_lost" and len(pipe.sent) == 1,
+          "one attempt that left and lost its answer is enough - the later ones that "
+          "never connected do not turn it back into 'never reached': %r" % (reply,))
+
+    # Never reached: no attempt opened anything, so nothing was sent.
+    nothing = StandIn().request("run_fragment_read", response_timeout=2.0)
+    check(nothing is None,
+          "a Revit never reached - no attempt opened anything - is still None: %r"
+          % (nothing,))
+
+    # A write is unchanged: one send, and `unknown_outcome` at once.
+    pipe = _Pipe()
+    wrote = StandIn(pipe).request("run_fragment_write", response_timeout=2.0,
+                                  idempotent=False)
+    check(error_of(wrote) == "unknown_outcome" and len(pipe.sent) == 1,
+          "a CHANGE whose answer was lost is still `unknown_outcome`, sent once: %r"
+          % (wrote,))
+
+    print()
+    print("  and the classification says only what is known")
+    lost = analyse({"ok": False, "error": "answer_lost", "message": message}, writes=False)
+    check(lost is not None and lost.code == "answer_lost" and lost.outcome == fa.UNKNOWN
+          and lost.touched_the_model is None,
+          "a lost read answer is an UNKNOWN outcome - it reached Revit and may have "
+          "run: %r" % (lost,))
+    check(lost is not None and lost.may_retry is True,
+          "and a READ may still be asked again, as nothing coming back is (row 5b-1560)")
+    said = explain(lost) or ""
+    check("never ran" not in said.lower() and "costs nothing" not in said,
+          "never told 'never ran' or 'costs nothing': %s" % said[:160])
+    wrote = analyse({"ok": False, "error": "answer_lost"}, writes=True)
+    check(wrote is not None and wrote.outcome == fa.UNKNOWN
+          and wrote.next_step == fa.LOOK_AT_THE_MODEL,
+          "and on a door that can change the model it is a person looking at the model, "
+          "never a retry: %r" % (wrote,))
+    recognised = getattr(fa, "recognised", None)
+    check(recognised is not None and recognised("answer_lost"),
+          "the outcome line recognises it, so it is not OUTCOME UNKNOWN by default only")
+    check("answer_lost" not in fa._KNOWN
+          and "answer_lost" not in (getattr(fa, "_ARRIVED_UNUSABLE", None) or {}),
+          "the client's own code, in neither _KNOWN (the add-in's) nor the table of "
+          "answers that arrived - nothing arrived")
+    could_read = getattr(bridge, "could_read", None)
+    check(could_read is not None
+          and not could_read({"ok": False, "error": "answer_lost", "message": "x"}),
+          "and discovery does not take it for an answer")
+
+    source = io.open(os.path.join(ROOT, "mcp", "client", "heron_bridge_client.py"),
+                     encoding="utf-8").read()
+    body = source[source.find("    def request(self, op"):]
+    body = body[:body.find("\n    def ", 10)]
+    check("For a read, asking again costs nothing" not in body
+          and "None if unreachable." not in body,
+          "and `request` no longer says a lost read 'costs nothing', nor that None means "
+          "only 'unreachable' without saying what else it never means")
+
+
 def core_pieces():
     """
     The pieces of heron_server_core.py the outcome line's rollback words are
@@ -768,6 +874,7 @@ def main():
           % ("" if not doubled else " - TWICE: " + ", ".join(doubled)))
 
     arrived_unusable()
+    lost_after_sent()
     beside_the_code()
     outside_stands()
 

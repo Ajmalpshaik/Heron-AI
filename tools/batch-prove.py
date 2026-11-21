@@ -228,6 +228,12 @@ POSITIVE_UNREADABLE = "POSITIVE UNREADABLE"
 NO_NEGATIVE = "NO NEGATIVE"
 NEG_NOT_EMPTY = "NEG NOT EMPTY"
 
+# A LEG REVIT NEVER ANSWERED - `no_reply`, which the proving client writes for
+# a Revit never reached, and the client's own `answer_lost` for a read that was
+# sent and whose answer never came (row 5b-1167 (b), 2026-11-21; it was None,
+# and so `no_reply`, until then). The same event to a batch: a TIMEOUT.
+NO_ANSWER = ("no_reply", "answer_lost")
+
 # What a person should do about each, in the order the report prints them.
 MEANING = {
     PASS: "both halves held. A draft is waiting for a person to read",
@@ -786,7 +792,7 @@ def judge(record, frag, expect=None):
 
     if not positive or not positive.get("ok"):
         why = HV.phase_failure(positive)
-        if positive and positive.get("error") == "no_reply":
+        if positive and positive.get("error") in NO_ANSWER:
             return TIMEOUT, why
         return DID_NOT_RUN, why
 
@@ -825,7 +831,7 @@ def judge(record, frag, expect=None):
 
     if not negative or not negative.get("ok"):
         why = HV.phase_failure(negative)
-        if negative and negative.get("error") == "no_reply":
+        if negative and negative.get("error") in NO_ANSWER:
             return TIMEOUT, why
         if verdict is not None:
             return verdict, "%s; and the negative did not run - %s" % (reason, why)

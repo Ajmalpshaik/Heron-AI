@@ -585,10 +585,25 @@ _ARRIVED_UNUSABLE = {
 }
 
 
+# A READ THAT WAS SENT AND WHOSE ANSWER NEVER CAME - row 5b-1167 (b).
+#
+# The bridge CLIENT's own code (heron_bridge_client.lost_reply), and nothing
+# arrived, so it is in neither table above. Until 2026-11-21 it came back None,
+# the same as a Revit never reached. It reached Revit and may have run, so it
+# is not known; asking again stays allowed for a read, exactly as for nothing
+# coming back (row 5b-1560) - RETRY is about whether asking again is safe, not
+# about whether it ran. A door that can change the model never asks again on
+# its own: there it is a person looking at the model. Read in `analyse`, which
+# knows `writes`; a table row can only say one of the two.
+ANSWER_LOST = "answer_lost"
+_ANSWER_LOST_REASON = ("the request reached Revit and no answer came back, so whether it "
+                       "ran is not known from here")
+
+
 def recognised(code):
     """
     Whether this file has a row for `code` - the add-in's table or the
-    client's two. Asked by the outcome line (heron_server_core, row 5b-1159),
+    client's own three. Asked by the outcome line (heron_server_core, row 5b-1159),
     which says OUTCOME UNKNOWN of every code that has none.
 
     `analyse` filed such a code on a read under "refused" until 2026-11-19;
@@ -597,7 +612,7 @@ def recognised(code):
     the foot of the table), and the bridge raises it after the job may have
     run. The line still asks THIS, so the two cannot drift apart.
     """
-    return code in _KNOWN or code in _ARRIVED_UNUSABLE
+    return code in _KNOWN or code in _ARRIVED_UNUSABLE or code == ANSWER_LOST
 
 
 def analyse(reply, writes=False):
@@ -659,6 +674,10 @@ def analyse(reply, writes=False):
 
     code = reply.get("error") or "unspecified"
     message = reply.get("message")
+
+    if code == ANSWER_LOST:
+        return Failure(code, UNKNOWN, LOOK_AT_THE_MODEL if writes else RETRY,
+                       _ANSWER_LOST_REASON, message)
 
     known = _KNOWN.get(code) or _ARRIVED_UNUSABLE.get(code)
     if known is not None:

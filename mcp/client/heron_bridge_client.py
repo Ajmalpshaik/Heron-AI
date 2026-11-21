@@ -498,11 +498,41 @@ def unreadable_reply(size):
                         % (size, "" if size == 1 else "s"))}
 
 
+def lost_reply(sent):
+    """
+    The answer `request` gives for a READ that was sent and whose answer never
+    came - after it has been sent `sent` times (FRAGMENT-ISSUES 5b-1167 (b)).
+
+    Until 2026-11-21 this came back None, the same as a Revit never reached,
+    so nothing after the client could tell "nothing left this machine" from
+    "it left, and may have run". It has a code of its own now; None means
+    only that no attempt was ever sent. heron_failure reads it as an unknown
+    outcome that a read may still ask again (row 5b-1560): asking again is
+    about whether that is safe, not about whether it ran.
+
+    IT SAYS ONLY WHAT IS KNOWN, and no "pipe" - to an MEP modeller that is in
+    the model. What a change gets in the same place is `unknown_outcome`,
+    unchanged.
+    """
+    return {"ok": False, "error": "answer_lost",
+            "message": ("The request reached Revit - it was sent %d time%s - and no "
+                        "answer came back, so whether it ran is not known from here. It "
+                        "only reads, so it may be asked again; if Revit is busy, wait "
+                        "for it first."
+                        % (sent, "" if sent == 1 else "s"))}
+
+
+#: The answers `request` writes ITSELF, in place of one it could not use or
+#: never got. None of them is something Revit said.
+CLIENT_CODES = ("reply_unreadable", "reply_too_large", "answer_lost")
+
+
 def could_read(reply):
     """
     True when `reply` is an answer Heron could read - anything `request`
-    parsed, a refusal included. False for None, and for the two answers this
-    client writes itself in place of one that arrived unusable.
+    parsed, a refusal included. False for None, and for the answers this
+    client writes itself in place of one that arrived unusable or never
+    arrived (CLIENT_CODES).
 
     FOR `discover`, WHICH ASKS "DID IT ANSWER?" OF A PING. An unreadable
     reply used to be None there, so a pipe answering something that is not
@@ -512,8 +542,7 @@ def could_read(reply):
     """
     if reply is None:
         return False
-    return not (isinstance(reply, dict)
-                and reply.get("error") in ("reply_unreadable", "reply_too_large"))
+    return not (isinstance(reply, dict) and reply.get("error") in CLIENT_CODES)
 
 
 #: HOW OFTEN A CALLER WAITING ON REVIT IS TOLD THE WAIT GOES ON. A reply can
@@ -747,9 +776,12 @@ class Bridge(object):
     def request(self, op, timeout=CONNECT_TIMEOUT_S, response_timeout=RESPONSE_TIMEOUT_S,
                 op_args=None, idempotent=True, on_wait=None):
         """
-        Send one request, return the parsed response. None if unreachable.
-        An answer that arrived and could not be used is NOT None (5b-1167): it
-        is `unreadable_reply` or `too_large_reply`, each with a code of its own.
+        Send one request, return the parsed response. None ONLY when no attempt
+        was ever sent - Revit was never reached. An answer that arrived and
+        could not be used is NOT None (5b-1167): it is `unreadable_reply` or
+        `too_large_reply`, each with a code of its own. Nor is a read that was
+        sent and whose answer never came (5b-1167 (b)): that is `lost_reply`,
+        `answer_lost`, and a change in the same place is `unknown_outcome`.
 
         The connection is kept and reused. The bridge hands the session to
         whichever connection is newest, so a client that reconnects for every
@@ -763,8 +795,11 @@ class Bridge(object):
         so it can always be sent again. An answer that is lost AFTER the request
         was sent is a different thing entirely: whether Revit ran it is unknown.
 
-        Everything up to Step 5 only reads, so asking twice costs nothing and
-        `idempotent` defaults to True. Step 6 writes MUST pass False - repeating
+        Everything up to Step 5 only reads, so asking twice changes nothing in
+        the model and `idempotent` defaults to True - though a read that ran
+        may still have used up what the chain carried (row 5b-273), which is
+        why a read whose every answer was lost says it was sent rather than
+        coming back None. Step 6 writes MUST pass False - repeating
         a move because the answer went missing would move the same ducts twice,
         and "it looked like it failed" is exactly how that happens.
 
@@ -796,6 +831,11 @@ class Bridge(object):
         payload = (json.dumps(body) + "\n").encode("utf-8")
         if op not in _HOLDS_NOTHING and self.pid is not None:
             _ASKED[self.pid] = self
+
+        # HOW MANY ATTEMPTS LEFT THIS MACHINE AND LOST THEIR ANSWER (5b-1167
+        # (b)). One is enough to make "never reached" untrue, whatever the
+        # later attempts did.
+        sent_and_lost = 0
 
         for attempt in range(1, RETRY_ATTEMPTS + 1):
             if attempt > 1:
@@ -830,17 +870,19 @@ class Bridge(object):
                 # ran it is unknown, and no amount of looking from here can
                 # settle that.
                 #
-                # For a read, asking again costs nothing. For a write it could
-                # do the work twice - move the same ducts 200 mm up, twice -
-                # and "it looked like it failed" is exactly how that happens.
-                # So retrying past this point is the CALLER's decision, and the
-                # default for anything that changes a model must be False.
+                # A read is sent again: a second run changes nothing in the
+                # model. For a write it could do the work twice - move the
+                # same ducts 200 mm up, twice - and "it looked like it failed"
+                # is exactly how that happens. So retrying past this point is
+                # the CALLER's decision, and the default for anything that
+                # changes a model must be False.
                 if not idempotent:
                     return {"ok": False, "error": "unknown_outcome",
                             "message": ("The request reached Revit but the answer was lost, so "
                                         "Heron cannot tell whether it ran. Check the model "
                                         "before trying again - repeating it could do the work "
                                         "twice.")}
+                sent_and_lost += 1
                 continue
 
             if isinstance(line, _OverLimit):
@@ -861,6 +903,10 @@ class Bridge(object):
                 # came back", and this did - so the request reached Revit.
                 return unreadable_reply(len(line))
 
+        # A READ THAT LEFT AND NEVER GOT ITS ANSWER IS NOT "NEVER REACHED"
+        # (5b-1167 (b)) - that is what None says, and only what it says now.
+        if sent_and_lost:
+            return lost_reply(sent_and_lost)
         return None
 
 
