@@ -1670,6 +1670,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pg.md`](needs-checking/group-pg.md)
 
+## Group PK - eight reading tools count what they pass over (D-64, work-note item WN-7) - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pk.md`](needs-checking/group-pk.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

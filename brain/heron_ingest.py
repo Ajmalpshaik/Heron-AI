@@ -1965,8 +1965,8 @@ def _main(argv):
                                          SCOPE.in_plain_words(scope, project)))
         # R-70. Said while the number is small, so the day it approaches the
         # ceiling is a day somebody NOTICES rather than a day search gets slow.
-        print("  D-23's sqlite-vec brute-force search stays fast below roughly")
-        print("  500,000 vectors. Nothing here is close to it.")
+        print("  Every vector is compared in plain Python, one by one (D-194);")
+        print("  a search measured too slow on a real scope is what changes that.")
         if refused and not ingested_any:
             print("  NOTHING was ingested: every file given was refused. That "
                   "is a complete answer, and the exit code says so.")

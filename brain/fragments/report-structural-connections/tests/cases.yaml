@@ -41,6 +41,12 @@ positive:
     expect: >
       connectionCount 1 - CN2, with C2 as what it joins
 
+  - given: >
+      VERSION 2. nothing selected, show left out
+    expect: >
+      the version 1 answer unchanged, unresolvedConnections 0, and no
+      passed-over sentence
+
 negative:
   - given: W1 selected - a structural wall no connection joins
     expect: >
@@ -58,6 +64,13 @@ negative:
     expect: >
       NOTHING IN THE MODEL CHANGES - no transaction opened; every connection's
       Properties the same before and after
+
+  - given: >
+      VERSION 2, NEGATIVE. W1 selected again
+    expect: >
+      unresolvedConnections 0 on this arrangement - CN1 and CN2 each say what
+      they join - and so no "would not say what they join" sentence; findings
+      otherwise as version 1's
 
 second_route:
   - >

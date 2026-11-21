@@ -6,10 +6,38 @@ positive:
       notByHost 2 - Level 1 naming the link's view it shows, Level 2 Custom -
       and every other view counted By Host View
 
+  - given: >
+      VERSION 2. the positive model above
+    expect: >
+      the same two views listed as version 1 lists them, and no passed-over
+      sentence, because the answer lists views. "N are By Host View" now
+      counts the pairs whose instance has no override of its own too - version
+      1 left them out, so its N was smaller. skippedPairs 0 expected: write it
+      down
+
+  - given: >
+      VERSION 2. the same model, the Level 3 plan's Revit Links tab with the
+      link's FILE row (not the instance under it) set By Linked View, if the
+      tab lets the two be set apart
+    expect: >
+      Level 3 listed By Linked View, read from the link type's settings -
+      version 1 did not list it. Record whether the tab let the two rows be
+      set apart; if it did not, this case is not asked
+
 negative:
   - given: linkName "No Such Link"
     expect: >
       linkCount 0, usage empty, findings naming it
+
+  - given: >
+      VERSION 2, NEGATIVE. the same model with every view By Host View, so the
+      answer is empty
+    expect: >
+      notByHost 0, usage empty, skippedPairs 0 and NO passed-over sentence -
+      an instance with no override of its own is read through its type, never
+      counted as passed over; "0 view-and-link pair(s) are By Linked View or
+      Custom; N are By Host View" with N every pair read. A sentence here, or
+      skippedPairs above 0, is written down with the views it came from
 
 second_route:
   - Visibility/Graphics > Revit Links in each listed view, read beside it
