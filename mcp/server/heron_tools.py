@@ -605,7 +605,20 @@ STATES_OUTCOME = ("revit_change", "revit_read", "revit_show", "revit_undo_last",
                   # And revit_offer_settings: a refusal REFUSED, no capability by
                   # that name NOT RUN, a table offered ANSWERED - nothing is sent
                   # to Revit from it.
-                  "revit_offer_settings")
+                  "revit_offer_settings",
+                  # THE TOOLS THAT OPEN A COMPANION PANEL, AND heron_checklist
+                  # (row 5b-1563's last part, 2026-11-21): a panel opened is
+                  # ANSWERED; a read that did not answer is the read's own word;
+                  # an answer from another model or the Companion switched off
+                  # REFUSED; Heron's working stopped after a good read NOT
+                  # ANSWERED. A checklist run says its checks' word.
+                  "revit_edit_table", "revit_building_loads",
+                  "revit_sprinkler_hydraulics", "revit_sprinkler_layout",
+                  "revit_model_dashboard", "heron_checklist",
+                  # AND THE THREE ROW 5b-1563 NEVER LISTED (row 5b-1945): a
+                  # report or a choice made ANSWERED, nowhere to send it NOT RUN;
+                  # revit_links ends as the inventory reads do.
+                  "revit_health", "revit_links", "revit_use_session")
 
 
 class NotDeclared(Exception):

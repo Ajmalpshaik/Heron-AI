@@ -1124,8 +1124,13 @@ read as success, and *"never ran"* said of an answer that was lost.
   2026-11-20 the inventory reads, the single-purpose tools and `revit_offer_settings` say it too**, each
   return read against the table: a good reply `ANSWERED`, no Revit to ask `NOT RUN`, an answer from
   another model withheld `REFUSED`, a selection or an isolate already made there `OUTCOME UNKNOWN`.
-  `revit_view_image` answers with a picture, so no line carries its word; `heron_checklist` and the
-  Companion's panels have not joined yet. **A saved
+  `revit_view_image` answers with a picture, so no line carries its word. **Since 2026-11-21 the tools
+  that open a Companion panel and `heron_checklist` say it too**: a panel opened `ANSWERED`, a read that
+  did not answer its own word, an answer from another model or the Companion switched off `REFUSED`,
+  Heron's own working stopped after a good read `NOT ANSWERED`; a checklist run `ANSWERED` when any
+  check answered, and otherwise its checks' word. And `revit_health`, `revit_links` and
+  `revit_use_session` the same day ([row 5b-1945](fragment-issues/row-5b-1945.md)): a report or a
+  choice made `ANSWERED`, nowhere to send it `NOT RUN`. **A saved
   command run from Revit's Commands panel carries the same line**, set by the same function from the
   door's own word (`heron_command_run.py`, issue [#1043](https://github.com/Ajmalpshaik/Heron-AI/issues/1043) - not yet run in Revit). And a change Revit kept in
   which nothing changed closes on its word, never on the add-in's *"was KEPT"*. The line is `outcome: `, a
@@ -1256,9 +1261,9 @@ has met a real Revit**: which reply the add-in sends for each ending is the C#'s
   real Revit to show it. Until then the line says what a chat can do: not send it again, and ask the
   modeller what Revit shows. A fragment that never ends is stopped by its own run clock
   ([D-129](DECISIONS.md#d-129--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again)).
-- **Only the three doors, and `revit_undo_last`.** Every other tool that says `_ended` —
-  `revit_apply_move`, the inventory reads, the Companion's panels — still answers in prose alone: each
-  one's "ok" is a different fact, and a tool joins when its returns have been read against the table
+- **Only the tools on `heron_tools.STATES_OUTCOME`.** Since 2026-11-21 every tool that says `_ended`
+  is on it but `revit_view_image`, which answers with a picture. A tool joins when its returns have
+  been read against the table, because each one's "ok" is a different fact
   ([row 5b-1563](fragment-issues/section-5b-rows-1551-1575.md)). `revit_undo_last` joined that way on
   2026-11-12 ([row 5b-1610](fragment-issues/row-5b-1610.md)): Undo sent is `STILL RUNNING`, never
   `KEPT`; each refusal `REFUSED`, a chat pinned to no model among them; no session, or an add-in

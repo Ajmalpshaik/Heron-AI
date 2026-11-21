@@ -114,6 +114,17 @@ def _brain():
     return SCOPE, CAP, SKILL, SEARCH, EMBED, RETRIEVE
 
 
+def order_providers(rows):
+    """
+    Several cards that provide one capability, in the order `resolve` chooses
+    them - brain/heron_capability.py `order_providers`, asked, never typed
+    again here (row 5b-1131). Each row: "status", "id", "folder" (the card's
+    folder, whose `version:` is read). Raises BrainUnavailable.
+    """
+    _scope, cap, _skill, _search, _embed, _retrieve = _brain()
+    return cap.order_providers(rows)
+
+
 class _NoAudit(object):
     """What the brain records when heron_audit cannot be imported at all.
 

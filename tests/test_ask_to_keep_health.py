@@ -395,8 +395,11 @@ def health_asks_every_revit():
           "both branches, and before the session is closed")
     check("asks_before_keeping" not in health,
           "and never from the server's own copy of the settings file (Q-70)")
-    check("revit_health" not in TOOLS.STATES_OUTCOME,
-          "revit_health is still not a door: it carries no outcome line")
+    # Held "revit_health is still not a door" until 2026-11-21, when it joined
+    # the tools that say an outcome word (row 5b-1945) - not a door, but its
+    # report is ANSWERED, as an inventory read's is.
+    check("revit_health" in TOOLS.STATES_OUTCOME,
+          "revit_health says how it ended in a word, its report ANSWERED (row 5b-1945)")
 
 
 def main():
