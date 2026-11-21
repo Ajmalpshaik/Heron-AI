@@ -978,6 +978,52 @@ def exercise_no_proof_words(module):
           "a proof the code DID move under is still said as that, in all three")
 
 
+def exercise_held_words(module):
+    """A card HELD at DRAFT on purpose is said as held, with its own reason,
+    in the two places beside revit_change that word a DRAFT - row 5b-1960,
+    issue #1209.
+
+    The line under a read's answer and a QA checklist's check both said
+    "no recorded proof ... stands behind it" for every DRAFT, which is untrue
+    of a held card whose proof still matches its code. Nothing is sent: each
+    is asked for its sentence, with a real PROVEN read's status stood in for
+    as DRAFT with a hold.
+    """
+    print()
+    print("  a card held at DRAFT on purpose is said as held, with its reason "
+          "(row 5b-1960)")
+    capability, folder = first_with("READ", "PROVEN")
+    check(bool(capability and folder), "the library has a PROVEN read to ask about")
+    if not (capability and folder):
+        return
+    why = "waiting on NEEDS-CHECKING Group PJ's one run"
+
+    def held(found):
+        return dict(found or {}, status="DRAFT", stale=False, proof=True,
+                    proof_held=why)
+
+    real_status, real_of = module.brain.proof_status, module.bridge.proof_of
+    try:
+        module.brain.proof_status = lambda f: held(real_status(f))
+        module.bridge.proof_of = lambda f: held(real_of(f))
+        ask, _first = module._checklist_ask()
+        line = module._proof_line(capability, folder) or ""
+        qa = ask({"capability": capability}) or {}
+    finally:
+        module.brain.proof_status, module.bridge.proof_of = real_status, real_of
+
+    check("held" in line and why in line and "no recorded proof" not in line,
+          "the line under an answer says held, with the reason, and not that no "
+          "proof stands behind it: %s" % line)
+    check("Treat this answer as a claim" in line,
+          "and still says to treat the answer as a claim - it is not PROVEN")
+    reason = qa.get("why") or ""
+    check(qa.get("ran") is False and "held" in reason and why in reason
+          and "no recorded proof" not in reason,
+          "a QA check on it is still not run, and says held, with the reason: %s"
+          % (reason or qa))
+
+
 def exercise_words_on_this_card(module):
     """The words path runs a capability unasked only when THIS checkout's own
     card declares the words - row 131. The identity table that matched them is
@@ -2146,6 +2192,24 @@ async def exercise_activity(module):
         check(draft in said and "DRAFT" in said and "Article 11" in said
               and "Nothing was sent to Revit" in said,
               "and the reply names it, its status and the Article")
+        # A DRAFT HELD ON PURPOSE is refused as held (row 5b-1960): its proof
+        # stands, so "no recorded proof stands behind its code" is untrue.
+        real_status = module.brain.proof_status
+        module.brain.proof_status = lambda folder: dict(
+            real_status(folder) or {}, status="DRAFT", stale=False, proof=True,
+            proof_held="waiting on Group PJ's one run")
+        try:
+            revit.asked[:] = []
+            got = await ended("revit_change", {"capability": writer})
+            said = module.revit_change(capability=writer)
+        finally:
+            module.brain.proof_status = real_status
+        check(got == ["refused"] and not revit.asked
+              and "held" in said and "waiting on Group PJ's one run" in said
+              and "no recorded proof stands behind" not in said,
+              "a card held at DRAFT on purpose (%s stood in) is refused as held, "
+              "quoting its reason - found %r, %d request(s)"
+              % (writer, got, len(revit.asked)))
         real_status = module.brain.proof_status
         module.brain.proof_status = lambda folder: dict(real_status(folder) or {},
                                                         stale=True)
@@ -4387,6 +4451,7 @@ def main():
         asyncio.run(exercise(server))
         exercise_waiting(server_module)
         exercise_no_proof_words(server_module)
+        exercise_held_words(server_module)
         exercise_words_on_this_card(server_module)
         exercise_served_from(server_module)
         asyncio.run(exercise_door(server_module))
