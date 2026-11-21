@@ -1872,11 +1872,24 @@ def _by_words(request, door, values):
     # have answered was lost: on Villa 1, "read parameter values of the
     # elements" ranked SET_PARAMETER_VALUES_BY_ID first and READ_ELEMENT_TABLE
     # second. Leaving the writes out BEFORE ranking is D-128 as heron_lookup
-    # has it. Only this door: revit_change is for changes, and revit_show is
-    # outside what the report asked for.
+    # has it. revit_change is for changes, so it ranks everything.
+    #
+    # AND THE SHOW DOOR LOOKS ITS WORDS UP UNDER ITS OWN CEILING (row 5b-1951,
+    # issue #1176). It runs nothing above its declared risk (door_refusal),
+    # yet ranked with every write in the list: on the owner's PC "select the
+    # level named Level 2" came back with CREATE_TRUSS first and four more
+    # MODIFY cards - all five refused by the door that offered them, and the
+    # find-then-select cards not among them. The ceiling is the door's own,
+    # read from the registry (Golden Rule 19), never typed here.
     question = door == "revit_read"
+    ceiling = (tools.NAMES[tools.risk_of(door)] if door == "revit_show"
+               else None)
     try:
-        found = brain.lookup(request, revit=revit, question=question)
+        if ceiling:
+            found = brain.lookup(request, revit=revit, question=question,
+                                 ceiling=ceiling)
+        else:
+            found = brain.lookup(request, revit=revit, question=question)
     except brain.BrainUnavailable as why:
         # NOTHING WAS SENT: the words were never looked up, so no door ran.
         _outcome(NOT_RUN)
@@ -1890,13 +1903,22 @@ def _by_words(request, door, values):
                  "%s) were not offered (D-128). For a change, use "
                  "revit_change." % (found.get("left_out") or 0,
                                     found.get("ceiling"))]
+    elif ceiling and found.get("ceiling") == ceiling:
+        asked = ["  Looked up for %s, which runs nothing above %s, so the %d "
+                 "fragments declared above it were not offered (D-128 item 4, "
+                 "row 5b-1951). For a change, use revit_change."
+                 % (door, ceiling, found.get("left_out") or 0)]
 
     capability = found.get("capability")
     if not capability:
-        first = ("Heron has no way of doing \"%s\"" % request
-                 if not found.get("question") else
-                 "Nothing in Heron that leaves the model unchanged matches "
-                 "\"%s\"" % request)
+        if found.get("question"):
+            first = ("Nothing in Heron that leaves the model unchanged matches "
+                     "\"%s\"" % request)
+        elif asked:
+            first = ("Nothing in Heron that %s runs matches \"%s\""
+                     % (door, request))
+        else:
+            first = "Heron has no way of doing \"%s\"" % request
         return None, _ended("handed_back", "\n".join(
             [first + ", so nothing has been sent to Revit. Run "
              "heron_capabilities to see what it does know."]
@@ -1945,8 +1967,20 @@ def _by_words(request, door, values):
     # such line is marked, and the closing sentence names both doors.
     elsewhere = []
 
+    #
+    # AND THE READ DOOR'S LIST CAN HOLD A SHOW (row 5b-1961). A question keeps
+    # EXECUTE in its ranking (D-128 item 3: selecting and zooming stay), and
+    # revit_read runs nothing above ANALYZE - so "put Level 2 in the
+    # selection" handed back SET_SELECTION first and said "call revit_read
+    # again", the one call that refuses it. Such a card is marked with the
+    # door that runs it, asked of `_lookup_door`, never typed here; only when
+    # that door is revit_show, the one D-128's ceiling lets in.
     def marked(name, risk):
         runs = _door_that_runs(door, risk, name)
+        if (runs == door and door == "revit_read"
+                and tools.door_refusal(door, risk, name)
+                and _lookup_door(risk, name, folders.get(name)) == "revit_show"):
+            runs = "revit_show"
         if runs == door:
             return ""
         elsewhere.append(name)
@@ -1996,7 +2030,13 @@ def _by_words(request, door, values):
     lines.append("  A NEWLINE separates one value from the next. A SEMICOLON "
                  "does not - it belongs to the value it sits inside.")
     lines.append("")
-    if elsewhere:
+    if elsewhere and door == "revit_read":
+        lines.append("  If one of these is what the user meant, call the door that "
+                     "runs it with capability=<it> and its values: revit_show for "
+                     "one marked so above - %s runs nothing above %s - and %s "
+                     "again for any other. If none is, ask the user."
+                     % (door, tools.NAMES[tools.risk_of(door)], door))
+    elif elsewhere:
         lines.append("  If one of these is what the user meant, call the door that "
                      "runs it with capability=<it> and its values: revit_read for "
                      "one marked so above - %s does not run a capability that only "
@@ -3561,6 +3601,15 @@ def _proof_line(capability, folder):
                 "the same as unproven, and not the same as proven." % capability)
 
     status = found["status"] or "not stated"
+    held = bridge.held_reason(found)
+    if status not in ("PROVEN", "PRODUCTION") and held:
+        # Row 5b-1960: a card held at DRAFT on purpose may have a proof that
+        # still matches its code, so "no recorded proof stands behind it" is
+        # untrue of it. Its own reason, and its proof as it stands.
+        return ("'%s' is %s, held there on purpose: \"%s\". %s It is not PROVEN. "
+                "Treat this answer as a claim, and check it against the model "
+                "before relying on it." % (capability, status, held,
+                                           bridge.held_proof(found)))
     if status not in ("PROVEN", "PRODUCTION"):
         return ("'%s' is %s - no recorded proof with a negative case stands behind "
                 "it. Treat this answer as a claim, and check it against the model "
@@ -3883,7 +3932,9 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     #   - THE SHORT PATH is revit_read's: the user's own words as `request`
     #     with `capability` empty run a phrasing a PROVEN capability declares,
     #     every value given, in this call; anything else sends nothing and
-    #     hands back the candidates (_by_words).
+    #     hands back the candidates (_by_words) - looked up under this door's
+    #     own ceiling, EXECUTE, so none of them is a card it refuses (row
+    #     5b-1951).
     #   - `values` is one "name=value" per line, e.g. show=true.
     #   - `expect_from` names the fragment whose result this acts on, and the
     #     carried elements are checked to be THAT fragment's, as revit_change
@@ -7564,6 +7615,15 @@ def _checklist_ask(origin="chat", ctx=None):
             return ended("refused", {"ran": False, "why": "How far %s is proven could not be read, "
                                                         "so nothing was sent - could not tell is "
                                                         "not PROVEN." % capability})
+        held = bridge.held_reason(proof)
+        if proof.get("status") not in bridge.KEEPABLE_STATUSES and held:
+            # Row 5b-1960: held at DRAFT on purpose - said as held, not as unproved.
+            return ended("refused", {"ran": False, "why": "%s is %s, held there on purpose: "
+                                                        "\"%s\". %s It is not PROVEN, so its "
+                                                        "answer is not a QA result. Nothing "
+                                                        "was sent."
+                                                        % (capability, proof.get("status"), held,
+                                                           bridge.held_proof(proof))})
         if proof.get("status") not in bridge.KEEPABLE_STATUSES:
             return ended("refused", {"ran": False, "why": "%s is %s - no recorded proof stands "
                                                         "behind it, so its answer is not a QA "

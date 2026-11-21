@@ -1,0 +1,149 @@
+# ROUTING SENTENCES FROZEN 2026-11-21, BEFORE ANY CARD WAS EDITED - for GitHub
+# issues #1176 (row 5b-1951), #1177 (5b-1952), #1187 (5b-1953), #1188
+# (5b-1954), #1039 (5b-1848) and #1169 (5b-1944, measured only: which card
+# owns a duct's offset is the owner's choice). The #1039 group was added the
+# same day, still before any card was edited.
+#
+# Measured beside them, never committed: the owner's 79, the plain questions,
+# tests/test_routing_phrases.py's sentences, routing-sentences-2026-11-21.yaml
+# and every declared sentence of the cards in play, as each stood on main -
+# 768 sentences in all.
+#
+# Read by tools/score-routing.py --sentences. Measured in a cloud container on
+# lexical and model only (origin/main against the branch). OWED ON THE OWNER'S
+# PC, which ranks model+rerank:
+#
+#   python tools/score-routing.py --sentences tests/data/routing-sentences-2026-11-21-b.yaml \
+#       --backend lexical+rerank --backend model+rerank
+#
+# Where a row quotes a sentence, it is that row's (the owner's own where the row
+# says it came from his PC: the first of the 5b-1951 group). Every other
+# sentence is this session's own, written before the change and declared on no
+# card. Never reworded to buy back a rank: a sentence here is the instrument.
+groups:
+- group: '5b-1951 (#1176): select an element by its name'
+  sentences:
+  - say: select the level named Level 2
+    expect: want SELECT_BY_PARAMETER_VALUE
+  - say: select the level called Level 3
+    expect: want SELECT_BY_PARAMETER_VALUE
+  - say: find the level named Roof and select it
+    expect: want SELECT_BY_PARAMETER_VALUE
+  - say: pick the grid named B
+    expect: want SELECT_BY_PARAMETER_VALUE
+  - say: select the wall whose mark is W-12
+    expect: want SELECT_BY_PARAMETER_VALUE
+  - say: select the door with mark D-104
+    expect: want SELECT_BY_PARAMETER_VALUE
+  - say: select the room named Kitchen
+    expect: not-a-write
+  - say: put Level 2 in the selection
+    expect: not-a-write
+  - say: highlight the level called Ground Floor
+    expect: not-a-write
+  - say: select the sheet named A-101
+    expect: not-a-write
+- group: '5b-1952 (#1177): a Revit file named by its path'
+  sentences:
+  - say: what version is C:\Projects\Tower\MEP.rvt
+    expect: want READ_MODEL_FILE_INFO
+  - say: which Revit release saved D:\Jobs\Hospital\HVAC Model.rvt
+    expect: want READ_MODEL_FILE_INFO
+  - say: is C:\Models\Site Works.rvt a central or a local
+    expect: want READ_MODEL_FILE_INFO
+  - say: check the version of this rvt before I open it
+    expect: want READ_MODEL_FILE_INFO
+  - say: what year of Revit is the file at \\server\jobs\Arch.rvt
+    expect: want READ_MODEL_FILE_INFO
+  - say: which Revit was this file saved in
+    expect: want READ_MODEL_FILE_INFO
+  - say: what Revit version was this model saved in
+    expect: want READ_MODEL_FILE_INFO
+  - say: tell me which Revit made E:\Share\Struct.rvt
+    expect: want READ_MODEL_FILE_INFO
+  - say: is this rvt file from Revit 2023 or 2024
+    expect: want READ_MODEL_FILE_INFO
+  - say: is the file they sent a local copy or the central
+    expect: want READ_MODEL_FILE_INFO
+  - say: which models are open right now
+    expect: not-a-write
+  - say: save this model
+    expect: neutral
+- group: '5b-1953 (#1187): roof pitch and roofs that meet'
+  sentences:
+  - say: give this roof a 25 degree pitch
+    expect: want SLOPE_ROOF_EDGES
+  - say: set the pitch of this roof to 30 degrees
+    expect: want SLOPE_ROOF_EDGES
+  - say: pitch this roof at 20 degrees
+    expect: want SLOPE_ROOF_EDGES
+  - say: change the roof slope to 35 degrees
+    expect: want SLOPE_ROOF_EDGES
+  - say: does this roof reach the other roof
+    expect: not-a-write
+  - say: does the extrusion roof meet the main roof
+    expect: not-a-write
+  - say: what slope is the main roof at
+    expect: want REPORT_ROOF_SLOPES
+  - say: what is the pitch of the wing roof
+    expect: want REPORT_ROOF_SLOPES
+  - say: tell me the pitch of the selected roof
+    expect: want REPORT_ROOF_SLOPES
+  - say: how many degrees is this roof sloped
+    expect: want REPORT_ROOF_SLOPES
+  - say: what is the gap from the wing roof to the main roof
+    expect: not-a-write
+  - say: make the wing roof run into the main roof
+    expect: want EXTEND_ROOF_TO_ROOF
+  - say: extend this roof until it meets the other one
+    expect: want EXTEND_ROOF_TO_ROOF
+- group: '5b-1954 (#1188): a category''s material in Object Styles'
+  sentences:
+  - say: what material do generic models use in object styles
+    expect: want LIST_CATEGORIES
+  - say: which categories carry a material in object styles
+    expect: want LIST_CATEGORIES
+  - say: what is the object style material of doors
+    expect: want LIST_CATEGORIES
+  - say: which material does the furniture category have in object styles
+    expect: want LIST_CATEGORIES
+  - say: set the object style material for furniture to oak
+    expect: want SET_OBJECT_STYLE
+  - say: in object styles set casework's material to walnut
+    expect: want SET_OBJECT_STYLE
+  - say: change the furniture category's material in object styles to oak
+    expect: want SET_OBJECT_STYLE
+  - say: what material is this wall
+    expect: not-a-write
+  - say: make these chairs oak
+    expect: want SET_ELEMENT_MATERIAL
+- group: '5b-1848 (#1039): datums from a link - held out, beside the 2026-11-21 set''s own group'
+  sentences:
+  - say: move the structural grids into our model
+    expect: want COPY_ELEMENTS_BETWEEN_DOCUMENTS
+  - say: bring the levels across from the architect's link
+    expect: want COPY_ELEMENTS_BETWEEN_DOCUMENTS
+  - say: I need the architect's grids in our file
+    expect: want COPY_ELEMENTS_BETWEEN_DOCUMENTS
+  - say: copy the levels out of the structural link
+    expect: want COPY_ELEMENTS_BETWEEN_DOCUMENTS
+  - say: are our levels at the same heights as the structural link
+    expect: want CHECK_DATUMS_AGAINST_LINK
+  - say: compare our grids with the architect's link
+    expect: want CHECK_DATUMS_AGAINST_LINK
+- group: '5b-1944 (#1169): a duct''s or pipe''s offset - measured only, the card is the owner''s choice'
+  sentences:
+  - say: set the offset of these ducts
+    expect: neutral
+  - say: change the duct offset to 2700
+    expect: neutral
+  - say: set the middle elevation of this pipe
+    expect: neutral
+  - say: put these pipes at 3000 from the level
+    expect: neutral
+  - say: set the mep offset
+    expect: neutral
+  - say: what is the offset of this duct
+    expect: not-a-write
+  - say: how high above the level is this pipe
+    expect: not-a-write

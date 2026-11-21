@@ -1,0 +1,108 @@
+# NEEDS-CHECKING Groups PB and PK - REPORT_DIVIDED_SURFACES version 4 (PB1,
+# PB2, PK5) and SET_DIVIDED_SURFACE_LAYOUT version 2 (PB3, PB4). Written
+# 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/pb-pk-p1102-box-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/pb-pk-p1102-box-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE MODEL, Revit 2024 - the models both cards' last proofs ran on
+# (tools/jobs/p1102-round18-families-revit2024-2026-11-02.yaml, session 59960):
+#   "P1102 Box"     Revit 2020's Mass\M_Box.rfa copied into
+#                   %TEMP%\heron-work\prove-1102\fam - ONE solid form,
+#                   bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e, and no
+#                   divided surface
+#   "P1102 Light24" Lighting ...\M_Downlight - Recessed Can.rfa from the same
+#                   copy - no mass form, no divided surface: the negative
+# Both open in Revit 2024, nothing else of the owner's in front. Group PB asks
+# for a 3000 x 2000 x 2500 mm box made in a new Mass family; P1102 Box is the
+# recorded box, so its own size stands - the counts below are written down from
+# the surface's Properties, never predicted. Never a working model.
+#
+# THE ARRANGEMENT IS MADE INSIDE EACH ROLLED-BACK RUN. The setup step
+# DIVIDE_FAMILY_SURFACE (MODIFY, itself DRAFT version 2 - Group OT) divides
+# the box's TOP face uGrid 20, vGrid 4, pattern none - row 5b-303's and PB1's
+# arrangement, which Revit 2024 counted as 7 and 23 gridlines, so well over 50
+# nodes for PK5. A step that changes the model takes the run's own values, so
+# every value it needs is in `set:` and again in `negative-set:` (a
+# negative-set replaces the set). Every run is ROLLED BACK; look at the family
+# afterwards - it must hold no divided surface.
+#
+# THE NEGATIVES. REPORT_DIVIDED_SURFACES: P1102 Light24, a family with nothing
+# divided (PB2 asks for a new project; the recorded empty model is this one -
+# the setup step is refused there, the box's id not being in it). SET_DIVIDED_
+# SURFACE_LAYOUT: the same family and the same layout with `dividedSurface`
+# the BOX FORM's id - the form the surface is on, which must NOT be touched
+# (PB4). Both a different model or value, never an empty one (rules 3 and 5).
+#
+# NOT IN THIS FILE, by hand from the groups: PB1's `withNodes` false reading,
+# PB3's first layout (it would read as already asked here - see the note),
+# PK5's divided PATH (a model line divided by hand, Divide Path, Fixed Number
+# 60) - each its own `validate` line.
+
+model: "P1102 Box (M_Box.rfa, Revit 2020 US Metric library) and P1102 Light24 (M_Downlight - Recessed Can.rfa), opened in Revit 2024"
+
+defaults:
+  in: "P1102 Box"
+  write: true
+  setup: [divide-family-surface]
+
+jobs:
+  - fragment: report-divided-surfaces
+    expect: surfaceCount
+    set:
+      form: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e"
+      face: "top"
+      uGrid: "20"
+      vGrid: "4"
+      pattern: ""
+      withNodes: true
+    negative-in: "P1102 Light24"
+    negative-set:
+      form: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e"
+      face: "top"
+      uGrid: "20"
+      vGrid: "4"
+      pattern: ""
+      withNodes: true
+    note: >
+      PB2 - THE FIRST CASE TO RUN, P1102 Light24: divided empty, surfaceCount
+      0, the finding says 0 surfaces and 0 paths, and no finding names BV21.
+      PB1 and PK5, P1102 Box: surfaceCount 1; the surface's line reads "U
+      rule FixedNumber 20, ..., V rule FixedNumber 4, ..., Revit counts N
+      U-gridlines and M V-gridlines" with no count in brackets beside a rule,
+      and a finding names BV21; the line is in `divided` and `findings` and
+      NOT a third time under `report`. With nodes: 50 listed, then "the list
+      stops at 50: N more node(s) not listed" - check N is N x M less 50 less
+      the line's "node(s) gave no point"; missingNodes their sum. Write N, M
+      and missingNodes down.
+
+  - fragment: set-divided-surface-layout
+    expect: applied
+    set:
+      form: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e"
+      face: "top"
+      uGrid: "20"
+      vGrid: "4"
+      pattern: ""
+      dividedSurface: "only"
+      surfaceLayout: "u number=8; v number=6"
+    negative-set:
+      form: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e"
+      face: "top"
+      uGrid: "20"
+      vGrid: "4"
+      pattern: ""
+      dividedSurface: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e"
+      surfaceLayout: "u number=8; v number=6"
+    note: >
+      PB4 - THE FIRST CASE TO RUN, dividedSurface the box form's id: refused
+      naming the form as the one the surface is on, "not the divided surface
+      itself"; applied 0, readBack empty, nothing changed. PB3, the surface
+      the setup made: applied 2; readBack's "U grid: ..." and "V grid: ..."
+      rows end at each grid's own parts with no gridline count in them; a row
+      of its own "Revit counts: U-gridlines A before, B now; V-gridlines C
+      before, D now" - write A to D down; a finding names BV21; nothing
+      refused or rolled back over a count. PB3's first layout, "u number=20; v
+      layout=number; v number=4", is what the setup already made, so it would
+      come back alreadyAsAsked with applied 0 - that is why the batch asks the
+      second.

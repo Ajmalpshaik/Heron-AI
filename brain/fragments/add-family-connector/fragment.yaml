@@ -9,10 +9,31 @@ semantic-identity: "put a duct, pipe or electrical connector on this face of the
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_CONNECTOR
-version: 6
+version: 7
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 7 (2026-11-21) - ONLY A FACE THAT FACES OUT, AND AT THE POINT
+# GIVEN, COUNTS. Issue Ajmalpshaik/Heron-AI#1029 again: version 6 narrowed the
+# count only when form= or facing= was given, so with both left out the
+# issue's two refusals came back exactly as before. Now (1) a face that faces
+# into another solid all over - the raised face's underside sitting on the
+# flange top - is left out, counted and said, whatever was given: points spread
+# over the face, out to 4% from its edges, are stepped 0.5 to 1.5 mm out along
+# its normal, and only when
+# every one lands inside a solid of the family is the face inside the body;
+# (2) `at`, optional, the connector's centre "X, Y, Z" in mm - only a face whose
+# centre (the one a refusal lists) lies within 1 mm of it counts, so the lid
+# screws 1 m away drop out; a point more than 1 mm off the plane is refused;
+# (3) the connector is never put inside the body: where another solid covers
+# the chosen face at its own centre on the side it points - a flange top under
+# its raised face, a box top under its neck; for a ring, at the opening's edge -
+# nothing is made and that solid is named. An independent review the same day
+# found three faults in the first draft, all fixed before merge: two points
+# alone judged a rectangle, at= refused the refusal's own "X 0, Y 0, Z 884 mm",
+# and a bored ring's cover went unseen. Left out, `at` binds "none". The card was DRAFT at version 6, never
+# proved; it stays DRAFT at version 7 until NEEDS-CHECKING Group PO is run.
+#
 # VERSION 6 (2026-11-20) - form= AND facing= PICK THE FACE, and back to DRAFT.
 # Issue Ajmalpshaik/Heron-AI#1029, seen 2026-11-19 on Revit 2020 in a fixed
 # pump family: the discharge flange's raised face was refused twice - on its
@@ -59,6 +80,18 @@ purpose: >
   Exactly one solid face must lie on the plane named; none, or more than one,
   is refused with the count, because a connector on the wrong face points the
   wrong way and nothing about it looks wrong in plan.
+
+  **ONLY A FACE THAT FACES OUT, AT THE POINT GIVEN (version 7, issue #1029).**
+  A plane is infinite, so on a real family more than one face lies on it - in
+  the issue's pump, the raised face's top and four lid screws a metre away at
+  the same height, and on the plane below, the flange top and the raised
+  face's own underside. A face that faces into another solid all over is
+  inside the body and never counts: it is left out and said. `at`, the
+  connector's centre in mm, leaves out every face whose centre is not within
+  1 mm of it; `form` and `facing` narrow it the same way. And where the face
+  chosen is covered at its own centre on the side it points - the flange top
+  under its raised face - nothing is made and the form covering it is named,
+  because a connector there would sit inside that form.
 
   **A JOINED OR CUT FORM'S FACE IS FOUND TOO (version 3, row 5b-410).** Once a
   form is joined or cut by COMBINE_FAMILY_FORMS - a flange cut by a bore void -
@@ -165,6 +198,16 @@ contract:
       source: request
       optional: true
       absent: none
+    # VERSION 7 (#1029). The connector's centre, "X, Y, Z" in millimetres -
+    # the centre a refusal lists for each face, taken as it prints it ("X 0,
+    # Y 0, Z 884 mm") or as three bare numbers. Only a face whose centre lies
+    # within 1 mm of it counts; a point more than 1 mm off `facePlane` is
+    # refused. Left out ("none"): a face anywhere on the plane counts.
+    - name: at
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: connector
       # The connector as made, read back: its kind, system, shape and size,
@@ -255,7 +298,11 @@ compatibility-note: >
   `ConnectorElement.CoordinateSystem` and `.Origin`, all already used by
   version 4, on every release. Version 6 adds `GeomCombination.AllMembers`
   (a `CombinableElementArray`), the same on 2020 and 2027 (api-surface, read
-  2026-11-20), and built against all eight releases the same day.
+  2026-11-20), and built against all eight releases the same day. Version 7
+  adds `Solid.IntersectWithCurve` with `SolidCurveIntersectionOptions`
+  (`CurveSegmentsInside`), `Face.Triangulate`, `Line.CreateBound` and
+  `Element.get_BoundingBox(null)`, built against all eight releases on
+  2026-11-21 (`tools/check-fragments-compile.py`).
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #

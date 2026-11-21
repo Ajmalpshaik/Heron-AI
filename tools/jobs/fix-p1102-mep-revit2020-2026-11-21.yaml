@@ -1,0 +1,61 @@
+# DESCRIBE_BLANK_PARAMETERS (DRAFT) - NEEDS-CHECKING Groups V, W and X
+# (X: "what to vary: parameterName"), and the 2026-11-16 night's morning list
+# (Group OI). Written 2026-11-21 in a cloud session with no Revit. NOT RUN.
+# It REPLACES the card's job in p1102-round2-reads-2026-11-02.yaml, which is
+# left as it was: its negative changed parameterName to a name nothing
+# carries, so read-element-parameters handed on `absent` for every duct and
+# the card wrote an "absent" finding - a finding in both legs (FRAGMENT-ISSUES
+# row 81 measured exactly that pair on Snowdon-scratch: blank 22 / absent 22).
+#
+#     python tools/batch-prove.py tools/jobs/fix-p1102-mep-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/fix-p1102-mep-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL: "P1102 MEP", Revit 2020 - a scratch copy of Revit 2020's own
+# Samples\rme_advanced_sample_project.rvt in %TEMP%\heron-work\prove-1102,
+# as p1102-round2-reads-2026-11-02.yaml records it. The small selection is
+# the callout "Callout of Level 1 HVAC WSHP TYP": 10 ducts (measured before
+# round 2). Nothing here changes the model.
+#
+# THE ARRANGEMENT. The chain is filter-elements-by-category, then
+# read-element-parameters, kept (`keep-chain`), because `blank` and `absent`
+# come only from it. One `parameterName` serves read-element-parameters and
+# the card, and must: the card words its findings with the name the read
+# used. The positive reads Comments (cases.yaml: "3 with an empty Comments").
+# The negative is cases.yaml's "every element has a value" - the same ten
+# ducts read for System Type, which GROUP_AND_COUNT's signed proof
+# (2026-11-02, this model, this callout) read on all ten: `values from
+# read-element-parameters (10)`, groups Undefined 9 and Supply Air 1 - so
+# blank 0 and absent 0, and the card must say NOTHING. A different value,
+# never a cleared one (rule 5). The negative-set carries every value.
+#
+# RULE 2 - COMMENTS ON THESE TEN WAS NEVER READ. On Snowdon-scratch all 22
+# ducts in FloorPlan: M1 had it empty (row 81). If every one of these ten
+# carries a comment, the positive is empty from the model: then any
+# parameter the ducts carry and leave empty is the positive, written here.
+
+model: "P1102 MEP (copy of rme_advanced_sample_project.rvt), 10 ducts in Callout of Level 1 HVAC WSHP TYP, Revit 2020"
+
+defaults:
+  in: "P1102 MEP"
+  setup: [filter-elements-by-category, read-element-parameters]
+
+jobs:
+  - fragment: describe-blank-parameters
+    keep-chain: true
+    expect: findings
+    set:
+      category: "Ducts"
+      inViewOnly: "Callout of Level 1 HVAC WSHP TYP"
+      parameterName: "Comments"
+    negative-set:
+      category: "Ducts"
+      inViewOnly: "Callout of Level 1 HVAC WSHP TYP"
+      parameterName: "System Type"
+    note: >
+      Negative - THE FIRST CASE TO RUN: the binding note reads `blank from
+      read-element-parameters (0); absent from read-element-parameters (0)`,
+      findings EMPTY - no "0 blank" sentence. Positive: `blank from
+      read-element-parameters (N); absent ... (0)`, one finding "N element(s)
+      have Comments but it is empty - these can be filled in", and no
+      "absent" finding. A finding in the negative is NEG NOT EMPTY - a card
+      that speaks about nothing.

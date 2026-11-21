@@ -1,0 +1,66 @@
+# NEEDS-CHECKING Group OT - ADD_FAMILY_CONNECTOR version 6 (DRAFT), a
+# connector on a face picked out by form= and facing= (issue #1029), rows OT15
+# and OT16. Built 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ot-pump-accessory-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ot-pump-accessory-revit2020-2026-11-21.yaml --session <2020 pid>
+#
+# THE MODEL (docs/needs-checking/group-ot.md, "The models"; the arrangement is
+# brain/fragments/add-family-connector/tests/cases.yaml, VERSION 6): a scratch
+# family from Revit 2020's metric Pipe Accessory template, saved under
+# %TEMP%\heron-work\ot, never the owner's own work. In it, each its own
+# extrusion and joined to nothing: a flange disc 200 mm across, Z 870 to 882;
+# a raised face on it 150 mm across, Z 882 to 884; a small box "Lid Screw"
+# 1 m away whose top is also at Z 884. Reference planes "Discharge Face" at
+# Z 884 and "Discharge Flange Top" at Z 882. A Length parameter
+# "Discharge Dia" = 150. KEPT before this runs - this runner rolls everything
+# back. NO `in:` BELOW: no row records the family's own name, so the job runs
+# on the document in front - bring the pump family to the front, or add
+# `in: "<its title>"` under defaults once it is saved.
+#
+# THE ARRANGEMENT - NO ELEMENT ID IS TYPED. The positive is OT15's SECOND
+# call: facePlane "Discharge Flange Top" with facing "up" - two faces lie on
+# that plane (the disc's top pointing up, the raised face's underside
+# pointing down) and facing= picks one. The negative is OT16's first call:
+# facePlane "Discharge Face" with facing "up" alone - the raised face's top
+# AND the screw's top both point up there, so it must refuse and make nothing.
+# A DIFFERENT value, not an empty one (fragment-proving, rules 3 and 5), and
+# it carries every value the leg needs, because a negative-set replaces the
+# set. Every run is ROLLED BACK. ONE job: the run record is kept per card.
+# OT15's first call (form= the raised face's id) and OT16's second (form= a
+# reference plane's id) need an id from the family, so they are by hand - see
+# the note.
+
+model: "a scratch Pipe Accessory family (Revit 2020 metric template): flange disc Z 870-882, raised face Z 882-884, Lid Screw box topped at Z 884, planes Discharge Face and Discharge Flange Top, Discharge Dia = 150"
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: add-family-connector
+    expect: connector
+    set:
+      facePlane: "Discharge Flange Top"
+      system: "Domestic Cold Water"
+      sizeParameters: "Discharge Dia"
+      facing: "up"
+    negative-set:
+      facePlane: "Discharge Face"
+      system: "Domestic Cold Water"
+      sizeParameters: "Discharge Dia"
+      facing: "up"
+    note: >
+      OT15 (second call) then OT16 (first call). Negative FIRST: refused,
+      listing both faces on "Discharge Face" with their form ids, the way each
+      faces and its centre, and saying to give form=; connector empty, nothing
+      made. Positive: a round pipe connector 150 mm on the flange disc's top,
+      pointing up, findings "1 other face(s) ... left out by facing=". Version
+      5 refused both. Then by hand, rolled back (no --apply), with the raised
+      face's id from the negative's list:
+      heron_bridge_client.py fragment add-family-connector --write --set
+      "facePlane=Discharge Face" --set "system=Domestic Cold Water" --set
+      "sizeParameters=Discharge Dia" --set form=<raised face id> - a connector
+      on the raised face, "1 other face(s) ... left out by form=" (OT15); and
+      the same with form=<the id of the plane Discharge Face> - refused by
+      name, nothing made (OT16).

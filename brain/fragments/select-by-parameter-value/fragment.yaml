@@ -38,6 +38,10 @@ purpose: >
   palette writes it - "Curtain Wall : Storefront". So "select every curtain
   wall of type Storefront" is Type equals Storefront, in Walls.
 
+  **One element picked by its own name is Name equals that text**, in its
+  category: "select the level called Ground" is Name equals Ground, in Levels,
+  and a grid named B is Name equals B, in Grids (row 5b-1951).
+
   **AN ELEMENT THAT DOES NOT CARRY THE PARAMETER IS COUNTED, NEVER MATCHED -
   not even by a "does not contain" query.** Treating a missing parameter as an
   empty string is the obvious code and it is wrong in one direction that
@@ -368,3 +372,9 @@ utterances:
   - ducts 500 mm high
   - pipes larger than 100 mm
   - walls between 200 and 300
+  # ADDED 2026-11-21, row 5b-1951 (issue #1176). An element picked by its Name
+  # - a level, a grid - is Name equals that text, in its category. At the END,
+  # so the eight the re-ranker reads (D-134) are unchanged; the row's own
+  # sentence is not declared.
+  - select the level with this name
+  - select a grid or a level by its name

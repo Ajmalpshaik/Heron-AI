@@ -1,0 +1,59 @@
+# NEEDS-CHECKING Group OR (docs/needs-checking/group-or.md), OR19 -
+# SYNC_SPACES_WITH_LINKED_ROOMS version 3 (rows 5b-1589, 5b-1655): a space
+# Revit puts in another phase than the one asked is counted in wrongPhase,
+# never in created. Written 2026-11-21 in a cloud session with no Revit.
+# NOT RUN. (Group OQ's OQ9 and OQ10 ask the same card on oq-mep.rvt, a model
+# not yet made; they are not here.)
+#
+#     python tools/batch-prove.py tools/jobs/or-nr-spaces-host-2-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/or-nr-spaces-host-2-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL: "NR Spaces Host 2", Group NR's second scratch host
+# (%TEMP%\heron-work\prove-1102, phases Existing then New Construction) as
+# NR8 (d), NR9 and NR11 left it (group-nr.md): P1102 ARCH.rvt linked and Room
+# Bounding, and P1102 ARCH NR11.rvt beside it; 95 spaces, all reading back in
+# New Construction - 91 matching P1102 ARCH.rvt's rooms (space 101 renamed
+# Vestibule by NR11) and the four Roof spaces of the NR11 copy. Never a
+# working model.
+#
+# THE ARRANGEMENT. NO SETUP CHAIN: every input is a value, and the link is
+# named because two are loaded (NR8 (b)). The positive asks the FIRST phase,
+# Existing, where no space stands. The negative is a DIFFERENT VALUE - the
+# LAST phase, New Construction, where every space for that link's rooms
+# already stands, so created and renamed must both be empty (NR9's second
+# call read alreadyMatching 91, created 0; updateNames false leaves 101's name
+# alone). It carries every value, because a negative-set replaces the set.
+# Every run is ROLLED BACK; OR19's kept run and its READ_ELEMENT_PARAMETERS
+# Phase read are by hand.
+#
+# THE POSITIVE HAS TWO HONEST ANSWERS, and OR19 says write down which: EITHER
+# created N with every space in Existing - OR every space in wrongPhase, NOT
+# in created, the first finding saying so. The second reads POSITIVE EMPTY
+# here: that is version 3 telling the truth about row 5b-1655, not a pass, and
+# the proof then waits for 5b-1655's cause.
+
+model: "NR Spaces Host 2 - Group NR's two-phase scratch host, P1102 ARCH.rvt linked and Room Bounding, 95 spaces in New Construction, Revit 2020"
+
+defaults:
+  in: "NR Spaces Host 2"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: sync-spaces-with-linked-rooms
+    expect: created
+    set:
+      linkName: "P1102 ARCH.rvt"
+      phaseName: "Existing"
+      updateNames: false
+    negative-set:
+      linkName: "P1102 ARCH.rvt"
+      phaseName: "New Construction"
+      updateNames: false
+    note: >
+      OR19. Negative: created 0, renamed 0, alreadyMatching about 91 (room 101
+      DIFFERS and is left alone), no box. Positive: write down which of the two
+      answers above came - created with a line per space and no NO AREA line,
+      or wrongPhase holding them with the first finding saying Revit put them
+      elsewhere. If linkName is refused as answering two links, give the whole
+      name the refusal lists (as NR8 (c)).

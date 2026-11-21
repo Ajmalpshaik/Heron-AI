@@ -1,0 +1,62 @@
+# NEEDS-CHECKING Group OU (OU10) - SET_MATERIAL_PROPERTIES version 3 (DRAFT):
+# an Identity field found by its NAME is counted first, and a material carrying
+# the name twice is NOT READ and the call refused (row 5b-1534, row 5b-203's
+# repair). Built 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ou2-heron-reads-test-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ou2-heron-reads-test-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE MODEL (docs/needs-checking/group-nk.md, NK0 and its run of 2026-11-12/13):
+# "Heron Reads Test", the scratch project saved under %TEMP%\heron-work\nk,
+# Revit 2024 - never a working model. It holds the materials "Heron A",
+# "Heron B" and "Heron C", and TWO shared parameters called "Keywords" bound
+# to Materials, so every material carries Keywords twice ('probe' written into
+# the first on Heron A). NK8 (a) - deleting the second one - was NOT RUN, so
+# the model should still carry both: check Manage > Project Parameters first.
+#
+# THE ARRANGEMENT. No selection: every input is a value. The positive writes a
+# field Revit keeps a parameter of its own for (Manufacturer) on Heron A -
+# version 2's route, unchanged by the repair; it must still write and read
+# back. The negative names a material the model has not got ("Heron Q"), with
+# the same field and value - a DIFFERENT value, refused before anything is
+# written, as the proof of 2026-11-02 refused "Concrete, Precst". Every write
+# is ROLLED BACK.
+#
+# OU10'S OWN TWO LEGS ARE NOT IN THIS BATCH, AND WHY:
+#   - its negative (Keywords on a material carrying it twice) refuses by
+#     THROWING - "Nothing from this call was kept" is an exception that rolls
+#     the call back - so a batch or `validate` leg reads it as a phase that did
+#     not run (NO NEGATIVE), never as an empty answer. Run it by hand, rolled
+#     back, and write Revit's words on OU10:
+#       python mcp/client/heron_bridge_client.py fragment --in "Heron Reads Test" set-material-properties --write --set "materialsNamed=Heron *" --set "fieldValues=Manufacturer=OU10 Maker; Keywords=x"
+#     It must refuse naming a Heron material as carrying TWO OR MORE parameters
+#     called 'Keywords' - NOT READ - and Heron A's Manufacturer must read as it
+#     did before: all or nothing.
+#   - its positive (Keywords carried ONCE) needs a material with one
+#     parameter called Keywords; no recorded model has one (the Material
+#     Browser's Keywords box is no parameter, row 5b-1627).
+
+model: "Heron Reads Test (scratch, every material carrying two shared parameters called Keywords), Revit 2024"
+
+defaults:
+  in: "Heron Reads Test"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: set-material-properties
+    expect: fieldsChanged
+    set:
+      materialsNamed: "Heron A"
+      fieldValues: "Manufacturer=OU10 Maker"
+    negative-set:
+      materialsNamed: "Heron Q"
+      fieldValues: "Manufacturer=OU10 Maker"
+    note: >
+      OU10's batch half. Positive: fieldsChanged 1, changedMaterialIds Heron
+      A's id, materialReport "Heron A: Manufacturer '...' -> 'OU10 Maker'",
+      refused empty - the doubled Keywords on the same material must NOT turn
+      down a field it does not touch. If it reads alreadyAsAsked 1, Heron A
+      already says OU10 Maker: change the value in both legs. Negative:
+      fieldsChanged 0, refused "no material matches 'Heron Q' in this project
+      - closest: ..." with Heron A, B and C among them; nothing changed.

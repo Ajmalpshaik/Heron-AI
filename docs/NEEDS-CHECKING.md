@@ -1694,6 +1694,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pm.md`](needs-checking/group-pm.md)
 
+## Group PN - REPORT_CATEGORY_OVERRIDES version 6: a whole-dialog read that failed says NOT READ, never "shown" or "no override" - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pn.md`](needs-checking/group-pn.md)
+
+## Group PO - ADD_FAMILY_CONNECTOR version 7: only a face that faces out, and at the point given, counts - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-po.md`](needs-checking/group-po.md)
+
 ## Group PP - a central model opened beside is not saved, a nested part kept upright says so, the session list names a wait, and the camera's eye on the sample house - BUILT, NOT RUN IN REVIT (2026-11-21)
 
 **Its own file:** [`needs-checking/group-pp.md`](needs-checking/group-pp.md)

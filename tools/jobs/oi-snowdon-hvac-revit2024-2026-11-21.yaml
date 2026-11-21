@@ -1,0 +1,49 @@
+# REPOINT_VIEW_REFERENCE (DRAFT) - the 2026-11-16 night's morning list (Group OI:
+# "reference views ... none on the night's model"). No group of its own.
+# Written 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/oi-snowdon-hvac-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/oi-snowdon-hvac-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE MODEL AND THE MARK come from the proof of REPORT_VIEW_REFERENCES (its
+# fragment.yaml, proof: 2026-09-08): "Snowdon Towers Sample HVAC", Revit 2024,
+# with ONE REFERENCE section drawn in it with "Reference other view" ticked so
+# it points at an existing view. A plain section will NOT do - the card reads
+# and changes the MARKER's referenced view (ReferenceableViewUtils). Use a
+# scratch copy of the sample, never a working model.
+#
+# NOT A NIGHT JOB - THE OWNER'S HANDS. He draws the reference section, then
+# SELECTS ITS MARKER by hand before the run: no selection card here is known
+# to select a reference marker, so `setup:` is empty and the card binds Revit's
+# own selection - read the binding note, "elements from the selection (1)"
+# (rule 5). NEEDS THE MODEL'S OWN NAME: the target - ANOTHER section view, not
+# the one the mark points at now - was never recorded. Write its name, as the
+# Project Browser shows it, in place of the capitals.
+#
+# THE ARRANGEMENT. One mark, two VALUES (rule 5): a section view it can point
+# at, and a floor plan it cannot - "FloorPlan: M1", which the Snowdon job files
+# record - so every element is refused and nothing changes (tests/cases.yaml).
+# Every write is ROLLED BACK. The run-twice case (everything in alreadyThere)
+# needs the first run KEPT, so it is by hand.
+
+model: "Snowdon Towers Sample HVAC (scratch copy) with one reference section drawn and its marker selected by hand, Revit 2024"
+
+defaults:
+  write: true
+  in: "Snowdon Towers Sample HVAC"
+  setup: []
+
+jobs:
+  - fragment: repoint-view-reference
+    expect: repointed
+    set:
+      targetViewId: "ANOTHER SECTION VIEW'S NAME"
+    negative-set:
+      targetViewId: "FloorPlan: M1"
+    note: >
+      Negative - THE FIRST CASE TO RUN: the floor plan, repointed 0, the mark
+      in refused, nothing changed. Positive: repointed 1, the mark read back
+      pointing at the target. Check before and after with
+      REPORT_VIEW_REFERENCES (PROVEN) on the same marker. Second route:
+      double-click the mark - it opens the target - and the bubble shows the
+      target's sheet and detail number when the target is on a sheet.

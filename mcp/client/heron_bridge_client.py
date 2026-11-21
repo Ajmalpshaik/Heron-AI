@@ -2144,6 +2144,42 @@ KEEPABLE_STATUSES = ("PROVEN", "PRODUCTION")
 ONCE_RISK = "MODIFY"
 
 
+def held_reason(found):
+    """Why a card is HELD at DRAFT on purpose, as one sentence - or "".
+
+    ROW 5b-1960. A card whose proof still matches its code can be kept at DRAFT
+    on purpose, and says why in `proof-held:` - `proof_of` hands it over as
+    `proof_held`. Every refusal of a DRAFT said "no recorded proof stands
+    behind its code", which is untrue of such a card; the sentence that replaces
+    it quotes this reason. Only a DRAFT's hold is read, as
+    tools/check-signatures.py reads it: a retired card's hold is history, and a
+    PROVEN card is not held from anything a refusal speaks of. The reason is
+    the card's own words, folded to one line, its closing full stop left to
+    the sentence it is quoted in.
+    """
+    if not found or found.get("status") != "DRAFT":
+        return ""
+    return " ".join(str(found.get("proof_held") or "").split()).rstrip(" .")
+
+
+def held_proof(found):
+    """What a held card's recorded proof is, in one true sentence (row 5b-1960).
+
+    Three answers, as D-30 keeps them apart: none recorded; recorded, and not
+    shown to match its code (it moved, or the proof recorded no fingerprint);
+    recorded, and it still matches its code - the case the old words got
+    wrong. Only the fingerprint is spoken for: whether that proof would also
+    be enough to promote the card (signed, a negative case) is not said.
+    """
+    if not found.get("proof"):
+        return "No proof is recorded for it yet."
+    of = " of %s" % found["date"] if found.get("date") else ""
+    if found.get("stale"):
+        return ("Its recorded proof%s cannot be shown to match its code as it is "
+                "now, so it does not describe what would run (D-30)." % of)
+    return "Its recorded proof%s still matches its code." % of
+
+
 def proof_of(name):
     """How far one fragment is proven - `heron_brain.proof_status`, asked.
 
@@ -2206,6 +2242,15 @@ def unproven_refusal(what, found):
     the try is named only where that risk is ONCE_RISK. For every other card,
     and one whose risk was not handed over, what comes next is the proof and
     nothing else is said.
+
+    A CARD HELD AT DRAFT ON PURPOSE IS REFUSED AS HELD - row 5b-1960, issue
+    #1209. The words were chosen by status alone, so a card whose proof still
+    matches its code and waits only for the run its `proof-held` names was told
+    "no recorded proof stands behind its code" and "it is proved first on a
+    test model". It is said as held now, its own reason quoted, and its proof
+    as it stands (`held_proof`). It is STILL refused: D-117 keeps a change only
+    from a PROVEN card, and whether a held one should be let through is the
+    owner's question, not this sentence's.
     """
     if found is None:
         return ("How far %s is proven could not be read, so Heron will not let it "
@@ -2228,6 +2273,14 @@ def unproven_refusal(what, found):
                     "on the saved model in front, and Revit asks them Keep or "
                     "Discard (D-119). It is started only on their word (D-122), "
                     "never through revit_change.")
+        held = held_reason(found)
+        if held:
+            return ("%s %s, and is held there on purpose: \"%s\". %s Heron keeps a "
+                    "change only from a PROVEN capability (D-117), so it will not "
+                    "let this one change a live model (Constitution Article 11). "
+                    "Nothing was sent to Revit. It can be asked for again once what "
+                    "the hold waits for is done and the card is PROVEN - %s.%s"
+                    % (what, said, held, held_proof(found), proving, once))
         return ("%s %s - no recorded proof stands behind its code, so Heron will "
                 "not let it change a live model (Constitution Article 11). Nothing "
                 "was sent to Revit. It is proved first on a test model, with a "

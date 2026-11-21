@@ -95,8 +95,13 @@ purpose: >
      "another document" cost five calls a save and an extra model on the
      modeller's screen (issue #1028, Revit 2020, 2026-11-19). The refusal
      that started it - SAVE_DOCUMENT refusing the pinned family - is version
-     2's: that PC's add-in was older than version 3, which `python
-     tools/heron-ready.py` brings up to date.
+     2's: that PC's add-in was older than version 3. AN OLDER ADD-IN IS
+     UPDATED BY THE MODELLER, never by the chat: close that Revit, then run
+     HeronInstaller.exe - or, building Heron from source, tools/setup.ps1,
+     which builds and deploys for each Revit (tools/deploy-addin.ps1 alone
+     copies what was built last, and builds nothing). `python
+     tools/heron-ready.py` only checks that an add-in is installed - it does
+     not update one (issue #1051 item D).
      A SAVE IS CHECKED, NEVER TRUSTED: ask the modeller to CLICK INSIDE THE
      REVIT WINDOW FIRST - the keys go to whichever window is in front, often
      the chat - then read REPORT_OPEN_DOCUMENTS (version 3) again: `fileTimes`

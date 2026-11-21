@@ -88,7 +88,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 |---|---|---|
 | [`batch-prove.py`](batch-prove.py) | many fragments against a real model in one pass; never accepts, never promotes | on the PC, Revit open; `--dry-run` first; `--unattended` overnight |
 | [`generate-jobs.py`](generate-jobs.py) | the derivable half of a job file - names, risk, setup chain | before writing a job file |
-| [`jobs/`](jobs/example.yaml) | the job files of past proving rounds, and `example.yaml` to start from | when writing the next one |
+| [`jobs/`](jobs/README.md) | the job files of past proving rounds, `example.yaml` to start from, and the index of which file covers which DRAFT cards on which model | when writing the next one |
 | [`prove-skill.py`](prove-skill.py) | is a skill proved: its words, its chain, and the Revit half written out as a job file | before proving a skill |
 | [`run-skill.py`](run-skill.py) | a skill's plan run whole on a real model - every step in order on one chain, changes rolled back, a positive and a negative leg - judged by `brain/heron_plan_proof.py` into a draft a person signs (row 141) | on the PC, Revit open; `--dry-run` first |
 | [`prove-agent.py`](prove-agent.py) | the proof path for an add-in agent, signed by a person | on the PC, Revit open |
@@ -1538,6 +1538,16 @@ about: a fragment that **goes looking** and can **drop** something on the way. `
 returns `found: 0` when its exemplar has no type and nothing separates that from *"there are none of
 this type"* — which is exactly why `FILTER_ELEMENTS_BY_CATEGORY` reports `unresolvedLevel`. One
 fragment already solved this; 59 have not. [`Q-46`](../docs/OPEN-QUESTIONS.md).
+
+**A dropped count is known by what the contract says it is, not only by seven words** (since 2026-11-21,
+[row 5b-1958](../docs/fragment-issues/row-5b-1958.md)). A provide whose name holds `unresolved`, `skipped`,
+`refused`, `dropped`, `missing`, `failed` or `weakened` counts, as before; so does one the contract declares
+`role: accounting` - *"handed and could not use, or work done"* - with a negative name (`noAnalytical`,
+`withoutLocation`, `notLinear`, `sectionsNotChecked`) or one of `unreadable`, `unmeasured`, `unbounded`,
+`outOfScope` and `heldBack`. Never a bool (`notAFamily` refuses the whole document and counts nothing a loop
+passed over), never a `result`, and never `unused` or `unassigned`, which are what those cards found. The words
+are `DROP_WORDS`, `DROP_SHAPE` and `DROP_WORDS_ACCOUNTING` in the tool; `tests/test_revit_gate.py` §3f holds a
+case for each and the four that must stay raised.
 
 **Question 12 went 7 → 0.** It asked *does it guard against null* and raised seven fragments that
 touch nothing nullable — `count-elements` counts a list it was handed, `set-selection` selects one,

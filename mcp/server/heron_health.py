@@ -369,10 +369,18 @@ def ask_to_keep_line(asks):
 # that said it (switches_line's answer), and writing_said_by() names them.
 SETTINGS_NOT_SENT = "not sent"
 
+# THE WAY TO UPDATE IT IS SAID HERE. Seen 2026-11-19 (issue #1051 item D, row
+# 5b-1966): Revit 2020's add-in was older than the chat, this was the one line
+# it got, and nothing said what to do - the family method then named a tool
+# that does not update an add-in. Every add-in from before the settings file
+# was reported gets this line; one newer than that and older than a later
+# field would not, and would need the same words on that field's line.
 SETTINGS_OLDER = (
     "Settings file: this Revit's Heron does not report its settings file - its "
     "Heron add-in is older than this chat's, so whether this chat reads the same "
-    "file cannot be said here.")
+    "file cannot be said here. To update that add-in: close that Revit, then run "
+    "HeronInstaller.exe - or, building Heron from source, tools/setup.ps1, which "
+    "builds and deploys it (tools/deploy-addin.ps1 alone builds nothing).")
 SETTINGS_NOT_READ = (
     "Settings file: Heron could not read which settings file this Revit reads just "
     "now - it gave no answer Heron could use. Ask again.")

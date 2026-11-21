@@ -1,0 +1,61 @@
+# NEEDS-CHECKING Group OT - COMBINE_FAMILY_FORMS version 3 (DRAFT): an array
+# copy's model group id stands for the form in it (row 5b-358), rows OT7, OT8
+# and OT31. Built 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ot-void-array-generic-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ot-void-array-generic-revit2020-2026-11-21.yaml --session <2020 pid>
+#
+# THE MODEL (group-ot.md OT7, OT8; brain/fragments/combine-family-forms/tests/
+# cases.yaml, VERSION 3): a scratch family from Revit 2020's metric Generic
+# Model template, saved under %TEMP%\heron-work\ot, never the owner's own work:
+# a solid plate "rect -300,-200 300,200" on Ref. Level, 0 to 20; a VOID
+# extrusion "circle -200,0 20" on Ref. Level, -10 to 30, arrayed by
+# ARRAY_FAMILY_FORMS count 3, step "X 200" (ARRAY_FAMILY_FORMS is DRAFT v5, so
+# that array is a try-once the owner keeps); and, for OT8, two model lines
+# grouped by hand into a model group. ALL KEPT before this runs - this runner
+# rolls everything back, and the array's group ids exist only once it is kept.
+# NO `in:` BELOW: no row records the family's own name, so the job runs on the
+# document in front - bring the family to the front, or add
+# `in: "<its title>"` under defaults once it is saved.
+#
+# THREE IDS ARE PLACEHOLDERS - type the real unique ids in before running; THE
+# DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN (row 5b-264):
+#   PLATE-ID        the plate's id, as the tool that made it gave it back
+#   VOID-GROUP-ID   the FIRST id in the kept array's `members` (a model group)
+#   LINES-GROUP-ID  the hand-made group of two model lines
+#
+# THE ARRANGEMENT. Positive OT7: the plate and the first array group. Negative
+# OT8: the plate and the group that holds no form - a DIFFERENT selection of
+# ids, refused before anything is combined (rules 3 and 5). Every run is
+# ROLLED BACK. ONE job: the run record is kept per card.
+#
+# OT7 HAS TWO ANSWERS AND THE RUN DECIDES WHICH: the plate cut through the
+# group's void, OR a plain refusal that Revit will not combine a form inside
+# an array's group. The second reads POSITIVE EMPTY here - that is OT7's
+# answer, not a broken arrangement: RECORD it on OT7, and the D-30 positive is
+# then cases.yaml's first (the plate with a plain, un-arrayed void), run by
+# hand with its own id.
+
+model: "a scratch Generic Model family (Revit 2020 metric template): a plate on Ref. Level, a void circle arrayed 3 x 200 mm along X (kept), and a hand-made group of two model lines"
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: combine-family-forms
+    expect: combinationId
+    set:
+      forms: "PLATE-ID,VOID-GROUP-ID"
+    negative-set:
+      forms: "PLATE-ID,LINES-GROUP-ID"
+    note: >
+      OT7 then OT8. Negative FIRST: refused, the lines group named as holding
+      no form; combinationId empty, cut false, nothing combined. Positive:
+      EITHER cut true, a finding that the group's form was taken, one hole
+      more taken from the plate - OR refused in plain words naming the group
+      and the way round (ungroup that copy, or the form's own id from
+      memberForms). Which one is OT7's answer; RECORD it. Watch for a failure
+      Revit raises at commit ("group edited outside group edit mode"). Then
+      OT31 by hand: select each array copy in Revit and read the form inside
+      against ARRAY_FAMILY_FORMS' memberForms.

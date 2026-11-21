@@ -1,0 +1,51 @@
+# NEEDS-CHECKING Group OP - RENAME_WORKSET version 2 (DRAFT, was PROVEN v1):
+# `refused` is one string, so the reason reaches the reply whole (row 108,
+# issue #912). Built 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/op-snowdon-scratch-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/op-snowdon-scratch-revit2024-2026-11-21.yaml --session <pid>
+#
+# BEFORE THE RUN (group-op.md): the add-in rebuilt and Revit restarted is for
+# OP1 to OP5 and OP9 to OP12; this card travels as source, so nothing needs
+# rebuilding for it.
+#
+# THE MODEL: "Snowdon-scratch_ajmal.al", the workshared scratch copy of the
+# Snowdon Towers HVAC sample that version 1 was proved on (Revit 2024, session
+# 27192, 2026-09-08). tools/jobs/snowdon-round4.yaml recorded its user
+# worksets: "Shared Levels and Grids" and "Workset1". Read Collaborate >
+# Worksets first - if either name has changed, write it here.
+#
+# THE ARRANGEMENT is OP6's. Nothing is selected: every input is a value, so
+# `setup: []`. The positive renames Workset1 to HERON PROOF WS. The negative
+# is a DIFFERENT VALUE, not an empty one (rule 3): the same rename to
+# "Shared Levels and Grids", a name another workset has - refused BEFORE the
+# rename, nothing changed. It carries every value, because a negative-set
+# replaces the positive's. Every run is ROLLED BACK; read the Worksets dialog
+# afterwards and see Workset1 still there. ONE job: a run's record is kept
+# per card.
+
+model: "Snowdon-scratch_ajmal.al: the workshared scratch copy of the Snowdon Towers HVAC sample, worksets Shared Levels and Grids and Workset1, Revit 2024"
+
+defaults:
+  in: "Snowdon-scratch_ajmal.al"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: rename-workset
+    expect: renamed
+    set:
+      worksetName: Workset1
+      newName: "HERON PROOF WS"
+      deleteInstead: false
+    negative-set:
+      worksetName: Workset1
+      newName: "Shared Levels and Grids"
+      deleteInstead: false
+    note: >
+      OP6. Positive: `renamed true`; the new name is what Collaborate >
+      Worksets would show (rolled back, so read the record, then see Workset1
+      in the dialog). Negative: `renamed false` and `refused` WHOLE on its own
+      line - "... finding that out mid-rename is worse than being told now"
+      to its last word - never "1 item(s) [...]" cut at 60 characters. That
+      whole sentence is what version 2 changed; read it in the run record.

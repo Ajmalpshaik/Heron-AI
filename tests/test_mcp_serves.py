@@ -978,6 +978,52 @@ def exercise_no_proof_words(module):
           "a proof the code DID move under is still said as that, in all three")
 
 
+def exercise_held_words(module):
+    """A card HELD at DRAFT on purpose is said as held, with its own reason,
+    in the two places beside revit_change that word a DRAFT - row 5b-1960,
+    issue #1209.
+
+    The line under a read's answer and a QA checklist's check both said
+    "no recorded proof ... stands behind it" for every DRAFT, which is untrue
+    of a held card whose proof still matches its code. Nothing is sent: each
+    is asked for its sentence, with a real PROVEN read's status stood in for
+    as DRAFT with a hold.
+    """
+    print()
+    print("  a card held at DRAFT on purpose is said as held, with its reason "
+          "(row 5b-1960)")
+    capability, folder = first_with("READ", "PROVEN")
+    check(bool(capability and folder), "the library has a PROVEN read to ask about")
+    if not (capability and folder):
+        return
+    why = "waiting on NEEDS-CHECKING Group PJ's one run"
+
+    def held(found):
+        return dict(found or {}, status="DRAFT", stale=False, proof=True,
+                    proof_held=why)
+
+    real_status, real_of = module.brain.proof_status, module.bridge.proof_of
+    try:
+        module.brain.proof_status = lambda f: held(real_status(f))
+        module.bridge.proof_of = lambda f: held(real_of(f))
+        ask, _first = module._checklist_ask()
+        line = module._proof_line(capability, folder) or ""
+        qa = ask({"capability": capability}) or {}
+    finally:
+        module.brain.proof_status, module.bridge.proof_of = real_status, real_of
+
+    check("held" in line and why in line and "no recorded proof" not in line,
+          "the line under an answer says held, with the reason, and not that no "
+          "proof stands behind it: %s" % line)
+    check("Treat this answer as a claim" in line,
+          "and still says to treat the answer as a claim - it is not PROVEN")
+    reason = qa.get("why") or ""
+    check(qa.get("ran") is False and "held" in reason and why in reason
+          and "no recorded proof" not in reason,
+          "a QA check on it is still not run, and says held, with the reason: %s"
+          % (reason or qa))
+
+
 def exercise_words_on_this_card(module):
     """The words path runs a capability unasked only when THIS checkout's own
     card declares the words - row 131. The identity table that matched them is
@@ -1941,6 +1987,44 @@ async def exercise_words(module):
               and "call revit_change again with capability=<it>" in plain,
               "and a list of changes at revit_change reads exactly as it did")
 
+        # AND A SHOW IN THE READ DOOR'S LIST IS MARKED FOR THE SHOW DOOR (row
+        # 5b-1961). A question keeps EXECUTE in its ranking (D-128), and
+        # revit_read runs nothing above ANALYZE - "put Level 2 in the
+        # selection" handed back SET_SELECTION and said "call revit_read
+        # again". The card is the first PROVEN EXECUTE one the show door runs,
+        # asked of the server's own `_lookup_door`, so no name is typed here.
+        show_cap = None
+        for name, seen in cards():
+            if (seen.get("risk") == "EXECUTE" and seen.get("heron-status") == "PROVEN"
+                    and module._lookup_door("EXECUTE", seen.get("capability"), name)
+                    == "revit_show"):
+                show_cap = seen.get("capability")
+                break
+        shown = {"capability": show_cap, "risk": "EXECUTE", "route": "ranked",
+                 "candidates": [{"capability": show_cap, "risk": "EXECUTE", "why": "close"},
+                                {"capability": capability, "risk": "READ",
+                                 "why": "also close"}]}
+        module.brain.lookup = lambda *_a, **_k: dict(shown)
+        try:
+            revit.asked[:] = []
+            at_read = await call("revit_read", {"request": "put them in the selection"})
+        finally:
+            module.brain.lookup = real_lookup
+        best = [line for line in at_read.splitlines() if "best match" in line]
+        other = [line for line in at_read.splitlines() if "also close" in line]
+        closing = at_read.strip().splitlines()[-1] if at_read.strip() else ""
+        check(bool(show_cap) and len(best) == 1
+              and "run it with revit_show, not revit_read" in best[0],
+              "revit_read handing back an EXECUTE card says revit_show runs it: %s"
+              % (best[0].strip() if best else at_read[:80]))
+        check(len(other) == 1 and "run it with" not in other[0],
+              "and the READ beside it stays unmarked - revit_read runs that one")
+        check("revit_show for one marked so above" in closing
+              and "call revit_read again with capability=<it>" not in closing,
+              "and the closing line names revit_show for the marked one: %s"
+              % closing.strip()[:110])
+        check(not revit.asked, "and sends nothing")
+
         # AND HOW FAR EACH IS PROVED (row 5b-1523). The list named each one's
         # risk and door and not its status, so a DRAFT picked from it was
         # learned only from revit_change's refusal. A PROVEN change first and a
@@ -1996,6 +2080,55 @@ async def exercise_words(module):
             check(flags.get(words) == [False],
                   "revit_change looks the same words up as a change - found %r"
                   % flags.get(words))
+        finally:
+            module.brain.lookup = real_lookup
+
+        # THE SHOW DOOR LOOKS ITS WORDS UP UNDER ITS OWN CEILING (row 5b-1951,
+        # issue #1176). On the owner's PC "select the level named Level 2"
+        # through revit_show came back with CREATE_TRUSS first and four more
+        # MODIFY cards, every one refused by that door. Read off the call, and
+        # off what the real lookup hands back: the filter runs before ranking,
+        # so no backend can put a card above the door's risk in the list.
+        import heron_tools as TOOLS
+        show_ceiling = TOOLS.NAMES[TOOLS.risk_of("revit_show")]
+        ceilings = {}
+        try:
+            def door_spy(request, revit=None, question=False, ceiling=None):
+                ceilings.setdefault(request, []).append((question, ceiling))
+                # Only when one was passed: a lookup without the keyword then
+                # FAILS the checks below rather than raising (heron-ship 2a).
+                given = {"ceiling": ceiling} if ceiling is not None else {}
+                return real_lookup(request, revit=revit, question=question,
+                                   **given)
+            module.brain.lookup = door_spy
+            words = "select the level named Level 2"
+            revit.asked[:] = []
+            shown = await call("revit_show", {"request": words})
+            check(ceilings.get(words) == [(False, show_ceiling)],
+                  "revit_show looks its words up under its own ceiling, %s, read "
+                  "from the registry - found %r" % (show_ceiling, ceilings.get(words)))
+            listed = [line for line in shown.splitlines()
+                      if "best match" in line or "also close" in line]
+            above = [line.strip()[:70] for line in listed
+                     if not any("(%s," % TOOLS.NAMES[n] in line
+                                for n in TOOLS.NAMES
+                                if n <= TOOLS.risk_of("revit_show"))]
+            check(not above,
+                  "and no card it lists is declared above %s: %s"
+                  % (show_ceiling, above or "%d listed" % len(listed)))
+            check(not listed or ("Looked up for revit_show" in shown
+                                 and "D-128" in shown),
+                  "and its hand-back says the cards above %s were not offered"
+                  % show_ceiling)
+            check(not revit.asked or revit.asked[-1][0] == "run_fragment_show",
+                  "and anything it sends is a show")
+            ceilings.clear()
+            await call("revit_read", {"request": words})
+            await call("revit_change", {"request": words})
+            check(ceilings.get(words) == [(True, None), (False, None)],
+                  "revit_read still asks as a question and revit_change ranks "
+                  "everything, neither with a door ceiling - found %r"
+                  % ceilings.get(words))
         finally:
             module.brain.lookup = real_lookup
 
@@ -2146,6 +2279,24 @@ async def exercise_activity(module):
         check(draft in said and "DRAFT" in said and "Article 11" in said
               and "Nothing was sent to Revit" in said,
               "and the reply names it, its status and the Article")
+        # A DRAFT HELD ON PURPOSE is refused as held (row 5b-1960): its proof
+        # stands, so "no recorded proof stands behind its code" is untrue.
+        real_status = module.brain.proof_status
+        module.brain.proof_status = lambda folder: dict(
+            real_status(folder) or {}, status="DRAFT", stale=False, proof=True,
+            proof_held="waiting on Group PJ's one run")
+        try:
+            revit.asked[:] = []
+            got = await ended("revit_change", {"capability": writer})
+            said = module.revit_change(capability=writer)
+        finally:
+            module.brain.proof_status = real_status
+        check(got == ["refused"] and not revit.asked
+              and "held" in said and "waiting on Group PJ's one run" in said
+              and "no recorded proof stands behind" not in said,
+              "a card held at DRAFT on purpose (%s stood in) is refused as held, "
+              "quoting its reason - found %r, %d request(s)"
+              % (writer, got, len(revit.asked)))
         real_status = module.brain.proof_status
         module.brain.proof_status = lambda folder: dict(real_status(folder) or {},
                                                         stale=True)
@@ -2658,6 +2809,13 @@ async def settings_said_by_each_revit(module, server, Says):
               "revit_health: an OLDER add-in - its Ask to Keep line as before, and one "
               "line each saying it did not report its switches or its file - found %r"
               % (old,))
+        # Issue #1051 item D, row 5b-1966: the older add-in's line says how it is
+        # updated - by the modeller, with the tools that build it - and never
+        # names heron-ready, which only checks that an add-in is installed.
+        check(len(old) == 3 and "HeronInstaller.exe" in old[2] and "tools/setup.ps1" in old[2]
+              and "heron-ready" not in old[2],
+              "revit_health: the OLDER add-in's line says how to update it - close that "
+              "Revit, HeronInstaller.exe or tools/setup.ps1 - found %r" % (old[2:],))
         check("Changes is ON in Revit 2025, session 5102, as that Revit has it" in said,
               "revit_health: the write gate is Revit's - Changes on in one of them warns, "
               "naming it")
@@ -4387,6 +4545,7 @@ def main():
         asyncio.run(exercise(server))
         exercise_waiting(server_module)
         exercise_no_proof_words(server_module)
+        exercise_held_words(server_module)
         exercise_words_on_this_card(server_module)
         exercise_served_from(server_module)
         asyncio.run(exercise_door(server_module))
