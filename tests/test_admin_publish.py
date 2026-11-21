@@ -424,6 +424,116 @@ def no_proof_at_all(names):
           "the card itself was never touched: read again, its proof still stands")
 
 
+def held_on_purpose(names):
+    """Section 7c - a card HELD at DRAFT on purpose is refused in words that
+    say so, and never in words saying no proof stands behind it (row 5b-1960,
+    issue #1209).
+
+    A held card carries `proof-held:` - the reason it waits, which
+    tools/check-signatures.py already reads as a deliberate hold. The refusal
+    was chosen by `heron-status` alone and said "no recorded proof stands
+    behind its code" and "it is proved first on a test model" - untrue of a
+    card whose proof still matches its code and waits only for the run its
+    hold names. Whether a held card should be refused at all is the owner's
+    question, not this fix: it is still refused here, in true words.
+
+    The card is a real one whose proof stands, edited IN MEMORY to DRAFT with
+    a hold, as 7b does - nothing on disk is touched.
+    """
+    print()
+    print("7c. A card held at DRAFT on purpose is refused as held, quoting its reason "
+          "(row 5b-1960)")
+    proof_of = getattr(CLIENT, "proof_of", None) or (lambda name: None)
+    refusal = getattr(CLIENT, "unproven_refusal", None) or (lambda what, found: None)
+    why = ("waiting on NEEDS-CHECKING Group PJ - its one run on Revit 2024, "
+           "against the original's box")
+
+    def held(**more):
+        found = {"status": "DRAFT", "stale": False, "proof": True,
+                 "date": "2026-11-02", "risk": "MODIFY", "proof_held": why}
+        found.update(more)
+        return refusal("SOME_CAPABILITY", found) or ""
+
+    standing = held()
+    check("SOME_CAPABILITY" in standing and "Nothing was sent to Revit" in standing,
+          "a held DRAFT is still refused, by name, saying nothing was sent")
+    check("held" in standing and why in standing,
+          "the refusal says it is held, and quotes the card's own reason")
+    check("no recorded proof stands behind" not in standing
+          and "proved first on a test model" not in standing,
+          "and never says no proof stands behind its code, nor that it is proved "
+          "first - its proof stands")
+    check("still matches its code" in standing and "2026-11-02" in standing,
+          "it says its recorded proof, and that proof's date, still match its code")
+    check("Article 11" in standing and "D-117" in standing,
+          "and why it is refused all the same: a change is kept only from a PROVEN "
+          "card (D-117, Article 11)")
+    check("try-once" in standing and "D-119" in standing,
+          "a held DRAFT declared MODIFY is still a DRAFT: its one try is named")
+
+    moved = held(stale=True)
+    check(why in moved and "D-30" in moved and "still matches" not in moved,
+          "a held card whose code moved after its proof says that proof no longer "
+          "describes it (D-30), and not that it still matches")
+    never = held(proof=False, date=None)
+    check(why in never and "No proof is recorded" in never
+          and "still matches" not in never,
+          "a held card with no proof recorded says so, plainly")
+    spread = held(proof_held="  waiting on\n  the second route  ")
+    check('"waiting on the second route"' in spread,
+          "a reason folded over lines in the card is quoted as one sentence")
+
+    plain = refusal("SOME_CAPABILITY", {"status": "DRAFT", "stale": False,
+                                        "risk": "MODIFY"}) or ""
+    check("held" not in plain and "no recorded proof stands behind its code" in plain,
+          "a DRAFT with no hold reads as it did")
+    retired = refusal("SOME_CAPABILITY", {"status": "DEPRECATED", "stale": False,
+                                          "risk": "MODIFY", "proof_held": why}) or ""
+    check(why not in retired and "DEPRECATED" in retired,
+          "a hold on a retired card is history, not why it is refused - not quoted")
+
+    # WHAT proof_of ANSWERS CARRIES THE HOLD - read from the card, not typed.
+    proven_one = next((n for n in names if card_risk(n) == "MODIFY"
+                       and current(proof_of(n))), None)
+    check(proven_one is not None, "the library has a MODIFY fragment whose proof stands")
+    if proven_one is None:
+        return
+    check((proof_of(proven_one) or {}).get("proof_held", "absent") is None,
+          "a card with no hold is read with proof_held None - found %r"
+          % (proof_of(proven_one) or {}).get("proof_held", "absent"))
+
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    import heron_fragment as FRAGMENT
+    real_load = FRAGMENT.load
+
+    def edited(folder, *args, **kwargs):
+        frag = real_load(folder, *args, **kwargs)
+        frag.data["heron-status"] = "DRAFT"
+        frag.data["proof-held"] = why + "\n"
+        return frag
+
+    FRAGMENT.load = edited
+    try:
+        found = proof_of(proven_one) or {}
+        with fake_revit() as (bridge, asked, out):
+            code = CLIENT.cmd_fragment(proven_one, writing=True, apply_it=True)
+    finally:
+        FRAGMENT.load = real_load
+    check(found.get("status") == "DRAFT" and found.get("stale") is False
+          and found.get("proof_held") == why,
+          "proof_of reads the card's hold, and its proof as standing - found %r"
+          % ({k: found.get(k) for k in ("status", "stale", "proof_held")},))
+    kept = [a.get("name") for a in bridge.args if a.get("apply") == "true"]
+    check(code == 2 and not bridge.sent and not kept,
+          "`fragment --write --apply` is still refused before Revit is asked "
+          "(exit %s, sent %r)" % (code, bridge.sent))
+    check("held" in out.getvalue() and why in out.getvalue()
+          and "no recorded proof stands behind" not in out.getvalue(),
+          "and the refusal it prints says held, with the reason")
+    check(current(proof_of(proven_one)),
+          "the card itself was never touched: read again, its proof still stands")
+
+
 def outside_verdict():
     """Row 5b-1594 (the owner's "yes", 2026-11-19): a Publish, an Admin or a
     no-transaction run sent without apply is not told "NOTHING WAS KEPT".
@@ -884,6 +994,7 @@ def main():
 
     article_11(names)
     no_proof_at_all(names)
+    held_on_purpose(names)
 
     # ------------------------------------------------------------------
     print()

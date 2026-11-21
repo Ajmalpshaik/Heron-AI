@@ -3129,6 +3129,13 @@ def proof_status(folder):
     DRAFT's one try takes a card declared MODIFY and no other
     (heron_bridge_client.unproven_refusal).
 
+    `proof_held` IS THE CARD'S OWN `proof-held:` REASON, or None - row 5b-1960.
+    A card held at DRAFT on purpose says why there, and tools/check-signatures.py
+    reads it as a deliberate hold; without it here every refusal of such a card
+    said "no recorded proof stands behind its code", untrue of one whose proof
+    still matches its code. Carried as written - which statuses a hold speaks
+    for is the refusal's to decide.
+
     None rather than a guess. A caller told None says the status could not be
     read; it never says PROVEN.
     """
@@ -3152,6 +3159,7 @@ def proof_status(folder):
         "model": str(proof.get("model") or "") or None,
         "by": str(proof.get("by") or "") or None,
         "risk": str(frag.data.get("risk") or "").upper() or None,
+        "proof_held": " ".join(str(frag.data.get("proof-held") or "").split()) or None,
     }
 
 

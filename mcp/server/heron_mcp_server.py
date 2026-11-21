@@ -3601,6 +3601,15 @@ def _proof_line(capability, folder):
                 "the same as unproven, and not the same as proven." % capability)
 
     status = found["status"] or "not stated"
+    held = bridge.held_reason(found)
+    if status not in ("PROVEN", "PRODUCTION") and held:
+        # Row 5b-1960: a card held at DRAFT on purpose may have a proof that
+        # still matches its code, so "no recorded proof stands behind it" is
+        # untrue of it. Its own reason, and its proof as it stands.
+        return ("'%s' is %s, held there on purpose: \"%s\". %s It is not PROVEN. "
+                "Treat this answer as a claim, and check it against the model "
+                "before relying on it." % (capability, status, held,
+                                           bridge.held_proof(found)))
     if status not in ("PROVEN", "PRODUCTION"):
         return ("'%s' is %s - no recorded proof with a negative case stands behind "
                 "it. Treat this answer as a claim, and check it against the model "
@@ -7606,6 +7615,15 @@ def _checklist_ask(origin="chat", ctx=None):
             return ended("refused", {"ran": False, "why": "How far %s is proven could not be read, "
                                                         "so nothing was sent - could not tell is "
                                                         "not PROVEN." % capability})
+        held = bridge.held_reason(proof)
+        if proof.get("status") not in bridge.KEEPABLE_STATUSES and held:
+            # Row 5b-1960: held at DRAFT on purpose - said as held, not as unproved.
+            return ended("refused", {"ran": False, "why": "%s is %s, held there on purpose: "
+                                                        "\"%s\". %s It is not PROVEN, so its "
+                                                        "answer is not a QA result. Nothing "
+                                                        "was sent."
+                                                        % (capability, proof.get("status"), held,
+                                                           bridge.held_proof(proof))})
         if proof.get("status") not in bridge.KEEPABLE_STATUSES:
             return ended("refused", {"ran": False, "why": "%s is %s - no recorded proof stands "
                                                         "behind it, so its answer is not a QA "
