@@ -396,9 +396,15 @@ namespace Heron.Revit.Addin
                 // the risk the gate above read for the NAME, so it is the
                 // owner's Publish or Admin switch that let this through, with
                 // Changes, and nothing in the request could have said so.
+                //
+                // AND A REFUSAL AFTER ITS CODE RAN SAYS WHAT IT DID OUTSIDE THE
+                // MODEL STANDS (FRAGMENT-ISSUES 5b row 1933): an export, a save
+                // or a new file is beyond the group's rollback. OutsideStood
+                // adds it only to a refusal, and only once the job's code ran.
                 case "run_fragment_publish":
                 case "run_fragment_admin":
-                    return RevitFragment.Run(app, request, true, HeronOperationRegistry.RiskOf(op));
+                    return RevitFragment.OutsideStood(
+                        RevitFragment.Run(app, request, true, HeronOperationRegistry.RiskOf(op)));
 
                 default:
                     // Step 6 added the write path. It lives in its own file so

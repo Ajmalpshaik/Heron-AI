@@ -109,6 +109,20 @@ def main():
     check(listen.count("if (waiting == null) break;") == 2,
           "the loop breaks on no instance - which now means stopped, and only that")
 
+    # ROW 5b-361: WHICH PROCESS TOOK THE PIPE is in the log line that says one
+    # did (NEEDS-CHECKING CS6) - read only for the log, and only on Windows.
+    print("\n4. the log names the process that took the session (5b-361)")
+    who = code_only(body_of(server, "private static string WhoConnected("))
+    check(listen.count('"A newer connection took the session" + who') == 2
+          and "var who = WhoConnected(accepted.Pipe);" in listen,
+          "both lines that say a newer connection took the session name what connected")
+    check("Environment.OSVersion.Platform != PlatformID.Win32NT) return \"\";" in who
+          and "GetNamedPipeClientProcessId(" in who,
+          "by Windows' own call for a pipe's client, and on no other system")
+    check(who.count("catch (Exception)") == 2 and who.count('return "";') >= 3,
+          "a process it cannot read is named by its id alone, and any failure says "
+          "nothing rather than costing the connection")
+
     print()
     if FAILURES:
         print("FAILED  %d check(s)" % len(FAILURES))

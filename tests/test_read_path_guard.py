@@ -282,6 +282,23 @@ def main():
           "or the answer is built")
     check('"read_changed_model"' in executor,
           "a changed model has its own error code, never a clean answer")
+    # ROW 5b-977: A COMMIT THE COUNTS CANNOT SEE - an edit to existing elements
+    # of a model already marked changed - is heard from Revit's own event.
+    heard_at = branch.find("new RevitChangedSet(app.Application, target,")
+    begun = branch.find("readChanges.Begin();")
+    described = branch.find("heard = readChanges.Describe();")
+    check(heard_at >= 0 and 0 <= begun < runs_at < described,
+          "every transaction Revit commits in the model while a read runs is heard: "
+          "listening starts before the fragment runs and is read after it")
+    check("ReadChangedModel(name, target, counted, heard, threw)" in branch,
+          "and what was heard is handed to the check, beside the counts")
+    judged = executor[executor.find("private static string ReadChangedModel("):]
+    judged = judged[:judged.find("\n        }\n")]
+    check("var commits = heard == null ? 0 : heard.Events;" in judged
+          and "&& commits == 0) return null;" in judged
+          and 'Json.Num("transactionsCommitted", commits)' in judged,
+          "a read in which Revit committed a transaction is refused read_changed_model, "
+          "and the refusal says how many")
     check("WithCount(answer, counted);" in executor
           and '"elementsCounted"' in executor,
           "a clean read carries the count it was measured by, so the chat's "

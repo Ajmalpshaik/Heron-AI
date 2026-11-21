@@ -75,10 +75,15 @@ class Failure(object):
         # `rolledBack` on a refusal after a rollback (row 5b-1559) - True when
         # Revit said it rolled back and the rollback check found nothing left
         # standing, False when either did not. `elements_counted`: a read
-        # that stopped, counted unchanged around the run.
+        # that stopped, counted unchanged around the run. `outside_stands`
+        # and `ran_outside`: an Admin or Publish job refused after its code
+        # ran, whose work outside the model stands - and one that ran with no
+        # group open in its model at all (D-192) - row 5b-1933.
         self.workflow = None
         self.rollback_held = None
         self.elements_counted = None
+        self.outside_stands = None
+        self.ran_outside = None
 
     @property
     def may_retry(self):
@@ -477,8 +482,9 @@ _KNOWN = {
     # around the run and the count moved, with no transaction to roll back.
     "read_changed_model": (UNKNOWN, LOOK_AT_THE_MODEL,
                            "a read ran with no transaction open and the model's count or "
-                           "its changed flag moved anyway, so something may be in the "
-                           "model that nothing can undo"),
+                           "its changed flag moved anyway, or Revit committed a "
+                           "transaction in it (row 5b-977), so something may be in the "
+                           "model that a read should never have left"),
     # D-192: a job that works only outside the model it was aimed at, run with
     # no transaction group open there - and that model moved after all, or a
     # transaction was left open in it. Nothing could roll it back.
@@ -691,7 +697,8 @@ def _beside(failure, reply):
     """
     `failure` with what the add-in said beside its code (row 5b-1901), read
     off the reply once and nowhere else: the run's id, whether a rollback
-    held, and a stopped read's count. Each is taken only when it is the
+    held, a stopped read's count, and whether a job's work outside the model
+    stands (row 5b-1933). Each is taken only when it is the
     type the add-in writes - a bool is a bool, a count a whole number - so a
     field from an add-in this server was not written against says nothing,
     as an absent one does. Classification is unchanged: the outcome line and
@@ -706,6 +713,13 @@ def _beside(failure, reply):
     counted = reply.get("elementsCounted")
     if isinstance(counted, int) and not isinstance(counted, bool) and counted >= 0:
         failure.elements_counted = counted
+    # ROW 5b-1933: what an Admin or Publish job did outside the model stands,
+    # and whether it had a group in the model at all. True only when the
+    # add-in wrote true; anything else says nothing.
+    if reply.get("outsideStands") is True:
+        failure.outside_stands = True
+    if reply.get("ranOutsideTheModel") is True:
+        failure.ran_outside = True
     return failure
 
 

@@ -529,9 +529,12 @@ def main():
     # The fourth argument is the registry's risk for the operation, which the
     # executor uses only to ask the switches again before it keeps anything
     # (the run guard, Article 13) - the executor itself is unchanged.
+    # Row 5b-1933 wraps the SAME call in RevitFragment.OutsideStood, which only
+    # adds outsideStands to a refusal after the job's code ran.
     routed = re.search(r'case "run_fragment_publish":\s*case "run_fragment_admin":\s*'
-                       r'return RevitFragment\.Run\(app, request, true, '
-                       r'HeronOperationRegistry\.RiskOf\(op\)\);', operations)
+                       r'return (?:RevitFragment\.OutsideStood\(\s*)?'
+                       r'RevitFragment\.Run\(app, request, true, '
+                       r'HeronOperationRegistry\.RiskOf\(op\)\)\)?;', operations)
     check(routed is not None,
           "both are routed to the SAME write executor run_fragment_write uses - "
           "one TransactionGroup, kept only on apply")

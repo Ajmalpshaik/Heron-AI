@@ -12,21 +12,27 @@
 # The FIRST sentence of the new-a group and of the new-b group is the owner's own
 # sentence from his PC; the rest are a session's words, never declared on a
 # card except where a row says so. Never reworded to buy back a rank.
+#
+# EXPECTATION CHANGED, NOT A SENTENCE, later on 2026-11-21: the level-elevation
+# group now wants WRITE_ELEMENT_PARAMETERS (PROVEN), not SET_PARAMETER_VALUES_BY_ID
+# (DRAFT, refused live) - row 5b-1950 records the PROVEN pair doing the job on
+# the owner's PC. Groups for rows 5b-1950 and 5b-1947 were added, frozen before
+# their edit. 67 sentences.
 groups:
 - group: 'new-a: a level''s elevation (owner''s PC 2026-11-21, and held-out)'
   sentences:
   - say: change the elevation of Level 2 to 3000 mm
-    expect: want SET_PARAMETER_VALUES_BY_ID
+    expect: want WRITE_ELEMENT_PARAMETERS
   - say: set the elevation of Level 3 to 6000
-    expect: want SET_PARAMETER_VALUES_BY_ID
+    expect: want WRITE_ELEMENT_PARAMETERS
   - say: raise Level 2 to 3500 mm
-    expect: want SET_PARAMETER_VALUES_BY_ID
+    expect: want WRITE_ELEMENT_PARAMETERS
   - say: change the height of the Roof level to 9000 mm
-    expect: want SET_PARAMETER_VALUES_BY_ID
+    expect: want WRITE_ELEMENT_PARAMETERS
   - say: Level 1 should be at 150 mm, change its elevation
-    expect: want SET_PARAMETER_VALUES_BY_ID
+    expect: want WRITE_ELEMENT_PARAMETERS
   - say: lower level 4 to 12000
-    expect: want SET_PARAMETER_VALUES_BY_ID
+    expect: want WRITE_ELEMENT_PARAMETERS
   - say: what is the elevation of Level 2
     expect: not-a-write
   - say: how high is level 3
@@ -49,6 +55,26 @@ groups:
     expect: want SLOPE_ROOF_EDGES
   - say: what is the slope of this roof
     expect: not-a-write
+- group: '5b-1950: a level''s Elevation as a parameter (owner''s PC)'
+  sentences:
+  - say: set the parameter elevation to 3000 on the level called level 2
+    expect: want WRITE_ELEMENT_PARAMETERS
+  - say: set the Elevation parameter of Level 3 to 6500
+    expect: want WRITE_ELEMENT_PARAMETERS
+  - say: set the global parameter Floor Height to 3500
+    expect: want SET_GLOBAL_PARAMETER
+- group: '5b-1947: stop walls joining'
+  sentences:
+  - say: stop these walls joining
+    expect: want DISALLOW_JOIN
+  - say: don't let these two walls join at the end
+    expect: want DISALLOW_JOIN
+  - say: keep these walls from joining each other
+    expect: want DISALLOW_JOIN
+  - say: stop the wall ends cleaning up
+    expect: want DISALLOW_JOIN
+  - say: unjoin the floor from the wall
+    expect: want JOIN_GEOMETRY
 - group: '1039 / 5b-1848: bring datums in from a link'
   sentences:
   - say: get the levels and grids from the structural link into this model
@@ -131,8 +157,6 @@ groups:
     expect: want JOIN_GEOMETRY
   - say: join the floor and the beam so they cut each other
     expect: want JOIN_GEOMETRY
-  - say: stop these walls joining
-    expect: want DISALLOW_JOIN
 - group: 956 / other rows, measured only
   sentences:
   - say: line the viewports up

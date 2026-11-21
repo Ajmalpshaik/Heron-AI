@@ -322,6 +322,36 @@ namespace Heron.FailureNote.TestHost
                   && !Json.HasKey("not json", "rolledBack") && !Json.HasKey(null, "a"),
                   "HasKey answers the outermost object only, and false for what does not parse");
 
+            // A REFUSAL FROM A JOB THAT WORKS OUTSIDE THE MODEL SAYS WHAT
+            // STANDS - 5b row 1933, 2026-11-21. Json.WithOutsideStands: pure
+            // text, run here; RevitFragment.OutsideStood decides when to ask.
+            const string mark = "What it did outside";
+            const string stands = "What it did outside the model still stands.";
+            var stopped = Json.Error("ran_too_long", "It ran too long. Heron rolled the whole job back.");
+            var marked = Json.WithOutsideStands(stopped, false, stands, mark);
+            Check(Json.ReadString(marked, "message") == "It ran too long. Heron rolled the whole job back. " + stands
+                  && marked.EndsWith("\"outsideStands\": true}", StringComparison.Ordinal)
+                  && !Json.HasKey(marked, "ranOutsideTheModel"),
+                  "a refusal after a group's rollback says the outside work stands, in its message and in outsideStands: " + marked);
+            Check(marked.StartsWith("{\"ok\": false, ", StringComparison.Ordinal)
+                  && Json.ReadString(marked, "error") == "ran_too_long"
+                  && Json.WithRollback(marked, 1, true, true).EndsWith("\"rolledBack\": true, \"rollbackReported\": true}", StringComparison.Ordinal),
+                  "and it is still the add-in's own refusal, so the dispatcher still adds whether the rollback held");
+            var noGroup = Json.WithOutsideStands(
+                Json.Error("stopped_mid_run", "Stopped. What it did outside the model before it was stopped stands."),
+                true, stands, mark);
+            Check(Json.ReadString(noGroup, "message") == "Stopped. What it did outside the model before it was stopped stands."
+                  && noGroup.EndsWith("\"outsideStands\": true, \"ranOutsideTheModel\": true}", StringComparison.Ordinal),
+                  "a job with no group says so in ranOutsideTheModel, and a message that already says it is not said twice: " + noGroup);
+            Check(Json.WithOutsideStands(answered, false, stands, mark) == answered,
+                  "an answer that is not a refusal is unchanged - a verdict says it for itself");
+            var told = Json.Error("x", "y", Json.Bool("outsideStands", false));
+            Check(Json.WithOutsideStands(told, true, stands, mark) == told,
+                  "a refusal that already says is unchanged - its writer knew more");
+            var awkward = Json.WithOutsideStands(Json.Error("fragment_threw", "a \"quoted\" } brace"), false, stands, mark);
+            Check(Json.ReadString(awkward, "message") == "a \"quoted\" } brace " + stands,
+                  "a message with quotes and braces in it is kept whole: " + awkward);
+
             // A RUN RECORD STAMPED WITH ITS UNDO - 5b row 1163. Json.Set keeps
             // one top-level key, the latest, and every other field whole.
             var record = Json.Obj(Json.Num("record", 1), Json.Str("workflow", "wf-1"),
