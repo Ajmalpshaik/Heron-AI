@@ -262,6 +262,44 @@ def _can_drop(code):
     return bool(re.search(r"\bcontinue\s*;", body)) or ".Add(" in body
 
 
+# WHAT A DROPPED COUNT IS CALLED. The seven words below were the whole rule
+# until 2026-11-21, on any provide whatever its role.
+DROP_WORDS = ("unresolved", "skipped", "refused", "dropped", "missing",
+              "failed", "weakened")
+
+# THE NEGATIVE NAMES, read only on a provide the contract itself declares
+# `role: accounting` - "what it was HANDED and could not use, or work done"
+# (heron_fragment.ROLES). The role is the contract's word; the name only tells
+# the first half from the second, so `scanned` and `linksSearched` stay what
+# they are. Row 5b-1958, issue #1203: REPORT_STRUCTURAL_LOADS declares
+# `noAnalytical` and stayed on D-64's worklist for good, and other
+# reading cards declare theirs the same way - noCeiling, withoutLocation,
+# notLinear, unreadable, outOfScope, heldBack - each one's contract comment
+# saying "given and could not use, never a thing it found".
+#
+# Never on a bool: `notAFamily` says the whole document was refused, and
+# counts nothing a loop passed over. Never on a `result`: a name the contract
+# calls a finding is a finding. `un-` on its own is not a negative word here -
+# `unused`, `unassigned` and `unconstrained` are what those cards FOUND - so
+# only the three that say "could not" are listed.
+DROP_SHAPE = re.compile(r"^(no|not|without)[A-Z]|NotChecked")
+DROP_WORDS_ACCOUNTING = ("unreadable", "unmeasured", "unbounded",
+                         "outofscope", "heldback")
+
+
+def _declares_drop(provide):
+    """Whether one provide of a contract is a declared dropped count (D-64)."""
+    name = (provide or {}).get("name") or ""
+    if any(w in name.lower() for w in DROP_WORDS):
+        return True
+    if provide.get("role") != "accounting":
+        return False
+    if (provide.get("type") or "").strip().lower() == "bool":
+        return False
+    return bool(DROP_SHAPE.search(name)) or any(
+        w in name.lower() for w in DROP_WORDS_ACCOUNTING)
+
+
 def ask(fid, name, doc, raw, code):
     """The fourteen answers for one fragment, in order."""
     answers = []
@@ -584,12 +622,9 @@ def ask(fid, name, doc, raw, code):
         # dropped varies. The rule is that ONE OF THEM EXISTS, never that a
         # particular word does; a rule about the word would be a naming
         # convention wearing a correctness rule's clothes.
-        dropped = [n.get("name") or "" for n
-                   in (doc.get("contract") or {}).get("provides") or []]
-        names_it = [n for n in dropped
-                    if any(w in n.lower() for w in
-                           ("unresolved", "skipped", "refused", "dropped",
-                            "missing", "failed", "weakened"))]
+        names_it = [n.get("name") for n
+                    in (doc.get("contract") or {}).get("provides") or []
+                    if _declares_drop(n)]
         if names_it:
             say(ANSWERED,
                 "the contract declares %s, so the caller is told what was "
