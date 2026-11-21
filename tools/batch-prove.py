@@ -136,6 +136,7 @@ import copy
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -976,9 +977,9 @@ def run_one(job, env, quiet=True, session=None, release=None, transcript=None):
         sys.stdout.write(output)
 
     if not os.path.isfile(record_path):
-        first = [line for line in output.splitlines() if line.strip()]
-        return None, DID_NOT_RUN, (first[0] if first else
-                                   "validate recorded nothing and said nothing")
+        # THE REFUSAL, NOT THE FIRST LINE - row 5b-1942, and `stop_reason`
+        # says why the first line was the wrong one.
+        return None, DID_NOT_RUN, stop_reason(output)
 
     try:
         record = json.loads(io.open(record_path, encoding="utf-8").read())
@@ -1190,6 +1191,49 @@ def refusal_line(text):
                 and any(m in line for m in HELD_ELSEWHERE + REVIT_BUSY)):
             return line.strip()
     return first_line(text)
+
+
+# THE NOTES `validate` PRINTS BEFORE IT TOUCHES REVIT, AND NEVER ITS REASON.
+# `report_undeclared` in the client names a value the fragment does not
+# declare - "'ductType' is not this fragment's - setup step create-mep-runs
+# takes it", "IGNORED 'maxSteps' - not a value this fragment declares", and
+# the two lines under that - and it never refuses (row 5b-228). It prints
+# first, so whenever a job carried such a value the first line `validate` said
+# was a note. Row 5b-1942: on 2026-11-21 a job reported DID NOT RUN with that
+# note as its reason, the lease refusal printed under it out of sight, and the
+# same job passed once the lease lapsed. The shapes are the client's own;
+# tests/test_batch_prove.py reads them from what `report_undeclared` prints.
+UNDECLARED_NOTE = re.compile(
+    r"^\S+ +'[^']*' is not this fragment's - setup step \S+ takes it$"
+    r"|^\S+ +IGNORED '[^']*' - not a value this fragment declares"
+    r"|^ +it takes: "
+    r"|^ +a mistyped name and an invented one look the same here")
+
+
+def stop_reason(output):
+    """Why `validate` recorded nothing: the line that says so, never a note.
+
+    The notes `report_undeclared` prints are set aside; of what is left, the
+    line naming who holds Revit, or that it is busy, comes first
+    (`refusal_line`); otherwise the first line - and a heading that ends in a
+    colon, "Could not identify the active model:", is read with the line under
+    it, which is the reason. A run that printed nothing but a note says that,
+    rather than passing the note off as a refusal.
+    """
+    said = [line.rstrip() for line in (output or "").splitlines() if line.strip()]
+    rest = [line for line in said if not UNDECLARED_NOTE.search(line)]
+    if not rest:
+        if said:
+            return ("validate recorded nothing, and printed only a note: %s"
+                    % " ".join(said[0].split()))
+        return "validate recorded nothing and said nothing"
+    reason = refusal_line("\n".join(rest))
+    lines = [line.strip() for line in rest]
+    if reason.endswith(":") and reason in lines:
+        under = lines.index(reason) + 1
+        if under < len(lines):
+            reason = "%s %s" % (reason, lines[under])
+    return reason
 
 
 def retry_reason(verdict, text):

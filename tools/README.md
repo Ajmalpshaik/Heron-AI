@@ -1209,6 +1209,13 @@ of the 7 it refused for this, 3 were given their values and 4 were retired cards
 sign. It is `REFUSED`, naming its date and the capability in its `deprecated: superseded-by:` - "prove that
 card instead". Measured the same day: 161 jobs in 84 files, 154 of which had read `WOULD RUN`.
 
+**A `DID NOT RUN`'s reason is `validate`'s refusal, never a note above it**
+([row 5b-1942](../docs/fragment-issues/row-5b-1942.md)). The note `report_undeclared` prints about a value
+the card does not declare - *"'ductType' is not this fragment's - setup step create-mep-runs takes it"* -
+comes first and never refuses (row 5b-228), and on 2026-11-21 it stood as a job's reason while the lease
+refusal under it went unseen. `stop_reason` sets those notes aside and gives the line naming who holds
+Revit or that it is busy, else the first line left, a heading read with the line under it.
+
 **Hole 2 — it passed fragments that had done nothing.** `heron_validate` judges whether the NEGATIVE
 came back empty, which is [D-30](../docs/DECISIONS.md)'s leg and which a fragment that does nothing
 satisfies without trying. So the POSITIVE is judged too, by one rule: **a declared result has to have
