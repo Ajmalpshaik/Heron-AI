@@ -188,6 +188,7 @@ utterances:
   # question about which wall face room areas reach went to PLACE_AREAS, a
   # write, at nearness rank 17 for this card - its text is mostly volumes.
   - which wall face are room areas measured to
+  - which wall line is room area measured to
   - do the room areas include the wall finish
   - what are the area and volume computation settings
   - list the area schemes
