@@ -328,9 +328,7 @@ utterances:
   # first try lost to this read on the model backend.
   - which categories have a material in object styles
   # ADDED 2026-11-21, row 5b-1954 (issue #1188). The material question in
-  # other words, and the counterweight to SET_OBJECT_STYLE's new request
-  # line, which without it pulled "what is the object style material of
-  # doors" to that write. At the END, so the eight the re-ranker reads (D-134)
-  # are unchanged; the row's own sentences are not declared.
+  # other words. At the END, so the eight the re-ranker reads (D-134) are
+  # unchanged; the row's own sentences are not declared.
   - what material does each category use in object styles
   - tell me the object style material of each category
