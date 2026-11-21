@@ -553,6 +553,16 @@ def test_no_reply_is_reported_as_a_timeout():
                             frag)
     check(verdict == BP.TIMEOUT, "no_reply is a TIMEOUT (%s)" % verdict)
 
+    # ROW 5b-1167 (b): a read that was SENT and lost its answer has a code of
+    # its own since 2026-11-21, `answer_lost`, where it was None - which the
+    # proving client wrote down as `no_reply`. Same event, same verdict.
+    verdict, why = BP.judge(record(positive_ok=False, positive_error="answer_lost"),
+                            frag)
+    check(verdict == BP.TIMEOUT, "answer_lost is a TIMEOUT too (%s)" % verdict)
+    verdict, why = BP.judge(record(positive={"sized": "3"}, negative_error="answer_lost"),
+                            frag)
+    check(verdict == BP.TIMEOUT, "in the negative leg as in the positive (%s)" % verdict)
+
 
 # ---------------------------------------------------------------------------
 # Hole 1 - finished work is never re-proved

@@ -279,6 +279,40 @@ def linked_carry_is_refused(text):
     return found
 
 
+def mixed_ids_are_recorded(text):
+    """FRAGMENT-ISSUES row 75, part (2), 2026-11-21: a list a fragment left as
+    IDS is counted against the model it was left in, and a mixed one recorded.
+
+    The host proves what IdsFromElsewhere records and what CarriedFromElsewhere
+    then says; only RevitFragment.cs shows that `Remember` asks it of an id
+    list, looks each id up in `target` - the model the step ran in - skips
+    the built-in ids that name no element by design, and keeps the record
+    through `chain.Keep` beside the value, before the plain keep that records
+    nothing. Read as text - Remember calls Revit. Every position is checked
+    for -1 first (heron-ship 2a)."""
+    at = text.find("private static void Remember(string name,")
+    body = text[at:at + 8000] if at >= 0 else ""
+    end = body.find("\n        }\n")
+    body = body[:end] if end >= 0 else body
+    takes = body.find("var idList = value as IEnumerable<ElementId>;")
+    looks = body.find("target.GetElement(id)", takes if takes >= 0 else 0)
+    skips = body.find("IsElementNumber(id)", takes if takes >= 0 else 0)
+    asks = body.find("HeronBindingNote.IdsFromElsewhere(here, nothing)")
+    keeps = re.search(r"chain\.Keep\(variable\.Name, value,\s*mixed == null \? null : "
+                      r"new List<string> \{ mixed \}\);", body)
+    plain = body.rfind("chain.Keep(variable.Name, value, null);")
+    return [
+        (takes >= 0 and looks > takes and asks > looks,
+         "Remember looks every carried id up in the model it was left in and asks "
+         "IdsFromElsewhere (row 75 (2)) - at %d, %d, %d" % (takes, looks, asks)),
+        (skips > takes >= 0 and skips < looks,
+         "skipping ids that are not element numbers (built-in categories, none) "
+         "before it looks"),
+        (keeps is not None and plain >= 0 and keeps.start() < plain,
+         "and keeps that record through chain.Keep, ahead of the plain keep"),
+    ]
+
+
 def one_id_is_a_list(text):
     """FRAGMENT-ISSUES 5b row 1406, 2026-11-20: one ElementId handed to a need
     that wants a list is shaped as a list of one, never handed on to throw a
@@ -639,7 +673,8 @@ def _suite(handed, block):
         print("  %s  %s" % ("ok  " if ok_here else "FAIL", said_here))
     linked_ok = all(ok_here for ok_here, _ in linked)
 
-    typed = typed_ids_only_on_a_read(text) + one_id_is_a_list(text)
+    typed = (typed_ids_only_on_a_read(text) + one_id_is_a_list(text)
+             + mixed_ids_are_recorded(text))
     for ok_here, said_here in typed:
         print("  %s  %s" % ("ok  " if ok_here else "FAIL", said_here))
     typed_ok = all(ok_here for ok_here, _ in typed)

@@ -270,6 +270,7 @@ namespace Heron.BindingNote.TestHost
                   "and an element with no family never matches");
 
             Foreign();
+            MixedIds();
             Typed();
             Parts();
             TakenBack();
@@ -283,6 +284,70 @@ namespace Heron.BindingNote.TestHost
             Console.WriteLine("PASSED - " + _checks + " checks. A partial revival no longer");
             Console.WriteLine("reads like a deliberate narrowing.");
             return 0;
+        }
+
+        /// <summary>
+        /// FRAGMENT-ISSUES row 75, part (2), 2026-11-21: a list a fragment left
+        /// as IDS carries no document, so the chain counts, when it keeps one,
+        /// how many of its ids name an element in the model they were left in.
+        /// Some that do and some that do not is a list holding another model's
+        /// ids beside this one's - the 2-of-1128 bind - and it is refused whole.
+        /// By reflection, for Foreign's reason.
+        /// </summary>
+        private static void MixedIds()
+        {
+            const BindingFlags Rule = BindingFlags.NonPublic | BindingFlags.Static;
+            var recordRule = typeof(HeronBindingNote).GetMethod("IdsFromElsewhere", Rule);
+            var refuseRule = typeof(HeronBindingNote).GetMethod("CarriedFromElsewhere", Rule);
+
+            Check(recordRule != null,
+                  "the chain has a rule for a carried list of IDS that names elements here and not here (row 75 (2))");
+
+            Func<int, int, string> record = (here, nothing) =>
+                recordRule == null ? null : (string)recordRule.Invoke(null, new object[] { here, nothing });
+            Func<ICollection<string>, string> refuse = documents =>
+                refuseRule == null ? null : (string)refuseRule.Invoke(null, new object[]
+                {
+                    "elements", "IList<ElementId>", "from report-door-room-links", documents,
+                    "Snowdon-scratch_ajmal.al",
+                });
+
+            // WHAT IS RECORDED. Only a MIXED list - the one that binds wrong.
+            Check(recordRule != null && record(1128, 0) == null,
+                  "every id naming an element here records nothing - it binds as before");
+            Check(recordRule != null && record(0, 1128) == null,
+                  "no id naming anything here records nothing either - nothing wrong can bind from it");
+            Check(recordRule != null && record(0, 0) == null,
+                  "an empty list, or one of built-in ids only, records nothing");
+            var mixed = record(2, 1126) ?? "";
+            Check(mixed.Length > 0,
+                  "2 ids naming something here and 1126 naming nothing - the row's walls, as ids - IS recorded");
+            Check(mixed.IndexOf("1126 of 1128", StringComparison.Ordinal) >= 0,
+                  "with how many of how many named nothing - got \"" + mixed + "\"");
+            Check(mixed.IndexOf("'", StringComparison.Ordinal) < 0,
+                  "in words with no quote of their own, so the refusal quoting them reads cleanly");
+
+            // WHAT THE BINDER SAYS. Refused whole, in words for an id list.
+            var said = mixed.Length == 0 ? "" : (refuse(new List<string> { mixed }) ?? "");
+            Check(said.Length > 0,
+                  "a mixed id list carried into the next step is REFUSED, not handed on");
+            Check(said.IndexOf("'elements'", StringComparison.Ordinal) >= 0
+                  && said.IndexOf("from report-door-room-links", StringComparison.Ordinal) >= 0,
+                  "naming the need and the step that left it - got \"" + said + "\"");
+            Check(said.IndexOf("1126 of 1128", StringComparison.Ordinal) >= 0
+                  && said.IndexOf("'Snowdon-scratch_ajmal.al'", StringComparison.Ordinal) >= 0,
+                  "and how many named nothing in the model being read, by name");
+            Check(said.IndexOf("NOTHING WAS BOUND", StringComparison.Ordinal) >= 0,
+                  "and says nothing was bound, as the chain's other refusals do");
+            Check(said.IndexOf("belong to '", StringComparison.Ordinal) < 0,
+                  "never 'belong to' a model it cannot name - an id list does not say whose it is");
+
+            // A link's elements AND a mixed id list in one record: both said.
+            var both = mixed.Length == 0 ? ""
+                : (refuse(new List<string> { "Structural", mixed }) ?? "");
+            Check(both.IndexOf("'Structural'", StringComparison.Ordinal) >= 0
+                  && both.IndexOf("1126 of 1128", StringComparison.Ordinal) >= 0,
+                  "a record naming a link beside a mixed id list says both");
         }
 
         /// <summary>

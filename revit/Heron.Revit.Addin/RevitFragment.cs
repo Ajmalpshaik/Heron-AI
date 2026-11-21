@@ -5508,8 +5508,51 @@ namespace Heron.Revit.Addin
                     continue;
                 }
 
+                // A LIST LEFT AS IDS SAYS NO DOCUMENT - row 75, part (2). So
+                // each id is looked up in `target`, the model this step ran
+                // in: some naming an element there and some not is a list
+                // holding another model's ids beside this one's, and is
+                // recorded so the binder refuses it whole. Ids that are not
+                // element numbers - a built-in category, none - are not asked.
+                // See HeronBindingNote.IdsFromElsewhere.
+                var idList = value as IEnumerable<ElementId>;
+                if (idList != null)
+                {
+                    int here = 0, nothing = 0;
+                    try
+                    {
+                        foreach (var id in idList)
+                        {
+                            if (!IsElementNumber(id)) continue;
+                            Element found = null;
+                            try { found = target.GetElement(id); } catch { }
+                            if (found != null) here++; else nothing++;
+                        }
+                    }
+                    catch { here = 0; nothing = 0; }   // unreadable: recorded as before
+                    var mixed = HeronBindingNote.IdsFromElsewhere(here, nothing);
+                    chain.Keep(variable.Name, value,
+                               mixed == null ? null : new List<string> { mixed });
+                    continue;
+                }
+
                 chain.Keep(variable.Name, value, null);
             }
+        }
+
+        /// <summary>
+        /// Whether ID could name an element: a number above zero. Built-in
+        /// categories and parameters are negative and InvalidElementId is -1,
+        /// and none of them is an element anywhere. Read off ToString(), as
+        /// every id here is - no IntegerValue and no #if (D-05).
+        /// </summary>
+        private static bool IsElementNumber(ElementId id)
+        {
+            long number;
+            return id != null
+                && long.TryParse(id.ToString(), System.Globalization.NumberStyles.Integer,
+                                 System.Globalization.CultureInfo.InvariantCulture, out number)
+                && number > 0;
         }
 
         /// <summary>
