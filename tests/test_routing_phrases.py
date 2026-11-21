@@ -337,6 +337,12 @@ DECLARED = [
      "5b-1882: answered SET_MEP_INSULATION on lexical and the model"),
     ("what is the upper limit of these rooms", "READ_ELEMENT_PARAMETERS",
      "5b-224: answered SET_ROOM_LIMITS on lexical and the model"),
+    # 2026-11-21, issue #958 row 5b-496: its held-out neighbours "what units are
+    # the heating loads shown in" and "is cooling load shown in watts or btu in
+    # this project" reached RUN_HEATING_COOLING_LOADS and SET_PROJECT_UNITS on
+    # the model alone on main 0429fc1c (tools/score-routing.py --sentences).
+    ("which unit are the heating and cooling loads read in", "REPORT_PROJECT_UNITS",
+     "5b-496: its paraphrases answered RUN_HEATING_COOLING_LOADS or SET_PROJECT_UNITS on the model"),
     ("the door schedule reads backwards", "REPORT_DOOR_ROOM_LINKS",
      "5b-1925: answered FLIP_ELEMENTS whenever that card was PROVEN"),
     ("what room does this door swing into", "REPORT_DOOR_ROOM_LINKS",
