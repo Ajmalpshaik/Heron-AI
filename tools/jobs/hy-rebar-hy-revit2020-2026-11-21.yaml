@@ -36,7 +36,7 @@ model: "rebar-hy scratch project (metric structural template), fresh copy, S1 an
 defaults:
   write: true
   setup:
-    - select-by-category-name
+    - filter-elements-by-category
     - set-selection
 
 jobs:

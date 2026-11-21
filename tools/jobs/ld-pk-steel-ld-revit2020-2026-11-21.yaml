@@ -35,7 +35,7 @@ model: "steel-ld scratch project (metric structural template) with C1, C2, B1, W
 
 defaults:
   in: "steel-ld"
-  setup: [select-by-category-name, set-selection]
+  setup: [filter-elements-by-category, set-selection]
 
 jobs:
   - fragment: report-structural-connections

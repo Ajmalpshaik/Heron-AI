@@ -33,7 +33,7 @@ defaults:
   write: true
   in: "Project1 work_ajmal.al"
   setup:
-    - select-by-category-name
+    - filter-elements-by-category
     - set-selection
 
 jobs:
