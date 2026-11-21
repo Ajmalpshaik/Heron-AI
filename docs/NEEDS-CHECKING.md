@@ -1642,6 +1642,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oz.md`](needs-checking/group-oz.md)
 
+## Group PB - four family-editor tools repaired from issue #1111: divided-surface counts under Revit's own names, a loop that crosses itself, and lists no longer printed twice - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pb.md`](needs-checking/group-pb.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

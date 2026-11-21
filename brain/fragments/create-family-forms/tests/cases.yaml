@@ -109,6 +109,18 @@ positive:
       the ten version-1 rows and one row of each new kind in ONE list
     expect: formCount 13, ONE entry in the undo list, every form read back
 
+  # VERSION 5 (2026-11-21, row 5b-1921, NEEDS-CHECKING PB5). Must pass the
+  # new self-crossing check: no side meets a side not next to it.
+  - given: >
+      an L-shaped outline and a slot with two arcs in one row:
+      kind=extrusion workPlane=Ref. Level profile=0,0; 600,0; 600,200;
+      200,200; 200,500; 0,500 startMm=0 endMm=100 solid=true, and a second
+      row profile=0,1000; 600,1000; arc 700,1100 600,1200; 0,1200; arc
+      -100,1100 0,1000
+    expect: >
+      formCount 2, each built and read back as version 4 would - neither
+      refused as crossing itself
+
   # VERSION 4 (2026-11-20). Each answers as version 3 did - the check must
   # let these through.
   - given: >
@@ -201,6 +213,18 @@ negative:
 
   - given: two squares meeting at one corner only - profile=rect 0,0 100,100 | rect 100,100 200,200
     expect: refused naming loops 1 and 2 as touching, and no form made
+
+  # VERSION 5 (2026-11-21, row 5b-1921, NEEDS-CHECKING PB6). FAILS on version
+  # 4, which tested loops against each other only and sent this one to Revit.
+  - given: >
+      a figure-of-eight, one loop whose corners cross: kind=extrusion
+      workPlane=Ref. Level profile=0,0; 400,400; 400,0; 0,400 startMm=0
+      endMm=100 solid=true
+    expect: >
+      refused before anything is made: the row, "the profile crosses or
+      touches itself", side 1 (from 0,0) and side 3 (from 400,0) named as
+      meeting though not next to each other; formCount 0, the family's form
+      count read back unchanged
 
   - given: >
       (issue #1051 A3) 601 loops in one call - three extrusion rows of 200
