@@ -1,0 +1,26 @@
+# A SKILL PLAN JOB for tools/run-skill.py - the count-elements skill, whole.
+#
+#     python tools/run-skill.py tools/jobs/skills/count-elements-plan.yaml --dry-run
+#     python tools/run-skill.py tools/jobs/skills/count-elements-plan.yaml
+#
+# The plan of FRAGMENT-ISSUES row 148, as it ran on 2026-09-19: ducts on one
+# level filtered, then counted - 8 there. The negative is the same plan on a
+# level that holds no ducts, where the count must be 0.
+#
+# EVERY FILL IN IS A JUDGEMENT about the model in front, and the job is
+# refused until each is replaced: which level holds a few ducts, and which
+# holds none. Read the five rules in .claude/skills/fragment-proving/SKILL.md
+# first - a wrong category gives a confident meaningless answer.
+
+skill: count-elements
+model: "FILL IN - the model these values were arranged for (recorded, never enforced)"
+
+steps:
+  - name: filter-elements-by-category
+    values:
+      category: Ducts
+      levelId: "FILL IN - a level holding a few ducts"
+    negative_values:
+      levelId: "FILL IN - a level holding no ducts"
+  - name: count-elements
+    expect: previous

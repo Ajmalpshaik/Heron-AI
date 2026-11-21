@@ -559,13 +559,13 @@ def job_file(plan, by_slug, chain_supply, threshold_ordinal,
             add("#   ALREADY  %-30s %s" % (frag.slug, frag.status))
         add("#")
         for line in GJ.wrap(
-                "THE COMPOSITION IS WHAT IS STILL OWED, AND NOTHING HERE RUNS "
-                "ONE. `prove` in mcp/client/heron_bridge_client.py runs several "
-                "fragments in ONE process on ONE lease - the first resets the "
-                "chain and the rest continue it, which IS a skill's plan - but "
-                "it calls run_fragment_read only, so it cannot run a MODIFY "
-                "step, and it judges nothing: no negative case, no draft. "
-                "FRAGMENT-ISSUES row 141.", 78, "# "):
+                "THE COMPOSITION IS WHAT IS STILL OWED, AND THIS FILE DOES NOT "
+                "RUN ONE: batch-prove proves fragments one at a time. The "
+                "composition runs through tools/run-skill.py, from a skill plan "
+                "job (tools/jobs/skills/count-elements-plan.yaml is one) - every "
+                "step in order on one chain, changes rolled back, a positive and "
+                "a negative leg, judged by brain/heron_plan_proof.py into a "
+                "draft a person signs. FRAGMENT-ISSUES row 141.", 78, "# "):
             add(line)
         add("#")
         add("#     python mcp/client/heron_bridge_client.py prove \\")
