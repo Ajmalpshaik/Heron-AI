@@ -105,3 +105,7 @@ utterances:
   - which edges of this roof define slope
   - report the slope of every roof
   - how steep are the roofs in this model
+  # ADDED 2026-11-21, row 5b-1953 (issue #1187). SLOPE_ROOF_EDGES took a pitch
+  # request ninth, and on the model alone that pulled a pitch QUESTION to the
+  # write; this keeps it here. Ninth, so the re-ranker never reads it (D-134).
+  - say what pitch each roof has
