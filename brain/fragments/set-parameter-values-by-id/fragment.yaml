@@ -610,13 +610,11 @@ utterances:
   # ADDED 2026-11-11, row 5b-1504 - version 8, a * key.
   - set the same values on every type of this family in the project
   - blank the manufacturer and URL on all these types
-  # ADDED 2026-11-21, row 5b-1938 (issue #1158). The owner's own sentence on
-  # his PC reached MOVE_VIEW_CUT_PLANE, a view tool; this card writes a
-  # level's Elevation by key (key=Name|in=Levels;Level 2|Elevation=3000 mm,
-  # version 5's note). Declared at the END, so the eight sentences the
-  # re-ranker reads (D-134) are unchanged.
-  - change the elevation of Level 2 to 3000 mm
-  - change the elevation of this level
+  # MOVED 2026-11-21 to WRITE_ELEMENT_PARAMETERS (row 5b-1950): "change the
+  # elevation of Level 2 to 3000 mm" and "change the elevation of this level"
+  # were declared here that morning (row 5b-1938). This card is DRAFT, so a
+  # live change refuses it; on the owner's PC the same job was done and kept
+  # by SELECT_BY_PARAMETER_VALUE then WRITE_ELEMENT_PARAMETERS, both PROVEN.
   # ADDED 2026-11-21, row 5b-1524 (issue #956). Each reached a card that
   # cannot bring a file back - ADD_FAMILY_PARAMETERS (ADMIN) or
   # EXPORT_PARAMETERS_TO_CSV, the export - on lexical or model; the third

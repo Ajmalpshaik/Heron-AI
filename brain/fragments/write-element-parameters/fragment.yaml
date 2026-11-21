@@ -378,3 +378,13 @@ utterances:
   # ADDED 2026-11-02, row 5b-1421. REPORT_KEYNOTES' routing table sends it
   # here; when LOAD_KEYNOTE_FILE was added, ranking moved it there.
   - change the keynote on these
+  # ADDED 2026-11-21, rows 5b-1938 and 5b-1950 (issue #956). A level's
+  # Elevation is a parameter like any other: on the owner's PC (Revit 2024,
+  # roofjoin-oy, run wf-20261121-105844-0015-d149) Level 2 was found by
+  # SELECT_BY_PARAMETER_VALUE (Name equals Level 2, in Levels) and this card
+  # wrote Elevation=3000 - written 1, kept, Level 2 from 4000 to 3000 mm.
+  # Moved here from SET_PARAMETER_VALUES_BY_ID, a DRAFT a live change
+  # refuses. At the END, so the eight the re-ranker reads (D-134) are
+  # unchanged.
+  - change the elevation of Level 2 to 3000 mm
+  - change the elevation of this level
