@@ -3,6 +3,16 @@
 // `rotationDegrees` are in scope, and leaves `placed`, `failed`, `readBack`,
 // `tops`, `instanceId`, `refused` and `findings` behind.
 //
+// VERSION 8 (2026-11-21) - A NESTED FAMILY KEPT UPRIGHT ON A PLANE THAT IS NOT
+// LEVEL SAYS SO (row 5b-1883 part 2, issue #902). On Revit 2020 an Always
+// Vertical part nested on the vertical plane `JB Front` was read back "nested
+// on "JB Front" ... - read back" while it lay flat across the plane, and
+// FLIP_ELEMENTS then could not flip its work plane. The read-back now compares
+// each instance's own Z with the plane's normal and, where they part, says it
+// is kept upright and does not stand on the plane, naming Always Vertical and
+// SET_FAMILY_SETTINGS always vertical=no. Nothing about where it is placed
+// changed.
+//
 // VERSION 7 (2026-11-20) - A NESTED FAMILY'S OWN OFFSET IS NOT A FAILURE
 // (FRAGMENT-ISSUES row 5b-301). Found 2026-10-03, Revit 2024, in a family:
 // the Work Plane-Based `Round void : HWC 10 cm` placed on Ref. Level at
@@ -599,10 +609,32 @@ if (refused == null && nestedHere)
                   + ownOffset.Definition.Name + " " + mmText(offsetBy) + " mm)");
         }
 
+        // VERSION 8 (row 5b-1883): KEPT UPRIGHT ON A PLANE THAT IS NOT LEVEL.
+        // An Always Vertical family - the generic templates' default - is
+        // hosted on a vertical plane and kept level, so it lies flat across
+        // it and has no work plane to flip. Judged from what each instance
+        // reads back - its own Z against the plane's normal - never assumed
+        // from the family's settings. A level plane asks nothing.
+        var keptUpright = 0;
+        if (nestedKind == FamilyPlacementType.WorkPlaneBased && !hostLevelLike)
+        {
+            foreach (var m in nestedMade)
+            {
+                var alongNormal = Math.Abs(m.Item1.GetTransform().BasisZ.DotProduct(hostPlane.Normal));
+                if (alongNormal < 0.9999) keptUpright++;
+            }
+        }
+
         instanceId = nestedMade[0].Item1.UniqueId;
         readBack = nestedMade.Count + " x \"" + nestedName + "\" nested " + how + " at " + string.Join("; ", stood)
             + " - read back. The first one's id is " + instanceId + ".";
         findings.Add(readBack);
+        if (keptUpright > 0) findings.Add(keptUpright + " of " + nestedMade.Count + " \"" + nestedName + "\" "
+            + (keptUpright == 1 ? "is" : "are") + " hosted on \"" + sitsOnName + "\" but kept upright - its own Z "
+            + "is still the model's, not the plane's - so it does not stand on \"" + sitsOnName + "\", it lies across "
+            + "it, and it has no work plane to flip. That is what a family set Always Vertical does on a plane that is "
+            + "not level. To have it stand on the plane, open \"" + nestedName + "\" and set SET_FAMILY_SETTINGS always "
+            + "vertical=no (REPORT_FAMILY_TEMPLATE reads the setting), save and load it again, then place it.");
         findings.Add("Next: LOCK_NESTED_FAMILY_TO_PLANES locks its own reference planes to this family's, so it moves "
             + "with them; LINK_FAMILY_PARAMETER links its instance parameters and, with family= and type=, its type's.");
     }

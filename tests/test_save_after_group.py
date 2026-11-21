@@ -110,7 +110,9 @@ def card_section():
         card = yaml.safe_load(yaml_text) or {}
     except Exception:                                   # noqa: BLE001 - reported
         card = {}
-    check(card.get("version") == 3, "the card is version 3")
+    # Version 4 since 2026-11-21: a central model opened directly is refused as
+    # another open document too (row 5b-1833).
+    check(card.get("version") == 4, "the card is version 4")
     check(card.get("heron-status") == "DRAFT",
           "and DRAFT: its C# moved, so version 2's proof no longer describes it "
           "(D-30), and a kept change from it is refused until it is proved (D-117)")
@@ -193,6 +195,28 @@ def card_section():
     check("kind saveOther" in cases and "window left open" in cases,
           "its cases look for another document's save in the reply's save block, and a "
           "Discard's negative leaves that window open")
+
+    # ROW 5b-1833: A CENTRAL MODEL OPENED DIRECTLY IS REFUSED AS ANOTHER OPEN
+    # DOCUMENT TOO. Until version 4 only the model Heron works in was asked
+    # whether it is the central model itself; another open document that was
+    # one was handed to the add-in to save, and the file it wrote was the one
+    # everybody on the job works from - while the reply said "local copy only".
+    found_at = at(bare, "else if (found.IsReadOnly)")
+    this_at = at(bare, "if (refused == null && thisOne)")
+    chain = bare[found_at:this_at] if 0 <= found_at < this_at else ""
+    check("found.GetWorksharingCentralModelPath()" in chain,
+          "another open document is asked whether it is the central model itself, in "
+          "the run, before anything is handed to the add-in (row 5b-1833)")
+    # The words are read from the source: `bare` has its strings blanked.
+    words_from = at(source, "else if (found.IsReadOnly)")
+    words_to = at(source, "if (refused == null && thisOne)")
+    said = source[words_from:words_to] if 0 <= words_from < words_to else ""
+    check("CENTRAL model itself" in said and "refused = " in chain,
+          "and refused when it is, in the words the model Heron works in is refused in")
+    check("could not tell whether it" in said,
+          "and refused when Heron cannot tell - as the model Heron works in is")
+    check("central model opened directly, as another open document" in cases,
+          "its cases hold a central model opened directly as another document, refused")
 
 
 def addin_section():
@@ -349,6 +373,9 @@ def other_section(run, run_code, save, save_code):
     check(0 <= at(body, "OpenToSave(") < save_in,
           "it asks first whether the document can be saved at all - read-only, or a "
           "transaction open in it")
+    check(0 <= at(body, "CentralItself(other") < save_in,
+          "and whether it is a central model opened directly, which it refuses as it "
+          "refuses the model Heron works in - asked again, after the run (row 5b-1833)")
     elsewhere = save_code[:start] + save_code[start + len(body):] if start >= 0 else ""
     check(start >= 0 and re.search(r"\.\s*Close\s*\(", elsewhere) is None,
           "and nothing else in the add-in's save closes a window")

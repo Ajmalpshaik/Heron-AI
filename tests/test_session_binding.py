@@ -170,6 +170,24 @@ def main():
           "held by another chat says so, with roughly how long is left")
     check(bridge.availability(Reply({"ok": True})) == "(availability unknown)",
           "an older add-in that cannot report it says UNKNOWN, never (free)")
+    # ROW 5b-1838: while another chat's job waits for the modeller - the Keep
+    # or Discard box, the delete box, a pick - the lease cannot lapse, and
+    # leaseSecondsRemaining says the least it can then last. The column said
+    # "~5 min left" for as long as the box stayed open; it says what holds it.
+    waiting = bridge.availability(Reply({"ok": True, "inUse": True, "mine": False,
+                                         "leaseSecondsRemaining": 300,
+                                         "leaseWaitingForModeller": True}))
+    check("another chat" in waiting and "waiting for an answer in Revit" in waiting
+          and "min left" not in waiting,
+          "another chat's job waiting for the modeller says so, not a time - %r" % waiting)
+    check("min left" in bridge.availability(Reply({"ok": True, "inUse": True, "mine": False,
+                                                   "leaseSecondsRemaining": 120,
+                                                   "leaseWaitingForModeller": False})),
+          "a lease nobody waits on still says roughly how long is left")
+    check("this chat" in bridge.availability(Reply({"ok": True, "inUse": True, "mine": True,
+                                                    "leaseSecondsRemaining": 300,
+                                                    "leaseWaitingForModeller": True})),
+          "this chat's own wait is still this chat's")
 
     # --- and the MODEL in front, held by another chat (row 5b-1645, D-141) ---
     # The lease is per person and the hold per chat, so a free lease said

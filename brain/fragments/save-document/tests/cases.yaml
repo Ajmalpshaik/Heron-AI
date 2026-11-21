@@ -62,15 +62,24 @@ positive:
       the save block done true, preview false; one Undo entry, and Ctrl+Z
       takes the change back while the file keeps it
 
-negative:
+  # ROW 5b-1834 (2026-11-21): this case was a negative - DISCARD pressed on
+  # Revit's Keep or Discard box. That box is shown only for a change Revit
+  # counts, and this card alone changes nothing in the model, so it never
+  # comes and the Discard could not be pressed. Rewritten to what can be run;
+  # D-171 point 5's Discard waits for a run that changes the model AND asks a
+  # save in one group (Group EN, EN13), as the nested family's negative does.
   - given: >
       documentPath = the file of the document Heron is working in, with one
-      unsaved change, kept through the Keep or Discard box and DISCARD pressed
-      (or the box closed) - once the card is proved, Ask to Keep on
+      unsaved change, kept from a chat - once the card is proved, Ask to Keep on
     expect: >
-      saveAsked true, and the reply's save block done false, saying Discard was
-      pressed and the model was NOT saved - a save follows only a Keep (D-171
-      point 5); the file's time on disk UNCHANGED
+      NO Keep or Discard box; the reply says Revit reported nothing added,
+      changed or deleted in the model, so the modeller was not asked; saveAsked
+      true and the reply's save block done true, preview false - the save made,
+      the file's time on disk moving to now. If a box does come, Revit counted
+      something for this run: Discard it, and the save block says done false and
+      the file's time is UNCHANGED (D-171 point 5)
+
+negative:
 
   - given: >
       the first positive case's nested family, one unsaved form, closeWindow=true,
@@ -107,6 +116,17 @@ negative:
 
   - given: the CENTRAL model of a workshared project opened directly, documentPath its file
     expect: refused - saving it writes the file the whole job works from; nothing synced
+
+  # VERSION 4 (row 5b-1833): until then only the model Heron works in was asked
+  # whether it is the central model itself.
+  - given: >
+      a central model opened directly, as another open document - a workshared
+      scratch CENTRAL model open BEHIND the one Heron works in, one change
+      unsaved in it, documentPath its file, run as a PREVIEW
+    expect: >
+      refused in the run, naming it as the CENTRAL model itself; saveAsked
+      false, no save block, the central file's time on disk UNCHANGED, and no
+      Synchronize with Central in Revit's journal
 
   - given: a path no open document was opened from
     expect: refused, the path said back and the open titles listed; nothing written, nothing closed

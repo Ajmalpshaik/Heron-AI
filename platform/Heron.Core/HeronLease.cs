@@ -138,6 +138,18 @@ namespace Heron.Core
         }
 
         /// <summary>
+        /// Whether a job is waiting for the modeller on the lease now - the
+        /// Keep or Discard box, the delete box, a pick. Said by `info` beside
+        /// SecondsRemaining, which then gives only the least the lease can
+        /// last, so another chat can be told what holds it rather than a time
+        /// (row 5b-1838).
+        /// </summary>
+        public static bool Waiting
+        {
+            get { return Session.Held(DateTime.UtcNow); }
+        }
+
+        /// <summary>
         /// Claim the lease, or renew it if it is already yours.
         ///
         /// An anonymous caller - no client id - is granted nothing and told
