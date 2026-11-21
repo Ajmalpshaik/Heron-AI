@@ -1642,9 +1642,17 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oz.md`](needs-checking/group-oz.md)
 
+## Group PA - REPORT_SPRINKLER_NETWORK version 2: a ceiling-hosted sprinkler's level read from its Schedule Level, as FILTER_ELEMENTS_BY_CATEGORY reads it - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pa.md`](needs-checking/group-pa.md)
+
 ## Group PC - an Admin or Publish job stopped part way says its outside work stands, a read that commits a transaction is refused, every fragment job notes Revit's memory, and the log names who takes the pipe - BUILT, NOT RUN IN REVIT (2026-11-21)
 
 **Its own file:** [`needs-checking/group-pc.md`](needs-checking/group-pc.md)
+
+## Group PD - row 106: is a clearance check slow on a real MEP model? One timed run before any fix is written (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pd.md`](needs-checking/group-pd.md)
 
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
