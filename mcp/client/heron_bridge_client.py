@@ -2521,6 +2521,10 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
             # Found 2026-09-12 while reading this path before running A16.
             if reply.get("applied"):
                 state = "APPLIED"
+            elif reply.get("ranOutsideTheModel"):
+                # D-192: no group was open, so nothing was rolled back - the
+                # model was counted unchanged, and what it did outside stands.
+                state = "RAN OUTSIDE THE MODEL"
             elif reply.get("rolledBack"):
                 state = "ROLLED BACK"
             else:
@@ -3662,7 +3666,14 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
                          + ", ".join(setup) + " with this phase's own values")
             if writing:
                 rolled = reply.get("rolledBack")
-                if rolled is True:
+                if reply.get("ranOutsideTheModel") is True:
+                    # D-192: NO GROUP WAS OPEN, so "run inside a transaction"
+                    # would be false. What is known is the count.
+                    told += (" - run with NO transaction group open in the model it "
+                             "was aimed at (noGroupOpen, D-192); Heron counted that "
+                             "model before and after it and found it unchanged, and "
+                             "what it did outside the model stands")
+                elif rolled is True:
                     told += (" - run inside a transaction, and Revit reported the "
                              "transaction group ROLLED BACK afterwards")
                 elif rolled is False:
