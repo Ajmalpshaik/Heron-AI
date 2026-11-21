@@ -263,6 +263,7 @@ an edit.
 | [D-192](#d-192--a-job-that-works-only-outside-the-model-it-is-aimed-at-declares-nogroupopen-and-an-admin-or-publish-job-then-opens-no-transaction-group-in-that-model) | A job that works only outside the model it is aimed at declares noGroupOpen, and an Admin or Publish job then opens no transaction group in that model | ✅ Accepted · 2026-11-21 |
 | [D-193](#d-193--making-sheets-keeps-three-rules-for-a-table-and-typed-numbers-alike-a-sheet-whose-number-or-name-revit-refuses-is-taken-back-a-number-asked-for-twice-makes-neither-and-1000-is-the-most-in-one-call) | Making sheets keeps three rules for a table and typed numbers alike: a sheet whose number or name Revit refuses is taken back, a number asked for twice makes neither, and 1,000 is the most in one call | ✅ Accepted · 2026-11-21 |
 | [D-194](#d-194--every-stored-vector-is-compared-in-plain-python-sqlite-vec-is-not-used) | Every stored vector is compared in plain Python; sqlite-vec is not used | ✅ Accepted · 2026-11-21 |
+| [D-195](#d-195--the-loads-panels-finalize-goes-to-revit-as-one-change---the-space-values-and-the-diffusers-flows-as-steps-of-one-request-in-one-undo-entry---with-every-step-gated-as-if-sent-alone) | The Loads panel's Finalize goes to Revit as one change - the Space values and the diffusers' flows as steps of one request, in one undo entry - with every step gated as if sent alone | ⏳ Proposed · 2026-11-21 |
 
 ## Format
 
@@ -1757,3 +1758,12 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`brain/heron_embed.py`](../brain/heron_embed.py) · `requirements-optional.txt`, `brain/heron_dependencies.py`, `tools/cloud-setup.sh`, `tools/heron-ready.py` - sqlite-vec taken out · D-23's index entry and record
 
 **Full record:** [`decisions/D-194.md`](decisions/D-194.md)
+
+## D-195 — The Loads panel's Finalize goes to Revit as one change - the Space values and the diffusers' flows as steps of one request, in one undo entry - with every step gated as if sent alone
+
+**Status:** Proposed · **Date:** 2026-11-21 · **Written by:** a cloud session working issue [#934](https://github.com/Ajmalpshaik/Heron-AI/issues/934), for the owner to accept, change or reject. Nothing in it is built.
+**Numbering:** D-195 is the id `tools/next-id.py` printed free on 2026-11-21, with `origin/main` at `1f648dd6` ending at D-193 and D-194 held by pull request #1189.
+**Answers:** [row 5b-314](fragment-issues/section-5b-rows-301-325.md) - the Loads panel's Finalize leaves two undo entries, and Article 8 asks for one · **Keeps:** Article 8 - one request, one named `TransactionGroup` · [D-126](decisions/D-126.md) - one Keep or Discard · [D-142](decisions/D-142.md) - the delete box · [D-156](decisions/D-156.md) - the read-back · Article 12c - a stale row refuses the whole write
+**Affects (if accepted):** `heron_mcp_server.py` `_loads_finalize` and `revit_change` · `RevitFragment.cs` (setup steps on a kept change) · `tests/test_loads_finalize.py` · [Group CC](needs-checking/group-cc.md) CC11
+
+**Full record:** [`decisions/D-195.md`](decisions/D-195.md)

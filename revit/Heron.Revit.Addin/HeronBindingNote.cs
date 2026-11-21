@@ -332,6 +332,43 @@ namespace Heron.Revit.Addin
         internal const string UnnamedDocument = "a model whose name could not be read";
 
         /// <summary>
+        /// What the chain writes down about a carried list of IDS whose ids
+        /// name an element in the model they were left in AND do not - or
+        /// null to record nothing, as before.
+        ///
+        /// FRAGMENT-ISSUES ROW 75, PART (2), 2026-11-21. A list a fragment
+        /// leaves as ElementIds, not Elements, carries no document, so
+        /// OtherDocument cannot be asked of it. What can be asked, when the
+        /// chain keeps it, is how many of its ids name an element in `target`
+        /// - the model the step ran in. A list of one model's ids names
+        /// everything there or, if they are all gone, nothing; some of each
+        /// is a list holding another model's ids beside this one's, or ids
+        /// Revit happened to give an unrelated element here too. That is the
+        /// 2-of-1128 bind, and it is refused whole, as a linked element list
+        /// is.
+        ///
+        /// ONLY THE MIXED LIST. All naming something here binds as before. All
+        /// naming nothing binds nothing wrong: an element-list need finds none
+        /// ("nothing usable survived") and an id-list need is handed numbers
+        /// that name nothing here. An id that names no element by design - a
+        /// built-in category, InvalidElementId - is never counted by the
+        /// caller. A list of ONE linked id that collides is not seen at all:
+        /// a number alone cannot say whose it is.
+        ///
+        /// NO QUOTE IN THE WORDS: CarriedFromElsewhere tells this record from a
+        /// model's name by its first words, and quotes neither.
+        /// </summary>
+        internal static string IdsFromElsewhere(int namedHere, int namedNothing)
+        {
+            if (namedHere <= 0 || namedNothing <= 0) return null;
+            return MixedIds + namedNothing + " of " + (namedHere + namedNothing)
+                 + " named no element in the model they were left in";
+        }
+
+        /// <summary>How IdsFromElsewhere's record begins, so the binder can tell it from a model's name.</summary>
+        internal const string MixedIds = "ids from more than one model: ";
+
+        /// <summary>
         /// The refusal for a need the chain would fill with elements recorded
         /// as ANOTHER document's, or null to bind it as before.
         ///
@@ -362,18 +399,42 @@ namespace Heron.Revit.Addin
         {
             if (documents == null || documents.Count == 0) return null;
 
+            // A MIXED ID LIST (row 75 (2)) is recorded in words, not as a
+            // model's name: it cannot say whose its ids are.
             var names = new List<string>();
+            var mixed = new List<string>();
             foreach (var document in documents)
             {
+                if (document != null && document.StartsWith(MixedIds, System.StringComparison.Ordinal))
+                {
+                    if (!mixed.Contains(document)) mixed.Add(document);
+                    continue;
+                }
                 var name = string.IsNullOrEmpty(document) ? UnnamedDocument : document;
                 if (!names.Contains(name)) names.Add(name);
             }
             names.Sort(System.StringComparer.Ordinal);
+            mixed.Sort(System.StringComparer.Ordinal);
 
             var here = string.IsNullOrEmpty(target) ? "the model being read" : "'" + target + "'";
+            var filled = "Cannot run: '" + need + "' (" + type + ") would be filled "
+                       + (string.IsNullOrEmpty(origin) ? "from the chain" : origin);
 
-            return "Cannot run: '" + need + "' (" + type + ") would be filled "
-                 + (string.IsNullOrEmpty(origin) ? "from the chain" : origin)
+            if (names.Count == 0)
+            {
+                var counted = new List<string>();
+                foreach (var one in mixed) counted.Add(one.Substring(MixedIds.Length));
+                return filled + ", and that list holds ids from more than one model: "
+                     + string.Join("; ", counted.ToArray()) + ", " + here + ", which this "
+                     + "fragment reads. An id means something only inside its own model, so "
+                     + "the ones that do name an element in " + here + " may be unrelated "
+                     + "elements that happen to share the number - the list most likely holds a "
+                     + "linked model's ids, or ids of elements that step deleted. NOTHING WAS "
+                     + "BOUND and no fragment ran. Read what is needed in the step that found "
+                     + "them; handing a linked model's ids on to another step is not built yet.";
+            }
+
+            var said = filled
                  + ", and those elements belong to '" + string.Join("', '", names.ToArray()) + "'"
                  + ", not to " + here + ", which this fragment reads - a linked model, most "
                  + "likely. They are carried as element ids, and an id means something only "
@@ -381,6 +442,9 @@ namespace Heron.Revit.Addin
                  + "unrelated element that happens to share the number. NOTHING WAS BOUND and "
                  + "no fragment ran. Read what is needed off the linked elements in the step "
                  + "that found them; handing them on to another step is not built yet.";
+            foreach (var one in mixed)
+                said += " Beside them it carried " + one + ".";
+            return said;
         }
 
         /// <summary>
