@@ -1,0 +1,128 @@
+# ROUTING SENTENCES FROZEN 2026-11-21, BEFORE ANY CARD WAS EDITED - FRAGMENT-ISSUES
+# row 132, the skill sentences left: find-blank-parameters' two, trace-system's
+# "which unit feeds this", ifc-export-readiness' two. A session's words except
+# the first group, which is the skill files' own. Never reworded to buy back a
+# rank.
+#
+# Read by tools/score-routing.py --sentences. Measured in a cloud container on
+# lexical only. OWED ON THE OWNER'S PC, which ranks model+rerank:
+#
+#   python tools/score-routing.py --sentences tests/data/routing-sentences-2026-11-21-row132.yaml \
+#       --backend model+rerank
+groups:
+- group: 'row 132: the five skill questions left (skill files'' own words)'
+  sentences:
+  - say: which ducts have no system name
+    expect: want READ_MEP_SYSTEM
+  - say: check for empty values
+    expect: want CHECK_MODEL_STANDARDS
+  - say: which unit feeds this
+    expect: want TRACE_CONNECTIVITY
+  - say: check the model before I export IFC
+    expect: not-a-write
+  - say: is anything going to be lost in the IFC
+    expect: not-a-write
+- group: 'row 132: held-out paraphrases, written before any edit'
+  sentences:
+  - say: find the ducts that are on no system
+    expect: want READ_MEP_SYSTEM
+  - say: which pipes have no system assigned
+    expect: want READ_MEP_SYSTEM
+  - say: which parameters are still empty
+    expect: not-a-write
+  - say: check that the required parameters are filled in
+    expect: want CHECK_MODEL_STANDARDS
+  - say: what feeds this diffuser
+    expect: want TRACE_CONNECTIVITY
+  - say: which equipment serves this grille
+    expect: not-a-write
+  - say: what will go wrong when I export to IFC
+    expect: not-a-write
+  - say: is the model ready for the IFC export
+    expect: not-a-write
+- group: 'row 132: read-mep-system''s own declared words, unchanged'
+  sentences:
+  - say: what system is this on
+    expect: want READ_MEP_SYSTEM
+  - say: which system are these
+    expect: want READ_MEP_SYSTEM
+  - say: what is the system name
+    expect: want READ_MEP_SYSTEM
+  - say: are these all on the same system
+    expect: want READ_MEP_SYSTEM
+  - say: what system type is this
+    expect: want READ_MEP_SYSTEM
+  - say: check the system is complete
+    expect: want READ_MEP_SYSTEM
+  - say: which system is this duct on
+    expect: want READ_MEP_SYSTEM
+  - say: which pipes are not in a system
+    expect: want READ_MEP_SYSTEM
+  - say: what is the system classification of this pipe
+    expect: want READ_MEP_SYSTEM
+- group: 'row 132: check-model-standards''s own declared words, unchanged'
+  sentences:
+  - say: check this model against our naming standard
+    expect: want CHECK_MODEL_STANDARDS
+  - say: are the views and sheets named correctly
+    expect: want CHECK_MODEL_STANDARDS
+  - say: run a standards check before we issue
+    expect: want CHECK_MODEL_STANDARDS
+  - say: find the views called copy of copy
+    expect: want CHECK_MODEL_STANDARDS
+  - say: which elements are missing the parameters the project requires
+    expect: want CHECK_MODEL_STANDARDS
+  - say: check the model naming conventions
+    expect: want CHECK_MODEL_STANDARDS
+  - say: is this model ready to submit
+    expect: want CHECK_MODEL_STANDARDS
+  - say: do the type names follow our naming standard
+    expect: want CHECK_MODEL_STANDARDS
+  - say: which parameters still say TBD
+    expect: want CHECK_MODEL_STANDARDS
+- group: 'row 132: trace-connectivity''s own declared words, unchanged'
+  sentences:
+  - say: what connects to what
+    expect: want TRACE_CONNECTIVITY
+  - say: trace this system
+    expect: want TRACE_CONNECTIVITY
+  - say: what is this duct connected to
+    expect: want TRACE_CONNECTIVITY
+  - say: follow the pipe
+    expect: want TRACE_CONNECTIVITY
+  - say: is this still connected
+    expect: want TRACE_CONNECTIVITY
+  - say: where does this run go
+    expect: want TRACE_CONNECTIVITY
+  - say: check the connectivity
+    expect: want TRACE_CONNECTIVITY
+  - say: is the ductwork still connected
+    expect: want TRACE_CONNECTIVITY
+  - say: check the connections
+    expect: want TRACE_CONNECTIVITY
+  - say: is this system all connected
+    expect: want TRACE_CONNECTIVITY
+  - say: how many separate pieces is this in
+    expect: want TRACE_CONNECTIVITY
+  - say: which branch is not connected to anything
+    expect: want TRACE_CONNECTIVITY
+  - say: why is the flow not calculating
+    expect: want TRACE_CONNECTIVITY
+  - say: find the disconnected run
+    expect: want TRACE_CONNECTIVITY
+  - say: is there a break in this system
+    expect: want TRACE_CONNECTIVITY
+  - say: is this duct connected
+    expect: want TRACE_CONNECTIVITY
+  - say: what does this connect to
+    expect: want TRACE_CONNECTIVITY
+  - say: follow the pipe and tell me where it goes
+    expect: want TRACE_CONNECTIVITY
+- group: 'row 132: writes nearby that must keep their own tool'
+  sentences:
+  - say: export the model to IFC
+    expect: neutral
+  - say: put these ducts on the supply air system
+    expect: neutral
+  - say: fill the empty parameters with TBD
+    expect: neutral
