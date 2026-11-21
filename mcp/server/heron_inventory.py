@@ -641,14 +641,41 @@ REGION_NOT_READ = (
     "so this is %r WHOLE. Restart Revit once Heron is updated, then ask again.")
 
 
+def across(reply):
+    """How big the picture is, in the words of its first line: "1280 px wide",
+    or - when the add-in took it again fitted on its height because it came
+    back taller than the width asked (row 5b-1890) - "1000 px tall". An
+    add-in older than that sends no `fittedOn`, and the words are as before."""
+    if reply.get("fittedOn") == "height":
+        return "%s px tall" % (reply.get("pictureHeight") or reply.get("pixelWidth"))
+    return "%s px wide" % reply.get("pixelWidth")
+
+
+def fit_line(reply):
+    """The one line about a picture's shape (row 5b-1890), or None: said when
+    the add-in fitted a tall picture on its height, or could not."""
+    size = ("%s x %s px" % (reply.get("pictureWidth"), reply.get("pictureHeight"))
+            if reply.get("pictureWidth") and reply.get("pictureHeight") else None)
+    if reply.get("fittedOn") == "height":
+        return ("It is taller than it is wide, so it was fitted on its height%s - the "
+                "longest side is the width asked. For a closer look at a tall, slim "
+                "thing, picture an elevation, or give its parts as `elements`."
+                % ((": " + size) if size else ""))
+    if reply.get("refitFailed"):
+        return ("It came back taller than it is wide%s, and Revit would not take it again "
+                "fitted on its height (%s), so it is sent as it came."
+                % ((", " + size) if size else "", reply.get("refitFailed")))
+    return None
+
+
 def region_line(reply, where):
     """The first line of a region picture (row 5b-1710): which plan, what
     region, how wide, and whether the plan's tags and dimensions came with it.
     `view` is the temporary copy's own name, so the plan is `regionOf`."""
-    said = ("A picture of a region of %r (%s) in %s - %s - %s px wide, from a temporary "
+    said = ("A picture of a region of %r (%s) in %s - %s - %s, from a temporary "
             "copy of the plan cropped to it."
             % (reply.get("regionOf") or reply.get("view"), reply.get("viewType"), where,
-               reply.get("region") or "the region asked for", reply.get("pixelWidth")))
+               reply.get("region") or "the region asked for", across(reply)))
     if reply.get("detailingCopied") is False:
         said += (" Revit would not copy the plan with its detailing, so its tags, "
                  "dimensions and text are NOT in this picture.")
@@ -670,14 +697,16 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280,
       Revit's number, or a form's long id from CREATE_FAMILY_FORMS or
       REPORT_FAMILY_FORMS. Framed in a temporary isometric 3D view, a section
       box round them with a margin; levels, grids and links left out, floors,
-      ceilings and roofs over them hidden and named; a family's connectors
-      hidden unless asked for. An id not in the model refuses the picture.
+      ceilings and roofs over them hidden and named; in a family, connectors
+      and whatever reaches out of the box hidden unless asked for, and named.
+      An id not in the model refuses the picture.
     - `around`, with a PLAN as `view` (or in front): a region of it - element
       ids, or a box "x1,y1;x2,y2" in mm from Revit's internal origin (the
       model-position line's numbers) - pictured from a temporary copy of the
       plan cropped to it, tags and dimensions kept. Not with `elements`.
 
-    `width`: 320 to 2400 px (default 1280).
+    `width`: 320 to 2400 px (default 1280) - the picture's longest side: one
+    taller than it is wide is fitted on its height.
 
     IT CHANGES NOTHING. A temporary view or copy is made in a group Revit
     always rolls back, and the picture is written to Heron's own folder, read
@@ -741,15 +770,15 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280,
         # AN ADD-IN OLDER THAN THIS SERVER reads no `around` and pictures the
         # view whole: said first, so the chat never reads it as the region.
         lines = [REGION_NOT_READ % (reply.get("view"),)]
-        lines.append("A picture of %r (%s) in %s, %s px wide."
-                     % (reply.get("view"), reply.get("viewType"), where, reply.get("pixelWidth")))
+        lines.append("A picture of %r (%s) in %s, %s."
+                     % (reply.get("view"), reply.get("viewType"), where, across(reply)))
     elif reply.get("mode") == "region":
         lines = [region_line(reply, where)]
         if reply.get("leftOut"):
             lines.append("Left out of the region: %s." % reply.get("leftOut"))
     elif reply.get("mode") == "elements":
-        lines = ["A picture of %d element(s) in %s, in a temporary 3D view, %s px wide."
-                 % (reply.get("shown", 0), where, reply.get("pixelWidth"))]
+        lines = ["A picture of %d element(s) in %s, in a temporary 3D view, %s."
+                 % (reply.get("shown", 0), where, across(reply))]
         if reply.get("leftOut"):
             lines.append("Left out of the frame: %s." % reply.get("leftOut"))
         # IN THE FRAME, HIDDEN FROM THE PICTURE (row 5b-1328): what lies over
@@ -757,12 +786,22 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280,
         if reply.get("hiddenAbove"):
             lines.append("Hidden from the picture, as they lie over them: %s. They are "
                          "still in the model." % reply.get("hiddenAbove"))
+        # IN A FAMILY, WHAT REACHES OUT OF THE BOX (row 5b-1890): not asked
+        # for, hidden so the frame is the parts - and named the same way.
+        if reply.get("hiddenCrossing"):
+            lines.append("Hidden from the picture, as they reach out of the frame and were "
+                         "not asked for: %s. They are still in the family."
+                         % reply.get("hiddenCrossing"))
     else:
-        lines = ["A picture of %r (%s) in %s, %s px wide."
-                 % (reply.get("view"), reply.get("viewType"), where, reply.get("pixelWidth"))]
+        lines = ["A picture of %r (%s) in %s, %s."
+                 % (reply.get("view"), reply.get("viewType"), where, across(reply))]
     if reply.get("widthClamped"):
         lines.append("The width asked for was outside 320 to 2400 px, so %s was used."
                      % reply.get("pixelWidth"))
+    # ITS SHAPE (row 5b-1890): a tall picture fitted on its height, or why not.
+    fitted = fit_line(reply)
+    if fitted:
+        lines.append(fitted)
     # WHERE IT SITS IN THE MODEL, or why that is not said (row 5b-1481).
     lines.append(_picture_to_model(reply, picture))
 
