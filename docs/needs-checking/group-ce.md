@@ -38,3 +38,5 @@ written: `REPORT_SPRINKLER_NETWORK` reads PROVEN on its card, at version 1 - its
 2026-11-02, on P1102 MEP, Revit 2020, session 59096. So where this page calls a card named here DRAFT, or says nothing
 has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether CE1 to
 CE10 were what that proof ran is NOT sorted here: for the owner.
+**Since 2026-11-21 the card is DRAFT again, at version 2** (row [5b-1910](../fragment-issues/row-5b-1910.md)): the run it owes is
+[Group PA](group-pa.md).
