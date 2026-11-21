@@ -5,13 +5,14 @@
 #     python tools/batch-prove.py tools/jobs/create-sheets-oz-2026-11-21.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/create-sheets-oz-2026-11-21.yaml
 #
-# THE MODEL is a SAVED scratch copy of Project1, Revit 2020 - the project
-# CREATE_SHEETS was first proved on, the copy Group MY arranged - never a
-# working model. OZ1 records the title block type as it shows in the Project
-# Browser (Family: Type) and adds a text project parameter "Discipline" bound
-# to Sheets if the copy has none. "A1 metric" below is the type CREATE_SHEETS'
-# first proof named; if the copy's title block is another, OZ1 writes it here
-# - the job file changes, never the card.
+# THE MODEL is a SAVED scratch copy of Project1, Revit 2020 - the copy Group
+# MY arranged - never a working model. OZ1 records the title block type as it
+# shows in the Project Browser (Family: Type) and adds a text project parameter
+# "Discipline" bound to Sheets if the copy has none. "A1 metric" below is the
+# name Group MY expected, not one a proof recorded (CREATE_SHEETS was first
+# proved on Snowdon-scratch, Revit 2024, and version 3 on P1102 MEP with
+# "A0 metric" - corrected 2026-11-21); if the copy's title block is another,
+# OZ1 writes it here - the job file changes, never the card.
 #
 # ONE LEG HERE, THE TABLE. Version 4 is asked two ways - typed numbers and
 # names, and a table (the value heron_sheet_list prints for OZ1's register:

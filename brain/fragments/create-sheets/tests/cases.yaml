@@ -219,7 +219,13 @@ negative:
   - given: VERSION 4. THE TABLE and numbers "OZ-701" both given
     expect: >
       NOTHING created; notCreated "Both a table of sheets (sheets) and typed
-      sheet numbers were given ... Nothing was created."
+      sheet numbers (numbers) were given ... Nothing was created."
+
+  - given: VERSION 4. THE TABLE and names "Typed Name" both given, no numbers
+    expect: >
+      NOTHING created; notCreated "Both a table of sheets (sheets) and typed
+      names (names) were given ... Nothing was created." - the names are not
+      silently ignored. The same for numberSuffix or namePrefix beside a table
 
   - given: >
       VERSION 4. One sheet selected, numbers left out, numberSuffix "-COPY",

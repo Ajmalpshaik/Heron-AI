@@ -230,12 +230,26 @@ if (titleBlockLeftOut) askedTitleBlock = "";
 
 bool copying = !byTable && !byNumbers && elements != null && elements.Any(e => e != null);
 
-if (byTable && byNumbers)
+// VERSION 4. Typed names, a number suffix or a name prefix beside a table
+// would be IGNORED by the table route, and an input ignored without a word
+// is a guess about what was meant (D-33) - so they refuse the call like
+// typed numbers do (found by the review of 2026-11-21).
+var typedBesideTable = new List<string>();
+if (byTable)
+{
+    if (byNumbers) typedBesideTable.Add("typed sheet numbers (numbers)");
+    if (names != null) typedBesideTable.Add("typed names (names)");
+    if (suffix.Length > 0) typedBesideTable.Add("a number suffix (numberSuffix)");
+    if (prefix.Length > 0) typedBesideTable.Add("a name prefix (namePrefix)");
+}
+
+if (byTable && typedBesideTable.Count > 0)
 {
     // VERSION 4. A table and typed numbers are two lists of sheets, and which
     // one is meant is not this card's guess (D-33). Nothing is made.
-    notCreated.Add("Both a table of sheets (sheets) and typed sheet numbers were given, so which "
-                 + "list is meant is not known - give one of them. Nothing was created.");
+    notCreated.Add("Both a table of sheets (sheets) and " + string.Join(", ", typedBesideTable)
+                 + " were given, so which is meant is not known - give the table alone. "
+                 + "Nothing was created.");
 }
 else if (byTable)
 {

@@ -64,8 +64,8 @@ purpose: >
   3. PREVIEW - NOTHING KEPT. CREATE_SHEETS with the tool's `sheets=` value,
      `titleBlockName` when it is needed, and previewOnly true: it makes
      every sheet and TAKES EACH ONE BACK, so the preview is the run itself.
-     Never pass `numbers` or `names` beside `sheets` - given both, the card
-     makes nothing. WHILE IT IS DRAFT - as it is now - the preview is run on the modeller's PC
+     Never pass `numbers`, `names`, `numberSuffix` or `namePrefix` beside
+     `sheets` - given any of them with a table, the card makes nothing. WHILE IT IS DRAFT - as it is now - the preview is run on the modeller's PC
      from the command line, which runs the card and ROLLS IT BACK - nothing
      can be kept without --apply, and --apply is refused for a DRAFT (D-117).
      heron_sheet_list prints that command, quoted for PowerShell, in the
@@ -167,4 +167,4 @@ note: >
   2026-11-20, row 5b-1526), but two calls and two entries in the undo list, and CREATE_SHEETS' number and
   name lists cross as comma-separated values that drop an empty name and
   split a name with a comma in it - FRAGMENT-ISSUES row 5b-1486.
-  NEEDS-CHECKING Group MY.
+  NEEDS-CHECKING Group MY, and Group OZ since the merge of 2026-11-21 (D-193).
