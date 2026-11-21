@@ -94,7 +94,7 @@ an edit.
 | [D-20](#d-20--millimetres-to-feet-is-arithmetic-not-unitutils) | Millimetres to feet is arithmetic, not UnitUtils | ✅ Accepted · ✔ read back 2026-09-06 |
 | [D-21](#d-21--failure-analysis-is-a-table-not-a-model-call) | Failure analysis is a table, not a model call | ✅ Accepted · ✔ read back 2026-09-06 |
 | [D-22](#d-22--a-second-chat-is-refused-not-allowed-to-take-over) | A second chat is refused, not allowed to take over | ✅ Accepted · ✔ read back 2026-09-06 |
-| [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) | The knowledge store is SQLite, one file per scope | ✅ Accepted · ✔ read back 2026-08-29 |
+| [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) | The knowledge store is SQLite, one file per scope | ✅ Accepted · ✔ read back 2026-08-29 · *sqlite-vec for meaning* superseded in part by D-194 · 2026-11-21 |
 | [D-24](#d-24--embeddings-are-computed-locally-by-default) | Embeddings are computed locally by default | ✅ Accepted · ✔ read back 2026-08-29 |
 | [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) | The existing libraries are studied and re-authored, never imported | ✅ Accepted · ✔ read back 2026-08-29 |
 | [D-26](#d-26--the-model-file-is-never-uploaded) | The model file is never uploaded | ✅ Accepted · ✔ read back 2026-08-29 |
@@ -262,6 +262,7 @@ an edit.
 | [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) | The usage counter keeps offered, helped and the last date it helped; "helped" is only the modeller's word; it moves a clause less than one rank; and no question text is kept | ✅ Accepted · 2026-11-20 |
 | [D-192](#d-192--a-job-that-works-only-outside-the-model-it-is-aimed-at-declares-nogroupopen-and-an-admin-or-publish-job-then-opens-no-transaction-group-in-that-model) | A job that works only outside the model it is aimed at declares noGroupOpen, and an Admin or Publish job then opens no transaction group in that model | ✅ Accepted · 2026-11-21 |
 | [D-193](#d-193--making-sheets-keeps-three-rules-for-a-table-and-typed-numbers-alike-a-sheet-whose-number-or-name-revit-refuses-is-taken-back-a-number-asked-for-twice-makes-neither-and-1000-is-the-most-in-one-call) | Making sheets keeps three rules for a table and typed numbers alike: a sheet whose number or name Revit refuses is taken back, a number asked for twice makes neither, and 1,000 is the most in one call | ✅ Accepted · 2026-11-21 |
+| [D-194](#d-194--every-stored-vector-is-compared-in-plain-python-sqlite-vec-is-not-used) | Every stored vector is compared in plain Python; sqlite-vec is not used | ✅ Accepted · 2026-11-21 |
 
 ## Format
 
@@ -453,6 +454,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-23 — The knowledge store is SQLite, one file per scope
 
 **Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-10](OPEN-QUESTIONS.md)
+**Superseded in part by:** [D-194](#d-194--every-stored-vector-is-compared-in-plain-python-sqlite-vec-is-not-used), accepted by the owner 2026-11-21 - *"`sqlite-vec` for meaning"*: every stored vector is compared in plain Python, and sqlite-vec is not used
 
 **Full record:** [`decisions/D-23.md`](decisions/D-23.md)
 
@@ -1745,3 +1747,13 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`CREATE_SHEETS`](../brain/fragments/create-sheets/fragment.yaml) version 4 (DRAFT) · [`CREATE_SHEETS_FROM_TABLE`](../brain/fragments/create-sheets-from-table/fragment.yaml) (DEPRECATED, merged in) · [`sheets-from-excel`](../brain/skills/sheets-from-excel.yaml) · [`heron_sheet_list.py`](../brain/heron_sheet_list.py) · [Group OZ](needs-checking/group-oz.md)
 
 **Full record:** [`decisions/D-193.md`](decisions/D-193.md)
+
+## D-194 — Every stored vector is compared in plain Python; sqlite-vec is not used
+
+**Status:** Accepted · **Date:** 2026-11-21 · **Accepted:** Ajmal PS, 2026-11-21, in conversation with the session working issue [#957](https://github.com/Ajmalpshaik/Heron-AI/issues/957): *"5b-1171: write the decision."*
+**Numbering:** D-194 is the id `tools/next-id.py` printed free on 2026-11-21, with `origin/main` at `1e5f37e9` ending at D-193.
+**Supersedes in part:** [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) - its words *"`sqlite-vec` for meaning"*
+**Settles:** [row 5b-1171](fragment-issues/section-5b-rows-1151-1175.md) · **Keeps:** the rest of D-23, Golden Rule 5, PROPOSALS F7
+**Affects:** [`brain/heron_embed.py`](../brain/heron_embed.py) · `requirements-optional.txt`, `brain/heron_dependencies.py`, `tools/cloud-setup.sh`, `tools/heron-ready.py` - sqlite-vec taken out · D-23's index entry and record
+
+**Full record:** [`decisions/D-194.md`](decisions/D-194.md)

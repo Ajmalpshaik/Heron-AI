@@ -926,8 +926,8 @@ Heron AI should automatically maintain its vector database. Background operation
 The user should not manually manage the vector database.
 
 > **As built (2026-10-18):** one SQLite file per knowledge scope, with FTS5 for words and the vectors in
-> the same file — `sqlite-vec` when it loads, the same cosine in Python when it does not
-> ([D-23](DECISIONS.md)). Embeddings are computed on the PC ([D-24](DECISIONS.md),
+> the same file, compared in plain Python ([D-23](DECISIONS.md); `sqlite-vec` is not used,
+> [D-194](DECISIONS.md#d-194--every-stored-vector-is-compared-in-plain-python-sqlite-vec-is-not-used), 2026-11-21). Embeddings are computed on the PC ([D-24](DECISIONS.md),
 > [D-26](DECISIONS.md)). There is no background agent: indexing is content-hashed, the server prepares
 > the store once when it starts (`heron_brain.warm_store`), a card changed on disk reaches its row on the
 > next lookup, and a store that has drifted from the cards is named in the `heron_lookup` answer. The

@@ -259,9 +259,12 @@ def main():
           "enforces is the format those files already keep")
     check(len(answer["say"]) == len(real) - 1,
           "with a sentence for each absent optional one")
-    check(any("sqlite_vec" in line and "compared in Python" in line
+    check(any("model2vec" in line and "character n-grams" in line
               for line in answer["say"]),
-          "including the one PROPOSALS F7 is about, said out loud")
+          "including what is lost without the trained model, said out loud")
+    check(not any(one["name"] == "sqlite_vec" for one in real),
+          "and sqlite_vec is not one of them: every vector is compared in "
+          "plain Python and nothing in Heron uses it (D-194)")
 
     print()
     print("3b. A package named twice with two kinds is not resolved quietly")

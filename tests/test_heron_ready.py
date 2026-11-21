@@ -171,9 +171,10 @@ def store_claude(work, plain_code):
         check(found({"LOCALAPPDATA": nothing}) == [] and found({}) == [],
               "and none where there is no Store Claude, or no %LOCALAPPDATA%")
         got = held(cache)
-        check(got == {"PyYAML": "0.0.1", "mcp": "0.0.2", "sqlite-vec": "0.0.3"},
+        check(got == {"PyYAML": "0.0.1", "mcp": "0.0.2"},
               "it reads Heron's packages off the copy's folder names, and only "
-              "Heron's: %s" % got)
+              "Heron's - not requests, and not sqlite-vec, which Heron does not "
+              "use (D-194): %s" % got)
         environ = {"APPDATA": roaming, "LOCALAPPDATA": local}
         check(inside(cache, environ) is False,
               "a run whose %APPDATA% has no Python folder is OUTSIDE the app")
@@ -202,8 +203,10 @@ def store_claude(work, plain_code):
     part = out.split("2a.", 1)[-1].split("\n3. ", 1)[0] if "2a." in out else ""
     check(bool(part), "the whole tool says 2a when %LOCALAPPDATA% holds a "
                       "Store Claude's copy")
-    check("pip install --user mcp==0.0.2 PyYAML==0.0.1 sqlite-vec==0.0.3" in part,
-          "with a pip line pinned to the copy's versions")
+    check("pip install --user mcp==0.0.2 PyYAML==0.0.1" in part
+          and "sqlite-vec" not in part,
+          "with a pip line pinned to the copy's versions, and no sqlite-vec "
+          "(D-194)")
     check("Reset or uninstall" in part,
           "and says a Reset or uninstall of the app deletes the copy")
     check("FIX " not in part and code == plain_code,

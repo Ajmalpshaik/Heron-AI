@@ -636,8 +636,9 @@ def claude_side():
 # ---------------------------------------------------------------------------
 
 #: The packages whose presence or version can change how fast Heron answers.
+#: sqlite-vec left this list on 2026-11-21: nothing in Heron uses it (D-194).
 SNAPSHOT_PACKAGES = ("PyYAML", "mcp", "model2vec", "sentence-transformers",
-                     "torch", "numpy", "sqlite-vec", "pypdf", "huggingface_hub")
+                     "torch", "numpy", "pypdf", "huggingface_hub")
 
 #: The only keys ever copied out of a Claude Code settings file.
 SETTINGS_KEYS = ("enableAllProjectMcpServers", "enabledMcpjsonServers",

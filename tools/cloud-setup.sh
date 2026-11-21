@@ -64,8 +64,9 @@ apt_pid=$!
 #               only (before, it exited off Windows, row 5b-162); and it is
 #               what test_mcp_serves and test_served_claims need
 #   model2vec   the trained embedding backend (needs huggingface.co - docs/38)
-#   sqlite-vec  vector search inside SQLite instead of in Python
 #   pypdf       ingesting PDFs
+# sqlite-vec is LEFT OUT since 2026-11-21: every vector is compared in plain
+# Python and nothing in Heron loads it (D-194).
 # sentence-transformers is deliberately LEFT OUT: it pulls torch, 500 MB to
 # 2 GB, to re-order a shortlist it already has. mcp is deliberately NOT pinned:
 # D-45, and both suites pass on SDK 2.2.0 as well as 1.x.
@@ -80,7 +81,7 @@ apt_pid=$!
 # built for its own Python, which need not be the one on PATH (this image
 # runs 3.11 against Debian's 3.12 builds), so pip's copies are also the ones
 # that load.
-PKGS="pyyaml mcp model2vec sqlite-vec pypdf"
+PKGS="pyyaml mcp model2vec pypdf"
 (
   pip install --quiet $PKGS ||
   pip install --quiet --ignore-installed $PKGS ||
@@ -99,13 +100,13 @@ wait "$pip_pid" || say "pip did not finish cleanly - $LOGS/heron-pip.log"
 say "dotnet $(dotnet --version 2>/dev/null || echo "NOT INSTALLED - $LOGS/heron-apt.log")"
 say "python $(python --version 2>&1)"
 missing=""
-for mod in yaml mcp model2vec sqlite_vec pypdf; do
+for mod in yaml mcp model2vec pypdf; do
   python -c "import $mod" > /dev/null 2>&1 || missing="$missing $mod"
 done
 if [ -n "$missing" ]; then
   say "python packages MISSING:$missing - $LOGS/heron-pip.log"
 else
-  say "python packages: all five import (yaml mcp model2vec sqlite_vec pypdf)"
+  say "python packages: all four import (yaml mcp model2vec pypdf)"
 fi
 
 # --- 2. somewhere to keep knowledge ----------------------------------------
