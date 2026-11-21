@@ -29,11 +29,9 @@ purpose: >
   heron_method lists each capability's status beside this method; a DRAFT
   one runs once, behind Revit's Keep or Discard box (D-119).
 
-  ONE THING THIS JOB NEEDS DOES NOT EXIST YET, marked GAP at step 7: a GUID
-  write. It is not in the list of capabilities after this method, because
-  nothing provides it - do not try to call it. At that step say so to the
-  modeller and let them choose; never work round a gap by guessing a value or
-  typing an element id.
+  A VALUE IS CARRIED BY GUID AND WRITTEN BY GUID where a name is held twice:
+  step 7 names the parameter as "Name {GUID}". Never work round a refusal by
+  guessing a value or typing an element id.
 
   0. FIND THE OLD ONES. SELECT_BY_PARAMETER_VALUE (SELECT_BY_FAMILY was
      merged into it at version 4, 2026-11-01) with parameterName=Family,
@@ -211,17 +209,22 @@ purpose: >
      nothing. A TYPE's value is written by naming the type's own id in its row -
      every unit of that type changes - so ask first. A CSV goes in the session's
      scratch folder, or %TEMP%\heron-work - never beside Heron or the model.
-     Both write by NAME, and both REFUSE a name the element carries twice, which
-     is right. GAP - A GUID WRITE: nothing writes a value by GUID yet. Checked
-     2026-10-17 on main: SET_PARAMETER_VALUES_BY_ID versions 2 and 3 (rows
-     5b-459, 5b-610) find a parameter by its name and match a row by a value an
-     element holds - not by GUID - and a CSV (once IMPORT_PARAMETER_VALUES)
-     takes names as headings. So a value is CARRIED by GUID - the map pairs the
-     GUIDs - and WRITTEN by name where the new element carries that name once;
-     where it carries it twice, name it to the modeller, who sets it by hand.
-     Widening one of the two to take a GUID is the fix, not a new capability. On
-     Revit 2020 a Yes/No that was written correctly can come back called
-     "rejected": read the value before believing either.
+     Both find a parameter by NAME first, and REFUSE a name the element carries
+     twice, which is right. A SHARED parameter is then named by its GUID - in
+     a row, or as a CSV column's heading - as "<name> {<its GUID>}", the GUID
+     the NEW element's record from step 6 gives it: "Equipment Tag
+     {e133774c-3f62-45f1-a0c6-7e6c6238380b}". That reaches the one parameter
+     with that GUID while it is still called that name (since the card's
+     version 6, row 5b-1344, 2026-10-28; it was written as a gap here on
+     2026-10-17, from versions 2 and 3). So a value is CARRIED by GUID - the
+     map pairs the GUIDs - and WRITTEN by name where the new element carries
+     that name once, by "<name> {<its GUID>}" where it carries it twice. A
+     BUILT-IN parameter has no GUID: where its name is held twice it is named
+     by Revit's own name for it, "Top Level {FAMILY_TOP_LEVEL_PARAM}" (the
+     card's version 9, row 5b-1703), and the card's refusal names each one in
+     the form that reaches it. On Revit 2020 a Yes/No that was
+     written correctly can come back called "rejected": read the value before
+     believing either.
 
   8. READ BACK AND COMPARE, by GUID first, then name:
      REPORT_PARAMETER_INVENTORY with step 1's values on the new ones
@@ -288,14 +291,10 @@ utterances:
 
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 #
-# THE GAP IS NOT LISTED HERE, ON PURPOSE. tests/test_skills.py and
-# tests/test_brain_reachable.py assert that every capability a skill needs has
-# a provider, and naming a gap here turns both red (measured 2026-10-12). Their
-# own comment says a gap in the library "would be asserting that the work is
-# unfinished" - which for this job is true. Whether a skill may carry a gap in
-# `needs`, so it reaches heron_skill.py's CAPABILITY GAPS list, is the
-# owner's decision; until then the gap is named in the purpose, which
-# heron_method prints whole.
+# THE GUID WRITE IS SET_PARAMETER_VALUES_BY_ID, listed below (row 5b-1962).
+# Until 2026-11-21 this comment said a GUID write was a gap left out of these
+# needs on purpose, and step 7 said nothing provides it, while that card had
+# taken "Name {GUID}" since its version 6 of 2026-10-28 (row 5b-1344).
 #
 # PLACE_FAMILY_ON_FACE AND PLACE_HOSTED_FAMILY ARE NAMED IN STEP 6 AND LEFT OUT
 # HERE, ON PURPOSE (row 5b-740). In `needs`, heron_skill.methods_for named this
@@ -355,7 +354,8 @@ note: >
   MOVE_ELEMENTS once per copy, a by-hand compare by GUID, and DELETE_ELEMENTS,
   because PLACE_FAMILY_INSTANCES stood the new one at the wrong height. Its
   lessons are in steps 2, 6, 9 and 10. Since the first version, tags are
-  COPY_TAGS_TO_REPLACEMENTS and steps 1 and 8 are REPORT_PARAMETER_INVENTORY;
-  the GUID write is still missing. Neither swap has been watched working
+  COPY_TAGS_TO_REPLACEMENTS and steps 1 and 8 are REPORT_PARAMETER_INVENTORY,
+  and step 7 writes by GUID through SET_PARAMETER_VALUES_BY_ID (row 5b-1962).
+  Neither swap has been watched working
   through this method, so it stays DRAFT (D-30); its proof plan is Group GC of
   docs/NEEDS-CHECKING.md, on a NEW project.
