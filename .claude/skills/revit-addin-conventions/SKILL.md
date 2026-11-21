@@ -112,6 +112,15 @@ that ([D-47](../../../docs/DECISIONS.md)), the operation must **say so before it
 
 Name it for what the user did, so Revit's undo history reads properly: `Heron: Move ducts up 200 mm`.
 
+**One exception, and only for an Admin or a Publish job: `noGroupOpen`**
+([D-192](../../../docs/decisions/D-192.md)). A card that works only outside the model it is aimed at -
+making a new family document, exporting families - declares that need, and `RevitFragment` then opens **no**
+`TransactionGroup` in that model: `EditFamily` is refused while one is open there. Such a run is measured as
+a read is - counted before and after - and refused `changed_outside_group` if that model moved; it may open
+no transaction of its own either (the source scan refuses one, `opens_own_transaction`). A card sent as a
+change, or one that also declares `editScopeFailures`, is refused `bad_contract` before anything runs.
+Never reach for it to dodge the group on a real write.
+
 Everything through Step 5 is read-only by design. Writes begin at Step 6, and they arrive **with** the
 safety rails — transaction group, preview, re-count before executing, document pinning, the permission
 gate and the emergency stop — not after them. A write path built before its safety path is a write path

@@ -391,3 +391,76 @@ Where one read fragment is really two jobs joined:
 has to exist before a fragment can be stored, found, composed or trusted. **After Phase 2 this becomes a
 standing activity rather than a step** — the library grows when a real job needs something, which is the
 only signal that has ever been worth building from.
+
+---
+
+## 6. Studying an outside project - the research rule
+
+**Moved here on 2026-11-21 from the upgrade plan** - `project-perfection-and-continuous-upgrade-plan-2026-09-12.md`,
+a work note, numbered `docs/34` until 2026-11-15 - whose own banner said it was kept *"for its reasoning - the
+fullest written statement of how Heron studies an outside project - and retires once that part has a
+permanent home"*. This section is that home. Its rules are moved with their words, and only two things
+changed: they say *another project* where the plan named three, and its naming rule is read under
+[D-177](decisions/D-177.md), which came later and wins. Git history holds the plan whole; what it
+produced is the Improvement Gate, recorded in [D-68](DECISIONS.md), [D-69](DECISIONS.md) and
+[34 §2.15-2.19](34-patterns-adapted.md).
+
+Sections 1 to 5 above are about the owner's own fragment library. This one is about any other project
+Heron reads for an idea - an outside repository, a product, a paper. **The outside project is a research
+reference, never a supplier of code.** Every idea taken is rewritten for Heron's constraints and checked
+against the current repository before it is built, and an idea is taken only when it solves a measured
+Heron problem: *do not chase every new feature.*
+
+### 6.1 Research does not finish when a plan is written
+
+For every feature, fix, refactor or upgrade that uses an idea from another project, the session building
+it does this again **at implementation time**:
+
+1. Open the other project.
+2. Read its current README **and the implementation files** behind the idea, not the README alone.
+3. Check whether it has changed since the note that recorded the idea was written.
+4. Confirm the licence and provenance before using anything beyond a general idea.
+5. Compare its mechanism with what Heron does now.
+6. Write the Heron design before writing code.
+7. Build only what fits Heron's architecture and product goals.
+8. Re-read the other project whenever a behaviour, boundary, lifecycle or failure case is unclear.
+9. Never fill an uncertainty with a guess when the source can be read.
+10. Record why Heron's version is different, where that difference matters.
+
+**A previous note, a memory or an earlier AI summary of the other project is not the source.** The
+project is a living reference: read it again.
+
+### 6.2 What is never done
+
+- copying a large implementation and renaming it;
+- importing another project's folder structure because it looks clean;
+- taking another project's terms where Heron already has a stable word of its own;
+- adding a dependency only to reproduce another project's architecture;
+- pasting another project's prompts, skills, tests or workflows into Heron unchanged;
+- copying code without checking the licence;
+- changing Heron's architecture only to match the other project.
+
+The allowed route is **study → understand → take the principle → map it to Heron → design → build → test →
+record**. If reusing code ever seemed genuinely necessary, that is a separate licence and provenance
+decision for the owner, never ordinary implementation - and [D-25](DECISIONS.md) and
+[AGENTS.md](../AGENTS.md) say Heron does not do it.
+
+### 6.3 Naming
+
+**[D-177](decisions/D-177.md) settles this, 2026-11-17: an idea taken from another project is described in
+Heron's own words, and the project, its repository, its product and its author are not named** - not in a
+research note, proposal, decision, card, skill, code comment, commit message or pull request, and not by a
+link, a path or a quotation that carries the name. Heron's own evidence is named as always. The upgrade
+plan's rule, written before that decision, said the same for code, class names, fragment ids and the words
+a modeller sees, and asked for a README or NOTICE entry where attribution was required; under D-177 the
+second half no longer arises, because no code is taken (point 4) and the idea is described without its
+source. Documents written before D-177 keep the names they carry until the owner asks otherwise (its
+point 5).
+
+### 6.4 When it worked
+
+An idea from another project has been taken well when it was **understood independently, adapted to Heron,
+tested against Heron's own requirements, and rejected when it did not fit** - and the change it led to went
+through the same loop as any other: understand → baseline → research → diagnose → design → build →
+critique → verify → record. The objective is not more AI; it is a Heron that gets cleaner, safer, easier to
+test and upgrade, and harder to break.
