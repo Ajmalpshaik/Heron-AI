@@ -105,6 +105,41 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
+**Where it stands on 2026-11-21, evening — read this first, then the table.** [That day's sitting
+note](handover-archive/2026-11-21-the-day-s-merges-the-new-work-waits-for-revit-and-five-questions-for-the-owner.md)
+lists every pull request merged up to 19:50 UTC with what each leaves owed; the whole day's list is
+`gh api -X GET search/issues -f q='repo:Ajmalpshaik/Heron-AI is:pr is:merged merged:2026-11-21'`. In short:
+
+- **What met Revit that day:** Revit 2024 on the owner's PC - OI31 and Group OY passed, OU21 and OU22 ran on 2024
+  ([#1178](https://github.com/Ajmalpshaik/Heron-AI/pull/1178)), and OX1 and OX2 passed
+  ([#1186](https://github.com/Ajmalpshaik/Heron-AI/pull/1186)). Nothing else that merged has run in Revit.
+- **What is DRAFT and owed in Revit:** the cards of Groups [OY](needs-checking/group-oy.md) (version 2),
+  [OZ](needs-checking/group-oz.md), [PA](needs-checking/group-pa.md), [PB](needs-checking/group-pb.md),
+  [PE](needs-checking/group-pe.md), [PG](needs-checking/group-pg.md), [PI](needs-checking/group-pi.md),
+  [PJ](needs-checking/group-pj.md) and [PK](needs-checking/group-pk.md); and,
+  built-not-run in the add-in, Groups [OV](needs-checking/group-ov.md), [OW](needs-checking/group-ow.md),
+  [OX](needs-checking/group-ox.md) (OX3 to OX5), [PC](needs-checking/group-pc.md), [PL](needs-checking/group-pl.md),
+  [PF](needs-checking/group-pf.md)'s methods, [PH](needs-checking/group-ph.md)'s first skill-runner runs, [PD](needs-checking/group-pd.md)'s timed run and
+  [OR29](needs-checking/group-or.md). Each group's file names its GitHub issue. How many cards are DRAFT is derived:
+  `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
+- **What waits for the owner's word, no Revit:** [D-195](decisions/D-195.md) (**Proposed** - Finalize as one
+  change); the three questions of [#1208](https://github.com/Ajmalpshaik/Heron-AI/pull/1208) - row 5b-1903 in
+  [#1103](https://github.com/Ajmalpshaik/Heron-AI/issues/1103), Q-95 and Q-96 in
+  [#1009](https://github.com/Ajmalpshaik/Heron-AI/issues/1009); the rest of
+  [#1103](https://github.com/Ajmalpshaik/Heron-AI/issues/1103) (5b-1060, row 129, 5b-1904, D-112);
+  [#1070](https://github.com/Ajmalpshaik/Heron-AI/issues/1070) (turn an isometric View 1, or a new view is enough);
+  and [#1118](https://github.com/Ajmalpshaik/Heron-AI/issues/1118) (rename docs 35 and 48 for D-177). The open
+  questions still unanswered are printed by `python tools/check-docs.py`, section 4.
+- **What the next session does first:** read the owner's answers on those issues and work any that came back -
+  each issue carries its own ready prompt. With no answer and no Revit, take an open defect
+  (`python tools/open-defects.py`). On the PC with Revit open, the order is the sitting note's TO DO: the DRAFT
+  reads first (PG then PK on one roof copy, PE, PB, PA, PD), then the DRAFT writes (OZ, OY version 2, PI, PJ), then the
+  add-in rebuilt and deployed - [#1182](https://github.com/Ajmalpshaik/Heron-AI/pull/1182) and
+  [#1211](https://github.com/Ajmalpshaik/Heron-AI/pull/1211) changed it - for PL, PC, OV, OW, OX3 to OX5, OR29, PF and PH.
+
+The table and the numbered list below are older and still hold for what they name; where one disagrees with a
+group's own file, the file wins.
+
 **State at a glance — written 2026-10-27, and re-read row by row against the cards and the git log on
 2026-11-11.** **On 2026-11-12 only the rows that day's work moved were brought up** — the Ask to Keep
 switch, the fragment library, a door's reply, the family tools and the documentation — and
@@ -285,7 +320,8 @@ and **its own group records no run** - Groups JT and JU used the flag once, with
 
 **Next, without Revit — what waits for the owner's word:** his answers to the open questions — the
 `A DECISION` bucket of `python tools/owner-queue.py`, and `python tools/check-docs.py` prints which are
-still open under its section 4; Q-72 to Q-82 and Q-85 to Q-87 were among them on 2026-11-12. **What that
+still open under its section 4; Q-72 to Q-82 and Q-85 to Q-87 were among them on 2026-11-12, and on
+2026-11-21 the owner's open items are the ones named at [the top of this section](#where-this-stands-right-now--read-this-then-9a-or-9). **What that
 tool does not list is named once, in
 [§8](#what-joined-it-on-2026-11-11-and-2026-11-12--his-word-not-his-revit):** the two decisions still
 Proposed from this work ([D-153](decisions/D-153.md), [D-154](decisions/D-154.md)), the PROVEN tools whose
@@ -295,7 +331,7 @@ And row 5b-1340, which decides how an add-in agent is ever promoted out of DRAFT
 > **The dated notes in this block stop at 2026-09-27.** What came between them and 2026-10-18 — the HVAC
 > loads and sprinkler work, the family-editing fragments, the project-location setters, and the safety
 > rails that met Revit on 2026-10-18 — is in [Latest sittings](#latest-sittings) below. **Most of what came
-> after 2026-10-18 is in no sitting note at all:** only 2026-10-29, 2026-11-11 and 2026-11-12 wrote one, so for the
+> after 2026-10-18 is in no sitting note at all:** only 2026-10-29, 2026-11-11 to 2026-11-14 and 2026-11-21 wrote one, so for the
 > rest read `git log --oneline --first-parent origin/main`, the register groups the table above links, and
 > the fragment cards. Read the newest sitting first. The notes here still hold for what they name, except two lines of
 > the installer note of 2026-09-22: a release **has** been published — v0.1.0, 2026-10-08
@@ -422,6 +458,7 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 
 | Date | Sitting |
 |---|---|
+| 2026-11-21 | [THE MERGES OF 2026-11-21: THE NEW WORK WAITS FOR REVIT, AND FIVE QUESTIONS WAIT FOR THE OWNER](handover-archive/2026-11-21-the-day-s-merges-the-new-work-waits-for-revit-and-five-questions-for-the-owner.md) |
 | 2026-11-14 | [A NIGHT ON REVIT 2024 ALONE: SCRATCH MODELS HERON MADE, TEN DRAFTS AND SEVEN DEFECTS](handover-archive/2026-11-14-a-night-on-revit-2024-alone-scratch-models-heron-made-and-seven-defects.md) |
 | 2026-11-13 | [THE OWNER'S PC PROVES WHAT #855 BUILT, AND THE PROVING FINDS NEW DEFECTS ON THE WAY](handover-archive/2026-11-13-the-owner-s-pc-proves-what-855-built-and-the-proving-finds-new.md) |
 | 2026-11-12 | [EVERY REPLY SAYS HOW IT ENDED IN ONE WORD, PROVEN TOOLS THAT ANSWERED WRONGLY ARE REPAIRED AND DRAFT AGAIN, AND A DEFECT ROW GETS A FILE OF ITS OWN](handover-archive/2026-11-12-every-reply-says-how-it-ended-in-one-word-proven-tools-that.md) |
@@ -433,7 +470,6 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 | 2026-10-06 | [SPRINKLERS LAID OUT IN ANY ROOM, PREVIEWED, THEN PLACED](handover-archive/2026-10-06-sprinklers-laid-out-in-any-room-previewed-then-placed.md) |
 | 2026-10-05 | [THE FIRE WATER AND THE SPACING, ON THE SPRINKLER PANEL](handover-archive/2026-10-05-the-fire-water-and-the-spacing-on-the-sprinkler-panel.md) |
 | 2026-10-04 | [A SPRINKLER SYSTEM'S HYDRAULICS NOW COME FROM THE MODEL](handover-archive/2026-10-04-a-sprinkler-system-s-hydraulics-now-come-from-the-model.md) |
-| 2026-10-02 | [HERON'S FIRE ENGINE NOW READS EN 12845, FM GLOBAL AND BS 5839](handover-archive/2026-10-02-heron-s-fire-engine-now-reads-en-12845-fm-global-and-bs-5839.md) |
 
 ## The session archive — what happened before today
 
