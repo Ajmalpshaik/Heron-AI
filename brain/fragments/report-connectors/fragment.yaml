@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -15,7 +15,14 @@ capability: REPORT_CONNECTORS
 # `unconnectedSpigots` and `findings`, sizes within `sizeTolerance`. See the
 # merge block above `utterances`. DRAFT at the time, until version 3 is proved
 # (D-30); the version 2 proof below was kept as the record of what was run.
-version: 3
+# VERSION 4 (2026-11-21, work-note item WN-4, issue #1005): the measurements as
+# NUMBERS - `connectorMeasurements` (millimetres and a facing vector, one entry
+# a number) and `connectorKinds` (domain, system and shape), each keyed by
+# element id and connector number - so a size filter or a connection planner
+# reads a diameter rather than parsing a sentence. The text outputs are
+# unchanged. Its C# moved, so it is DRAFT until NEEDS-CHECKING Group PA runs
+# (D-30); the proof below stays as the record.
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -137,6 +144,24 @@ contract:
       # `openConnectors`, not here.
       role: result
       type: int
+    - name: connectorMeasurements
+      # VERSION 4 (WN-4): every connector's numbers, one entry a number, keyed
+      # "<element id>/<connector number>/<measure>" - the connector number
+      # counts the element's connectors from 1 in Revit's order, as `findings`
+      # numbers them. Measures: diameterMm (round), widthMm and heightMm
+      # (rectangular or oval), xMm, yMm and zMm (where it sits, MILLIMETRES
+      # from Revit's internal origin) and facingX, facingY and facingZ (the way
+      # it faces, a unit vector). A measure Revit will not give is left out,
+      # never 0: an electrical connector has no size keys.
+      role: result
+      type: IDictionary<string, double>
+    - name: connectorKinds
+      # VERSION 4 (WN-4): "<element id>/<connector number>" -> its domain,
+      # system and shape, in `connectorFacts`' words ("DomainHvac SupplyAir,
+      # Round"), so every connector has an entry even where no number could be
+      # read.
+      role: result
+      type: IDictionary<string, string>
     - name: findings
       # VERSION 3: the grading in sentences, millimetres - the summary first,
       # with the warning that every size is what the FAMILY declares, then each

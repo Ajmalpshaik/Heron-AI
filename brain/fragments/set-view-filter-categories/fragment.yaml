@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -16,7 +16,12 @@ capability: SET_VIEW_FILTER_CATEGORIES
 # live model that day a rename and a re-rule took six undo steps and left a
 # filter behind, because no tool could edit either. DRAFT at the time, until
 # version 2 is run in Revit: NEEDS-CHECKING Group EE.
-version: 2
+# VERSION 3 (2026-11-21, row 5b-1364 item 1, issue #950): `matchValue` "has no
+# value" - or "is blank" - is a rule, Revit's CreateHasNoValueParameterRule on
+# the parameter, as CREATE_VIEW_FILTER has taken it since 2026-11-01. Version 2
+# read it as text to match with equals. Version 2's proof below is kept as the
+# record; its C# moved, so it is DRAFT until NEEDS-CHECKING Group PA runs (D-30).
+version: 3
 source: OFFICIAL
 risk: MODIFY
 # A settings change: after it runs from the chat, the Companion page offers its values
@@ -93,7 +98,9 @@ contract:
       # merged into it 2026-11-01, took it the same way): equals, does not
       # equal, contains, does not contain, begins with, does not begin with,
       # ends with, does not end with ("does not contain TRG_MEC"). None means
-      # equals. BLANK keeps the rule as it is.
+      # equals. BLANK keeps the rule as it is. VERSION 3: "has no value" or
+      # "is blank" alone - no text after it - catches the elements whose
+      # parameter holds no value.
       # The new rule REPLACES every condition the filter had, AND or OR. With
       # parameterName blank the filter's rule must be one condition on one
       # parameter, else the parameter has to be named. A name in filterNames

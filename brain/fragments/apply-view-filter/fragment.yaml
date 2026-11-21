@@ -17,7 +17,12 @@ capability: APPLY_VIEW_FILTER
 # still taken, and changes every view following it. Version 2's proof below
 # is kept as the record; its C# moved, so it is DRAFT until NEEDS-CHECKING
 # Group OR's OR27 runs (D-30).
-version: 3
+# VERSION 4 (2026-11-21, row 5b-1363 item 4, issue #950): words only - the
+# refusal for no filter names UPDATE_SAVED_SET (mode create) for a hand-picked
+# list, where it named CREATE_SELECTION_FILTER, retired into it on 2026-11-01.
+# Nothing runs differently; still DRAFT until Group OR's OR27 and Group PA's
+# check of this sentence run (D-30).
+version: 4
 source: OFFICIAL
 risk: MODIFY
 # A settings change: after it runs from the chat, the Companion page offers its values
