@@ -442,8 +442,9 @@ PYTHON_COMPARISON = "python"
 def comparison():
     """(how vectors are compared, why) - said, never assumed (PROPOSALS F7).
 
-    Always Python today: sqlite-vec has no caller (row 5b-1171). The answer
-    says whether it is installed, because the one wrong belief worth
+    Always Python: D-194 (the owner, 2026-11-21) decided every stored vector
+    is compared in plain Python and sqlite-vec is not used (row 5b-1171). The
+    answer says whether it is installed, because the one wrong belief worth
     preventing is that installing it made search faster.
     """
     try:
@@ -453,9 +454,9 @@ def comparison():
         installed = False
     return PYTHON_COMPARISON, (
         "vectors are compared in Python - same answers, slower. sqlite-vec is "
-        + ("installed but not used: nothing in Heron loads it yet"
+        + ("installed but not used: nothing in Heron loads it"
            if installed else "not installed, and would not be used if it were")
-        + " (row 5b-1171).")
+        + " (D-194, row 5b-1171).")
 
 
 def vector(text):
@@ -504,13 +505,14 @@ def encoder():
 # Storing vectors, in the scope's own file
 # ---------------------------------------------------------------------------
 #
-# D-23 names sqlite-vec. IT IS NOT WIRED: `_try_vec_extension` below has had no
-# caller since it was written (row 5b-1171), so every vector is compared in
-# Python over the stored bytes, installed or not - identical answers, slower,
-# and nothing to install. `comparison()` says so, and tools/heron-ready.py
-# prints it (PROPOSALS F7), so nobody takes the slow path for the fast one.
-# Where it would load, some Python builds ship with extension loading compiled
-# out - exactly the locked-down machine Heron's install promise is about.
+# EVERY VECTOR IS COMPARED IN PLAIN PYTHON - D-194, the owner's decision of
+# 2026-11-21, superseding D-23's "sqlite-vec for meaning" (row 5b-1171). It is
+# done over the stored bytes, identical answers, nothing to install, and
+# nothing refused on a Python build with extension loading compiled out - the
+# locked-down machine Heron's install promise is about. `comparison()` says so,
+# and tools/heron-ready.py prints it (PROPOSALS F7). `_try_vec_extension`
+# below has no caller and is not to be given one without a new decision; it
+# and sqlite-vec in the install lists are owed out (row 5b-1955).
 #
 # Both keep the vectors IN THE SCOPE'S OWN FILE, which is the part that matters:
 # one file per scope stays true either way (Golden Rule 5), and a vector never
@@ -783,9 +785,10 @@ def nearest(store, text, limit=5, kind=FRAGMENT):
             # at the same dimension IS compared (FRAGMENT-ISSUES row 5b-107,
             # measured: a model-stamped row of 256 floats scored against a
             # lexical query). `index()` re-embeds a row whose stamp differs on
-            # every open, which closes most of that window; what a mismatch
-            # that slips through should return - nothing, or this - is the
-            # owner's decision, not this comment's (D-52).
+            # every open, which closes most of that window. A mismatch that
+            # slips through at the same length IS COMPARED, below - the
+            # owner's decision of 2026-11-21 ("keep comparing as now"), asked
+            # on issue #957 under D-52.
             continue
         scored.append((row["id"], sum(a * b for a, b in zip(want, got))))
 
