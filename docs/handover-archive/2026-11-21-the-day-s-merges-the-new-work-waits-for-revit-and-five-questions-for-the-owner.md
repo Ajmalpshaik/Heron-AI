@@ -44,11 +44,14 @@ changed and how it was checked.
 | [#1192](https://github.com/Ajmalpshaik/Heron-AI/pull/1192) | `REPORT_ROOF_SLOPES` (DRAFT), a read for a roof's pitch | [Group PG](../needs-checking/group-pg.md), now on [#1202](https://github.com/Ajmalpshaik/Heron-AI/issues/1202) |
 | [#1198](https://github.com/Ajmalpshaik/Heron-AI/pull/1198) | A skill runner (`tools/run-skill.py`, row 141), and the ten skill job files made current (row 5b-1956) | [Group PH](../needs-checking/group-ph.md), [#1196](https://github.com/Ajmalpshaik/Heron-AI/issues/1196) |
 | [#1195](https://github.com/Ajmalpshaik/Heron-AI/pull/1195) | The doors skip a card that does not claim the Revit in front (row 5b-1131) | - |
+| [#1205](https://github.com/Ajmalpshaik/Heron-AI/pull/1205) | Grids say what they made in findings (`CREATE_GRIDS` v4); an offset copy needs only the offset (`COPY_ELEMENTS` v6); a list printed twice is named | [Group PI](../needs-checking/group-pi.md) [#1200](https://github.com/Ajmalpshaik/Heron-AI/issues/1200), [Group PJ](../needs-checking/group-pj.md) [#1201](https://github.com/Ajmalpshaik/Heron-AI/issues/1201) |
 | [#1206](https://github.com/Ajmalpshaik/Heron-AI/pull/1206) | The Revit checks rows 5b-1351 and 5b-1702 still owe; OT29 and OT30 brought up to date (#944, #945) | OT29, OT30 |
 | [#1208](https://github.com/Ajmalpshaik/Heron-AI/pull/1208) | An owed Revit reading (OR29, on #1115); the owner's questions recorded (Q-95, Q-96); Q-94 answered; `open-issue.py` finds colour-marked questions | OR29, and three questions below |
 | [#1210](https://github.com/Ajmalpshaik/Heron-AI/pull/1210) | Job methods say each card's real status; the builders-work method's step 5 keeps the face (#960) | - |
 | [#1211](https://github.com/Ajmalpshaik/Heron-AI/pull/1211) | A lost read answer says it reached Revit; a carried id list mixing two models is refused; [D-195](../decisions/D-195.md) **Proposed** for Finalize | [Group PL](../needs-checking/group-pl.md), [#1204](https://github.com/Ajmalpshaik/Heron-AI/issues/1204) - **the add-in rebuilt** |
 | [#1212](https://github.com/Ajmalpshaik/Heron-AI/pull/1212) | WN-7 (#1005): eight reading tools count what they pass over (D-64) - all DRAFT | [Group PK](../needs-checking/group-pk.md), [#1202](https://github.com/Ajmalpshaik/Heron-AI/issues/1202) |
+| [#1223](https://github.com/Ajmalpshaik/Heron-AI/pull/1223) | Row 132: three skill sentences reach the read that answers them (#959) | - |
+| [#1232](https://github.com/Ajmalpshaik/Heron-AI/pull/1232) | Register audit: every owed group tracked by an open issue, done checks taken off (D-187) | - |
 
 **What is DRAFT now** is derived, never typed: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 The cards today's pull requests changed, with the state each card says:
@@ -95,8 +98,8 @@ routing words alone moved, and two cards DEPRECATED by `CREATE_SHEETS` version 4
      the names out of their text, or leave them (D-177)?
 2. **On the PC, the reads first** - DRAFT, changing nothing, on scratch copies: Group PG then PK on the same
    roof copy (#1202), Group PE (#1166), PB (#1163), PA (#1160), and PD's one timed run (#1172).
-3. **Then the DRAFT writes**, behind Keep or Discard: Group OZ (`CREATE_SHEETS` v4, #988) and Group OY's
-   version 2 rows (#1144).
+3. **Then the DRAFT writes**, behind Keep or Discard: Group OZ (`CREATE_SHEETS` v4, #988), Group OY's
+   version 2 rows (#1144), Group PI (`CREATE_GRIDS` v4, #1200) and Group PJ (`COPY_ELEMENTS` v6, #1201).
 4. **Then rebuild and deploy the add-in** - #1182 and #1211 changed it - and run what only the new add-in can
    show: Groups PL (#1204), PC (#1167), OV (#1123), OW (#1136), OX3 to OX5 (#1142), OR29 (#1115), and the
    methods of Group PF (#1170), and the skill runner's first runs, Group PH (#1196). Each group's file has its order and its negative case.

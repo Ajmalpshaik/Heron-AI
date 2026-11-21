@@ -7,7 +7,7 @@
 
 # The balance of work
 
-> **GENERATED 2026-11-21 18:58 by `python tools/balance-of-work.py --write`.**
+> **GENERATED 2026-11-21 19:41 by `python tools/balance-of-work.py --write`.**
 > **If that stamp is not today, this page is history and not a work list.** Every figure
 > below was read back out of the tool that owns it, and each row names the command that
 > derives it. Nothing here is typed by hand, so where this page and a register disagree,
@@ -23,20 +23,20 @@ business here. When every row does, delete the file and the tool with it.
 
 | # | What is left | Count | Derive it with |
 |---|---|---|---|
-| 1 | **Fragments that have never met a model** — the largest single body of work left | **127** of **746** | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` |
-| 1a | — of those, never run **in this checkout** — see the warning below | **127** | `python tools/generate-jobs.py` |
-| 1b | — of those, **ready to prove right now**, needing only a Revit session | **102** | `python tools/generate-jobs.py` |
+| 1 | **Fragments that have never met a model** — the largest single body of work left | **129** of **746** | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` |
+| 1a | — of those, never run **in this checkout** — see the warning below | **129** | `python tools/generate-jobs.py` |
+| 1b | — of those, **ready to prove right now**, needing only a Revit session | **104** | `python tools/generate-jobs.py` |
 | 1c | — of those, **structurally blocked**, each with a reason printed | **25** | `python tools/generate-jobs.py` |
 | 2 | **Skills never proved** | **50** of **50** | `grep -h '^heron-status:' brain/skills/*.yaml \| sort \| uniq -c` |
 | 3 | **Agents left to build** | **0** of **252** | `python tools/agent-count.py` |
 | 3b | — and **deferred by a decision**, which is neither left nor done | **2** | `python tools/agent-count.py` |
 | 4 | **Agent proofs drafted but unsigned** | **0** | `ls brain/agent-proof-drafts/*.yaml` |
-| 5 | **Proving-register rows still open** | **2841** of **3362** | `python tools/owner-queue.py` |
-| 6 | **Heron's own defects still open** | **13** of **1400** | `python tools/open-defects.py` |
+| 5 | **Proving-register rows still open** | **2836** of **3370** | `python tools/owner-queue.py` |
+| 6 | **Heron's own defects still open** | **13** of **1402** | `python tools/open-defects.py` |
 | 7 | **Questions unanswered** | **2** | `python tools/check-docs.py` |
 | 8 | **Proposals awaiting the owner** | **11** of **37** | `python tools/owner-queue.py` |
-| 9 | **Signatures gone stale — proved, then the code moved under them** | **67** | `python tools/check-signatures.py` |
-| 10 | **Everything waiting on the owner personally**, across three registers | **2854** | `python tools/owner-queue.py` |
+| 9 | **Signatures gone stale — proved, then the code moved under them** | **68** | `python tools/check-signatures.py` |
+| 10 | **Everything waiting on the owner personally**, across three registers | **2849** | `python tools/owner-queue.py` |
 
 > **ROWS 1a TO 1c ARE ABOUT THIS CHECKOUT, NOT ABOUT THE PROJECT.** They count what has never
 > been run *here*, and `brain/proof-drafts/runs/` is gitignored, so every worktree starts almost

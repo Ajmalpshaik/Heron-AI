@@ -115,7 +115,8 @@ lists each one with what it leaves owed. In short:
   ([#1186](https://github.com/Ajmalpshaik/Heron-AI/pull/1186)). Nothing else that merged has run in Revit.
 - **What is DRAFT and owed in Revit:** the cards of Groups [OY](needs-checking/group-oy.md) (version 2),
   [OZ](needs-checking/group-oz.md), [PA](needs-checking/group-pa.md), [PB](needs-checking/group-pb.md),
-  [PE](needs-checking/group-pe.md), [PG](needs-checking/group-pg.md) and [PK](needs-checking/group-pk.md); and,
+  [PE](needs-checking/group-pe.md), [PG](needs-checking/group-pg.md), [PI](needs-checking/group-pi.md),
+  [PJ](needs-checking/group-pj.md) and [PK](needs-checking/group-pk.md); and,
   built-not-run in the add-in, Groups [OV](needs-checking/group-ov.md), [OW](needs-checking/group-ow.md),
   [OX](needs-checking/group-ox.md) (OX3 to OX5), [PC](needs-checking/group-pc.md), [PL](needs-checking/group-pl.md),
   [PF](needs-checking/group-pf.md)'s methods, [PH](needs-checking/group-ph.md)'s first skill-runner runs, [PD](needs-checking/group-pd.md)'s timed run and
@@ -132,7 +133,7 @@ lists each one with what it leaves owed. In short:
 - **What the next session does first:** read the owner's answers on those issues and work any that came back -
   each issue carries its own ready prompt. With no answer and no Revit, take an open defect
   (`python tools/open-defects.py`). On the PC with Revit open, the order is the sitting note's TO DO: the DRAFT
-  reads first (PG then PK on one roof copy, PE, PB, PA, PD), then the DRAFT writes (OZ, OY version 2), then the
+  reads first (PG then PK on one roof copy, PE, PB, PA, PD), then the DRAFT writes (OZ, OY version 2, PI, PJ), then the
   add-in rebuilt and deployed - [#1182](https://github.com/Ajmalpshaik/Heron-AI/pull/1182) and
   [#1211](https://github.com/Ajmalpshaik/Heron-AI/pull/1211) changed it - for PL, PC, OV, OW, OX3 to OX5, OR29, PF and PH.
 
