@@ -267,4 +267,3 @@ Nothing recorded them, so none was invented. Write each one into its file before
 - `set-view-template-control` - Whether the template 'Mechanical Plan' (recorded in sweep-project1-2.yaml) includes View Scale is not recorded - check in View Templates first
 - `set-worksharing-ownership` - the workshared local copy's document name (EC12 '(the local copy)'), so no in:
 - `sync-with-central` - the workshared local copy's document name (EC12 writes '(the local copy)'), so no in:
-
