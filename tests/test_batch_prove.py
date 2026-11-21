@@ -759,6 +759,34 @@ def test_a_leg_that_would_leave_a_value_unbound_is_refused():
           "a negative arranged in another model runs on the set's values: runnable")
 
 
+def test_a_retired_card_is_refused_naming_its_successor():
+    print("A DEPRECATED or ARCHIVED card is refused, naming the card that took its job")
+    # Row 5b-1934: 154 jobs in tools/jobs/ read WOULD RUN for cards merged away
+    # on 2026-11-01, and 4 were refused for a value their successor now takes.
+    # A retired card is offered by nothing and can never be promoted
+    # (heron_fragment.can_promote: DEPRECATED and ARCHIVED sit after PROVEN), so
+    # a batch run of one is a draft nobody can sign.
+    retired = FakeFragment("old-card", [{"name": "found"}], status="DEPRECATED")
+    retired.data = {"deprecated": {"date": "2026-11-01",
+                                   "superseded-by": "NEW_CAPABILITY"}}
+    archived = FakeFragment("older-card", [{"name": "found"}], status="ARCHIVED")
+    library = {"old-card": retired, "older-card": archived,
+               "live-card": FakeFragment("live-card", [{"name": "found"}])}
+    base = {"fragment": "old-card", "setup": [], "set": {},
+            "negative-set": {"categoryName": "Sheets"}, "write": False,
+            "cross": None, "in": None, "negative-in": None, "expect": None,
+            "timeout": 60}
+    verdict, why = BP.job_refusal(base, library)
+    check(verdict == BP.REFUSED and "DEPRECATED since 2026-11-01" in (why or "")
+          and "NEW_CAPABILITY" in why,
+          "a DEPRECATED card is refused, with its date and successor (%s)" % why)
+    verdict, why = BP.job_refusal(dict(base, fragment="older-card"), library)
+    check(verdict == BP.REFUSED and "ARCHIVED" in (why or "") and "instead" not in why,
+          "an ARCHIVED one too, and with no successor named, none is invented (%s)" % why)
+    check(BP.job_refusal(dict(base, fragment="live-card"), library)[0] is None,
+          "and a live DRAFT card is not")
+
+
 def test_the_job_file_is_checked_against_the_contract():
     print("A mistyped name in the job file is caught before Revit is touched")
 
@@ -1555,6 +1583,7 @@ def main():
                  test_a_job_with_no_negative_arrangement_is_refused,
                  test_a_negative_that_would_hand_the_chain_the_wrong_values_is_refused,
                  test_a_leg_that_would_leave_a_value_unbound_is_refused,
+                 test_a_retired_card_is_refused_naming_its_successor,
                  test_the_job_file_is_checked_against_the_contract,
                  test_an_admin_or_publish_fragment_is_never_sent_by_a_batch,
                  test_defaults_merge_key_by_key,

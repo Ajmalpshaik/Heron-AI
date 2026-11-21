@@ -179,6 +179,8 @@ RUNS = os.path.join(ROOT, "brain", "proof-drafts", "runs")
 
 # Statuses that mean the work is finished and must not be repeated. See hole 1.
 FINISHED = ("PROVEN", "PRODUCTION")
+# Retired: offered by nothing, so never proved (row 5b-1934).
+RETIRED = ("DEPRECATED", "ARCHIVED")
 
 # Long enough for the worst honest case - two setup steps and one run per phase,
 # each capped at 180 seconds by the bridge itself - and short enough that a
@@ -348,6 +350,21 @@ def job_refusal(job, library, release=None):
     frag = library.get(job["fragment"])
     if frag is None:
         return NO_FRAGMENT, "no fragment called '%s'" % job["fragment"]
+
+    # A RETIRED CARD IS NOT PROVED (row 5b-1934). A DEPRECATED or ARCHIVED card
+    # is offered by nothing - retrieval leaves it out - and its job was the
+    # record of a round before it was merged away, so the dry run said WOULD
+    # RUN for work no chat can ever reach, or refused it for a value its
+    # successor now takes. It is refused for what it is, naming the card that
+    # took its job.
+    if getattr(frag, "status", None) in RETIRED:
+        retired = (getattr(frag, "data", None) or {}).get("deprecated") or {}
+        successor = retired.get("superseded-by")
+        return REFUSED, ("heron-status is %s%s - nothing offers a retired card, so "
+                         "there is nothing to prove.%s"
+                         % (frag.status,
+                            " since %s" % retired["date"] if retired.get("date") else "",
+                            " Prove %s's card instead" % successor if successor else ""))
 
     if release:
         verdict, why = release_refusal(frag, release)

@@ -1198,9 +1198,16 @@ the chain its own - so a `negative-set:` carrying only the value it varies leave
 every other value unbound. The dry run said `WOULD RUN` for exactly that job on 2026-11-20. Now every card
 of each leg - the setup steps and the fragment - is read for the request values it cannot run without
 (`heron_fragment.need_may_be_absent`, the add-in's rule), and a leg that leaves one unbound is `REFUSED`,
-naming the leg, the card and the values. Measured that day: 32 of the 1,297 jobs in `tools/jobs/` are
-refused this way - jobs that cannot run as written today, the add-in refusing each for want of a value
-([row 5b-1934](../docs/fragment-issues/row-5b-1934.md)).
+naming the leg, the card and the values. Measured 2026-11-21 over the 1,297 jobs in `tools/jobs/`: 32
+leave a value unbound, 25 of them for PROVEN cards, which the dry run reports `ALREADY` before it asks;
+of the 7 it refused for this, 3 were given their values and 4 were retired cards
+([row 5b-1934](../docs/fragment-issues/row-5b-1934.md)). None is refused for it now.
+
+**A retired card is refused for what it is** ([row 5b-1934](../docs/fragment-issues/row-5b-1934.md)). A
+`DEPRECATED` or `ARCHIVED` card is offered by nothing and can never be promoted
+(`heron_fragment.can_promote` - both sit after `PROVEN`), so a batch run of one is a draft nobody can
+sign. It is `REFUSED`, naming its date and the capability in its `deprecated: superseded-by:` - "prove that
+card instead". Measured the same day: 161 jobs in 84 files, 154 of which had read `WOULD RUN`.
 
 **Hole 2 — it passed fragments that had done nothing.** `heron_validate` judges whether the NEGATIVE
 came back empty, which is [D-30](../docs/DECISIONS.md)'s leg and which a fragment that does nothing

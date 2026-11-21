@@ -34,6 +34,19 @@ defaults:
     level: "Level 1"
     middleElevationMm: 2700
     defaultSize: "400x300"
+  # THE NEGATIVE GETS THE SAME VALUES (row 5b-1934). A job's `negative-set:` is
+  # merged over `defaults.negative-set`, not over `set:`, and the client hands
+  # the negative leg the negative-set INSTEAD of the set - so the job's
+  # negative, `layerNames` alone, left every other value here unbound and could
+  # not run. The negative varies the layer and nothing else.
+  negative-set:
+    cadName: "MX-TEST.dwg"
+    drawAs: duct
+    systemType: "Supply Air"
+    runType: "Mitered Elbows / Tees"
+    level: "Level 1"
+    middleElevationMm: 2700
+    defaultSize: "400x300"
 
 jobs:
   - fragment: draw-mep-from-cad
