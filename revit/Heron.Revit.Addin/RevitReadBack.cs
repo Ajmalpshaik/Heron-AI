@@ -159,6 +159,39 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// Which of `ids` are still in the model, each with its category's name
+        /// ("" when it has none) - for HeronReadBack's handed check (row
+        /// 5b-1903, D-196). An element Revit has deleted, or one that cannot be
+        /// read, is left out: it is not "asked, did not change", and the check
+        /// must never say it is. Read with the group still open, at the moment
+        /// the "after" is read.
+        /// </summary>
+        internal static Dictionary<string, string> Present(Document document,
+                                                           IEnumerable<ElementId> ids)
+        {
+            var there = new Dictionary<string, string>(StringComparer.Ordinal);
+            if (document == null || ids == null) return there;
+            foreach (var id in ids)
+            {
+                if (id == null) continue;
+                try
+                {
+                    var element = document.GetElement(id);
+                    if (element == null) continue;
+                    string category = "";
+                    try { category = element.Category == null ? "" : element.Category.Name; }
+                    catch (Exception) { category = ""; }
+                    there[id.ToString()] = category ?? "";
+                }
+                catch (Exception)
+                {
+                    // Not read - left out, never said as not changed.
+                }
+            }
+            return there;
+        }
+
+        /// <summary>
         /// One element read again by its UniqueId, or null when it does not
         /// resolve or cannot be read - the rollback check's second and third
         /// look. Null is "not read", never "unchanged".

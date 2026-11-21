@@ -40,6 +40,13 @@ namespace Heron.Revit.Addin
     ///              compared. Every other changed element is counted as not
     ///              read, and the chat is told so - never that it is unchanged.
     ///
+    /// AND WHAT THE JOB WAS HANDED (D-196, row 5b-1903): every element bound
+    /// to the card's needs that is still in the model and that Revit did NOT
+    /// count as modified is named - "asked, did not change" - so a pinned duct
+    /// a move left where it was is said rather than left out. Revit's count,
+    /// never a cause: a card that only reads some of what it is handed lists
+    /// those too. See Compared.CheckHanded.
+    ///
     /// SPLIT OUT SO IT CAN BE PROVED WITHOUT REVIT, the move HeronChangeReport
     /// makes: this names no Autodesk type, and tests/Heron.ReadBack.TestHost
     /// links it BY SOURCE with the bridge's Json.cs. RevitReadBack.cs is the
@@ -283,6 +290,19 @@ namespace Heron.Revit.Addin
             }
         }
 
+        /// <summary>One element the job was handed that Revit counted no change to.</summary>
+        internal sealed class HandedRow
+        {
+            internal readonly string Id;
+            internal readonly string Category;
+
+            internal HandedRow(string id, string category)
+            {
+                Id = id;
+                Category = category;
+            }
+        }
+
         /// <summary>The comparison, sealed, and the one way it is written.</summary>
         internal sealed class Compared
         {
@@ -302,6 +322,60 @@ namespace Heron.Revit.Addin
 
             /// <summary>Counted as changed, and not read on one side or the other.</summary>
             internal int NotRead { get { return Math.Max(0, Changed - Read); } }
+
+            // ROW 5b-1903, THE OWNER'S YES OF 2026-11-21 (D-196): WHAT THE JOB
+            // WAS HANDED AND REVIT COUNTED NO CHANGE TO. Everything above reads
+            // only what Revit counted as modified, so a pinned duct a move left
+            // where it was was never mentioned at all. Filled by CheckHanded;
+            // a comparison it was never called on carries none of it.
+            private bool _handedChecked;
+
+            /// <summary>Handed elements checked - at most MostRead.</summary>
+            internal int Handed;
+
+            /// <summary>False when the job was handed more than were checked.</summary>
+            internal bool HandedAll = true;
+
+            /// <summary>Handed, still in the model, and not counted as changed - in the order handed.</summary>
+            internal readonly List<HandedRow> AskedNotChanged = new List<HandedRow>();
+
+            /// <summary>
+            /// Check what the job was HANDED against what Revit counted as
+            /// changed. `handed` is the elements bound to the card's needs, as
+            /// text, in the order bound; `all` is false when there were more
+            /// than were checked; `present` is the ones still in the model,
+            /// each with its category. An element handed and not in the model
+            /// is not named here - Revit counted it deleted, or the job took it
+            /// out - and one Revit counted as changed is not named either. What
+            /// is left is said as Revit's count and nothing more: whether the
+            /// job MEANT to change it - a duct to move, or a host it only tags -
+            /// is the card's to say, not this list's.
+            /// </summary>
+            internal Compared CheckHanded(IList<string> handed, bool all,
+                                          IDictionary<string, string> present)
+            {
+                _handedChecked = true;
+                HandedAll = all;
+                if (handed == null) return this;
+
+                var counted = new HashSet<string>(StringComparer.Ordinal);
+                if (ChangedIds != null) foreach (var id in ChangedIds) if (id != null) counted.Add(id);
+                var seen = new HashSet<string>(StringComparer.Ordinal);
+
+                foreach (var id in handed)
+                {
+                    if (id == null || !seen.Add(id)) continue;
+                    Handed++;
+                    string category;
+                    if (present == null || !present.TryGetValue(id, out category)) continue;
+                    if (counted.Contains(id)) continue;
+                    AskedNotChanged.Add(new HandedRow(id, category));
+                }
+                return this;
+            }
+
+            /// <summary>What Revit counted as changed, as Compare was given it.</summary>
+            internal IList<string> ChangedIds;
 
             /// <summary>
             /// The reply's field: `"readBack": {...}`. The rows with a
@@ -329,7 +403,8 @@ namespace Heron.Revit.Addin
                         Json.Num("valuesMore", Math.Max(0, row.Differences.Count - MostValues))));
                 }
 
-                return "\"readBack\": " + Json.Obj(
+                var fields = new List<string>
+                {
                     Json.Str("mode", Mode),
                     Json.Num("changed", Changed),
                     Json.Num("read", Read),
@@ -337,7 +412,30 @@ namespace Heron.Revit.Addin
                     Json.Num("noValueChanged", NoValueChanged),
                     Json.Num("notRead", NotRead),
                     Json.Arr("elements", rows),
-                    Json.Num("elementsMore", Math.Max(0, WithDifference.Count - MostShown)));
+                    Json.Num("elementsMore", Math.Max(0, WithDifference.Count - MostShown))
+                };
+
+                // THE HANDED CHECK, ONLY WHEN IT WAS MADE: an add-in that never
+                // looked must not read as one that looked and found nothing.
+                if (_handedChecked)
+                {
+                    var named = new List<string>();
+                    for (var i = 0; i < AskedNotChanged.Count && i < MostShown; i++)
+                    {
+                        var one = AskedNotChanged[i];
+                        named.Add(Json.Obj(Json.Str("id", one.Id),
+                                           string.IsNullOrEmpty(one.Category) ? null
+                                               : Json.Str("category", one.Category)));
+                    }
+                    fields.Add(Json.Num("handed", Handed));
+                    fields.Add(Json.Bool("handedAll", HandedAll));
+                    fields.Add(Json.Num("askedNotChanged", AskedNotChanged.Count));
+                    fields.Add(Json.Arr("askedNotChangedElements", named));
+                    fields.Add(Json.Num("askedNotChangedMore",
+                                        Math.Max(0, AskedNotChanged.Count - MostShown)));
+                }
+
+                return "\"readBack\": " + Json.Obj(fields.ToArray());
             }
         }
 
@@ -356,7 +454,8 @@ namespace Heron.Revit.Addin
                                          IDictionary<string, Values> before,
                                          IDictionary<string, Values> after)
         {
-            var result = new Compared { Mode = mode, Changed = changed == null ? 0 : changed.Count };
+            var result = new Compared { Mode = mode, Changed = changed == null ? 0 : changed.Count,
+                                        ChangedIds = changed };
             if (changed == null || before == null || after == null) return result;
 
             foreach (var id in changed)
