@@ -1662,6 +1662,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pe.md`](needs-checking/group-pe.md)
 
+## Group PF - job methods and a skill's plan, run where Revit is: a plan that stops at a failed step, no write method beside a question, builders work, general notes and the casework template (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pf.md`](needs-checking/group-pf.md)
+
 ## Group PG - REPORT_ROOF_SLOPES, the pitch of each roof read edge by edge, changing nothing - DRAFT until proved (2026-11-21)
 
 **Its own file:** [`needs-checking/group-pg.md`](needs-checking/group-pg.md)

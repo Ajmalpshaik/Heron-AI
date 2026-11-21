@@ -479,6 +479,55 @@ def test_accept_and_batch_prove_rescue_the_same_records():
           % message)
 
 
+def test_a_negative_that_did_not_run_is_said_so():
+    print("accept says a negative that did not run did not run (row 5b-1884)")
+
+    # Row 5b-1884. A run record whose negative was refused - `ok: false`,
+    # nothing provided - was refused at the signing gate, rightly, in the words
+    # for a negative that FOUND something: "the negative case came back with
+    # content". `looks_empty` returns False for a phase that provides nothing,
+    # on purpose ("no count to judge"), so the last test answered for a leg
+    # that never ran. batch-prove's judge names the same record by
+    # phase_failure(); the signing gate must say what happened, not send the
+    # person signing to look for content that was never returned.
+    listed = SAMPLE.replace(
+        "    - name: elements\n      type: IList<Element>\n",
+        "    - name: elements\n      type: IList<ElementId>\n")
+    workspace = tempfile.mkdtemp()
+    original = HV.DRAFTS_DIR
+    try:
+        frag = make_fragment(os.path.join(workspace, "sample"), listed)
+        HV.DRAFTS_DIR = os.path.join(workspace, "drafts")
+        HV.write_draft("sample", {"fragment": "sample", "proof-draft": {
+            "date": "2026-11-21", "by": "", "model": "a test model",
+            "positive_case": "returned three",
+            "negative_case": "returned nothing",
+            "second_route": "none exists",
+            "fingerprint": frag.fingerprint()}})
+        runs = os.path.join(workspace, "drafts", "runs")
+        os.makedirs(runs)
+        negative = {"phase": "negative", "ok": False, "error": "refused",
+                    "message": "the view named has no such category"}
+        with io.open(os.path.join(runs, "sample.json"), "w", encoding="utf-8") as fh:
+            fh.write(json.dumps({"fragment": "sample", "phases": [
+                {"phase": "positive", "ok": True,
+                 "provides": {"elements": "3 item(s) [1, 2, 3]"}},
+                negative]}))
+        code, message = HV.accept("sample", "A Person", library=[frag])
+    finally:
+        HV.DRAFTS_DIR = original
+        shutil.rmtree(workspace)
+
+    check(code != 0, "a record whose negative did not run is still refused: %s" % message)
+    check("came back with content" not in message,
+          "and not in the words for a negative that found something")
+    check("did not run" in message,
+          "it says the negative did not run")
+    check(HV.phase_failure(negative) in message,
+          "in phase_failure's words, as batch-prove's judge says it: %s"
+          % HV.phase_failure(negative))
+
+
 def test_an_unsigned_draft_cannot_pass_validation():
     print("The last line of defence")
     workspace = tempfile.mkdtemp()
@@ -644,6 +693,7 @@ def main():
                  test_accept_records_a_proof_and_leaves_the_status_alone,
                  test_a_sentence_result_at_the_signing_gate,
                  test_accept_and_batch_prove_rescue_the_same_records,
+                 test_a_negative_that_did_not_run_is_said_so,
                  test_an_unsigned_draft_cannot_pass_validation,
                  test_restamp_refuses_a_genuinely_stale_proof,
                  test_the_fingerprint_is_about_content_only,
