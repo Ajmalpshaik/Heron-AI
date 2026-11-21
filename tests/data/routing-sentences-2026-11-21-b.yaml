@@ -1,7 +1,13 @@
 # ROUTING SENTENCES FROZEN 2026-11-21, BEFORE ANY CARD WAS EDITED - for GitHub
 # issues #1176 (row 5b-1951), #1177 (5b-1952), #1187 (5b-1953), #1188
-# (5b-1954) and #1169 (5b-1944, measured only: which card owns a duct's offset
-# is the owner's choice).
+# (5b-1954), #1039 (5b-1848) and #1169 (5b-1944, measured only: which card
+# owns a duct's offset is the owner's choice). The #1039 group was added the
+# same day, still before any card was edited.
+#
+# Measured beside them, never committed: the owner's 79, the plain questions,
+# tests/test_routing_phrases.py's sentences, routing-sentences-2026-11-21.yaml
+# and every declared sentence of the cards in play, as each stood on main -
+# 768 sentences in all.
 #
 # Read by tools/score-routing.py --sentences. Measured in a cloud container on
 # lexical and model only (origin/main against the branch). OWED ON THE OWNER'S

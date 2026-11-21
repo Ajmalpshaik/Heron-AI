@@ -3860,7 +3860,9 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     #   - THE SHORT PATH is revit_read's: the user's own words as `request`
     #     with `capability` empty run a phrasing a PROVEN capability declares,
     #     every value given, in this call; anything else sends nothing and
-    #     hands back the candidates (_by_words).
+    #     hands back the candidates (_by_words) - looked up under this door's
+    #     own ceiling, EXECUTE, so none of them is a card it refuses (row
+    #     5b-1951).
     #   - `values` is one "name=value" per line, e.g. show=true.
     #   - `expect_from` names the fragment whose result this acts on, and the
     #     carried elements are checked to be THAT fragment's, as revit_change
