@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -104,6 +104,64 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-21'
+  by: Ajmal PS
+  model: Ducts OI31 (3,421 elements), Revit 2024, session 35160
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    create-mep-runs, fit-mep-joints with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned borrowedBy Func`2,
+    chosen FlexDuctType, connectorsOf Func`2, findings 0 item(s), flexDucts 1 item(s) [925641],
+    given 3 item(s) [Duct, Duct, Duct], invariant CultureInfo, limit 0, lines 1 item(s) [Ducts
+    ''Radius Elbows / Taps'' (id 925634) (2800 mm) removed a...], loadedTypes 2 item(s) [Flex
+    - Rectangular, Flex - Round], maxLengthMm 0, mm Func`2, named Func`2, near 0.00328083989501312,
+    notConverted 2 item(s) [Ducts ''Radius Elbows / Taps'' (id 925632): an end is not join...,
+    Ducts ''Radius Elbows / Taps'' (id 925636): an end is not join...], quoted Func`2, refused
+    , removed 1 item(s) [925634], report Convert to flex duct with "Flex Duct Rectangular:
+    Flex - Rectangular": 1 of 3 converted - Ducts ''Radius Elbows / Taps'' (id 925634) (2800
+    mm) removed and replaced by flex duct id 925641, 400x200 on "Supply Air" (read from the
+    system of the fittings it joins - Revit gives a new flex its own when the change is kept),
+    joined at both ends. Rigid duct(s) removed: 925634. 2 left as it was - Ducts ''Radius
+    Elbows / Taps'' (id 925632): an end is not joined to anything - Convert to Flex Duct needs
+    both ends joined. Left as it is; Ducts ''Radius Elbows / Taps'' (id 925636): an end is
+    not joined to anything - Convert to Flex Duct needs both ends joined. Left as it is, seen
+    HashSet`1, shapeWord Func`2, typeNames "Flex Duct Rectangular: Flex - Rectangular" (rectangular),
+    "Flex Duct Round: Flex - Round" (round), wanted Flex - Rectangular. inputs came elements
+    from fit-mep-joints (3); flexDuctType as given; maxLengthMm not given - "0", the card''s
+    own default (optional). on Ducts OI31'
+  negative_case: 'run with ductType=Rectangular Duct: Radius Elbows / Taps, flexDuctType=Flex
+    - Round, level=Level 1, runs=400x200: 100000,100000,2700; 104000,100000,2700; 104000,104000,2700;
+    108000,104000,2700, systemType=Supply Air, toleranceMm=10 instead - chosen because it
+    should not contain what this fragment reports - the arrangement was re-made first by running
+    create-mep-runs, fit-mep-joints with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned borrowedBy Func`2,
+    chosen FlexDuctType, connectorsOf Func`2, findings 0 item(s), flexDucts 0 item(s), given
+    3 item(s) [Duct, Duct, Duct], invariant CultureInfo, limit 0, lines 0 item(s), loadedTypes
+    2 item(s) [Flex - Rectangular, Flex - Round], maxLengthMm 0, mm Func`2, named Func`2,
+    near 0.00328083989501312, notConverted 3 item(s) [Ducts ''Radius Elbows / Taps'' (id 925646):
+    an end is not join..., Ducts ''Radius Elbows / Taps'' (id 925648): a rectangular duct...,
+    Ducts ''Radius Elbows / Taps'' (id 925650): an end is not join...], quoted Func`2, refused
+    , removed 0 item(s), report Convert to flex duct with "Flex Duct Round: Flex - Round":
+    0 of 3 converted. Rigid duct(s) removed: none. 3 left as it was - Ducts ''Radius Elbows
+    / Taps'' (id 925646): an end is not joined to anything - Convert to Flex Duct needs both
+    ends joined. Left as it is; Ducts ''Radius Elbows / Taps'' (id 925648): a rectangular
+    duct, and "Flex Duct Round: Flex - Round" is round - name a rectangular flex duct type.
+    Left as it is; Ducts ''Radius Elbows / Taps'' (id 925650): an end is not joined to anything
+    - Convert to Flex Duct needs both ends joined. Left as it is, seen HashSet`1, shapeWord
+    Func`2, typeNames "Flex Duct Rectangular: Flex - Rectangular" (rectangular), "Flex Duct
+    Round: Flex - Round" (round), wanted Flex - Round. inputs came elements from fit-mep-joints
+    (3); flexDuctType as given; maxLengthMm not given - "0", the card''s own default (optional).
+    on Ducts OI31'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: f85f7efbcfd21434
+  fingerprint: c369f21fa031fe72
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
