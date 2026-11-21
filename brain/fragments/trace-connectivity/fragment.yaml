@@ -241,3 +241,10 @@ utterances:
   # reached AUTO_SIZE_PIPE, a write, on lexical and model
   # (tools/check-skill-routing.py). Declared on the read (D-86).
   - follow the pipe and tell me where it goes
+  # ADDED 2026-11-21, row 132 (GitHub issue #959). The trace-system skill's
+  # own sentence: the unit that feeds an element is reached by walking its
+  # network, which is this read's whole job and the step of the skill's plan
+  # that answers it. It reached REPORT_PROJECT_UNITS ("unit") on lexical and
+  # SET_PROJECT_UNITS, an ADMIN write, through check-skill-routing.py.
+  # Declared on the read that answers it (D-86).
+  - which unit feeds this
