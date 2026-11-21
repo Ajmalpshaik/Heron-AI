@@ -1642,6 +1642,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oz.md`](needs-checking/group-oz.md)
 
+## Group PA - REPORT_SPRINKLER_NETWORK version 2: a ceiling-hosted sprinkler's level read from its Schedule Level, as FILTER_ELEMENTS_BY_CATEGORY reads it - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pa.md`](needs-checking/group-pa.md)
+
+## Group PD - row 106: is a clearance check slow on a real MEP model? One timed run before any fix is written (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pd.md`](needs-checking/group-pd.md)
+
 ## Group PE - five cards changed for issues #950, #1005, #1112 and #1114, and a read of the open models that answers whatever the pin - DRAFT until proved (2026-11-21)
 
 **Its own file:** [`needs-checking/group-pe.md`](needs-checking/group-pe.md)
