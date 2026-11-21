@@ -243,7 +243,11 @@ utterances:
   - set the material of generic models in object styles
   # ADDED 2026-11-21, row 5b-1954 (issue #1188). A category's Object Styles
   # material asked for by name: on the model "set the object style material
-  # for furniture to oak" reached SET_ELEMENT_MATERIAL. Seventh, so the
-  # re-ranker reads it (D-134) - its two backends are owed on the PC; the
-  # wordings that named "object style material of" pulled a question here.
+  # for furniture to oak" reached SET_ELEMENT_MATERIAL. The request is NINTH,
+  # so the re-ranker never reads it (D-134): seventh, on the owner's PC
+  # (model+rerank) it pulled "which material does the furniture category have
+  # in object styles", a question, to this write. The seventh and eighth are
+  # plain line requests, the card's own job, with no material in them.
+  - set the cut line weight of Stairs to 5
+  - change the projection line colour of Pipes to blue
   - set a category to oak in object styles
