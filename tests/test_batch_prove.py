@@ -1106,6 +1106,116 @@ def test_unattended_asks_again_only_when_revit_was_never_reached():
               "%s is never asked again, whatever the text says" % verdict)
 
 
+def _printed_by(function, *args):
+    """What `function` prints, as `validate` would show it to batch-prove."""
+    import contextlib
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        function(*args)
+    return out.getvalue()
+
+
+def _run_one_saying(output):
+    """`run_one` on a `validate` that printed OUTPUT and wrote no record.
+
+    The run-records folder is a scratch one for the call, because `run_one`
+    deletes the record it is about to ask for before it asks."""
+    class Said(object):
+        returncode = 1
+        stdout = output.encode("utf-8")
+
+    job = {"fragment": "note-then-refusal-sample", "setup": [], "keep-chain": False,
+           "set": {}, "negative-set": {}, "setup-set": {}, "negative-setup-set": {},
+           "write": True, "cross": None, "in": None, "negative-in": None,
+           "expect": None, "timeout": 60, "note": None}
+    runs = tempfile.mkdtemp(prefix="heron-batch-runs-")
+    real = (BP.RUNS, BP.subprocess.run)
+    BP.RUNS = runs
+    BP.subprocess.run = lambda *a, **k: Said()
+    try:
+        record_, verdict, why = BP.run_one(job, dict(os.environ), session="35160")
+    finally:
+        BP.RUNS, BP.subprocess.run = real
+        shutil.rmtree(runs, ignore_errors=True)
+    return record_, verdict, why
+
+
+def test_a_did_not_run_reason_is_the_refusal_not_a_note_above_it():
+    """ROW 5b-1942. Seen on the owner's PC on 2026-11-21: `--session 35160`,
+    not unattended, reported `DID NOT RUN  convert-to-flex-duct  'ductType' is
+    not this fragment's - setup step create-mep-runs takes it` - the note
+    `report_undeclared` prints before Revit is touched, which never refuses
+    (row 5b-228). The refusal was the lease, printed under it, and the same job
+    PASSED under --unattended once the lease lapsed. `run_one` took the first
+    line `validate` printed as the reason.
+
+    The notes here are not typed: they are what the client's own
+    `report_undeclared` prints, so a note reworded there is still a note here.
+    """
+    print("DID NOT RUN gives the refusal as its reason, never a note printed above it")
+    notes = {
+        "a value a setup step takes": _printed_by(
+            BP.BRIDGE.report_undeclared, "convert-to-flex-duct",
+            [{"name": "ductType", "value": "Default"}],
+            [{"name": "flexType", "type": "string", "source": "request"}],
+            {"ductType": "create-mep-runs"}),
+        "a value nothing declares": _printed_by(
+            BP.BRIDGE.report_undeclared, "convert-to-flex-duct",
+            [{"name": "maxSteps", "value": "200"}],
+            [{"name": "flexType", "type": "string", "source": "request"}]),
+        "a value nothing declares, on a card that takes none": _printed_by(
+            BP.BRIDGE.report_undeclared, "convert-to-flex-duct",
+            [{"name": "maxSteps", "value": "200"}], []),
+    }
+    for label, note in sorted(notes.items()):
+        check(note.strip() != "", "the client still prints a note for %s" % label)
+
+    lease = LEASE_HELD.splitlines()[1].strip()
+    refusals = [
+        ("the lease held by another chat", LEASE_HELD, lease),
+        ("a model held by another chat", OPENING % MODEL_HELD, MODEL_HELD),
+        ("a busy Revit", OPENING % BUSY, BUSY),
+        ("no Revit connected",
+         "No Revit is connected. Press Heron on the ribbon to connect first.\n",
+         "No Revit is connected. Press Heron on the ribbon to connect first."),
+    ]
+    for label, note in sorted(notes.items()):
+        for what, refusal, reason in refusals:
+            _, verdict, why = _run_one_saying(note + refusal)
+            check(verdict == BP.DID_NOT_RUN,
+                  "%s under %s: DID NOT RUN (%s)" % (what, label, verdict))
+            check(why == reason,
+                  "%s under %s: the reason is the refusal, not the note - %r"
+                  % (what, label, why))
+
+    # THE RETRY RULE STILL READS THE REASON ALONE, so a refusal that is now the
+    # reason is waited out on its own words - not only on the transcript.
+    _, verdict, why = _run_one_saying(notes["a value a setup step takes"] + LEASE_HELD)
+    check(BP.retry_reason(verdict, why) == BP.HELD,
+          "the lease, as the reason alone, is still waited out (%r)"
+          % BP.retry_reason(verdict, why))
+    _, verdict, why = _run_one_saying(notes["a value a setup step takes"]
+                                      + OPENING % BUSY)
+    check(BP.retry_reason(verdict, why) == BP.BUSY,
+          "a busy Revit, as the reason alone, is still BUSY (%r)"
+          % BP.retry_reason(verdict, why))
+
+    # AN OPENING REFUSAL THAT NAMES NO HOLDER keeps its heading with its reason,
+    # so the line still says what was being asked when Revit said no.
+    _, _, why = _run_one_saying(OPENING % "Revit did not answer at all.")
+    check(why == "Could not identify the active model: Revit did not answer at all.",
+          "an opening refusal reads as the heading and its reason - %r" % why)
+
+    # NOTHING BUT A NOTE is still reported, and called a note, never a refusal.
+    _, verdict, why = _run_one_saying(notes["a value a setup step takes"])
+    check(verdict == BP.DID_NOT_RUN and "ductType" in (why or "")
+          and "only a note" in (why or ""),
+          "a run that printed only a note says so - %r" % why)
+    _, _, why = _run_one_saying("")
+    check(why == "validate recorded nothing and said nothing",
+          "and one that printed nothing still says that - %r" % why)
+
+
 def test_unattended_waits_and_stops_at_the_limit():
     print("--unattended waits 30 s when held, 10 s when busy, and gives up at the limit")
     import argparse
@@ -1590,6 +1700,7 @@ def main():
                  test_the_command_line_is_one_the_client_actually_parses,
                  test_a_value_with_a_space_is_quoted_when_printed,
                  test_unattended_asks_again_only_when_revit_was_never_reached,
+                 test_a_did_not_run_reason_is_the_refusal_not_a_note_above_it,
                  test_unattended_waits_and_stops_at_the_limit,
                  test_the_closer_closes_revits_memory_warning_and_nothing_else,
                  test_the_log_has_one_line_per_fragment,
