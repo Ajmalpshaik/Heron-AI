@@ -20,7 +20,7 @@ capability: SET_VIEW_FILTER_CATEGORIES
 # value" - or "is blank" - is a rule, Revit's CreateHasNoValueParameterRule on
 # the parameter, as CREATE_VIEW_FILTER has taken it since 2026-11-01. Version 2
 # read it as text to match with equals. Version 2's proof below is kept as the
-# record; its C# moved, so it is DRAFT until NEEDS-CHECKING Group PA runs (D-30).
+# record; its C# moved, so it is DRAFT until NEEDS-CHECKING Group PE runs (D-30).
 version: 3
 source: OFFICIAL
 risk: MODIFY

@@ -13,7 +13,7 @@ capability: MEASURE_DISTANCE
 # finding for two elements that touch names FIND_CLASHES, where it named
 # SELECT_TOUCHING, retired into it on 2026-11-01, and no longer says that card
 # tells touching from overlapping: neither does. Nothing runs differently;
-# still DRAFT until proved - NEEDS-CHECKING Group PA (D-30).
+# still DRAFT until proved - NEEDS-CHECKING Group PE (D-30).
 version: 2
 source: OFFICIAL
 risk: READ

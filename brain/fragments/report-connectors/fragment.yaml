@@ -20,7 +20,7 @@ capability: REPORT_CONNECTORS
 # a number) and `connectorKinds` (domain, system and shape), each keyed by
 # element id and connector number - so a size filter or a connection planner
 # reads a diameter rather than parsing a sentence. The text outputs are
-# unchanged. Its C# moved, so it is DRAFT until NEEDS-CHECKING Group PA runs
+# unchanged. Its C# moved, so it is DRAFT until NEEDS-CHECKING Group PE runs
 # (D-30); the proof below stays as the record.
 version: 4
 source: OFFICIAL

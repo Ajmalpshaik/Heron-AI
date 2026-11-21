@@ -56,7 +56,7 @@
 // "equals has no value" matches those words. The read-back names such a rule
 // "<parameter> has no value". Version 2 read "has no value" as text to match
 // with equals, so the filter caught only an element whose value was those
-// three words. Not run in Revit: NEEDS-CHECKING Group PA.
+// three words. Not run in Revit: NEEDS-CHECKING Group PE.
 //
 // THE RULE IS WRITTEN THE WAY CREATE_VIEW_FILTERS_BY_RULE VERSION 2 TAKES IT -
 // the operator in front of the value, in Revit's Filters dialog words: "does

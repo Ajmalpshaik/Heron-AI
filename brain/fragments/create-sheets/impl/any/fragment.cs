@@ -13,7 +13,7 @@
 // other rule of the typed job holds - the number checked against the register
 // first (placeholders already count), each sheet in its own SubTransaction,
 // number and name read back, previewOnly taken back. A table and the copy job
-// are unchanged. Not run in Revit: NEEDS-CHECKING Group PA.
+// are unchanged. Not run in Revit: NEEDS-CHECKING Group PE.
 //
 // VERSION 4 (2026-11-21) - CREATE_SHEETS_FROM_TABLE MERGED IN, on the owner's
 // "merge: yes" (issue #1080), with the three rules D-193 records. Three ways
