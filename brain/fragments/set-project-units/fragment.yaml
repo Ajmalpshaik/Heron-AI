@@ -166,7 +166,6 @@ compatibility-note: >
 
 utterances:
   - set cooling load units to btu/h
-  - switch the load units to kilowatts
   - change the project units for air flow to cfm
   - set the project length units to millimeters
   - change project units

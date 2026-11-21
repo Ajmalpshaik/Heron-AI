@@ -204,10 +204,13 @@ utterances:
   - set room area computation to wall center
   - measure room areas at the wall finish
   - create a new area scheme
-  - give an area scheme a new name
-  - make a new area scheme with a name of its own
   - rename the area scheme
   - change the name of the area scheme
   - change the area scheme name
   - change the description of the area scheme
   - change the room area computation
+  # ADDED 2026-11-21 (rows 5b-496 and 5b-337, GitHub issues #958 and #955), LAST
+  # so the re-ranker's eight are main's (D-134): "create a new area scheme called
+  # gross building" reached CREATE_AREA_PLAN on the model and both re-rankers.
+  - give an area scheme a new name
+  - make a new area scheme with a name of its own

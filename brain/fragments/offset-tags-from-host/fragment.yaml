@@ -398,10 +398,14 @@ compatibility-note: >
 utterances:
   - move the tags beside the diffusers
   - offset the duct tags with a leader
-  - put each tag above its duct or pipe on a leader
   - move the tags off the elements
   - move each tag 8 mm right and 6 mm up from its element
   - turn this tag vertical
   - make the tags follow the opening direction
   - rotate the tag to match the wall
   - give each tag the same orientation as its opening
+  # ADDED 2026-11-21 (row 5b-496, GitHub issue #958), LAST so the re-ranker's
+  # eight are main's (D-134): on the trained model alone "put the duct tags above
+  # the ducts with a leader" (tests/test_routing_phrases.py) reached
+  # TAG_ELEMENTS_IN_VIEW; with this line it reaches this card.
+  - put each tag above its duct or pipe on a leader
