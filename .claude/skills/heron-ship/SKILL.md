@@ -693,8 +693,9 @@ to D-131 on <date> with `tools/renumber.py`, because `main` had given D-116 to a
 first"* (or names the branch that holds it); one with no Numbering line gets one under its Status line.
 Do not rewrite that line by hand to say the new number was "found free". It stages nothing, and refuses
 while a merge is half done. Exit **1** means it left something for you, named: a line of main's this
-branch edited, a bare group letter, which can be a word, or a decision with no Status line to write
-its Numbering line under. Not `git grep`: a grep
+branch edited, a bare group letter, which can be a word, a decision with no Status line to write
+its Numbering line under, or - where this branch COMMITTED the number before main gave it to another
+decision - main's decision under the old number, with the title it must quote (row 5b-1923). Not `git grep`: a grep
 cannot tell this branch's D-116 from main's. The gates still catch a clash left in:
 `check-docs` a number defined twice, `check-decision-titles` a number reused with another title,
 `tests/test_open_defects.py` a 5b number used twice - in one rows file, or in a rows file and a row's
