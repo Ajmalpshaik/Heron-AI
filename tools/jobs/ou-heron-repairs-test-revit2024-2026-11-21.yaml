@@ -1,0 +1,51 @@
+# NEEDS-CHECKING Group OU - DIVIDE_PARTS version 3 (DRAFT), row OU20: a part
+# counts as divided only when its element GAINED parts, and a datum that cuts
+# nothing is taken back whole - NOTHING WAS DIVIDED (row 5b-1515). Built
+# 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ou-heron-repairs-test-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ou-heron-repairs-test-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE MODEL is "Heron Repairs Test", Revit 2024 - Group DQ's scratch rig, where
+# version 2 was proved on 2026-11-13 (session 22684; group-dq.md, the run under
+# DQ3a to DQ3c): five 3000 mm Generic - 200mm walls on Level 1 - two square
+# across x = 0, one 30 degrees off square across it, two stopping short of it -
+# with parts made from all five, the level "HERON HIGH" at 9000 mm (above every
+# wall) and the grid "HERON CUT" along x = 0. Never a working model.
+#
+# THE ARRANGEMENT is DQ's: the five parts handed in by filter-elements-by-
+# category, category Parts, `keep-chain: true` (binding note "elements from
+# filter-elements-by-category (5)", rule 5).
+#   positive  OU20(a) cutterNames=HERON CUT - the grid crosses three walls of
+#             five (DQ3b measured partCountAfter 8)
+#   negative  OU20(b) cutterNames=HERON HIGH - a DIFFERENT VALUE on the same
+#             parts: a level that crosses nothing. Version 2 answered
+#             "divided 5" beside partCountAfter 5 here (DQ3c)
+#
+# KNOWN BEFORE IT RUNS - a contract question, recorded, not fixed here:
+# `partCountAfter` is declared `role: result`, and OU20 expects it to read 5
+# on the negative ("before 5 and after 5"). The runner judges the negative on
+# every declared result, so a negative that does exactly what OU20 asks reads
+# NEG NOT EMPTY on partCountAfter alone. Read it: divided 0 with the refusal is
+# OU20(b) passing.
+#
+# Every run is ROLLED BACK. ONE job - a run record is kept per card.
+model: "Heron Repairs Test - Group DQ's scratch rig: five walls with parts, level HERON HIGH, grid HERON CUT, Revit 2024"
+defaults:
+  in: "Heron Repairs Test"
+  write: true
+jobs:
+  - fragment: divide-parts
+    expect: divided
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    setup-set: {category: "Parts"}
+    negative-setup-set: {category: "Parts"}
+    set: {cutterNames: "HERON CUT"}
+    negative-set: {cutterNames: "HERON HIGH"}
+    note: >
+      OU20. Positive: divided 3 (not 5), partCountBefore 5, partCountAfter 8,
+      findings "3 of 5 part(s) divided" and the two missed parts named.
+      Negative: refused "no part was cut ... NOTHING WAS DIVIDED.", divided 0,
+      partCountBefore 5 and partCountAfter 5, and the refusal does NOT say the
+      work plane "could not be taken back".

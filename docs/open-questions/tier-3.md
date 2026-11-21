@@ -1212,3 +1212,38 @@ your folders.
 **Nothing is built until this is answered.** The typed command stays the way in.
 
 ---
+
+### 🔵 Q-97 — When one tool has two proving runs waiting, which one should its proof be signed on? *(asked 2026-11-21, row 5b-1978)*
+
+**Tracked as GitHub issue [#1254](https://github.com/Ajmalpshaik/Heron-AI/issues/1254) since 2026-11-21** - the owner answers there.
+
+**Where it comes from.** Heron's batch proving keeps **one** run record and **one** proof draft per tool,
+and a signed proof describes one positive-and-negative pair. On 2026-11-21 three tools were found with more
+than one run waiting for them - [row 5b-1978](../fragment-issues/row-5b-1978.md) has the files and lines,
+read from the repository, nothing run in Revit:
+
+1. **Make sheets** (`CREATE_SHEETS`). Group OZ owes the *sheets from a table* run, written when the tool
+   was version 4; Group PE owes the *placeholder sheets* run of version 5, which is the tool as it now
+   stands. Whichever is run second replaces the first, and a proof drafted from OZ's run would describe
+   code that has changed since.
+2. **Extend a roof to meet another roof** (`EXTEND_ROOF_TO_ROOF`). Three job files prove it - Revit 2024
+   and Revit 2020 among them.
+3. **Line style and family reference planes** (`CREATE_LINE_STYLE`, `SET_FAMILY_PLANE_REFERENCE`, Group OK).
+   Each already has an unsigned proof draft on your PC from a run you KEPT on *Column Scratch 1044* on
+   2026-11-20. Running the new OK job files replaces those drafts.
+
+**The question, in a modeller's words: for each of these, which run do you want the proof signed on?**
+
+- **Make sheets.** **Recommended:** version 5's placeholder run (PE3) is the proof, because it is the tool
+  as it stands; the table run (OZ) is run afterwards as a check of its own and written down in Group OZ,
+  not signed.
+- **Roof to roof.** **Recommended:** the first proof on the release Group OY names, and each other release
+  run with `--release` (which keeps its own record, `extend-roof-to-roof@2020`), never two runs on the same
+  release back to back without a draft read between them.
+- **Group OK.** **Recommended:** review and sign the drafts already on your PC first
+  (`python brain/heron_validate.py review <tool>`); run the new OK job files only if those drafts are gone.
+
+**Nothing is changed until this is answered.** Until then each of these is run one at a time, with the draft
+read and signed or set aside before the next run of the same tool.
+
+---

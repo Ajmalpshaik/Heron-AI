@@ -1,0 +1,63 @@
+# NEEDS-CHECKING Group OT - ARRAY_FAMILY_FORMS version 5 (DRAFT): a form on a
+# plane a labelled dimension moves is said, and the form in each copy is given
+# back as memberForms (rows 5b-1261 and 5b-358), rows OT5 and OT6. Built
+# 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ot-leg-length-generic-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ot-leg-length-generic-revit2020-2026-11-21.yaml --session <2020 pid>
+#
+# THE MODEL (group-ot.md OT5; brain/fragments/array-family-forms/tests/
+# cases.yaml, VERSION 5): a scratch family from Revit 2020's metric Generic
+# Model template, saved under %TEMP%\heron-work\ot, never the owner's own work.
+# Reference planes "Left" and "Leg End" 300 mm apart, a dimension between them
+# labelled Length "Leg Length"; a solid extrusion 20 x 20 sketched ON "Leg End"
+# and extruded back to "Left", its far face locked to "Left" (the heater's
+# legs). For OT6, a second 20 x 20 solid extrusion sketched on "Ref. Level".
+# KEPT before this runs - this runner rolls everything back. NO `in:` BELOW:
+# no row records the family's own name, so the job runs on the document in
+# front - bring the family to the front, or add `in: "<its title>"` under
+# defaults once it is saved.
+#
+# ONE ID IS A PLACEHOLDER: LEG-FORM-ID, the Leg End extrusion's unique id as
+# the tool that made it gave it back (or REPORT_FAMILY_FORMS). Type it in
+# before running - THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN (row
+# 5b-264).
+#
+# THE ARRANGEMENT. Positive: OT5 - the Leg End extrusion, count 3, step Z 80.
+# Negative: the SAME form with count 1 - a different value, refused as not an
+# array, nothing made (cases.yaml, negative "count 1"). OT6's own case arrays
+# the Ref. Level extrusion and is NOT empty - it is a RECORD row, not D-30's
+# empty half - so it is a by-hand line in the note, never this job's negative.
+# Every run is ROLLED BACK. ONE job: the run record is kept per card.
+
+model: "a scratch Generic Model family (Revit 2020 metric template): planes Left and Leg End 300 mm apart labelled Leg Length, a 20 x 20 extrusion on Leg End locked to Left, and one on Ref. Level"
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: array-family-forms
+    expect: memberForms
+    set:
+      form: "LEG-FORM-ID"
+      count: "3"
+      step: "Z 80"
+    negative-set:
+      form: "LEG-FORM-ID"
+      count: "1"
+      step: "Z 80"
+    note: >
+      OT5 then the count-1 negative. Negative FIRST: refused - not an array -
+      arrayId, members and memberForms empty, nothing arrayed. Positive:
+      arrayed, three in all 80 mm apart up +Z, every copy read back; members
+      two group ids and memberForms one form id per group, the same order; a
+      finding naming "Leg End" and "Leg Length", saying the row was read at
+      this type only and to flex it with FLEX_FAMILY. RECORD, if it comes, the
+      second finding (how many arrayed forms read their work plane as not
+      associated). Then by hand: OT5's flex at Leg Length 500 on the KEPT
+      array (try-once with the owner's Keep, then FLEX_FAMILY trials "Leg
+      Length=500") - RECORD what it finds; and OT6, rolled back:
+      heron_bridge_client.py fragment array-family-forms --write --set
+      form=<the Ref. Level extrusion's id> --set count=3 --set "step=Y 100" -
+      no plane finding; RECORD whether the not-associated finding still fires.

@@ -1,0 +1,63 @@
+# NEEDS-CHECKING Group OQ - RELOAD_LINKS version 3 (DRAFT): when anything was
+# done the first finding reads "No undo: Revit's Undo and Discard cannot take
+# this back." (row 73, issue #921). Built 2026-11-21 in a cloud session with
+# no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/oq-oq-snowdon-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/oq-oq-snowdon-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE OWNER'S YES FIRST, FOR THIS RUN. A link's reload happens OUTSIDE Revit's
+# undo, so the batch's rollback CANNOT take the positive back - his answer of
+# 2026-11-20 on row 73 is "yes, on a scratch copy only", and OQ7 asks his yes
+# for each run. Never in an unattended night without it.
+#
+# THE MODEL (group-oq.md): "oq-snowdon", a copy of Revit 2024's own
+# Snowdon Towers Sample HVAC.rvt saved as %TEMP%\heron-work\oq\oq-snowdon.rvt
+# with its six links copied beside it and loaded - never a working model.
+# Revit 2024: the sample is a 2024 file. Open it in a Revit with no working
+# model in front.
+#
+# THE ARRANGEMENT. The positive selects every RVT Links placement with
+# filter-elements-by-category (no view - a link is not drawn in every plan),
+# and reloads them, `unload` false. OQ7 asks ONE placement; no selector here
+# can pick one link by name, so this reloads the six files - each file ONCE
+# however many placements it has (the card's own positive case). The
+# binding note should read `elements from the selection (6)` or however many
+# placements the copy has (fragment-proving, rule 5). The negative is a
+# DIFFERENT selection, never an empty one (rule 3): the ducts drawn in
+# "FloorPlan: M1" (22 in the sample, the skill's rule 1) - no link among them,
+# so `done` 0, every id in `notLinks`, and NO "No undo" line. Its values carry
+# the category and the view, and `unload` - a negative-set replaces the
+# positive's values. The same pair ran in p1102-round16 on the 2024 sample
+# (there with "FloorPlan: L2"; use it if M1 is missing).
+#
+# OQ8 - unload of a link ALREADY unloaded by hand - needs the model changed by
+# hand first, so it is by hand, as the group writes it. ONE job: a run's record
+# is kept per card.
+
+model: "oq-snowdon: a scratch copy of Snowdon Towers Sample HVAC.rvt with its six links loaded, Revit 2024"
+
+defaults:
+  in: "oq-snowdon"
+  write: true
+  setup: [filter-elements-by-category, set-selection]
+
+jobs:
+  - fragment: reload-links
+    expect: done
+    set:
+      category: "RVT Links"
+      unload: false
+    negative-set:
+      category: Ducts
+      inViewOnly: "FloorPlan: M1"
+      unload: false
+    note: >
+      OQ7 then the negative. FIRST FIND OUT what Revit does with a reload
+      inside the transaction the run opens - row 73 measured only the unload
+      (refused inside, done outside); write it down whatever it is. If it
+      reloads: `done` one per linked FILE, the FIRST finding "No undo: Revit's
+      Undo and Discard cannot take this back.", then Revit's raw result code;
+      Manage Links reads Loaded; and the rollback leaves the reload in place -
+      write down that it did. Negative: `done` 0, the ducts in `notLinks`, no
+      "No undo" line.

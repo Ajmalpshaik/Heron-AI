@@ -1,0 +1,42 @@
+# NEEDS-CHECKING Group OR (docs/needs-checking/group-or.md), OR11 -
+# REPORT_VIEW_WORK_PLANE version 2 (row 5b-1480): the plane is said as
+# "Level : Level 1 - horizontal at elevation 0 mm", not "Level 1" in quotes.
+# Written 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/or-project1-mech-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/or-project1-mech-revit2020-2026-11-21.yaml --session <pid>
+#
+# READ: nothing is changed, so no transaction and no write switch.
+#
+# THE MODEL: an UNSAVED scratch project "Project1", made fresh from Revit
+# 2020's default mechanical template - the arrangement version 1 was proved
+# on (report-view-work-plane-project1-2026-11-09.yaml, and OR11): the floor
+# plan "1 - Mech" on its own level, and the template's one schedule "Space
+# Outdoor Air Schedule". Make it new, so no other "Project1" is open beside
+# it (Revit names every new project Project1).
+#
+# THE NEGATIVE CHANGES ONLY THE VIEW. OR11 asks a sheet; the mechanical
+# template has none, so the schedule stands in for it, as in the version 1
+# proof - a schedule has no work plane either. Add a sheet by hand and run
+# OR11's sheet line as well if wanted. A reader that fell back to the view in
+# front, or to any plan's plane, would give the schedule one.
+
+model: "Project1 - unsaved scratch project from Revit 2020's default mechanical template, floor plan 1 - Mech, schedule Space Outdoor Air Schedule, Revit 2020"
+
+defaults:
+  in: "Project1"
+  setup: []
+
+jobs:
+  - fragment: report-view-work-plane
+    expect: workPlanes
+    set:
+      views: "FloorPlan: 1 - Mech"
+    negative-set:
+      views: "Schedule: Space Outdoor Air Schedule"
+    note: >
+      OR11. Negative: workPlanes empty, withPlane 0, noPlane 1, findings naming
+      the schedule with no work plane. Positive: withPlane 1, the row reading
+      "work plane Level : Level 1 - horizontal at elevation 0 mm" - version 1
+      read work plane "Level 1" in quotes - and a finding that one plan's
+      plane was matched to its own level by name.

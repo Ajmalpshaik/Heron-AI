@@ -1,0 +1,76 @@
+# NEEDS-CHECKING Group PI - CREATE_GRIDS version 4 (DRAFT): what was made is
+# said in `findings`, and `refused` holds a refusal and nothing else (row
+# 5b-1948, issue #1174; the group is issue #1200). Built 2026-11-21 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/pi-scratch-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/pi-scratch-revit2024-2026-11-21.yaml
+#
+# THE MODEL (docs/needs-checking/group-pi.md): a NEW scratch project from
+# Revit's default template, on Revit 2024 (where the fault was seen), saved
+# under %TEMP%\heron-work\pi - never a working model. NO NAME FOR IT IS
+# RECORDED, so `in:` is left out: put that project in front, or add
+# `in: "<its title>"` under `defaults:` once it is saved and named. Not
+# `roofjoin-oy`: that is where the grid "Wing" was drawn and KEPT on
+# 2026-11-21, so PI1 there would be refused for a name already taken.
+#
+# WHICH RUN IS KEPT: NONE. The group says every run is ROLLED BACK - no check
+# here keeps a grid - and a batch keeps nothing anyway. While the card is
+# DRAFT `revit_change` refuses it (D-117); this file is the proving client's
+# rolled-back preview. Revit 2020 is the group's second release: the same job,
+# rolled back, after this one passes - with `--release 2020` once the card is
+# PROVEN again (D-131). Version 3's proof (2026-11-02, P1102 MEP, Revit 2020)
+# stays on the card as the record.
+#
+# THE ARRANGEMENT. One job, PI1 against PI4 - a run record and a proof draft
+# are kept per card, so a second job here would replace the first. No setup
+# chain: every input is a value, nothing is selected. The positive is the
+# call seen on 2026-11-21 (PI1). The negative is a DIFFERENT VALUE (rule 3):
+# a line whose ends differ in height by 500 mm (PI4), refused before anything
+# is made. `negative-set:` replaces `set:`, so it carries every value PI4
+# gives - gridLines alone; gridNames is left out, as PI4 leaves it.
+#
+# WHAT THE RUNNER CANNOT JUDGE. `expect: created` judges the count; the point
+# of version 4 is WHERE THE SENTENCE GOES, and `refused` is role accounting
+# and `findings` has no role. READ BOTH on each phase: PI1 FAILS if the line
+# "1 grid line(s) drawn between the points given, each one level" is in
+# `refused` (version 3 put it there); PI4 FAILS if `findings` holds anything.
+#
+# PI2 AND PI3 are rows to read and record, not this card's D-30 pair - each
+# is one rolled-back `fragment` line (no --apply, so nothing stays). firstLetter
+# Q and firstNumber 91 are version 3's proof's own names, free in a new
+# project; change them if this project holds a grid Q or 91. One line each in
+# PowerShell:
+#
+#   PI2: python mcp/client/heron_bridge_client.py fragment create-grids --write
+#        --set "spacingsAcross=6000, 6000" --set "spacingsUp=6000, 6000"
+#        --set firstLetter=Q --set firstNumber=91
+#   PI3: python mcp/client/heron_bridge_client.py fragment create-grids --write
+#        --set centreMm=0,0 --set radiiMm=6000 --set "spokeAnglesDegrees=0, 180"
+#        --set startDegrees=0 --set endDegrees=90
+#
+# PI3: RECORD whether `radialNotes` also arrives in the reply as a list of its
+# own, and how many times the spoke's line is printed.
+model: "a new scratch project from Revit's default template, saved under %TEMP%\\heron-work\\pi, Revit 2024 - its name not recorded"
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: create-grids
+    expect: created
+    set:
+      gridLines: "4000,-6000,0; 8000,-6000,0"
+      gridNames: "Wing"
+    negative-set:
+      gridLines: "0,0,0; 30000,0,500"
+    note: >
+      PI1 then PI4. Negative FIRST (PI4): refused before anything is made -
+      `refused` names 500 mm and says a grid is a vertical plane; `created` 0
+      items; `findings` 0 ITEMS (a refusal says nothing was made, and nothing
+      in the answer says it was); the project's grid count unchanged.
+      Positive (PI1): `created` 1 item, `namedAs` [Wing]; `refused` 0 ITEMS;
+      `findings` one item, "1 grid line(s) drawn between the points given,
+      each one level". If that line is in `refused`, PI1 FAILS whatever the
+      verdict says. Rolled back - no grid stays.

@@ -1,0 +1,62 @@
+# NEEDS-CHECKING Group OT - FILTER_ELEMENTS_IN_ROOM version 2 (DRAFT): a door
+# or window in a wall is judged by its From Room and To Room, not by its point
+# (row 5b-1485), rows OT25 and OT26. Built 2026-11-21 in a cloud session with
+# no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ot-project1-rooms-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ot-project1-rooms-revit2020-2026-11-21.yaml --session <2020 pid>
+#
+# THE MODEL (group-ot.md "The models", OT25, OT26; brain/fragments/
+# filter-elements-in-room/tests/cases.yaml, VERSION 2): a scratch project from
+# Revit 2020's DefaultMetric.rte, never a working model - "Project1", the
+# title Revit gives a first new project (other job files ran on a new,
+# never-saved "Project1" in Revit 2020; if this one is saved, or Revit titled
+# it Project2, put that title in `in:`). On Level 1: Room 7 enclosed by four
+# walls, two windows in its outside wall and one door into Room 8; Room 8
+# with windows of its own; a door between Room 8 and Room 9. ROOM 9 HAS NO
+# WINDOW OF ITS OWN - the negative below depends on it. The rooms are named
+# "Room" and numbered 7, 8 and 9, which Revit reads as "Room 7", "Room 8",
+# "Room 9" (the card takes a room by that name). Doors and windows of any
+# loaded type. KEPT before this runs; this card only reads.
+#
+# THE ARRANGEMENT. The setup selects every door and window in the
+# "FloorPlan: Level 1" view (Level 1 has a floor plan and a ceiling plan, so
+# the view is named with its kind) - the binding note must read `elements
+# from the selection (N)` with N every door and window drawn there (rule 5).
+# Positive OT25: room "Room 7" - its two windows and the door 7-8 in
+# `elements`, door 8-9 and Room 8's windows outside. Negative: the WINDOWS
+# alone and room "Room 9" - a DIFFERENT selection and a different room, every
+# window outside because none has Room 9 as its From Room or To Room; elements
+# empty (rules 3 and 5). OT26 as written - room "Room 7" with Room 8's windows
+# and the door 8-9 selected by hand - cannot be selected by a card without
+# coordinates nobody recorded; it is a by-hand line in the note. ONE job: the
+# run record is kept per card.
+
+model: "Project1: a scratch project from Revit 2020's DefaultMetric.rte - Room 7 (two windows, door to Room 8), Room 8 (windows), Room 9 (door from Room 8, no window) on Level 1"
+
+defaults:
+  in: "Project1"
+  setup: [filter-elements-by-category, set-selection]
+
+jobs:
+  - fragment: filter-elements-in-room
+    expect: elements
+    set:
+      categories: "Doors, Windows"
+      inViewOnly: "FloorPlan: Level 1"
+      room: "Room 7"
+    negative-set:
+      categories: "Windows"
+      inViewOnly: "FloorPlan: Level 1"
+      room: "Room 9"
+    note: >
+      OT25 then the Room 9 negative. Negative FIRST: elements empty, every
+      window in outside, each doorsAndWindows line saying neither its From
+      Room nor its To Room is Room 9. Positive: elements Room 7's two windows
+      and the door 7-8; doorsAndWindows giving each its side ("window ... its
+      To Room") - check each against Properties > From Room / To Room; Room
+      8's windows and the door 8-9 in outside. Version 1 put every window
+      outside. Then OT26 by hand: select Room 8's windows and the door 8-9 in
+      Level 1, and heron_bridge_client.py fragment --in "Project1"
+      filter-elements-in-room --set "room=Room 7" - both outside, each line
+      saying neither side is Room 7.

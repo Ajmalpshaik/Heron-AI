@@ -1,0 +1,60 @@
+# NEEDS-CHECKING Group OR (docs/needs-checking/group-or.md), OR4 with OR5 -
+# CREATE_HVAC_ZONE version 2 (row 5b-1654): a zone name another zone already
+# has, in any capitals, is refused before anything is made. Written
+# 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/or-nr-spaces-host-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/or-nr-spaces-host-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL: "NR Spaces Host", Group NR's scratch host
+# (%TEMP%\heron-work\prove-1102\NR Spaces Host.rvt, from Revit 2020's US
+# Metric Mechanical-Default_Metric.rte, P1102 ARCH.rvt linked) after NR7 and
+# NR10, as group-nr.md records them: 91 spaces - 31 on Level 1, 33 on
+# 02 - Floor, 27 on 03 - Floor - in the phase New Construction; the zones
+# Default, NR Zone L1, NR Zone L2 and NR Zone L3 (NR10's own zones undone by
+# the owner's two Ctrl+Z). Never a working model. The version 1 proof was on
+# Snowdon-scratch, Revit 2024; OR4 and OR5 ask Revit 2020 here, where the
+# duplicate name was found.
+#
+# THE ARRANGEMENT. The spaces are selected by LEVEL, not in a view, so
+# whether the plan shows the Spaces category cannot empty the selection
+# (fragment-proving rule 3): filter-elements-by-category Spaces on Level 1 -
+# the 31 of NR7, all of them in NR Zone L1. OR4 asks two spaces; 31 is the
+# set Heron can name without an id nobody recorded, and a zone of 31 is a
+# small write. The negative is the SAME selection and a DIFFERENT VALUE -
+# OR5's taken name in other capitals - carrying every value, because a
+# negative-set replaces the set. Every run is ROLLED BACK: OR4's kept look in
+# the System Browser is by hand.
+
+model: "NR Spaces Host - Group NR's scratch MEP host with 91 spaces and the zones NR Zone L1 to L3, Revit 2020"
+
+defaults:
+  in: "NR Spaces Host"
+  write: true
+  setup: [filter-elements-by-category, set-selection]
+
+jobs:
+  - fragment: create-hvac-zone
+    expect: added
+    set:
+      categories: "Spaces"
+      levelId: "Level 1"
+      zoneName: "OR4 Zone"
+      level: "Level 1"
+      phase: "New Construction"
+    negative-set:
+      categories: "Spaces"
+      levelId: "Level 1"
+      zoneName: "nr zone l2"
+      level: "Level 1"
+      phase: "New Construction"
+    note: >
+      OR4 then OR5. Binding note first: elements from the selection (31).
+      Negative - THE FIRST CASE TO RUN: refused before anything is made - no
+      zone, added 0, movedFromAnotherZone empty, refused naming NR Zone L2, its
+      id and its level; HVAC Zones still lists one zone of that name. Version 1
+      made a second one (NR10 (b)). Positive: added 31, movedFromAnotherZone
+      naming each space as LEFT zone 'NR Zone L1', and refused holding only the
+      two information lines (taken out of another zone; area reads zero). If
+      the binding note is not 31, the level's spaces have changed since NR7 -
+      write down the count.

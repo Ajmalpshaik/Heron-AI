@@ -1,0 +1,64 @@
+# CONVERT_CAD_TO_DIRECTSHAPE (DRAFT) - NEEDS-CHECKING Group I, row I2 ("An
+# IMPORTED CAD - a link is not an import"), and the 2026-11-16 night's
+# morning list (Group OI: "no ... CAD with solids"). Written 2026-11-21 in a
+# cloud session with no Revit. NOT RUN. It REPLACES the card's job in
+# p1102-round7-arch-2026-11-02.yaml, which is left as it was: that job gave ONE
+# `category` to both the setup's filter (the import's name) and the card's
+# own `category` (the category the new elements go in), so the card was asked
+# for category "Roofing Detail.dwg", which no built-in category is.
+#
+#     python tools/batch-prove.py tools/jobs/fix-p1102-arch-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/fix-p1102-arch-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL: "P1102 ARCH", Revit 2020 - a scratch copy of Revit 2020's own
+# Samples\rac_advanced_sample_project.rvt in %TEMP%\heron-work\prove-1102, as
+# p1102-round7-arch-2026-11-02.yaml records it: "1 imported CAD 'Roofing
+# Detail.dwg'". select-group-members was proved on it (2026-11-02) with 72
+# walls in "FloorPlan: 01 - Entry Level". Never a working model.
+#
+# THE ARRANGEMENT. The selection and the card's own category are kept apart:
+# the setup chain is given its values with `setup-set:` (the import, by the
+# name the model holds, `categoryName`), and the card's `category` is
+# Generic Models - cases.yaml's positive. The negative is a DIFFERENT
+# SELECTION, not a cleared one (rules 3 and 5): the 72 walls of "FloorPlan:
+# 01 - Entry Level", none an import - cases.yaml's "a wall or a duct in the
+# set": notAnImport 72, created empty. The negative-set carries every value,
+# because it replaces the set. Every write is ROLLED BACK.
+#
+# RULE 2 - WHAT THE IMPORT HOLDS WAS NEVER RECORDED. "Roofing Detail.dwg"
+# sits in a drafting view (round 7 selected it in "Roofing Termination
+# Detail"), so it may be 2D linework with no solid at all. If the positive
+# comes back created 0 and skippedSolids 0, that is the import, not the card:
+# the card then needs the OWNER'S HANDS - a 3D DWG imported into this copy
+# (IMPORT_CAD, into a 3D or plan view, not "this view only"), its name as the
+# model shows it written in `categoryName` below in place of "Roofing
+# Detail.dwg". No 3D DWG is recorded anywhere in the register.
+
+model: "P1102 ARCH (scratch copy of rac_advanced_sample_project.rvt) with its one import Roofing Detail.dwg, Revit 2020"
+
+defaults:
+  in: "P1102 ARCH"
+  write: true
+  setup: [filter-elements-by-category, set-selection]
+
+jobs:
+  - fragment: convert-cad-to-directshape
+    expect: created
+    setup-set:
+      categoryName: "Roofing Detail.dwg"
+    negative-setup-set:
+      category: "Walls"
+      inViewOnly: "FloorPlan: 01 - Entry Level"
+    set:
+      category: "Generic Models"
+    negative-set:
+      category: "Generic Models"
+    note: >
+      Group I I2. Negative - THE FIRST CASE TO RUN: the binding note reads
+      `elements from the selection (72)`, notAnImport 72 ids, created
+      empty, refused empty - nothing made. Positive: the binding note reads
+      `elements from the selection (1)` (the import), created one id per
+      solid, skippedSolids counting the rest, each new element in Generic
+      Models; the import itself still there. created 0 with skippedSolids
+      0 is a 2D import (see the header) - POSITIVE EMPTY from the model,
+      not the card.

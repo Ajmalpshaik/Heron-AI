@@ -1,0 +1,55 @@
+# NEEDS-CHECKING Group PE - REPORT_CONNECTORS version 4 (DRAFT, was PROVEN
+# v3): `connectorMeasurements` (millimetres and a facing vector) and
+# `connectorKinds`, keyed by element id and connector number (work-note item
+# WN-4). Built 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/pe-p1102-mep-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/pe-p1102-mep-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL: "P1102 MEP", a scratch copy of Revit 2020's own
+# Samples\rme_advanced_sample_project.rvt in %TEMP%\heron-work\prove-1102 -
+# the model version 3 was proved on (2026-11-02, session 33624) with this
+# arrangement (tools/jobs/p1102-round2-reads-2026-11-02.yaml). The callout
+# "Callout of Level 1 HVAC WSHP TYP" drew 10 ducts there, rectangular
+# (404243 read Rectangular, 2.133 x 1.148 ft). A READ: nothing changes.
+#
+# THE ARRANGEMENT. The positive selects the callout's ducts with
+# filter-elements-by-category and set-selection - the binding note should
+# read `elements from the selection (10)` (rule 5). The negative is a
+# DIFFERENT selection (rule 3): the walls on Level 1, which have no MEP model
+# at all - every one in `noConnectors`, and every result empty,
+# `connectorMeasurements` and `connectorKinds` included. Its values carry the
+# category and the level, because a negative-set replaces the positive's.
+# `sizeTolerance` is left out: optional, it binds 0.
+#
+# BY HAND (PE2, its own line on the Project1 copy): a ROUND duct with both
+# ends open - `diameterMm` and no width or height - and a lighting fixture's
+# electrical connector - "no profile" in `connectorKinds`, its position and
+# facing, and NO size, never a size of 0. This callout is rectangular ducts
+# only; PE2's ids are PE0's to record. ONE job: a run's record is kept per
+# card.
+
+model: "P1102 MEP: a scratch copy of rme_advanced_sample_project.rvt, the callout Callout of Level 1 HVAC WSHP TYP with 10 ducts, Revit 2020"
+
+defaults:
+  in: "P1102 MEP"
+  setup: [filter-elements-by-category, set-selection]
+
+jobs:
+  - fragment: report-connectors
+    expect: connectorMeasurements
+    set:
+      category: Ducts
+      inViewOnly: "Callout of Level 1 HVAC WSHP TYP"
+    negative-set:
+      category: Walls
+      levelId: "Level 1"
+    note: >
+      Positive: `connectorMeasurements` holds "<id>/1/widthMm",
+      "<id>/1/heightMm", xMm, yMm and zMm and a facing vector of length 1 for
+      each connector of each duct, no `diameterMm` on a rectangular one;
+      `connectorKinds` "<id>/1" reads "DomainHvac ..., Rectangular". Compare
+      404243's width and height with its Properties palette (2.133 x 1.148 ft
+      is about 650 x 350 mm). `connectorSummary` and `findings` read as
+      version 3's. Negative: the walls in `noConnectors`, every dictionary
+      0 entries, `connectorSummary` empty.
