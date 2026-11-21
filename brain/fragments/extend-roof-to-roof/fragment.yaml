@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -154,6 +154,67 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-21'
+  by: Ajmal PS
+  model: roofjoin-oy (3,273 elements), Revit 2024, session 35160
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, endOf Func`3, extended 1, extendedRoof 1 item(s) [id 352563], findings 4 item(s)
+    [1 roof extended to meet the other - EXTENDED: roof by extrus..., 2 of the 6 point(s)
+    of the end met no upper face of roof by ..., The end is flat and went to its FARTHEST
+    point, so elsewhere..., ...], invariant CultureInfo, labelOf Func`2, lines 3 item(s) [roof
+    by extrusion 352563 ''Generic - 400mm'', its end toward (..., roof by extrusion 352563
+    ''Generic - 400mm'', its end toward (..., EXTENDED: roof by extrusion 352563 ''Generic
+    - 400mm''''s Extru...], maxExtendMm 10000, mm Func`2, needMm 5066.54408652649, noFootprint
+    this tool does not extend a roof by footprint on Revit 2024: its edges are its sketch,
+    and Heron edits a roof''s sketch nowhere yet (row 5b-1930). Join it by hand: Modify >
+    Join/Unjoin Roof, then pick the edge of the roof to extend and the face it is to meet,
+    onUpperFace Func`5, oneMillimetre 0.00328083989501312, pointsOf Func`2, refused (null),
+    release 2024, report roof by extrusion 352563 ''Generic - 400mm'', its end toward (0,
+    1, 0): 4 of 6 point(s) of its end meet the upper face of roof by footprint 352517 ''Generic
+    - 400mm'', nearest 3066 mm, farthest 5067 mm away | roof by extrusion 352563 ''Generic
+    - 400mm'', its end toward (0, -1, 0): 0 of 6 point(s) of its end meet the upper face of
+    roof by footprint 352517 ''Generic - 400mm'' | EXTENDED: roof by extrusion 352563 ''Generic
+    - 400mm''''s Extrusion End is 8067 mm (was 3000 mm), and its end moved 5067 mm toward
+    roof by footprint 352517 ''Generic - 400mm'' - read back off the roof''s geometry, its
+    other end where it was, roofs 2 item(s) [Generic - 400mm, Generic - 400mm]. inputs came
+    view3d as given; elements from the selection (2); maxExtendMm as given; extend not given
+    - "", the card''s own default (optional). on roofjoin-oy'
+  negative_case: 'run with categories=Roofs, exact=false, maxExtendMm=500, maxMm=12500,8500,9000,
+    minMm=-500,-6500,2500, view3d={3D} instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running select-in-region,
+    set-selection with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, endOf
+    Func`3, extended 0, extendedRoof (null), findings 3 item(s) [Nothing was changed - see
+    refused for why, 2 of the 6 point(s) of the end met no upper face of roof by ..., Revit
+    2024''s API has no Join/Unjoin Roof; this tool extends ...], invariant CultureInfo, labelOf
+    Func`2, lines 2 item(s) [roof by extrusion 352563 ''Generic - 400mm'', its end toward
+    (..., roof by extrusion 352563 ''Generic - 400mm'', its end toward (...], maxExtendMm
+    500, mm Func`2, needMm 5066.54408652649, noFootprint this tool does not extend a roof
+    by footprint on Revit 2024: its edges are its sketch, and Heron edits a roof''s sketch
+    nowhere yet (row 5b-1930). Join it by hand: Modify > Join/Unjoin Roof, then pick the edge
+    of the roof to extend and the face it is to meet, onUpperFace Func`5, oneMillimetre 0.00328083989501312,
+    pointsOf Func`2, refused roof by extrusion 352563 ''Generic - 400mm'' has to extend 5067
+    mm to meet roof by footprint 352517 ''Generic - 400mm'', more than the 500 mm allowed.
+    Nothing was changed, release 2024, report roof by extrusion 352563 ''Generic - 400mm'',
+    its end toward (0, 1, 0): 4 of 6 point(s) of its end meet the upper face of roof by footprint
+    352517 ''Generic - 400mm'', nearest 3066 mm, farthest 5067 mm away | roof by extrusion
+    352563 ''Generic - 400mm'', its end toward (0, -1, 0): 0 of 6 point(s) of its end meet
+    the upper face of roof by footprint 352517 ''Generic - 400mm'', roofs 2 item(s) [Generic
+    - 400mm, Generic - 400mm]. inputs came view3d as given; elements from the selection (2);
+    maxExtendMm as given; extend not given - "", the card''s own default (optional). on roofjoin-oy'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: f85f7efbcfd21434
+  fingerprint: 6c77dad09bca2590
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

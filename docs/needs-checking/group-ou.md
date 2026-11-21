@@ -82,3 +82,10 @@ Each PROVEN card is signed again only after its positive AND negative rows below
 
 **Not here:** rows that need a Revit run BEFORE any fix can be written - 106, 1121, 1441, 1381, 1831,
 1644, 1329, 1749, 1404 - are in their own rows and issues, untouched.
+
+### The 2026-11-21 run - Revit 2024 (build 24.3.60.12), add-in 0.2.0+c9af86d1, on Group OY's *roofjoin-oy*
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| OU21 | 2024 | **Not as written - a ROOF type, not a plain floor.** `CREATE_FLOOR` v4's one kept run (D-119, the owner pressed Keep): Level 2, *Generic - 400mm*, 0,0 to 12000,8000 - *"Roof created on 'Level 2' with 4 edge(s). It is FLAT - no slope has been set on any edge"*, `measuredMm` *"12000 x 8000 mm on plan, base at 3000 mm, level 'Level 2' sits at 3000 mm"*. The negative (`validate --kept`, rolled back) with `floorType` *150mm Foundation Slab*: `created` none, *"'Foundation Slab: 150mm Foundation Slab' is a Foundation Slab type, and this makes a plain floor, ceiling or roof. A foundation slab is CREATE_FOUNDATION_SLAB's ..."* | **PASS on a roof type**; (a)'s plain floor word for word as version 3 not run. Draft `brain/proof-drafts/create-floor.yaml` on the owner's PC |
+| OU22 | 2024 | **Not on Revit 2020 and P1102 MEP as written.** The one kept run on *roofjoin-oy*: Level 2, *Generic - 400mm*, `plane` the grid *Wing*, profile `0,500; 2000,1655; 4000,500`, 0 to 3000 - *"Roof by extrusion made (id 352563), type "Basic Roof: Generic - 400mm", level "Level 2", sketched on a reference plane drawn along grid Wing in "Level 2" (id 352560): 2 edge(s), extruded from 0 to 3000 mm north of the plane"*, no *"did not read back"* throw. The negative, `level=Level 9`: *"No level in this project is named "Level 9". NOTHING WAS MADE. Levels in this project: Level 1, Level 2."* | **PASS on 2024**; the Revit 2020 run as written is still owed. Draft `brain/proof-drafts/create-extrusion-roof.yaml` on the owner's PC |
