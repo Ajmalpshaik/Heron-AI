@@ -1,0 +1,94 @@
+# NEEDS-CHECKING Group PE - SET_VIEW_FILTER_CATEGORIES version 3 (DRAFT, was
+# PROVEN v2): `matchValue` "has no value" builds Revit's has-no-value rule
+# (row 5b-1364 item 1); and APPLY_VIEW_FILTER version 4 (DRAFT): one sentence
+# names the live card (row 5b-1363 item 4), on top of version 3's refusal of a
+# template-owned view (Group OR, OR27). Built 2026-11-21 in a cloud session
+# with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/pe-project1-systems-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/pe-project1-systems-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL: "Project1", a NEW project from Revit 2020's Systems template,
+# nothing drawn - the model APPLY_VIEW_FILTER version 2 was proved on
+# (2026-10-15, session 25244) and the arrangement of
+# tools/jobs/view-filters-project1-revit2020-2026-10-15.yaml: 10 view filters
+# (Domestic, Sanitary, Vent, Hydronic among them), "{3D}" carrying no filter.
+# Its filter Domestic holds four pipe categories, rule System Classification
+# contains 'Domestic' - ONE condition, rule-based, and every pipe category
+# has Comments, which is what PE0 asks the filter for. Save it under
+# %TEMP%\heron-work as Project1.rvt so its title stays "Project1"; if Revit
+# titles the new project otherwise, write that title in `in:`. Never 4355-*.
+# Group PE names a saved copy of Project1 with PE0's own filter; this one is
+# used because its filter and views are recorded, so nothing here waits for
+# PE0's names.
+#
+# SET_VIEW_FILTER_CATEGORIES (PE1): nothing selected, `setup: []`. The
+# positive is PE1's second line on Domestic - Comments, "has no value"; the
+# negative is PE1's first line - "has no value Level 1", a DIFFERENT value
+# (rule 3) - refused, nothing changed. The third PE1 line, "equals has no
+# value" (matched as text), is by hand.
+#
+# APPLY_VIEW_FILTER: version 2's pair - Domestic on "{3D}" with a red
+# projection line (`enabled` BLANK: Revit 2020 has no Enable Filter tick); the
+# negative the same on "Project View", which Revit refuses a filter on. OR27's
+# template-owned plan (P1102 MEP NR) and PE4's no-filter call are by hand.
+#
+# Every write is ROLLED BACK - open Manage > Filters afterwards and see
+# Domestic as it was. Each negative-set carries EVERY value, because it
+# replaces the positive's values. One job per card: a run's record is kept
+# per card.
+
+model: "Project1: a new project from Revit 2020's Systems template, 10 view filters (Domestic among them), {3D} carrying none, Revit 2020"
+
+defaults:
+  in: "Project1"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: set-view-filter-categories
+    expect: changed
+    set:
+      filterNames: Domestic
+      categories: ""
+      newName: ""
+      parameterName: Comments
+      matchValue: "has no value"
+    negative-set:
+      filterNames: Domestic
+      categories: ""
+      newName: ""
+      parameterName: Comments
+      matchValue: "has no value Level 1"
+    note: >
+      PE1, THE NEGATIVE FIRST. Negative: refused "... "has no value" and "is
+      blank" take nothing after them ...", `changed` empty. Positive:
+      `changed` names Domestic; `readBack` says its rule is "Comments has no
+      value" - its four pipe categories kept - and counts the elements it
+      catches (none in an empty project). A readBack reading "Comments equals
+      'has no value'" is version 2's text match: a FAIL whatever the verdict.
+
+  - fragment: apply-view-filter
+    expect: applied
+    set:
+      view: "{3D}"
+      filter: Domestic
+      overrides: "projection-line-colour=255,0,0"
+      visible: "true"
+      enabled: ""
+      keepOtherSettings: ""
+      solidFill: ""
+    negative-set:
+      view: "Project View"
+      filter: Domestic
+      overrides: "projection-line-colour=255,0,0"
+      visible: "true"
+      enabled: ""
+      keepOtherSettings: ""
+      solidFill: ""
+    note: >
+      Positive: `applied true`, Domestic on {3D} with a red projection line.
+      Negative: `applied false`, Revit's own words refusing a filter on the
+      Project View, nothing changed. Then by hand: PE4 (no `filter` given -
+      record who refuses, the binder naming `filter` or the card's sentence
+      naming CREATE_VIEW_FILTER) and Group OR's OR27 (a and b) on P1102 MEP NR.

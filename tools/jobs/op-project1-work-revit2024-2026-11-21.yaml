@@ -1,0 +1,84 @@
+# NEEDS-CHECKING Group OP - SET_VIEW_SECTION_BOX version 2 and
+# SET_VIEW_TEMPLATE_CONTROL version 2 (both DRAFT, were PROVEN v1): each
+# card's one refusal is one string, so it reaches the reply whole (row 108,
+# issue #912). Built 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/op-project1-work-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/op-project1-work-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE MODEL: "Project1 work_ajmal.al", Revit 2024 - the model
+# SET_VIEW_SECTION_BOX version 1 was proved on (2026-09-13, session 20224) and
+# the one tools/jobs/sweep-project1-2.yaml asked SET_VIEW_TEMPLATE_CONTROL of.
+# Its floor plan "1 - Mech" drew 9 ducts on 2026-09-13
+# (tools/jobs/project1-sectionbox-2026-09-13.yaml); it has the 3D view "{3D}"
+# and 16 view templates, "Mechanical Plan" among them. A scratch model, never
+# a job model. Version 1 of SET_VIEW_TEMPLATE_CONTROL was proved on "test
+# projject" by tracking; its version 2 can come back empty (an ordinary view
+# is refused and lists nothing), so it is a D-30 pair here.
+#
+# SET_VIEW_SECTION_BOX (OP7): the ducts in "1 - Mech" selected with
+# filter-elements-by-category and set-selection, boxed in "{3D}" with
+# marginMm 500. OP7 asks ONE element; nine is the recorded small selection
+# (rule 1), so `enclosed` reads 9, not 1 - the refusal's wording is what
+# version 2 changed. The negative is the SAME nine and the same margin on the
+# plan "1 - Mech" - a DIFFERENT value, a view that genuinely has no section
+# box (rule 3).
+#
+# SET_VIEW_TEMPLATE_CONTROL (OP8): nothing selected, `setup: []`. The
+# positive frees View Scale on the template "Mechanical Plan"; the negative
+# passes the ordinary plan "1 - Mech" in its place - refused by name. Check
+# in View > View Templates first that "Mechanical Plan" is a template here
+# and includes View Scale; if it does not include it, the positive still
+# answers (nowFree lists it) but the Scale row was never locked.
+#
+# Every write is ROLLED BACK. Each negative-set carries EVERY value, because
+# it replaces the positive's values. One job per card: a run's record is kept
+# per card.
+
+model: "Project1 work_ajmal.al: a scratch Project1, floor plan 1 - Mech with 9 ducts, the 3D view {3D}, 16 view templates, Revit 2024"
+
+defaults:
+  in: "Project1 work_ajmal.al"
+  write: true
+
+jobs:
+  - fragment: set-view-section-box
+    setup: [filter-elements-by-category, set-selection]
+    keep-chain: true
+    expect: applied
+    set:
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
+      view: "{3D}"
+      marginMm: "500"
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
+      view: "1 - Mech"
+      marginMm: "500"
+    note: >
+      OP7. Negative: `viewRefused true`, `applied false`, nothing changed,
+      and `refusalReasons` WHOLE - ending "... ISOLATE_ELEMENTS", naming
+      SET_VIEW_CROP too - never "1 item(s) [...]". Positive: `applied true`,
+      `enclosed` the count on the binding note (9 on 2026-09-13), the box
+      round them in {3D} with about 500 mm to spare. Read the binding note
+      before the result (rule 5).
+
+  - fragment: set-view-template-control
+    setup: []
+    expect: nowFree
+    set:
+      template: "Mechanical Plan"
+      parameterNames: "View Scale"
+      include: false
+    negative-set:
+      template: "1 - Mech"
+      parameterNames: "View Scale"
+      include: false
+    note: >
+      OP8. Negative: nothing changed, `nowHeld` and `nowFree` empty,
+      `viewsFollowing` 0, and `refused` WHOLE - "'1 - Mech' is a view, not a
+      view template ... rather than reported as done". Positive: View Scale
+      in `nowFree`, the template's other settings still in `nowHeld`, and
+      `viewsFollowing` the views on it. Rolled back - so the Scale row on a
+      view following the template is greyed again afterwards.
