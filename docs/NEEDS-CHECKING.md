@@ -1642,9 +1642,9 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oz.md`](needs-checking/group-oz.md)
 
-## Group PD - job methods and a skill's plan, run where Revit is: a plan that stops at a failed step, no write method beside a question, builders work, general notes and the casework template (2026-11-21)
+## Group PF - job methods and a skill's plan, run where Revit is: a plan that stops at a failed step, no write method beside a question, builders work, general notes and the casework template (2026-11-21)
 
-**Its own file:** [`needs-checking/group-pd.md`](needs-checking/group-pd.md)
+**Its own file:** [`needs-checking/group-pf.md`](needs-checking/group-pf.md)
 
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 

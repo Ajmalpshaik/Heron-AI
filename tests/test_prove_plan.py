@@ -35,7 +35,7 @@ WHAT THIS HOLDS, THROUGH A FAKE REVIT
 WHAT IT CANNOT DO
 -----------------
 Run a plan in Revit. Whether the stop reads right on the owner's PC, on the
-count-elements plan that found this, is owed there (NEEDS-CHECKING PD).
+count-elements plan that found this, is owed there (NEEDS-CHECKING PF).
 """
 
 import contextlib
