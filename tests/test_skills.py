@@ -343,6 +343,67 @@ def main():
           % (_draft9[0] if _draft9 else "no DRAFT card to plant"))
 
     print()
+    print("10. A METHOD NEVER SERVES A GAP OR A WAIT A CARD HAS CLOSED")
+    # ROW 5b-1981. The other direction to section 9, held sentence by
+    # sentence rather than by a rule, so that signing a card never turns
+    # this red. Each sentence below was served by heron_method after the
+    # card beside it had done the job: replace-in-place-family said nothing
+    # writes a value by GUID while SET_PARAMETER_VALUES_BY_ID had taken
+    # "Name {GUID}" since its version 6 (row 5b-1344, 2026-10-28), and told
+    # the chat not to try; room-setup listed numbering the rooms as a gap
+    # "until RENUMBER_SEQUENTIAL is proved" after its proof of 2026-11-14;
+    # reinforce-concrete called CHECK_REBAR_AGAINST_SPEC a DRAFT read after
+    # its proof of 2026-11-17; drawing-set's step 5 began a status sentence
+    # it never finished. Each check also asks that the card is still in the
+    # method's needs, so its real status is served beside the steps.
+    _closed10 = (
+        ("replace-in-place-family", "GAP - A GUID WRITE",
+         "SET_PARAMETER_VALUES_BY_ID"),
+        ("replace-in-place-family", "ONE THING THIS JOB NEEDS DOES NOT EXIST",
+         "SET_PARAMETER_VALUES_BY_ID"),
+        ("room-setup", "a gap until RENUMBER_SEQUENTIAL is proved",
+         "RENUMBER_SEQUENTIAL"),
+        ("reinforce-concrete", "A DRAFT READ, CHECK_REBAR_AGAINST_SPEC",
+         "CHECK_REBAR_AGAINST_SPEC"),
+        ("drawing-set", "Its status: TAG_ROOMS", "TAG_ELEMENTS_IN_VIEW"),
+    )
+    _methods10 = SKILL.load_all()[0]
+
+    def _served10(sid):
+        s_ = _methods10.get(sid)
+        if s_ is None:
+            return None, ()
+        return (" ".join(("%s %s" % (s_.purpose, " ".join(
+            str(p) for p in s_.preconditions()))).split()), s_.needs())
+
+    def _clean10(text, needs, stale, cap):
+        return text is not None and stale not in text and cap in needs
+
+    for _sid10, _stale10, _cap10 in _closed10:
+        _text10, _needs10 = _served10(_sid10)
+        check(_clean10(_text10, _needs10, _stale10, _cap10),
+              "%s no longer serves \"%s\", and needs %s"
+              % (_sid10, _stale10, _cap10))
+    # The GUID write is named where the job needs it: step 7 writes a value
+    # by "Name {GUID}" through the card that takes that form.
+    import re as _re10
+    _replace10, _ = _served10("replace-in-place-family")
+    _step7 = (_replace10 or "").partition(" 7. ")[2].partition(" 8. ")[0]
+    check("SET_PARAMETER_VALUES_BY_ID" in _step7
+          and _re10.search(r"\{[^}]*GUID[^}]*\}", _step7) is not None,
+          "replace-in-place-family step 7 writes a value by \"Name {GUID}\" "
+          "through SET_PARAMETER_VALUES_BY_ID")
+    # AND IT CAN FAIL: the stale sentence planted back is caught.
+    _sid10, _stale10, _cap10 = _closed10[0]
+    _text10, _needs10 = _served10(_sid10)
+    check(not _clean10("%s 7. %s 8." % (_text10, _stale10), _needs10,
+                       _stale10, _cap10)
+          and not _clean10(_text10, [n for n in _needs10 if n != _cap10],
+                           _stale10, _cap10),
+          "a closed gap planted back, or its card taken out of needs, is "
+          "caught (%s)" % _sid10)
+
+    print()
     print("The HVAC skills name heron_hvac calculations that exist (PROPOSALS F42-3)")
     import re as _re
     import heron_hvac as _HVAC
