@@ -1670,9 +1670,17 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pg.md`](needs-checking/group-pg.md)
 
+## Group PH - the skill runner's first runs: a job method's plan run whole, both legs, judged and signed by a person (2026-11-21)
+
+**Its own file:** [`needs-checking/group-ph.md`](needs-checking/group-ph.md)
+
 ## Group PK - eight reading tools count what they pass over (D-64, work-note item WN-7) - DRAFT until proved (2026-11-21)
 
 **Its own file:** [`needs-checking/group-pk.md`](needs-checking/group-pk.md)
+
+## Group PL - a carried id list naming elements here and not here is refused whole, and a read whose answer was lost says it reached Revit - BUILT, NOT RUN IN REVIT (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pl.md`](needs-checking/group-pl.md)
 
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
