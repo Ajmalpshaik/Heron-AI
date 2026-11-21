@@ -300,7 +300,7 @@ def _words(text):
     return found
 
 
-def methods_for(skills, request, capabilities, limit=2):
+def methods_for(skills, request, capabilities, limit=2, ceiling=None):
     """The skills `request` is one step of, best first - at most `limit`.
 
     WHY THIS EXISTS. A family is not one capability, it is a method of fifteen
@@ -321,7 +321,21 @@ def methods_for(skills, request, capabilities, limit=2):
     last is the weakest sign, because a ranked guess's runners-up are where
     retrieval is noisiest. The host still decides what the user meant (D-01);
     this names the methods so it does not have to read them off disk.
+
+    `ceiling` IS D-128's, AND A METHOD IS HELD TO IT AS A CAPABILITY IS (row
+    5b-650). A request the host calls a question is answered under the
+    highest risk a question may be - `heron_brain.question_ceiling()` - and
+    every write was already left out of its candidates; the methods were
+    not, so "how many sprinklers are in this room", asked as a question, was
+    named sprinkler-layout and terminal-layout, both MODIFY. A method whose
+    declared risk is above `ceiling` is left out; one with no risk a
+    permission level knows is left out too, because nothing says it is
+    below. None - not a question - leaves every method in, as before.
     """
+    if ceiling is not None:
+        top = CAP.RISK_ORDER.index(ceiling)
+        skills = [s for s in skills if s.risk in CAP.RISK_ORDER
+                  and CAP.RISK_ORDER.index(s.risk) <= top]
     asked = set(_words(request))
     wanted = [c for c in capabilities if c]
     if not asked or not wanted:

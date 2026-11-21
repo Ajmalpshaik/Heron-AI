@@ -2093,6 +2093,18 @@ def _record_refusal(frag, record_path):
     negative = phases.get("negative")
     if negative is None:
         return "the run record has no negative phase in it"
+    if not negative.get("ok", True):
+        # A LEG THAT DID NOT RUN IS ASKED WHETHER IT RAN BEFORE IT IS ASKED
+        # WHETHER IT IS EMPTY (row 5b-1884). A refused negative provides
+        # nothing, `looks_empty` reads nothing as "no count to judge" on
+        # purpose, and the refusal below then told the person signing that the
+        # leg FOUND something - sending them to look for content never
+        # returned. batch-prove's judge names the same record by
+        # phase_failure(); this says it in the same words.
+        return ("the negative case did not run - %s. Nothing came back to "
+                "judge, so there is no evidence that it finds nothing: arrange "
+                "the negative again and re-run the fragment."
+                % phase_failure(negative))
     roles, names = contract_of(frag)
     if not looks_empty(negative, roles, names, string_results(frag)):
         return ("the negative case came back with content, so it is a FINDING "

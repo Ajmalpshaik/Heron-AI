@@ -2886,9 +2886,19 @@ def cmd_try_once(name, values=None, session=None, in_document=None):
     return 0
 
 
-def cmd_prove(names, in_document=None, values=None, session=None):
+def cmd_prove(names, in_document=None, values=None, session=None, keep_going=False):
     """
     Run several fragments against the open model in ONE process.
+
+    A RUN IS A PLAN, AND A PLAN STOPS AT THE STEP THAT FAILED (row 148). The
+    first fragment opens a chain and the rest continue it, so a step after a
+    failure answers from whatever was left before it. Measured 2026-09-19 on
+    the count-elements skill's plan: the filter refused, and count-elements
+    ran anyway and answered `count 1` - a floor left selected by an earlier
+    probe. So the steps after a failed one, or one with no reply, are not sent:
+    each is named NOT RUN with the step that stopped it, and the run exits 1.
+    `keep_going` (`--keep-going`) sends them anyway, for a batch of fragments
+    that hand nothing on, and each says it ran after a step that failed.
 
     ONE PROCESS, ONE LEASE, MANY FRAGMENTS - and that is the whole point.
     The lease identifies a CHAT, and a command line that exits after each
@@ -2995,7 +3005,18 @@ def cmd_prove(names, in_document=None, values=None, session=None):
     named_document = None
 
     failures = 0
+    not_run = 0
+    stopped_by = None
     for index, (name, source, needs) in enumerate(sources):
+        if stopped_by is not None and not keep_going:
+            print("%-30s NOT RUN - %s failed before it, so this step would answer "
+                  "from what was left before that step, not from it"
+                  % (name, stopped_by))
+            not_run += 1
+            continue
+        if stopped_by is not None:
+            print("%-30s runs after a step that failed (%s) - --keep-going: it "
+                  "answers from what was left before that step" % (name, stopped_by))
         args = {"name": name, "source": source, "needs": needs}
         if values:
             args["values"] = values
@@ -3020,6 +3041,7 @@ def cmd_prove(names, in_document=None, values=None, session=None):
         if reply is None:
             print("%-30s NO REPLY" % name)
             failures += 1
+            stopped_by = stopped_by or name
             continue
 
         if not reply.get("ok"):
@@ -3028,6 +3050,7 @@ def cmd_prove(names, in_document=None, values=None, session=None):
             print("%-30s %s" % (name, reply.get("error")))
             print("%s %s" % (" " * 30, reply.get("message")))
             failures += 1
+            stopped_by = stopped_by or name
             continue
 
         if named_document is None:
@@ -3059,7 +3082,8 @@ def cmd_prove(names, in_document=None, values=None, session=None):
     bridge.close()
 
     print("")
-    print("%d ran, %d failed" % (len(sources) - failures, failures))
+    print("%d ran, %d failed%s" % (len(sources) - failures - not_run, failures,
+                                   ", %d not run" % not_run if not_run else ""))
     return 1 if failures else 0
 
 
@@ -4234,6 +4258,9 @@ def main(argv):
         rest, pairs, _, _, _ = pull_values(argv[2:])
         if rest is None:
             return 2
+        # --keep-going sends the steps after a failed one anyway (row 148).
+        keep_going = "--keep-going" in rest
+        rest = [r for r in rest if r != "--keep-going"]
         # prove --in "Project1" report-level-elevations ...  reads a model that is open
         # but not necessarily the one in front.
         rest, session = pull_session(rest)
@@ -4248,7 +4275,8 @@ def main(argv):
         values = caller_values(pairs)
         if values is None:
             return 2
-        return cmd_prove(rest, in_document, values, session=session)
+        return cmd_prove(rest, in_document, values, session=session,
+                         keep_going=keep_going)
     if argv[1] == "fragment":
         rest, pairs, _, _, _ = pull_values(argv[2:])
         # --write runs it inside a transaction so a MODIFY fragment can run.

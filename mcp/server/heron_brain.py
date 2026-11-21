@@ -1144,9 +1144,12 @@ def lookup(request, revit=None, question=False):
         if capability and not (answer.route == "identity"
                                and getattr(answer, "autorun", False)):
             skills, _problems = SKILL.load_all()
+            # Under the same ceiling as the candidates: a question is never
+            # named a method that changes the model (D-128, row 5b-650).
             for skill in SKILL.methods_for(
                     skills.values(), request,
-                    [capability] + [c["capability"] for c in candidates]):
+                    [capability] + [c["capability"] for c in candidates],
+                    ceiling=ceiling):
                 methods.append({"id": skill.id, "name": skill.name,
                                 "uses": len(skill.needs())})
 

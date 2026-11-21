@@ -95,6 +95,14 @@ number, which is what tools/check-decision-titles.py asks of a decision whose
 title moved number. Another decision's Numbering line that names the old id
 is left as written, and named. The date is this machine's.
 
+AND THE ONE MAIN'S DECISION OWES (row 5b-1923). CI reads the pull request's
+merge commit (issue #1056, option 2), so this branch's own history counts:
+where this branch COMMITTED its D-116 before main gave D-116 to another
+decision, main's D-116 must quote the title the branch wrote first, or
+check-decision-titles fails the pull request. This tool never edits main's
+decision, so it names that line - main's title and the one to quote - in what
+it left for a person, and exits 1.
+
 It does not reorder rows. A renamed 5b row in a rows file stays where it was
 in that file; a row with a file of its own has no place to keep - the
 register reads those files in number order. heron-ship section 6a has the
@@ -134,6 +142,10 @@ def _load(name, filename):
 # The registers, the readers and the git helper are next-id's: one rule for
 # what an id is, read in one place.
 NI = _load("next_id", "next-id.py")
+# What a decision was FIRST written as is check-decision-titles' question, read
+# the way CI reads it - so the Numbering line main's decision owes (row 5b-1923)
+# is named by the same rule that fails the pull request without it.
+CDT = _load("check_decision_titles", "check-decision-titles.py")
 CouldNot = NI.CouldNot
 REGISTERS = {reg.key: reg for reg in NI.REGISTERS}
 # Where a 5b row's line is: a rows file, or the row's own file (next-id's
@@ -472,6 +484,58 @@ def decision_lines(body, old, added):
     return found
 
 
+def owed_by_base(root, old, base, base_commit):
+    """The Numbering line BASE's decision OLD owes, as a left item, or None.
+
+    Row 5b-1923. Since issue #1056 (option 2) CI reads the pull request's
+    merge commit, so this branch's own history counts. A branch that wrote
+    OLD BEFORE base gave OLD to another decision owes two Numbering lines: its
+    moved decision names OLD - written by `plan` - and base's decision under
+    OLD quotes the title this branch wrote there first. This tool never edits
+    base's decision, so the second is named for a person instead.
+
+    "First" is check-decision-titles' own reading of the history - the commit
+    time. A tie to the second is not called first here; the gate breaks it by
+    commit id and says which line to add if it goes that way. A history cut
+    short is said, never guessed past.
+    """
+    try:
+        log = CDT.git(root, ["show", "%s:%s" % (base_commit, CDT.LOG)])
+    except CDT.CouldNot:
+        return None
+    base_title = [t for n, t in CDT.headings(log) if n == "D-%d" % old.value]
+    if not base_title:
+        return None                  # base never gave OLD to a decision of its own
+    base_title = base_title[0]
+    number = "D-%d" % old.value
+    line_no = next((i for i, line in enumerate(log.split(NL), 1)
+                    if CDT.HEADING.match(line) and CDT.HEADING.match(line).group(1) == number), 1)
+    where = (CDT.LOG, line_no, None, "## %s %s %s" % (number, chr(0x2014), base_title))
+    try:
+        mine, _ = CDT.history(root, "HEAD")
+        theirs, _ = CDT.history(root, base_commit)
+    except CDT.CouldNot as exc:
+        return where[:2] + ("%s's %s may owe a %s line quoting the title this branch first "
+                            "wrote under %s, and the history to tell cannot be read: %s"
+                            % (shown(base), number, NUMBERING, number, exc), where[3])
+    base_first = min([k for (n, _t), k in theirs.items() if n == number] or [None],
+                     key=lambda k: k or (float("inf"), ""))
+    branch = sorted((k, t) for (n, t), k in mine.items() if n == number and (n, t) not in theirs)
+    if not branch or (base_first and branch[0][0][0] >= base_first[0]):
+        return None                  # base wrote OLD first, or this branch never committed it
+    first_title = branch[0][1]
+    lines = CDT.entries(log).get(number, ("", []))[1]
+    if any(first_title in line for line in lines):
+        return None                  # base's decision already quotes it
+    return where[:2] + (
+        '%s\'s %s, "%s", owes a %s line quoting "%s" - this branch wrote that title under %s '
+        "first (%s), and check-decision-titles fails this pull request until %s's decision "
+        "says so. This tool never edits %s's decision: write the line under its heading "
+        "once %s is merged" % (shown(base), number, base_title, NUMBERING, first_title, number,
+                               CDT.when(root, branch[0][0]), shown(base), shown(base),
+                               shown(base)), where[3])
+
+
 # --------------------------------------------------------------------------
 # The plan, and doing it
 # --------------------------------------------------------------------------
@@ -580,6 +644,11 @@ def plan(root, old_typed, new_typed, base="origin/main"):
                                     body[min(own) - 2] if min(own) > 1 else ""))
         if changed or wrote:
             result.edits[rel] = (NL.join(body), changed)
+
+    if old.kind == "D":
+        owed = owed_by_base(root, old, base, base_commit)
+        if owed:
+            result.left.append(owed)
 
     targets = set()
     for was, now in result.renames:
