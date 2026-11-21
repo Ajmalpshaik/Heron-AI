@@ -242,3 +242,11 @@ utterances:
   - is this model ready to submit
   - do the type names follow our naming standard
   - which parameters still say TBD
+  # ADDED 2026-11-21, row 132 (GitHub issue #959). The find-blank-parameters
+  # skill's own sentence: whether the parameters the project requires are
+  # filled in is this read's required-parameters section, the one read that
+  # finds an empty value on its own (DESCRIBE_BLANK_PARAMETERS needs the lists
+  # handed in). It reached CHECK_SHEET_SETS_BY_PARAMETER on lexical and
+  # SET_PARAMETER_VALUES_BY_ID, a write, through check-skill-routing.py.
+  # Declared on the read that answers it (D-86); the skill lists it in needs.
+  - check for empty values
