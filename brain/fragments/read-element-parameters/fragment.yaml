@@ -440,3 +440,17 @@ utterances:
   # diameter, mark and level and moved nothing on any frozen set, as twelve
   # wordings did for row 5b-1007, so it is left as it is.
   - what diameter are these pipes
+  # ADDED 2026-11-21, row 5b-1882 part (1) (GitHub issue #1127) - ONE VALUE OFF
+  # AN ELEMENT, the judgement above. Each reached SET_MEP_INSULATION, a write,
+  # on lexical and the model on main 4ae650e6. A duct or pipe carries
+  # "Insulation Thickness" and "Insulation Type" as parameters of its own,
+  # read here by name. Declared after the eighth line, so what the re-ranker
+  # reads of this card (D-134) is unchanged.
+  - what insulation thickness is on these pipes
+  - how thick is the insulation on this duct
+  - what insulation type is on this pipe
+  # ADDED 2026-11-21, row 5b-224 (GitHub issue #955). It reached
+  # SET_ROOM_LIMITS, a write, on lexical and the model on main 4ae650e6. A
+  # room's "Upper Limit" holds a level, read as the level's name - the same
+  # case as "what is the base constraint of these walls" above.
+  - what is the upper limit of these rooms

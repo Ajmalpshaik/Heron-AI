@@ -250,3 +250,8 @@ utterances:
   - flip them
   - fix the from and to room on these doors
   - flip the work plane of the nested part
+  # ADDED 2026-11-21, row 5b-1925 (GitHub issue #1130). The routing table above
+  # claims it; it reached REPORT_DOOR_ROOM_LINKS, the read, whose own declared
+  # "the door schedule rooms read backwards" is the same words without the
+  # request. A request to fix belongs to the write, so it is declared here.
+  - the door schedule rooms read backwards, fix them

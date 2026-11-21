@@ -205,3 +205,12 @@ utterances:
   - check the from and to room on these doors
   - what room does this door lead to
   - are any doors flipped the wrong way
+  # ADDED 2026-11-21, row 5b-1925 (GitHub issue #1130). The routing table above
+  # claims it, and a comment is not indexed, so ranking decided - on a near tie
+  # with FLIP_ELEMENTS, a write, settled by the PROVEN tie-break: whichever card
+  # was PROVEN took it. Declared, so identity answers it whatever either status.
+  - the door schedule reads backwards
+  # ADDED 2026-11-21, row 5b-321 (GitHub issue #955): it reached
+  # PLACE_HOSTED_FAMILY on lexical and FLIP_ELEMENTS on the model, both writes.
+  # The room a door swings into is its To Room, which this read gives.
+  - what room does this door swing into
