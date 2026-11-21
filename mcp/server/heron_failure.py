@@ -641,11 +641,14 @@ def analyse(reply, writes=False):
                 "Heron did not get an answer, so it cannot tell you whether that happened. "
                 "Look at the model before trying again - repeating it could do the work twice.")
         # WHAT THIS SENTENCE CLAIMED UNTIL 2026-11-11 (row 5b-1167): "asking
-        # again costs nothing". None is two cases the client does not tell
+        # again costs nothing". None was two cases the client did not tell
         # apart - Revit was never reached, or a request left and its answer
-        # never came - and in the second the read may have run. So the
-        # sentence says only what is known. Something that CAME BACK and could
-        # not be read is no longer None: it is `reply_unreadable`, above.
+        # never came - and in the second the read may have run. Since
+        # 2026-11-21 the client tells them apart (row 5b-1167 (b)): the second
+        # is `answer_lost`, below. None still reaches here from a caller with
+        # no reply at all - a step that threw (heron_workflow) - so the
+        # sentence still says only what is known. Something that CAME BACK and
+        # could not be read is no longer None: it is `reply_unreadable`, above.
         #
         # AND IT IS FILED AS NOT KNOWN, NOT AS NEVER RAN (row 5b-1560). It was
         # NEVER_RAN until 2026-11-19 - so `touched_the_model` answered False
