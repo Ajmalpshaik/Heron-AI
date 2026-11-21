@@ -28,9 +28,13 @@ negative:
 
   - given: a number refused for any other reason
     expect: >
-      the sheet id in `refused`, with numberedAs carrying what Revit actually
-      called it. The sheet exists either way and the register must show the
-      truth
+      VERSION 4 (D-193 rule 1): NO SHEET for it - the sheet is taken back in
+      its own SubTransaction, and a line in notCreated says "Revit refused
+      the number, so the sheet was taken back" with Revit's own words;
+      `refused` empty. Versions 1 to 3 kept the sheet under the number Revit
+      picked and named it in `refused`. NOT KNOWN HOW TO PROVOKE IT with a
+      number that is free (the clash is checked before anything is made) -
+      recorded so a run that meets one is read correctly
 
   - given: fewer names than numbers
     expect: >
@@ -135,6 +139,114 @@ negative:
       NOTHING created, titleBlockNotFound true and titleBlockProblem saying no
       title block was named - the title block still has no default
 
+  # VERSION 4 (2026-11-21, CREATE_SHEETS_FROM_TABLE merged in, D-193). Each
+  # FAILS on version 3 - which has no `sheets` or `previewOnly`, makes the
+  # first of a number given twice, takes any count of numbers, and keeps a
+  # sheet whose name Revit refused. NEEDS-CHECKING Group OZ runs them.
+  - given: >
+      VERSION 4, D-193 rule 1. numbers "OZ-201,OZ-202,OZ-203", names "HERON
+      GOOD 1,HERON BAD:NAME,HERON GOOD 3" (a ":" Revit does not allow in a
+      name; "{" if ":" is taken), a title block that exists
+    expect: >
+      created two ids, OZ-201 and OZ-203; a line in notCreated "OZ-202: Revit
+      refused the name "HERON BAD:NAME", so the sheet was taken back. Revit
+      said: ..." with Revit's sentence; and NO sheet OZ-202 in the Project
+      Browser - not under the number, not under a name Revit chose. Version 3
+      kept OZ-202 under Revit's own name and said nothing (row 5b-1893)
+
+  - given: VERSION 4, D-193 rule 2. numbers "OZ-301,oz-301,OZ-302", a title block that exists
+    expect: >
+      ONE sheet, OZ-302. Two lines in notCreated, "OZ-301: entries 1 and 2 of
+      the numbers given both give this number - neither was made" and the
+      same for "oz-301"; numberTaken empty. Version 3 made OZ-301 and refused
+      oz-301 as already used by it
+
+  - given: >
+      VERSION 4, D-193 rule 3. 1,001 numbers, OZ-0001 to OZ-1001 (the group
+      file prints the PowerShell that makes them), a title block that exists
+    expect: >
+      NOTHING created - notCreated one line "1001 sheet numbers were given;
+      one call makes at most 1000 sheets. Split the list. Nothing was
+      created."; the sheet count unchanged. Version 3 made all 1,001
+
+  - given: >
+      VERSION 4. numbers "OZ-401,OZ-402", a title block that exists,
+      previewOnly true
+    expect: >
+      NOTHING kept - created empty, the sheet count unchanged; preview two
+      lines, each the number, its name and "on" the title block as Family:
+      Type, then "would be made"; findings opening "PREVIEW - nothing was
+      kept. 2 of 2 number(s) would be made". Version 3 has no previewOnly and
+      makes both
+
+  - given: >
+      VERSION 4, THE TABLE. sheets "Sheet Number|Sheet Name|Drawn By|Checked
+      By|Discipline;OZ-501|HERON TEST PLAN 1|AP|JS|Mechanical;OZ-502|HERON
+      TEST PLAN 2|AP|JS|Mechanical;OZ-503|HERON TEST PLAN 3|AP||Mechanical",
+      a title block that exists, on a model with a text project parameter
+      "Discipline" bound to Sheets
+    expect: >
+      three sheets, each on the title block, valuesSet 8 (Checked By is empty
+      on OZ-503 and writes nothing - D-183), columnsMatched naming Drawn By,
+      Checked By and Discipline as "the sheet's own parameter (text) on 3
+      sheet(s)", findings opening "Made 3 of 3 row(s) as sheets and set 8
+      value(s)". Read Drawn By and Discipline in each sheet's Properties.
+      Version 3 has no `sheets`, so it is refused as nothing to create
+
+  - given: THE TABLE above, titleBlockName "NoSuchTitleBlockAnywhere" - THE TABLE'S D-30 NEGATIVE
+    expect: >
+      titleBlockNotFound true; titleBlockProblem saying no title block type
+      called "NoSuchTitleBlockAnywhere" is loaded, asked by OZ-501, OZ-502,
+      OZ-503, and that nothing was made; created empty, valuesSet 0 - the
+      sheet count unchanged
+
+  - given: THE TABLE above with titleBlockName left out (it has no Title Block column)
+    expect: >
+      NOTHING made, titleBlockNotFound true, titleBlockProblem saying no title
+      block was named for OZ-501, OZ-502, OZ-503 - the title block has no
+      default, in the table as for typed numbers
+
+  - given: VERSION 4. THE TABLE with two rows numbered OZ-601 and oz-601, and one OZ-602
+    expect: >
+      ONE sheet, OZ-602; a line in notCreated for each of the two rows, each
+      naming entries 1 and 2 and "neither was made"
+
+  - given: VERSION 4. THE TABLE with a row whose Sheet Name has a ":" in it
+    expect: >
+      that row in notCreated "Revit refused it, so this row was taken back -"
+      with Revit's own words, NO sheet for it, the other rows made
+
+  - given: VERSION 4. THE TABLE and numbers "OZ-701" both given
+    expect: >
+      NOTHING created; notCreated "Both a table of sheets (sheets) and typed
+      sheet numbers (numbers) were given ... Nothing was created."
+
+  - given: VERSION 4. THE TABLE and names "Typed Name" both given, no numbers
+    expect: >
+      NOTHING created; notCreated "Both a table of sheets (sheets) and typed
+      names (names) were given ... Nothing was created." - the names are not
+      silently ignored. The same for numberSuffix or namePrefix beside a table
+
+  - given: >
+      VERSION 4. One sheet selected, numbers left out, numberSuffix "-COPY",
+      previewOnly true
+    expect: >
+      NOTHING created; the source in notDuplicated and a line in notCreated
+      saying a copy run is not previewed. The same without previewOnly makes
+      the copy, exactly as version 3
+
+  - given: >
+      VERSION 4, THE TABLE. A column naming a title block TYPE parameter, one
+      naming a read-only parameter ("Current Revision"), one misspelt
+      ("Discipln") and a Yes/No project parameter bound to Sheets holding
+      "Yes", "no" and "maybe" on three rows
+    expect: >
+      the type column in columnsNotWritten and the type's value in Edit Type
+      UNCHANGED; "Current Revision" in columnsNotWritten as read-only;
+      "Discipln" in columnsUnmatched, nothing written from it; two sheets
+      ticked and unticked as asked and "maybe" in valuesNotSet "a tick box
+      takes Yes or No" - that sheet still made (D-183)
+
 second_route:
   - >
     open the Sheets branch of the Project Browser and read the numbers - that
@@ -142,3 +254,9 @@ second_route:
   - >
     version 3: COUNT THE SHEETS before and after a copy run - the rise must
     equal the length of created - and one Ctrl+Z removes every copy
+  - >
+    version 4: a sheet list schedule (CREATE_SCHEDULE, listKind sheets) with
+    Sheet Number, Sheet Name, Drawn By, Checked By and Discipline as fields
+    shows every value a table wrote, row by row against the spreadsheet; and
+    COUNT THE SHEETS before and after a run with a refused name - the rise
+    must equal the length of created, never one more

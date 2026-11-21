@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "add new sheets to the drawing register"
 kind: action
 domain: revit.sheets
 capability: CREATE_SHEETS
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -55,6 +55,19 @@ purpose: >
   block is not copied. **Neither job copies the views on a sheet** - the new
   sheets are empty; DUPLICATE_VIEWS and PLACE_VIEW_ON_SHEET do that.
 
+  **VERSION 4 also makes new drawings from rows handed in as one value**
+  (CREATE_SHEETS_FROM_TABLE merged in) - written by heron_sheet_list from the
+  modeller's own file - in one call and one undo. The first row names the
+  fields: Sheet Number is required, Sheet Name and Title Block optional, and
+  each other field is filled into the new drawing's own parameter of that
+  name, or else into its title block instance; never into a title block TYPE
+  parameter. An empty field writes nothing, and a value Revit will not take is
+  given back while its drawing is kept. For the rows and for numbers typed
+  alike: each drawing is made in its own sub-transaction, and one whose number
+  or name Revit refuses is taken back and given back with Revit's words; one
+  number given twice makes neither; at most 1,000 in one call. previewOnly
+  does the whole job and takes it back.
+
 contract:
   needs:
     - name: doc
@@ -63,6 +76,11 @@ contract:
       # The new sheets' numbers. Version 3: optional, and left out it is
       # "none" - then the sheets handed in are copied instead, when a
       # numberSuffix is given. Given, the copy job does not run.
+      # Version 4 (D-193): more than 1,000 refuses the call, nothing made; a
+      # number given twice, capitals ignored, makes NEITHER sheet. Given with
+      # a `sheets` table, nothing is made. A list crosses as one
+      # comma-separated value that drops empty entries (RevitFragment.Parts),
+      # so a name with a comma in it, or a blank one, belongs in `sheets`.
       type: IList<string>
       source: request
       optional: true
@@ -82,6 +100,10 @@ contract:
       # Version 3: optional, and left out it is "from the source sheets" - the
       # copy job's own rule. With numbers given and no title block named,
       # NOTHING is created: the title block still has no default.
+      # Version 4: with a `sheets` table, the title block of every row whose
+      # Title Block cell is empty; left out, every row must name its own, and
+      # one that does not refuses the whole call. Any name not found, in the
+      # table or here, refuses the whole call: nothing is made.
       type: string
       source: request
       optional: true
@@ -108,8 +130,39 @@ contract:
       source: request
       optional: true
       absent: none
+    - name: sheets
+      # Version 4, from CREATE_SHEETS_FROM_TABLE. THE TABLE, ONE VALUE. Rows
+      # separated by ";", cells by "|"; a ";", "|" or "%" inside a cell
+      # written %3B, %7C, %25 (any %XX is decoded, so a double quote may be
+      # %22). First row the headers:
+      #   Sheet Number|Sheet Name|Title Block|Drawn By|Checked By;M-101|Level 1
+      #   Plan||AP|JS;M-102|Level 2 Plan||AP|JS
+      # Sheet Number (or Number) is required; Sheet Name (or Name) and Title
+      # Block are optional; every other header names a parameter. An empty
+      # cell writes nothing - it does not clear a value (D-183). A row's empty
+      # Title Block cell takes titleBlockName; a row with neither refuses the
+      # whole call - THE TITLE BLOCK HAS NO DEFAULT. heron_sheet_list writes
+      # this value from the modeller's spreadsheet. Left out it is "none".
+      # Given with `numbers`, NOTHING is made - which list is meant is the
+      # caller's to say. Given, `numbers`, `names` and `elements` are not read.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: previewOnly
+      # Version 4, from CREATE_SHEETS_FROM_TABLE. true: a table or typed
+      # numbers - every sheet is made in its own sub-transaction and TAKEN
+      # BACK after its read-back; nothing is kept, and `preview` lists every
+      # one as it would be made or not, with its title block and (a table)
+      # the values it would get. Refused with the copy job, which cannot take
+      # its copies back one by one: nothing is made. Absent binds false.
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: created
+      # The sheets made and kept. Version 4: empty on a preview, and a sheet
+      # whose number or name Revit refused is never here - it was taken back.
       role: result
       type: IList<ElementId>
     - name: numberedAs
@@ -118,12 +171,27 @@ contract:
     - name: namedAs
       role: result
       type: IDictionary<ElementId, string>
+    - name: valuesSet
+      # Version 4, from CREATE_SHEETS_FROM_TABLE. A table's parameter values
+      # written AND read back as asked after one regeneration (a number counts
+      # when Revit took it - its reading is in the project's units). 0 on a
+      # preview, and on every other route.
+      role: result
+      type: int
+    - name: preview
+      # Version 4, from CREATE_SHEETS_FROM_TABLE. previewOnly only: ONE
+      # string, a line per row or number - made or not and why, its title
+      # block, and (a table) every value it would get. Empty otherwise.
+      role: result
+      type: string
     - name: numberTaken
       # Numbers already in the register, checked BEFORE anything is created so
       # no sheet is made for them. Given and unusable, never a sheet it made
       # (D-52). Version 3: in the copy job too - a source's number plus the
       # suffix already used, including by a copy made earlier in the same
-      # batch (DUPLICATE_SHEETS' collidedNumbers).
+      # batch (DUPLICATE_SHEETS' collidedNumbers). Version 4: a table's rows
+      # too (placeholders count, capitals ignored). A number given twice in
+      # one request is NOT here - it is in notCreated, neither made.
       role: accounting
       type: IList<string>
     - name: notDuplicated
@@ -138,25 +206,35 @@ contract:
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
-      # "did this come back empty" (D-52).
+      # "did this come back empty" (D-52). Version 4: only the copy job fills
+      # it - a copy whose number did not take, which exists. A table's rows
+      # and typed numbers take such a sheet back instead (D-193), so it is a
+      # line in notCreated. CREATE_SHEETS_FROM_TABLE's own `refused` was a
+      # SENTENCE - why nothing was made; that sentence is a line in
+      # notCreated here (titleBlockProblem for a title block), and the first
+      # of `findings`.
       role: accounting
       type: IList<ElementId>
     - name: titleBlockNotFound
       # That the title block asked for is not loaded - or, version 2, that its
       # type name is in two families and does not say which. A refusal, never
-      # a sheet it made (D-52).
+      # a sheet it made (D-52). Version 4: any title block a table names - in
+      # titleBlockName or a Title Block cell - and a row to be made with
+      # neither; nothing was made.
       role: accounting
       type: bool
     - name: noTitleblock
       # Version 2, from CREATE_SHEET. True when the caller said none and the
       # sheets were made with no title block. They print bare, so it is said.
-      # What it was told, never a sheet it made (D-52).
+      # What it was told, never a sheet it made (D-52). Version 4: a table
+      # row whose Title Block cell, or titleBlockName, said none.
       role: accounting
       type: bool
     - name: titleBlockProblem
       # Version 2. Why the title block named could not be used - not loaded,
       # or a type name two families share, naming both. Empty when one was
-      # found or none was asked for. A refusal (D-52).
+      # found or none was asked for. A refusal (D-52). Version 4, a table:
+      # every bad name, and the rows that asked for it.
       role: accounting
       type: string
     - name: notCreated
@@ -164,10 +242,54 @@ contract:
       # for, and why: blank, already used (naming the sheet that holds it,
       # capitals ignored), or Revit declining ViewSheet.Create in its own
       # words. A failed create is HERE, not in numberTaken - version 1 put it
-      # there. The evidence it looked and said no (D-52).
+      # there. The evidence it looked and said no (D-52). Version 4 (D-193):
+      # also a sheet whose number or name Revit refused, TAKEN BACK and given
+      # Revit's words; a number given twice, a line for each entry, neither
+      # made; and a refusal of the whole call - more than 1,000, a table that
+      # cannot be read safely, a table and numbers both given, previewOnly
+      # with the copy job.
       role: accounting
       type: IList<string>
+    - name: columnsMatched
+      # Version 4, from CREATE_SHEETS_FROM_TABLE. One line per parameter
+      # column: where it was written - the sheet's own parameter or the title
+      # block instance's - its kind, and on how many sheets. Evidence it
+      # looked, never a value written (D-52).
+      role: accounting
+      type: IList<string>
+    - name: columnsUnmatched
+      # Version 4, from CREATE_SHEETS_FROM_TABLE. Columns no sheet made has a
+      # parameter for - not written. Usually a project parameter not bound to
+      # Sheets, or a header worded unlike the parameter. Asked of the
+      # modeller, never guessed (D-52).
+      role: accounting
+      type: IList<string>
+    - name: columnsNotWritten
+      # Version 4, from CREATE_SHEETS_FROM_TABLE. Columns that name a
+      # parameter this card will not write, and why: read-only, on the title
+      # block TYPE, two parameters sharing the name, or one holding another
+      # element (D-52).
+      role: accounting
+      type: IList<string>
+    - name: valuesNotSet
+      # Version 4, from CREATE_SHEETS_FROM_TABLE. One line per cell not
+      # written or not read back as asked: the sheet, the column, the value
+      # and why - a tick box given a word that is not yes or no, a number
+      # Revit would not read. The sheet itself is KEPT (D-183) (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      # Version 4, from CREATE_SHEETS_FROM_TABLE. A table: what was made, or
+      # why nothing was, first; then notes - sheets with no title block, a
+      # title block found only after a regeneration. Typed numbers: the
+      # PREVIEW line on a preview, else empty.
+      type: IList<string>
 
+# VERSION 3'S PROOF, KEPT AS A RECORD (2026-11-21). Version 4 changed impl/
+# (CREATE_SHEETS_FROM_TABLE merged in, D-193), so the fingerprint below no
+# longer describes the code and the card is DRAFT until NEEDS-CHECKING Group OZ
+# proves version 4 on a real model (D-30). The typed-numbers route this proof
+# ran is still there, with version 4's three rules added.
 proof:
   date: '2026-11-02'
   by: Ajmal PS
@@ -203,11 +325,29 @@ runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  One implementation for every release. `ViewSheet.Create`,
+  One implementation for every release, no version branch. `ViewSheet.Create`,
   `ViewSheet.SheetNumber` and `ViewSheet.Name` are unchanged 2020 to 2027, and
   no units call is made. The title block is found by name among
   `OST_TitleBlocks` element types rather than by id, because a name is what a
   project standard is written in and an id is not portable between models.
+  Version 4 (CREATE_SHEETS_FROM_TABLE merged in) - read with tools/api-surface
+  --members on 2026-11-21, present with these signatures 2020 through 2027:
+  ViewSheet.Create(Document, ElementId), ViewSheet.SheetNumber { get; set; }
+  and IsPlaceholder, View.IsTemplate, Element.Name { get; set; },
+  Element.GetParameters(string), Element.GetTypeId(), Element.OwnerViewId,
+  ElementType.FamilyName, Document.GetElement(ElementId), Document.Regenerate()
+  and Document.Title, FilteredElementCollector.FirstElement(),
+  Parameter.IsReadOnly, StorageType, Definition, Set(string), Set(int),
+  SetValueString(string), AsString(), AsInteger() and AsValueString(), and
+  SubTransaction(Document) with Start, Commit, RollBack, HasStarted and
+  HasEnded. A tick box is recognised as SET_PARAMETER_VALUES_BY_ID recognises
+  one: Definition.GetDataType against SpecTypeId.Boolean.YesNo on 2022 and
+  later, Definition.ParameterType == YesNo on 2020 and 2021, both read by
+  reflection so one source compiles on every release - ParameterType is gone
+  from 2023 and ForgeTypeId begins at 2021. No unit API is called: a number
+  goes through SetValueString, Revit's own reading in the project's units. No
+  ElementId is built from or read as a number, so 2024's 64-bit ids do not
+  reach this code.
 
 # VERSION 2 (2026-11-01) - CREATE_SHEET WAS MERGED INTO THIS CARD on the
 # owner's instruction ("now merge the other duplicates also"), and is
@@ -266,6 +406,65 @@ compatibility-note: >
 # WHERE ITS OUTPUTS ARE NOW: newSheetIds -> created, notDuplicated ->
 # notDuplicated, collidedNumbers -> numberTaken. Its sentences moved here.
 
+# VERSION 4 (2026-11-21) - CREATE_SHEETS_FROM_TABLE WAS MERGED INTO THIS CARD
+# on the owner's "merge: yes" (issue #1080, 2026-11-21), and is DEPRECATED - the
+# merge FRAGMENT-ISSUES rows 5b-1486 and 5b-1875 planned. The same job - new
+# numbered, named sheets on a title block, every number checked before a sheet
+# exists - from a table of rows instead of typed lists. What it had and this
+# card lacked is here now, its code moved whole: the `sheets` table (rows ";",
+# cells "|", every %XX decoded), a title block per row, every other column
+# filled into the sheet's own parameter or its title block instance's - never
+# the title block TYPE's - with the version-safe Yes/No test, the per-row
+# SubTransaction, previewOnly, the read-back after one regeneration,
+# valuesSet, preview, columnsMatched, columnsUnmatched, columnsNotWritten,
+# valuesNotSet and findings, and the 1,000-row ceiling. D-183's four choices
+# hold as they did: an empty cell writes nothing, an Excel date arrives as an
+# ISO date, a value Revit refuses is listed while its sheet is kept, at most
+# 1,000 rows.
+#
+# THE THREE RULES THE TWO CARDS HELD OPPOSITE, chosen 2026-11-21 on the
+# owner's word "remaining all the things you can choose what is the best" and
+# recorded as D-193 - in each the table card's, the safer, for BOTH routes:
+#   1. a sheet number or name Revit refuses TAKES THAT SHEET BACK, listed in
+#      notCreated with Revit's own words. This card kept it (in `refused` when
+#      its number did not take, and silently when only its name did not -
+#      FRAGMENT-ISSUES row 5b-1893, fixed here);
+#   2. the same number twice in one request makes NEITHER, each listed. This
+#      card made the first;
+#   3. at most 1,000 sheets in one call, typed numbers too.
+# The copy job (version 3) keeps its own rules; whether rule 1 reaches it too
+# is FRAGMENT-ISSUES row 5b-1935, the owner's. previewOnly is refused with it.
+#
+# WHERE ITS OUTPUTS ARE NOW: created, numberedAs, namedAs, numberTaken,
+# notCreated, titleBlockNotFound, noTitleblock, titleBlockProblem, valuesSet,
+# preview, columnsMatched, columnsUnmatched, columnsNotWritten, valuesNotSet
+# and findings under the same names. Its `refused` (a SENTENCE - why nothing
+# was made) is a line in notCreated here, or titleBlockProblem for a title
+# block, and the first of `findings` either way; this card's `refused` stays a
+# list of sheet ids. Its sentences moved here.
+#
+# NOT CARRIED: nothing it did. A table and typed numbers given together
+# refuse the call (new - which list is meant is the caller's to say).
+#
+# ROUTING (2026-11-09, CREATE_SHEETS_FROM_TABLE's rows, moved here with it).
+# The cards named were not edited.
+#
+#   "Sheets from Excel"                               -> here, through the
+#   "read the sheet list from a spreadsheet,              sheets-from-excel
+#    preview, create"                                     method, which reads
+#   "make the sheets from this Excel"                     the file first
+#   "import the parameter values from this csv" /     -> SET_PARAMETER_VALUES_BY_ID
+#    "load these values back into the model from the      - values onto elements
+#    spreadsheet"                                         that already exist
+#   "I need a drawing index"                          -> CREATE_SCHEDULE - the
+#                                                        index OF the sheets
+#   "change the title block on these sheets"          -> SET_SHEET_TITLE_BLOCK
+#   "which sheets are in this model"                  -> FIND_SHEETS - a QUESTION
+#   "which sheets are in this excel file"             -> heron_sheet_list, the
+#                                                        chat tool - it reads the
+#                                                        file and touches no model
+# No question was claimed for this card (D-86).
+
 utterances:
   - create some sheets
   - add new sheets
@@ -286,3 +485,9 @@ utterances:
   - copy the sheet with a new number
   - duplicate the drawing sheet
   - create sheets based on these
+  # MOVED 2026-11-21 from CREATE_SHEETS_FROM_TABLE, merged into this card.
+  # The owner's own words: docs/48 section 5 item 7 and its section 2 row,
+  # and the request the modeller is to make (the owner's brief, 2026-11-09).
+  - Sheets from Excel
+  - read the sheet list from a spreadsheet, preview, create
+  - make the sheets from this Excel

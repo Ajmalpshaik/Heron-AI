@@ -7648,8 +7648,8 @@ def heron_sheet_list(path: str, sheet: str = "", header_row: int = 1) -> str:
 
     It answers with the sheets, every problem in the file (no number, a
     number twice, a formatted number, a blank or multi-line row), and the
-    exact `sheets=` value for CREATE_SHEETS_FROM_TABLE, with how to preview
-    and run it. Show the
+    exact `sheets=` value for CREATE_SHEETS, with how to preview and run
+    it. Show the
     modeller the problems and ask about each; ask the title block when the
     file has none. Never type the value by hand - pass it as given.
     """
@@ -7661,7 +7661,10 @@ def heron_sheet_list(path: str, sheet: str = "", header_row: int = 1) -> str:
         register = reader.read(path, sheet=(sheet or "").strip() or None, header_row=header_row)
     except Exception as why:                         # noqa: BLE001 - said to the modeller
         return "'%s' could not be read: %s. Nothing in Revit was touched." % (path, why)
-    _folder, status = _fragment_for("CREATE_SHEETS_FROM_TABLE")
+    # The card the reader names (CREATE_SHEETS since 2026-11-21, when
+    # CREATE_SHEETS_FROM_TABLE was merged into it, D-193) - read from the
+    # reader, so the status asked of and the card named cannot drift apart.
+    _folder, status = _fragment_for(reader.CARD)
     return reader.chat_answer(register, status=status)
 
 

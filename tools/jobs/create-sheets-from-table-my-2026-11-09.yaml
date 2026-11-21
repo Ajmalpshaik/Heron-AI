@@ -1,6 +1,12 @@
 # NEEDS-CHECKING Group MY - CREATE_SHEETS_FROM_TABLE, built 2026-11-09 in a
 # cloud session with no Revit. NOT RUN.
 #
+# RETIRED 2026-11-21 - KEPT AS THE RECORD, NOT TO BE RUN.
+# CREATE_SHEETS_FROM_TABLE was merged into CREATE_SHEETS as its version 4
+# (issue #1080, D-193) and is DEPRECATED; the same table is CREATE_SHEETS'
+# `sheets` input. Group MY's checks moved to NEEDS-CHECKING Group OZ, whose
+# job file is tools/jobs/create-sheets-oz-2026-11-21.yaml - run that one.
+#
 #     python tools/batch-prove.py tools/jobs/create-sheets-from-table-my-2026-11-09.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/create-sheets-from-table-my-2026-11-09.yaml
 #
