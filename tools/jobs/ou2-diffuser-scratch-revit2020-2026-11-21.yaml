@@ -1,0 +1,64 @@
+# NEEDS-CHECKING Group OU (OU12) - READ_ELEMENT_PARAMETERS version 8 (DRAFT):
+# asked for "Level", the first level parameter that HOLDS a level answers - a
+# work plane-based diffuser on a level's plane carries an empty phantom
+# "Level", which version 7 answered `absent` (rows 5b-342, 5b-335). Built
+# 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ou2-diffuser-scratch-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ou2-diffuser-scratch-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL NEEDS ITS OWN NAME. No row records one, so `in:` is left out and
+# the run goes to the document IN FRONT - put this model in front, or type its
+# title (as Revit's title bar shows it) as `in:` under `defaults:`. It is the
+# one scratch model rows OU11 to OU14 all describe, made ONCE by hand or
+# through the chat (fragment-proving, night rule 3 - setup: cannot carry it,
+# because a read step after a step that places is refused), saved under
+# %TEMP%\heron-work\or, Revit 2020 as the group runs first, never a working
+# model:
+#   - Level 1 and Level 2, Level 2 3000 mm above it (OU11)
+#   - two walls on Level 1 (OU13: "those three diffusers sit beside two
+#     walls")
+#   - THREE "M_Supply Diffuser - Circular - Round Neck - Ceiling Mounted"
+#     placed on Level 1's own plane - work plane-based, so the Properties
+#     palette shows Schedule Level "Level 1" and no Level (row 5b-342's
+#     measurement, Project2, Revit 2024). Write their ids down
+#   - (OU11, not this job) one level-based mechanical equipment family on
+#     Level 1 at 1200 mm
+#   - NOTHING ELSE of the Air Terminals category in the model
+# Write the model's name on OU12 and in this file.
+#
+# THE ARRANGEMENT. filter-elements-by-category with NO view, so a plan's view
+# range cannot hide a diffuser lying on the floor plane (rule 3): the positive
+# takes every Air Terminal - the three diffusers - and the negative takes
+# every Level, a DIFFERENT selection (OU12's "on a level"), read on the same
+# name. The negative-set carries the category and the name, because it
+# replaces the positive's values. A read; nothing in the model changes.
+#
+# BY HAND, NOT HERE: OU12's other negative (a model element whose every level
+# parameter is empty); OU13 (REPORT_LEVEL_ELEVATIONS - its `storeys` line is
+# written on every run, so no batch negative can be empty); OU14
+# (REPORT_MODEL_DASHBOARD's by-level part, read by eye - that card's batch job
+# is on oq-snowdon); OU11 (SET_ELEMENT_LEVEL - its batch job is on P1102 MEP).
+
+model: "the OU11-OU14 diffuser scratch model (Level 1, Level 2 at 3000 mm, two walls and three work plane-based ceiling diffusers on Level 1's plane) - needs the model's own name, Revit 2020"
+
+defaults:
+  setup: [filter-elements-by-category, set-selection]
+
+jobs:
+  - fragment: read-element-parameters
+    expect: values
+    set:
+      category: "Air Terminals"
+      parameterName: "Level"
+    negative-set:
+      category: "Levels"
+      parameterName: "Level"
+    note: >
+      OU12. Positive: the binding note "elements from the selection (3)";
+      findings '"Level": 3 of 3 carry a value, 0 blank, 0 absent' with each
+      diffuser's id reading Level 1 (level); resolvedFrom "level" for each;
+      absent EMPTY - version 7 put all three in `absent` off the empty
+      phantom Level. Negative, the levels: values empty, every level in
+      `absent`, noteWording null. A binding count other than 3 means
+      something else of Air Terminals is in the model - remove it or say so.

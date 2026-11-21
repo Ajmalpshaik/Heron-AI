@@ -1,0 +1,62 @@
+# NEEDS-CHECKING Group OU (OU18) - REPORT_ELEMENT_OWNERSHIP version 3 (DRAFT):
+# "changed in central?" beside who owns it - each element's Model Updates
+# status in `centralStatus`, and the elements updated or deleted in central
+# since this model last reloaded in `changedInCentral` (WN-5, issue #1005).
+# Built 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ou2-workshared-scratch-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ou2-workshared-scratch-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE POSITIVE'S MODEL NEEDS ITS OWN NAME, AND THE OWNER'S HANDS. No row
+# records it, so `in:` is left out and the positive goes to the document IN
+# FRONT - put local A in front, or type its title as `in:` on the job. OU18's
+# arrangement, made by hand before the run, never on a working model: a
+# scratch workshared central under %TEMP%\heron-work and two local files of
+# it opened under two user names (Options > General > Username). The central
+# holds TWO walls and no other wall - the one local B moves and the one
+# nobody touches - because the selection below is every wall in the model.
+# In local B move one wall and Synchronize with Central; in local A, with NO
+# Reload Latest, draw a third wall and do not synchronise. Local A is the
+# document the positive reads, in the same Revit 2024 as the negative's.
+#
+# THE NEGATIVE'S MODEL: "Heron Reads Test" (docs/needs-checking/group-nk.md,
+# NK0), the scratch project under %TEMP%\heron-work\nk, Revit 2024 - a new
+# project, NOT workshared, holding five walls. Not workshared, the card puts
+# every wall in `editable` (accounting) and leaves every declared result
+# empty - owners, creators, lastChangedBy, ownedByOthers, changedInCentral -
+# which is OU18's negative. Revit 2024: the card's version 1 proof release,
+# and the release Heron Reads Test is saved in.
+#
+# THE ARRANGEMENT. filter-elements-by-category with no view, category Walls,
+# in each document; the chain's values are its own (`setup-set:`) and the
+# negative leg has the same (`negative-setup-set:`). The card takes no value.
+# A read; nothing in either model changes.
+#
+# BY HAND, NOT HERE: OU18's second read - Reload Latest in local A, then the
+# same run again, the moved wall now CurrentWithCentral - and Worksharing
+# Display > Model Updates in local A compared with `centralStatus`. The
+# card's earlier proof was D-53 tracking on a workshared model; this negative
+# is a different document because on a workshared one every element read
+# named its creator (the proof of 2026-09-09: creators 17 entries for 17).
+
+model: "a scratch workshared central's local A (OU18, two walls, one moved and synchronised from local B, one drawn in A and not synchronised) - needs the model's own name - and Heron Reads Test (not workshared), Revit 2024"
+
+defaults:
+  setup: [filter-elements-by-category, set-selection]
+
+jobs:
+  - fragment: report-element-ownership
+    expect: changedInCentral
+    negative-in: "Heron Reads Test"
+    setup-set:
+      category: "Walls"
+    negative-setup-set:
+      category: "Walls"
+    note: >
+      OU18. Positive, local A: the binding note "elements from the selection
+      (3)"; changedInCentral the wall local B moved, its centralStatus
+      UpdatedInCentral; the untouched wall CurrentWithCentral; the wall drawn
+      in A NotYetInCentral and not in changedInCentral - as Worksharing
+      Display > Model Updates shows in A. Negative, Heron Reads Test:
+      notWorkshared true, all five walls in editable, changedInCentral and
+      centralStatus EMPTY - any word in centralStatus there is the failure.

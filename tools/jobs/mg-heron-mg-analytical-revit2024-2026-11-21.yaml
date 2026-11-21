@@ -1,0 +1,51 @@
+# ASSOCIATE_ANALYTICAL_ELEMENTS (DRAFT) - NEEDS-CHECKING Group MG, row MG5, and
+# the 2026-11-16 night's morning list (Group OI: "the owner's hands ... a kept
+# DRAFT"). Written 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/mg-heron-mg-analytical-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/mg-heron-mg-analytical-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE MODEL (Group MG, MG1): "Heron MG Analytical", a scratch project new from
+# Revit's metric STRUCTURAL template, saved under %TEMP%\heron-work, Revit
+# 2024 - columns C1 and C2, beam B1 between them on Level 2, floor S1 on Level
+# 2, an architectural wall A1, the analytical model on. Never a working model.
+#
+# NOT A NIGHT JOB - IT NEEDS THE OWNER'S HANDS, TWICE (MG4, MG5, MG6):
+#   1. An analytical member M9 drawn by MG4's first line
+#      (`create-analytical-elements`, kind member, points 0,0,0; 6000,0,0,
+#      level Level 2) and KEPT with `try-once` - a DRAFT's one run is always
+#      asked (D-119). No set-up step can hand it on: a change step's elements
+#      cannot be selected by a read step after it (row 5b-917).
+#   2. M9 and B1 SELECTED BY HAND before the run - exactly two elements, one
+#      analytical and one physical. No selection card here selects one member
+#      and one beam together, so `setup:` is empty and the card binds Revit's
+#      own selection; read the binding note, "elements from the selection
+#      (2)" (rule 5).
+#
+# THE ARRANGEMENT. One selection, two VALUES (rule 5, not an emptied
+# selection): B1 is already tied to its own analytical member, so with
+# `replace` false the pair is refused naming that tie; with `replace` true the
+# old tie is removed first and named, and M9 is tied. Every write is ROLLED
+# BACK. The third MG5 case - M9 and a beam whose analytical member was deleted
+# in Revit - is by hand, as MG5 says.
+
+model: "Heron MG Analytical scratch project (metric structural template) with the member M9 kept from MG4, M9 and B1 selected by hand, Revit 2024"
+
+defaults:
+  write: true
+  in: "Heron MG Analytical"
+  setup: []
+
+jobs:
+  - fragment: associate-analytical-elements
+    expect: associated
+    set:
+      replace: "true"
+    negative-set:
+      replace: "false"
+    note: >
+      MG5. Negative - THE FIRST CASE TO RUN: replace false, associated 0,
+      refused naming B1's own analytical member - nothing changed. Positive:
+      replace true, associated 1, the report naming the old tie as removed
+      first and M9 now tied to B1, read back. Read both with
+      REPORT_ANALYTICAL_MODEL before and after (the second route).

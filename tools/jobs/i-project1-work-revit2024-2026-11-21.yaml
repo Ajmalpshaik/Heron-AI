@@ -1,0 +1,58 @@
+# SET_DESIGN_OPTION (DRAFT) - NEEDS-CHECKING Group I, row I1 ("It ran against a
+# model with no design options. `Project1 work_ajmal.al` has 1"), and the
+# 2026-11-16 night's morning list (Group OI: "the owner's hands ... a design
+# option"). Written 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/i-project1-work-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/i-project1-work-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE MODEL: "Project1 work_ajmal.al", Revit 2024 - the model Group I names as
+# holding one design option, and the one sweep-project1.yaml describes: in view
+# "1 - Mech", 4 walls, 1 door, 1 room, 5 ducts and 2 duct fittings. Use a
+# saved scratch copy, never a working model.
+#
+# NOT A NIGHT JOB - THE OWNER'S HANDS. No public API makes a design option
+# active (the card's purpose), so before the run he makes the option ACTIVE
+# from the status bar's Design Option list, and writes its name below in place
+# of the capitals. NEEDS THE MODEL'S OWN NAME: the option's name was never
+# recorded. Until it is written, the positive is refused listing the real
+# option names - which is the name to write.
+#
+# THE ARRANGEMENT. The positive: the 5 ducts in "1 - Mech", copied into the
+# active option. The negative is a different VALUE, an option name that does
+# not exist - refused with the real names listed, nothing copied
+# (tests/cases.yaml) - never an emptied selection (rules 3 and 5). The
+# negative-set carries every value, because it replaces the set. Every write
+# is ROLLED BACK. The card's other negative - the main model active and a
+# real option named - needs the option switched off by hand between legs, so
+# it is run by hand afterwards.
+
+model: "Project1 work_ajmal.al (scratch copy) with its one design option made active by hand, view 1 - Mech, Revit 2024"
+
+defaults:
+  write: true
+  in: "Project1 work_ajmal.al"
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: set-design-option
+    expect: copied
+    set:
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
+      designOptionName: "THE ACTIVE OPTION'S NAME"
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
+      designOptionName: "ZZZ NO SUCH OPTION"
+    note: >
+      Negative - THE FIRST CASE TO RUN: copied 0, the real option names listed,
+      nothing copied. Positive (the option active): copied 5, newElementIds the
+      5 copies, the read-back saying COPIED rather than moved, the originals
+      still in the main model. Check the active option is the same before and
+      after. Second route: switch the status bar between the option and the
+      main model - the copies come and go, the originals stay; and
+      REPORT_DESIGN_OPTIONS afterwards. Bound note: "elements from
+      set-selection (5)" or the selection's own count.

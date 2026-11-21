@@ -1,0 +1,74 @@
+# SET_WORKSHARING_OWNERSHIP (DRAFT, PUBLISH) - NEEDS-CHECKING Group EC, part 9
+# and row EC12 - and SYNC_WITH_CENTRAL (DRAFT, PUBLISH) - Group A, row A19,
+# and the 2026-11-16 night's morning list (Group OI: "No batch sends one").
+# Written 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/a-ec-workshared-scratch-revit2024-2026-11-21.yaml --dry-run
+#
+# BOTH ARE PUBLISH. No batch sends one (D-106): the dry run and the run report
+# WILL NOT RUN IN A BATCH and print, for each, the
+# `validate --allow-publish ... --write` command that IS the proof - the
+# owner's line, run by hand with his Publish and Changes switches on,
+# HERON_CLIENT_ID set and stdin closed.
+#
+# THE MODEL (Group EC, part 9): a WORKSHARED scratch - Collaborate >
+# Worksharing on a scratch project, saved as central, closed, a LOCAL copy
+# opened; a user workset "Heron Test Workset" added, synchronised, relinquish
+# all, so it is owned by nobody. Revit 2024, as Group EC. Never a working
+# model, and never a central anybody else uses: a sync reaches everybody on
+# the central. NEEDS THE MODEL'S OWN NAME: the local copy's document name was
+# not recorded (EC12 writes "<the local copy>"), so `in:` is left out and the
+# jobs run in the model in front - put the local copy in front.
+#
+# A ROLLBACK DOES NOT UNDO EITHER CARD'S WORK ON THE CENTRAL. EC12: "this one
+# leaves the workset owned; the `give` run puts it back". A sync is sent and
+# cannot be taken back. Run them in the order below.
+#
+# THE ARRANGEMENT. Ownership: the negative is a workset name that matches
+# none - a different VALUE (rule 5). Sync: the negative is ANOTHER MODEL that
+# is not workshared, "night-scratch" (Group OI: a file copy of Heron's
+# DefaultMetric scratch, never workshared), opened beside the local copy -
+# the card refuses it by name, pointing at SAVE_DOCUMENT (tests/cases.yaml).
+
+model: "a workshared scratch local copy with user workset Heron Test Workset owned by nobody (Group EC part 9), and night-scratch for the sync negative, Revit 2024"
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: set-worksharing-ownership
+    expect: changed
+    set:
+      action: "take"
+      worksetNames: "Heron Test Workset"
+    negative-set:
+      action: "take"
+      worksetNames: "Heron No Such Workset"
+    note: >
+      EC12. Negative - THE FIRST CASE TO RUN: a name that matches none,
+      changed 0, refused by name - no workset guessed by a near name.
+      Positive: changed 1, report "Heron Test Workset: editable by <me>";
+      Collaborate > Worksets shows Editable Yes, Owner this user, before and
+      after (the second route). Then by hand `action=give`: the workset given
+      back, Editable No.
+
+  - fragment: sync-with-central
+    expect: synchronised
+    negative-in: "night-scratch"
+    set:
+      comment: "Heron proof of sync-with-central"
+      relinquish: "true"
+    negative-set:
+      comment: "Heron proof of sync-with-central"
+      relinquish: "true"
+    note: >
+      A19. Negative - THE FIRST CASE TO RUN: night-scratch, synchronised
+      false, refused "'night-scratch' is not workshared, so there is no
+      central model to sync with. SAVE_DOCUMENT is what an ordinary file
+      wants". Positive: synchronised true, the finding "... synchronised with
+      central. Everything this user owned was relinquished ...". The real
+      check is a SECOND local of the same central reloading latest and editing
+      without a refusal (tests/cases.yaml). WATCH FOR "Revit refused the sync":
+      the card must run outside any transaction, and the write path opens
+      Heron's group round it - that answer is a finding, not a pass.
