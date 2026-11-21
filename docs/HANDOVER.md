@@ -105,10 +105,10 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
-**Where it stands on 2026-11-21, evening — read this first, then the table.** Every pull request merged that
-day is listed by `gh api -X GET search/issues -f q='repo:Ajmalpshaik/Heron-AI is:pr is:merged merged:2026-11-21'`, and
-[that day's sitting note](handover-archive/2026-11-21-the-day-s-merges-the-new-work-waits-for-revit-and-five-questions-for-the-owner.md)
-lists each one with what it leaves owed. In short:
+**Where it stands on 2026-11-21, evening — read this first, then the table.** [That day's sitting
+note](handover-archive/2026-11-21-the-day-s-merges-the-new-work-waits-for-revit-and-five-questions-for-the-owner.md)
+lists every pull request merged up to 19:50 UTC with what each leaves owed; the whole day's list is
+`gh api -X GET search/issues -f q='repo:Ajmalpshaik/Heron-AI is:pr is:merged merged:2026-11-21'`. In short:
 
 - **What met Revit that day:** Revit 2024 on the owner's PC - OI31 and Group OY passed, OU21 and OU22 ran on 2024
   ([#1178](https://github.com/Ajmalpshaik/Heron-AI/pull/1178)), and OX1 and OX2 passed

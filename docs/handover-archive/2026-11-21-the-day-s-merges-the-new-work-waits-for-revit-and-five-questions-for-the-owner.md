@@ -11,10 +11,10 @@
 
 Written to the rule in [section 11](../HANDOVER.md#11-handover--2026-09-12): what is NEW, a MISTAKE worth not
 repeating, what is still TO DO. A cloud session with no Revit, bringing the status pages up after the day's
-merges, with `origin/main` at `0429fc1c`. **Every number below is a record of this day, not a count to carry
+merges, with `origin/main` at `0429fc1c` when it began and `6aba1f57` when it ended. **Every number below is a record of this day, not a count to carry
 forward** - derive today's with the command beside it.
 
-**NEW - what merged on 2026-11-21.** The list is GitHub's, not typed from memory:
+**NEW - what merged on 2026-11-21, up to 19:50 UTC** (later merges that day are in `git log --first-parent origin/main`, not here). The list is GitHub's, not typed from memory:
 `gh api -X GET search/issues -f q='repo:Ajmalpshaik/Heron-AI is:pr is:merged merged:2026-11-21'` (dates in
 UTC; the first-parent log of `main` for the day starts at `d1f9cc20`). Each pull request's own page says what it
 changed and how it was checked.
@@ -52,6 +52,8 @@ changed and how it was checked.
 | [#1212](https://github.com/Ajmalpshaik/Heron-AI/pull/1212) | WN-7 (#1005): eight reading tools count what they pass over (D-64) - all DRAFT | [Group PK](../needs-checking/group-pk.md), [#1202](https://github.com/Ajmalpshaik/Heron-AI/issues/1202) |
 | [#1223](https://github.com/Ajmalpshaik/Heron-AI/pull/1223) | Row 132: three skill sentences reach the read that answers them (#959) | - |
 | [#1232](https://github.com/Ajmalpshaik/Heron-AI/pull/1232) | Register audit: every owed group tracked by an open issue, done checks taken off (D-187) | - |
+| [#1235](https://github.com/Ajmalpshaik/Heron-AI/pull/1235) | Work notes: three finished notes retired, every open item linked to its issue | - |
+| [#1256](https://github.com/Ajmalpshaik/Heron-AI/pull/1256) | Row 132: the owner's-PC re-ranker result recorded for #1223 | - |
 
 **What is DRAFT now** is derived, never typed: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 The cards today's pull requests changed, with the state each card says:
