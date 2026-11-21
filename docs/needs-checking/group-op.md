@@ -7,6 +7,8 @@
 
 ## Group OP - the owner's answers of 2026-11-19/20 in code: an empty `absent:` binds, replies carry dictionary entries whole, three one-reason refusals become one string, and a rollback that cannot take a job back says so (2026-11-20)
 
+**Tracked as GitHub issue [#1218](https://github.com/Ajmalpshaik/Heron-AI/issues/1218) since 2026-11-21** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The owner answered four rows in their GitHub issues, and one pull request made each change:
 [row 5b-1841](../fragment-issues/row-5b-1841.md) (issue #1041, answer A),
 [row 5b-194](../fragment-issues-archive/reading-defects-5b-176-200.md#row-5b-194) and
