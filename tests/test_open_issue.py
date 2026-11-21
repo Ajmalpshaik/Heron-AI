@@ -39,7 +39,8 @@ WHAT THIS PROVES
   8. THE OTHER REGISTERS, IN THEIR OWN FORMS: a NEEDS-CHECKING group gets
      its "Tracked as" line under its heading and lists only unstruck checks;
      one check gets a PLAIN line, so its bold id is still written once; a
-     question gets its line under its heading; an answered question, a
+     question gets its line under its heading - a question marked with its
+     priority colour too; an answered question, a
      tracked group, a moved row and a FIXED row are refused.
   9. LINE ENDINGS ARE KEPT: a CRLF file is written back CRLF.
 
@@ -139,7 +140,15 @@ QUESTIONS = (
     "### \u2705 Q-701 \u2014 Already answered *(answered)*\n\n"
     "**Answer:** yes.\n\n"
     "### Q-702 \u2014 Answered but no tick\n\n"
-    "**Answer:** no.\n"
+    "**Answer:** no.\n\n"
+    # THE REGISTER MARKS AN OPEN QUESTION BY ITS PRIORITY COLOUR (OPEN-QUESTIONS.md:
+    # red, orange, yellow, blue), and an answered one may keep its colour - its
+    # Answer paragraph is what marks it answered. Until 2026-11-21 the tool read
+    # only a bare id or a tick, so it found no colour-marked question at all.
+    "### \U0001F535 Q-703 \u2014 Can wait, and carries its colour *(new, 2026-11-21)*\n\n"
+    "The question.\n\n"
+    "### \U0001F7E1 Q-704 \u2014 Answered, and kept its colour\n\n"
+    "**Answer:** yes.\n"
 )
 
 
@@ -372,6 +381,14 @@ def main():
         q = text(root, "docs/open-questions/tier-1.md").split("\n")
         check(code == 0 and q[3] == "" and q[4].startswith("**Tracked as GitHub issue [#701]") and q[5] == "",
               "a question gets its line under its heading")
+        code, said, gh = run(root, ["Q-703", "--record", "703"])
+        q = text(root, "docs/open-questions/tier-1.md").split("\n")
+        at = [i for i, l in enumerate(q) if "Q-703" in l and l.startswith("###")]
+        check(code == 0 and len(at) == 1 and q[at[0] + 1] == ""
+              and q[at[0] + 2].startswith("**Tracked as GitHub issue [#703]"),
+              "a question marked with its priority colour is found, and gets its line under its heading")
+        code, said, gh = run(root, ["Q-704", "--record", "704"])
+        check(code == 1 and "answered" in said, "a coloured question with an Answer is refused as answered")
         for ident, what in (("Q-701", "a ticked question"), ("Q-702", "a question with an Answer"),
                             ("Q-700", "a question already tracked"), ("5b-9002", "a moved row"),
                             ("5b-8", "a FIXED row"), ("5b-424242", "a row that is not there"),
