@@ -480,6 +480,10 @@ def job_refusal(job, library, release=None):
                          "fragment runs. Add `negative-setup-set:` - the same "
                          "values, unless the negative is arranged differently")
 
+    unbound = unbound_refusal(job, library)
+    if unbound:
+        return REFUSED, unbound
+
     if job["expect"]:
         names = set(p.get("name") for p in frag.provides() or []
                     if isinstance(p, dict))
@@ -494,6 +498,79 @@ def job_refusal(job, library, release=None):
                          "'count_elements' or 'duct'" % job["cross"])
 
     return None, None
+
+
+def required_values(frag):
+    """The names of the `source: request` needs FRAG cannot run without - the
+    add-in's rule, heron_fragment.need_may_be_absent, as heron_validate reads it.
+    A card with no contract to read (a test's stand-in) needs none."""
+    needs = getattr(frag, "needs", None)
+    if not callable(needs):
+        return []
+    return [n.get("name") for n in needs() or []
+            if isinstance(n, dict) and HF.need_source(n) == "request"
+            and not HF.need_may_be_absent(n)]
+
+
+def unbound_refusal(job, library):
+    """Why a leg of JOB would leave a value its card cannot run without unbound,
+    or None (row 5b-1931).
+
+    EACH LEG'S VALUES ARE THE CLIENT'S, NOT A MERGE. heron_bridge_client hands
+    the fragment under test `values if using is None else using` - the
+    `negative-set:` INSTEAD of the `set:` on the negative leg, whenever there is
+    one - and the setup chain `setup-set`, else the leg's values; on the negative
+    leg `negative-setup-set`, else the `negative-set`, else the `set`. A step
+    that changes the model travels with the fragment on a write and runs on the
+    fragment's values (RevitFragment.RunSetupSteps). So a `negative-set:`
+    carrying only the value it varies leaves the region of a select-in-region
+    chain, and every other value, unbound - and the dry run said WOULD RUN for
+    exactly that job (tools/jobs/extend-roof-to-roof-oy-2026-11-20.yaml as first
+    written)."""
+    plain = job.get("set") or {}
+    negative = job.get("negative-set") or {}
+    legs = [("positive", plain, job.get("setup-set") or plain)]
+    if negative or job.get("negative-setup-set") or job.get("negative-in"):
+        fragment_values = negative or plain
+        legs.append(("negative", fragment_values,
+                     job.get("negative-setup-set") or fragment_values))
+    travels = set()
+    if job.get("write"):
+        for step in job.get("setup") or []:
+            card = library.get(step)
+            if card is None:
+                continue
+            risk = BRIDGE.fragment_risk(os.path.join(
+                card_root(card), "brain", "fragments", card.slug, "fragment.yaml"))
+            if risk in ("MODIFY", "PUBLISH", "ADMIN"):
+                travels.add(step)
+    for leg, fragment_values, setup_values in legs:
+        cards = [(step, fragment_values if step in travels else setup_values)
+                 for step in job.get("setup") or []]
+        cards.append((job["fragment"], fragment_values))
+        for name, values in cards:
+            card = library.get(name)
+            missing = [n for n in required_values(card) if n not in values] if card else []
+            if not missing:
+                continue
+            given = ", ".join(sorted(values)) or "nothing"
+            if leg == "negative" and negative:
+                how = ("A `negative-set:` REPLACES the `set:` rather than adding "
+                       "to it, so repeat in `negative-set:` every value the leg "
+                       "needs, or give the setup chain its own with "
+                       "`negative-setup-set:`")
+            else:
+                how = ("Give %s in `set:`%s" % (
+                    "it" if len(missing) == 1 else "them",
+                    ", or the setup chain its own with `setup-set:`"
+                    if name != job["fragment"] else ""))
+            return ("the %s leg would leave %s of %s unbound - %s - and %s cannot "
+                    "run without %s. That leg is given %s. %s (row 5b-1931)"
+                    % (leg, "a value" if len(missing) == 1 else "values",
+                       "setup step '%s'" % name if name != job["fragment"]
+                       else "the fragment", ", ".join(missing), name,
+                       "it" if len(missing) == 1 else "them", given, how))
+    return None
 
 
 def release_refusal(frag, release):

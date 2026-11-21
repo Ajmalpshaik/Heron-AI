@@ -74,8 +74,9 @@ out("markdown files: %d\n\n" % len(md))
 # run on to the next line, as GitHub renders a link a line break wraps (19 of
 # them on 2026-11-20, every one `[row` at a line's end and its number on the
 # next), but never past a blank line, which ends the paragraph a link is in. A
-# link written inside code is an example and is not judged.
-link = re.compile(r'\[((?:[^\]\n]|\n(?![ \t]*\n))*)\]\(([^)]+)\)')
+# link written inside code is an example and is not judged. The pattern is
+# register-text.py's PROSE_LINK, the one row_links() reads section 12's links
+# with too (row 5b-1926), so the two sections cannot read a page differently.
 heading = re.compile(r'^#{1,6} (.+)$', re.M)
 
 import importlib.util
@@ -83,6 +84,7 @@ _rt_spec = importlib.util.spec_from_file_location(
     'register_text', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'register-text.py'))
 _rt = importlib.util.module_from_spec(_rt_spec)
 _rt_spec.loader.exec_module(_rt)
+link = _rt.PROSE_LINK
 
 
 def anchor_of(text):

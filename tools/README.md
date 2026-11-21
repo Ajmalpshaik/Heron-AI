@@ -1191,6 +1191,17 @@ nothing and still says *"Nothing was sent to Revit"*. **The logic is held by
 [`tests/test_batch_prove.py`](../tests/test_batch_prove.py) on a stand-in Revit; the run against a real
 one is still owed** - NEEDS REAL REVIT, [Group NI](../docs/needs-checking/group-ni.md), NI1 to NI4.
 
+**Each leg is checked against the values it will really be given**
+([row 5b-1931](../docs/fragment-issues/row-5b-1931.md)). The client hands the negative leg the
+`negative-set:` **instead of** the `set:` - card and setup chain alike, unless `negative-setup-set:` gives
+the chain its own - so a `negative-set:` carrying only the value it varies leaves the chain's region and
+every other value unbound. The dry run said `WOULD RUN` for exactly that job on 2026-11-20. Now every card
+of each leg - the setup steps and the fragment - is read for the request values it cannot run without
+(`heron_fragment.need_may_be_absent`, the add-in's rule), and a leg that leaves one unbound is `REFUSED`,
+naming the leg, the card and the values. Measured that day: 32 of the 1,297 jobs in `tools/jobs/` are
+refused this way - jobs that cannot run as written today, the add-in refusing each for want of a value
+([row 5b-1934](../docs/fragment-issues/row-5b-1934.md)).
+
 **Hole 2 — it passed fragments that had done nothing.** `heron_validate` judges whether the NEGATIVE
 came back empty, which is [D-30](../docs/DECISIONS.md)'s leg and which a fragment that does nothing
 satisfies without trying. So the POSITIVE is judged too, by one rule: **a declared result has to have

@@ -687,6 +687,78 @@ def test_a_negative_that_would_hand_the_chain_the_wrong_values_is_refused():
           "and a chain with no values of its own reads the negative-set, as it always did")
 
 
+class FakeCard(FakeFragment):
+    """A stand-in that also has a contract's needs, for the binding check."""
+
+    def __init__(self, slug, needs, risk="READ"):
+        FakeFragment.__init__(self, slug, [{"name": "found"}], risk=risk)
+        self._needs = needs
+
+    def needs(self):
+        return self._needs
+
+
+def test_a_leg_that_would_leave_a_value_unbound_is_refused():
+    print("A leg whose values leave a card without one it needs is refused")
+    # Row 5b-1931: the client hands the negative leg the `negative-set` INSTEAD
+    # of the `set`, card and chain alike, so a negative-set carrying only the
+    # varied value left the select-in-region chain without its region and the
+    # card without its view - and the dry run said WOULD RUN.
+    request = lambda name, type_="string", **more: dict(
+        {"name": name, "type": type_, "source": "request"}, **more)
+    library = {
+        "region": FakeCard("region", [request("minMm", "XYZ"),
+                                      request("maxMm", "XYZ"),
+                                      request("exact", "bool", optional=True)]),
+        "extender": FakeCard("extender", [
+            {"name": "doc", "type": "Document"},
+            request("view3d", "View3D"),
+            request("maxExtendMm", "double", optional=True, absent="NaN"),
+            {"name": "elements", "type": "IList<Element>"}]),
+    }
+    region = {"minMm": "0,0,0", "maxMm": "1,1,1"}
+    base = {"fragment": "extender", "setup": ["region"],
+            "set": dict(region, view3d="{3D}", maxExtendMm="10000"),
+            "negative-set": {"maxExtendMm": "500"}, "write": False,
+            "cross": None, "in": None, "negative-in": None, "expect": None,
+            "timeout": 60}
+    verdict, why = BP.job_refusal(base, library)
+    check(verdict == BP.REFUSED and "negative leg" in (why or "")
+          and "minMm" in why and "maxMm" in why and "'region'" in why,
+          "a negative-set with only the varied value is refused, naming the "
+          "chain's unbound region (%s)" % why)
+    check("REPLACES" in (why or "") and "5b-1931" in (why or ""),
+          "and it says why: the negative-set replaces the set")
+
+    job = dict(base, **{"negative-set": dict(region, maxExtendMm="500")})
+    verdict, why = BP.job_refusal(job, library)
+    check(verdict == BP.REFUSED and "the fragment" in (why or "")
+          and "view3d" in why and "maxExtendMm" not in why.split(" - ")[1],
+          "with the region repeated, the card's own unbound view is named - "
+          "and a value its card may leave out is not (%s)" % why)
+
+    job = dict(base, **{"negative-set": dict(region, view3d="{3D}", maxExtendMm="500")})
+    check(BP.job_refusal(job, library)[0] is None,
+          "every value repeated in the negative-set: runnable")
+
+    job = dict(base, **{"negative-set": {"view3d": "{3D}", "maxExtendMm": "500"},
+                        "negative-setup-set": region})
+    check(BP.job_refusal(job, library)[0] is None,
+          "the region given to the chain by negative-setup-set instead: runnable")
+
+    job = dict(base, set={"view3d": "{3D}"},
+               **{"negative-set": dict(region, view3d="{3D}")})
+    verdict, why = BP.job_refusal(job, library)
+    check(verdict == BP.REFUSED and "positive leg" in (why or "")
+          and "`set:`" in why and "REPLACES" not in why,
+          "and a positive leg missing a value is refused too, told to give it in "
+          "`set:` (%s)" % why)
+
+    job = dict(base, **{"negative-set": {}, "negative-in": "Other model"})
+    check(BP.job_refusal(job, library)[0] is None,
+          "a negative arranged in another model runs on the set's values: runnable")
+
+
 def test_the_job_file_is_checked_against_the_contract():
     print("A mistyped name in the job file is caught before Revit is touched")
 
@@ -1482,6 +1554,7 @@ def main():
                  test_every_proven_fragment_in_the_library_is_refused,
                  test_a_job_with_no_negative_arrangement_is_refused,
                  test_a_negative_that_would_hand_the_chain_the_wrong_values_is_refused,
+                 test_a_leg_that_would_leave_a_value_unbound_is_refused,
                  test_the_job_file_is_checked_against_the_contract,
                  test_an_admin_or_publish_fragment_is_never_sent_by_a_batch,
                  test_defaults_merge_key_by_key,
