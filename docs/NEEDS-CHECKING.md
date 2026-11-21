@@ -1670,6 +1670,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pg.md`](needs-checking/group-pg.md)
 
+## Group PH - the skill runner's first runs: a job method's plan run whole, both legs, judged and signed by a person (2026-11-21)
+
+**Its own file:** [`needs-checking/group-ph.md`](needs-checking/group-ph.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
