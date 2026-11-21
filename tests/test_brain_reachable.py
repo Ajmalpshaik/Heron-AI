@@ -963,12 +963,24 @@ def main():
             layout = BRAIN.method("builders-work-layout")
             # Read as words: a step's own lines keep their breaks in the YAML.
             steps = " ".join((layout or {}).get("purpose", "").split())
-            check(layout is not None and all(
-                      gap in steps for gap in (
-                          "GAP - KEEP A FACE",
-                          "GAP - A TAG ON AN OPENING INSIDE A LINK")),
-                  "the builders work method names its two gaps, so a chat "
-                  "says so at that step instead of working round one")
+            check(layout is not None
+                  and "GAP - A TAG ON AN OPENING INSIDE A LINK" in steps,
+                  "the builders work method names its gap, so a chat says so "
+                  "at that step instead of working round one")
+            # KEEP A FACE WAS A GAP THE LIBRARY HAD CLOSED (row 5b-1957). Step
+            # 5 said "not on main yet" while SET_PARAMETER_VALUES_BY_ID had
+            # carried keepFace since its version 3 (row 5b-610, the same day
+            # as the method), so a chat told the modeller Heron had no tool
+            # for a job one card does. It names the card and its input now,
+            # and the card is in what heron_method serves beside the steps.
+            check(layout is not None
+                  and "GAP - KEEP A FACE" not in steps
+                  and "SET_PARAMETER_VALUES_BY_ID" in steps
+                  and "keepFace=outside" in steps
+                  and "SET_PARAMETER_VALUES_BY_ID" in
+                  [u["capability"] for u in layout["uses"]],
+                  "and step 5 keeps the outside face with "
+                  "SET_PARAMETER_VALUES_BY_ID's keepFace, which it serves")
             # Its third gap, replacing a family at the same place, is the
             # replace method since row 5b-740 - so step 4 sends a chat there.
             check(layout is not None

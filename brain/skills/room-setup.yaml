@@ -18,9 +18,11 @@ purpose: >
   order the modeller reads the plan for numbering, named, and tagged in
   their plan - and then, when asked, a floor or a ceiling in each room, the
   shape of the room, shafts and columns cut out. For an MEP model the same
-  steps make Spaces; which of the two is always said, never guessed. ONE
-  STEP HAS NO TOOL A CHAT CAN KEEP TODAY - writing the running numbers, step
-  5 - and the method says what is done instead.
+  steps make Spaces; which of the two is always said, never guessed.
+  Writing the running numbers, step 5, waited for RENUMBER_SEQUENTIAL to be
+  proved; it was on 2026-11-14, so step 5's ONCE IT IS PROVEN is the route
+  while the list served after this method says PROVEN, and the modeller types
+  the numbers only while it says DRAFT.
 
   The status in brackets after each capability is what that capability's own
   fragment.yaml said on 2026-11-11. The list of capabilities after this method
@@ -39,7 +41,8 @@ purpose: >
      revit_levels for the levels by name; revit_phases for the phases by
      their exact names. WHEN THE WALLS ARE IN A LINKED MODEL - the usual case
      for an MEP model - rooms and spaces stop at them only while that link is
-     Room Bounding: LIST_LINKED_MODELS (PROVEN), then SET_LINK_ROOM_BOUNDING
+     Room Bounding: LIST_LINKED_MODELS (DRAFT since its version 2 of
+     2026-11-20, a read, so it runs and says so), then SET_LINK_ROOM_BOUNDING
      (DRAFT, version 3 since 2026-11-20; version 2 is the one proved) with linkName and roomBounding on. It is the link
      TYPE's setting and touches a linked model, so the modeller is asked for
      that one change first (Constitution Article 7).
@@ -65,11 +68,13 @@ purpose: >
      opening the modeller points at, CREATE_ROOM_SEPARATION_LINES (PROVEN,
      version 2) with lineKind room or space and the points in millimetres;
      then step 3 for that area and this step again.
-  5. NUMBER THEM - NO TOOL A CHAT CAN KEEP WRITES THE NUMBERS TODAY. The
-     capability built for it is RENUMBER_SEQUENTIAL - a running number in
-     the order it is handed, with a prefix, a first number and a width - and
-     it is DRAFT: version 3, its proof older than its code, so revit_change
-     refuses it (D-117). ITS TRY-ONCE IS NOT A WAY ROUND FOR THIS JOB. A
+  5. NUMBER THEM. The capability built for it is RENUMBER_SEQUENTIAL - a
+     running number in the order it is handed, with a prefix, a first number
+     and a width. It was DRAFT when this step was written - version 3, its
+     proof older than its code - and version 3 was proved on 2026-11-14; the
+     list served after this method says which it is now. PROVEN there: ONCE
+     IT IS PROVEN, at the end of this step. DRAFT there: revit_change refuses
+     it (D-117), and ITS TRY-ONCE IS NOT A WAY ROUND FOR THIS JOB. A
      version is kept ONCE and a second run is refused, so the next level
      could never be numbered; it acts on whatever is selected in Revit, not
      on an order worked out before it; and while Revit's Keep or Discard box
@@ -102,8 +107,10 @@ purpose: >
   6. NAME THEM, by their numbers - in step 5's table as they are numbered,
      or in one write. For the write: read the modeller the list, each number
      and the name it gets, and get their yes for this one write - a bulk
-     parameter write (Article 7). Then SET_PARAMETER_VALUES_BY_ID (PROVEN,
-     version 7) with rows keyed on the number -
+     parameter write (Article 7). Then SET_PARAMETER_VALUES_BY_ID (DRAFT
+     since its version 10 of 2026-11-20 - while the list served after this
+     method says DRAFT, revit_change refuses it and the names go in step 5's
+     table) with rows keyed on the number -
      "key=Number|in=Rooms;101|Name=Lift Lobby;102|Name=Staircase 1" - the
      names exactly as the modeller gave them. A number that matches no room,
      or several, is refused for that row alone and named. Then
