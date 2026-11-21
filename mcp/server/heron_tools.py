@@ -396,7 +396,8 @@ TOOLS = {
 
     # The sheet register reader (docs/48 s5 item 7). READ, no operation: it
     # reads the .xlsx or .csv the modeller names - a file on their own PC -
-    # and hands back the rows and the value CREATE_SHEETS_FROM_TABLE takes. It
+    # and hands back the rows and the `sheets` value CREATE_SHEETS takes
+    # (CREATE_SHEETS_FROM_TABLE's until it was merged there, 2026-11-21). It
     # reaches no Revit and writes nothing; making the sheets is revit_change
     # (or, while that card is DRAFT, the command line and try-once).
     "heron_sheet_list":         (READ,    None),

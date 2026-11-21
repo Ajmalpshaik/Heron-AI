@@ -16,8 +16,9 @@ WHAT IT PROVES
   1. It is declared READ with no operation - it reaches no Revit.
   2. Through the server's own function: a CSV register gives its sheets and
      the exact `sheets=` value; the route it names follows the status the
-     card CREATE_SHEETS_FROM_TABLE has on disk today, read the way the server
-     reads it; an .xls is refused in words.
+     card the reader names (CREATE_SHEETS since 2026-11-21, when
+     CREATE_SHEETS_FROM_TABLE was merged into it - D-193) has on disk today,
+     read the way the server reads it; an .xls is refused in words.
 
 It needs the MCP SDK and exits 3 without it - NOT a pass. The reader itself,
 which needs nothing, is tests/test_sheet_list.py.
@@ -66,8 +67,16 @@ def tool(folder):
     value = L.card_value(L.read(path))
     check("2 sheet(s) to make" in said and "sheets=" + value in said,
           "a CSV gives its sheets and the exact value")
-    _folder, status = S._fragment_for("CREATE_SHEETS_FROM_TABLE")
+    card = getattr(L, "CARD", "CREATE_SHEETS_FROM_TABLE")
+    folder_of, status = S._fragment_for(card)
     check(status is not None, "the card is found on disk, at %s" % status)
+    check(card == "CREATE_SHEETS" and folder_of is not None
+          and os.path.basename(os.path.normpath(folder_of)) == getattr(L, "CARD_FOLDER", None)
+          and (status or "").upper() not in ("DEPRECATED", "ARCHIVED"),
+          "the card the chat is sent to is live, and its folder is the one the commands name: %s %s"
+          % (card, folder_of))
+    check("CREATE_SHEETS_FROM_TABLE" not in said and "create-sheets-from-table" not in said,
+          "the retired CREATE_SHEETS_FROM_TABLE is named nowhere in the answer")
     if (status or "").upper() in ("PROVEN", "PRODUCTION"):
         check("revit_change with previewOnly=true" in said, "PROVEN: revit_change is named")
     else:

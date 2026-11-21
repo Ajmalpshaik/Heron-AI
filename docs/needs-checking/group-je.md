@@ -54,6 +54,8 @@ The title blocks are two families from Revit 2020's own library, loaded into all
 | **JE6** | *Revit 2024.* JE0 to JE5 on the 2024 copy, JE3 with `--release 2024` once the first release is signed | The same answers |
 | **JE7** | *Revit 2027.* JE0 to JE5 on the 2027 copy, JE3 with `--release 2027` | The same answers |
 
+**Since 2026-11-21, JE1's `create-sheets --write --apply` is refused until Group OZ is signed** (found by the review of [D-193](../decisions/D-193.md)'s merge): `CREATE_SHEETS` went back to DRAFT at version 4, and the bridge client refuses `--apply` for a DRAFT card ([D-117](../DECISIONS.md)). For JE6 and JE7 before then, make JE1's three sheets **by hand** - Revit's New Sheet on *C 17 x 22 Horizontal*, numbers JE-01 to JE-03, names *JE one*, *JE two*, *JE three* - and keep them; do not spend version 4's one `try-once` on this setup ([D-119](../DECISIONS.md)). Once [Group OZ](group-oz.md) is signed, JE1 runs as written.
+
 The handed-twice route in `cases.yaml` is not arranged here: a selection never holds one sheet twice, and no
 setup step in the library hands one in twice.
 

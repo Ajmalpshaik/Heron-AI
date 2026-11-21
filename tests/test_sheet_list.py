@@ -44,7 +44,8 @@ WHAT IT PROVES
      row; more than 1,000 rows is refused.
 
 WHAT IT CANNOT DO: say that Revit makes the sheets. That is NEEDS-CHECKING
-Group MY, on a real model.
+Group OZ (Group MY's checks, carried there when CREATE_SHEETS_FROM_TABLE was
+merged into CREATE_SHEETS version 4 on 2026-11-21), on a real model.
 """
 
 from __future__ import print_function
@@ -341,9 +342,18 @@ def section_answer(folder):
           "the exact value is given, and given ONCE")
     check("titleBlockName: ASK the modeller" in draft and "--set 'titleBlockName=...'" in draft,
           "with no Title Block column, the title block is to be asked - no default")
-    check("revit_change refuses it (D-117)" in draft and "fragment create-sheets-from-table" in draft
+    check("revit_change refuses it (D-117)" in draft and "fragment create-sheets --set" in draft
           and "--write --set previewOnly=true" in draft and "try-once in place of fragment" in draft,
           "while DRAFT: the command-line preview, rolled back, and the one try-once")
+    # 2026-11-21: CREATE_SHEETS_FROM_TABLE was merged into CREATE_SHEETS
+    # version 4 (D-193) and is DEPRECATED - every command and every card name
+    # the chat is given is the keeper's, never the retired card's.
+    card = getattr(L, "CARD", None)
+    check(card == "CREATE_SHEETS" and getattr(L, "CARD_FOLDER", None) == "create-sheets",
+          "the reader names the card it writes for once: CREATE_SHEETS, create-sheets (%r)" % (card,))
+    check("create-sheets-from-table" not in draft and "CREATE_SHEETS_FROM_TABLE" not in draft
+          and "CREATE_SHEETS is DRAFT" in draft,
+          "and never the retired CREATE_SHEETS_FROM_TABLE, in a command or in words")
     check("Nothing in Revit was touched" in draft, "it says it touched no model")
     check("sheetNumbers=M-101, M-102, 105" in draft and "FIND_SHEETS through revit_read" in draft,
           "the numbers for FIND_SHEETS, the read that says which are already used")
@@ -351,6 +361,8 @@ def section_answer(folder):
     check("revit_change with previewOnly=true first" in proven and "try-once" not in proven
           and proven.count(value) == 1,
           "once PROVEN: revit_change, previewing first, the value once")
+    check(proven.count("CREATE_SHEETS: revit_change") == 1 and "CREATE_SHEETS_FROM_TABLE" not in proven,
+          "once PROVEN, the card named is CREATE_SHEETS")
     check(L.chat_answer({"ok": False, "refused": "'x' was not read: because"}) == "'x' was not read: because",
           "a refusal is said as it is")
 
@@ -533,7 +545,7 @@ def main():
         print("%d FAILED" % len(FAILURES))
         return 1
     print("All passed. That is the reader agreeing with these files - not evidence that "
-          "Revit makes the sheets (NEEDS-CHECKING Group MY).")
+          "Revit makes the sheets (NEEDS-CHECKING Group OZ).")
     return 0
 
 

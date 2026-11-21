@@ -108,7 +108,7 @@ the card's own; nothing here was run in Revit.
 | Duplicates and overlaps | `find-duplicate-elements` PROVEN | **Have** |
 | Clash with links | `find-clashes` PROVEN | **Have** |
 | Title block overlap | `report-sheet-title-blocks` exists; overlap check not found | **Unsure** |
-| Sheets from Excel | `create-sheets` PROVEN; `import-parameter-values` DEPRECATED. `create-sheets-from-table` (DRAFT, 2026-11-09) makes them from a spreadsheet with their parameters, read by the chat tool `heron_sheet_list` - [§5.3](#53-item-7---sheets-from-excel) | **Built, not run in Revit** |
+| Sheets from Excel | `create-sheets` makes them from a spreadsheet with their parameters, read by the chat tool `heron_sheet_list` - its version 4 since 2026-11-21, DRAFT until [Group OZ](needs-checking/group-oz.md) ([D-193](decisions/D-193.md)); `create-sheets-from-table` (built 2026-11-09, PROVEN 2026-11-13) was merged into it and is DEPRECATED; `import-parameter-values` DEPRECATED - [§5.3](#53-item-7---sheets-from-excel) | **Built, not run in Revit** |
 | Views, sections per room | `duplicate-views`, `create-section-view`, `create-room-elevations` | **Have** |
 | Rebar from a spec or PDF | rebar fragments (`place-beam-rebar`, `place-column-rebar` ...) and the `reinforce-concrete` method, extended 2026-11-09 to read the spec and confirm it first; `check-rebar-against-spec` (DRAFT, 2026-11-09) checks the placed bars against it - anchorage never passed - [§5.4](#54-item-8---rebar-from-a-spec) | **Built, not run in Revit** |
 | Parametric family agent | `family-creation` and the other `brain/skills/*-family-creation.yaml` skills, [43](43-building-revit-families.md) | **Have - deeper** |
@@ -174,7 +174,7 @@ DRAFT, until proven on a real model. Ordered by value to an MEP modeller against
 | 4 | **Plain-language QA rule to saved checklist** - the host turns a sentence into a check that maps onto existing `check-*` fragments; the checklist runs in one call and reports. **Built 2026-11-08, not run in Revit: [docs/50](50-qa-checklists.md)** | Heron has the checks; it lacks the saved list | `heron_modelqa.py`, `heron-model-auditor` |
 | 5 | **3D to 2D MEP schematic** - one system traced, drawn as single lines on a drafting view, with sizes, flow and pressure drop. **Built 2026-11-08 as `DRAW_MEP_SCHEMATIC`, DRAFT and not run in Revit that day - its status since is on its card: [§5.1](#51-item-5---the-mep-schematic)** | Real MEP value, and Heron already has the trace and the maths | `trace-connectivity`, `report-mep-pressure-drop`, `heron_hvac` (`heron_graph.py`, named here first, is the graph of fragments, not of ducts - not used) |
 | 6 | **CAD lines to ducts and pipes** - read the CAD layer, ask size and type, draw the run. **Built 2026-11-09 as `DRAW_MEP_FROM_CAD` (DRAFT) and the `cad-to-mep` method, not run in Revit: [§5.2](#52-item-6---cad-lines-to-ducts-and-pipes)** | Common job on Gulf projects with CAD backgrounds | `extract-cad-curves`, `create-mep-runs`, `fit-mep-joints` (the `duct-layout` skill, named here first, is a unit ducted to its diffusers - not extended) |
-| 7 | **Sheets from Excel** - read the sheet list from a spreadsheet, preview, create. **Built 2026-11-09 as `CREATE_SHEETS_FROM_TABLE` (DRAFT), the `heron_sheet_list` tool and the `sheets-from-excel` method, not run in Revit: [§5.3](#53-item-7---sheets-from-excel)** | Small, quick win | `create-sheets` (not extended - it is PROVEN; `set-parameter-values-by-id` would be a second call) |
+| 7 | **Sheets from Excel** - read the sheet list from a spreadsheet, preview, create. **Built 2026-11-09 as `CREATE_SHEETS_FROM_TABLE`, the `heron_sheet_list` tool and the `sheets-from-excel` method; the card was signed PROVEN 2026-11-13 and merged 2026-11-21 into `CREATE_SHEETS` version 4, DRAFT until Group OZ (D-193): [§5.3](#53-item-7---sheets-from-excel)** | Small, quick win | `create-sheets` (not extended then - it was PROVEN; `set-parameter-values-by-id` would be a second call. Extended 2026-11-21 as its version 4) |
 | 8 | **Rebar from a spec** - read the bar sizes and covers from a given spec, then place, then check anchorage and bar length. **Built 2026-11-09 as `CHECK_REBAR_AGAINST_SPEC` (DRAFT) and the `reinforce-concrete` method extended, not run in Revit: [§5.4](#54-item-8---rebar-from-a-spec)** | Structural, lower for MEP | rebar fragments, `reinforce-concrete` (extended, not copied; `report-host-rebar` not edited - it is PROVEN) |
 | Later | Dynamo graph to recipe; ACC (after a decision) | | |
 
@@ -264,7 +264,8 @@ C:\...\sheet list.xlsx"* (or .csv) - the method [`sheets-from-excel`](../brain/s
   part at most 8 MB), and while the card is DRAFT its command line is printed only up to 30,000 characters - a
   Windows command line holds 32,767 - above which the modeller splits the file.
 - **Creating is one capability** - [`create-sheets-from-table`](../brain/fragments/create-sheets-from-table/fragment.yaml)
-  (`CREATE_SHEETS_FROM_TABLE`, MODIFY), one call, one undo. **The table reaches Revit as ONE value** - rows `;`,
+  (`CREATE_SHEETS_FROM_TABLE`, MODIFY; since 2026-11-21 the `sheets` input of
+  [`create-sheets`](../brain/fragments/create-sheets/fragment.yaml) version 4, D-193), one call, one undo. **The table reaches Revit as ONE value** - rows `;`,
   cells `|`, a `;` `|` `%` or `"` in a cell percent-encoded - the shape `SET_PARAMETER_VALUES_BY_ID`'s `rows` and
   the Companion's table Apply already use: a chat value loses its line breaks, and `CREATE_SHEETS`' own lists
   cross as comma-separated values that drop an empty name and split a name with a comma. Every title block named
@@ -279,12 +280,14 @@ C:\...\sheet list.xlsx"* (or .csv) - the method [`sheets-from-excel`](../brain/s
   preview, ask about every column that matches nothing (D-33, D-34), create, Keep or Discard. **While the card is
   DRAFT no chat tool runs it** - `revit_read` refuses a MODIFY and `revit_change` a DRAFT (D-117): the preview is the
   command line, rolled back, and the creation is the one `try-once` (D-119); `heron_sheet_list` prints both.
-- **The overlap** with `CREATE_SHEETS` and `SET_PARAMETER_VALUES_BY_ID` (both PROVEN, neither edited), why
+- **The overlap** with `CREATE_SHEETS` and `SET_PARAMETER_VALUES_BY_ID` (both PROVEN then, neither edited), why
   `IMPORT_PARAMETER_VALUES` is not a route (DEPRECATED, merged into `SET_PARAMETER_VALUES_BY_ID`), the routing
   measured before and after - after the independent review's changes no question reaches it on lexical or model;
   the re-ranked backend is still to be asked on the owner's PC - and the merge planned once it is proved:
-  [row 5b-1486](fragment-issues/section-5b-rows-1476-1500.md).
-- **What a real Revit must show:** [NEEDS-CHECKING Group MY](needs-checking/group-my.md) - the D-30 negative (a title
+  [row 5b-1486](fragment-issues/section-5b-rows-1476-1500.md), done 2026-11-21 on the owner's word
+  ([row 5b-1875](fragment-issues/row-5b-1875.md), [D-193](decisions/D-193.md)).
+- **What a real Revit must show:** [NEEDS-CHECKING Group MY](needs-checking/group-my.md), carried since 2026-11-21 to
+  [Group OZ](needs-checking/group-oz.md) with the merged card's three rules - the D-30 negative (a title
   block that does not exist: nothing made), the preview, title block instance and type columns, Yes/No, dates and
   read-only columns, names Revit refuses, a real register and its time, Revit 2020 and 2025 or later, and the whole
   method in a chat.
