@@ -624,3 +624,8 @@ utterances:
   - update parameters from this Excel
   - I exported the parameters to excel and edited them, now put them back
   - bring the edited spreadsheet back into the model
+  # ADDED 2026-11-21, row 5b-1946 (issue #956), on the owner's word that day
+  # ("fix the remaining open rows in 956"). Spreadsheet edits coming back, in other
+  # words. At the END, so the eight the
+  # re-ranker reads (D-134) are unchanged.
+  - bring my csv edits into the model

@@ -53,17 +53,23 @@ def add(store, fid, capability, status="DRAFT", risk="READ",
     store.db.commit()
 
 
-def _door_chooser(repo):
+def _door_chooser(repo, in_front=None):
     """The server's own `_fragment_for`, read from its source and run with
-    its library at `repo` - the doors' chooser, without the MCP SDK."""
+    its library at `repo` - the doors' chooser, without the MCP SDK. The
+    Revit in front is `in_front` (a release, or None for not known), stood
+    in for the server's look-only `_revit_version`."""
     sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
     import heron_tools as TOOLS
     import heron_brain as BRAIN
+    import heron_bridge_client as BRIDGE
     import io as _io
     text = TOOLS.server_text()
     start = text.index("\ndef _fragment_for(")
     end = text.index("\n# ", start)
-    names = {"os": os, "io": _io, "brain": BRAIN, "_repo_root": lambda: repo}
+    names = {"os": os, "io": _io, "brain": BRAIN, "bridge": BRIDGE,
+             "_repo_root": lambda: repo,
+             "_revit_version": lambda: (in_front, "stood in by the suite")}
     exec(compile(text[start:end], "heron_mcp_server.py", "exec"), names)
     return names["_fragment_for"]
 
@@ -334,6 +340,48 @@ def main():
                 check(got[0] == want and agreed,
                       "%s -> the doors take %s, resolve %s" % (
                           what, got[0], chosen.providers[0] if chosen else "nothing"))
+
+            print()
+            print("10. Two cards for one job: the doors skip one that does not "
+                  "claim the Revit in front (5b-1131)")
+            # The owner, 2026-11-21: "yes skip it and take the next card".
+            # resolve drops a provider that does not claim the release it is
+            # given; the doors did not look at a card's releases at all, so
+            # with the newer card on 2020 only and Revit 2024 in front, they
+            # sent the 2020 card and Revit's compile answered.
+            for folder, fid, version, revit in (
+                    ("aaa-rel-newer-2020", "FRG-REL-002", "9", "2020"),
+                    ("zzz-rel-older-2024", "FRG-REL-001", "2", "2024")):
+                path = os.path.join(library, folder)
+                os.makedirs(path)
+                with open(os.path.join(path, "fragment.yaml"), "w") as handle:
+                    handle.write('id: %s\ncapability: REL_CASE\nheron-status: PROVEN\n'
+                                 'version: %s\nrevit: ["%s"]\n' % (fid, version, revit))
+                add(store, fid, "REL_CASE", status="PROVEN", folder=path, revit=revit)
+            repo = os.path.join(home, "repo")
+            for front, want, what in (
+                    ("2024", "zzz-rel-older-2024",
+                     "Revit 2024 in front: the newer card claims only 2020, so the next"),
+                    ("2020", "aaa-rel-newer-2020",
+                     "Revit 2020 in front: the newer card claims it, so that one"),
+                    (None, "aaa-rel-newer-2020",
+                     "the Revit in front not known: the order alone, as before"),
+                    ("2027", "aaa-rel-newer-2020",
+                     "neither card claims the Revit in front: the order alone - sent, "
+                     "and Revit's compile answers, as with one card")):
+                got = _door_chooser(repo, in_front=front)("REL_CASE")
+                chosen = CAP.resolve(store, "REL_CASE", revit=front) if front in (
+                    "2020", "2024") else None
+                agreed = chosen is None or (
+                    _top_level_id(os.path.join(library, got[0] or "", "fragment.yaml"))
+                    == chosen.providers[0])
+                check(got[0] == want and agreed,
+                      "%s -> the doors take %s%s" % (
+                          what, got[0],
+                          ", resolve %s" % chosen.providers[0] if chosen else ""))
+            got = _door_chooser(repo, in_front="2024")("ONE_CASE")
+            check(got[0] == "only-one",
+                  "one card is sent whatever it claims, as before -> %s" % got[0])
         finally:
             store.close()
     finally:
