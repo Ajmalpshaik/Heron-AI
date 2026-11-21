@@ -16,6 +16,7 @@
 > | **C09** — library documentation | **Done.** `brain/README.md` said *thirty-two fragments, every one DRAFT* and *the executor is not built*. Both were false. Corrected, with the recomputing command named beside the numbers so the next drift is visible |
 > | **N01–N09** — the nine new capabilities | **Done.** All nine exist, all `DRAFT`, all compiling on eight releases. Listed below |
 > | C01, C02, C05–C08 · S01–S05 | **Not started.** Each needs a live model or a contract decision. Unchanged below |
+> | *Read 2026-11-21* | C01, C02, C07 and C08 were built 2026-11-20 and 2026-11-21 (WN-1 to WN-4 of issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005), each item's own line below); C06 reads done in code; **C05 is open** (WN-79, #1005) and **S01-S05 wait for the owner** (WN-59, issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012)) |
 >
 > **The nine new capabilities, added 2026-09-08:**
 >
@@ -146,6 +147,8 @@ The terminal connector helper returns the first End connector, without a domain 
 
 **Acceptance:** Mixed input categories, a family with multiple connector domains, misleading connection flags, and a nearer incompatible duct beside a valid candidate. Rejected inputs must not be counted as connected.
 
+*(tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-21 (WN-79). Read that day in `connect-air-terminals` version 2: the terminal's connector is still the first End one with no domain check, `IsConnected` still decides both the skip and the result, and the nearest duct is still chosen before any compatibility filter - so C05 is open.)*
+
 ### C06 — Preserve ownership uncertainty (P2)
 
 **Fragments:** `read-element-ownership`, `report-element-ownership`  
@@ -156,6 +159,8 @@ One records an unreadable checkout status as owned by an unknown person; the oth
 **Proposed change:** Introduce an explicit unknown-status result with a reason. Share the classification policy while retaining the richer report's creator and last-changer information. Treat editability as advisory, not a guarantee of a later write.
 
 **Acceptance:** Unreadable ownership appears as unknown in both APIs; non-workshared models and known owners retain their intended results.
+
+*done in code - read 2026-11-21, not run in Revit: the two fragments are one since 2026-11-01 - `read-element-ownership` is DEPRECATED, merged into `REPORT_ELEMENT_OWNERSHIP` - and that card (version 3, DRAFT) puts an element whose status cannot be read in `ownedByOthers` with "unknown" as its owner, and reads an unreadable central status as "unknown", never "current". Its Revit run is owed with WN-5's (issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005)).*
 
 ### C07 — Preserve loop structure in room geometry (P2)
 

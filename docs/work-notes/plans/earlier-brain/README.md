@@ -8,6 +8,10 @@
 > [`02-work-packages.md` §0](02-work-packages.md) **and nowhere else.** Opened 2026-09-23. **Owner:** Ajmal PS.
 > **Read 2026-10-18:** §0 there shows every package merged, done or dropped on the owner's word except
 > **C8**, *not started*. What keeps this folder open is C8 and the PC proofs in [05](05-pc-proving.md).
+> **Read 2026-11-21: C8 is done too** - its row in §0 says where each item went. What keeps the folder now:
+> the PC proofs in [05](05-pc-proving.md) (WN-76, issue [#1014](https://github.com/Ajmalpshaik/Heron-AI/issues/1014),
+> and the NEEDS-CHECKING groups each §0 row names) and the owner's data in [03](03-owner-data.md), loaded
+> nowhere since C5 was dropped (WN-60, issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012)).
 
 ---
 

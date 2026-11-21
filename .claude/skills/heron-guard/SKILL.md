@@ -65,9 +65,13 @@ not this hook's, and one more reason `check-structure.py` still runs before ever
 ## The second rule — the owner's switches, D-166
 
 [D-166](../../../docs/decisions/D-166.md) layer 1, accepted by the owner from proposal
-[F45](../../../docs/proposals/f45.md). Changes, Admin and Publish are `write.enabled`, `admin.enabled` and
+[F45](../../../docs/proposals/f45.md). Changes, Admin and Publish were `write.enabled`, `admin.enabled` and
 `publish.enabled` in `%APPDATA%\Heron\config\heron.config` - a file every program running as the
-modeller can write, read fresh on every request. So the hook also refuses:
+modeller can write. **Since D-166's layer 2 (built 2026-11-16) they are held in Revit's memory**, set only
+by a click in Heron's Settings window and off at every Revit start (`HeronPermissions.cs`); `HeronConfig`
+no longer declares the three keys, so a line naming one is ignored and dropped on the next save. The
+hook still refuses the attempt - against an add-in built before that, and because an AI trying it is the
+thing to see. So the hook also refuses:
 
 | Refused | Allowed |
 |---|---|
@@ -83,7 +87,7 @@ hatch is for the person, and is written here.
 **It is a tripwire, not a lock.** It does not stop a script that writes the file another way (a `.py` or
 `.ps1` written first, then run), a host that does not load this repository's settings - Claude Desktop,
 Cowork, Claude Code opened in another folder - or an AI that edits `.claude/settings.json`. D-166 layer
-2, the switches leaving `heron.config`, is the lock. Every refusal is a line in the hooks' diary, so
+2, the switches leaving `heron.config`, is the lock - built, not yet run in Revit (D-166's status). Every refusal is a line in the hooks' diary, so
 `python tools/hook-report.py` shows whether an AI ever tried.
 
 **Seen on a real host, 2026-11-16**, in a cloud session on Linux: the host ran the hook on a real `Bash`
