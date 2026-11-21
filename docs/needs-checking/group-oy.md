@@ -19,8 +19,9 @@ v1) does that for a **roof by extrusion**, whose extent is its Extrusion Start a
 (2026-11-21, issue [#1143](https://github.com/Ajmalpshaik/Heron-AI/issues/1143)) extends a **roof by footprint** from
 Revit 2022 by moving its gable-end line in sketch edit mode, every line keeping its slope - NOT RUN; OY6 to OY8 are its
 look - and on 2020 and 2021 refuses one, naming the release (row [5b-1930](../fragment-issues/row-5b-1930.md)). The `join-roofs` method offers it in its step 1. Written in a cloud
-container with no Revit; it compiles on 2020 to 2027 (`tools/check-fragments-compile.py`, 2026-11-20). **Nothing
-here has run in Revit.** No add-in code changed: the card travels as source.
+container with no Revit; it compiles on 2020 to 2027 (`tools/check-fragments-compile.py`, 2026-11-20). **Version 1
+ran on Revit 2024 on 2026-11-21 (the run below) and was signed PROVEN; version 2 has not run, so the card is DRAFT
+again until OY2 to OY4 are run again on version 2 and OY6 to OY8 are run.** No add-in code changed: the card travels as source.
 
 **The model is a scratch copy, never a working model** - *roofjoin-oy*, the arrangement in the card's
 `tests/cases.yaml`, and the job file

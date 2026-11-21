@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -93,7 +93,11 @@ capability: EXTEND_ROOF_TO_ROOF
 # done as in version 1, now in a transaction of its own that is rolled back
 # when the read-back disagrees. NOTHING OF THE FOOTPRINT WAY HAS RUN IN REVIT:
 # its first run is the look row 5b-1930 asked for (Group OY, OY6 to OY8).
-# Still DRAFT; version 1 had no proof either.
+# BACK TO DRAFT. Version 1 was run on Revit 2024 on 2026-11-21 (Group OY,
+# OY1 to OY4 PASS) and signed PROVEN by Ajmal PS the same day - the proof below,
+# kept as the record of what version 1 did. Its fingerprint is version 1's C#;
+# version 2's is new, so the card is DRAFT until OY2 to OY4 are run again on
+# version 2 and OY6 to OY8 are run, and a new proof is signed.
 version: 2
 source: OFFICIAL
 risk: MODIFY
