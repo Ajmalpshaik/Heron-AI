@@ -73,7 +73,8 @@ utterances:
   - join/unjoin roof
 
 # CAPABILITIES, never fragment ids - the other ways step 1 offers: the walls
-# to the roof, and a roof by extrusion's end to the other roof, then the two
+# to the roof, and a roof's end (by extrusion, or from Revit 2022 by
+# footprint - EXTEND_ROOF_TO_ROOF version 2) to the other roof, then the two
 # joined. Step 2 is by hand, so nothing for it is listed.
 needs:
   - SHAPE_WALL_TOPS_TO_ROOF

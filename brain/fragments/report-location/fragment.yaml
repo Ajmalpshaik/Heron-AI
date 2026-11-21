@@ -24,7 +24,9 @@ risk: READ
 # them. Version 4 was PROVEN (the proof block below, kept as the record of
 # what it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING
 # Group OC is run (D-30) - on the owner's word of 2026-11-11 that a fragment
-# found wrong may be changed even though it is proven.
+# found wrong may be changed even though it is proven. SIGNED 2026-11-16:
+# version 5 ran on Revit 2024 (model Heron OC Tags) and Ajmal PS signed it
+# PROVEN - the proof below.
 
 # HOW IT ANSWERS, VERSION BY VERSION - comments, not `purpose`, because
 # `purpose` is searched (FRAGMENT-ISSUES rows 5b-356 and 5b-476). Until

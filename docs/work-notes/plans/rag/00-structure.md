@@ -524,7 +524,7 @@ says what you have. It never says **what would fix it**.
 |---|---|---|---|---|
 | `pyyaml` | REQUIRED | installed | | |
 | `model2vec` | optional | installed | meaning-based search | |
-| `sqlite-vec` | optional | installed | faster vector search | 0.3 MB |
+| `sqlite-vec` | optional | installed | faster vector search - **not used since [D-194](../../../DECISIONS.md), 2026-11-21: every vector is compared in plain Python, and Heron no longer installs it** | 0.3 MB |
 | `reranker` | optional | **MISSING** | settles the top-20 ties | 500 MB - 2 GB |
 
 **The sizes belong in it.** Measured 2026-09-10, the whole installed Python side of Heron is **about
