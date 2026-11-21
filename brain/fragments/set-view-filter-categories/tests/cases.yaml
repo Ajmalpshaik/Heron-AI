@@ -76,6 +76,20 @@ negative:
       NOTHING changed; refused says the rule has 2 conditions and asks for the
       parameter, which replaces all of them. readBack says OR, not AND
 
+  - given: >
+      VERSION 3. matchValue "has no value" and parameterName "Comments" on a
+      filter whose categories all have Comments
+    expect: >
+      changed 1; readBack names the rule "Comments has no value" and counts the
+      elements whose Comments is empty - not the ones whose Comments reads
+      "has no value"
+
+  - given: >
+      VERSION 3, NEGATIVE. matchValue "has no value Level 1"
+    expect: >
+      NOTHING changed; refused says "has no value" and "is blank" take nothing
+      after them. changed 0
+
 second_route:
   - Revit's own Manage, Filters dialog - the filter's name, the categories ticked and its rule, read on screen
   - REPORT_VIEW_FILTERS on a view carrying the renamed filter - the new name, the same overrides

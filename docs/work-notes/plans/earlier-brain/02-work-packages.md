@@ -259,7 +259,7 @@ prototype of the Fragment Creation Agent while writing house-rule skills.
 2. **"Changed in central?" as a column** in the element-ownership report fragments (the write pre-check
    half is C3's). *(done 2026-11-20 (WN-5, issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005)): `REPORT_ELEMENT_OWNERSHIP` version 3 (DRAFT) answers "changed in central?" from `WorksharingUtils.GetModelUpdatesStatus` - `centralStatus` per element and `changedInCentral` for those updated or deleted in central - as of the last time this model talked to central; on a model that is not workshared both stay empty. `READ_ELEMENT_OWNERSHIP` is DEPRECATED into it. Not run in Revit - NEEDS-CHECKING [Group OU](../../../needs-checking/group-ou.md) OU18.)*
 3. **Placeholder sheets** — a new fragment on `ViewSheet.CreatePlaceholder`; and first record that
-   `create-sheet-list`'s card says `CREATE_SHEET` makes placeholders, which it does not (reported). *(Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-6).)*
+   `create-sheet-list`'s card says `CREATE_SHEET` makes placeholders, which it does not (reported). *(done 2026-11-21 (WN-6, issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005)): no new fragment - `CREATE_SHEETS` version 5 (DRAFT) makes placeholder sheets with `ViewSheet.CreatePlaceholder` when typed numbers are given with `titleBlockName` placeholder, under every rule of its typed-numbers job, and the retired `create-sheet-list` card's sentence now names that. Not run in Revit - NEEDS-CHECKING [Group PE](../../../needs-checking/group-pe.md) PE3.)*
 
 **On the PC:** a model with a linked architectural model, a workshared central, and the new fragment proved.
 

@@ -68,8 +68,13 @@ else
             straightMm, horizontalMm, verticalMm));
 
         if (straight < 1e-9)
+            // VERSION 2 (2026-11-21, row 5b-1363 item 4): SELECT_TOUCHING was
+            // retired into FIND_CLASHES on 2026-11-01, and neither ever told
+            // touching from overlapping - FIND_CLASHES says so in its own
+            // purpose. So the sentence names the live card and what it does.
             findings.Add("They touch or overlap, so every distance is zero. That is a real answer, "
-                + "and this fragment cannot tell touching from overlapping - SELECT_TOUCHING can");
+                + "and this fragment cannot tell touching from overlapping - FIND_CLASHES tests their "
+                + "real solids, though it counts touching as clashing too");
 
         findings.Add("A bounding box is axis-aligned and is larger than a sloped or rotated element, "
             + "so for those this gap is a LOWER bound: the real clearance is at least this and may "

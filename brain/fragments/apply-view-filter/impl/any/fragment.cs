@@ -185,8 +185,12 @@ var solidCut = false;
 
 if (filter == null)
 {
+    // VERSION 4 (2026-11-21, row 5b-1363 item 4): the hand-picked list's
+    // card is named by its live capability. CREATE_SELECTION_FILTER was
+    // retired into UPDATE_SAVED_SET on 2026-11-01, so a reader who followed
+    // the old name found a retired card.
     refusal = "No filter was given - make one first with CREATE_VIEW_FILTER for a rule, or "
-        + "CREATE_SELECTION_FILTER for a hand-picked list.";
+        + "UPDATE_SAVED_SET with mode create for a hand-picked list.";
 }
 else if (wantEnabled == -2)
 {
