@@ -1638,6 +1638,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oy.md`](needs-checking/group-oy.md)
 
+## Group OZ - CREATE_SHEETS version 4, the sheets of a table and of typed numbers made by one card: CREATE_SHEETS_FROM_TABLE merged in, with D-193's three rules - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-oz.md`](needs-checking/group-oz.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

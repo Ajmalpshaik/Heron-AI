@@ -1,0 +1,60 @@
+# NEEDS-CHECKING Group OZ - CREATE_SHEETS version 4, built 2026-11-21 in a
+# cloud session with no Revit: CREATE_SHEETS_FROM_TABLE merged in, with the
+# three rules of D-193. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-sheets-oz-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-sheets-oz-2026-11-21.yaml
+#
+# THE MODEL is a SAVED scratch copy of Project1, Revit 2020 - the project
+# CREATE_SHEETS was first proved on, the copy Group MY arranged - never a
+# working model. OZ1 records the title block type as it shows in the Project
+# Browser (Family: Type) and adds a text project parameter "Discipline" bound
+# to Sheets if the copy has none. "A1 metric" below is the type CREATE_SHEETS'
+# first proof named; if the copy's title block is another, OZ1 writes it here
+# - the job file changes, never the card.
+#
+# ONE LEG HERE, THE TABLE. Version 4 is asked two ways - typed numbers and
+# names, and a table (the value heron_sheet_list prints for OZ1's register:
+# header row, then one row per sheet, ";" between rows and "|" between
+# cells). A run record and a proof draft are kept per CARD, so two jobs on
+# create-sheets would leave only the second's; the table is the leg here,
+# because it is the merged code and the first Revit evidence that a column is
+# filled (CREATE_SHEETS_FROM_TABLE's signed proof wrote no value). The typed
+# leg is OZ2 in the group, its own `validate` line with its own --out.
+# Numbers OZ-501 to OZ-503 are free in any project that has not run this
+# group.
+#
+# NO SETUP CHAIN. Nothing is selected and nothing is handed on: every input
+# is a value.
+#
+# THE NEGATIVE IS A VALUE, NOT A SELECTION (fragment-proving rules 2 and 5):
+# the same request with a title block name the model has not got. A card that
+# made sheets with no title block, or on whichever it found, makes them here;
+# this one must refuse and make nothing. Every run is ROLLED BACK. The three
+# rules of D-193 are rows OZ4 to OZ6 of the group, run by hand.
+
+model: saved scratch copy of Project1 with OZ1's title block and Discipline parameter, Revit 2020
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: create-sheets
+    expect: created
+    set:
+      sheets: "Sheet Number|Sheet Name|Drawn By|Checked By|Discipline;OZ-501|HERON TEST PLAN 1|AP|JS|Mechanical;OZ-502|HERON TEST PLAN 2|AP|JS|Mechanical;OZ-503|HERON TEST PLAN 3|AP||Mechanical"
+      titleBlockName: "A1 metric"
+    negative-set:
+      sheets: "Sheet Number|Sheet Name|Drawn By|Checked By|Discipline;OZ-501|HERON TEST PLAN 1|AP|JS|Mechanical;OZ-502|HERON TEST PLAN 2|AP|JS|Mechanical;OZ-503|HERON TEST PLAN 3|AP||Mechanical"
+      titleBlockName: "NoSuchTitleBlockAnywhere"
+    note: >
+      OZ3, THE TABLE - the card's D-30 pair. Negative - THE FIRST CASE TO RUN: titleBlockNotFound
+      true, titleBlockProblem "no title block type called
+      \"NoSuchTitleBlockAnywhere\" is loaded in ... (asked by OZ-501, OZ-502,
+      OZ-503) ... Nothing was made.", created empty, valuesSet 0, preview
+      empty. Positive: created three ids, numberedAs OZ-501 to OZ-503,
+      valuesSet 8 (Checked By is empty on OZ-503 and writes nothing - D-183),
+      columnsMatched naming Drawn By, Checked By and Discipline as the sheet's
+      own parameter (text) on 3 sheet(s); every "not" list empty. Rolled back -
+      so LOOK in OZ11, the one kept run.

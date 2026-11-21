@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -56,6 +56,36 @@ capability: CREATE_SHEETS_FROM_TABLE
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-21 - MERGED INTO CREATE_SHEETS (create-sheets) as its
+# version 4, on the owner's "merge: yes" on issue #1080 - the merge FRAGMENT-
+# ISSUES rows 5b-1486 and 5b-1875 planned. Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences and routing rows moved to CREATE_SHEETS.
+# The proof below is the record of what this card's code did, not a claim
+# about today.
+deprecated:
+  date: '2026-11-21'
+  by: Ajmal PS
+  superseded-by: CREATE_SHEETS
+  why: >
+    The same job: new numbered, named sheets on a title block, every number
+    checked before a sheet exists. CREATE_SHEETS version 4 takes this card's
+    table as its `sheets` input, with this card's code moved whole - rows ";",
+    cells "|", every %XX decoded, a title block per row or titleBlockName, no
+    default; every other column filled into the sheet's own parameter or its
+    title block instance's, never a title block TYPE's, with the version-safe
+    Yes/No test; each sheet in its own SubTransaction; previewOnly; the
+    read-back after one regeneration; valuesSet, preview, columnsMatched,
+    columnsUnmatched, columnsNotWritten, valuesNotSet and findings under the
+    same names; and D-183's four choices as they were. This card's `refused`
+    sentence is a line in notCreated there (titleBlockProblem for a title
+    block) and the first of findings. The three rules the two cards held
+    opposite are this card's, for typed numbers too (D-193): a number or name
+    Revit refuses takes that sheet back, a number given twice makes neither,
+    and at most 1,000 sheets in one call.
 
 purpose: >
   Makes new drawings in the register from rows handed in as one value -

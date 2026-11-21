@@ -19,15 +19,18 @@ purpose: >
   call and ONE undo. The owner's words, docs/48 section 5 item 7: "Sheets
   from Excel - read the sheet list from a spreadsheet, preview, create". The
   file is read by heron_sheet_list, in Python, and touches no model; the
-  sheets are made by CREATE_SHEETS_FROM_TABLE.
+  sheets are made by CREATE_SHEETS, with its `sheets` table.
 
   Every tool of this method is DRAFT or PROVEN as the list after it says.
-  CREATE_SHEETS_FROM_TABLE was written 2026-11-09 and signed PROVEN on
-  2026-11-13 (Revit 2020, its card's proof), so revit_change runs both the
-  preview and the create. Should a later version send it back to DRAFT, no
-  chat tool runs it, a preview included: revit_read refuses anything above
-  ANALYZE and this card is MODIFY, and revit_change refuses a DRAFT before
-  anything is sent (D-117). Steps 3 and 5 keep what runs it then.
+  The sheets were made by CREATE_SHEETS_FROM_TABLE until 2026-11-21, when it
+  was merged into CREATE_SHEETS as its version 4 (the owner's "merge: yes",
+  issue #1080, D-193) and retired. CREATE_SHEETS version 4 is DRAFT until one
+  proving run on the owner's PC (NEEDS-CHECKING Group OZ), so TODAY NO CHAT
+  TOOL RUNS IT, a preview included: revit_read refuses anything above ANALYZE
+  and this card is MODIFY, and revit_change refuses a DRAFT before anything is
+  sent (D-117). Steps 3 and 5 say what runs it now: the preview from the
+  command line, rolled back, and the creation as its one try-once. Once it is
+  PROVEN again, revit_change runs both.
 
   0. THE FILE - NOTHING IN REVIT. heron_sheet_list with the path the modeller
      gives (and `sheet` when the register is not the workbook's first sheet,
@@ -58,16 +61,17 @@ purpose: >
      returns are already in the register and will be SKIPPED, not changed;
      its notFound are the numbers still free. Say which, in one line.
 
-  3. PREVIEW - NOTHING KEPT. CREATE_SHEETS_FROM_TABLE with the tool's
-     `sheets=` value, `titleBlockName` when it is needed, and previewOnly
-     true: it makes every sheet and TAKES EACH ONE BACK, so the preview is the
-     run itself. WHILE IT IS DRAFT the preview is run on the modeller's PC
+  3. PREVIEW - NOTHING KEPT. CREATE_SHEETS with the tool's `sheets=` value,
+     `titleBlockName` when it is needed, and previewOnly true: it makes
+     every sheet and TAKES EACH ONE BACK, so the preview is the run itself.
+     Never pass `numbers` or `names` beside `sheets` - given both, the card
+     makes nothing. WHILE IT IS DRAFT - as it is now - the preview is run on the modeller's PC
      from the command line, which runs the card and ROLLS IT BACK - nothing
      can be kept without --apply, and --apply is refused for a DRAFT (D-117).
      heron_sheet_list prints that command, quoted for PowerShell, in the
      Heron folder - up to 30,000 characters, as a Windows command line holds
      no more; above that it prints none and the modeller splits the file:
-       python mcp/client/heron_bridge_client.py fragment create-sheets-from-table
+       python mcp/client/heron_bridge_client.py fragment create-sheets
          --set 'sheets=...' --write --set previewOnly=true --set 'titleBlockName=...'
      Say so to the modeller and let them run it, or run it only where they
      have asked for exactly that; never send it through another tool. ONCE
@@ -75,7 +79,8 @@ purpose: >
      modeller: `preview` - each row "would be made" with its title block and
      values, or why not; numberTaken (already in the register, not made);
      notCreated (no number, a number twice, Revit refusing a number or a name
-     in its own words); columnsMatched (where each column goes - the sheet's
+     in its own words, or why the whole table was refused); titleBlockProblem
+     (a title block not found); columnsMatched (where each column goes - the sheet's
      own parameter, or the title block instance's); columnsUnmatched;
      columnsNotWritten (read-only, on the title block TYPE, two parameters
      sharing the name); valuesNotSet (a tick box given a word, a number Revit
@@ -96,9 +101,10 @@ purpose: >
      every sheet on that type; say so.
 
   5. CREATE. The same values without previewOnly - one call, one undo. WHILE
-     DRAFT, this is the card's ONE run on the saved model in front through
-     try-once (D-119), and only when the modeller asks for it in the chat:
-       python mcp/client/heron_bridge_client.py try-once create-sheets-from-table
+     DRAFT - as it is now - this is the card's ONE run on the saved model in
+     front through try-once (D-119), and only when the modeller asks for it
+     in the chat:
+       python mcp/client/heron_bridge_client.py try-once create-sheets
          --set 'sheets=...' --set 'titleBlockName=...'
      once per version; Revit asks Keep or Discard. ONCE PROVEN, revit_change.
      Then say what came back in Revit words: how many sheets were made and
@@ -136,20 +142,25 @@ utterances:
 # change the modeller may ask for at step 4, not a step of this method.
 needs:
   - FIND_SHEETS
-  - CREATE_SHEETS_FROM_TABLE
+  # CREATE_SHEETS_FROM_TABLE until 2026-11-21, when it was merged into
+  # CREATE_SHEETS version 4 (D-193) - the same table, as its `sheets` input.
+  - CREATE_SHEETS
 
 preconditions:
   - the sheet register is an .xlsx or a .csv on the modeller's own PC, with the headers on one row and one sheet per row below it
   - every problem heron_sheet_list listed in the file - no number, a number twice - has been put to the modeller and settled by them, never guessed
   - "the title block is in the file or named by the modeller as 'Family: Type' - never assumed (D-33)"
   - every column that matches no sheet parameter has been put to the modeller - renamed in the file, bound by a separate change, or left out on their word
-  - if CREATE_SHEETS_FROM_TABLE is ever DRAFT again, the model is saved and in front for its one try-once
+  - while CREATE_SHEETS is DRAFT - as it is since version 4, 2026-11-21 - the model is saved and in front for its one try-once
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
-  WRITTEN 2026-11-09 IN A CLOUD SESSION; its card was signed PROVEN on
-  2026-11-13. docs/48 section 5 item 7.
+  WRITTEN 2026-11-09 IN A CLOUD SESSION; its card, CREATE_SHEETS_FROM_TABLE,
+  was signed PROVEN on 2026-11-13 and merged into CREATE_SHEETS version 4 on
+  2026-11-21 (issue #1080, D-193), which is DRAFT until NEEDS-CHECKING Group
+  OZ. docs/48 section 5 item 7. What follows is why the job was built as one
+  card in the first place.
   One card, CREATE_SHEETS_FROM_TABLE, rather than CREATE_SHEETS and
   then SET_PARAMETER_VALUES_BY_ID keyed by Sheet Number - both PROVEN when
   this was written (SET_PARAMETER_VALUES_BY_ID is DRAFT at version 10 since

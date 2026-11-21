@@ -261,6 +261,7 @@ an edit.
 | [D-190](#d-190--the-readme-stops-asking-modellers-not-to-install-before-a-release-is-signed-and-says-plainly-the-build-is-unsigned-and-what-was-checked) | The README stops asking modellers not to install before a release is signed, and says plainly the build is unsigned and what was checked | ✅ Accepted · 2026-11-20 |
 | [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) | The usage counter keeps offered, helped and the last date it helped; "helped" is only the modeller's word; it moves a clause less than one rank; and no question text is kept | ✅ Accepted · 2026-11-20 |
 | [D-192](#d-192--a-job-that-works-only-outside-the-model-it-is-aimed-at-declares-nogroupopen-and-an-admin-or-publish-job-then-opens-no-transaction-group-in-that-model) | A job that works only outside the model it is aimed at declares noGroupOpen, and an Admin or Publish job then opens no transaction group in that model | ✅ Accepted · 2026-11-21 |
+| [D-193](#d-193--making-sheets-keeps-three-rules-for-a-table-and-typed-numbers-alike-a-sheet-whose-number-or-name-revit-refuses-is-taken-back-a-number-asked-for-twice-makes-neither-and-1000-is-the-most-in-one-call) | Making sheets keeps three rules for a table and typed numbers alike: a sheet whose number or name Revit refuses is taken back, a number asked for twice makes neither, and 1,000 is the most in one call | ✅ Accepted · 2026-11-21 |
 
 ## Format
 
@@ -1733,3 +1734,14 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** `RevitFragment.cs`, `HeronDialogNote.cs`, `heron_fragment.py`, `heron_failure.py`, `heron_bridge_client.py`, `check-revit-gate.py`, `create-family-document` (version 4), `export-families` (version 2)
 
 **Full record:** [`decisions/D-192.md`](decisions/D-192.md)
+
+## D-193 — Making sheets keeps three rules for a table and typed numbers alike: a sheet whose number or name Revit refuses is taken back, a number asked for twice makes neither, and 1,000 is the most in one call
+
+**Status:** Accepted · **Date:** 2026-11-21 · **Accepted:** Ajmal PS, 2026-11-21, on issue [#1080](https://github.com/Ajmalpshaik/Heron-AI/issues/1080): *"merge: yes"*, and for the three rules *"remaining all the things you can choose what is the best"* - the session chose them on that word and wrote them on #1080 the same day
+**Numbering:** D-193 is the id `tools/next-id.py` printed free on 2026-11-21, with `origin/main` at `148fd459` ending at D-192.
+**Settles:** the three rules [row 5b-1875](fragment-issues/row-5b-1875.md) put to the owner before the merge · [row 5b-1893](fragment-issues/row-5b-1893.md) - a sheet name Revit refuses was kept in silence
+**Keeps:** [D-183](decisions/D-183.md) - its four choices, unchanged, now on `CREATE_SHEETS` · [D-33](decisions/D-33.md) - which of two is meant is asked, never guessed · [D-30](decisions/D-30.md) - DRAFT until a recorded run · Article 8 - one call, one undo
+**Leaves open:** the copy job of `CREATE_SHEETS` keeps version 3's rule - [row 5b-1935](fragment-issues/row-5b-1935.md), the owner's
+**Affects:** [`CREATE_SHEETS`](../brain/fragments/create-sheets/fragment.yaml) version 4 (DRAFT) · [`CREATE_SHEETS_FROM_TABLE`](../brain/fragments/create-sheets-from-table/fragment.yaml) (DEPRECATED, merged in) · [`sheets-from-excel`](../brain/skills/sheets-from-excel.yaml) · [`heron_sheet_list.py`](../brain/heron_sheet_list.py) · [Group OZ](needs-checking/group-oz.md)
+
+**Full record:** [`decisions/D-193.md`](decisions/D-193.md)

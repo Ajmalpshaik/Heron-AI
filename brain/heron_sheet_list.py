@@ -7,8 +7,12 @@
 # See docs/29-metadata-standard.md
 
 """
-A sheet register read from a spreadsheet - .xlsx or .csv - for
-CREATE_SHEETS_FROM_TABLE (docs/48 section 5 item 7, "Sheets from Excel").
+A sheet register read from a spreadsheet - .xlsx or .csv - for the `sheets`
+table of CREATE_SHEETS (docs/48 section 5 item 7, "Sheets from Excel"). The
+table was CREATE_SHEETS_FROM_TABLE's until 2026-11-21, when that card was
+merged into CREATE_SHEETS as its version 4 (issue #1080, D-193) - the same
+value, the same rules. CARD and CARD_FOLDER below name the card; nothing else
+here does.
 
     python brain/heron_sheet_list.py "C:\\Projects\\sheet list.xlsx"
     python brain/heron_sheet_list.py list.csv --sheet "Register" --header-row 3
@@ -94,6 +98,11 @@ import re
 import sys
 import zipfile
 import xml.etree.ElementTree as ET
+
+# The card this reader writes for, and its folder - what the chat is told to
+# run, and the status the server reads before it says how (D-117, D-119).
+CARD = "CREATE_SHEETS"
+CARD_FOLDER = "create-sheets"
 
 # The card makes at most this many sheets in one call, and says so.
 MOST_ROWS = 1000
@@ -859,8 +868,8 @@ def _encode(text):
 
 
 def card_value(register):
-    """The `sheets` value CREATE_SHEETS_FROM_TABLE takes, as one line: the
-    header row, then a row per sheet. Empty when the register was refused."""
+    """The `sheets` value CREATE_SHEETS takes, as one line: the header row,
+    then a row per sheet. Empty when the register was refused."""
     if not register.get("ok"):
         return ""
     headers = [NUMBER, NAME]
@@ -890,7 +899,7 @@ def draft_commands(value, needs_title_block):
     """(preview command, try-once command), or None when either is longer
     than a Windows command line safely holds (MOST_COMMAND_CHARS)."""
     title = " --set 'titleBlockName=...'" if needs_title_block else ""
-    base = ("python mcp/client/heron_bridge_client.py %s create-sheets-from-table --set "
+    base = ("python mcp/client/heron_bridge_client.py %s " + CARD_FOLDER + " --set "
             + _powershell("sheets=" + value).replace("%", "%%"))
     preview = (base % "fragment") + " --write --set previewOnly=true" + title
     once = (base % "try-once") + title
@@ -901,9 +910,8 @@ def draft_commands(value, needs_title_block):
 
 def chat_answer(register, status=None, most_shown=40):
     """What heron_sheet_list says: what was read, every problem (cut at
-    MOST_LINES), the sheets, and the values for CREATE_SHEETS_FROM_TABLE -
-    the value printed ONCE, with the route its card's status allows (D-117,
-    D-119)."""
+    MOST_LINES), the sheets, and the values for CREATE_SHEETS - the value
+    printed ONCE, with the route its card's status allows (D-117, D-119)."""
     if not register.get("ok"):
         return register.get("refused") or "The file was not read."
     rows = register["rows"]
@@ -948,25 +956,25 @@ def chat_answer(register, status=None, most_shown=40):
             out.append("The list is %d characters as one value - more than one call carries "
                        "(%d). Split the file into parts and read each." % (len(value), MOST_VALUE_CHARS))
             return "\n".join(out)
-        out.append("CREATE_SHEETS_FROM_TABLE: revit_change with previewOnly=true first (which "
+        out.append(CARD + ": revit_change with previewOnly=true first (which "
                    "numbers are used, which columns match no parameter), then without it:")
         out.append("sheets=" + value)
         return "\n".join(out)
 
     commands = draft_commands(value, needs_title_block)
     if commands is None:
-        out.append("CREATE_SHEETS_FROM_TABLE is %s, so it runs only from a command line, and %d "
+        out.append("%s is %s, so it runs only from a command line, and %d "
                    "sheet(s) make a command longer than Windows holds (%d characters as one value; "
                    "a command line takes about %d). Nothing is printed to run. Split the file "
                    "into parts of about %d rows and read each part - or wait until the card is "
                    "PROVEN, when revit_change carries the whole list."
-                   % (state or "not PROVEN", len(rows), len(value), MOST_COMMAND_CHARS,
+                   % (CARD, state or "not PROVEN", len(rows), len(value), MOST_COMMAND_CHARS,
                       max(1, len(rows) * MOST_COMMAND_CHARS // max(1, len(value)) * 9 // 10)))
         return "\n".join(out)
     preview, once = commands
-    out.append("CREATE_SHEETS_FROM_TABLE is %s, so revit_change refuses it (D-117). The preview "
+    out.append("%s is %s, so revit_change refuses it (D-117). The preview "
                "runs on the modeller's PC, in PowerShell in the Heron folder, rolled back - "
-               "nothing kept:" % (state or "not PROVEN"))
+               "nothing kept:" % (CARD, state or "not PROVEN"))
     out.append("  " + preview)
     out.append("The creation is its one try-once (D-119), only when the modeller asks, on the "
                "saved model in front - Revit asks Keep or Discard: the same command with "
