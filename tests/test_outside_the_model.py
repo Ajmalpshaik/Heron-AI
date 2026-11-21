@@ -289,6 +289,59 @@ def the_cards():
           "create-family-document says the window now opens in the same call")
 
 
+def the_stopped_job(raw):
+    """
+    ROW 5b-1933: an Admin or Publish job refused after its code ran says that
+    what it did outside the model stands - `outsideStands`, and
+    `ranOutsideTheModel` for a D-192 job. The rule is Json.WithOutsideStands,
+    run in tests/Heron.FailureNote.TestHost; this reads the wiring, which
+    calls the Revit API and is read as TEXT.
+    """
+    print("\n6. a job stopped part way says its outside work stands (row 5b-1933)")
+    code = code_only(raw)
+    operations = code_only(read(os.path.join(ROOT, "revit", "Heron.Revit.Addin",
+                                             "RevitOperations.cs")))
+    cases = operations[operations.find('case "run_fragment_publish":'):]
+    cases = cases[:cases.find("default:")]
+    check('case "run_fragment_admin":' in cases
+          and "RevitFragment.OutsideStood(" in cases
+          and "RevitFragment.Run(app, request, true" in cases[cases.find("OutsideStood("):],
+          "the Admin and Publish doors hand Run's reply to OutsideStood")
+    write = operations[operations.find('case "run_fragment_write":'):]
+    write = write[:write.find('case "run_fragment_publish":')]
+    check("OutsideStood" not in write,
+          "and a change to the model does not - its group is all it did")
+
+    stood = body_of(code, "internal static string OutsideStood(")
+    check("if (!CodeRan) return reply;" in stood
+          and "Json.WithOutsideStands(reply, RanWithNoGroup" in stood,
+          "OutsideStood marks a reply only once the job's code ran, and says whether it "
+          "had a group")
+    run_script = body_of(code, "private static string RunScript(")
+    check(run_script.find("CodeRan = true;") >= 0
+          and run_script.find("CodeRan = true;") < run_script.find("HeronScriptHost.Run("),
+          "RunScript marks the code as run before it runs it - a throw counts")
+    run = body_of(code, "public static string Run(UIApplication app, string request, bool writing")
+    first = run.find("CodeRan = false;")
+    check(first >= 0 and "RanWithNoGroup = false;" in run
+          and first < run.find("RunScript("),
+          "Run clears both at its start, so one job's never reads as the next's")
+    branch = run[run.find("else if (wantsNoGroup)"):]
+    check(branch.find("RanWithNoGroup = true;") >= 0
+          and branch.find("RanWithNoGroup = true;") < branch.find("RunScript("),
+          "the D-192 branch marks itself before its code runs")
+
+    words = joined(raw)
+    mark = re.search(r'OutsideStandsMark = "([^"]+)"', raw)
+    mark = mark.group(1) if mark else None
+    check(mark is not None, "the add-in has one mark for the words that say it")
+    nothing_here = words[words.find("OutsideNothingHere ="):][:600]
+    dialog = joined(read(os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronDialogNote.cs")))
+    dialog = dialog[dialog.find("case Outcome.OutsideOnly:"):][:500]
+    check(mark is not None and mark in nothing_here and mark in dialog,
+          "and the D-192 refusals already carry it, so their words are not said twice")
+
+
 def main():
     raw = read(FRAGMENT)
     the_need(raw)
@@ -296,6 +349,7 @@ def main():
     the_verdict(raw)
     the_readers()
     the_cards()
+    the_stopped_job(raw)
     print()
     if FAILURES:
         print("FAILED  %d check(s)" % len(FAILURES))
