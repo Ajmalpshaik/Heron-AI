@@ -203,3 +203,7 @@ utterances:
   - reinforce these walls with T10 at 150 each face
   - add area reinforcement to the raft
   - place slab rebar bottom both ways
+  # ADDED 2026-11-21, row 5b-1347 (issue #956). Claimed for this card in
+  # CREATE_LEVELS' routing note; on main the model alone sent it to
+  # CREATE_WALLS_BY_FACE. Declared so identity answers it on every backend.
+  - T10 at 150 both faces of these walls
