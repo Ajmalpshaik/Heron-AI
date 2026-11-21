@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-057
-semantic-identity: "set Area and Volume Computations - make a new area scheme or give one a new name, switch between Areas only and Areas and Volumes, change where room areas are measured"
+semantic-identity: "set Area and Volume Computations - switch between Areas only and Areas and Volumes, change where room areas are measured, make or rename area schemes"
 kind: action
 domain: revit.rooms
 capability: SET_AREA_VOLUME_COMPUTATIONS

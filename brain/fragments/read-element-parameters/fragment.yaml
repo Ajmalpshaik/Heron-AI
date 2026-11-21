@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-001
-semantic-identity: "reads one named parameter off every element - a size, a thickness, a mark, a level"
+semantic-identity: "reads one named parameter off every element"
 kind: action
 domain: revit.parameters
 capability: READ_ELEMENT_PARAMETERS
