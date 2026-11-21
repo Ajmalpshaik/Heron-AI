@@ -23,7 +23,10 @@ risk: MODIFY
 # the answer names CREATE_FOUNDATION_SLAB. Every other type is version 3's
 # run, statement for statement. Version 3 was PROVEN (the proof block below,
 # kept as the record of what it proved); its C# moved, so it is DRAFT until
-# NEEDS-CHECKING Group OU is run (D-30).
+# NEEDS-CHECKING Group OU is run (D-30). SIGNED 2026-11-21: version 4 ran on
+# Revit 2024 (Group OU's OU21, a ROOF type on the model roofjoin-oy) and Ajmal
+# PS signed it PROVEN - the proof below replaced version 3's. OU21's plain
+# floor, word for word, is still owed.
 #
 # VERSION 3 (2026-11-01) - CREATE_CEILING AND CREATE_ROOF WERE MERGED INTO THIS
 # CARD on the owner's instruction ("make sure there is no duplicate tools", then
@@ -151,7 +154,9 @@ contract:
     - name: findings
       type: IList<string>
 
-# VERSION 2's PROOF (NEEDS-CHECKING Group HM, Revit 2020, 2026-10-19). The
+# THE PROOF BELOW IS VERSION 4's, signed 2026-11-21 (Group OU's OU21, Revit
+# 2024, roofjoin-oy - a roof type, Level 2, 12000 x 8000 mm). Before it the
+# block held VERSION 2's PROOF (NEEDS-CHECKING Group HM, Revit 2020, 2026-10-19). The
 # positive is the run kept through try-once (D-120): a round slab of radius
 # 5000 mm through the pre-2022 call, its Area between 78.50 and 78.58 m2 by
 # SELECT_BY_NUMERIC_PARAMETER - a circle, not the 77.25 m2 20-sided polygon.
