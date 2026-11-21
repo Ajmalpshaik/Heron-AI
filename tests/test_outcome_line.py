@@ -202,7 +202,12 @@ INVENTORY = ("revit_phases", "revit_levels", "revit_worksets", "revit_views",
 SINGLE = ("revit_select_by_category", "revit_isolate_temporary",
           "revit_reset_temporary", "revit_preview_move", "revit_release",
           "revit_use_this_model", "revit_offer_settings")
-SAYS = DOORS + (UNDO_TOOL, MOVE_TOOL) + INVENTORY + SINGLE
+# AND THE TOOLS THAT OPEN A COMPANION PANEL, AND heron_checklist, since
+# 2026-11-21 (row 5b-1563's last part). Section 5h walks them.
+PANELS = ("revit_edit_table", "revit_building_loads", "revit_sprinkler_hydraulics",
+          "revit_sprinkler_layout", "revit_model_dashboard")
+CHECKLIST_TOOL = "heron_checklist"
+SAYS = DOORS + (UNDO_TOOL, MOVE_TOOL) + INVENTORY + SINGLE + PANELS + (CHECKLIST_TOOL,)
 WORDS = ("KEPT", "NOTHING CHANGED", "ANSWERED", "NOT ANSWERED", "REFUSED", "NOT RUN",
          "ROLLED BACK", "STILL RUNNING", "OUTCOME UNKNOWN")
 
@@ -1820,6 +1825,250 @@ def the_other_tools_say_it_too(stage):
     stage.fresh(dict(READ_OK))
 
 
+def the_panels_and_the_checklist_say_it_too(stage, picked):
+    """
+    ROW 5b-1563, ITS LAST PART: the tools that open a Companion panel -
+    revit_edit_table, revit_building_loads, revit_sprinkler_hydraulics,
+    revit_sprinkler_layout, revit_model_dashboard - and heron_checklist say
+    how their call ended in a word, every return read against the table.
+
+    A panel tool answers from ONE revit_read and then works on it: so when
+    that read did not answer, its word is the read's own (NOT RUN with no
+    Revit, OUTCOME UNKNOWN for a lost answer, NOT RUN for Revit busy); an
+    answer from another model is REFUSED; the Companion switched off is
+    REFUSED; a panel opened is ANSWERED; and Heron's own working that stops
+    after a good read is NOT ANSWERED - nothing was open to keep anything.
+
+    heron_checklist's list, show and save are ANSWERED, its refusals REFUSED,
+    a library that cannot be read NOT RUN. A run where any check answered is
+    ANSWERED; one where none did says the word of its checks - NOT RUN with
+    no Revit, REFUSED when Heron turned a check down before sending it, and
+    OUTCOME UNKNOWN when a read left for Revit and its answer was lost.
+    """
+    print()
+    print("5h. The Companion's panel tools and heron_checklist say a word too (row 5b-1563)")
+    module = stage.module
+    import types
+    import webbrowser
+    from heron_session import NotBound
+    page = module._companion_module()
+    brain = module.brain
+
+    OTHER = {"document": "Project2", "documentPath": "C:/jobs/Project2.rvt",
+             "projectKey": "key-2", "creationGuid": "guid-2"}
+    PINNED = dict(MODEL, creationGuid="guid-1")
+
+    class Seen(object):
+        def recently_seen(self):
+            return True
+
+    def quiet_page():
+        """The page's panels take what they are given and open no browser."""
+        stage.patch(webbrowser, "open", lambda *a, **k: True)
+        stage.patch(page, "enabled", lambda: True)
+        stage.patch(page, "shared", lambda **k: Seen())
+        stage.patch(page, "live_changes", lambda pid: None)
+        for panel, method in (("TABLES", "open"), ("LOADS_PANEL", "reading"),
+                              ("LOADS_PANEL", "open"), ("SPRINKLER_PANEL", "open"),
+                              ("LAYOUT_PANEL", "open"), ("DASHBOARD_PANEL", "open")):
+            held = getattr(page, panel, None)
+            if held is not None and hasattr(held, method):
+                stage.patch(held, method, lambda *a, **k: None)
+
+    # WHAT HERON'S BRAIN MAKES OF A GOOD READ - stood in, so the panel's own
+    # endings are what is read, not the calculation's.
+    network = types.SimpleNamespace(system="Sprinkler 1", systems=[])
+    worked = {"building_loads": {"takeoff": {}, "said": "Loads: 3 Spaces calculated."},
+              "sprinkler_hydraulics": {"network": network, "said": "Solved: 1 system."},
+              "sprinkler_layout": {"data": {}, "result": {"rooms": [1]}, "said": "Laid out."},
+              "model_dashboard": {"dashboard": {}, "said": "The dashboard is open."}}
+    stopped = {"building_loads": {"takeoff": None, "said": "Nothing was calculated: x."},
+               "sprinkler_hydraulics": {"network": None, "said": "Nothing was solved: x."},
+               "sprinkler_layout": {"data": None, "said": "Nothing was laid out: x."},
+               "model_dashboard": {"dashboard": None, "said": "Nothing was counted: x."}}
+    provides = {"revit_edit_table": {"tableJson": '{"rows": [{"id": 1}], "columns": ["Mark"]}'},
+                "revit_building_loads": {"takeoffJson": "{}"},
+                "revit_sprinkler_hydraulics": {"networkJson": "{}"},
+                "revit_sprinkler_layout": {"layoutJson": "{}"},
+                "revit_model_dashboard": {"dashboardJson": "{}"}}
+    arguments = {"revit_edit_table": {"parameters": "Mark"}}
+    calc = {"revit_building_loads": "building_loads",
+            "revit_sprinkler_hydraulics": "sprinkler_hydraulics",
+            "revit_sprinkler_layout": "sprinkler_layout",
+            "revit_model_dashboard": "model_dashboard"}
+    real_status = brain.proof_status
+
+    def standing(folder):
+        held = real_status(folder)
+        if held is None:
+            return held
+        return dict(held, status="PROVEN", stale=False, proof=True)
+
+    def call(name, reply, unbound=False, off=False, brain_says=None, broken=False):
+        stage.fresh(reply, None)
+        module.pinned.check(dict(PINNED))
+        quiet_page()
+        # The panels' reads are stood in as proven, as Revit is: their own
+        # status is not this section's claim, only how the panel tool ends.
+        stage.patch(brain, "proof_status", standing)
+        if off:
+            stage.patch(page, "enabled", lambda: False)
+        if unbound:
+            def none():
+                raise NotBound("Two Revit sessions are connected and none was chosen, "
+                               "so nothing has been sent to Revit.")
+            module.binding.resolve = none
+        job = calc.get(name)
+        if job:
+            if broken:
+                def gone(*a, **k):
+                    raise brain.BrainUnavailable("Heron's library could not be read.")
+                stage.patch(brain, job, gone)
+            else:
+                said = dict(brain_says or worked[job])
+                stage.patch(brain, job, lambda *a, **k: dict(said))
+        if name == "revit_model_dashboard":
+            stage.patch(brain, "model_dashboard_board", lambda board: "")
+        had, sys.stderr = sys.stderr, io.StringIO()
+        try:
+            tool = getattr(module, name, None)
+            said = (tool(**arguments.get(name, {})) if tool is not None
+                    else "(no such tool)")
+        except Exception as exc:                                # noqa: BLE001
+            said = "(%s raised %s: %s)" % (name, type(exc).__name__, exc)
+        finally:
+            sys.stderr = had
+            stage.unpatch()
+        return said if isinstance(said, str) else repr(said)
+
+    wrong = []
+    for name in PANELS:
+        good = dict(PINNED, ok=True, ran="x", provides=dict(provides[name]))
+        cases = [("a panel opened", dict(good), "ANSWERED", {}),
+                 ("the Companion switched off", dict(good), "REFUSED", {"off": True}),
+                 ("no Revit to send it to", dict(good), "NOT RUN", {"unbound": True}),
+                 ("no answer at all", None, "OUTCOME UNKNOWN", {}),
+                 ("Revit busy", error("revit_busy"), "NOT RUN", {}),
+                 ("an answer from another model", dict(good, **OTHER), "REFUSED", {})]
+        if name in calc:
+            cases += [("Heron's working stopped after a good read", dict(good),
+                       "NOT ANSWERED", {"brain_says": stopped[calc[name]]}),
+                      ("Heron's library could not be read after a good read", dict(good),
+                       "NOT ANSWERED", {"broken": True})]
+        for what, reply, want, how in cases:
+            said = call(name, reply, **how)
+            if stated(said) != want:
+                wrong.append("%s, %s: %s (%r)" % (name, what, stated(said), said[:90]))
+            elif what == "a panel opened" and name in calc and \
+                    worked[calc[name]]["said"] not in said:
+                wrong.append("%s, %s: not Heron's answer (%r)" % (name, what, said[:90]))
+    check(not wrong,
+          "each of the %d panel tools says the word true of each of its endings - not: %s"
+          % (len(PANELS), "; ".join(wrong[:4]) or "none"))
+
+    # ---- heron_checklist
+    import heron_checklists as LISTS
+    read = picked.get("read")
+    CHECK = {"sentence": "the model has levels", "capability": read, "values": [],
+             "output": "found", "op": "==", "target": 0}
+    LIST = {"name": "Stand-in list", "description": "one check", "checks": [dict(CHECK)]}
+
+    def store(folder="/scratch/checklists"):
+        """The real store's run, judged rows and text, over one saved list and
+        a folder that is there (or not) - nothing on this PC is read."""
+        found = dict(LIST)
+
+        def find(name, home=None):
+            if (name or "") != found["name"]:
+                raise LISTS.ChecklistError("No checklist called '%s' is saved." % name)
+            return dict(found)
+
+        return types.SimpleNamespace(
+            ChecklistError=LISTS.ChecklistError, folder=lambda make=False: folder,
+            all_checklists=lambda: ([dict(found)], []), describe=lambda c: c["name"],
+            find=find, prepare_run=lambda c: (c, []), stamp=lambda *a, **k: None,
+            history=lambda answer: None, run=LISTS.run, finish=LISTS.finish,
+            text=LISTS.text, check_line=lambda c: c.get("sentence") or "",
+            save=lambda *a, **k: "/scratch/checklists/stand-in-list.json",
+            delete=lambda name: find(name)["name"])
+
+    def checklist(reply, unbound=False, folder="/scratch/checklists", broken=False,
+                  busy=None, **arguments):
+        stage.fresh(reply, None)
+        quiet_page()
+        if broken:
+            def gone():
+                raise brain.BrainUnavailable("Heron's library could not be read.")
+            stage.patch(brain, "checklists", gone)
+        else:
+            stage.patch(brain, "checklists", lambda: store(folder))
+        stage.patch(module, "_checklist_contracts", lambda checks: {})
+        stage.patch(module, "_checklist_on_page", lambda answer: False)
+        if busy is not None:
+            stage.patch(module, "_checklist_panel",
+                        lambda: types.SimpleNamespace(begin=lambda who: busy,
+                                                      end=lambda: None))
+        else:
+            stage.patch(module, "_checklist_panel", lambda: None)
+        if unbound:
+            def none():
+                raise NotBound("No Revit is connected, so nothing has been sent to Revit.")
+            module.binding.resolve = none
+        had, sys.stderr = sys.stderr, io.StringIO()
+        try:
+            said = module.heron_checklist(**arguments)
+        except Exception as exc:                                # noqa: BLE001
+            said = "(heron_checklist raised %s: %s)" % (type(exc).__name__, exc)
+        finally:
+            sys.stderr = had
+            stage.unpatch()
+        return said if isinstance(said, str) else repr(said)
+
+    named = {"action": "run", "name": LIST["name"]}
+    lists = [("list", dict(READ_OK), "ANSWERED", {"action": "list"}),
+             ("list with no folder for Heron's data", dict(READ_OK), "NOT RUN",
+              {"action": "list", "folder": None}),
+             ("show", dict(READ_OK), "ANSWERED", {"action": "show", "name": LIST["name"]}),
+             ("show of a name not saved", dict(READ_OK), "REFUSED",
+              {"action": "show", "name": "no such list"}),
+             ("an action it has not got", dict(READ_OK), "REFUSED", {"action": "paint"}),
+             ("save", dict(READ_OK), "ANSWERED",
+              {"action": "save", "name": LIST["name"], "checks": "[]",
+               "extends": "office list"}),
+             ("delete", dict(READ_OK), "ANSWERED", {"action": "delete", "name": LIST["name"]}),
+             ("its library could not be read", dict(READ_OK), "NOT RUN",
+              {"action": "list", "broken": True}),
+             ("a run while another run is going", dict(READ_OK), "NOT RUN",
+              dict(named, busy="a run is going on the page")),
+             ("a run whose check answered", dict(READ_OK), "ANSWERED", dict(named)),
+             ("a run with no Revit to send it to", dict(READ_OK), "NOT RUN",
+              dict(named, unbound=True)),
+             ("a run whose read's answer was lost", None, "OUTCOME UNKNOWN", dict(named)),
+             ("a run Revit was too busy for", error("revit_busy"), "NOT RUN", dict(named))]
+    wrong = []
+    for what, reply, want, arguments in lists:
+        said = checklist(reply, **arguments)
+        if stated(said) != want:
+            wrong.append("%s: %s (%r)" % (what, stated(said), said[:90]))
+        elif what == "a run whose check answered" and (not stage.revit.asked
+                                                       or "NOT RUN" in said.split("\n", 2)[-1]):
+            wrong.append("%s: Revit was asked %d time(s) and the row reads %r"
+                         % (what, len(stage.revit.asked), said[:200]))
+    # A CHECK HERON TURNS DOWN BEFORE SENDING IT - its capability not proven -
+    # makes a run REFUSED, and nothing is sent to Revit.
+    stage.patch(module.bridge, "proof_of", lambda folder: {"status": "DRAFT", "stale": False})
+    try:
+        said = checklist(dict(READ_OK), **named)
+    finally:
+        stage.unpatch()
+    if stated(said) != "REFUSED" or stage.revit.asked:
+        wrong.append("a run whose only check is not proven: %s, %d sent (%r)"
+                     % (stated(said), len(stage.revit.asked), said[:90]))
+    check(not wrong, "heron_checklist says the word true of each of its endings - not: %s"
+          % ("; ".join(wrong[:4]) or "none"))
+    stage.fresh(dict(READ_OK))
+
+
 def the_panel_says_it_too(stage, cases, replies, core):
     """
     ISSUE #1043: Revit's Commands panel runs revit_change's and revit_read's
@@ -2469,6 +2718,7 @@ def main():
         the_panel_says_it_too(stage, cases, replies, core)
         the_pin_and_the_model_in_front(stage, picked)
         the_other_tools_say_it_too(stage)
+        the_panels_and_the_checklist_say_it_too(stage, picked)
         a_keep_that_made_nothing_closes_on_its_word(cases, replies)
         the_page_labels_what_the_body_said(stage, picked)
         asyncio.run(through_the_sdk(stage, cases, picked))

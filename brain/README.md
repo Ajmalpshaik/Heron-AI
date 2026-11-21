@@ -97,7 +97,7 @@ every tool. The table below this one says more about each module.
 | [`heron_rerank.py`](heron_rerank.py) | The optional second read of the top ~20 | The same, through `heron_retrieve` |
 | [`heron_scope.py`](heron_scope.py) · [`heron_paths.py`](heron_paths.py) | One SQLite store per knowledge scope, and where on the PC they live | Every tool that answers from the library; `python brain/heron_paths.py --where` |
 | [`heron_fragment.py`](heron_fragment.py) | What a fragment card is, the validator, and whether a proof still matches its code | `revit_change`, before it keeps a change ([D-117](../docs/DECISIONS.md)); every store rebuild |
-| [`heron_capability.py`](heron_capability.py) | A capability's providers, best first, for one Revit release | `heron_resolve`, `heron_capabilities`, `heron_method` |
+| [`heron_capability.py`](heron_capability.py) | A capability's providers, best first, for one Revit release - and the one order they are chosen in, `provider_order` (trust, then newest version, then id) | `heron_resolve`, `heron_capabilities`, `heron_method`; the `revit_` doors' `_fragment_for`, through `heron_brain.order_providers` (row 5b-1131) |
 | [`heron_skill.py`](heron_skill.py) | Skills: jobs in a modeller's words, as capabilities | `heron_method`, `heron_capabilities`, and the jobs line of a `heron_lookup` answer |
 | [`heron_validate.py`](heron_validate.py) | Gathers a proof's evidence and never signs | No tool - its own command line, and `tools/batch-prove.py` |
 | [`heron_matrix.py`](heron_matrix.py) | Every fragment against every Revit release | `heron_compatibility` |

@@ -569,6 +569,14 @@ _BY_FAILURE = {
 # table's own words.
 _ANSWERED_BY_REPLY = (ANSWERED, None)
 
+# AND THE WORD A TOOL SAYS ONCE ITS ONE READ HAS ANSWERED AND IT GOES ON TO
+# WORK ON WHAT CAME BACK - a Companion panel's (row 5b-1563). ANSWERED, a
+# second object like the one above, so `_ended` can tell it apart: a refusal
+# said after it speaks instead, as there; and a FAILURE said after it is NOT
+# ANSWERED - Heron's own working stopped after the read, and the read opened
+# nothing to keep anything.
+_ANSWERED_THEN_WORKED = (ANSWERED, None)
+
 # The two labels `_ended` is given that are a word by themselves. "ok" is not
 # one - it is KEPT at one door and ANSWERED at another, and the door says
 # which - and "failed" is four different endings.
@@ -798,15 +806,7 @@ def _said_outcome(tool, reply, label, how):
     """
     if tool not in tools.STATES_OUTCOME or not isinstance(reply, str):
         return reply
-    says = None
-    if isinstance(how, tuple) and len(how) == 2:
-        how, says = how
-    word = how if how in _WORDS else _BY_LABEL.get(label, UNKNOWN)
-    if word != how:
-        says = None
-    if word == ROLLED_BACK and not _changes_model(tool):
-        word = NOT_ANSWERED if tools.risk_of(tool) <= tools.ANALYZE else UNKNOWN
-        says = None
+    word, says = word_said(tool, label, how)
     if not reply.strip():
         return outcome_line(word, says)
     # NO OTHER LINE OF THE REPLY MAY PASS FOR THIS ONE (second review,
@@ -820,6 +820,25 @@ def _said_outcome(tool, reply, label, how):
     # that may span lines by design, such as a compile error.
     first, newline, rest = _not_the_line(reply).partition(NEWLINE)
     return first + NEWLINE + outcome_line(word, says) + newline + rest
+
+
+def word_said(tool, label, how):
+    """
+    (word, says): the word `_said_outcome` puts on `tool`'s line for this
+    label and this word said - read once, here, for the line and for a
+    caller that needs the word of a body it ran without a reply to print
+    (heron_checklist's checks, row 5b-1563), so the two cannot disagree.
+    """
+    says = None
+    if isinstance(how, tuple) and len(how) == 2:
+        how, says = how
+    word = how if how in _WORDS else _BY_LABEL.get(label, UNKNOWN)
+    if word != how:
+        says = None
+    if word == ROLLED_BACK and not _changes_model(tool):
+        word = NOT_ANSWERED if tools.risk_of(tool) <= tools.ANALYZE else UNKNOWN
+        says = None
+    return word, says
 
 
 def _not_the_line(text):
@@ -886,7 +905,24 @@ def _ended(outcome, answer=None):
     # label it gives then is the word, through `_BY_LABEL`, as it is the label.
     if outcome in ("refused", "failed") and getattr(_ctx, "how", None) is _ANSWERED_BY_REPLY:
         _ctx.how = None
+    # AND ONE THAT GOES ON TO WORK ON ITS READ (`_answered_by_read`): a
+    # refusal after it is the label's word, a failure after it NOT ANSWERED.
+    if getattr(_ctx, "how", None) is _ANSWERED_THEN_WORKED:
+        if outcome == "refused":
+            _ctx.how = None
+        elif outcome == "failed":
+            _ctx.how = NOT_ANSWERED
     return answer
+
+
+def _answered_by_read():
+    """
+    Said by a tool whose one revit_read has answered, before it works on what
+    came back - a Companion panel's (row 5b-1563): ANSWERED, unless it then
+    says "refused" (the label's word) or "failed" (NOT ANSWERED) - so each
+    `return _ended(...)` after the read keeps the one form it is written in.
+    """
+    _ctx.how = _ANSWERED_THEN_WORKED
 
 
 def _failure_ended(failure):

@@ -156,16 +156,16 @@ core.started(__name__ == "__main__")
 # a second definition would be a second lock, a second pin, a second server.
 # A suite that stands in one of ITS names sets it on that module, not on this.
 from heron_server_core import (                             # noqa: E402
-    approval, binding, _companion_module, _Context, _ctx, _ended,
+    _answered_by_read, approval, binding, _companion_module, _Context, _ctx, _ended,
     _ended_by_reply, _failure_ended, NEWLINE, NO_REVIT_HERE, _note, _old_code,
     pinned, _refused_for_old_code, _revit_lock, server)
 # HOW A DOOR'S CALL ENDED, IN ONE FIXED WORD (row 5b-1159): the words a door
 # says where the label it gives `_ended` is not a word by itself. The table,
 # and the line a reply carries the word on, are the core's.
 from heron_server_core import (                             # noqa: E402
-    ANSWERED, _change_outcome, _failure_outcome, KEPT, kept_nothing, NOT_RUN,
-    _outcome, REFUSED, ROLLED_BACK, ROLLED_BACK_AS_ASKED, _sent, STILL_RUNNING,
-    UNKNOWN)
+    ANSWERED, _change_outcome, _failure_outcome, KEPT, kept_nothing, NOT_ANSWERED,
+    NOT_RUN, _outcome, REFUSED, ROLLED_BACK, ROLLED_BACK_AS_ASKED, _sent,
+    STILL_RUNNING, UNKNOWN, word_said)
 
 import anyio.from_thread                                   # noqa: E402 - the SDK's own dependency
 
@@ -1074,6 +1074,15 @@ def _fragment_for(capability):
     file, and the index is a rebuilt cache of those files which was stale once
     already. This runs over a few hundred small files on a call that is about
     to change somebody's model - speed is not the thing to optimise here.
+
+    MORE THAN ONE CARD FOR ONE CAPABILITY: THE ORDER `heron_resolve` CHOOSES
+    IN (row 5b-1131) - trust, then version newest first, then id - asked of
+    brain/heron_capability.py `order_providers`, over these files. Until
+    2026-11-21 this took the first folder in name order, whatever its status,
+    so `heron_resolve` could name one card and `revit_change` run another - a
+    DRAFT ahead of a PROVEN. One card needs no order, and no brain. With
+    several and the brain not there, NONE is chosen: a guess between two
+    cards is the defect this replaced.
     """
     folder_root = os.path.join(_repo_root(), "brain", "fragments")
     if not os.path.isdir(folder_root):
@@ -1083,24 +1092,35 @@ def _fragment_for(capability):
     if not wanted:
         return None, None
 
+    matches = []
     try:
         for name in sorted(os.listdir(folder_root)):
             path = os.path.join(folder_root, name, "fragment.yaml")
             if not os.path.isfile(path):
                 continue
-            found = status = None
+            found = status = fid = None
             with io.open(path, "r", encoding="utf-8", errors="replace") as fh:
                 for line in fh:
                     if line.startswith("capability:"):
                         found = line.split(":", 1)[1].strip().upper()
                     elif line.startswith("heron-status:"):
                         status = line.split(":", 1)[1].strip().upper()
+                    elif line.startswith("id:"):
+                        fid = line.split(":", 1)[1].split("#", 1)[0].strip().strip("\"'")
             if found and found == wanted:
-                return name, status
+                matches.append({"name": name, "status": status, "id": fid or name,
+                                "folder": os.path.join(folder_root, name)})
     except OSError:
         return None, None
 
-    return None, None
+    if not matches:
+        return None, None
+    if len(matches) > 1:
+        try:
+            matches = brain.order_providers(matches)
+        except brain.BrainUnavailable:
+            return None, None
+    return matches[0]["name"], matches[0]["status"]
 
 
 # A RETIRED CARD NAMES WHAT DOES ITS JOB NOW, and the answer says it (issue
@@ -4316,6 +4336,20 @@ def revit_offer_settings(capability: str, values: str) -> str:
             "there. Nothing in the model was changed." % (capability, len(supplied)))
 
 
+def _word_of_read(out):
+    """
+    The read's own WORD, adopted by a tool whose revit_read did not get a good
+    reply and which answers with that read's sentence: it ends as the read
+    did, its label (row 5b-389, `return _ended(out.get("ended"), said)`, the
+    next line) and its word for the outcome line (row 5b-1563). The read's
+    word was its own and never this tool's (`_through` puts it back), so a
+    tool handing its answer on takes it here. A good reply adopts nothing.
+    """
+    reply = out.get("reply")
+    if (not isinstance(reply, dict) or not reply.get("ok")) and out.get("how") is not None:
+        _ctx.how = out.get("how")
+
+
 @server.tool()
 def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 2000) -> str:
     """
@@ -4353,6 +4387,7 @@ def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 200
     # revit_read has already refused, classified any failure and checked the
     # pin; when it did not get a good reply, its own sentence is the answer -
     # and how it said that ended is this call's ending too (row 5b-389).
+    _word_of_read(out)
     if not isinstance(reply, dict) or not reply.get("ok"):
         return _ended(out.get("ended"), said)
     # THE PIN'S REFUSAL STANDS: revit_read hands over the raw reply before it
@@ -4361,6 +4396,10 @@ def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 200
     if pinned.check(reply):
         return _ended("refused", said)
     _ended("ok")
+    # ANSWERED from here (row 5b-1563): the read answered and the panel is
+    # this tool's answer, nothing kept in the model - and a "failed" said
+    # below, Heron's own working stopping, is NOT ANSWERED.
+    _answered_by_read()
 
     import json
     provides = reply.get("provides") or {}
@@ -4454,6 +4493,7 @@ def revit_building_loads(inputs: str = "", expect_from: str = "",
     # revit_read has already refused, classified any failure and checked the
     # pin; when it did not get a good reply, its own sentence is the answer,
     # and how it said that ended, as in revit_edit_table (row 5b-389).
+    _word_of_read(out)
     if not isinstance(reply, dict) or not reply.get("ok"):
         return _ended(out.get("ended"), said)
     # THE PIN'S REFUSAL STANDS, as in revit_edit_table: a good reply from
@@ -4461,6 +4501,10 @@ def revit_building_loads(inputs: str = "", expect_from: str = "",
     if pinned.check(reply):
         return _ended("refused", said)
     _ended("ok")
+    # ANSWERED from here (row 5b-1563): the read answered and the panel is
+    # this tool's answer, nothing kept in the model - and a "failed" said
+    # below, Heron's own working stopping, is NOT ANSWERED.
+    _answered_by_read()
     provides = reply.get("provides") or {}
     # A FRESH READ OVERTAKES ANY RECALCULATE still working on the take-off the
     # page holds - said before this run is kept, so that one cannot be kept
@@ -4542,6 +4586,7 @@ def revit_sprinkler_hydraulics(system: str = "", inputs: str = "",
         "REPORT_SPRINKLER_NETWORK", "systemName=" + ((system or "").strip() or "*"),
         expect_from, ctx=ctx)
     reply = out.get("reply")
+    _word_of_read(out)
     if not isinstance(reply, dict) or not reply.get("ok"):
         return _ended(out.get("ended"), said)
     # THE PIN'S REFUSAL STANDS, as in revit_building_loads - and the endings
@@ -4549,6 +4594,10 @@ def revit_sprinkler_hydraulics(system: str = "", inputs: str = "",
     if pinned.check(reply):
         return _ended("refused", said)
     _ended("ok")
+    # ANSWERED from here (row 5b-1563): the read answered and the panel is
+    # this tool's answer, nothing kept in the model - and a "failed" said
+    # below, Heron's own working stopping, is NOT ANSWERED.
+    _answered_by_read()
     provides = reply.get("provides") or {}
     try:
         answer = brain.sprinkler_hydraulics(provides.get("networkJson") or "", inputs,
@@ -4630,11 +4679,16 @@ def revit_sprinkler_layout(spaces: str = "", inputs: str = "", ctx: _Context = N
         "REPORT_SPRINKLER_LAYOUT_SPACES", "spaces=" + rooms_asked, ctx=ctx)
     reply = out.get("reply")
     # Labelled as revit_building_loads labels its endings (row 5b-389).
+    _word_of_read(out)
     if not isinstance(reply, dict) or not reply.get("ok"):
         return _ended(out.get("ended"), said)
     if pinned.check(reply):
         return _ended("refused", said)
     _ended("ok")
+    # ANSWERED from here (row 5b-1563): the read answered and the panel is
+    # this tool's answer, nothing kept in the model - and a "failed" said
+    # below, Heron's own working stopping, is NOT ANSWERED.
+    _answered_by_read()
     provides = reply.get("provides") or {}
     try:
         answer = brain.sprinkler_layout(provides.get("layoutJson") or "", inputs,
@@ -4655,14 +4709,23 @@ def revit_sprinkler_layout(spaces: str = "", inputs: str = "", ctx: _Context = N
     return answer["said"]
 
 
-def _read_dashboard(companion_page, origin="chat", ctx=None, parameters="", board=""):
+def _read_dashboard(companion_page, origin="chat", ctx=None, parameters="", board="",
+                    word_out=None):
     """
     One read of the model for the Model Dashboard (docs/40 s21.10): READ
     REPORT_MODEL_DASHBOARD through revit_read - no transaction, the chat's
     lock and pin - make the panel in the brain, and put it on the page.
     Returns (ended, said): how it ended, as revit_read's endings are labelled
     (row 5b-389), and the sentence to give.
+
+    AND ITS WORD, in word_out["how"] when a dict is given - for
+    revit_model_dashboard's outcome line (row 5b-1563): the read's own word
+    when the read did not answer, ANSWERED for a dashboard opened, NOT
+    ANSWERED when Heron's working stopped after a good read, NOT RUN when the
+    library could not be read before anything was sent. With no word put
+    there, the label says it.
     """
+    word_out = {} if word_out is None else word_out
     out = {}
     wanted = ", ".join(p.strip() for p in (parameters or "").replace(";", ",").split(",")
                        if p.strip())
@@ -4672,6 +4735,7 @@ def _read_dashboard(companion_page, origin="chat", ctx=None, parameters="", boar
     except ValueError as why:
         return "refused", "Nothing was read: %s" % why
     except brain.BrainUnavailable as why:
+        word_out["how"] = NOT_RUN
         return "failed", str(why)
     values = "\n".join(v for v in (("parameters=" + wanted) if wanted else "",
                                     ("breakdowns=" + breakdowns) if breakdowns else "") if v)
@@ -4679,6 +4743,7 @@ def _read_dashboard(companion_page, origin="chat", ctx=None, parameters="", boar
         "REPORT_MODEL_DASHBOARD", values, "", ctx=ctx)
     reply = out.get("reply")
     if not isinstance(reply, dict) or not reply.get("ok"):
+        word_out["how"] = out.get("how")
         return out.get("ended"), said
     # THE PIN'S REFUSAL STANDS, as in revit_building_loads: a good read of
     # ANOTHER model must never be shown as this chat's model.
@@ -4691,8 +4756,10 @@ def _read_dashboard(companion_page, origin="chat", ctx=None, parameters="", boar
                                        project=pinned.project_key, project_name=pinned.title,
                                        board=board or None)
     except brain.BrainUnavailable as why:
+        word_out["how"] = NOT_ANSWERED
         return "failed", str(why)
     if answer.get("dashboard") is None:
+        word_out["how"] = NOT_ANSWERED
         return "failed", answer["said"]
     # D-147: the model's change count as the add-in's live file has it now,
     # so the page can say when the model has changed since this read.
@@ -4702,6 +4769,7 @@ def _read_dashboard(companion_page, origin="chat", ctx=None, parameters="", boar
         changes = None
     companion_page.DASHBOARD_PANEL.open(reply.get("document"), answer, _pin_identity(),
                                         parameters=wanted, board=board, changes=changes)
+    word_out["how"] = ANSWERED
     return "ok", answer["said"]
 
 
@@ -4728,7 +4796,13 @@ def revit_model_dashboard(parameters: str = "", board: str = "", view3d: bool = 
         return ("The Heron Companion is switched off in Revit, so the model was not read. "
                 "To turn it on, open Settings on the Heron tab and turn Companion "
                 "on.")
-    ended, said = _read_dashboard(companion_page, ctx=ctx, parameters=parameters, board=board)
+    word = {}
+    ended, said = _read_dashboard(companion_page, ctx=ctx, parameters=parameters, board=board,
+                                  word_out=word)
+    # Its word, as _read_dashboard found it (row 5b-1563). A 3D view that is
+    # not made below is a sentence of the answer, never its ending.
+    if word.get("how") is not None:
+        _ctx.how = word["how"]
     if ended != "ok":
         return _ended(ended, said)
     if view3d:
@@ -7345,41 +7419,61 @@ def _checklist_ask(origin="chat", ctx=None):
     NOT RUN, and nothing sent, when the capability is not PROVEN or its proof
     is stale (D-30: a result from code nobody proved is not a QA result), and
     when the chat has moved to another model since the first check.
+
+    AND HOW EACH CHECK ENDED (row 5b-1563): first["endings"], one a check, in
+    order - the label and the word a door's ending is said in, which
+    heron_checklist reads into a word with the core's own `word_said`. A
+    check turned down before anything was sent is "refused"; no capability by
+    that name is "handed_back" - nothing said no, NOT RUN; a read that did
+    not answer is the read's own label and word; one that answered is "ok".
+    Labels only here, never a word: the words are the core's, and this part
+    of the file is also read without it (tests/test_checklists.py).
     """
     store = brain.commands()
-    first = {}
+    first = {"endings": []}
+
+    def ended(label, said, how=None):
+        first["endings"].append((label, how))
+        return said
 
     def ask(check):
         capability = check.get("capability") or ""
         folder, _status = _fragment_for(capability)
         if folder is None:
-            return {"ran": False, "why": "Heron has nothing called %s, so nothing was sent." % capability}
+            return ended("handed_back", {"ran": False, "why": "Heron has nothing called %s, so nothing "
+                                                        "was sent." % capability})
         proof = bridge.proof_of(folder)
         if proof is None:
-            return {"ran": False, "why": "How far %s is proven could not be read, so nothing was "
-                                         "sent - could not tell is not PROVEN." % capability}
+            return ended("refused", {"ran": False, "why": "How far %s is proven could not be read, "
+                                                        "so nothing was sent - could not tell is "
+                                                        "not PROVEN." % capability})
         if proof.get("status") not in bridge.KEEPABLE_STATUSES:
-            return {"ran": False, "why": "%s is %s - no recorded proof stands behind it, so its "
-                                         "answer is not a QA result. Nothing was sent."
-                                         % (capability, proof.get("status") or "not proven")}
+            return ended("refused", {"ran": False, "why": "%s is %s - no recorded proof stands "
+                                                        "behind it, so its answer is not a QA "
+                                                        "result. Nothing was sent."
+                                                        % (capability, proof.get("status")
+                                                           or "not proven")})
         if proof.get("stale") and proof.get("proof") is False:
             # Row 5b-1154: the card says proven and records no proof.
-            return {"ran": False, "why": "%s says it is %s, but its card records no proof at all "
-                                         "(D-30), so its answer is not a QA result. Nothing was "
-                                         "sent." % (capability, proof.get("status"))}
+            return ended("refused", {"ran": False, "why": "%s says it is %s, but its card records "
+                                                        "no proof at all (D-30), so its answer is "
+                                                        "not a QA result. Nothing was sent."
+                                                        % (capability, proof.get("status"))})
         if proof.get("stale"):
-            return {"ran": False, "why": "%s was proven, but its code has changed since (D-30), "
-                                         "so nothing was sent." % capability}
+            return ended("refused", {"ran": False, "why": "%s was proven, but its code has changed "
+                                                        "since (D-30), so nothing was sent."
+                                                        % capability})
         try:
             values = store.fill({"name": check.get("sentence"), "values": check.get("values") or [],
                                  "inputs": []}, {})
         except store.CommandError as why:
-            return {"ran": False, "why": str(why)}
+            return ended("refused", {"ran": False, "why": str(why)})
         with _revit_lock:
             moved = _moved_since(first.get("identity"))
             if moved is not None:
-                return {"ran": False, "why": "The chat is no longer on the model the first check "
-                                             "read, so nothing was sent. Run the checklist again."}
+                return ended("refused", {"ran": False, "why": "The chat is no longer on the model "
+                                                            "the first check read, so nothing was "
+                                                            "sent. Run the checklist again."})
             out = {}
             # D-158: a check that names where its failing ids are asks for
             # that list whole, so Select in Revit can take every one - set
@@ -7393,11 +7487,13 @@ def _checklist_ask(origin="chat", ctx=None):
             reply = out.get("reply")
             if out.get("ended") != "ok" or not isinstance(reply, dict) or not reply.get("ok"):
                 lines = [line.strip() for line in str(said or "").splitlines() if line.strip()]
-                return {"ran": False, "why": " ".join(lines[:2])[:400] or "Revit did not answer."}
+                return ended(out.get("ended"), {"ran": False, "why": " ".join(lines[:2])[:400]
+                                                or "Revit did not answer."}, out.get("how"))
             wrong_model = pinned.check(reply)
             if wrong_model is not None:
-                return {"ran": False, "why": wrong_model}
+                return ended("refused", {"ran": False, "why": wrong_model})
             first.setdefault("identity", _pin_identity())
+            first["endings"].append(("ok", None))
         try:
             changes = _companion_module().live_changes(binding.pid)
         except Exception:                            # noqa: BLE001 - only a finding is lost
@@ -7448,13 +7544,15 @@ def _run_checklist(checklist, origin="chat", ctx=None, progress=None):
         if progress is not None:
             progress(partial)
 
-    first = {}
+    first = {"endings": []}
     try:
         try:
             binding.resolve()
         except NotBound as unbound:
             said = "Revit is not connected for this chat, so nothing was sent: %s" % unbound
             answer = store.run(checklist, lambda check: {"ran": False, "why": said})
+            # Nowhere to send it: nothing said no - "handed_back", NOT RUN.
+            first["endings"] = [("handed_back", None)]
         else:
             ask, first = _checklist_ask(origin=origin, ctx=ctx)
             answer = store.run(checklist, ask, progress=step)
@@ -7466,6 +7564,8 @@ def _run_checklist(checklist, origin="chat", ctx=None, progress=None):
                               held.get("run"), held.get("findings"))
         answer["failed"] = True
     answer["identity"] = list(first["identity"]) if first.get("identity") else None
+    # How each check ended - for heron_checklist's line (row 5b-1563).
+    answer["endings"] = list(first.get("endings") or [])
     # WHAT CHANGED SINCE THE LAST RUN ON THIS MODEL - NEW, STILL OPEN, FIXED -
     # and this run kept for the next. Only a finished run; never raises.
     if not answer.get("failed"):
@@ -7509,6 +7609,34 @@ def _checklist_on_page(answer):
     return False
 
 
+#: Which of its checks' words a run that answered nothing says - the first
+#: of these any check said. A word not here, or none, is OUTCOME UNKNOWN.
+_CHECKLIST_WORDS = (UNKNOWN, STILL_RUNNING, NOT_ANSWERED, REFUSED, NOT_RUN)
+
+
+def _checklist_word(answer, ran):
+    """
+    The word for one run of a checklist (row 5b-1563). A run that stopped on
+    a fault is OUTCOME UNKNOWN; one where any check answered is ANSWERED -
+    the rows say which did not. One where none did says its checks' word: a
+    read whose answer was lost outranks a refusal, a refusal outranks NOT
+    RUN, so a word never says more than the least known check. A run that
+    asked no check at all is NOT RUN.
+    """
+    if answer.get("failed"):
+        return UNKNOWN
+    if ran:
+        return ANSWERED
+    words = [word_said("revit_read", label, how)[0]
+             for label, how in answer.get("endings") or []]
+    if not words:
+        return NOT_RUN
+    for word in _CHECKLIST_WORDS:
+        if word in words:
+            return word
+    return UNKNOWN
+
+
 @server.tool()
 def heron_checklist(action: str = "list", name: str = "", checks: str = "",
                     description: str = "", replace: bool = False, report: bool = False,
@@ -7538,16 +7666,24 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
     against the last run. Never call the model compliant. report=true, when
     they ask for a report, also writes Excel and HTML files; give both paths.
     """
+    # HOW IT ENDED, IN A WORD (row 5b-1563), every return read against
+    # heron_server_core.OUTCOMES: list, show, save and delete keep nothing in
+    # the model and ANSWER; each refusal is REFUSED by its label; a library or
+    # a folder that is not there, or a run another run is in the way of, is
+    # NOT RUN; a run says the word its checks make it (`_checklist_word`).
     try:
         store = brain.checklists()
     except brain.BrainUnavailable as why:
+        _outcome(NOT_RUN)
         return _ended("failed", str(why))
     act = (action or "list").strip().lower()
     try:
         if act == "list":
             found, broken = store.all_checklists()
             if store.folder() is None:
-                return "This PC has no folder for Heron's data, so no checklist can be saved here."
+                return _outcome(NOT_RUN, "This PC has no folder for Heron's data, so no "
+                                         "checklist can be saved here.")
+            _outcome(ANSWERED)
             if not found and not broken:
                 return ("No QA checklists are saved yet. action=\"starter\" saves Heron's example, "
                         "when the modeller asks for it.")
@@ -7560,13 +7696,16 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
             extended = ["Extends '%s'. Overrides: %s." % (checklist["extends"], "; ".join(
                 "%s -> %s" % (o["sentence"], ", ".join("%s %s" % (k, o[k]) for k in sorted(o) if k != "sentence"))
                 for o in checklist.get("overrides") or []) or "none")] if checklist.get("extends") else []
+            _outcome(ANSWERED)
             return "\n".join([store.describe(checklist)] + extended + [
                 "%d. %s\n   values: %s" % (i, store.check_line(c), "; ".join(
                     "%s=%s" % (v["name"], v["value"]) for v in c.get("values") or []) or "none")
                 for i, c in enumerate(checklist.get("checks") or [], 1)])
         if act == "delete":
+            deleted = store.delete(name)
+            _outcome(ANSWERED)
             return ("Deleted the checklist '%s', and the runs kept of it to compare with."
-                    % store.delete(name))
+                    % deleted)
         if act == "run":
             # D-179: a list that extends an office list runs the office list
             # as it is now, with its overrides - and says so if it changed.
@@ -7577,6 +7716,9 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
             panel = _checklist_panel()
             refusal = panel.begin("chat") if panel is not None else None
             if refusal:
+                # NOT RUN: nothing said no to the list - another run held the
+                # page just then, and nothing was sent.
+                _outcome(NOT_RUN)
                 return _ended("refused", "Not run: %s." % refusal)
             try:
                 answer = _run_checklist(checklist, origin="chat", ctx=ctx,
@@ -7593,6 +7735,7 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
             # A NO DATA check read the model and answered "could not decide"
             # (D-165) - an answer, so it counts as run; only NOT RUN does not.
             ran = answer["counts"]["pass"] + answer["counts"]["fail"] + answer["counts"]["missing"]
+            _outcome(_checklist_word(answer, ran))
             return _ended("failed" if answer.get("failed") else "ok" if ran else "refused", said)
         if act not in ("save", "starter"):
             return _ended("refused", "action must be list, show, save, starter, run or delete - "
@@ -7618,8 +7761,10 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
     except store.ChecklistError as why:
         return _ended("refused", str(why))
     except OSError as why:
+        _outcome(NOT_RUN)
         return _ended("failed", "The checklist could not be written: %s. Nothing was saved." % why)
     kept = store.find(checklist["name"])
+    _outcome(ANSWERED)
     lines = ["Saved '%s'. It runs from this chat with action=\"run\", or from the Heron "
              "Companion's QA Checklist page." % kept["name"]]
     lines += ["%d. %s" % (i, store.check_line(c)) for i, c in enumerate(kept["checks"], 1)]
