@@ -24,8 +24,9 @@ purpose: >
   Every tool of this method is DRAFT or PROVEN as the list after it says.
   The sheets were made by CREATE_SHEETS_FROM_TABLE until 2026-11-21, when it
   was merged into CREATE_SHEETS as its version 4 (the owner's "merge: yes",
-  issue #1080, D-193) and retired. CREATE_SHEETS version 4 is DRAFT until one
-  proving run on the owner's PC (NEEDS-CHECKING Group OZ), so TODAY NO CHAT
+  issue #1080, D-193) and retired. CREATE_SHEETS - version 5 since
+  2026-11-21 - is DRAFT until its proving runs on the owner's PC
+  (NEEDS-CHECKING Group OZ, then Group PE's PE3), so TODAY NO CHAT
   TOOL RUNS IT, a preview included: revit_read refuses anything above ANALYZE
   and this card is MODIFY, and revit_change refuses a DRAFT before anything is
   sent (D-117). Steps 3 and 5 say what runs it now: the preview from the
@@ -151,7 +152,7 @@ preconditions:
   - every problem heron_sheet_list listed in the file - no number, a number twice - has been put to the modeller and settled by them, never guessed
   - "the title block is in the file or named by the modeller as 'Family: Type' - never assumed (D-33)"
   - every column that matches no sheet parameter has been put to the modeller - renamed in the file, bound by a separate change, or left out on their word
-  - while CREATE_SHEETS is DRAFT - as it is since version 4, 2026-11-21 - the model is saved and in front for its one try-once
+  - while CREATE_SHEETS is DRAFT - as it is since version 4, and at version 5, 2026-11-21 - the model is saved and in front for its one try-once
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 

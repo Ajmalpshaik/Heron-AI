@@ -201,8 +201,11 @@ compatibility-note: >
 #                                           Roof, this is the other way for the
 #                                           walls; a roof by extrusion to a roof
 #                                           is EXTEND_ROOF_TO_ROOF (row 5b-1877),
-#                                           a footprint roof to a roof is done
-#                                           by hand. tests/test_brain_reachable.py
+#                                           and from Revit 2022 a footprint
+#                                           roof's gable end too (its version
+#                                           2); on 2020 and 2021 a footprint
+#                                           roof to a roof is done by hand.
+#                                           tests/test_brain_reachable.py
 
 utterances:
   - make the tops of these walls follow the roof above
