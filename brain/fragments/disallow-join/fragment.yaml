@@ -149,3 +149,8 @@ utterances:
   # ADDED 2026-11-02, row 5b-1419. This card's own routing table claims it;
   # tools/check-routing.py listed it as reaching JOIN_GEOMETRY instead.
   - the walls are joining where they should not
+  # ADDED 2026-11-21, row 5b-1947 (issue #956), on the owner's word that day
+  # ("fix the remaining open rows in 956"). Walls that should not join, without the word
+  # 'clean' a clean-join request shares. At the END - and the card has
+  # fewer than eight, so the re-ranker reads this line too (D-134).
+  - these walls should not join each other

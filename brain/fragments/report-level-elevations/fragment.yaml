@@ -296,3 +296,8 @@ utterances:
   # (LEVEL_IS_BUILDING_STORY), and the sentence reached CREATE_LEVELS, a
   # write, on model and both re-ranked backends. Declared on the read (D-86).
   - which levels are not building storeys
+  # ADDED 2026-11-21, row 5b-1946 (issue #956), on the owner's word that day
+  # ("fix the remaining open rows in 956"). "what is the elevation of Level 2" reached
+  # CREATE_LEVELS, a write. At the END, so the eight the
+  # re-ranker reads (D-134) are unchanged.
+  - what is the elevation of this level
