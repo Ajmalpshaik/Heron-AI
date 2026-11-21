@@ -1123,7 +1123,7 @@ whether his fuller plan of 2026-11-17 adds to them is his to say when it starts.
 
 ---
 
-### 🔵 Q-94 — Heron's usage counter: does it keep the question you typed, or only a count against the clause it answered from? *(found 2026-09-12, carried here 2026-11-20)*
+### ✅ Q-94 — Heron's usage counter: does it keep the question you typed, or only a count against the clause it answered from? → **Only the clause and a count** *(found 2026-09-12, carried here 2026-11-20, answered 2026-11-20)*
 
 **Where it comes from.** [D-70](../decisions/D-70.md) settled, on the owner's yes of 2026-09-12, that Heron
 keeps a **counter** of how often each standard clause answers a question - a clause id and a count, per
@@ -1148,6 +1148,67 @@ clause 5.3 was used once more, or also the words you typed?**
 **Nothing is recommended.** Shape 1 is what D-70 covers; shape 2 is new, and it is the half with the privacy
 consequence. Whoever builds R-25 stores the clause id and the count until this is answered.
 
+**Answer:** shape 1 - only the clause and its counts; the question's words are never kept. The owner's
+words, 2026-11-20, answering question 1 on pull request [#1096](https://github.com/Ajmalpshaik/Heron-AI/pull/1096):
+*"yes to all four on the usage counter, build it"* - the fourth of the four, as the pull request put it, was
+*"Your question's words are not stored - only the clause and the counts"*. Recorded as [D-191](../decisions/D-191.md) item 4 and built in
+pull request [#1135](https://github.com/Ajmalpshaik/Heron-AI/pull/1135). The answer was written here on
+2026-11-21, when this question was found still reading open.
+
 **Tracked as GitHub issue [#1009](https://github.com/Ajmalpshaik/Heron-AI/issues/1009) since 2026-11-16 (WN-39)** - the owner answers there.
+
+---
+
+### 🔵 Q-95 — The cloud index for documents: which service makes it, and does the switch stay off until you turn it on? *(asked 2026-11-20 on pull request #1096, carried here 2026-11-21)*
+
+**Tracked as GitHub issue [#1009](https://github.com/Ajmalpshaik/Heron-AI/issues/1009) since 2026-11-21** - the owner answers there.
+
+**Where it comes from.** Q-54, above in this file,
+was answered *"build it, and split by content type"*, and [D-82](../decisions/D-82.md) records the line:
+documents may go to the cloud, Revit models, families and model data never leave the PC. That is R-30 of
+[`rag/01-requirements.md`](../work-notes/plans/rag/01-requirements.md), tracked as WN-13 of issue
+[#1006](https://github.com/Ajmalpshaik/Heron-AI/issues/1006). **It is not built, on purpose**: no decision
+names the service a document would be sent to, and none says in so many words that the switch is off until
+you turn it on. Both were asked on pull request
+[#1096](https://github.com/Ajmalpshaik/Heron-AI/pull/1096) (its question 2), which merged unanswered, so
+the question comes here rather than living only in a merged pull request.
+
+**The question, in a modeller's words: when Heron may send a document's text to the cloud to index it, which
+service does that - and is it switched off until you switch it on yourself?**
+
+1. **Which service.** It needs an account and a key on your PC, and it is your choice - Heron does not pick
+   one for you. Nothing is sent anywhere until it is named.
+2. **Off until you switch it on**, and the switch says in plain words *"your document text is sent to
+   <service> to be indexed - your Revit models never are."* **Recommended: yes** - it is what D-24 kept
+   (local is the default) and what D-82 keeps.
+
+**Nothing is built until both are answered.** Until then every document is indexed on this PC only, as
+today.
+
+---
+
+### 🔵 Q-96 — Adding a document to Heron's knowledge from the chat, in one step: build it? *(asked 2026-11-20 on pull request #1096, carried here 2026-11-21)*
+
+**Tracked as GitHub issue [#1009](https://github.com/Ajmalpshaik/Heron-AI/issues/1009) since 2026-11-21** - the owner answers there.
+
+**Where it comes from.** R-90 of [`rag/01-requirements.md`](../work-notes/plans/rag/01-requirements.md)
+says adding a document is **one obvious action**: you never type a path, name a database or choose a
+folder. Half of it is built - Heron decides where the store is, and tells you in your words where a
+document went (*"for the whole company - on this PC"*, R-89). **The other half is not:** adding a document
+is still a typed command with a file path in it, `python brain/heron_ingest.py <file> --scope company`,
+and no Heron tool lets the chat do it. That is WN-20 of issue
+[#1006](https://github.com/Ajmalpshaik/Heron-AI/issues/1006). It was asked on pull request
+[#1096](https://github.com/Ajmalpshaik/Heron-AI/pull/1096) (its question 3), which merged unanswered.
+
+**The question, in a modeller's words: should you be able to say *"add this PDF for the whole company"* in
+the chat, and Heron adds it - instead of typing a command?**
+
+**Recommended: yes.** The tool would read only the one file you name, write only Heron's own knowledge store
+on this PC, send nothing anywhere and touch nothing in Revit; it would say first, in your words, where the
+document goes and that your file is left untouched (R-91), exactly as the typed command does now. **Cost:**
+one more tool the chat can call, and it reads a file from your PC - only the one you name, never a search of
+your folders.
+
+**Nothing is built until this is answered.** The typed command stays the way in.
 
 ---
