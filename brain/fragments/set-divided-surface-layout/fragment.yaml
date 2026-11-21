@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -61,7 +61,22 @@ capability: SET_DIVIDED_SURFACE_LAYOUT
 # sets it at creation, and nothing changes it afterwards yet), the belt
 # measurement of a curved surface, and a divided surface in an in-place mass
 # of a project, which is refused like any project.
-version: 1
+#
+# VERSION 2 (2026-11-21) - REVIT'S GRIDLINE COUNTS UNDER ITS OWN NAMES, and
+# back to DRAFT. FRAGMENT-ISSUES row 5b-1908 (issue #1111): version 1 ended
+# each grid's readBack row with its same-letter count - "U grid: ...; 6
+# gridline(s) before, 7 now" - and row 5b-303 measured on a Revit 2024 mass
+# that each count moved with the OTHER rule, so that pairing could tell the
+# modeller the other direction's lines. The counts now have a readBack row of
+# their own, "Revit counts: U-gridlines 6 before, 7 now; V-gridlines 9 before,
+# 11 now", beside no grid - the same words as DIVIDE_FAMILY_SURFACE version 2
+# - and the finding says which rule makes which lines is NEEDS-CHECKING
+# BV21's. No write and no check moved. Version 1 was PROVEN (the proof block
+# below, kept as the record of what it proved); its C# moved, so it is DRAFT
+# again until NEEDS-CHECKING Group PB (PB3, PB4) is run (D-30) - on the
+# owner's word that a fragment found wrong may be changed even though it is
+# proven.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -135,7 +150,8 @@ contract:
       type: int
     - name: readBack
       # EVERY setting of the surface as Revit holds it after the call - each
-      # grid's parts and gridline counts before and now, the surface's own
+      # grid's parts, Revit's U- and V-gridline counts before and now on a row
+      # of their own beside no grid (version 2, BV21), the surface's own
       # settings and its cuts - each marked asked, already so, or left as it
       # was, and anything Revit moved unasked. A STRING, because a reply cuts a
       # list to three items, and this is the evidence. Empty on a refusal.

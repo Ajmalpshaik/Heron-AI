@@ -9,9 +9,21 @@ semantic-identity: "build extrusions, revolves, blends, sweeps and swept blends 
 kind: action
 domain: revit.families
 capability: CREATE_FAMILY_FORMS
-version: 4
+version: 5
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 5 (2026-11-21) - A LOOP THAT CROSSES OR TOUCHES ITSELF, refused, and
+# still DRAFT. FRAGMENT-ISSUES row 5b-1921 (issue #1111): version 4 tested
+# every pair of loops, but never one loop against itself, so a figure-of-eight
+# - or corners written out of order, so one side runs across another - still
+# reached Revit, which answers only "unexpected internal error". Version 4's
+# side-against-side arithmetic is now run on each loop's own sides that are
+# not next to each other (a blend's and a swept blend's top loop too); two
+# nearer than 0.01 mm refuse the call before anything is made, naming the row,
+# the loop and the two sides by their order and first corner. A plain outline,
+# a slot, a circle and a polygon pass unchanged, and no output changed. DRAFT
+# until NEEDS-CHECKING Group OT and Group PB (PB5, PB6) are run (D-30).
 
 # VERSION 4 (2026-11-20) - LOOPS THAT TOUCH, AND A LOOP BUDGET, and back to
 # DRAFT. Two refusals before anything is made, each naming what to do instead:

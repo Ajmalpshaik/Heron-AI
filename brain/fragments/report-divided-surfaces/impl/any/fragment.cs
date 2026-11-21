@@ -22,13 +22,23 @@
 // that card changed reads back here in the same words. A setting Revit will not read is
 // said so, with Revit's reason, and never shown as "no" or "none" (D-52).
 //
+// VERSION 3 (2026-11-21, row 5b-1908): EACH RULE IN ITS OWN WORDS, AND
+// REVIT'S GRIDLINE COUNTS UNDER REVIT'S OWN NAMES - "U rule FixedNumber 20,
+// Center, V rule FixedNumber 4, Center, Revit counts 7 U-gridlines and 23
+// V-gridlines". Version 2 printed each count in brackets beside its
+// same-letter rule ("U FixedNumber 20, Center (7 gridlines)"); row 5b-303
+// measured on a Revit 2024 mass that each count moved with the OTHER rule, so
+// that pairing could tell the modeller the other direction's lines. Which rule
+// makes which gridlines is NEEDS-CHECKING BV21's to settle by eye; a finding
+// says so - the same words as DIVIDE_FAMILY_SURFACE version 2.
+//
 // withNodes true adds where the nodes are, in millimetres - the first 50 of
 // each - which is what an adaptive component is placed on. A node's place
 // comes from the point Revit's geometry gives for it; a node with none is
 // counted, not guessed.
 
 const double MmPerFoot = 304.8;
-var report = new List<string>();
+var divided = "";
 var findings = new List<string>();
 var surfaceCount = 0;
 var pathCount = 0;
@@ -84,12 +94,21 @@ Func<SpacingRule, string> rule = r =>
     return text;
 };
 
+// VERSION 3 (row 5b-1911): EACH LINE IS KEPT INSIDE THIS BLOCK, closed at the
+// end of the file. The add-in sends every list of text a fragment leaves at its
+// top level whole beside the answer, so version 2's top-level `report` printed
+// every line a third time, beside `divided` and `findings`.
+{
+var report = new List<string>();
 foreach (DividedSurface surface in new FilteredElementCollector(doc).OfClass(typeof(DividedSurface)))
 {
     surfaceCount++;
+    // VERSION 3: each rule in its own words, and Revit's two gridline counts
+    // under Revit's own names, beside no rule (row 5b-1908, BV21).
     var line = "divided surface " + surface.Id + " on " + (surface.Host != null ? (surface.Host.Category != null ? surface.Host.Category.Name + " " : "") + surface.Host.Id : "no host")
-        + ": U " + rule(surface.USpacingRule) + " (" + surface.NumberOfUGridlines + " gridlines), V " + rule(surface.VSpacingRule)
-        + " (" + surface.NumberOfVGridlines + " gridlines), border tiles " + surface.BorderTile;
+        + ": U rule " + rule(surface.USpacingRule) + ", V rule " + rule(surface.VSpacingRule)
+        + ", Revit counts " + surface.NumberOfUGridlines + " U-gridlines and " + surface.NumberOfVGridlines
+        + " V-gridlines, border tiles " + surface.BorderTile;
     var one = surface;
     line += ", all grid rotation " + held(() => degreesText(one.AllGridRotation))
         + ", component rotation " + held(() => sayComponentRotation(one.ComponentRotation))
@@ -161,5 +180,10 @@ foreach (DividedPath path in new FilteredElementCollector(doc).OfClass(typeof(Di
 // Nothing found leaves `divided` empty, so the hand-on sees no answer; the
 // finding says it in words.
 findings.Add(surfaceCount + " divided surface(s) and " + pathCount + " divided path(s) read in \"" + doc.Title + "\".");
-var divided = string.Join(" | ", report);
+if (surfaceCount > 0)
+    findings.Add("Which rule makes which gridlines is not settled, so Revit's two counts are given under its own names "
+        + "and not beside a rule: on a test mass the U-gridline count moved with the V rule and the V-gridline count "
+        + "with the U rule. NEEDS-CHECKING BV21 settles it by eye in the Family Editor.");
+divided = string.Join(" | ", report);
 findings.AddRange(report);
+}   // VERSION 3 (row 5b-1911): the end of the block that keeps `report`.

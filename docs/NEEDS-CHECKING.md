@@ -1646,9 +1646,17 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pa.md`](needs-checking/group-pa.md)
 
+## Group PB - four family-editor tools repaired from issue #1111: divided-surface counts under Revit's own names, a loop that crosses itself, and lists no longer printed twice - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pb.md`](needs-checking/group-pb.md)
+
 ## Group PD - row 106: is a clearance check slow on a real MEP model? One timed run before any fix is written (2026-11-21)
 
 **Its own file:** [`needs-checking/group-pd.md`](needs-checking/group-pd.md)
+
+## Group PE - five cards changed for issues #950, #1005, #1112 and #1114, and a read of the open models that answers whatever the pin - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pe.md`](needs-checking/group-pe.md)
 
 ## Group PF - job methods and a skill's plan, run where Revit is: a plan that stops at a failed step, no write method beside a question, builders work, general notes and the casework template (2026-11-21)
 
