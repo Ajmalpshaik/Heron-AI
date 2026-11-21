@@ -27,17 +27,21 @@ purpose: >
   exist and stops before any sheet.
 
   The status in brackets after each capability is what that capability's own
-  fragment.yaml said on 2026-10-17. The list of capabilities after this method
-  is read from the library every time it is served: where the two differ, the
-  list is right and this text is out of date.
+  fragment.yaml said on 2026-10-17, read again on 2026-11-21. The list of
+  capabilities after this method is read from the library every time it is
+  served: where the two differ, the list is right and this text is out of
+  date. A step whose capability is DRAFT in that list and changes the model
+  does not go through revit_change, which refuses a DRAFT (D-117): it runs
+  only through try-once, on a saved model, when the modeller asks (D-119,
+  D-121, D-122).
 
-  ONE STEP OF THIS JOB HAS NO TOOL ON MAIN YET, and a second has half of one -
-  each marked GAP below and kept out of the list of capabilities, because
-  nothing there provides them: setting an opening's depth with one face kept,
-  and a tag on an opening inside a link. Replacing a family with another at
-  the same place is the method replace-in-place-family since row 5b-740. At a
-  gap say so to the modeller and let them choose; never work round a gap by
-  guessing a value or typing an element id.
+  ONE STEP OF THIS JOB HAS HALF A TOOL ON MAIN - marked GAP below and kept
+  out of the list of capabilities: a tag on an opening inside a link.
+  Replacing a family with another at the same place is the method
+  replace-in-place-family since row 5b-740, and setting an opening's depth
+  with one face kept is SET_PARAMETER_VALUES_BY_ID's keepFace since its
+  version 3 (row 5b-610). At a gap say so to the modeller and let them
+  choose; never work round a gap by guessing a value or typing an element id.
 
   BEFORE EACH BIG STEP - 1, 2, 3, 4, 5, 6, 7 and every delete - ASK THE
   MODELLER TO SYNCHRONIZE WITH CENTRAL, and wait for their word. Heron does not
@@ -45,7 +49,8 @@ purpose: >
   of this method. Each step is its own undo entry, so the job as a whole is
   NOT one undo, and the sync is the copy to go back to.
 
-  0. THE LINKS. LIST_LINKED_MODELS (PROVEN): which models are linked, each
+  0. THE LINKS. LIST_LINKED_MODELS (DRAFT since its version 2 of 2026-11-20,
+     a read, so it runs and says so): which models are linked, each
      one's name as step 6 types it, and whether it is loaded. An opening in a
      link that is not loaded cannot be dimensioned or found.
 
@@ -87,7 +92,8 @@ purpose: >
      the modeller names (Cable Tray Support on the first). The parameter must
      be one THIS model can filter those categories by: the call asks every
      category first and creates nothing, naming the category, when one cannot
-     take it. Then APPLY_VIEW_FILTER (PROVEN, version 2) for each on the plan,
+     take it. Then APPLY_VIEW_FILTER (DRAFT since its version 3 of 2026-11-20,
+     which refuses a view whose template controls its filters) for each on the plan,
      its whole row at once: OUTSEL with the grey of step 1 and visible=true;
      INSEL with overrides "none" and visible=true, so the openings draw normal;
      the level and grid filter with the overrides the modeller gives; the
@@ -114,11 +120,21 @@ purpose: >
      carries one gap of its own - a GUID write. Its last step names every tag
      and dimension a delete takes, as step 8 does here.
 
-  5. THE OPENING DEPTH. GAP - KEEP A FACE: the depth parameter ("Wall Width")
-     set with the OUTSIDE face of the wall kept where it is. A plain parameter
-     write moves whichever face the family does not hold fixed, so it is not
-     this step. Its own job (the keep-a-face task), not on main yet; the
-     modeller sets it.
+  5. THE OPENING DEPTH. SET_PARAMETER_VALUES_BY_ID (DRAFT since its version
+     10 of 2026-11-20; keepFace came in at version 3 and no proof has run it)
+     with keepFace=outside: the depth parameter the modeller names ("Wall
+     Width") set to the depth they give,
+     with the OUTSIDE face of the wall kept where it is - one row per opening,
+     by id (id|uniqueId|parameter|was|new) or by key, as its card says. A
+     plain parameter write moves whichever face the family does not hold
+     fixed, so keepFace is never left out here. The outside is found from the
+     wall the opening sits in, in this model or a loaded link, by three signs;
+     an opening they do not agree on - none voting, or two voting different
+     ways - is refused by name, never guessed: by id rows the whole run, by
+     key that row alone, and that one the modeller sets. A pinned opening or
+     one in a model group is refused before anything is written. Every face
+     moved back is in the same undo entry as the write. keepFace's run in
+     Revit is NEEDS-CHECKING Group FE.
 
   6. DIMENSIONS. CREATE_LINEAR_DIMENSION (since version 4), one string per
      call, the references `|` between them. In a SECTION: the opening's height
@@ -172,13 +188,12 @@ purpose: >
 # whose candidates include one of `needs` (heron_skill.methods_for), and the
 # words they share with the request put it first. They keep to "builders",
 # "work" and "layout" on purpose: every other word here is one more request
-# this job would be offered beside - "set" alone is in hundreds. And never
-# "this": heron_skill._words makes it "thi", which is not a plain word, so a
-# phrase saying "this" shares a word with every request that does - measured
-# 2026-10-17, it offered this job beside "turn this tag vertical"
-# (FRAGMENT-ISSUES 5b-650, recorded there, not fixed here). "set up the
-# builders work layout" and "do the builders work for this layout" reach it
-# through the three words.
+# this job would be offered beside - "set" alone is in hundreds. "this" was
+# kept out too: heron_skill._words made it "thi", so a phrase saying it shared
+# a word with every request that did - measured 2026-10-17, it offered this
+# job beside "turn this tag vertical" (FRAGMENT-ISSUES 5b-650; _words drops it
+# since 2026-11-20). "set up the builders work layout" and "do the builders
+# work for this layout" reach it through the three words.
 utterances:
   - do the builders work for the layout
   - make the builders work layout
@@ -186,9 +201,9 @@ utterances:
 
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 #
-# THE GAPS ARE NOT LISTED HERE, ON PURPOSE, as in replace-in-place-family:
+# THE GAP IS NOT LISTED HERE, ON PURPOSE, as in replace-in-place-family:
 # tests/test_skills.py and tests/test_brain_reachable.py assert that every
-# capability a skill needs has a provider. Each gap is named in the purpose,
+# capability a skill needs has a provider. The gap is named in the purpose,
 # which heron_method prints whole. NOT NAMED, ON PURPOSE: SYNC_WITH_CENTRAL -
 # the modeller syncs, see the purpose.
 needs:
@@ -199,6 +214,9 @@ needs:
   - APPLY_VIEW_FILTER
   - CREATE_VIEW_TEMPLATE_FROM_VIEW
   - APPLY_VIEW_TEMPLATE
+  # Step 5, the depth with the outside face kept - version 3's keepFace
+  # (row 5b-610). A GAP here until 2026-11-21, though on main since 2026-10-17.
+  - SET_PARAMETER_VALUES_BY_ID
   - CREATE_LINEAR_DIMENSION
   - SELECT_BY_PARAMETER_VALUE
   - TAG_ELEMENTS_IN_VIEW
@@ -224,7 +242,10 @@ note: >
   Written 2026-10-17 from a builders work layout done by hand on 2026-10-15
   and 17, on Revit 2020, in a real project's plans and sections; no name,
   value or id from that model is in this file beyond the examples in quotes.
-  Step 4 is replace-in-place-family since row 5b-740 and step 5 a separate task; the tags were moved with OFFSET_TAGS_FROM_HOST version 2 and the dimensions
+  Step 4 is replace-in-place-family since row 5b-740, and step 5
+  SET_PARAMETER_VALUES_BY_ID's keepFace (row 5b-610, written the same day as
+  this method and named a GAP here until 2026-11-21, row 5b-1957); the tags
+  were moved with OFFSET_TAGS_FROM_HOST version 2 and the dimensions
   drawn with CREATE_LINEAR_DIMENSION versions 3 and 4, both DRAFT that day. The
   job as a whole has not been watched working through Heron, so it stays DRAFT
-  (D-30); no NEEDS-CHECKING group holds that run yet.
+  (D-30); that run is NEEDS-CHECKING Group PF's PF3.

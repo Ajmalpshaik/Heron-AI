@@ -120,7 +120,7 @@ purpose: >
        welded mesh  PLACE_FABRIC_REINFORCEMENT (DRAFT) - the fabric sheet
                  type by its exact name
        one bar or set of a chosen shape - an extra bar over a support, an L
-                 starter bar  PLACE_REBAR (DRAFT) - the shape and points asked
+                 starter bar  PLACE_REBAR (PROVEN on 2026-11-17, read 2026-11-21) - the shape and points asked
      A PROVEN card runs through revit_change, and Revit asks Keep or Discard
      when the owner's Ask to Keep switch is on; a DRAFT one by the route
      above.

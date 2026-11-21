@@ -461,7 +461,11 @@ def find_question(root, qid):
     folder = os.path.join(root, "docs", "open-questions")
     if not os.path.isdir(folder):
         raise CouldNotRead("docs/open-questions/ is not there")
-    heading = re.compile(r"^###\s+(✅\s*)?%s\b(.*)$" % re.escape(qid))
+    # A TICK, A PRIORITY COLOUR OR NOTHING before the id: OPEN-QUESTIONS.md marks
+    # an open question red, orange, yellow or blue, and an answered one may keep
+    # its colour - its Answer paragraph says it is answered. Until 2026-11-21 only
+    # the tick was read, so no colour-marked question could be found at all.
+    heading = re.compile(r"^###\s+(?:(✅)\s*|(?:🔴|🟠|🟡|🔵)\s*)?%s\b(.*)$" % re.escape(qid))
     for name in sorted(os.listdir(folder)):
         if not name.endswith(".md"):
             continue

@@ -246,9 +246,10 @@ purpose: >
       window that covers the table's sizes - a size outside every rule gets
       no fitting, silently. Name the fitting "Family: Type": its type name
       alone is refused when two loaded families have a type of that name
-      (version 2, DRAFT until NEEDS-CHECKING Group NL is run, rows 5b-1120
-      and 5b-1549: revit_change refuses a DRAFT, so until then the rule is
-      set by hand in the type's Routing Preferences). The modeller draws a
+      (version 2, rows 5b-1120 and 5b-1549 - DRAFT when this was written,
+      PROVEN since 2026-11-13; while the list served after this method says
+      DRAFT, revit_change refuses it and the rule is set by hand in the
+      type's Routing Preferences). The modeller draws a
       run through it at three
       sizes and the angles above; FIND_DEAD_ENDS on the run then names any
       end the fitting left open, and REPORT_CONNECTORS on a placed fitting
