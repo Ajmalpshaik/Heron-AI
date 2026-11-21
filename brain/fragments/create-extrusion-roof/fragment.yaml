@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -148,6 +148,57 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-21'
+  by: Ajmal PS
+  model: roofjoin-oy (3,273 elements), Revit 2024, session 35160
+  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-11-21; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned MillimetresPerFoot 304.8, along XYZ, apart Func`3, arcs 0,
+    culture CultureInfo, extrusionEndMm 3000, extrusionStartMm 0, findings 2 item(s) [Roof
+    by extrusion made (id 352563), type "Basic Roof: Generi..., The reference plane drawn
+    along grid Wing is the one the roo...], grid Grid, grids 1 item(s) [Wing], halfMillimetre
+    0.00164041994750656, host Level, levelList Func`1, levels 2 item(s) [Level 1, Level 2],
+    listOf Func`2, mm Func`2, namedPlanes 0 item(s), origin XYZ, ownName Func`2, pairOf Func`2,
+    planeDrawn 1 item(s) [id 352560], planeList Func`1, planeWords a reference plane drawn
+    along grid Wing in "Level 2" (id 352560), points 3 item(s) [System.Double[], System.Double[],
+    System.Double[]], problem (null), refused (null), report Roof by extrusion made (id 352563),
+    type "Basic Roof: Generic - 400mm", level "Level 2", sketched on a reference plane drawn
+    along grid Wing in "Level 2" (id 352560): 2 edge(s), extruded from 0 to 3000 mm north
+    of the plane - read back as Extrusion Start 0 and End 3000 mm in Properties - its top
+    1655 mm above "Level 2"., roof 1 item(s) [id 352563], roofTypes 8 item(s) [Generic - 400mm,
+    Steel Bar Joist - Steel Deck - EPDM Membrane, Generic - 125mm, ...], said Func`2, shortest
+    0.00256026455729167, sketchOn ReferencePlane, through 2 item(s) [(null), (null)], type
+    RoofType, typeLabel Func`2, typeList Func`1. inputs came level as given; roofType as given;
+    plane as given; profile as given; extrusionStartMm as given; extrusionEndMm as given.
+    on roofjoin-oy'
+  negative_case: 'run with level=Level 9, roofType=Generic - 400mm, plane=Wing, profile=0,500;
+    2000,1655; 4000,500, extrusionStartMm=0, extrusionEndMm=3000 instead - chosen because
+    it should not contain what this fragment reports - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8,
+    along (null), apart Func`3, arcs 0, culture CultureInfo, extrusionEndMm 3000, extrusionStartMm
+    0, findings 1 item(s) [No level in this project is named "Level 9". NOTHING WAS MAD...],
+    grid (null), grids 1 item(s) [Wing], halfMillimetre 0.00164041994750656, host (null),
+    levelList Func`1, levels 2 item(s) [Level 1, Level 2], listOf Func`2, mm Func`2, namedPlanes
+    0 item(s), origin (null), ownName Func`2, pairOf Func`2, planeDrawn (null), planeList
+    Func`1, planeWords (null), points 3 item(s) [System.Double[], System.Double[], System.Double[]],
+    problem (null), refused No level in this project is named "Level 9". NOTHING WAS MADE.
+    Levels in this project: Level 1, Level 2., report , roof (null), roofTypes 8 item(s) [Generic
+    - 400mm, Steel Bar Joist - Steel Deck - EPDM Membrane, Generic - 125mm, ...], said Func`2,
+    shortest 0.00256026455729167, sketchOn (null), through 2 item(s) [(null), (null)], type
+    (null), typeLabel Func`2, typeList Func`1. inputs came level as given; roofType as given;
+    plane as given; profile as given; extrusionStartMm as given; extrusionEndMm as given.
+    on roofjoin-oy'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: f85f7efbcfd21434
+  fingerprint: 8b15e3842c383328
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
