@@ -1101,17 +1101,30 @@ def lookup(request, revit=None, question=False):
         # done by hand, while ATTACH_WALLS does that job there. _done_here_by
         # says which card, if any; the line is then not said, and that card
         # is the answer, with the walled one named beside it.
+        #
+        # AND A CARD'S OWN DECLARED WORDS NAME THAT CARD, WHATEVER THE RANKING
+        # (row 5b-1837). A card's exact phrase reaches it by identity only
+        # where it is offered, so on a release it leaves out its own words
+        # were ranked like any sentence and another card could come first: on
+        # Revit 2024 "dimension the radius" - CREATE_RADIAL_DIMENSION's words,
+        # 2025 on - reached LABEL_FAMILY_RADIUS, and nothing named the card
+        # they were written for. The identity table says whose words they are;
+        # only when they are nobody's is the request ranked again.
         other_release, done_here_by = None, None
         walled = set(e.id for e in excluded
                      if e.reason.startswith("declared for Revit"))
         if revit is not None and walled and answer.route != "identity":
-            wider, _all = RETRIEVE.retrieve(store, request, revit=None,
-                                            limit=1, ceiling=ceiling)
-            if wider and wider[0].id in walled:
-                row = wider[0].row
+            own, _status = _SE.short_circuit(store, request)
+            if own in walled:
+                row = next((r for r in store.fragments() if r["id"] == own), None)
+            else:
+                wider, _all = RETRIEVE.retrieve(store, request, revit=None,
+                                                limit=1, ceiling=ceiling)
+                row = wider[0].row if wider and wider[0].id in walled else None
+            if row is not None:
                 named = {
                     "capability": row["capability"],
-                    "provider": wider[0].id,
+                    "provider": row["id"],
                     "revit": _releases(row),
                 }
                 done_here_by = _done_here_by(RETRIEVE, store, row, _rows, ceiling)
