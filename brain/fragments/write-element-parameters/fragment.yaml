@@ -388,3 +388,9 @@ utterances:
   # unchanged.
   - change the elevation of Level 2 to 3000 mm
   - change the elevation of this level
+  # ADDED 2026-11-21, row 5b-1946 and 5b-1950 (issue #956), on the owner's word that day
+  # ("fix the remaining open rows in 956"). A level's Elevation in other
+  # words; the held-out sentences of those rows are not declared. At the END, so the eight the
+  # re-ranker reads (D-134) are unchanged.
+  - move this level up to a new elevation
+  - set the parameter Elevation on this level

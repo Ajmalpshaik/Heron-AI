@@ -325,3 +325,7 @@ utterances:
   # model. Declared at the END: the re-ranker's eight are unchanged.
   - clean the join between them
   - join these two roofs' geometry
+  # ADDED 2026-11-21, row 5b-1947 (issue #956), on the owner's word that day.
+  # Keeps clean-up requests here once DISALLOW_JOIN declares walls that
+  # should not join. At the END: the re-ranker's eight (D-134) unchanged.
+  - clean up the joins between these elements

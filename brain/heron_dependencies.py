@@ -28,9 +28,10 @@ gives every entry three fields:
 and every entry fills in all three. So the sentence a person needs
 already exists, written down, for every optional dependency. What has gone
 wrong (PROPOSALS F7) is that the sentence never reaches them: `sqlite_vec`
-falls back to comparing vectors in Python and nothing says so, so Heron
-gets slower and stays that way, and nobody knows there is anything to
-install.
+fell back to comparing vectors in Python and nothing said so, so Heron got
+slower and stayed that way, and nobody knew there was anything to install.
+(Since D-194, 2026-11-21, sqlite-vec is not one of Heron's packages at all:
+every vector is compared in plain Python.)
 
 That is why this agent will not accept an optional dependency that does
 not say what is LOST without it. Not because the field might be missing -
@@ -314,9 +315,6 @@ def main(argv):
          "uses": "the trained embedding backend, so retrieval matches on "
                  "meaning",
          "lost": "retrieval falls back to character n-grams"},
-        {"name": "sqlite_vec", "kind": "optional",
-         "uses": "vector search inside SQLite instead of in Python",
-         "lost": "vectors are compared in Python - slower, same answers"},
         {"name": "pypdf", "kind": "optional",
          "uses": "reading PDF documents into the knowledge store",
          "lost": "PDFs cannot be ingested"},

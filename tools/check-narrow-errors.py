@@ -62,12 +62,14 @@ WHAT IT STILL CANNOT SEE
 A handler written as a TUPLE - `except (AttributeError,
 sqlite3.OperationalError):` - because the pattern below expects the name
 straight after `except`. Measured 2026-09-22: the one tuple handler in this
-repository is `heron_embed._try_vec_extension`, and it is CORRECT - both
-types there mean the sqlite extension is unavailable, it answers a boolean
-rather than a store's contents, and the fallback gives the same answers. So
-widening the pattern today would flag right code, and what to do about that
-is part of the question row 5b-110 already asks. Recorded rather than
-guessed at.
+repository was `heron_embed._try_vec_extension`, and it was CORRECT - both
+types there meant the sqlite extension was unavailable, it answered a boolean
+rather than a store's contents, and the fallback gave the same answers. So
+widening the pattern then would have flagged right code, and what to do about
+that is part of the question row 5b-110 already asks. Recorded rather than
+guessed at. That handler came out with the loader on 2026-11-21 (D-194, row
+5b-1955); a search of every tracked .py file for a tuple handler naming
+sqlite3.OperationalError found no other that day.
 """
 
 from __future__ import print_function
