@@ -704,6 +704,57 @@ def link_removers():
           "and the call itself is found, an unload and a delete of a link type alike")
 
 
+def session_reads(text):
+    """Section 15 - a read of the whole Revit session is aimed at no model (5b-1887)."""
+    print()
+    print("15. A read of the Revit session answers whatever the pin (row 5b-1887)")
+    body = body_of(text, "revit_read") or ""
+    code = "\n".join(line for line in body.splitlines()
+                     if not line.lstrip().startswith("#"))
+    check("session_read = _reads_the_session(capability)" in code,
+          "revit_read asks whether the card reads the whole session")
+    guarded = re.search(r"if not session_read:\s*\n\s*_aim_at_pin\(args\)", code)
+    check(guarded is not None,
+          "and aims at the pinned model only when it does not - so a closed pinned "
+          "model cannot refuse it")
+    check("wrong_model = None if session_read else pinned.check(reply)" in code,
+          "its reply neither sets the pin nor is refused by it")
+    check("wrong_model = pinned.check(reply)" not in code,
+          "and no unguarded pin check is left on the read door")
+
+    listed = re.search(r"SESSION_READS = frozenset\(\{([^}]*)\}\)", text)
+    names = re.findall(r'"([A-Z_]+)"', listed.group(1)) if listed else []
+    check("REPORT_OPEN_DOCUMENTS" in names,
+          "REPORT_OPEN_DOCUMENTS is on the list of session reads - found %r" % (names,))
+    for capability in names:
+        card = None
+        for folder in sorted(os.listdir(FRAGMENTS)):
+            path = os.path.join(FRAGMENTS, folder, "fragment.yaml")
+            if os.path.isfile(path) and card_line(path, "capability") == capability:
+                card = os.path.join(FRAGMENTS, folder)
+                break
+        check(card is not None, "%s names a card in the library" % capability)
+        if card is None:
+            continue
+        check(card_line(os.path.join(card, "fragment.yaml"), "risk") == "READ",
+              "%s is a READ - nothing that changes a model is let past the pin" % capability)
+        source = os.path.join(card, "impl", "any", "fragment.cs")
+        cs = _code_only(read(source)) if os.path.isfile(source) else ""
+        check(re.search(r"foreach\s*\(\s*Document\s+\w+\s+in\s+app\.Documents\s*\)", cs) is not None,
+              "%s's C# reads every document of the application - its answer is the "
+              "session's, whichever model it runs in" % capability)
+
+    asks = lifted(text, "_reads_the_session")
+    check(asks is not None, "the question is one helper, lifted and run here")
+    if asks is not None:
+        namespace = asks.__globals__
+        namespace["SESSION_READS"] = frozenset(names)
+        check(asks(" report_open_documents ") is True,
+              "a session read is known by its capability, in any case and spacing")
+        check(asks("LIST_MATERIALS") is False and asks("") is False,
+              "NEGATIVE: a read of one model, and no capability at all, are not")
+
+
 def main():
     # ASK BEFORE CALLING - heron-ship 2a. On the code as it stood these names
     # do not exist, and a traceback would replace every failure below.
@@ -1164,6 +1215,7 @@ def main():
     change_floor(text, door_refusal)
     dry_run_floor(text)
     link_removers()
+    session_reads(text)
 
     print()
     if FAILURES:

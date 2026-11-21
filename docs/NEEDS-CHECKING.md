@@ -1650,6 +1650,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pd.md`](needs-checking/group-pd.md)
 
+## Group PE - five cards changed for issues #950, #1005, #1112 and #1114, and a read of the open models that answers whatever the pin - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pe.md`](needs-checking/group-pe.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

@@ -9,7 +9,12 @@ semantic-identity: "add new sheets to the drawing register"
 kind: action
 domain: revit.sheets
 capability: CREATE_SHEETS
-version: 4
+# VERSION 5 (2026-11-21, work-note item WN-6, issue #1005): with typed numbers,
+# `titleBlockName` placeholder makes PLACEHOLDER sheets
+# (ViewSheet.CreatePlaceholder) - a number and a name for the sheet list, no
+# title block and no views. Nothing else changes. Still DRAFT: version 4's
+# Group OZ and this version's NEEDS-CHECKING Group PE (D-30).
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -104,6 +109,10 @@ contract:
       # Title Block cell is empty; left out, every row must name its own, and
       # one that does not refuses the whole call. Any name not found, in the
       # table or here, refuses the whole call: nothing is made.
+      # Version 5: with typed numbers, the word placeholder, said outright,
+      # makes placeholder sheets - a number and a name, no title block, no
+      # views (ViewSheet.CreatePlaceholder). Not read in a table's Title Block
+      # cell, where it is a title block name like any other.
       type: string
       source: request
       optional: true
