@@ -55,8 +55,9 @@ through only while the owner's **Publish** or **Admin** switch is on in Heron's 
 - `batch-prove` and `prove` never send one. `validate` refuses one unless it is given
   **`--allow-publish --write` together** - `--allow-publish` alone is refused, because the read path
   would have run an export past the Publish switch.
-- **The switch is the owner's to turn on, in Settings.** Ask him; never set `admin.enabled` or
-  `publish.enabled` in `heron.config` yourself.
+- **The switch is the owner's to turn on, in Settings.** Ask him. Since
+  [D-166](../../../docs/decisions/D-166.md) the switches are held in Revit's memory, off at every Revit
+  start, so a line in `heron.config` does nothing - and the `heron-guard` hook refuses writing one.
 - A proof rolls the model back; **it does not unwrite a file.** An export proof leaves what it wrote -
   point it at a scratch folder.
 - A setup step declared `PUBLISH` or `ADMIN` is refused whatever the flags: arranging a proof never
@@ -460,7 +461,7 @@ cannot do it - it refuses a PROVEN fragment, which most steps are. Use the skill
 ```bash
 python tools/run-skill.py tools/jobs/skills/count-elements-plan.yaml --dry-run   # refuses FILL IN; sends nothing
 python tools/run-skill.py tools/jobs/skills/count-elements-plan.yaml             # both legs, then a draft
-python brain/heron_plan_proof.py accept count-elements --by "Ajmal PS"          # a PERSON signs a PASS
+python brain/heron_plan_proof.py accept count-elements --by "Your Name"        # a PERSON signs a PASS
 ```
 
 - **A plan job is not a batch-prove job.** `steps:` in the plan's order, each with `values` and, for the

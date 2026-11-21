@@ -173,6 +173,18 @@ def paging(runs, folder):
     check(any(line.startswith("setup     deleted  7") and "Generic" not in line for line in every),
           "a deleted element is listed with no category - it had none left to read")
 
+    # WHICH ELEMENTS A WARNING NAMED (row 5b-1889): the ids the add-in sent,
+    # and how many it left out. A warning with none reads exactly as before.
+    check(every[-2] == "warning   Line is slightly off axis (x2, 1 element(s))",
+          "a warning the add-in sent no ids for reads as it did - %r" % every[-2])
+    named = dict(record, reply=dict(reply, warningsDismissed=[
+        {"text": "Line in Sketch is slightly off axis", "times": 3, "elements": 4,
+         "step": "sketch", "elementIds": ["352621", "352622"], "elementIdsMore": 2}]))
+    warned = [line for line in runs.entries(named) if line.startswith("warning")]
+    check(warned == ["warning   Line in Sketch is slightly off axis (x3, 4 element(s), "
+                     "ids 352621, 352622 and 2 more, setup step sketch)"],
+          "a warning that named elements lists their ids, and how many more - %r" % warned)
+
     # A DICTIONARY'S ENTRIES, where the add-in sent them (5b-1325): one line
     # each under the value, in the order sent, and nothing for a name that
     # arrived as a count alone.

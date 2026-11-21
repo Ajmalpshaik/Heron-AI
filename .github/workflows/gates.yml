@@ -453,6 +453,65 @@ jobs:
       - name: Install PyYAML
         run: python -m pip install --quiet pyyaml
 
+      # THE .NET 10 SDK, as the compile job installs it. The image carries a
+      # .NET already, and the C# test hosts the suites build for themselves
+      # used it; naming the version here means the bridge host below is built
+      # by the SDK the compile job proves, not by whatever the image holds.
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      # test_bridge_roundtrip.py does not build its own host: it exits 3 and
+      # prints the one command that does. That command is read out of the
+      # suite, never typed here, so the two cannot drift - the target
+      # framework in it is the newest runtime this runner has, which the
+      # suite asks dotnet itself. Measured 2026-11-21 in a Linux container:
+      # about 16 s to build, 5 s for the suite, exit 0.
+      - name: Build the bridge test host the way its suite says
+        shell: bash
+        run: |
+          build=$(python - <<'PY'
+          import importlib.util
+          spec = importlib.util.spec_from_file_location(
+              "roundtrip", "tests/test_bridge_roundtrip.py")
+          suite = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(suite)
+          print(suite.BUILD_HINT)
+          PY
+          )
+          echo "$build"
+          $build
+
+      # THE MCP SDK, IN A VENV OF ITS OWN, AT THE VERSIONS A MODELLER GETS.
+      # requirements-lock.txt is what HeronInstaller.exe installs: every
+      # package pinned and hashed. It pins pywin32 too, which has no wheel
+      # but Windows', and pip refuses the whole file for that one line
+      # (tools/heron-ready.py says so, measured 2026-10-17) - so that one
+      # stanza is left out of a copy, and the rest goes in exactly as pinned,
+      # hashes required and nothing built from source.
+      #
+      # A VENV, NOT THIS JOB'S PYTHON, ON PURPOSE. The sweep below runs every
+      # suite on a Python with no SDK, and that is a check in itself: dozens
+      # of suites read the server's source as text precisely so they run
+      # without the SDK, and the bare sweep is what proves they still do. The
+      # SDK going into that Python would let a suite start depending on it
+      # and pass here while failing on every machine without it. Measured
+      # 2026-11-21 on Python 3.11 in a Linux container: about 8 s.
+      - name: Install the pinned MCP SDK into a venv of its own
+        shell: bash
+        run: |
+          awk '/^pywin32==/ { skip = 1 }
+               skip { if ($0 !~ /\\$/) skip = 0; next }
+               { print }' requirements-lock.txt > "$RUNNER_TEMP/lock-not-windows.txt"
+          if grep -q '^pywin32' "$RUNNER_TEMP/lock-not-windows.txt"; then
+            echo "::error::The Windows-only pin is still in the copy."
+            exit 1
+          fi
+          python -m venv "$RUNNER_TEMP/mcp-venv"
+          "$RUNNER_TEMP/mcp-venv/bin/python" -m pip install --quiet \
+            --require-hashes --only-binary=:all: -r "$RUNNER_TEMP/lock-not-windows.txt"
+          "$RUNNER_TEMP/mcp-venv/bin/python" -m pip list
+
       - name: Run every suite, and keep NOT RUN apart from FAILED
         shell: bash
         run: |
@@ -485,45 +544,65 @@ jobs:
             exit 1
           fi
 
-          # THE SUITES THAT CANNOT RUN ON A PLAIN LINUX RUNNER, AND WHY.
+          # TWO LISTS, AND EVERY SUITE ON EITHER MUST COME BACK EXIT 3 FROM
+          # THE SWEEP ABOVE, which runs on a Python with no MCP SDK.
           #
-          #   test_bridge_roundtrip.py needs a built .NET test host
-          #   test_checklist_tool.py   needs the MCP SDK - the chat's
-          #                            heron_checklist tool (docs/50); the
-          #                            store and its run against a stand-in
-          #                            server run here, in test_checklists.py
-          #   test_commands_tool.py    needs the MCP SDK - the chat's
-          #                            heron_commands tool (docs/49); the store
-          #                            and runner it serves run here, in
-          #                            test_commands.py
-          #   test_loads_finalize.py   needs the MCP SDK - it runs the server's
-          #                            own Finalize against a stand-in Revit
-          #   test_mcp_serves.py       needs the MCP SDK
-          #   test_mcp_stdio.py        needs the MCP SDK - off Windows it starts
-          #                            the real server with its library alone
-          #                            (D-132), and its stand-in Revit part
-          #                            runs (docs/04 7.1)
-          #   test_outcome_line.py     needs the MCP SDK - it calls the three
-          #                            doors, which are functions of the
-          #                            server, against a stand-in Revit
+          # THE SUITES THAT NEED THE MCP SDK - run again below, on the venv
+          # holding the pinned lock, where each must come back exit 0. They
+          # were on the not-runnable list until 2026-11-21, when "both drag in
+          # native dependencies that break" was measured rather than repeated:
+          # the lock installs on Linux from wheels alone, and all eight passed
+          # on Python 3.11. Each reads the server by importing it:
+          #
+          #   test_checklist_tool.py   the chat's heron_checklist tool (docs/50);
+          #                            the store and its run against a stand-in
+          #                            server are test_checklists.py's
+          #   test_commands_tool.py    the chat's heron_commands tool (docs/49);
+          #                            the store and runner are test_commands.py's
+          #   test_loads_finalize.py   the server's own Finalize, against a
+          #                            stand-in Revit
+          #   test_mcp_serves.py       the server's tools, as Claude Code sees them
+          #   test_mcp_stdio.py        off Windows the real server with its
+          #                            library alone (D-132), and its stand-in
+          #                            Revit part (docs/04 7.1)
+          #   test_outcome_line.py     the three doors, which are functions of
+          #                            the server, against a stand-in Revit
           #                            (docs/04 8.12)
-          #   test_served_claims.py    needs the MCP SDK
-          #   test_sheet_list_tool.py  needs the MCP SDK - the chat's
-          #                            heron_sheet_list tool (docs/48 s5
-          #                            item 7); the reader it serves runs
-          #                            here, in test_sheet_list.py
-          #   test_routing_phrases.py  needs the trained embedding (model2vec)
+          #   test_served_claims.py    what the server serves against what it
+          #                            claims
+          #   test_sheet_list_tool.py  the chat's heron_sheet_list tool (docs/48
+          #                            s5 item 7); the reader is test_sheet_list.py's
           #
-          # The MCP SDK and the .NET host are left out on purpose: both drag in
-          # native dependencies that break for reasons that have nothing to do
-          # with this repository. Those prove nothing either way here.
+          # One that comes back 0 from the bare sweep no longer needs the SDK:
+          # take it off this list in the same change, as below.
           #
-          # The trained embedding is left out because every routing check in
-          # this job ranks by spelling here, on purpose, and the owner's PC
-          # ranks by meaning. test_routing_phrases.py asks sentences that the
-          # two disagree on (FRAGMENT-ISSUES 5b-319), so it runs where the
-          # model is - his PC - and says COULD NOT RUN here rather than assert
-          # one backend's answers on the other.
+          # test_bridge_roundtrip.py was on the not-runnable list for want of
+          # its built .NET test host. The step above builds it, so it runs in
+          # the sweep itself and is on neither list.
+          #
+          # THE SUITES THAT CANNOT RUN ON THIS RUNNER AT ALL, AND WHY.
+          #
+          #   test_routing_phrases.py  its sentences are measured on the owner's
+          #                            backend, the trained embedding WITH the
+          #                            re-ranker (D-134). The embedding alone is
+          #                            cheap to fetch - model2vec and
+          #                            minishlab/potion-base-8M, about 130 MB
+          #                            (heron_embed.SIZE) - but on it alone the
+          #                            suite FAILS: 6 checks, measured
+          #                            2026-11-21 on main 0429fc1c, the curtain
+          #                            wall selections and the cooling-load
+          #                            units question among them (row 5b-1882,
+          #                            issue #1127). So fetching the model would
+          #                            turn a NOT RUN into a red that is a
+          #                            backend this runner does not rank on,
+          #                            not this change - and the re-ranker is a
+          #                            torch install of gigabytes. It runs on
+          #                            the owner's PC, model+rerank.
+          #
+          # The trained embedding stays out of THIS Python for a second reason:
+          # every routing check in this job ranks by spelling here, on purpose,
+          # and installing model2vec would move every suite onto a backend CI
+          # does not use (the heron-ship skill, s2).
           #
           # IT IS A NOT-RUNNABLE LIST, NOT A FAILURE LIST. Each of these
           # must come back exit 3. One that comes back exit 1 has RUN and has
@@ -546,17 +625,23 @@ jobs:
           # Neither test was edited until it passed: the claims are unchanged
           # and both still fail if the thing they assert stops being true.
           printf '%s\n' \
-            test_bridge_roundtrip.py \
             test_checklist_tool.py \
             test_commands_tool.py \
             test_loads_finalize.py \
             test_mcp_serves.py \
             test_mcp_stdio.py \
             test_outcome_line.py \
-            test_routing_phrases.py \
             test_served_claims.py \
             test_sheet_list_tool.py \
-            | sort > "$RUNNER_TEMP/known-not-runnable.txt"
+            | sort > "$RUNNER_TEMP/needs-mcp-sdk.txt"
+
+          printf '%s\n' \
+            test_routing_phrases.py \
+            | sort > "$RUNNER_TEMP/not-runnable-here.txt"
+
+          # What the bare sweep must report as waiting: both lists, exactly.
+          sort "$RUNNER_TEMP/needs-mcp-sdk.txt" "$RUNNER_TEMP/not-runnable-here.txt" \
+            > "$RUNNER_TEMP/known-not-runnable.txt"
 
           python - "$RUNNER_TEMP" <<'PY'
           import json, os, sys
@@ -665,12 +750,68 @@ jobs:
             status=1
           fi
 
-          if [ "$status" -eq 0 ]; then
-            echo "Nothing failed, and the suites that could not run are exactly the ones named here."
+          # THE SECOND PASS: the suites that need the MCP SDK, on the venv
+          # that holds it. Here exit 3 is NOT let through - the SDK they wait
+          # for is installed, so a 3 is the install not doing its job, the
+          # same rule windows.yml keeps. Every one named must pass; one that
+          # waits, fails or hangs fails the job.
+          mcp_code=0
+          "$RUNNER_TEMP/mcp-venv/bin/python" brain/heron_unit_test.py \
+            --suites $(cat "$RUNNER_TEMP/needs-mcp-sdk.txt") --json \
+            > "$RUNNER_TEMP/sweep-mcp.json" || mcp_code=$?
+
+          if [ "$mcp_code" -eq 2 ]; then
+            echo "::error::The MCP SDK pass refused to run at all. That is not a test failure."
+            cat "$RUNNER_TEMP/sweep-mcp.json"
+            status=1
+          else
+            mcp_status=0
+            python - "$RUNNER_TEMP" > "$RUNNER_TEMP/mcp-why.txt" <<'PY' || mcp_status=$?
+          import json, os, sys
+
+          temp = sys.argv[1]
+          report = json.load(open(os.path.join(temp, "sweep-mcp.json")))
+          named = sorted(open(os.path.join(temp, "needs-mcp-sdk.txt")).read().split())
+          bad = []
+          for w in report["waiting"]:
+              bad.append("%s could NOT RUN with the SDK installed - %s" % (w["suite"], w["why"]))
+          for f in report["failed"]:
+              bad.append("%s (exit %s)\n    %s" % (f["suite"], f["code"], f["why"]))
+          for t in report["timedOut"]:
+              bad.append("%s did not finish (bound %ss)" % (t["suite"], t["bound"]))
+          if sorted(report["ok"]) != named and not bad:
+              bad.append("passed %s, named %s" % (sorted(report["ok"]), named))
+          print("\n".join(bad))
+          print("%d of %d passed with the MCP SDK, in %ss"
+                % (len(report["ok"]), len(named), report["seconds"]))
+          sys.exit(1 if bad else 0)
+          PY
+            cat "$RUNNER_TEMP/mcp-why.txt"
             {
               echo
-              echo "Nothing failed, and the suites that could not run are exactly"
-              echo "the ones named here."
+              echo "**With the pinned MCP SDK:** $(tail -1 "$RUNNER_TEMP/mcp-why.txt")"
+            } >> "$GITHUB_STEP_SUMMARY"
+            if [ "$mcp_status" -ne 0 ]; then
+              echo "::error::A suite that needs the MCP SDK did not pass with it installed."
+              {
+                echo
+                echo "**These did not pass with the MCP SDK installed:**"
+                echo
+                echo '```'
+                cat "$RUNNER_TEMP/mcp-why.txt"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+              status=1
+            fi
+          fi
+
+          if [ "$status" -eq 0 ]; then
+            echo "Nothing failed, the suites that need the MCP SDK passed with it, and the suites that could not run are exactly the ones named here."
+            {
+              echo
+              echo "Nothing failed, the suites that need the MCP SDK passed with"
+              echo "it, and the suites that could not run are exactly the ones"
+              echo "named here."
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 

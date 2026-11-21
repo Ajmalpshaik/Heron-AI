@@ -19,9 +19,13 @@
 # the owner's PC. Groups for rows 5b-1950 and 5b-1947 were added, frozen before
 # their edit. 67 sentences.
 #
-# ROUND 3, later on 2026-11-21: a group of 19 held-out sentences for rows 5b-424,
+# ROUND 3, later on 2026-11-21: a group of 19 sentences for rows 5b-424,
 # 5b-1007, 5b-476, 5b-1832, 5b-1946, 5b-1947 and 5b-1950, frozen before their
-# edits. The two attach sentences expect SHAPE_WALL_TOPS_TO_ROOF because this file
+# edits - 17 new and held out, and 2 moved here from the "956 / other rows"
+# group ("set the keynote of this type", "read the text of these notes"),
+# which the same change then declared word for word on SET_FAMILY_TYPE_VALUES
+# and READ_ELEMENT_PARAMETERS, so those two are not held out (corrected
+# 2026-11-21 by the review of that day's merges). The two attach sentences expect SHAPE_WALL_TOPS_TO_ROOF because this file
 # is asked with --revit 2024, where ATTACH_WALLS is not offered. 84 sentences.
 groups:
 - group: 'new-a: a level''s elevation (owner''s PC 2026-11-21, and held-out)'

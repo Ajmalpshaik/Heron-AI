@@ -8,6 +8,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using Heron.Bridge;
 
 namespace Heron.Revit.Addin
 {
@@ -52,24 +53,43 @@ namespace Heron.Revit.Addin
     /// dismissed, because nothing was kept for them to be about - which is
     /// the move path's order too: every message is judged before any warning
     /// is touched.
+    ///
+    /// EACH ONE NAMES ITS ELEMENTS (FRAGMENT-ISSUES row 5b-1889, issue #1112).
+    /// Until 2026-11-21 a warning was counted with how many elements it named
+    /// and not WHICH: on Revit 2020 "Line in Sketch is slightly off axis"
+    /// (4 elements) came back from three CREATE_FAMILY_FORMS calls, and the
+    /// caller could not tell which of its forms to fix. Now every message
+    /// carries the ids Revit named, as Revit prints them (ElementId.ToString(),
+    /// the way every Heron answer prints an id), and each kind kept here holds
+    /// them once each, in the order first named. The sentence names the first
+    /// few, the reply lists more and says how many it left out. A message
+    /// whose ids could not be read is quoted exactly as before.
     /// </summary>
     internal sealed class HeronFailureNote
     {
         /// <summary>
         /// One failure as Revit posted it: its severity as a number, Revit's
-        /// words for it, and how many elements it named.
+        /// words for it, how many elements it named, and - when they could be
+        /// read - which: each id as Revit prints it. Null when they could not.
         /// </summary>
         internal struct Posted
         {
             internal readonly int Severity;
             internal readonly string Text;
             internal readonly int Elements;
+            internal readonly IList<string> Ids;
 
             internal Posted(int severity, string text, int elements)
+                : this(severity, text, elements, null)
+            {
+            }
+
+            internal Posted(int severity, string text, int elements, IList<string> ids)
             {
                 Severity = severity;
                 Text = text;
                 Elements = elements;
+                Ids = ids;
             }
         }
 
@@ -77,6 +97,11 @@ namespace Heron.Revit.Addin
         /// One distinct message and how often it came. Distinct by the step it
         /// came from AND its words, so a warning a setup step raised is never
         /// folded into one the fragment under test raised.
+        ///
+        /// `Elements` counts every element each time, repeats included, as it
+        /// always did; `Ids` holds each element named ONCE, in the order Revit
+        /// first named it (row 5b-1889). So one element named twice reads
+        /// "2 times, 2 elements" beside one id - and both are true.
         /// </summary>
         internal sealed class Said
         {
@@ -84,6 +109,7 @@ namespace Heron.Revit.Addin
             internal string Text;
             internal int Times;
             internal int Elements;
+            internal readonly List<string> Ids = new List<string>();
         }
 
         /// <summary>
@@ -96,6 +122,19 @@ namespace Heron.Revit.Addin
         /// whole.
         /// </summary>
         internal const int Quoted = 5;
+
+        /// <summary>
+        /// How many element ids the SENTENCE names for one kind; the rest are
+        /// counted and said to exist. The chat prints the sentence whole, so
+        /// it stays short - the reply lists up to `IdsListed`.
+        /// </summary>
+        internal const int IdsQuoted = 5;
+
+        /// <summary>
+        /// How many element ids the REPLY lists for one kind. What it leaves
+        /// out is counted beside them (`elementIdsMore`), never dropped.
+        /// </summary>
+        internal const int IdsListed = 50;
 
         private readonly List<Said> _dismissed = new List<Said>();
         private readonly List<Said> _refused = new List<Said>();
@@ -135,7 +174,7 @@ namespace Heron.Revit.Addin
                 foreach (var one in batch)
                 {
                     if (one.Severity == warning) continue;
-                    Add(_refused, step, one.Text, one.Elements);
+                    Add(_refused, step, one.Text, one.Elements, one.Ids);
                     RefusedCount++;
                 }
                 return true;
@@ -143,7 +182,7 @@ namespace Heron.Revit.Addin
 
             foreach (var one in batch)
             {
-                Add(_dismissed, step, one.Text, one.Elements);
+                Add(_dismissed, step, one.Text, one.Elements, one.Ids);
                 DismissedCount++;
             }
             return false;
@@ -162,6 +201,18 @@ namespace Heron.Revit.Addin
         /// </summary>
         internal void CouldNotDismiss(string step, string text, int elements, string why)
         {
+            CouldNotDismiss(step, text, elements, null, why);
+        }
+
+        /// <summary>
+        /// The same, with the ids the warning named (row 5b-1889): they go
+        /// with it to what stopped the job. An id another time of the same
+        /// warning also named stays with the dismissed kind as well - which
+        /// time named which is not kept - and the job rolls back either way.
+        /// </summary>
+        internal void CouldNotDismiss(string step, string text, int elements,
+                                      IList<string> ids, string why)
+        {
             var words = Words(text);
             for (var i = 0; i < _dismissed.Count; i++)
             {
@@ -177,7 +228,7 @@ namespace Heron.Revit.Addin
 
             Add(_refused, step,
                 "a warning Heron could not dismiss: " + words +
-                (string.IsNullOrEmpty(why) ? "" : " (" + why.Trim() + ")"), elements);
+                (string.IsNullOrEmpty(why) ? "" : " (" + why.Trim() + ")"), elements, ids);
             RefusedCount++;
         }
 
@@ -189,7 +240,7 @@ namespace Heron.Revit.Addin
         internal void Unreadable(string step, string why)
         {
             Add(_refused, step,
-                "Revit's list of what went wrong could not be read (" + Words(why) + ")", 0);
+                "Revit's list of what went wrong could not be read (" + Words(why) + ")", 0, null);
             RefusedCount++;
         }
 
@@ -220,23 +271,93 @@ namespace Heron.Revit.Addin
             return "Revit would not let it through: " + Quote(_refused, int.MaxValue) + ".";
         }
 
+        /// <summary>
+        /// One kept kind as the reply lists it in `warningsDismissed`: Revit's
+        /// words, how often, how many elements, the setup step, and (row
+        /// 5b-1889) the ids it named, as JSON strings, up to `IdsListed`, with
+        /// `elementIdsMore` beside a list cut short. A kind that named no id
+        /// that could be read carries no `elementIds`, so its object reads
+        /// exactly as it did. The ONE writer of that object - RevitFragment
+        /// and the test host both call it.
+        /// </summary>
+        internal static string Listed(Said one)
+        {
+            if (one == null) return "";
+            var ids = new List<string>();
+            for (var i = 0; i < one.Ids.Count && i < IdsListed; i++) ids.Add(JsonText(one.Ids[i]));
+            var more = one.Ids.Count - ids.Count;
+            return Json.Obj(Json.Str("text", one.Text),
+                            Json.Num("times", one.Times),
+                            Json.Num("elements", one.Elements),
+                            Json.Str("step", one.Step),
+                            ids.Count == 0 ? null : Json.Arr("elementIds", ids),
+                            more > 0 ? Json.Num("elementIdsMore", more) : null);
+        }
+
         // ------------------------------------------------------------ helpers
 
-        private static void Add(List<Said> into, string step, string text, int elements)
+        private static void Add(List<Said> into, string step, string text, int elements,
+                                IList<string> ids)
         {
             var words = Words(text);
             var count = elements < 0 ? 0 : elements;
+            Said kind = null;
             foreach (var said in into)
             {
                 if (said.Step == step && said.Text == words)
                 {
-                    said.Times++;
-                    said.Elements += count;
-                    return;
+                    kind = said;
+                    break;
                 }
             }
 
-            into.Add(new Said { Step = step, Text = words, Times = 1, Elements = count });
+            if (kind == null)
+            {
+                kind = new Said { Step = step, Text = words };
+                into.Add(kind);
+            }
+            kind.Times++;
+            kind.Elements += count;
+
+            // EACH ID ONCE, IN THE ORDER FIRST NAMED (row 5b-1889). A blank id
+            // is not one: it would print as a gap in the list.
+            if (ids == null) return;
+            foreach (var id in ids)
+            {
+                var trimmed = id == null ? "" : id.Trim();
+                if (trimmed.Length == 0 || kind.Ids.Contains(trimmed)) continue;
+                kind.Ids.Add(trimmed);
+            }
+        }
+
+        /// <summary>
+        /// An id as a JSON string value. Json.Str writes a name AND a value
+        /// and an array holds bare values, so the escaping is borrowed from
+        /// Str by writing a throwaway pair and keeping its value half - the
+        /// move HeronChangeReport makes for `firstIds`. An id is digits from
+        /// ElementId.ToString(), so the escaping is a guard, not a path a real
+        /// id takes.
+        /// </summary>
+        private static string JsonText(string id)
+        {
+            var pair = Json.Str("x", id ?? "");
+            return pair.Substring(pair.IndexOf(':') + 2);
+        }
+
+        /// <summary>
+        /// "element ids 1001, 1002" - the first `IdsQuoted`, then how many
+        /// more (row 5b-1889). Empty when none was read, so the quote is
+        /// exactly what it was.
+        /// </summary>
+        private static string Named(List<string> ids)
+        {
+            if (ids == null || ids.Count == 0) return "";
+            var shown = new List<string>();
+            for (var i = 0; i < ids.Count && i < IdsQuoted; i++) shown.Add(ids[i]);
+            var left = ids.Count - shown.Count;
+            return (ids.Count == 1 ? "element id " : "element ids ")
+                 + string.Join(", ", shown.ToArray())
+                 + (left > 0 ? " and " + left.ToString(CultureInfo.InvariantCulture) + " more" : "");
         }
 
         /// <summary>
@@ -255,9 +376,11 @@ namespace Heron.Revit.Addin
             for (var i = 0; i < said.Count && i < limit; i++)
             {
                 var entry = said[i];
-                var detail = new List<string>(3);
+                var detail = new List<string>(4);
                 if (entry.Times > 1) detail.Add(Count(entry.Times, "time", "times"));
                 if (entry.Elements > 0) detail.Add(Count(entry.Elements, "element", "elements"));
+                var named = Named(entry.Ids);
+                if (named.Length > 0) detail.Add(named);
                 if (entry.Step != null) detail.Add("in setup step '" + entry.Step + "'");
 
                 var text = new StringBuilder("\"").Append(entry.Text).Append('"');

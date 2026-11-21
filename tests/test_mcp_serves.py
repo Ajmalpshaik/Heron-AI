@@ -3313,6 +3313,54 @@ async def exercise_view_image(module):
               "a floor and a ceiling hidden over the elements are named, and said to "
               "be still in the model")
 
+        # IN A FAMILY, WHAT REACHES OUT OF THE BOX IS HIDDEN AND NAMED (row
+        # 5b-1890): a context slab crossing the frame is said, never left to
+        # look absent - and said as the family's, not the model's.
+        revit.reply = dict(PICTURE_REPLY, mode="elements", view="{3D}", viewType="ThreeD",
+                           shown=2, hiddenCrossing="88 (form); 91 (Generic Models)")
+        said, images = await call({"elements": "310, 312"})
+        check(len(images) == 1 and "reach out of the frame and were not asked for" in said
+              and "88 (form); 91 (Generic Models)" in said and "still in the family" in said
+              and "lie over them" not in said,
+              "what reached out of the box in a family is named, and said to be still in "
+              "the family: %r" % said)
+
+        # A TALL PICTURE FITTED ON ITS HEIGHT (row 5b-1890): its first line
+        # says how tall, and one line says why - the field report's rod hanger.
+        revit.reply = dict(PICTURE_REPLY, view="View 1", viewType="ThreeD", pixelWidth=1000,
+                           fittedOn="height", pictureWidth=194, pictureHeight=1000)
+        said, images = await call({"view": "View 1", "width": 1000})
+        first = (said.splitlines() or [""])[0]
+        check(len(images) == 1 and "1000 px tall" in first and "px wide" not in first,
+              "a picture fitted on its height says how tall in its first line: %r" % first)
+        check("fitted on its height: 194 x 1000 px" in said
+              and "longest side is the width asked" in said,
+              "and one line says it was taller than wide, with its size: %r" % said)
+        revit.reply = dict(PICTURE_REPLY, view="View 1", viewType="ThreeD", pixelWidth=1000,
+                           fittedOn="width", pictureWidth=1000, pictureHeight=5159,
+                           refitFailed="the view cannot be exported")
+        said, images = await call({"view": "View 1", "width": 1000})
+        check(len(images) == 1 and "1000 px wide" in (said.splitlines() or [""])[0]
+              and "would not take it again fitted on its height (the view cannot be "
+                  "exported)" in said and "1000 x 5159 px" in said,
+              "a refit Revit refused sends the first picture and says why it is tall: %r"
+              % said)
+        revit.reply = dict(PICTURE_REPLY, view="Level 1", fittedOn="width",
+                           pictureWidth=1280, pictureHeight=720)
+        said, images = await call({"view": "Level 1"})
+        check("fitted on its height" not in said and "taller than it is wide" not in said,
+              "a wide picture says nothing about its shape")
+
+        # THE TWO SIDES NAME THE SAME FIELDS (row 5b-1890).
+        capture = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitCapture.cs")
+        with io.open(capture, encoding="utf-8") as fh:
+            written = fh.read()
+        unwritten = [key for key in ("fittedOn", "pictureWidth", "pictureHeight",
+                                     "refitFailed", "hiddenCrossing")
+                     if '"%s"' % key not in written]
+        check(not unwritten, "RevitCapture.cs writes every new field the server reads - "
+                             "missing %r" % unwritten)
+
         # A REGION OF A PLAN (row 5b-1710, issue #853): `around` travels to
         # the add-in as typed, the words name the PLAN - never the temporary
         # copy's name - and the region, and say the copy is gone.

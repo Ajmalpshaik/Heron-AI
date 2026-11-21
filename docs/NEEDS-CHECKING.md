@@ -1630,7 +1630,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ow.md`](needs-checking/group-ow.md)
 
-## Group OX - a job that works only outside the model opens no transaction group in it (D-192): a new family from a chat, and an export of families - BUILT, NOT RUN IN REVIT (2026-11-20)
+## Group OX - a job that works only outside the model opens no transaction group in it (D-192): a new family from a chat, and an export of families - BUILT 2026-11-20; OX1 and OX2's positive RUN ON REVIT 2024 2026-11-21, OX2's negative and OX3 to OX5 owed
 
 **Its own file:** [`needs-checking/group-ox.md`](needs-checking/group-ox.md)
 
@@ -1689,6 +1689,10 @@ Step 6 is finished, and not before. At that point:
 ## Group PL - a carried id list naming elements here and not here is refused whole, and a read whose answer was lost says it reached Revit - BUILT, NOT RUN IN REVIT (2026-11-21)
 
 **Its own file:** [`needs-checking/group-pl.md`](needs-checking/group-pl.md)
+
+## Group PM - a dismissed warning names its elements, and a picture's longest side is the width asked - BUILT, NOT RUN IN REVIT (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pm.md`](needs-checking/group-pm.md)
 
 ## Group PP - a central model opened beside is not saved, a nested part kept upright says so, the session list names a wait, and the camera's eye on the sample house - BUILT, NOT RUN IN REVIT (2026-11-21)
 
