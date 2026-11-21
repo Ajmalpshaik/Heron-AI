@@ -338,3 +338,7 @@ utterances:
   # re-ranker reads (D-134) are unchanged.
   - make a roof by footprint on Level 2 from 0,0 to 12000,8000 with the two long sides sloping at 30 degrees
   - make a roof by footprint on this level
+  # ADDED 2026-11-21, row 5b-1946 (issue #956), on the owner's word that day
+  # ("fix the remaining open rows in 956"). Footprint roofs in other words. At the END, so the eight the
+  # re-ranker reads (D-134) are unchanged.
+  - sketch a roof footprint on this level

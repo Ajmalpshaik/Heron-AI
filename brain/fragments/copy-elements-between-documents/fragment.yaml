@@ -360,3 +360,7 @@ utterances:
   # the card that brings a file back (row 5b-1524).
   - get the levels and grids from the structural link into this model
   - bring the architect's levels into our model
+  # ADDED 2026-11-21, row 5b-1946 (issue #956), on the owner's word that day
+  # ("fix the remaining open rows in 956"). Levels taken over from a link. At the END, so the eight the
+  # re-ranker reads (D-134) are unchanged.
+  - copy the levels across from the link
