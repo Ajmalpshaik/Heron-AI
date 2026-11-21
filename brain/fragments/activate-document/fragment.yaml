@@ -5,7 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-030
-semantic-identity: "make a document on disk the window in front, project or family alike"
+# THE IDENTITY NAMES OPENING THE FILE since 2026-11-21 (row 5b-1943) - what
+# OpenAndActivateDocument does when the document is not open - so a request
+# to open a project or family file by its path finds this card. All three
+# routes read the identity; measured with tools/score-routing.py --sentences.
+semantic-identity: "make a document on disk the window in front, opening its file if it is not open, project or family alike"
 kind: action
 domain: revit.document
 capability: ACTIVATE_DOCUMENT
@@ -171,6 +175,8 @@ compatibility-note: >
 # OPEN_VIEW and CREATE_FAMILY_DOCUMENT.
 #
 #   "go back to the project"      -> here, with the project's path
+#   "open the project file <path>" -> here, with that path - a project or a
+#                                    family file on disk (row 5b-1943)
 #   "switch to the other project" -> REPORT_OPEN_DOCUMENTS for its full path,
 #                                    then here
 #   "switch to the MEP project"   -> the same (SWITCH_ACTIVE_PROJECT's row, moved)
@@ -183,8 +189,16 @@ compatibility-note: >
 
 utterances:
   - make that document the active one
+  # ADDED 2026-11-21, row 5b-1943: OPENING A FILE BY ITS PATH. On the owner's
+  # PC (model + re-ranker) "open the project file <path>\Ducts OI31.rvt"
+  # reached LOAD_KEYNOTE_FILE, a write, and this card - the one that opens a
+  # file - was not offered. Placed among the first eight on purpose: the
+  # re-ranker reads a card's identity and its first eight utterances (D-134).
+  - open the project file C:\Models\Tower Block.rvt
   - go back to the project
+  - open this family file from disk
   - bring this file to the front
+  - open a saved rvt or rfa by its full path
   - activate the project window
   # MOVED 2026-11-01 from SWITCH_ACTIVE_PROJECT, merged into this card.
   - switch to the other project
