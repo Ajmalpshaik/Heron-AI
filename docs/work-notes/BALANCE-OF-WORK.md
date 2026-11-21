@@ -7,7 +7,7 @@
 
 # The balance of work
 
-> **GENERATED 2026-11-21 18:39 by `python tools/balance-of-work.py --write`.**
+> **GENERATED 2026-11-21 18:58 by `python tools/balance-of-work.py --write`.**
 > **If that stamp is not today, this page is history and not a work list.** Every figure
 > below was read back out of the tool that owns it, and each row names the command that
 > derives it. Nothing here is typed by hand, so where this page and a register disagree,
@@ -31,12 +31,12 @@ business here. When every row does, delete the file and the tool with it.
 | 3 | **Agents left to build** | **0** of **252** | `python tools/agent-count.py` |
 | 3b | — and **deferred by a decision**, which is neither left nor done | **2** | `python tools/agent-count.py` |
 | 4 | **Agent proofs drafted but unsigned** | **0** | `ls brain/agent-proof-drafts/*.yaml` |
-| 5 | **Proving-register rows still open** | **2837** of **3358** | `python tools/owner-queue.py` |
-| 6 | **Heron's own defects still open** | **13** of **1399** | `python tools/open-defects.py` |
+| 5 | **Proving-register rows still open** | **2841** of **3362** | `python tools/owner-queue.py` |
+| 6 | **Heron's own defects still open** | **13** of **1400** | `python tools/open-defects.py` |
 | 7 | **Questions unanswered** | **2** | `python tools/check-docs.py` |
 | 8 | **Proposals awaiting the owner** | **11** of **37** | `python tools/owner-queue.py` |
 | 9 | **Signatures gone stale — proved, then the code moved under them** | **67** | `python tools/check-signatures.py` |
-| 10 | **Everything waiting on the owner personally**, across three registers | **2850** | `python tools/owner-queue.py` |
+| 10 | **Everything waiting on the owner personally**, across three registers | **2854** | `python tools/owner-queue.py` |
 
 > **ROWS 1a TO 1c ARE ABOUT THIS CHECKOUT, NOT ABOUT THE PROJECT.** They count what has never
 > been run *here*, and `brain/proof-drafts/runs/` is gitignored, so every worktree starts almost

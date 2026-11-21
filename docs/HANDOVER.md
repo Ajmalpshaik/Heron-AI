@@ -105,9 +105,9 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
-**Where it stands on 2026-11-21, evening — read this first, then the table.** Thirty pull requests merged that
-day (`gh api -X GET search/issues -f q='repo:Ajmalpshaik/Heron-AI is:pr is:merged merged:2026-11-21'`), and
-[that day's sitting note](handover-archive/2026-11-21-thirty-pull-requests-merge-the-new-work-waits-for-revit-and-the-owner.md)
+**Where it stands on 2026-11-21, evening — read this first, then the table.** Every pull request merged that
+day is listed by `gh api -X GET search/issues -f q='repo:Ajmalpshaik/Heron-AI is:pr is:merged merged:2026-11-21'`, and
+[that day's sitting note](handover-archive/2026-11-21-the-day-s-merges-the-new-work-waits-for-revit-and-five-questions-for-the-owner.md)
 lists each one with what it leaves owed. In short:
 
 - **What met Revit that day:** Revit 2024 on the owner's PC - OI31 and Group OY passed, OU21 and OU22 ran on 2024
@@ -118,7 +118,7 @@ lists each one with what it leaves owed. In short:
   [PE](needs-checking/group-pe.md), [PG](needs-checking/group-pg.md) and [PK](needs-checking/group-pk.md); and,
   built-not-run in the add-in, Groups [OV](needs-checking/group-ov.md), [OW](needs-checking/group-ow.md),
   [OX](needs-checking/group-ox.md) (OX3 to OX5), [PC](needs-checking/group-pc.md), [PL](needs-checking/group-pl.md),
-  [PF](needs-checking/group-pf.md)'s methods, [PD](needs-checking/group-pd.md)'s timed run and
+  [PF](needs-checking/group-pf.md)'s methods, [PH](needs-checking/group-ph.md)'s first skill-runner runs, [PD](needs-checking/group-pd.md)'s timed run and
   [OR29](needs-checking/group-or.md). Each group's file names its GitHub issue. How many cards are DRAFT is derived:
   `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 - **What waits for the owner's word, no Revit:** [D-195](decisions/D-195.md) (**Proposed** - Finalize as one
@@ -134,7 +134,7 @@ lists each one with what it leaves owed. In short:
   (`python tools/open-defects.py`). On the PC with Revit open, the order is the sitting note's TO DO: the DRAFT
   reads first (PG then PK on one roof copy, PE, PB, PA, PD), then the DRAFT writes (OZ, OY version 2), then the
   add-in rebuilt and deployed - [#1182](https://github.com/Ajmalpshaik/Heron-AI/pull/1182) and
-  [#1211](https://github.com/Ajmalpshaik/Heron-AI/pull/1211) changed it - for PL, PC, OV, OW, OX3 to OX5, OR29 and PF.
+  [#1211](https://github.com/Ajmalpshaik/Heron-AI/pull/1211) changed it - for PL, PC, OV, OW, OX3 to OX5, OR29, PF and PH.
 
 The table and the numbered list below are older and still hold for what they name; where one disagrees with a
 group's own file, the file wins.
@@ -457,7 +457,7 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 
 | Date | Sitting |
 |---|---|
-| 2026-11-21 | [THIRTY PULL REQUESTS MERGE IN A DAY: THE NEW WORK WAITS FOR REVIT, AND FIVE QUESTIONS WAIT FOR THE OWNER](handover-archive/2026-11-21-thirty-pull-requests-merge-the-new-work-waits-for-revit-and-the-owner.md) |
+| 2026-11-21 | [THE MERGES OF 2026-11-21: THE NEW WORK WAITS FOR REVIT, AND FIVE QUESTIONS WAIT FOR THE OWNER](handover-archive/2026-11-21-the-day-s-merges-the-new-work-waits-for-revit-and-five-questions-for-the-owner.md) |
 | 2026-11-14 | [A NIGHT ON REVIT 2024 ALONE: SCRATCH MODELS HERON MADE, TEN DRAFTS AND SEVEN DEFECTS](handover-archive/2026-11-14-a-night-on-revit-2024-alone-scratch-models-heron-made-and-seven-defects.md) |
 | 2026-11-13 | [THE OWNER'S PC PROVES WHAT #855 BUILT, AND THE PROVING FINDS NEW DEFECTS ON THE WAY](handover-archive/2026-11-13-the-owner-s-pc-proves-what-855-built-and-the-proving-finds-new.md) |
 | 2026-11-12 | [EVERY REPLY SAYS HOW IT ENDED IN ONE WORD, PROVEN TOOLS THAT ANSWERED WRONGLY ARE REPAIRED AND DRAFT AGAIN, AND A DEFECT ROW GETS A FILE OF ITS OWN](handover-archive/2026-11-12-every-reply-says-how-it-ended-in-one-word-proven-tools-that.md) |

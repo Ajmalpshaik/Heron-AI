@@ -1,4 +1,4 @@
-# Session note — THIRTY PULL REQUESTS MERGE IN A DAY: THE NEW WORK WAITS FOR REVIT, AND FIVE QUESTIONS WAIT FOR THE OWNER
+# Session note — THE MERGES OF 2026-11-21: THE NEW WORK WAITS FOR REVIT, AND FIVE QUESTIONS WAIT FOR THE OWNER
 
 > **Session note** from 2026-11-21, written straight into this folder as its README asks. Nothing here is
 > specification: where it disagrees with [DECISIONS.md](../DECISIONS.md), the
@@ -7,7 +7,7 @@
 
 ---
 
-### 2026-11-21 evening — THIRTY PULL REQUESTS MERGE IN A DAY: THE NEW WORK WAITS FOR REVIT, AND FIVE QUESTIONS WAIT FOR THE OWNER
+### 2026-11-21 evening — THE MERGES OF 2026-11-21: THE NEW WORK WAITS FOR REVIT, AND FIVE QUESTIONS WAIT FOR THE OWNER
 
 Written to the rule in [section 11](../HANDOVER.md#11-handover--2026-09-12): what is NEW, a MISTAKE worth not
 repeating, what is still TO DO. A cloud session with no Revit, bringing the status pages up after the day's
@@ -42,6 +42,7 @@ changed and how it was checked.
 | [#1189](https://github.com/Ajmalpshaik/Heron-AI/pull/1189) | Search names a card the model cuts before its job; vectors compared in plain Python, sqlite-vec removed ([D-194](../decisions/D-194.md), Accepted) | - |
 | [#1190](https://github.com/Ajmalpshaik/Heron-AI/pull/1190), [#1191](https://github.com/Ajmalpshaik/Heron-AI/pull/1191), [#1193](https://github.com/Ajmalpshaik/Heron-AI/pull/1193), [#1199](https://github.com/Ajmalpshaik/Heron-AI/pull/1199) | Routing words: questions that reached a write now reach the read; a level's elevation to the PROVEN write; object-style materials; keynotes, text notes, viewports, walls not joining | [#1188](https://github.com/Ajmalpshaik/Heron-AI/issues/1188) is half repaired; the rest each pull request names |
 | [#1192](https://github.com/Ajmalpshaik/Heron-AI/pull/1192) | `REPORT_ROOF_SLOPES` (DRAFT), a read for a roof's pitch | [Group PG](../needs-checking/group-pg.md), now on [#1202](https://github.com/Ajmalpshaik/Heron-AI/issues/1202) |
+| [#1198](https://github.com/Ajmalpshaik/Heron-AI/pull/1198) | A skill runner (`tools/run-skill.py`, row 141), and the ten skill job files made current (row 5b-1956) | [Group PH](../needs-checking/group-ph.md), [#1196](https://github.com/Ajmalpshaik/Heron-AI/issues/1196) |
 | [#1195](https://github.com/Ajmalpshaik/Heron-AI/pull/1195) | The doors skip a card that does not claim the Revit in front (row 5b-1131) | - |
 | [#1206](https://github.com/Ajmalpshaik/Heron-AI/pull/1206) | The Revit checks rows 5b-1351 and 5b-1702 still owe; OT29 and OT30 brought up to date (#944, #945) | OT29, OT30 |
 | [#1208](https://github.com/Ajmalpshaik/Heron-AI/pull/1208) | An owed Revit reading (OR29, on #1115); the owner's questions recorded (Q-95, Q-96); Q-94 answered; `open-issue.py` finds colour-marked questions | OR29, and three questions below |
@@ -65,7 +66,7 @@ routing words alone moved, and two cards DEPRECATED by `CREATE_SHEETS` version 4
 
 - **Two branches took the same group letter on the same day.** Group PK was taken by #1212 while #1211 held it,
   and #1211 had to become Group PL before it merged. `python tools/next-id.py` again *just before* the merge, not
-  only when the id is chosen - heron-ship §6a says so, and on a day of thirty merges it is the step that matters.
+  only when the id is chosen - heron-ship §6a says so, and on a day of this many merges it is the step that matters.
 - **A group merged with no issue of its own.** Group PG (#1192) reached `main` naming only its source issue
   #1161, where D-187 asks for an issue per new group in the same change. Its checks were added to #1202 - the
   same card's version 2 runs there, "after Group PG" - and its file now names #1202.
@@ -98,6 +99,6 @@ routing words alone moved, and two cards DEPRECATED by `CREATE_SHEETS` version 4
    version 2 rows (#1144).
 4. **Then rebuild and deploy the add-in** - #1182 and #1211 changed it - and run what only the new add-in can
    show: Groups PL (#1204), PC (#1167), OV (#1123), OW (#1136), OX3 to OX5 (#1142), OR29 (#1115), and the
-   methods of Group PF (#1170). Each group's file has its order and its negative case.
+   methods of Group PF (#1170), and the skill runner's first runs, Group PH (#1196). Each group's file has its order and its negative case.
 
 The full list waiting on Revit is `python tools/owner-queue.py`; what is unfinished is `python tools/check-gaps.py`.
