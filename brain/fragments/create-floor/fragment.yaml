@@ -322,3 +322,10 @@ utterances:
   # CREATE_FOUNDATION_SLAB once that card came, on 2024 and 2020. Declared so
   # it reaches here by identity. Outside impl/, so the proof is not stale.
   - make the slab
+  # ADDED 2026-11-21, row 5b-1939 (issue #1159). The owner's own sentence on
+  # his PC reached CREATE_EXTRUSION_ROOF, the other kind of roof; a roof by
+  # footprint is this card with a roof type, left flat, and SLOPE_ROOF_EDGES
+  # slopes its edges after. Declared at the END, so the eight sentences the
+  # re-ranker reads (D-134) are unchanged.
+  - make a roof by footprint on Level 2 from 0,0 to 12000,8000 with the two long sides sloping at 30 degrees
+  - make a roof by footprint on this level

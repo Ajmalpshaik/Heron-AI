@@ -351,3 +351,12 @@ utterances:
   - create a label in this tag family from the seed family
   # ...and COPY_LABELS_FROM_FAMILY's semantic identity, which nothing else declares:
   - copy labels already set up in a seed tag or title block family, open in the same Revit, into the family in front - same category only, at a point - and read each copy back against its seed
+  # ADDED 2026-11-21, row 5b-1848 (issue #1039). Both reached
+  # CHECK_DATUMS_AGAINST_LINK, a read that only compares, on lexical and
+  # model; a copy was asked for. Declared at the END, so the re-ranker's
+  # eight (D-134) are unchanged. Either one alone sent "bring the edited
+  # spreadsheet back into the model" here on lexical (score-routing,
+  # 2026-11-21); that sentence is declared on SET_PARAMETER_VALUES_BY_ID,
+  # the card that brings a file back (row 5b-1524).
+  - get the levels and grids from the structural link into this model
+  - bring the architect's levels into our model
