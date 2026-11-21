@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-041
-semantic-identity: "change the units, symbol and rounding the project shows a kind of value in - lengths, heating and cooling loads, airflow"
+semantic-identity: "change the units, symbol and rounding the project shows a kind of value in"
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
 # Nothing in the library could set Manage > Project Units. The building loads
@@ -166,6 +166,7 @@ compatibility-note: >
 
 utterances:
   - set cooling load units to btu/h
+  - switch the load units to kilowatts
   - change the project units for air flow to cfm
   - set the project length units to millimeters
   - change project units
