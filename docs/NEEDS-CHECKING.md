@@ -1642,6 +1642,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oz.md`](needs-checking/group-oz.md)
 
+## Group PA - REPORT_SPRINKLER_NETWORK version 2: a ceiling-hosted sprinkler's level read from its Schedule Level, as FILTER_ELEMENTS_BY_CATEGORY reads it - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pa.md`](needs-checking/group-pa.md)
+
+## Group PD - row 106: is a clearance check slow on a real MEP model? One timed run before any fix is written (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pd.md`](needs-checking/group-pd.md)
+
 ## Group PF - job methods and a skill's plan, run where Revit is: a plan that stops at a failed step, no write method beside a question, builders work, general notes and the casework template (2026-11-21)
 
 **Its own file:** [`needs-checking/group-pf.md`](needs-checking/group-pf.md)
