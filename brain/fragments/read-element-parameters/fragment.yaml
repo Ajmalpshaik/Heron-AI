@@ -440,3 +440,7 @@ utterances:
   # diameter, mark and level and moved nothing on any frozen set, as twelve
   # wordings did for row 5b-1007, so it is left as it is.
   - what diameter are these pipes
+  # ADDED 2026-11-21, row 5b-1929 (issue #1078): a roof's Slope is a parameter
+  # (BuiltInParameter ROOF_SLOPE, "Slope", 2020 to 2027); the question reached
+  # SLOPE_ROOF_EDGES or EXTEND_ROOF_TO_ROOF - writes - on every backend.
+  - what is the slope of this roof

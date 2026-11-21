@@ -237,3 +237,7 @@ utterances:
   - set the line pattern of Ducts to Dash
   - set the material of Generic Models to Concrete
   - make the Hidden Lines subcategory of Ducts lineweight 1
+  # ADDED 2026-11-21, row 5b-1873 (issue #1078): this card's own request, which
+  # declaring LIST_CATEGORIES' two material questions sent to the read on the
+  # model backend the first time they were tried.
+  - set the material of generic models in object styles

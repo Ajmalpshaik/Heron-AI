@@ -312,3 +312,10 @@ utterances:
   # styles" from SET_OBJECT_STYLE to this read on the model backend - the
   # same trade the purpose was refused for - so they were taken back.
   - list the categories with their line weights and colours
+  # ADDED 2026-11-21, row 5b-1873 (issue #1078): two questions about the Material
+  # column this card reads (version 4) that reached SET_OBJECT_STYLE or
+  # TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS, writes. Declared with SET_OBJECT_STYLE's
+  # "set the material of generic models in object styles" beside them, which the
+  # first try lost to this read on the model backend.
+  - what material is set for generic models in object styles
+  - which categories have a material in object styles

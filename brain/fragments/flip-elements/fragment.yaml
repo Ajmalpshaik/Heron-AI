@@ -46,7 +46,7 @@ purpose: >
 
   **VERSION 2: A FLIPPED DOOR'S FROM AND TO ROOM FOLLOW ITS SWING.** Revit
   leaves From Room and To Room as they were when a door's facing is flipped, so
-  the door schedule reads backwards. After a facing flip the door's To Room is
+  they are left the wrong way round. After a facing flip the door's To Room is
   swapped to the room it now swings into - only where the rooms either side
   say so - and each door is named. `fromToRoomOnly` fixes the From and To Room
   of doors already wrong, and flips nothing.
@@ -249,4 +249,10 @@ utterances:
   - the handing is wrong
   - flip them
   - fix the from and to room on these doors
+  # ADDED 2026-11-21, row 5b-1925 (issue #1130): the request this card's own
+  # routing row names - on main it reached REPORT_DOOR_ROOM_LINKS, the read,
+  # on all four backends. And "the door schedule reads backwards" came out of
+  # this card's purpose, where it was the only write saying it word for word,
+  # so the question stays with the read whichever of the two is PROVEN.
+  - the door schedule rooms read backwards, fix them
   - flip the work plane of the nested part
