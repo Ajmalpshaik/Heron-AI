@@ -25,8 +25,10 @@ tries a type change first where the two families host the same way, places one n
 rest - by `PLACE_FAMILY_INSTANCES`, `PLACE_FAMILY_ON_FACE` or `PLACE_HOSTED_FAMILY` by the new one's hosting,
 or by copying an existing instance of the new type and moving it where the placement refuses - puts each on
 its old one's workset, copies the tags with `COPY_TAGS_TO_REPLACEMENTS`, and names every tag and dimension a
-delete takes before asking for it. **The GUID write is still a gap**: `SET_PARAMETER_VALUES_BY_ID`
-version 2 finds a parameter by name, measured from its code on main 2026-10-17.
+delete takes before asking for it. **The GUID write was written as a gap** on 2026-10-17, from
+`SET_PARAMETER_VALUES_BY_ID` version 2, which found a parameter by name only. Its version 6 (2026-10-28,
+row 5b-1344) takes `"<name> {<its GUID>}"`, and step 7 of the method writes by it since 2026-11-21
+([row 5b-1981](../fragment-issues/row-5b-1981.md)) - not yet run in Revit through this method.
 
 **What is measured and what is not run.** The method validates (`python brain/heron_skill.py`); every
 capability it names has a provider; which methods `heron_lookup` names beside every declared sentence and the routing phrase lists was

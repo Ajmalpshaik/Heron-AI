@@ -243,10 +243,11 @@ real edit does.
 | **Proving a fragment or skill against a model** | **no. Needs Revit** |
 | **Add-in load, upgrade, rollback, manifest discovery** | **no. Needs a real Windows install** |
 
-So a cloud session goes **further than CI does**. `gates.yml` leaves the suites it names in its
-`known-not-runnable.txt` list unrun - the MCP SDK and the .NET host drag in dependencies a hosted runner
-should not carry, and the trained embedding is not there; this environment installs the SDK and the
-embedding and builds the host on request, so **nothing in `tests/` is out of its reach** once §2's check
+So a cloud session goes **further than CI does**. Since 2026-11-21 `gates.yml` builds the .NET host and
+runs the suites that need the MCP SDK on a venv holding the pinned lock, but it leaves
+`test_routing_phrases.py` unrun on its not-runnable list - the trained embedding is not there, and on
+the embedding alone, without the re-ranker the owner's PC ranks with, that suite fails; this environment
+installs the embedding on request, so **nothing in `tests/` is out of its reach** once §2's check
 answers `model`.
 
 No total is written here on purpose. One was — *"196 of 199"* — and
