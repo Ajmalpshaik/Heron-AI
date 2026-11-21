@@ -370,7 +370,7 @@ def ask_to_keep_line(asks):
 SETTINGS_NOT_SENT = "not sent"
 
 # THE WAY TO UPDATE IT IS SAID HERE. Seen 2026-11-19 (issue #1051 item D, row
-# 5b-1962): Revit 2020's add-in was older than the chat, this was the one line
+# 5b-1966): Revit 2020's add-in was older than the chat, this was the one line
 # it got, and nothing said what to do - the family method then named a tool
 # that does not update an add-in. Every add-in from before the settings file
 # was reported gets this line; one newer than that and older than a later

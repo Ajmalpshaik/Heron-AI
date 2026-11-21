@@ -28,7 +28,7 @@ risk: MODIFY
 # the chosen face at its own centre on the side it points - a flange top under
 # its raised face, a box top under its neck - nothing is made and that solid is
 # named. Left out, `at` binds "none". The card was DRAFT at version 6, never
-# proved; it stays DRAFT at version 7 until NEEDS-CHECKING Group PN is run.
+# proved; it stays DRAFT at version 7 until NEEDS-CHECKING Group PO is run.
 #
 # VERSION 6 (2026-11-20) - form= AND facing= PICK THE FACE, and back to DRAFT.
 # Issue Ajmalpshaik/Heron-AI#1029, seen 2026-11-19 on Revit 2020 in a fixed

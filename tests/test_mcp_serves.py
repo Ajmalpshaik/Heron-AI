@@ -2658,7 +2658,7 @@ async def settings_said_by_each_revit(module, server, Says):
               "revit_health: an OLDER add-in - its Ask to Keep line as before, and one "
               "line each saying it did not report its switches or its file - found %r"
               % (old,))
-        # Issue #1051 item D, row 5b-1962: the older add-in's line says how it is
+        # Issue #1051 item D, row 5b-1966: the older add-in's line says how it is
         # updated - by the modeller, with the tools that build it - and never
         # names heron-ready, which only checks that an add-in is installed.
         check(len(old) == 3 and "HeronInstaller.exe" in old[2] and "tools/setup.ps1" in old[2]
