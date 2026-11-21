@@ -1,0 +1,61 @@
+# NEEDS-CHECKING Groups LD and PK - REPORT_STRUCTURAL_CONNECTIONS version 2
+# (LD2, PK3): connections that would not say what they join are counted in
+# unresolvedConnections. Written 2026-11-21 in a cloud session with no Revit.
+# NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ld-pk-steel-ld-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ld-pk-steel-ld-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL, Revit 2020: "steel-ld", Group LD's scratch project new from the
+# metric STRUCTURAL template, saved under %TEMP%\heron-work (LD1, and
+# tools/jobs/report-structural-connections-ld-2026-11-01.yaml, which this
+# replaces for version 2). By hand before the run: on Level 1 steel columns C1
+# and C2 standing apart, steel beam B1 framing into C1, structural wall W1
+# away from all three; Steel > Connection CN1 between B1 and C1 and CN2, a
+# single-member connection on C2's base. Write down every type in Connection
+# Settings and each connection's Properties. Never a working model.
+#
+# THE ARRANGEMENT: the structural framing of "FloorPlan: Level 1" (B1) for the
+# positive, the walls of the same plan (W1) for the negative - a DIFFERENT
+# selection, not an empty one (fragment-proving, rules 3 and 5). The chain has
+# values of its own, so the negative leg carries its own too. A read: nothing
+# changes.
+#
+# EXPECT NEG NOT EMPTY ON typeCount. The card counts every connection type
+# loaded in the model (`typeCount`, role: result) whatever is selected or
+# `show` asks, and the runner and `accept` judge the negative on every
+# declared result - so W1's leg will read typeCount above 0 on any model that
+# holds CN1 and CN2. That is a question about the card's contract, not this
+# arrangement; write the number down on the PK3 row.
+#
+# NOT IN THIS FILE: PK3's second run and LD3 (nothing selected, `show` left
+# out), LD4 (`show` "bolts"), LD5 (Revit 2024 or later).
+
+model: "steel-ld scratch project (metric structural template) with C1, C2, B1, W1 and connections CN1 (B1-C1) and CN2 (C2 alone) placed by hand, Revit 2020"
+
+defaults:
+  in: "steel-ld"
+  setup: [filter-elements-by-category, set-selection]
+
+jobs:
+  - fragment: report-structural-connections
+    expect: connectionCount
+    setup-set:
+      categoryName: Structural Framing
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categoryName: Walls
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      show: "connections"
+    negative-set:
+      show: "connections"
+    note: >
+      LD2 and PK3's negative - THE FIRST CASE TO RUN, the wall W1:
+      connectionCount 0, notConnected names W1, findings "1 of the 1 member(s)
+      handed in is joined by no connection"; unresolvedConnections written down
+      (0 expected - CN1 and CN2 each say what they join) and the "would not say
+      what they join" sentence there exactly when it is above 0. Positive, B1:
+      connectionCount 1 - CN1, its type, "joins 2" naming B1 and C1 with the
+      primary first, origin in mm, approval and code checking status - and not
+      CN2; unresolvedConnections 0 and no such sentence.

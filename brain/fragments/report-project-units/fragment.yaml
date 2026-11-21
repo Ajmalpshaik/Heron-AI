@@ -130,3 +130,13 @@ utterances:
   # and "what symbol does air flow show" - claimed in the routing table above
   # - fell to a three-way tie that SET_AIR_TERMINAL_FLOW, a write, took.
   - what symbol does air flow show
+  # ADDED 2026-11-21 (row 5b-496, GitHub issue #958): on the trained model alone
+  # "what units are the heating loads shown in" reached RUN_HEATING_COOLING_LOADS
+  # and "is cooling load shown in watts or btu in this project" SET_PROJECT_UNITS
+  # (both held out, never declared); this line, LAST so the re-ranker's eight
+  # are main's (D-134), moves both here. Tried and taken
+  # back: "loads" or "cooling loads" in the identity - either also moved
+  # "set the cooling load units to kW" or the suite's "show cooling and heating
+  # loads in Btu/h ..." off SET_PROJECT_UNITS. The suite's "which units does this
+  # model show cooling load in" stays on RUN_HEATING_COOLING_LOADS there.
+  - which unit are the heating and cooling loads read in

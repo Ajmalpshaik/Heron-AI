@@ -1,0 +1,69 @@
+# NEEDS-CHECKING Group OK - SET_FAMILY_PLANE_REFERENCE version 2 (DRAFT):
+# every plane that is not an outline or centre plane put on a subcategory of
+# Reference Planes in one call (row 5b-1849, issue #1034), row OK4. Built
+# 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ok-column-scratch-1044-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ok-column-scratch-1044-revit2020-2026-11-21.yaml --session <2020 pid>
+#
+# READ THIS FIRST - A DRAFT MAY ALREADY BE WAITING. On 2026-11-20 OK4 held on
+# Revit 2020 in "Column Scratch 1044", and OK3 later KEPT a run through
+# try-once with a `validate --kept` negative; brain/proof-drafts/
+# set-family-plane-reference.yaml was rewritten from that kept run, NOT SIGNED
+# (docs/needs-checking/group-ok.md, OK3 and OK4). If that draft is still on
+# the PC, review and sign IT (python brain/heron_validate.py review
+# set-family-plane-reference) and DO NOT RUN THIS FILE: batch-prove writes
+# brain/proof-drafts/runs/set-family-plane-reference.json and the draft
+# afresh, and the kept run's draft is replaced. This file is for when that
+# draft is gone.
+#
+# THE MODEL - RECORDED: "Column Scratch 1044", made from Metric Column.rft by
+# CREATE_FAMILY_DOCUMENT in %TEMP%\heron-work\issues-1120, Revit 2020 (build
+# 20191106_1200). Since 2026-11-20 it holds, KEPT: the subcategory
+# "Secondary References" (OK1) and a plane "Insert" at X 350 (OK3), the
+# family saved after both; Insert was then moved onto Secondary References
+# by OK3's kept run (whether the family was saved again after that, the row
+# does not say - either way the positive below has a plane to move). So NO
+# SETUP STEP: OK4
+# needed CREATE_LINE_STYLE in its rolled-back group because the subcategory
+# did not exist yet; it exists now.
+#
+# THE ARRANGEMENT - OK4's held values, the template's own planes. Positive:
+# planes "Left=Left; Right=Right", otherPlanesSubcategory "Secondary
+# References" - OK4 moved 1 plane that is not an outline or centre plane and
+# left Center (Front/Back), Center (Left/Right), Left, Right, Back and Front
+# on Reference Planes; that plane was rolled back, so it is on Reference
+# Planes still, and Insert is moved or already as asked. Negative: the same with
+# otherPlanesSubcategory "No Such Subcategory" - a DIFFERENT value, refused,
+# no plane's Subcategory changed (rules 3 and 5); it carries every value,
+# because a negative-set replaces the set. ROLLED BACK. ONE job: the run
+# record is kept per card.
+
+model: "Column Scratch 1044 (from Metric Column.rft, Secondary References and plane Insert kept), Revit 2020"
+
+defaults:
+  in: "Column Scratch 1044"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: set-family-plane-reference
+    expect: onSubcategory
+    set:
+      planes: "Left=Left; Right=Right"
+      otherPlanesSubcategory: "Secondary References"
+    negative-set:
+      planes: "Left=Left; Right=Right"
+      otherPlanesSubcategory: "No Such Subcategory"
+    note: >
+      OK4. Negative FIRST: changed 0, onSubcategory 0, refused "Nothing was
+      changed. Reference Planes has no subcategory named "No Such
+      Subcategory" - this family has Reference Planes, Secondary References.
+      CREATE_LINE_STYLE with parentCategory "Reference Planes" makes one ...".
+      Positive: onSubcategory 1 or more, "N plane(s) moved to another
+      subcategory of Reference Planes", the outline and centre planes named as
+      left on Reference Planes, Left and Right already as asked. If it reads
+      onSubcategory 0, every other plane is on Secondary References already
+      (the kept file differs from the row): make one more plane with
+      CREATE_REFERENCE_PLANES, kept, and run again. Gray and green in Ref.
+      Level are looked at only on a KEPT run.

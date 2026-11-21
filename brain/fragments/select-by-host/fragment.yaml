@@ -5,13 +5,26 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SEL-009
-semantic-identity: "the things really hosted on this element, not the things near it"
+semantic-identity: "the doors, windows and other things really hosted in this wall or element, not the things near it"
 kind: filter
 domain: revit.selection
 capability: SELECT_BY_HOST
 version: 1
 source: OFFICIAL
 risk: READ
+
+# IDENTITY NAMES DOORS, WINDOWS AND A WALL (2026-11-21, row 5b-321, GitHub issue
+# #955). With both re-rankers "which doors are in this wall" and "which windows
+# sit in this wall" reached PLACE_HOSTED_FAMILY, a change, on main 0429fc1c, and
+# "count the windows in the external walls" did on every backend but lexical:
+# the re-ranker reads the identity and the first eight utterances (D-134), and
+# the identity named no door, window or wall. Measured with
+# tools/score-routing.py --sentences on 764 sentences frozen before the edit
+# (tests/data/routing-sentences-2026-11-21-round4.yaml and its neighbours), all
+# four backends: all three reach this card now, nothing moved the wrong way.
+# On lexical "put two windows in the north wall" now reaches this read instead
+# of DIMENSION_ELEMENT_FACES (a different write) - a request answered by a read,
+# which changes nothing; PLACE_HOSTED_FAMILY was not first on main either.
 
 # DOORS AND WINDOWS FIRST, AND THE COUNT BESIDE THE SELECTION (FRAGMENT-ISSUES
 # 5b-321, 2026-10-09). Until then this purpose was mostly duct insulation and

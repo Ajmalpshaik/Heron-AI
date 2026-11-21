@@ -1,0 +1,54 @@
+# NEEDS-CHECKING Group OU (OU15) and Group NX (NX2) - REPORT_STRUCTURAL_LOADS
+# version 3 (DRAFT): a load case's category is read from its SubcategoryId,
+# never printed "category ?" (row 5b-1640). Built 2026-11-21 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ou2-p1102-str-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ou2-p1102-str-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL: "P1102 STR", the saved scratch copy of Revit 2020's own
+# rst_advanced_sample_project under %TEMP%\heron-work\prove-1102, Revit 2020 -
+# never a working project. The model and release of the card's version 2
+# proof (2026-11-14, session 26612) and of OU15's first half.
+#
+# THE ARRANGEMENT - version 2's proof, with the cases list added. The positive
+# hands in every floor (filter-elements-by-category, no view): 5 floors and 5
+# area loads, -1, -2 and -1.5 kPa, so loadCount 5. The negative is a
+# DIFFERENT selection, the 133 structural columns of "02 - Floor", which carry
+# no load: loadCount 0, boundaryCount 0. Both legs ask `show` "loads; cases",
+# so the "Load cases (3):" lines this version changed are printed in both -
+# they are accounting (`report`), so READ THEM: the runner judges loadCount.
+# A read; nothing in the model changes.
+#
+# BY HAND, NOT HERE: OU15's own form - nothing selected, show=cases - and the
+# same on a Revit 2024 scratch structural project, the second release (no such
+# project is recorded: it needs the model's own name); OU15's negative, a case
+# Revit gives no category, if one can be arranged - otherwise each line read
+# against Analyze > Load Cases by eye.
+
+model: "P1102 STR (saved scratch copy of Revit 2020's rst_advanced_sample_project), Revit 2020"
+
+defaults:
+  in: "P1102 STR"
+  setup: [filter-elements-by-category, set-selection]
+
+jobs:
+  - fragment: report-structural-loads
+    expect: loadCount
+    setup-set:
+      categories: "Floors"
+    negative-setup-set:
+      categories: "Structural Columns"
+      inViewOnly: "02 - Floor"
+    set:
+      show: "loads; cases"
+    negative-set:
+      show: "loads; cases"
+    note: >
+      OU15 and NX2. Positive: loadCount 5, the binding note "elements from
+      the selection (5)"; the report's "Load cases (3):" lines each naming the
+      category Analyze > Load Cases shows - DL1 "nature Dead, category Dead
+      Loads", LL1 under Live Loads, SNOW1 under Snow - and NO "category ?".
+      Negative: the 133 columns, loadCount 0, boundaryCount 0, findings "No
+      load is hosted on the analytical element(s) of what was handed in"; the
+      same three case lines, which are the model's, not the selection's.

@@ -1,0 +1,59 @@
+# NEEDS-CHECKING Group OT - FLEX_FAMILY version 3 (DRAFT): a nested family's
+# own extent is checked in every trial and in the restore (row 5b-367), rows
+# OT9 and OT10. Built 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ot-spring-generic-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ot-spring-generic-revit2020-2026-11-21.yaml --session <2020 pid>
+#
+# THE MODEL (group-ot.md OT9; brain/fragments/flex-family/tests/cases.yaml,
+# VERSION 3 - the ARRAY_FAMILY_FORMS version 2 spring): a scratch host family
+# from Revit 2020's metric Generic Model template, saved under
+# %TEMP%\heron-work\ot, never the owner's own work. Reference planes "Pitch"
+# at 30 and "Top Turn Start" at 120, the second dimensioned from Ref. Level
+# and labelled Length "Top Height"; an Integer parameter "Coils" = 3; a
+# level-based Generic Model one-turn family loaded and nested at 0,0,0 on
+# Ref. Level, moved up 30, its Bottom locked to "Pitch", arrayed count
+# "Coils", step "Z 60 last", the last copy's Top locked to "Top Turn Start".
+# KEPT before this runs - FLEX_FAMILY puts every value back and this runner
+# rolls the run back as well. The older spring families (SpringProof, Revit
+# 2024, tools/jobs/spring-swept-blend-2026-10-07.yaml) hold neither "Coils"
+# nor "Top Height" and were never saved, so none is reused. NO `in:` BELOW: no
+# row records this family's own name, so the job runs on the document in
+# front - bring it to the front, or add `in: "<its title>"` under defaults
+# once it is saved.
+#
+# THE ARRANGEMENT - NO ID. Positive OT9: trials "Coils=5 | Coils=3; Top
+# Height=200". Negative: trials "No Such Size=500" - a parameter the family
+# has not got, refused before anything is tried: allHeld false, trialResults
+# empty, restored false (version 2's own proof negative, 2026-10-18). OT10 -
+# a nested family NOT locked to "Pitch" - is NOT empty (its trial line says
+# NOT HELD), so it is a by-hand line in the note, in its own family, never this
+# job's negative. Every run is ROLLED BACK. ONE job: the run record is kept
+# per card.
+
+model: "a scratch Generic Model host (Revit 2020 metric template): planes Pitch (30) and Top Turn Start (120, labelled Top Height), a nested one-turn family arrayed by Coils, its ends locked to the planes"
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: flex-family
+    expect: trialResults
+    set:
+      trials: "Coils=5 | Coils=3; Top Height=200"
+    negative-set:
+      trials: "No Such Size=500"
+    note: >
+      OT9 then the no-such-parameter negative. Negative FIRST: "Nothing was
+      tried. "No Such Size" is not a parameter of this family ...", allHeld
+      false, trialResults empty. Positive: allHeld true, restored true; each
+      trial line "across N solid(s) and M nested families" with M following
+      Coils (5, then 3); the findings saying how many nested families came
+      back by their own ids and how many array copies Revit remade were
+      matched by shape. Version 2 said only "across N solid(s)". Then OT10 by
+      hand, in a second scratch host: the one-turn family nested, moved to Z
+      30 and NOT locked to "Pitch", no array, a labelled dimension "Pitch
+      Height" moving "Pitch"; heron_bridge_client.py fragment flex-family
+      --write --set "trials=Pitch Height=60" - allHeld false, NOT HELD naming
+      the nested family that did not follow. Version 2 passed this case.

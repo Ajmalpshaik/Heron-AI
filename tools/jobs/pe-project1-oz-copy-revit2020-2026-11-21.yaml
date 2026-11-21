@@ -1,0 +1,56 @@
+# NEEDS-CHECKING Group PE - CREATE_SHEETS version 5 (DRAFT, was DRAFT v4):
+# with typed numbers, `titleBlockName` "placeholder" makes PLACEHOLDER sheets
+# (ViewSheet.CreatePlaceholder, work-note item WN-6). Built 2026-11-21 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/pe-project1-oz-copy-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/pe-project1-oz-copy-revit2020-2026-11-21.yaml
+#
+# AFTER GROUP OZ, AND IT REPLACES OZ'S RUN RECORD. tools/jobs/create-sheets-oz-2026-11-21.yaml
+# (version 4's table leg) was written before version 5 (commit 1161483d,
+# 2026-11-21) and does not ask for a placeholder. A run record and a proof
+# draft are kept per CARD (brain/proof-drafts/runs/create-sheets.json), so
+# this run replaces whatever OZ's left: run OZ, read its draft and keep what
+# it shows, THEN run this - the group says "run it first, then PE3".
+#
+# THE MODEL is OZ's: the SAVED scratch copy of Project1, Revit 2020, that
+# Group MY / OZ1 arranges - never a working model. `in:` is left out, as OZ's
+# file leaves it: that copy's title is not recorded anywhere, so the run reads
+# the model in front - bring the copy to the front, or write its title as
+# Revit shows it in `in:` under `defaults:`.
+#
+# THE ARRANGEMENT. Nothing selected, `setup: []`; every input is a value.
+# Numbers PH-101 and PH-102 are free in any project that has not run Group PE.
+# The positive is PE3's second line. The negative is a DIFFERENT VALUE of the
+# same input (rule 3): a title block name the model has not got, instead of
+# "placeholder" - so a card that made a placeholder sheet for any name it did
+# not know, or ignored the word, is caught - refused, nothing made. PE3's own
+# negative - a number ALREADY in the register with "placeholder" - needs the
+# number OZ1 records, written nowhere yet; it is by hand, with that number,
+# and so is PE3's preview line. Each leg carries every value. Every run is
+# ROLLED BACK. ONE job.
+
+model: "the saved scratch copy of Project1 that Group MY / OZ1 arranges, Revit 2020"
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: create-sheets
+    expect: created
+    set:
+      numbers: "PH-101,PH-102"
+      names: "HERON PLACEHOLDER 1,HERON PLACEHOLDER 2"
+      titleBlockName: placeholder
+    negative-set:
+      numbers: "PH-101,PH-102"
+      names: "HERON PLACEHOLDER 1,HERON PLACEHOLDER 2"
+      titleBlockName: "NoSuchTitleBlockAnywhere"
+    note: >
+      PE3. Negative - THE FIRST CASE TO RUN: titleBlockNotFound true, created
+      empty, the sheet count unchanged. Positive: created two ids, numberedAs
+      PH-101 and PH-102, namedAs the two names, noTitleblock false, findings
+      "2 sheet(s) were made as PLACEHOLDER sheets ...". Rolled back - so the
+      look in a sheet list schedule, and where the Project Browser shows a
+      placeholder, is a kept run's, as PE3 writes it.

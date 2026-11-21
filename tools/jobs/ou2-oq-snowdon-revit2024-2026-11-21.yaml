@@ -1,0 +1,81 @@
+# NEEDS-CHECKING Group OU (OU9, OU14) and Group OQ (OQ3, OQ4) - two cards on
+# the oq-snowdon copy: REPORT_MODEL_DASHBOARD version 5 (DRAFT; version 4's
+# subcategory rows OQ3/OQ4, version 5's level lookup OU14, rows 5b-1355 and
+# 5b-342) and SET_LINK_ROOM_BOUNDING version 3 (DRAFT; a name two parameters
+# share is never written, row 5b-1534). Built 2026-11-21 in a cloud session
+# with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ou2-oq-snowdon-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ou2-oq-snowdon-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE MODEL (docs/needs-checking/group-oq.md): "oq-snowdon", a copy of Revit
+# 2024's own Snowdon Towers Sample HVAC.rvt saved as
+# %TEMP%\heron-work\oq\oq-snowdon.rvt with its six links copied beside it and
+# loaded - never a working model. The same copy Group OQ's own job file
+# (oq-oq-snowdon-revit2024-2026-11-21.yaml) runs on. Beside it, for the
+# dashboard's negative: "Family1", a NEW Generic Model family left at its
+# default name and not saved - the family document the dashboard's first
+# proof used on Revit 2024 (tools/jobs/report-model-dashboard-2026-11-01.yaml).
+# Both open in ONE Revit 2024; `in:` and `negative-in:` bring each to the
+# front.
+#
+# THE ARRANGEMENT.
+#   report-model-dashboard needs only the document, so there is no selection.
+#   The positive is oq-snowdon, the negative the family: elementTotal is the
+#   one declared result, every other output accounting, so a family reads
+#   elementTotal 0 and the project its whole count. No values are sent - OQ3
+#   reads it as revit_read does, with none.
+#   set-link-room-bounding takes the link by the start of its name, as its
+#   proof of 2026-11-02 did on the same sample (p1102-round16, Revit 2024,
+#   session 59960): that copy's Architectural link read Room Bounding ON, so
+#   the positive turns it OFF. The negative names a link the model has not
+#   got - a DIFFERENT value, carrying every value the leg needs, because a
+#   negative-set replaces the positive's values. Every write ROLLED BACK.
+#
+# BY HAND, NOT HERE: OQ3's Select by ID of one sampleIds element; OQ4's
+# oq-blank (one wall, no model line) read by eye; OU14 on the diffuser scratch
+# model of tools/jobs/ou2-diffuser-scratch-revit2020-2026-11-21.yaml; OU9's
+# doubled "Room Bounding" negative - if every link type carries the built-in
+# one, write on OU9 that it cannot be arranged. ONE job per card: a run's
+# record is kept per card.
+
+model: "oq-snowdon: a scratch copy of Snowdon Towers Sample HVAC.rvt with its six links loaded, and Family1 (a new unsaved Generic Model family) beside it, Revit 2024"
+
+defaults:
+  in: "oq-snowdon"
+  setup: []
+
+jobs:
+  - fragment: report-model-dashboard
+    expect: elementTotal
+    negative-in: "Family1"
+    note: >
+      OQ3, OQ4 and OU14's batch half. Positive, oq-snowdon: elementTotal the
+      sum of every categories row's instances (JT1 read 4750 on such a copy,
+      give or take what it holds); every row JT1 read as "Center line" now
+      named with its parent - "Center line (Ducts)" or whatever Revit names -
+      with `parent` set and up to 5 sampleIds; every other row `parent` null;
+      the findings line counting those rows as subcategories. READ
+      dashboardJson - the runner judges elementTotal alone. Negative, Family1:
+      elementTotal 0, sectionsNotRead 13, isFamily true, every part null and
+      named "not a project"; not one of oq-snowdon's numbers in it. The
+      diffusers on Level 1 (OU14) are not in this model - that row is by hand.
+
+  - fragment: set-link-room-bounding
+    write: true
+    expect: changed
+    set:
+      linkName: "Snowdon Towers Sample Architectural.rvt"
+      roomBounding: false
+    negative-set:
+      linkName: "No Such Link.rvt"
+      roomBounding: false
+    note: >
+      OU9, version 2's answer the other way round. READ Room Bounding in the
+      Architectural link's Type Properties FIRST: if it is OFF in this copy
+      (OQ6 turns one off by hand), put roomBounding true in `set:` - OU9's own
+      direction - or the positive reads changed 0, alreadyThat 1. Positive:
+      changed 1, "1 link type(s) set to Room Bounding OFF and read back",
+      `ambiguous` EMPTY - the count is asked only where the built-in is
+      missing. Negative: changed 0, refused "No Revit link's name starts "No
+      Such Link.rvt". NOTHING WAS CHANGED."

@@ -1,0 +1,67 @@
+# NEEDS-CHECKING Group OU - EDIT_TEXT_VALUES version 10 (DRAFT), rows OU1 and
+# OU3(a): renaming a LEVEL answers Revit's "rename the views too?" from
+# `renameViews`, and with it left out renames NOTHING (row 5b-1221, D-145).
+# Built 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ou-house-scratch-2-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ou-house-scratch-2-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL is "House Scratch 2", Revit 2020 - a scratch copy of Revit 2020's
+# rac_basic_sample_project.rvt in %TEMP%\heron-work\issues-1120, never a
+# working model. OU1 asks for "a scratch copy of rac_basic_sample_project.rvt
+# (Level 1, id 311, with its floor plan Level 1, id 312)" and names no copy;
+# House Scratch 2 is the copy Group HP ran the same level rename on, through
+# SET_PARAMETER_VALUES_BY_ID, on 2026-11-20 (HP1 to HP4, rolled back: level 311,
+# view 312). If another copy is used, its own name goes in `in:` below.
+#
+# THE ARRANGEMENT. Level 1 handed in by id - filter-elements-by-id
+# elementIds=311, the row's FILTER_ELEMENTS_BY_ID - with `keep-chain: true`
+# so the card is given exactly that one level (binding note:
+# "elements from filter-elements-by-id (1)", rule 5).
+#   positive (OU1)    field=Name mode=replace text=Level 1
+#                     replacement=Ground Floor renameViews=yes
+#   negative (OU3(a)) the same with renameViews LEFT OUT - a DIFFERENT VALUE
+#                     of an optional input (`absent: none`), so the card binds
+#                     and refuses by its own rule; it is not an unbound need.
+#                     HP3 used the same negative for the sibling card
+# negative-set REPLACES set, so it carries every value - and leaving
+# renameViews out of it is what makes it the negative.
+#
+# Every run is ROLLED BACK. ONE job - a run record is kept per card. OU2
+# (renameViews=no) and OU3(b) (floor plan Level 2 renamed, not a level) are
+# commands of their own, in the note below, each with its own --out.
+model: "House Scratch 2 - a scratch copy of Revit 2020's rac_basic_sample_project.rvt (Level 1 id 311, floor plan Level 1 id 312), Revit 2020"
+defaults:
+  in: "House Scratch 2"
+  write: true
+jobs:
+  - fragment: edit-text-values
+    expect: changed
+    setup: [filter-elements-by-id]
+    keep-chain: true
+    setup-set: {elementIds: "311"}
+    negative-setup-set: {elementIds: "311"}
+    set:
+      field: Name
+      mode: replace
+      text: "Level 1"
+      replacement: "Ground Floor"
+      renameViews: "yes"
+    negative-set:
+      field: Name
+      mode: replace
+      text: "Level 1"
+      replacement: "Ground Floor"
+    note: >
+      OU1 then OU3(a). Positive: changed 1 (311); the reply's `dialogs` lists
+      TaskDialog_Confirm_Level_Rename answered Yes, the job not refused;
+      levelNote "Level 'Level 1' -> 'Ground Floor' (id 311), renameViews=yes:
+      1 view(s) renamed with it - Ground Floor (id 312)". If levelNote says the
+      view still carries the old name while the read-back shows it renamed,
+      WRITE IT DOWN on the row - Revit renames at the commit. Negative: changed
+      empty, NO dialog in the reply, refused "renaming a level makes Revit ask
+      whether to rename its views too, and 1 level(s) would be renamed here -
+      'Level 1' (id 311) - so NOTHING WAS RENAMED...". OU2 by hand: the same
+      validate with --set renameViews=no and --out under %TEMP%\heron-work -
+      changed 1, the dialog answered No, levelNote "1 view(s) still carry the
+      old name - Level 1 (id 312)".

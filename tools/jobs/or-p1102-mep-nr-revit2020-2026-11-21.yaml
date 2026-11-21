@@ -1,0 +1,59 @@
+# NEEDS-CHECKING Group OR (docs/needs-checking/group-or.md), OR10 -
+# CREATE_VIEW_FILTER version 6 (row 5b-1650): a filter asked for on a plan
+# whose view template controls its filters is refused before anything is
+# made. Written 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/or-p1102-mep-nr-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/or-p1102-mep-nr-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL: "P1102 MEP NR", Group NR's fresh copy of Revit 2020's
+# rme_advanced_sample_project.rvt under %TEMP%\heron-work\prove-1102 - never a
+# working model - as Group NR left it (group-nr.md, the run records of NR4 and
+# NR5): "Level 1 HVAC Duct Plan" read templateOwned false and carries NR4's
+# four "NR -" filters; "Level 3 HVAC Plan" was given the template "Mechanical
+# Plan" through APPLY_VIEW_TEMPLATE and KEPT (NR5 (c)), and that template owns
+# its filters. If Level 3 HVAC Plan has lost the template, give it back (as
+# NR5 (c)) before running - without it the negative below has nothing to
+# refuse.
+#
+# THE ARRANGEMENT. NO SETUP CHAIN: every input is a value. The positive: one
+# filter typed in full - Ducts and Duct Fittings, System Classification equals
+# Supply Air, a colour - on the plan whose template does NOT own the filters.
+# The negative is the SAME call with `view` the plan whose template DOES (OR10
+# (a)) - a different value, not a cleared one, and carrying every value,
+# because a negative-set replaces the set. "OR10 Supply Air" is a filter name
+# no NR row made. Every run is ROLLED BACK. OR10 (b) - Filters unticked in the
+# template's Include column, kept, then (a) again - is one call by hand after.
+
+model: "P1102 MEP NR - Group NR's scratch copy of rme_advanced_sample_project.rvt, Level 3 HVAC Plan under the template Mechanical Plan, Revit 2020"
+
+defaults:
+  in: "P1102 MEP NR"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: create-view-filter
+    expect: created
+    set:
+      view: "Level 1 HVAC Duct Plan"
+      filterName: "OR10 Supply Air"
+      categoryIds: "Ducts, Duct Fittings"
+      parameterName: "System Classification"
+      matchValue: "Supply Air"
+      colour: "60,235,235"
+    negative-set:
+      view: "Level 3 HVAC Plan"
+      filterName: "OR10 Supply Air"
+      categoryIds: "Ducts, Duct Fittings"
+      parameterName: "System Classification"
+      matchValue: "Supply Air"
+      colour: "60,235,235"
+    note: >
+      OR10. Negative - THE FIRST CASE TO RUN: refused before anything is made,
+      naming the template Mechanical Plan and APPLY_VIEW_FILTER; created null,
+      createdIds and readBack empty; the project's filter count unchanged.
+      Version 5 made the filters on that plan here (NR5 (d), row 5b-1650).
+      Positive: created the new filter, readBack "System Classification equals
+      'Supply Air'" with the two categories, on Level 1 HVAC Duct Plan in
+      60,235,235, alreadyExists empty. Rolled back.

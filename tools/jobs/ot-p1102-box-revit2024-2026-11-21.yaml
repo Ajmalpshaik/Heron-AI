@@ -1,0 +1,64 @@
+# NEEDS-CHECKING Group OT - DIVIDE_FAMILY_SURFACE version 2 (DRAFT): each grid
+# rule said as asked, and Revit's own gridline counts in a part of their own,
+# never beside a rule (row 5b-303), rows OT17 and OT18. Built 2026-11-21 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ot-p1102-box-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ot-p1102-box-revit2024-2026-11-21.yaml --session <2024 pid>
+#
+# THE MODEL IS A RECORDED ONE, ON REVIT 2024: "P1102 Box", the Revit 2020 US
+# Metric library's Mass\M_Box.rfa copied into %TEMP%\heron-work\prove-1102\fam
+# and opened in Revit 2024 - one solid form
+# bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e, no divided surface
+# (tools/jobs/p1102-round18-families-revit2024-2026-11-02.yaml, round 18).
+# Group OT asks for a NEW Mass family with a 3000 x 2000 x 2500 box on Revit
+# 2020; this reuses the recorded box instead, on the release version 1 was
+# proved on (Revit 2024, 2026-10-03) - the card's revit: list holds both. The
+# box's own size changes only Revit's counts, never the rule words this
+# version is about. To run OT17 as written instead, make that Mass family on
+# Revit 2020, put its form id in place of the one below, and drop `in:`.
+#
+# THE ARRANGEMENT. Positive OT17: the top face, uGrid "20", vGrid "4", pattern
+# "" (Revit's default). Negative: the same face and rules with pattern "Not A
+# Pattern" - a DIFFERENT value, refused naming the patterns and panels Revit
+# offers, nothing kept (cases.yaml, negative "pattern Not A Pattern" - the
+# negative tools/jobs/family-recheck-2026-10-02.yaml used for version 1).
+# OT18's own two calls are NOT this job's negative: its first DIVIDES (not
+# empty), and its second needs the first kept - both are by hand, below.
+# Every run is ROLLED BACK. ONE job: the run record is kept per card.
+
+model: "P1102 Box (Revit 2020 US Metric M_Box.rfa, opened in Revit 2024), one solid form, no divided surface, Revit 2024"
+
+defaults:
+  in: "P1102 Box"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: divide-family-surface
+    expect: divided
+    set:
+      form: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e"
+      face: "top"
+      uGrid: "20"
+      vGrid: "4"
+      pattern: ""
+    negative-set:
+      form: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e"
+      face: "top"
+      uGrid: "20"
+      vGrid: "4"
+      pattern: "Not A Pattern"
+    note: >
+      OT17 then the pattern negative. Negative FIRST: refused naming the
+      patterns and panels Revit offers; surfaceId and divided empty, nothing
+      kept. Positive: divided reads "U rule: Number 20; V rule: Number 4;
+      Revit counts N U-gridlines and M V-gridlines" - no count beside a rule -
+      and a finding naming NEEDS-CHECKING BV21. RECORD by eye which rule made
+      which lines (BV21) - only on a KEPT run, since this one is rolled back.
+      Then OT18 by hand, rolled back: heron_bridge_client.py fragment --in
+      "P1102 Box" divide-family-surface --write --set
+      form=bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e --set face=front
+      --set uGrid=3 --set "vGrid=1000 mm" --set pattern= - divided, "U rule:
+      Number 3; V rule: 1000 mm apart", no count beside a rule; the "face
+      already divided" refusal needs that call KEPT first (try-once).

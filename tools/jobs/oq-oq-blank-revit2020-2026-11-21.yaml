@@ -1,0 +1,71 @@
+# NEEDS-CHECKING Group OQ - EDIT_REVISION_NUMBERING_SEQUENCE version 3 (DRAFT,
+# was PROVEN v2): a settings change is refused only when an ISSUED revision's
+# printed number would really change (row 5b-414, issue #926). Built
+# 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/oq-oq-blank-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/oq-oq-blank-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL (docs/needs-checking/group-oq.md, OQ13): "oq-blank", a new
+# project from the default template saved as %TEMP%\heron-work\oq\oq-blank.rvt,
+# never a working model. Revit 2020 - the release version 2 was proved on
+# (Project1, session 2648), and the one where the numbering is the project's
+# one "Alphanumeric" (OQ13: "on 2020 or 2021 name=Alphanumeric").
+#
+# MADE BY HAND FIRST, AND SAVED (OQ13's arrangement - a batch cannot issue a
+# revision): Manage > Sheet Issues/Revisions, numbering PER PROJECT; the
+# Alphanumeric numbering's custom list set to AA, BB, CC, D, E; four
+# revisions numbered Alphanumeric, the first three ticked Issued, the fourth
+# not; one sheet whose revision schedule reads AA, BB, CC, D. Read it before
+# the run - the positive needs the fourth one NOT issued.
+#
+# THE ARRANGEMENT. Nothing is selected: every input is a value, so `setup: []`.
+# The positive is OQ13's call - the list AA, BB, CC, DD, EE - which version 2
+# refused and version 3 must allow, the three issued revisions printing what
+# they printed. The negative is a DIFFERENT VALUE on the same model (rule 3,
+# never an empty one): the list AA, BB, C, DD, EE, under which the third
+# ISSUED revision would print C instead of CC - it must be refused naming that
+# revision and both numbers, nothing changed. It carries EVERY value, because
+# a negative-set replaces the positive's values. Every run is ROLLED BACK; run
+# LIST_REVISIONS afterwards and see AA, BB, CC, D, E still there.
+#
+# OQ14 - the fourth revision issued too, and the per-SHEET numbering - change
+# the model between the two legs, so they are by hand, as the group writes
+# them. ONE job: a run's record is kept per card.
+
+model: "oq-blank: a new project from the default template, numbering per project, Alphanumeric list AA, BB, CC, D, E, four revisions with the first three issued, Revit 2020"
+
+defaults:
+  in: "oq-blank"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: edit-revision-numbering-sequence
+    expect: changed
+    set:
+      name: Alphanumeric
+      newName: ""
+      minimumDigits: ""
+      startingNumber: ""
+      prefix: ""
+      suffix: ""
+      customSequence: "AA, BB, CC, DD, EE"
+    negative-set:
+      name: Alphanumeric
+      newName: ""
+      minimumDigits: ""
+      startingNumber: ""
+      prefix: ""
+      suffix: ""
+      customSequence: "AA, BB, C, DD, EE"
+    note: >
+      OQ13, then a value-driven negative. Negative: `changed` empty, `refused`
+      naming the third revision and "'CC' -> 'C'", nothing changed. Positive:
+      `changed` names the list change "AA, BB, CC, D, E -> AA, BB, CC, DD, EE"
+      and says the issued revisions print exactly what they printed before -
+      AA, BB, CC; `findings` reads the list back. Rolled back - so read a
+      sheet's revision schedule (AA, BB, CC, D still) and, if the owner wants
+      to SEE DD, keep OQ13 once through the chat and Undo, as the group says.
+      If the schedule printed AA to CC differently from LIST_REVISIONS,
+      RevisionNumber is not what the sheet prints - that is the finding.

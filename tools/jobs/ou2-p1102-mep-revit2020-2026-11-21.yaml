@@ -1,0 +1,64 @@
+# NEEDS-CHECKING Group OU (OU11) and Group OE (OE6) - SET_ELEMENT_LEVEL
+# version 4 (DRAFT): a non-wall element's level, offset and column ends are
+# taken only from its OWN parameter set, its level parameter must hold a
+# level, and an offset that does not read back as written is put back and the
+# element refused (row 5b-342). Built 2026-11-21 in a cloud session with no
+# Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ou2-p1102-mep-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ou2-p1102-mep-revit2020-2026-11-21.yaml --session <pid>
+#
+# HELD FOR SIGNING BY ROW 5b-1831, WHATEVER THIS RUN SAYS (group-oe.md: "Held:
+# set-element-level, until row 5b-1831 names the two elements"). A kept run of
+# version 3 on four columns raised Heron's Delete box for 2 elements; a
+# rolled-back batch raises no box and reports no deletion, so a PASS here
+# cannot name them. OE7's kept run, by hand on "Heron OE Roofs" (Revit 2024),
+# is what names them.
+#
+# THE MODEL: "P1102 MEP", the saved scratch copy of Revit 2020's own
+# rme_advanced_sample_project under %TEMP%\heron-work\prove-1102, Revit 2020 -
+# never a working project. The model and release of the card's version 2
+# proof (2026-11-02, session 33624); Group OU runs Revit 2020 first.
+#
+# THE ARRANGEMENT - version 2's proof: the 10 ducts drawn in "Callout of Level
+# 1 HVAC WSHP TYP" (round 3 read 10 ducts, 9 duct fittings and 2 air terminals
+# there). A duct is a non-wall element, so it goes through version 4's own
+# parameter set route (Reference Level, Offset). The positive moves them to
+# Level 2; the negative is a DIFFERENT value on the same ducts, Level 1, where
+# they already are - moved 0, alreadyThere 10. The negative-set carries the
+# selection's values too, because it replaces the positive's. Every write is
+# ROLLED BACK.
+#
+# BY HAND, NOT HERE: OU11 itself - a level-based mechanical equipment family
+# on Level 1 at 1200 mm moved to Level 2 (moved 1, Level 2 with -1800 mm), and
+# its negative, the ceiling diffuser on Level 1's plane, which must be in
+# `refused` with nothing on it changed - on the diffuser scratch model of
+# tools/jobs/ou2-diffuser-scratch-revit2020-2026-11-21.yaml; and OE6's
+# columns on Heron OE Roofs (tools/jobs/roofs-walls-levels-delete-oe-2026-11-16.yaml,
+# its third job), on version 4.
+
+model: "P1102 MEP (saved scratch copy of Revit 2020's rme_advanced_sample_project), Revit 2020"
+
+defaults:
+  in: "P1102 MEP"
+  write: true
+  setup: [filter-elements-by-category, set-selection]
+
+jobs:
+  - fragment: set-element-level
+    expect: moved
+    set:
+      category: "Ducts"
+      inViewOnly: "Callout of Level 1 HVAC WSHP TYP"
+      newLevel: "Level 2"
+    negative-set:
+      category: "Ducts"
+      inViewOnly: "Callout of Level 1 HVAC WSHP TYP"
+      newLevel: "Level 1"
+    note: >
+      OU11's batch half, on version 2's proof arrangement. Positive: the
+      binding note "elements from the selection (10)", moved 10,
+      heightChanged empty, refused empty - each duct at the height it was, its
+      offset re-solved against Level 2. Negative: moved 0, alreadyThere 10,
+      refused empty. HELD BY ROW 5b-1831 - a pass here is not for signing
+      until OE7 names the two elements.
