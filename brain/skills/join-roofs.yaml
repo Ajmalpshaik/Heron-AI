@@ -38,18 +38,22 @@ purpose: >
      the underside of the roof above, measured along the wall (Revit 2022
      on); ATTACH_WALLS attaches the wall tops to the roof as Attach Top/Base
      does (Revit 2025 on). Where ONE ROOF has to meet ANOTHER and the roof
-     to extend is a roof by extrusion: EXTEND_ROOF_TO_ROOF casts rays from
-     its end to the other roof in a 3D view, says how far the end has to go,
-     and changes nothing until it is asked again with a limit (maxExtendMm);
-     then it moves the end by its Extrusion Start or End and reads it back.
+     to extend is a roof by extrusion - or, from Revit 2022, a roof by
+     footprint whose gable end (a line that defines no slope) faces the other
+     roof: EXTEND_ROOF_TO_ROOF casts rays from its end to the other roof in a
+     3D view, says how far the end has to go, and changes nothing until it is
+     asked again with a limit (maxExtendMm); then it moves the end - an
+     extrusion's Extrusion Start or End, a footprint's gable-end line in sketch
+     edit mode, every line keeping its slope - and reads it back.
      The end is flat and goes to its farthest point, so elsewhere it runs
      through the other roof and on under it: JOIN_GEOMETRY on the two roofs
      after it cleans where they overlap, and the part under the other roof
      stays - say so. Name what each will change and ASK FIRST - run it only
      on the modeller's yes for this one operation, through revit_change.
-  2. WHEN NO OTHER WAY GETS THERE - a roof by footprint that has to reach
-     another roof is that case: its edges are its sketch, and no Heron tool
-     edits a roof's sketch yet - say so, and say the job is done by hand in Revit:
+  2. WHEN NO OTHER WAY GETS THERE - a roof by footprint on Revit 2020 or
+     2021 (no sketch editing for an add-in before 2022), or one whose end
+     facing the other roof is not a gable end, is that case - say so, and say
+     the job is done by hand in Revit:
      Modify > Join/Unjoin Roof, then pick the edge of the roof to extend and
      the face it is to meet. Never offer a tool that makes a new roof in its
      place.
