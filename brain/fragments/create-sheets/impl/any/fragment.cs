@@ -6,6 +6,15 @@
 // `columnsUnmatched`, `columnsNotWritten`, `valuesNotSet` and `findings`
 // behind.
 //
+// VERSION 5 (2026-11-21, work-note item WN-6, issue #1005) - PLACEHOLDER
+// SHEETS. With typed numbers, `titleBlockName` placeholder - the word, said
+// outright as none is - makes each sheet with ViewSheet.CreatePlaceholder: a
+// number and a name for the sheet list, no title block and no views. Every
+// other rule of the typed job holds - the number checked against the register
+// first (placeholders already count), each sheet in its own SubTransaction,
+// number and name read back, previewOnly taken back. A table and the copy job
+// are unchanged. Not run in Revit: NEEDS-CHECKING Group PE.
+//
 // VERSION 4 (2026-11-21) - CREATE_SHEETS_FROM_TABLE MERGED IN, on the owner's
 // "merge: yes" (issue #1080), with the three rules D-193 records. Three ways
 // to say which sheets to make, and the first one given decides:
@@ -981,12 +990,27 @@ else
 ElementId titleBlockId = ElementId.InvalidElementId;
 bool titleBlockChosen = false;
 string titleBlockLabel = "no title block";   // VERSION 4: a preview line says it
+// VERSION 5 (work-note item WN-6, issue #1005): the word placeholder, said
+// outright, makes PLACEHOLDER sheets - ViewSheet.CreatePlaceholder, in every
+// release 2020 to 2027: Revit's own kind of sheet with a number and a name for
+// the sheet list and no title block or views, which is how a drawing register
+// is set up before the drawings are. The typed-numbers job only: a table's
+// Title Block cell and the copy job are as version 4 left them.
+bool placeholderAsked = false;
 
 if (string.Equals(askedTitleBlock, "none", StringComparison.OrdinalIgnoreCase))
 {
     // Said outright. The sheets are made bare and the answer says so.
     noTitleblock = true;
     titleBlockChosen = true;
+}
+else if (string.Equals(askedTitleBlock, "placeholder", StringComparison.OrdinalIgnoreCase))
+{
+    // VERSION 5: said outright, as none is. Not noTitleblock: a placeholder is
+    // not a sheet that prints bare, it is a line on the sheet list.
+    placeholderAsked = true;
+    titleBlockChosen = true;
+    titleBlockLabel = "a placeholder (no title block, no views)";
 }
 else
 {
@@ -1046,7 +1070,7 @@ else
                 ? "No title block was named"
                 : "No title block type called \"" + askedTitleBlock + "\" is loaded in " + doc.Title)
             + ". Name one as it shows in the Project Browser - Family: Type - or say none "
-            + "for sheets with no title block. Nothing was created.";
+            + "for sheets with no title block, or placeholder for placeholder sheets. Nothing was created.";
     }
 }
 
@@ -1138,7 +1162,12 @@ if (titleBlockChosen)
             {
                 step.Start();
                 string revitSaid = null;
-                try { sheet = ViewSheet.Create(doc, titleBlockId); }
+                try
+                {
+                    sheet = placeholderAsked
+                        ? ViewSheet.CreatePlaceholder(doc)
+                        : ViewSheet.Create(doc, titleBlockId);
+                }
                 catch (Exception failure) { revitSaid = failure.Message; }
                 if (sheet == null)
                 {
@@ -1207,6 +1236,13 @@ if (titleBlockChosen)
             taken[wantedNumber] = actualName ?? "";
         }
     }
+
+    // VERSION 5: what kind of sheet was made, said when it was a placeholder,
+    // so the answer is never read as sheets ready for views.
+    if (placeholderAsked && made > 0)
+        findings.Add(made + " sheet(s) " + (previewOnly ? "would be" : "were") + " made as PLACEHOLDER "
+            + "sheets - Revit's own kind: a number and a name for the sheet list, with no title block "
+            + "and no views.");
 
     if (previewOnly)
     {

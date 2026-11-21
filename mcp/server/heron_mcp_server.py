@@ -1421,6 +1421,25 @@ def _provides_lines(provides, entries=None, items=None):
     return lines
 
 
+# READS OF THE REVIT SESSION, NOT OF ONE MODEL - row 5b-1887 (issue #1112).
+# REPORT_OPEN_DOCUMENTS lists every model open in the Revit it runs in; it is
+# what a chat asks to find out what is open. Aimed at the pin like every other
+# read, it was REFUSED the moment the pinned model was closed - "No open model
+# saved at <that family>. Open: Project1." (Revit 2020, 2026-11-19) - which is
+# exactly when the family method asks it whether the save landed. So a card
+# named here is sent with no model to aim at, and its reply pins nothing and
+# is checked against no pin: it is about the session, and the pin stays as it
+# was. A card goes on this list only if its answer is the same whichever open
+# model it runs in - tests/test_read_door.py reads each one's C# for the loop
+# over the application's documents and its risk for READ.
+SESSION_READS = frozenset({"REPORT_OPEN_DOCUMENTS"})
+
+
+def _reads_the_session(capability):
+    """True for a card whose answer is the Revit session's, not one model's."""
+    return (capability or "").strip().upper() in SESSION_READS
+
+
 def _aim_at_pin(args):
     """
     Put the pinned model's identity on a fragment request, in place.
@@ -3601,7 +3620,11 @@ def revit_read(capability: str = "", values: str = "",
     # means to consume - revit_change's rule and reason, and the add-in's
     # refusal of the two together.
     args = {"name": folder, "source": source, "needs": needs, "chain": "reset"}
-    _aim_at_pin(args)
+    # A READ OF THE WHOLE SESSION IS AIMED AT NO MODEL (row 5b-1887): naming
+    # the pinned one would refuse it once that model is closed.
+    session_read = _reads_the_session(capability)
+    if not session_read:
+        _aim_at_pin(args)
 
     # D-158: THE ID LISTS A QA CHECK NAMED, sent whole by the add-in. Set on
     # the side channel by _checklist_ask around its one read, and only there,
@@ -3672,8 +3695,10 @@ def revit_read(capability: str = "", values: str = "",
 
     # GOLDEN RULE 20, as revit_change keeps it: the add-in has already refused
     # a different model on `expectProject`; this is the first call's pin, and
-    # the cover for an add-in too old to read the key.
-    wrong_model = pinned.check(reply)
+    # the cover for an add-in too old to read the key. NOT for a read of the
+    # whole session (row 5b-1887): it is about every open model, so it neither
+    # sets the pin nor is refused by it.
+    wrong_model = None if session_read else pinned.check(reply)
     if wrong_model is not None:
         return _ended("refused", wrong_model)
 
@@ -3681,6 +3706,9 @@ def revit_read(capability: str = "", values: str = "",
     lines = ["%s read %s." % (capability, document)]
     if matched:
         lines.append(_matched_line(request, matched))
+    if session_read:
+        lines.append("  It reads every model open in this Revit, whichever one this chat "
+                     "is working on; the model this chat is pinned to is unchanged.")
 
     # THE PINNED MODEL NEED NOT BE THE ONE ON SCREEN - that is what aiming at
     # the pin means - and an answer about a window nobody is looking at is

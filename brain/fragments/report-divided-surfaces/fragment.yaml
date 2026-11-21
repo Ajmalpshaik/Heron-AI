@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -19,7 +19,24 @@ capability: REPORT_DIVIDED_SURFACES
 # second still did and the first was a coin toss. Each surface's line now
 # carries them, in the words that card's readBack uses. Version 1 was DRAFT,
 # so no proof went stale; DR5a and DR5b are the new rows of its plan.
-version: 2
+#
+# VERSION 3 (2026-11-21) - EACH RULE IN ITS OWN WORDS, REVIT'S GRIDLINE
+# COUNTS UNDER ITS OWN NAMES, and back to DRAFT. FRAGMENT-ISSUES row 5b-1908
+# (issue #1111): version 2 printed each count in brackets beside its
+# same-letter rule - "U FixedNumber 6, Center (6 gridlines)" - and row 5b-303
+# measured on a Revit 2024 mass that each count moved with the OTHER rule's
+# value, so that pairing could tell the modeller the other direction's lines.
+# Each surface's line now reads "U rule <rule>, V rule <rule>, Revit counts N
+# U-gridlines and M V-gridlines" - the same words as DIVIDE_FAMILY_SURFACE
+# version 2 - and a finding says which rule makes which lines is NEEDS-CHECKING
+# BV21's to settle by eye. And (row 5b-1911) each surface's and path's line
+# is kept inside the read, so it is no longer sent a third time as a numbered
+# list under `report` beside `divided` and `findings`; no output changed.
+# Version 2 was PROVEN (the proof block below, kept as
+# the record of what it proved); its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group PB (PB1, PB2) is run (D-30) - on the owner's word that a
+# fragment found wrong may be changed even though it is proven.
+version: 3
 source: OFFICIAL
 risk: READ
 

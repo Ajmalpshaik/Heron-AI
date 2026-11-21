@@ -12,9 +12,22 @@
 positive:
   - given: a mass family with one face divided 10 x 6 by number, and a line divided into 8 by number, withNodes true
     expect: >
-      one surface with U FixedNumber 10 and V FixedNumber 6 and their
-      gridline counts; one path with its node count, FixedNumber 8 and
-      length; node positions in millimetres for both
+      one surface with "U rule FixedNumber 10" and "V rule FixedNumber 6"
+      and, beside neither rule, "Revit counts N U-gridlines and M
+      V-gridlines" (version 3); one path with its node count, FixedNumber 8
+      and length; node positions in millimetres for both
+
+  - given: >
+      VERSION 3 (row 5b-1908, NEEDS-CHECKING PB1). A Mass family, a 3000 x
+      2000 x 2500 mm box, its top face divided by DIVIDE_FAMILY_SURFACE with
+      uGrid=20 and vGrid=4 - row 5b-303's arrangement; withNodes false
+    expect: >
+      the surface's line reads "U rule FixedNumber 20, ..., V rule
+      FixedNumber 4, ..., Revit counts N U-gridlines and M V-gridlines" with
+      N and M what the surface's Properties show; no count in brackets beside
+      a rule; a finding names NEEDS-CHECKING BV21. The line is in `divided`
+      and `findings` and NOT a third time as a numbered list under `report`
+      (row 5b-1911)
 
   - given: >
       Group JL's rig after JL1 was kept - its one divided surface flipped,
@@ -32,7 +45,8 @@ positive:
 negative:
   - given: a new project with nothing in it
     expect: >
-      divided empty; the finding says 0 surfaces and 0 paths
+      divided empty; the finding says 0 surfaces and 0 paths, and no finding
+      names BV21 - there is no count to explain (version 3)
 
   - given: >
       the same rig with the box's BACK face divided too (JL7's arrangement)
