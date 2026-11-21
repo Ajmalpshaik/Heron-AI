@@ -1,8 +1,9 @@
 # Report Composition Agent - HERON-RPT-CMP-001
 #
 # NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
-# status (the module's Heron-Status header owns it). The register gives this
-# agent T2 and says "judgement, so a model call". It makes none, and the
+# status (the module's Heron-Status header owns it). The register gave this
+# agent T2 until 2026-11-21 (T1 now, row 5b-1177) and said "judgement, so a
+# model call". It makes none, and the
 # reason is D-27 rather than thrift - see allowed-tools and PROPOSALS F19.
 
 agent: HERON-RPT-CMP-001

@@ -12,7 +12,7 @@ semantic-identity: "run Revit's heating and cooling loads analysis on this model
 # loads", "calculate the HVAC loads for this model" and "run the loads
 # analysis and show the cooling load per space" - Revit's Analyze > Heating
 # and Cooling Loads. No card ran it: the ribbon coverage note
-# (docs/work-notes/investigations/2026-11-01-revit-ribbon-coverage.md) put it
+# (docs/52-revit-ribbon-coverage.md) put it
 # PARTIAL, "reads the results but cannot run the analysis", and
 # brain/heron_retrieve.py on the three sentences (a scratch store, Revit
 # 2027) answered READ_SPACE_LOADS first each time, a read.

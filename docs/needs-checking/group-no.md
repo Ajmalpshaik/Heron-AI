@@ -7,7 +7,9 @@
 
 ## Group NO - a family connector's shape changed, and a connector moved onto a reference plane: `SET_FAMILY_CONNECTOR_ROLES` version 5 (2026-11-11)
 
-**Tracked as GitHub issue [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015) since 2026-11-16** - #871 struck NO1 and NO9, and on 2026-11-19 NO0, NO2 to NO5, NO7 and NO8 were struck on the run record of 2026-11-12 below. **NO6 waits for the owner's word in that issue:** it ran on a connector Heron put on the plane, not one placed by hand with Place on Work Plane as the row asks - *counts*, and it is struck; *run it*, and it moves to a Revit run. Every result stays in this file.
+**Tracked as GitHub issue [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015) since 2026-11-16** - #871 struck NO1 and NO9, and on 2026-11-19 NO0, NO2 to NO5, NO7 and NO8 were struck on the run record of 2026-11-12 below. ~~**NO6 waits for the owner's word in that issue:** it ran on a connector Heron put on the plane, not one placed by hand with Place on Work Plane as the row asks - *counts*, and it is struck; *run it*, and it moves to a Revit run.~~ **Answered 2026-11-21: *run it*** - the owner asked the session for the best choice, and it is this one: the fault this group exists for was a connector placed **by hand**, and one Heron places may not sit on the plane the same way, so only a hand-placed run answers NO6. It is a Revit 2024 run now, tracked in issue [#901](https://github.com/Ajmalpshaik/Heron-AI/issues/901) beside row 5b-1567's owed Revit 2024 proof entry. Every result stays in this file.
+
+Tracked as GitHub issue [#901](https://github.com/Ajmalpshaik/Heron-AI/issues/901) since 2026-11-21: check NO6 - tick it there.
 
 Found missing on 2026-11-11 while finishing the owner's diffuser plenum families on Revit 2020: a hand-placed
 duct connector could not be made round, its whole set-up took three or four calls, and it could not sit on a

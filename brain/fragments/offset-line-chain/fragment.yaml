@@ -11,7 +11,7 @@ semantic-identity: "offset a chain of model lines, detail lines or walls by a di
 # 2026-11-03: asked for as a gap on Revit's ribbon - "Offset (Modify >
 # Offset) for a chain of lines. Offset selected model/detail lines or a chain
 # by a distance, copy or move." The ribbon coverage note
-# (docs/work-notes/investigations/2026-11-01-revit-ribbon-coverage.md) put
+# (docs/52-revit-ribbon-coverage.md) put
 # Offset PARTIAL: "moves only; no copy option, no line chains".
 # brain/heron_retrieve.py on a scratch store (Revit 2024) sent "offset these
 # detail lines 300 as a copy" to DRAW_FAMILY_DETAIL_LINES and "offset this
