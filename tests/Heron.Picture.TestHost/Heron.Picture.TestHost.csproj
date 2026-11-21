@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proves the two picture rules RevitCapture keeps (row 5b-1890) WITHOUT Revit.
+
+    The source-linking pattern Heron.FailureNote.TestHost uses, and for the
+    same reason: HeronPicture.cs touches no Autodesk type - it reads a PNG's
+    header and compares numbers - so it is linked here BY SOURCE rather than
+    through a project reference, which would drag in RevitAPI.dll and make
+    the one testable piece untestable on any machine without Revit.
+
+    Linking keeps ONE copy of each rule: when a picture is taken again fitted
+    on its height, and which element reaches out of the section box.
+    RevitCapture.cs, which exports and hides, is the half that needs Revit,
+    and NEEDS-CHECKING Group PM says what it owes.
+
+        Run it with `dotnet run`, pointed at this folder, passing
+        -p:RevitVersion=2024. (XML comments cannot carry a double
+        hyphen, so the flag is spelled out rather than shown.)
+        tests/test_picture_fit.py builds and runs it.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.Picture.TestHost</RootNamespace>
+    <AssemblyName>Heron.Picture.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronPicture.cs"
+             Link="HeronPicture.cs" />
+  </ItemGroup>
+
+</Project>

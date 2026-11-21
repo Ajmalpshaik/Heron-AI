@@ -53,6 +53,9 @@ capability: CREATE_EXTRUSION_ROOF
 # an extrusion roof - and asks LevelId only when no Reference Level is read.
 # A refusal now names the level it read. What LevelId answers for an
 # extrusion roof is NOT MEASURED. Still DRAFT; NEEDS-CHECKING Group OU.
+# SIGNED 2026-11-21: version 2 ran on Revit 2024 (Group OU's OU22, on the
+# model roofjoin-oy) and Ajmal PS signed it PROVEN - the proof below. The
+# Revit 2020 run OU22 asks for is still owed.
 version: 2
 source: OFFICIAL
 risk: MODIFY

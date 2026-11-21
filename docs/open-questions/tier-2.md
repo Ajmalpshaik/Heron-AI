@@ -57,7 +57,7 @@ reviewed.
 ### 🟠 Q-10 — Which vector store?
 
 *Recommendation:* SQLite + `sqlite-vec` + FTS5 — one file per knowledge scope, zero install, and all
-three retrieval stages in one engine.
+three retrieval stages in one engine. *(Superseded in part 2026-11-21 by [D-194](../decisions/D-194.md): sqlite-vec is not used - every stored vector is compared in plain Python. SQLite, one file per scope and FTS5 stand.)*
 
 → [05 §5](../05-heron-brain.md)
 
