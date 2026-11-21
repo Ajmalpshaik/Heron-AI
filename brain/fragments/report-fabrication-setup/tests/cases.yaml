@@ -40,6 +40,13 @@ positive:
       duct "not a fabrication part - a design duct; Design to Fabrication is
       what turns one into fabrication parts"
 
+  - given: >
+      VERSION 2. show buttons with one loaded service named
+    expect: >
+      each palette's buttons named as version 1 names them, and
+      skippedButtons the number of buttons Revit gave back as nothing - 0
+      where every one read, and then no passed-over sentence
+
 negative:
   - given: >
       service "ZZNOTASERVICE" - a name no service has, show services
@@ -65,6 +72,12 @@ negative:
     expect: >
       NOTHING IN THE MODEL CHANGES - no transaction opened; MEP Fabrication
       Settings and every part the same before and after
+
+  - given: >
+      VERSION 2, NEGATIVE. show buttons with service "ZZNOTASERVICE"
+    expect: >
+      skippedButtons 0 and no "could not be read" sentence - no service
+      matched, so no button was asked of Revit; the findings as version 1's
 
 second_route:
   - >

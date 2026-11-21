@@ -42,7 +42,12 @@ semantic-identity: "which steel connections this model has - each connection's t
 kind: action
 domain: revit.elements
 capability: REPORT_STRUCTURAL_CONNECTIONS
-version: 1
+# VERSION 2 (2026-11-21, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005): a connection whose joined elements Revit will not give is counted in
+# `unresolvedConnections`, not read as joining nothing, and named on the
+# narrowed empty answer only. Its C# moved, so it stays DRAFT until
+# NEEDS-CHECKING Group PK runs (D-30).
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -100,6 +105,13 @@ contract:
       # found unconnected, never a connection found.
       role: accounting
       type: IList<ElementId>
+    - name: unresolvedConnections
+      # VERSION 2 (D-64). Connections whose joined elements Revit would not
+      # give, so a narrowed read could not match them to a member handed in.
+      # Always carried; a sentence in `findings` names it only on the narrowed
+      # empty answer.
+      role: accounting
+      type: int
     - name: findings
       type: IList<string>
 
