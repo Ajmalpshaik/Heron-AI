@@ -95,6 +95,29 @@ def main():
               "and it says out loud the piece is optional and Heron answers without it")
 
         print()
+        print("0b. With no trained model, the cut is NOT MEASURED - never 'no card is cut' (row 5b-320)")
+        check(getattr(E, "MODEL_READS", None) == 512,
+              "heron_embed states how many word-pieces the model reads: %r"
+              % (getattr(E, "MODEL_READS", None),))
+        reach = getattr(E, "reach", None)
+        cutter = getattr(E, "cut_before_opening", None)
+        check(callable(reach) and callable(cutter),
+              "heron_embed.reach() and cut_before_opening() exist")
+        if callable(reach) and callable(cutter):
+            held = list(E._MODEL_CACHE)
+            E._MODEL_CACHE[:] = [None]          # no trained model, for these two asks
+            try:
+                import heron_fragment as FRAG
+                cards, _ = FRAG.load_all()
+                some = list(cards.values())[:3]
+                check(reach(some[0]) is None,
+                      "reach() answers None, not a count it cannot make")
+                check(cutter(some) is None,
+                      "cut_before_opening() answers None, never an empty list")
+            finally:
+                E._MODEL_CACHE[:] = held
+
+        print()
         print("1. The same text embeds the same way in a DIFFERENT process")
         code = ("import sys; sys.path.insert(0, %r);"
                 "import heron_embed as E;"

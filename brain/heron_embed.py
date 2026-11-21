@@ -259,7 +259,12 @@ def _load_model():
                 raise
             model = StaticModel.from_pretrained(which)
         _WHICH_MODEL[0] = "model2vec:%s" % which
-        _MODEL_CACHE.append(lambda t: list(model.encode([t])[0]))
+        # THE CUT IS SAID HERE, NOT LEFT TO THE LIBRARY'S DEFAULT (row
+        # 5b-320): model2vec reads MODEL_READS word-pieces of a text and
+        # drops the rest, and a default is a number nothing in Heron states.
+        _MODEL_CACHE.append(
+            lambda t: list(model.encode([t], max_length=MODEL_READS)[0]))
+        _PIECES[:] = [model.tokenizer]
         return _MODEL_CACHE[0]
     except Exception:
         pass
@@ -315,6 +320,32 @@ def _on_disk(which):
 # semantic route quietly stops working and nothing says so. Found by a review
 # 2026-09-11.
 _WHICH_MODEL = [None]
+
+# HOW MUCH OF A CARD THE TRAINED MODEL READS - FRAGMENT-ISSUES row 5b-320.
+#
+# model2vec averages the word-pieces of a text, and reads the first
+# MODEL_READS of them: everything after is dropped. Measured 2026-11-21
+# (model2vec 0.10.0, potion-base-8M, main 4ae650e6): 178 of the 610 live
+# cards are longer than that, so the model never reads their ends, and
+# whatever opens a long card is what nearness thinks the card is.
+#
+# WHAT IS EMBEDDED WAS NOT CHANGED, AND THAT WAS MEASURED, NOT ASSUMED. The
+# same day, `tools/score-routing.py --sentences` on 281 frozen sentences (the
+# owner's 79, the 124 plain questions, tests/test_routing_phrases.py's own),
+# main against a tree embedding only identity, utterances and the purpose's
+# first paragraph: on the model 9 answers better and 8 worse, on lexical 7
+# better and 17 worse; against a tree reading every word-piece (no cut): on
+# the model 4 better and 6 worse. Neither is a repair. So the rule stays the
+# one in PLACE_HOSTED_FAMILY's card - A PURPOSE OPENS WITH WHAT A MODELLER
+# ASKS THE TOOL FOR - and `cut_before_opening()` below names any card whose
+# opening the model does not read in full, which tests/test_routing_phrases.py
+# asks of every live card.
+MODEL_READS = 512
+
+# The trained model's own tokenizer, set when model2vec loads - the one thing
+# that can count its word-pieces. Empty for any other encoder, whose limit and
+# tokenizer are its own: reach() then answers None rather than a guess.
+_PIECES = []
 
 
 def stamp():
@@ -553,6 +584,61 @@ def _text_for(row, frag):
     return " ".join([row["semantic_identity"], row["capability"],
                      row["domain"]] + said +
                     ([frag.data.get("purpose", "")] if frag else []))
+
+
+def opening(frag):
+    """What a card OPENS with, as `_text_for` lays it out: the identity, the
+    capability, the domain, every utterance, and the purpose's first paragraph.
+
+    A folded purpose keeps a blank line as a line break, so the first line of
+    the loaded purpose is its first paragraph - the place a card says what a
+    modeller asks the tool for (row 5b-320).
+    """
+    data = getattr(frag, "data", None) or {}
+    purpose = (data.get("purpose") or "").strip()
+    return " ".join([data.get("semantic-identity") or "",
+                     data.get("capability") or "", data.get("domain") or ""]
+                    + list(frag.utterances()) + [purpose.split("\n")[0]])
+
+
+def reach(frag):
+    """(read in full, word-pieces counted) for a card's opening, or None.
+
+    True when the trained model reads the whole of `opening(frag)` - fewer
+    word-pieces than MODEL_READS. Counted with the model's own tokenizer,
+    which may itself cut at MODEL_READS: a count that reaches the cut is
+    read as cut, so the answer is right either way. None when the encoder is
+    not model2vec - nothing here can count another encoder's pieces.
+    """
+    if _load_model() is None or not _PIECES:
+        return None
+    pieces = len(_PIECES[0].encode(opening(frag), add_special_tokens=False).ids)
+    return pieces < MODEL_READS, pieces
+
+
+# The statuses search never offers - the same slice heron_search's
+# RETIRED_FRAGMENTS takes, from the one list of statuses (never typed here).
+RETIRED = FRAG.STATUSES[FRAG.STATUSES.index("DEPRECATED"):]
+
+
+def cut_before_opening(frags):
+    """[(capability, pieces)] for every card whose opening the model cuts.
+
+    `frags` is any iterable of cards; a retired one is skipped, since search
+    never offers it. None when reach() cannot count (another encoder, or no
+    trained model) - an empty list would read as "every card is fine".
+    """
+    out = []
+    for frag in frags:
+        if getattr(frag, "status", None) in RETIRED:
+            continue
+        got = reach(frag)
+        if got is None:
+            return None
+        if not got[0]:
+            out.append(((getattr(frag, "data", None) or {}).get("capability"),
+                        got[1]))
+    return out
 
 
 def index(store, force=False, source=SCOPE.ASK):

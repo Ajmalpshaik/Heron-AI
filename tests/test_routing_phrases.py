@@ -71,6 +71,14 @@ table per backend would be a list of excused failures. So with no trained
 model this exits 3 - COULD NOT RUN, which is not a pass - and
 .github/workflows/gates.yml lists it as not runnable there.
 
+ONE QUESTION IS ASKED ONLY WHERE THE RE-RANKER RUNS (row 5b-1293)
+-----------------------------------------------------------------
+"are room areas taken to the wall finish" reaches a write on the model with
+no re-ranker, and the owner closed that as by design on 2026-11-20. On a
+machine without the re-ranker it prints as NOT ASKED - never as a pass - and
+is asked where the owner's PC asks it. RERANKER_ONLY below says so; nothing
+else is excused there.
+
 NOT A SCORE
 -----------
 A handful of sentences that once went wrong, each with its row. It is not the
@@ -293,6 +301,17 @@ QUESTIONS = [
      "5b-560: answered ALIGN_VIEWPORTS_ACROSS_SHEETS"),
 ]
 
+# A QUESTION THE OWNER CLOSED AS BY DESIGN ON THE MODEL ALONE - asked only
+# where the re-ranker runs, as his PC does. Row 5b-1293, "Yes, close it",
+# 2026-11-20: on the model with no re-ranker it reaches
+# CREATE_FROM_ROOM_BOUNDARIES, no card's words repair it, and D-128's question
+# flag from the host guards it. Asked there it is a check against a decision,
+# not against the code - so it is SAID as not asked, never counted as a pass.
+RERANKER_ONLY = {
+    "are room areas taken to the wall finish":
+        "5b-1293: closed as by design on the model alone, the owner's word 2026-11-20",
+}
+
 # A question about the project's own setup reaches the tool that READS it.
 # Three site questions still reach SET_PROJECT_LOCATION and are NOT here -
 # row 5b-346 records them, measured; this guards the ones the change moved.
@@ -455,6 +474,10 @@ def main():
         for text in sentences():
             check(SEARCH.normalise(text) not in declared,
                   "no card declares %r" % text)
+        asked = set(t for t, _w in QUESTIONS)
+        for text in RERANKER_ONLY:
+            check(text in asked, "the re-ranker-only question %r is one of "
+                  "section 4's, so the exception names a live check" % text)
 
         print("\n3. A CHANGE ASKED FOR REACHES THE TOOL THAT MAKES IT")
         for text, want, why in CHANGES:
@@ -464,7 +487,13 @@ def main():
                   "  and it was ranked, not matched word for word (%s)" % answer.route)
 
         print("\n4. A QUESTION OR A SELECTION IS NOT ANSWERED BY A CHANGE")
+        import heron_rerank as RERANK
+        reranked = RERANK.backend()[0] == RERANK.CROSS_ENCODER
         for text, why in QUESTIONS:
+            if text in RERANKER_ONLY and not reranked:
+                print("  %-5s %r - NOT ASKED on the model alone (%s)"
+                      % ("n/a", text, RERANKER_ONLY[text]))
+                continue
             _answer, got, risk = ask(text)
             check(not writes(risk), "%r -> %s, %s (%s)" % (text, got, risk or "no risk", why))
 
@@ -506,6 +535,51 @@ def main():
             answer, got, _risk = ask(text)
             check(answer.route == "identity" and got == want,
                   "  and the search answers it by identity: %s, %s" % (got, answer.route))
+
+        print("\n9. THE MODEL READS EVERY CARD'S OPENING IN FULL (row 5b-320)")
+        # The trained model reads a card's first EMBED.MODEL_READS word-pieces
+        # and drops the rest, and PLACE_HOSTED_FAMILY's version 3 put its sill
+        # rules first - nearness rank 1 to 35 for its own job. Nothing then
+        # said which cards the cut reaches. A card's opening - identity,
+        # utterances, the purpose's first paragraph - must be read in full.
+        # Asked before it is called, so a heron_embed without it FAILS here
+        # rather than crashing the section (heron-ship 2a).
+        cutter = getattr(EMBED, "cut_before_opening", None)
+        reads = getattr(EMBED, "MODEL_READS", 512)
+        retired_statuses = getattr(EMBED, "RETIRED", SEARCH.RETIRED_FRAGMENTS)
+        check(cutter is not None, "heron_embed can name a card the model cuts")
+        if cutter is None:
+            def cutter(_frags):
+                return None
+        cut = cutter(on_disk.values())
+        check(cut is not None, "the model's own tokenizer counted every card")
+        check(cut == [], "no live card's opening is cut by the model: %s"
+              % (", ".join("%s (%d word-pieces)" % one for one in cut or [])
+                 or "none"))
+
+        # AND IT NAMES ONE THAT IS. A real card, its opening pushed past the
+        # cut by utterances alone - the way #410 pushed a card's job away.
+        class Planted(object):
+            status = "DRAFT"
+
+            def __init__(self, real):
+                self.data = dict(real.data, capability="PLANTED_LONG_OPENING")
+                self._said = list(real.utterances()) + [
+                    "read the sill height of door %d in this wall" % n
+                    for n in range(reads // 4)]
+
+            def utterances(self):
+                return self._said
+
+        real = next(f for f in on_disk.values() if f.status not in retired_statuses)
+        named = cutter([Planted(real)]) or []
+        check([cap for cap, _n in named] == ["PLANTED_LONG_OPENING"],
+              "a card whose opening runs past the cut is named: %s"
+              % (named or "nothing named"))
+        retired = Planted(real)
+        retired.status = "DEPRECATED"
+        check(cutter([retired]) == [],
+              "a retired card is not asked - search never offers it")
     finally:
         if store is not None:
             store.close()
