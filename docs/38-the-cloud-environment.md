@@ -121,8 +121,8 @@ than on shared words. This is the only thing on this page that cannot be checked
 
 ## 3. What the setup script does, and the three things it will not do
 
-In order: the .NET 10 SDK and `python-is-python3` from apt, side by side with PyYAML, `mcp`, `model2vec`,
-`sqlite-vec` and `pypdf` from pip; the knowledge directory; then a fragment index rebuild and a NuGet restore, run
+In order: the .NET 10 SDK and `python-is-python3` from apt, side by side with PyYAML, `mcp`, `model2vec`
+and `pypdf` from pip (`sqlite-vec` left the list on 2026-11-21, D-194); the knowledge directory; then a fragment index rebuild and a NuGet restore, run
 in parallel. The rebuild and the restore are bounded with `timeout`. Every failure is kept in a named
 log rather than raised, and the script's last lines say what did not arrive - `dotnet ... NOT
 INSTALLED`, or `python packages MISSING:` and the names - because the exit code cannot say it.
@@ -131,7 +131,7 @@ INSTALLED`, or `python packages MISSING:` and the names - because the exit code 
 flowchart TD
     S(["<b>tools/cloud-setup.sh</b><br/>as root, before Claude Code starts"])
     APT["<b>apt</b> · heron-apt.log<br/>update, then install even if it failed<br/>dotnet-sdk-10.0 · python-is-python3"]
-    PIP["<b>pip</b> · heron-pip.log<br/>pyyaml · mcp · model2vec · sqlite-vec · pypdf<br/>plain, then --ignore-installed"]
+    PIP["<b>pip</b> · heron-pip.log<br/>pyyaml · mcp · model2vec · pypdf<br/>plain, then --ignore-installed"]
     SAY["<b>Say what arrived</b><br/>dotnet version or NOT INSTALLED<br/>python packages MISSING: and the names"]
     KB["<b>The knowledge folder</b><br/>HERON_KNOWLEDGE, /opt/heron-kb"]
     RB["<b>Store rebuild</b> · timeout 180 s<br/>heron_scope.py --rebuild<br/>heron-rebuild.log"]
@@ -168,7 +168,7 @@ restore. A step that fails leaves its log and the script carries on. Read from t
 ```text
 tools/cloud-setup.sh, as root, before Claude Code starts
   together:  apt  (update, then install anyway)  dotnet-sdk-10.0, python-is-python3   -> heron-apt.log
-             pip  pyyaml mcp model2vec sqlite-vec pypdf (plain, then --ignore-installed) -> heron-pip.log
+             pip  pyyaml mcp model2vec pypdf (plain, then --ignore-installed) -> heron-pip.log
   then:      say what arrived - the dotnet version or NOT INSTALLED; python packages MISSING: ...
   then:      the knowledge folder, HERON_KNOWLEDGE (/opt/heron-kb)
   together:  heron_scope.py --rebuild (timeout 180 s)   dotnet restore for Revit 2024 (timeout 120 s)

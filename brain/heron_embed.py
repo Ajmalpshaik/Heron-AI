@@ -510,9 +510,9 @@ def encoder():
 # done over the stored bytes, identical answers, nothing to install, and
 # nothing refused on a Python build with extension loading compiled out - the
 # locked-down machine Heron's install promise is about. `comparison()` says so,
-# and tools/heron-ready.py prints it (PROPOSALS F7). `_try_vec_extension`
-# below has no caller and is not to be given one without a new decision; it
-# and sqlite-vec in the install lists are owed out (row 5b-1955).
+# and tools/heron-ready.py prints it (PROPOSALS F7). The loader that never had
+# a caller, and sqlite-vec in the install lists, came out the same day (row
+# 5b-1955); loading it again needs a new decision.
 #
 # Both keep the vectors IN THE SCOPE'S OWN FILE, which is the part that matters:
 # one file per scope stays true either way (Golden Rule 5), and a vector never
@@ -524,22 +524,6 @@ def _pack(vec):
 
 def _unpack(blob):
     return list(struct.unpack("%df" % (len(blob) // 4), blob))
-
-
-def _try_vec_extension(db):
-    try:
-        import sqlite_vec
-    except ImportError:
-        return False
-    try:
-        db.enable_load_extension(True)
-        sqlite_vec.load(db)
-        db.enable_load_extension(False)
-        return True
-    except (AttributeError, sqlite3.OperationalError):
-        # Extension loading compiled out, or refused. Normal on a hardened
-        # build, and the fallback below gives the same answers.
-        return False
 
 
 FRAGMENT = "fragment"

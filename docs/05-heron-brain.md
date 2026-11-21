@@ -237,8 +237,9 @@ Tracked as [Q-10](OPEN-QUESTIONS.md).
 
 > **As built (2026-10-18):** decided as
 > [D-23](DECISIONS.md#d-23--the-knowledge-store-is-sqlite-one-file-per-scope), one SQLite file per
-> scope, with FTS5 for keywords. `sqlite-vec` is used when it loads. Where a Python build cannot load
-> extensions, the same cosine is computed in Python over the same stored bytes. Either way the vectors
+> scope, with FTS5 for keywords. Every stored vector is compared in plain Python over the stored bytes,
+> and `sqlite-vec` is not used ([D-194](DECISIONS.md#d-194--every-stored-vector-is-compared-in-plain-python-sqlite-vec-is-not-used),
+> 2026-11-21 - until then this note said it was used when it loaded, which it never was). The vectors
 > stay in the scope's own file ([`heron_embed.py`](../brain/heron_embed.py)).
 
 ## 6. **[NOTE]** Embedding model choice — the offline question

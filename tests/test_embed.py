@@ -75,6 +75,9 @@ def main():
         check(how == "python" and "sqlite-vec" in words and "5b-1171" in words,
               "it says vectors are compared in Python and names sqlite-vec and "
               "row 5b-1171: %r" % (words[:90],))
+        check(not hasattr(E, "_try_vec_extension") and "D-194" in words,
+              "and nothing in it loads sqlite-vec - D-194, the comparison is "
+              "plain Python")
         ready = io.open(os.path.join(ROOT, "tools", "heron-ready.py"),
                         encoding="utf-8").read()
         check("EMBED.comparison()" in ready,

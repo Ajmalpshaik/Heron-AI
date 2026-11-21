@@ -1754,6 +1754,6 @@ What this makes easy. What this makes hard. What it locks in.
 **Numbering:** D-194 is the id `tools/next-id.py` printed free on 2026-11-21, with `origin/main` at `1e5f37e9` ending at D-193.
 **Supersedes in part:** [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) - its words *"`sqlite-vec` for meaning"*
 **Settles:** [row 5b-1171](fragment-issues/section-5b-rows-1151-1175.md) · **Keeps:** the rest of D-23, Golden Rule 5, PROPOSALS F7
-**Affects:** [`brain/heron_embed.py`](../brain/heron_embed.py) · D-23's index entry and record
+**Affects:** [`brain/heron_embed.py`](../brain/heron_embed.py) · `requirements-optional.txt`, `brain/heron_dependencies.py`, `tools/cloud-setup.sh`, `tools/heron-ready.py` - sqlite-vec taken out · D-23's index entry and record
 
 **Full record:** [`decisions/D-194.md`](decisions/D-194.md)
