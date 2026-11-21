@@ -183,6 +183,51 @@ namespace Heron.Bridge
         }
 
         /// <summary>
+        /// A REFUSAL FROM A JOB THAT WORKS OUTSIDE THE MODEL, ONCE ITS CODE HAS
+        /// RUN, SAYING THAT WHAT IT DID OUT THERE STANDS - FRAGMENT-ISSUES 5b
+        /// row 1933. An Admin or a Publish job that Heron's clock, a stop, a
+        /// Revit dialog or the run guard ends part way had its group rolled
+        /// back, or - D-192 - had no group at all; a file it already wrote, or
+        /// a document it already made, saved or closed, is outside every
+        /// rollback. Until 2026-11-21 the refusal carried no field for that,
+        /// and the chat's outcome line said only ROLLED BACK.
+        ///
+        /// Adds `outsideStands` true - the field a verdict of the same kind of
+        /// job carries (row 5b-1594) - and `ranOutsideTheModel` true when the
+        /// job ran with no group open in its model (D-192). And `sentence` to
+        /// the message, unless the message already says it: `mark` is the
+        /// words every such sentence of the add-in's starts with.
+        ///
+        /// Changes nothing that is not one of the add-in's own refusals
+        /// (Error's opening), and nothing that already says either field at
+        /// its top level - its writer knew more. Pure text, so it is proved
+        /// without Revit by tests/Heron.FailureNote.TestHost; which refusals
+        /// it is asked of is the caller's (RevitFragment.OutsideStood).
+        /// </summary>
+        public static string WithOutsideStands(string reply, bool ranOutsideTheModel,
+                                               string sentence, string mark)
+        {
+            if (string.IsNullOrEmpty(reply)) return reply;
+            if (!reply.StartsWith("{\"ok\": false, ", StringComparison.Ordinal)) return reply;
+            if (!reply.EndsWith("}", StringComparison.Ordinal)) return reply;
+            if (HasKey(reply, "outsideStands") || HasKey(reply, "ranOutsideTheModel")) return reply;
+
+            var said = reply;
+            var message = ReadString(reply, "message");
+            var saysItAlready = !string.IsNullOrEmpty(message) && !string.IsNullOrEmpty(mark)
+                                && message.IndexOf(mark, StringComparison.Ordinal) >= 0;
+            if (!string.IsNullOrEmpty(sentence) && !saysItAlready)
+            {
+                var words = string.IsNullOrEmpty(message) ? sentence : message + " " + sentence;
+                said = Set(reply, "message", "\"" + Escape(words) + "\"");
+            }
+
+            return said.Substring(0, said.Length - 1)
+                 + ", " + Bool("outsideStands", true)
+                 + (ranOutsideTheModel ? ", " + Bool("ranOutsideTheModel", true) : "") + "}";
+        }
+
+        /// <summary>
         /// The document with its top-level `key` set to `value` - raw JSON
         /// text, as Obj or a quoted string writes it - replacing every earlier
         /// top-level `key` rather than adding a second. Returned unchanged when
