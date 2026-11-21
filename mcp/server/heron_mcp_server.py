@@ -1425,13 +1425,76 @@ def _provides_lines(provides, entries=None, items=None):
             return None
         return sent
 
+    # A LIST WHOSE EVERY LINE IS PRINTED ELSEWHERE IN THIS REPLY IS NAMED, NOT
+    # PRINTED AGAIN (row 5b-1941, issue #1162). The add-in sends every list of
+    # text a fragment leaves at its top level, so a card that joins one into an
+    # output, or adds it into `findings`, printed each line two or three times -
+    # 211 live cards had that shape, 171 of them PROVEN. Said here because it
+    # is how the answer is printed: no card's code changes and no proof goes
+    # stale. Where a line is printed is a text value, which arrives whole, or
+    # another list printed in full - never a list's summary, whose three items
+    # are cut at 60 characters. Only a list that arrived WHOLE qualifies: one
+    # longer than what arrived has lines nobody here has seen. The longest is
+    # kept first, so of two lists with the same lines one still prints, and
+    # where a line is printed does not depend on which name sorts first.
+    texts = dict((str(name), str(data[name])) for name in data
+                 if list_size(data[name]) is None
+                 and dictionary_size(data[name]) is None)
+    printed_elsewhere = {}
+    kept_lists = []
+
+    def word_for_word(line, text):
+        """True when `line` stands whole in `text` - "1" inside "1020206"
+        is not "1", so a list of short values is never taken as printed.
+        Plain string work, so the helper still runs on its own (no `re`)."""
+        def joins(char):
+            return char.isalnum() or char == "_"
+        start = text.find(line)
+        while start >= 0:
+            end = start + len(line)
+            if not (start > 0 and joins(text[start - 1])) \
+                    and not (end < len(text) and joins(text[end])):
+                return True
+            start = text.find(line, start + 1)
+        return False
+
+    def whole_list(name):
+        sent = items_arrived(name)
+        count = list_size(data[name])
+        if not sent or count is None or count != len(sent):
+            return None
+        return sent
+
+    candidates = [name for name in data if whole_list(name)]
+    for name in sorted(candidates, key=lambda n: (-len(whole_list(n)), str(n))):
+        found_in = []
+        for line in whole_list(name).values():
+            line = str(line)
+            where = [other for other in sorted(texts) if word_for_word(line, texts[other])]
+            if not where:
+                where = [other for other in kept_lists
+                         if line in [str(v) for v in whole_list(other).values()]]
+            if not where:
+                found_in = None
+                break
+            if where[0] not in found_in:
+                found_in.append(where[0])
+        if found_in and any(str(v).strip() for v in whole_list(name).values()):
+            printed_elsewhere[str(name)] = found_in
+        else:
+            kept_lists.append(name)
+
     lines = [""]
     if data:
         width = max(len(str(name)) for name in data)
         for name in sorted(data):
             lines.append("  %-*s  %s" % (width, name, data[name]))
             whole = items_arrived(name)
-            if whole:
+            where = printed_elsewhere.get(str(name))
+            if where:
+                lines.append("    its %d line(s) are printed under %s - not printed again."
+                             % (len(whole), " and ".join(where)))
+            elif whole:
                 for number in whole:
                     lines.append("    %s. %s" % (number, whole[number]))
                 count = list_size(data[name])
