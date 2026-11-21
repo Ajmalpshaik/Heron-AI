@@ -142,14 +142,17 @@ def test_a_head_whose_only_level_is_its_schedule_level_is_read_there():
                         "impl", "any", "fragment.cs")
     with open(path, encoding="utf-8") as fh:
         code = fh.read()
-    order = ["FAMILY_LEVEL_PARAM", "SCHEDULE_LEVEL_PARAM", "LEVEL_PARAM,",
-             "INSTANCE_REFERENCE_LEVEL_PARAM", "RBS_START_LEVEL_PARAM"]
+    # FILTER_ELEMENTS_BY_CATEGORY's five, and the schedule-only level after
+    # Schedule Level: REPORT_SPRINKLER_LAYOUT_SPACES's proof read head 545673
+    # on Level 2 through it, where this card's proof read that head on none.
+    order = ["FAMILY_LEVEL_PARAM", "SCHEDULE_LEVEL_PARAM", "INSTANCE_SCHEDULE_ONLY_LEVEL_PARAM",
+             "LEVEL_PARAM,", "INSTANCE_REFERENCE_LEVEL_PARAM", "RBS_START_LEVEL_PARAM"]
     start = code.find("var levelParameterOrder = new[]")
     assert start >= 0, "the level parameters are one list, in one place"
     block = code[start:code.find("};", start)]
     at = [block.find("BuiltInParameter." + name) for name in order]
-    assert all(i >= 0 for i in at), "all five are asked, Schedule Level among them: %r" % at
-    assert at == sorted(at), "in FILTER_ELEMENTS_BY_CATEGORY's order"
+    assert all(i >= 0 for i in at), "all six are asked, both Schedule Levels among them: %r" % at
+    assert at == sorted(at), "in FILTER_ELEMENTS_BY_CATEGORY's order, the schedule-only level after Schedule Level"
     lookup = code[code.find("Func<Element, ElementId> levelIdOf"):]
     lookup = lookup[:lookup.find("\n};")]
     assert "foreach (var candidate in levelParameterOrder)" in lookup, \

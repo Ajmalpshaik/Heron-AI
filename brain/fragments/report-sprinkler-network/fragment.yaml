@@ -22,7 +22,10 @@ risk: READ
 # own proof below shows every head of P1102 MEP's system that way, beside
 # pipes on Level 2. Version 2 asks LevelId, then five level parameters in
 # FILTER_ELEMENTS_BY_CATEGORY's order, and one that holds no level is passed
-# over and the next asked (row 5b-335). The Space probe for a head above its
+# over and the next asked (row 5b-335) - with the instance's schedule-only
+# level after Schedule Level, the parameter REPORT_SPRINKLER_LAYOUT_SPACES
+# asks, whose proof of 2026-10-21 put head 545673 on Level 2 where this
+# card's proof put the same head on none. The Space probe for a head above its
 # Space (row 5b-338) asks at that same level. Every other answer is version
 # 1's. The proof below is version 1's, kept as the record; it is stale, and
 # the card stays DRAFT until NEEDS-CHECKING Group PA is run (D-30).

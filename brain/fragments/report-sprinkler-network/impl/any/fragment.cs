@@ -4,8 +4,8 @@
 // READS ONLY. No transaction is opened and nothing is set.
 //
 // VERSION 2 (2026-11-21, FRAGMENT-ISSUES row 5b-1910) - an element's level is
-// FILTER_ELEMENTS_BY_CATEGORY's lookup: LevelId, then five level parameters,
-// Schedule Level among them, and one that holds no level is passed over. A
+// FILTER_ELEMENTS_BY_CATEGORY's lookup: LevelId, then its five level
+// parameters and the schedule-only level after Schedule Level, and one that holds no level is passed over. A
 // sprinkler on a ceiling's face kept its level only in Schedule Level and was
 // reported on no level. Every other answer is version 1's.
 //
@@ -199,7 +199,7 @@ Func<Element, BuiltInParameter, double?> doubleOf = (element, which) =>
     return null;
 };
 // THE LEVEL IS ASKED THE WAY FILTER_ELEMENTS_BY_CATEGORY ASKS IT (version 2,
-// FRAGMENT-ISSUES row 5b-1910): LevelId, then five level parameters in turn,
+// FRAGMENT-ISSUES row 5b-1910): LevelId, then six level parameters in turn,
 // and one that holds no LEVEL is passed over and the next asked (row 5b-335).
 // Version 1 asked LevelId, then an MEP curve's start level, then the family's
 // Level - and a sprinkler on a ceiling's face or a level's plane has no
@@ -207,10 +207,18 @@ Func<Element, BuiltInParameter, double?> doubleOf = (element, which) =>
 // in Schedule Level, so it was written "level": null. Its proof of 2026-11-02
 // shows every head of the system that way. The same answer places a head
 // above its Space at its level, below (row 5b-338).
+//
+// ONE MORE THAN FILTER_ELEMENTS_BY_CATEGORY ASKS: the instance's schedule-only
+// level, right after Schedule Level. REPORT_SPRINKLER_LAYOUT_SPACES asks the
+// family Level and then that one, and its proof of 2026-10-21 put head 545673
+// on Level 2 - the head this card's proof of 2026-11-02 wrote on no level.
+// Which of the two Schedule Level parameters a face-hosted head carries is not
+// measured; asking both costs nothing, as one it does not carry is passed over.
 var levelParameterOrder = new[]
 {
     BuiltInParameter.FAMILY_LEVEL_PARAM,
     BuiltInParameter.SCHEDULE_LEVEL_PARAM,
+    BuiltInParameter.INSTANCE_SCHEDULE_ONLY_LEVEL_PARAM,
     BuiltInParameter.LEVEL_PARAM,
     BuiltInParameter.INSTANCE_REFERENCE_LEVEL_PARAM,
     BuiltInParameter.RBS_START_LEVEL_PARAM,   // MEP curves. Never drop this one.
