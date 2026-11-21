@@ -262,10 +262,16 @@ Two wrinkles worth not re-discovering:
   that only `dotnet-sdk-10.0` carries — `tools/check-compile.py` says so itself when it skips them, and
   a skip is not a pass. Run `apt-get update` first; a stale index 404s on the .deb.
 
-**This is about your machine, not about CI.** `.github/workflows/gates.yml` leaves both out on
-purpose — they drag in native dependencies that break for reasons unrelated to this repository — and
-its tests job **fails the build if a suite on its not-runnable list runs there after all**. So install
-locally, run every suite, and leave that list alone unless the runner itself changes.
+**CI has both since 2026-11-21, and keeps the main sweep without the SDK on purpose.** The tests job
+in `.github/workflows/gates.yml` builds the bridge host with the command `test_bridge_roundtrip.py`
+prints, and puts the MCP SDK - `requirements-lock.txt`, pinned and hashed, its Windows-only `pywin32`
+left out - into a **venv of its own**. The sweep of every suite still runs on a Python with no SDK, so a
+suite that starts needing it fails there rather than passing quietly; the suites that need it are then run
+again on the venv, where an exit 3 fails the job. "They drag in native dependencies that break" was
+measured that day rather than repeated: the lock installs on Linux from wheels alone, in seconds. The job
+still **fails the build if a suite on its not-runnable list runs there after all**, so a suite that
+starts running comes off that list in the same change - which today holds `test_routing_phrases.py`
+alone, for the re-ranker.
 
 **Nothing else should fail on any machine.** `test_graph.py` and `test_reachable.py` were on this list
 until 2026-09-12, when both were fixed rather than excused — each had a fixture describing a repository

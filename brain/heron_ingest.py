@@ -1963,8 +1963,9 @@ def _main(argv):
         # R-89: where it went, in the modeller's words.
         print("  %d chunk(s) kept %s." % (total,
                                          SCOPE.in_plain_words(scope, project)))
-        # R-70. Said while the number is small, so the day it approaches the
-        # ceiling is a day somebody NOTICES rather than a day search gets slow.
+        # R-70. Said while the number is small, so the day search gets slow is
+        # a day somebody NOTICES. The sqlite-vec ceiling this line printed went
+        # with D-194 (2026-11-21): every vector is compared in plain Python.
         print("  Every vector is compared in plain Python, one by one (D-194);")
         print("  a search measured too slow on a real scope is what changes that.")
         if refused and not ingested_any:

@@ -78,9 +78,9 @@ negative:
       the far roof and the main roof selected, maxExtendMm 50000 - a pair
       where no end faces the other roof
     expect: >
-      extended 0; refused begins "NOTHING MET: no ray from either end of a
-      roof by extrusion met the upper face of the other roof in the 3D view
-      '{3D}'"; report lists both ends of the far roof with 0 points meeting;
+      extended 0; refused begins "NOTHING MET: no ray from an end this tool
+      can move met the upper face" (version 2's words; version 1 said "from
+      either end of a roof by extrusion"); report lists both ends of the far roof with 0 points meeting;
       nothing changed
 
   - given: >
@@ -117,9 +117,11 @@ negative:
       version 2 on Revit 2020 or 2021 - Wing F and the main roof, maxExtendMm
       10000
     expect: >
-      extended 0; findings "Revit <release>'s API has no sketch editing for an
-      add-in (SketchEditScope came in 2022) ... Modify > Join/Unjoin Roof",
-      naming the release; nothing changed
+      extended 0; refused "Both roofs are roofs by footprint, and Revit
+      <release>'s API has no sketch editing for an add-in (SketchEditScope
+      came in 2022) ... Modify > Join/Unjoin Roof ... Nothing was changed",
+      naming the release - both roofs are by footprint, so the pair is
+      refused before any ray is cast; nothing changed
 
 second_route:
   - given: >

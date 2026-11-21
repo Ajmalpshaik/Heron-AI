@@ -23,7 +23,7 @@ Revit or a real pipe**. Rebuild the add-in and restart Revit first (`python tool
 
 **The models: scratch copies, never a working model.** For PL1, a scratch copy of a project with at least one Revit
 link loaded - Snowdon-scratch with *Snowdon Towers Sample Architectural.rvt* is the one row 75 was measured on - in
-`%TEMP%\heron-work\pk`, pinned in the chat. The scratch cards below are written in `%TEMP%\heron-work\pk\cards`,
+`%TEMP%\heron-work\pl`, pinned in the chat. The scratch cards below are written in `%TEMP%\heron-work\pl\cards`,
 never in Heron's folder, and sent one after the other with `python mcp/client/heron_bridge_client.py fragment
 <card> ...` from one terminal, so they share one chain. Read the document name on every reply.
 

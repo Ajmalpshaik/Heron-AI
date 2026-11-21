@@ -34,8 +34,8 @@ purpose: >
   SET_REBAR_COVER, the three CREATE_REBAR_*_TYPE cards, LIST_REBAR_TYPES and
   REPORT_HOST_REBAR were PROVEN; PLACE_COLUMN_REBAR, PLACE_REBAR and
   PLACE_FABRIC_REINFORCEMENT were DRAFT (NEEDS-CHECKING Group HY), and
-  CHECK_REBAR_AGAINST_SPEC was written that day, DRAFT, compiled for Revit
-  2020 to 2027 and NOT RUN in Revit (Group MZ). A PROVEN change runs through
+  CHECK_REBAR_AGAINST_SPEC was written that day, DRAFT, and proved on
+  2026-11-17 (Revit 2024). A PROVEN change runs through
   revit_change. A DRAFT CHANGE IS RUN BY NO CHAT TOOL (D-117): it is
   previewed on the modeller's PC from the command line, which runs it and
   ROLLS IT BACK - nothing can be kept without --apply, and --apply is refused
@@ -51,8 +51,9 @@ purpose: >
   asked for exactly that; never send it through another tool. For the
   modeller this means: a column, a hand-placed bar or a mesh cannot be added
   from the chat yet - each is one try on a saved model until the owner has
-  proved it. A DRAFT READ, CHECK_REBAR_AGAINST_SPEC, is run by revit_read,
-  which keeps nothing and says it is DRAFT.
+  proved it. A READ - CHECK_REBAR_AGAINST_SPEC, REPORT_HOST_REBAR - is run
+  by revit_read whatever its status, keeps nothing, and says so when it is
+  DRAFT.
 
   0. SAVE THE MODEL FIRST - the rebar for a building is hundreds of sets.
      REPORT_OPEN_DOCUMENTS says whether it has a file and when it was last

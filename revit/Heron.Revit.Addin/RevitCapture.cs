@@ -67,7 +67,15 @@ namespace Heron.Revit.Addin
     ///   framed all the same (row 5b-1311, NEEDS-CHECKING Group IO). Every
     ///   connector not among the ids framed is hidden, element by element:
     ///   their symbols drew past the section box and the picture was fitted
-    ///   to them (row 5b-1327). See Prepare.
+    ///   to them (row 5b-1327). See Prepare. And since 2026-11-21 any other
+    ///   model element not asked for whose extent reaches out of the section
+    ///   box is hidden and named too - a context slab crossing it was the
+    ///   frame, not the parts (row 5b-1890). See HideReachingOut.
+    ///
+    ///   THE LONGEST SIDE IS THE WIDTH ASKED (row 5b-1890, 2026-11-21): a
+    ///   picture that comes back taller than that is taken again fitted on its
+    ///   height, its shape the view's. HeronPicture holds both rules, proved
+    ///   without Revit; NEEDS-CHECKING Group PM is their run.
     ///
     /// WHY IT IS ANALYZE AND OPENS A TRANSACTION
     /// -------------------------------------------
@@ -757,6 +765,7 @@ namespace Heron.Revit.Addin
 
                     View3D view;
                     string hidden = null;
+                    string crossing = null;
                     using (var transaction = new Transaction(doc, Label))
                     {
                         transaction.Start();
@@ -777,6 +786,14 @@ namespace Heron.Revit.Addin
                             hidden = HideCoversAbove(doc, view, section, high.Z, framed);
                             if (hidden != null) doc.Regenerate();
                         }
+                        else
+                        {
+                            // IN A FAMILY, WHAT REACHES OUT OF THE BOX (row
+                            // 5b-1890): a context slab crossing it was the
+                            // frame, not the parts asked for. Hidden and named.
+                            crossing = HideReachingOut(doc, view, section, framed);
+                            if (crossing != null) doc.Regenerate();
+                        }
 
                         // COMMITTED INSIDE THE GROUP, so Revit has drawn the
                         // view before it is asked to export it - and the
@@ -792,7 +809,7 @@ namespace Heron.Revit.Addin
 
                     return Exported(doc, view, width, clamped, "elements",
                                     string.Join("; ", left.ToArray()), hidden, shown,
-                                    ref after, group, watch);
+                                    ref after, group, watch, crossing: crossing);
                 }
                 catch (Exception ex)
                 {
@@ -1108,6 +1125,76 @@ namespace Heron.Revit.Addin
             return string.Join("; ", named.ToArray());
         }
 
+        /// <summary>
+        /// IN A FAMILY, hide in VIEW every model element that was not asked for
+        /// and whose extent reaches out past a face of the section box, and
+        /// answer what was hidden - "id (Category)", "; " between, a form at
+        /// the family's own subcategory named "form" - or null for nothing.
+        ///
+        /// WHY (row 5b-1890, issue #1051 item A5). Seen 2026-11-19 on Revit
+        /// 2020: given `elements=` for a hanger's small parts, the frame zoomed
+        /// out to a context slab crossing the section box, and the parts could
+        /// not be shown close up. The connectors' symbols did the same (row
+        /// 5b-1327) and Prepare hides every connector not asked for; this is
+        /// the same move for the rest of the family's model elements.
+        ///
+        /// ONLY WHAT REACHES OUT. An element lying wholly inside the box stays
+        /// - it is the parts' context, and the box was drawn round them. An id
+        /// asked for is never hidden. HeronPicture.ReachesOut decides, with the
+        /// same tolerance as the covers above, and is proved without Revit.
+        ///
+        /// ONLY IN A FAMILY, where it was seen. In a project the floors,
+        /// ceilings and roofs over the elements are HideCoversAbove's, and a
+        /// wall or a pipe through the box is the elements' setting; hiding it
+        /// there was not asked for, and whether it zooms a project's picture
+        /// out is not measured (NEEDS-CHECKING Group PM).
+        ///
+        /// FROM THE VIEW'S OWN COLLECTOR, crossed with the box, so an element
+        /// the view does not show is never named. Connectors are Prepare's; a
+        /// category that is not a model one is hidden by category already. An
+        /// element Revit will not hide is passed over; a hide Revit refuses
+        /// costs the hide, never the picture, and names nothing.
+        /// </summary>
+        private static string HideReachingOut(Document doc, View3D view, BoundingBoxXYZ section,
+                                              List<Element> framed)
+        {
+            var inBox = new BoundingBoxIntersectsFilter(new Outline(section.Min, section.Max));
+            var boxLow = new[] { section.Min.X, section.Min.Y, section.Min.Z };
+            var boxHigh = new[] { section.Max.X, section.Max.Y, section.Max.Z };
+
+            var ids = new List<ElementId>();
+            var named = new List<string>();
+            foreach (var element in new FilteredElementCollector(doc, view.Id)
+                         .WhereElementIsNotElementType().WherePasses(inBox))
+            {
+                if (framed.Exists(e => e.Id.Equals(element.Id))) continue;
+                if (element is ConnectorElement) continue;
+
+                Category category = null;
+                try { category = element.Category; }
+                catch (Autodesk.Revit.Exceptions.InvalidOperationException) { category = null; }
+                if (category != null && category.CategoryType != CategoryType.Model) continue;
+
+                var box = element.get_BoundingBox(null);
+                if (box == null) continue;
+                XYZ low = null, high = null;
+                Grow(box, ref low, ref high);
+                if (!HeronPicture.ReachesOut(boxLow, boxHigh, new[] { low.X, low.Y, low.Z },
+                                             new[] { high.X, high.Y, high.Z }, Touching))
+                    continue;
+                if (!element.CanBeHidden(view)) continue;
+
+                ids.Add(element.Id);
+                named.Add(element.Id + " (" + (category == null ? "form" : category.Name) + ")");
+            }
+            if (ids.Count == 0) return null;
+
+            try { view.HideElements(ids); }
+            catch (Autodesk.Revit.Exceptions.ArgumentException) { return null; }
+            catch (Autodesk.Revit.Exceptions.InvalidOperationException) { return null; }
+            return string.Join("; ", named.ToArray());
+        }
+
         // -------------------------------------------------- the export itself
 
         /// <summary>
@@ -1124,7 +1211,7 @@ namespace Heron.Revit.Addin
                                        TransactionGroup group,
                                        HeronRollbackWitness.Watch watch,
                                        string regionOf = null, string regionSaid = null,
-                                       bool detailing = true)
+                                       bool detailing = true, string crossing = null)
         {
             // READ OFF THE VIEW NOW, while it is still in the model. Given
             // element ids, VIEW is the temporary 3D view, and the rollback in
@@ -1147,31 +1234,44 @@ namespace Heron.Revit.Addin
             byte[] picture = null;
             var deleted = false;
             string failure = null;
+            var fittedOn = "width";
+            string refitFailed = null;
             try
             {
                 Directory.CreateDirectory(folder);
 
-                var options = new ImageExportOptions();
-                options.FilePath = Path.Combine(folder, "capture");
-                options.ExportRange = ExportRange.SetOfViews;
-                options.HLRandWFViewsFileType = ImageFileType.PNG;
-                options.ShadowViewsFileType = ImageFileType.PNG;
-                options.ZoomType = ZoomFitType.FitToPage;
-                options.FitDirection = FitDirectionType.Horizontal;
-                options.PixelSize = width;
-                options.SetViewsAndSheets(new List<ElementId> { view.Id });
+                picture = ExportOnce(doc, view, folder, width, FitDirectionType.Horizontal);
+                if (picture == null) failure = "Revit exported the view and wrote no picture.";
 
-                // HERON'S OWN EXPORT, into its own folder, so the run guard
-                // armed round this job lets it through - a fragment that
-                // exports is still cancelled. See HeronRunGuard.HeronExports.
-                using (HeronRunGuard.HeronExports())
+                // THE LONGEST SIDE IS THE WIDTH ASKED (row 5b-1890). Fitted on
+                // its width, a view taller than it is wide comes back taller
+                // than that - 1000 x 5159 px for a rod hanger's View 1 - and
+                // the chat shrinks it before reading it, so the rest is bytes
+                // nobody sees. Taken again fitted on its height, in the same
+                // folder and the same group; its shape is the view's still.
+                // HeronPicture decides, and is proved without Revit.
+                int wide, high;
+                if (picture != null && HeronPicture.Size(picture, out wide, out high)
+                    && HeronPicture.TooTall(width, wide, high))
                 {
-                    doc.ExportImage(options);
+                    try
+                    {
+                        foreach (var old in Directory.GetFiles(folder)) File.Delete(old);
+                        var again = ExportOnce(doc, view, folder, width, FitDirectionType.Vertical);
+                        if (again != null)
+                        {
+                            picture = again;
+                            fittedOn = "height";
+                        }
+                        else refitFailed = "Revit wrote no picture fitted on its height";
+                    }
+                    catch (Exception refit)
+                    {
+                        // THE FIRST PICTURE IS STILL A TRUE ONE, so it is sent,
+                        // and why it is tall is said - never a refusal for size.
+                        refitFailed = refit.Message;
+                    }
                 }
-
-                var written = Directory.GetFiles(folder, "*.png");
-                if (written.Length == 0) failure = "Revit exported the view and wrote no picture.";
-                else picture = File.ReadAllBytes(written[0]);
             }
             finally
             {
@@ -1198,18 +1298,30 @@ namespace Heron.Revit.Addin
                     + "width. " + Undone(after));
             }
 
+            // THE PICTURE'S OWN SIZE, read from its header (row 5b-1890), so
+            // the words say what was sent - left out when it cannot be read.
+            int pictureWidth, pictureHeight;
+            var sized = HeronPicture.Size(picture, out pictureWidth, out pictureHeight);
+
             return Json.Ok(
                 Json.Str("mode", mode),
                 Json.Str("view", viewName),
                 Json.Str("viewType", viewType),
                 Json.Num("pixelWidth", width),
                 Json.Bool("widthClamped", clamped),
+                sized ? Json.Num("pictureWidth", pictureWidth) : null,
+                sized ? Json.Num("pictureHeight", pictureHeight) : null,
+                Json.Str("fittedOn", fittedOn),
+                Json.Str("refitFailed", refitFailed),
                 Json.Num("bytes", picture.Length),
                 Json.Num("shown", shown),
                 Json.Str("leftOut", string.IsNullOrEmpty(leftOut) ? null : leftOut),
                 // IN THE FRAME AND NOT IN THE PICTURE - said, so a modeller
                 // checking a clearance is never shown a slab as not there.
                 Json.Str("hiddenAbove", string.IsNullOrEmpty(hidden) ? null : hidden),
+                // IN A FAMILY, NOT ASKED FOR AND REACHING OUT OF THE BOX (row
+                // 5b-1890) - said for the same reason.
+                Json.Str("hiddenCrossing", string.IsNullOrEmpty(crossing) ? null : crossing),
                 // A REGION OF A PLAN (row 5b-1710): the plan's own name - `view`
                 // is the temporary copy's - what the region was, and whether
                 // the copy carries the plan's tags and dimensions.
@@ -1234,6 +1346,37 @@ namespace Heron.Revit.Addin
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
                 Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Str("png", Convert.ToBase64String(picture)));
+        }
+
+        /// <summary>
+        /// One export of VIEW into FOLDER, fitted on its width or its height to
+        /// SIZE pixels, and the picture it wrote - or null for none. FOLDER is
+        /// this capture's own, so whatever PNG lands in it is the one; a second
+        /// export into it is made only once the first is deleted (row 5b-1890).
+        /// </summary>
+        private static byte[] ExportOnce(Document doc, View view, string folder, int size,
+                                         FitDirectionType fit)
+        {
+            var options = new ImageExportOptions();
+            options.FilePath = Path.Combine(folder, "capture");
+            options.ExportRange = ExportRange.SetOfViews;
+            options.HLRandWFViewsFileType = ImageFileType.PNG;
+            options.ShadowViewsFileType = ImageFileType.PNG;
+            options.ZoomType = ZoomFitType.FitToPage;
+            options.FitDirection = fit;
+            options.PixelSize = size;
+            options.SetViewsAndSheets(new List<ElementId> { view.Id });
+
+            // HERON'S OWN EXPORT, into its own folder, so the run guard
+            // armed round this job lets it through - a fragment that
+            // exports is still cancelled. See HeronRunGuard.HeronExports.
+            using (HeronRunGuard.HeronExports())
+            {
+                doc.ExportImage(options);
+            }
+
+            var written = Directory.GetFiles(folder, "*.png");
+            return written.Length == 0 ? null : File.ReadAllBytes(written[0]);
         }
 
         /// <summary>Millimetres in a foot, Revit's internal unit (D-20).</summary>

@@ -62,6 +62,12 @@ namespace Heron.FailureNote.TestHost
             return new HeronFailureNote.Posted(severity, text, elements);
         }
 
+        /// <summary>A failure that names its elements, as RevitFragment reads one (row 5b-1889).</summary>
+        private static HeronFailureNote.Posted Named(int severity, string text, params string[] ids)
+        {
+            return new HeronFailureNote.Posted(severity, text, ids.Length, new List<string>(ids));
+        }
+
         /// <summary>
         /// A fragment write's reply, in the shape RevitFragment writes it: a
         /// Report answer, then WithVerdict's fields spliced on before the
@@ -76,13 +82,7 @@ namespace Heron.FailureNote.TestHost
                 Json.Num("providesCount", 1));
 
             var listed = new List<string>();
-            foreach (var one in said.Dismissed)
-            {
-                listed.Add(Json.Obj(Json.Str("text", one.Text),
-                                    Json.Num("times", one.Times),
-                                    Json.Num("elements", one.Elements),
-                                    Json.Str("step", one.Step)));
-            }
+            foreach (var one in said.Dismissed) listed.Add(HeronFailureNote.Listed(one));
 
             return answer.Substring(0, answer.Length - 1)
                  + "," + Json.Bool("applied", true)
@@ -373,6 +373,93 @@ namespace Heron.FailureNote.TestHost
                   && Json.Set("{\"a\": 1", "undo", "1") == "{\"a\": 1"
                   && Json.Set(record, "undo", null) == record,
                   "an empty object takes it, and what does not parse is returned unchanged");
+
+            // 12. EACH WARNING NAMES ITS ELEMENTS - FRAGMENT-ISSUES row
+            // 5b-1889, issue #1112. Seen 2026-11-19 on Revit 2020: "Line in
+            // Sketch is slightly off axis" (4 elements) from three
+            // CREATE_FAMILY_FORMS calls, counted and not tied to any form.
+            note = new HeronFailureNote();
+            note.RollsBack(null, Batch(Named(Warning, "Line in Sketch is slightly off axis and may cause inaccuracies.",
+                                             "352621", "352622")), Warning);
+            note.RollsBack(null, Batch(Named(Warning, "Line in Sketch is slightly off axis and may cause inaccuracies.",
+                                             "352622", "352630")), Warning);
+            var offAxis = note.Dismissed.Count == 1 ? note.Dismissed[0] : null;
+            Check(offAxis != null && string.Join(",", offAxis.Ids.ToArray()) == "352621,352622,352630",
+                  "a warning keeps each element it named ONCE, in the order first named - "
+                  + (offAxis == null ? "no entry" : string.Join(",", offAxis.Ids.ToArray())));
+            Check(offAxis != null && offAxis.Times == 2 && offAxis.Elements == 4,
+                  "and its count is as before: 2 times, 4 elements, repeats included");
+            sentence = note.DismissedSentence();
+            Check(sentence.Contains("(2 times, 4 elements, element ids 352621, 352622, 352630)"),
+                  "the sentence says WHICH elements: \"" + sentence + "\"");
+            var entry = offAxis == null ? "" : HeronFailureNote.Listed(offAxis);
+            Check(entry == "{\"text\": \"Line in Sketch is slightly off axis and may cause inaccuracies.\", "
+                         + "\"times\": 2, \"elements\": 4, \"step\": null, "
+                         + "\"elementIds\": [\"352621\", \"352622\", \"352630\"]}",
+                  "and the reply's entry lists them as strings, as every Heron answer prints an id: " + entry);
+
+            // ...and one id reads as one, a setup step still named after it.
+            note = new HeronFailureNote();
+            note.RollsBack("sketch", Batch(Named(Warning, "Line is slightly off axis.", "1001")), Warning);
+            Check(note.DismissedSentence().Contains("(1 element, element id 1001, in setup step 'sketch')"),
+                  "one id is \"element id\", and the setup step is still named: \"" + note.DismissedSentence() + "\"");
+
+            // A WARNING WHOSE IDS COULD NOT BE READ reads exactly as before -
+            // no empty list, no new words. Blank ids are not ids.
+            note = new HeronFailureNote();
+            note.RollsBack(null, Batch(Said(Warning, "Elements have duplicate 'Mark' values.", 2),
+                                       Named(Warning, "Highlighted lines overlap.", " ", "")), Warning);
+            Check(note.DismissedSentence().Contains("\"Elements have duplicate 'Mark' values.\" (2 elements)")
+                  && !note.DismissedSentence().Contains("element id"),
+                  "a warning with no ids read is quoted as before: \"" + note.DismissedSentence() + "\"");
+            Check(HeronFailureNote.Listed(note.Dismissed[0]) == "{\"text\": \"Elements have duplicate 'Mark' values.\", "
+                  + "\"times\": 1, \"elements\": 2, \"step\": null}"
+                  && note.Dismissed.Count == 2 && note.Dismissed[1].Ids.Count == 0
+                  && !HeronFailureNote.Listed(note.Dismissed[1]).Contains("elementIds"),
+                  "and its reply entry carries no elementIds at all; blank ids are dropped");
+
+            // MANY IDS: the sentence names the first few and counts the rest;
+            // the reply lists more, and counts what it left out. None dropped.
+            note = new HeronFailureNote();
+            var lots = new List<string>();
+            for (var i = 1; i <= HeronFailureNote.IdsListed + 7; i++) lots.Add((5000 + i).ToString(CultureInfo.InvariantCulture));
+            note.RollsBack(null, Batch(Named(Warning, "Too many.", lots.ToArray())), Warning);
+            var tooMany = note.Dismissed[0];
+            sentence = note.DismissedSentence();
+            Check(tooMany.Ids.Count == HeronFailureNote.IdsListed + 7,
+                  "every id is kept (" + tooMany.Ids.Count + ")");
+            Check(sentence.Contains("element ids 5001, 5002, 5003, 5004, 5005 and "
+                                    + (HeronFailureNote.IdsListed + 7 - HeronFailureNote.IdsQuoted) + " more)"),
+                  "the sentence names the first " + HeronFailureNote.IdsQuoted + " and counts the rest: \"" + sentence + "\"");
+            entry = HeronFailureNote.Listed(tooMany);
+            Check(entry.Contains("\"" + (5000 + HeronFailureNote.IdsListed) + "\"]")
+                  && !entry.Contains("\"" + (5000 + HeronFailureNote.IdsListed + 1) + "\"")
+                  && entry.EndsWith("\"elementIdsMore\": 7}", StringComparison.Ordinal),
+                  "the reply lists the first " + HeronFailureNote.IdsListed + " and says 7 more: ..."
+                  + entry.Substring(Math.Max(0, entry.Length - 60)));
+
+            // WHAT STOPPED A JOB NAMES ITS ELEMENTS TOO, and a warning that
+            // could not be dismissed takes its ids with it.
+            note = new HeronFailureNote();
+            note.RollsBack(null, Batch(Named(Error, "Can't keep elements joined.", "77", "78")), Warning);
+            Check(note.RefusedSentence() == "Revit would not let it through: \"Can't keep elements joined.\" "
+                                            + "(2 elements, element ids 77, 78).",
+                  "a refusal names the elements Revit refused: \"" + note.RefusedSentence() + "\"");
+            note = new HeronFailureNote();
+            note.RollsBack(null, Batch(Named(Warning, "Stubborn warning.", "9"), Said(Warning, "Easy warning.", 0)), Warning);
+            note.CouldNotDismiss(null, "Stubborn warning.", 1, new List<string> { "9" }, "not initialized");
+            Check(note.DismissedCount == 1 && note.Dismissed.Count == 1
+                  && note.RefusedSentence().Contains("(not initialized)\" (1 element, element id 9)"),
+                  "a warning Heron could not dismiss takes its id to the refusal: \"" + note.RefusedSentence() + "\"");
+
+            // THE REPLY BUILT FROM THEM still reads as section 11 says.
+            note = new HeronFailureNote();
+            note.RollsBack(null, Batch(Named(Warning, "Line is slightly off axis.", "1", "2")), Warning);
+            reply = Reply(note);
+            Check(Json.ReadLong(reply, "warnings") == 1
+                  && reply.Contains("\"warningsDismissed\": [{\"text\": \"Line is slightly off axis.\", \"times\": 1, "
+                                    + "\"elements\": 2, \"step\": null, \"elementIds\": [\"1\", \"2\"]}]"),
+                  "the reply carries the ids inside warningsDismissed, and its count as before");
 
             Console.WriteLine();
             if (Failures.Count > 0)

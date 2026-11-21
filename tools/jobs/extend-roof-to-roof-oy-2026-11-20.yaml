@@ -1,7 +1,10 @@
 # NEEDS-CHECKING Group OY - EXTEND_ROOF_TO_ROOF (DRAFT), a roof by extrusion's
 # end extended until it meets another roof's upper face, measured with rays -
 # the owner's other way to Join/Unjoin Roof (row 5b-1877, issue #1087). Built
-# 2026-11-20 in a cloud session with no Revit. NOT RUN.
+# 2026-11-20 in a cloud session with no Revit. Version 1 RAN on Revit 2024 on
+# 2026-11-21 (Group OY's OY2 to OY4 PASS) and was signed; version 2 has not run,
+# so the card is DRAFT again - this job is version 1's, and Group OY says what
+# version 2 owes.
 #
 #     python tools/batch-prove.py tools/jobs/extend-roof-to-roof-oy-2026-11-20.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/extend-roof-to-roof-oy-2026-11-20.yaml --session <pid>
