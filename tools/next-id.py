@@ -92,6 +92,18 @@ folder. A pull request whose head is a branch this run already read is that
 branch, labelled with its number; any other - from a fork, or pushed since the
 fetch - is fetched as `refs/pull/N/head` and read the same way.
 
+Open issues, since 2026-11-21 (row 5b-1928): `gh api repos/OWNER/NAME/issues
+?state=open`, pull requests left out. Since D-187 every new group, row, check
+and question is opened as an issue in the same change - so an id can be named
+in an open issue's title or body before any branch holding it is pushed, and
+on 2026-11-20 this offered Group OW while issues #1136 and #1142 already named
+OW and OX. Each id an open issue names that main has not got, and that no
+branch, pull request or worktree read holds, is NAMED IN AN ISSUE: listed with
+the issue's number, and counted, so `next` goes above it. An issue that names
+an id main has, or one a branch holds, is that id's own tracking, and is not
+listed. Read the same way as the pull requests, and NOT READ for the same
+reasons - which never changes the exit code.
+
 Worktrees: `git worktree list --porcelain`, read line by line - a path holds
 spaces ("Heron Ai") and is everything after `worktree `. Each worktree's
 register files are read FROM DISK, saved or not, committed or not.
@@ -551,6 +563,61 @@ def open_pulls(gh, root, repo):
     return parse_pulls(out)
 
 
+# Open issues: number and text (title, then body) as one JSON pair a line.
+# The issues list carries pull requests too; `pull_request` marks them.
+ISSUES_JQ = ('.[] | select(.pull_request == null) | '
+             '[.number, ((.title // "") + "\n" + (.body // ""))] | @json')
+
+# Each register's id as an issue writes it - "Group OW", "5b-1928", "Q-95",
+# "D-192" - with what turns the match into the register's id.
+ISSUE_IDS = {
+    "group": (re.compile(r"(?<![0-9A-Za-z])Group ([A-Z]{1,3})(?![0-9A-Za-z])"), str),
+    "5b": (re.compile(r"(?<![0-9A-Za-z-])5b-([0-9]+)(?![0-9])"), int),
+    "Q": (re.compile(r"(?<![0-9A-Za-z-])Q-([0-9]+)(?![0-9])"), int),
+    "D": (re.compile(r"(?<![0-9A-Za-z-])D-([0-9]+)(?![0-9])"), int),
+}
+
+
+def parse_issues(text):
+    """[(number, text)] from gh's ISSUES_JQ lines. A line in any other shape
+    means gh answered something this tool does not read."""
+    found = []
+    for line in text.split(NL):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            number, words = json.loads(line)
+        except (ValueError, TypeError):
+            raise CouldNot("gh answered a line this tool does not read: %r" % line[:120])
+        if not isinstance(number, int) or not isinstance(words, str):
+            raise CouldNot("gh answered a line this tool does not read: %r" % line[:120])
+        found.append((number, words))
+    return found
+
+
+def open_issues(gh, root, repo):
+    """[(number, text)] of REPO's open issues, or CouldNot saying why not."""
+    try:
+        code, out, err = gh(["api", "--paginate", "repos/%s/issues?state=open&per_page=100"
+                             % repo, "--jq", ISSUES_JQ], root)
+    except OSError as exc:
+        raise CouldNot("gh could not be run - it is not installed, or not on PATH (%s)" % exc)
+    if code != 0:
+        raise CouldNot("gh did not list them (exit %d): %s" % (code, first_line(err or out)))
+    return parse_issues(out)
+
+
+def issue_ids(issues):
+    """{register key: {id: [issue numbers]}} - every id each issue names."""
+    named = {key: {} for key in ISSUE_IDS}
+    for number, words in issues:
+        for key, (pattern, convert) in ISSUE_IDS.items():
+            for found in set(pattern.findall(words)):
+                named[key].setdefault(convert(found), []).append(number)
+    return named
+
+
 def fetch_pull(root, remote, number):
     """The head commit of pull request NUMBER, fetched from REMOTE."""
     git(root, ["fetch", "--no-tags", remote, "refs/pull/%d/head" % number])
@@ -705,6 +772,22 @@ def answer(root, remote="origin", base="main", fetched=True, gh=run_gh, github=N
                     pulls["open"].append(read_pull(root, remote, pr, pulls["repo"],
                                                    holders, ids_of))
 
+    # OPEN ISSUES, read where the pull requests could be (row 5b-1928).
+    issues = {"read": False, "repo": pulls["repo"], "why_not": None, "count": 0}
+    named = {key: {} for key in ISSUE_IDS}
+    if not fetched:
+        issues["why_not"] = "--no-fetch reads nothing from the network"
+    elif pulls["repo"] is None:
+        issues["why_not"] = pulls["why_not"]
+    else:
+        try:
+            listed = open_issues(gh, root, pulls["repo"])
+        except CouldNot as exc:
+            issues["why_not"] = str(exc)
+        else:
+            issues["read"], issues["count"] = True, len(listed)
+            named = issue_ids(listed)
+
     trees = read_worktrees(root, mine, holders) if worktrees else None
 
     # What each piece of work adds: the ids at its head less those where it
@@ -736,6 +819,7 @@ def answer(root, remote="origin", base="main", fetched=True, gh=run_gh, github=N
         "branches": [name for name, _ in refs if name != base_name],
         "this_checkout": any(one.name == "HEAD" for one in holders),
         "pull_requests": pulls,
+        "issues": issues,
         "worktrees": trees,
         "holders": {one.name: {"owner": one.owner, "pr": pr_of.get(one.owner),
                                "this_checkout": one.owner == mine,
@@ -784,6 +868,12 @@ def answer(root, remote="origin", base="main", fetched=True, gh=run_gh, github=N
         everywhere = set()
         for one in holders:
             everywhere |= one.ids[reg.key]
+        # AN ID ONLY AN OPEN ISSUE NAMES IS USED TOO (row 5b-1928): main has not
+        # got it, and no work read holds it, so its branch is not pushed yet.
+        in_issues = dict((i, sorted(set(numbers)))
+                         for i, numbers in named.get(reg.key, {}).items()
+                         if i not in on_main and i not in everywhere)
+        everywhere |= set(in_issues)
         high = max(everywhere, key=reg.order)
 
         above, holds, adders, taken, merged = {}, {}, {}, {}, {}
@@ -827,6 +917,8 @@ def answer(root, remote="origin", base="main", fetched=True, gh=run_gh, github=N
             # Live work adding an id main has with the same entry: its own.
             "already_merged": {reg.show(i): names for i, names in
                                sorted(merged.items(), key=lambda kv: reg.order(kv[0]))},
+            "named_in_issues": {reg.show(i): numbers for i, numbers in
+                                sorted(in_issues.items(), key=lambda kv: reg.order(kv[0]))},
         }
     return result
 
@@ -930,6 +1022,10 @@ def report(result):
         for gid, names in one["already_merged"].items():
             out("      MERGED  %s is on main exactly as %s adds it - its own, not a clash\n"
                 % (gid, " and ".join(label(result, n) for n in names)))
+        for gid, numbers in one.get("named_in_issues", {}).items():
+            out("      NAMED IN AN ISSUE  %s is in open issue %s and in no branch read - "
+                "taken, so next is above it\n"
+                % (gid, " and ".join("#%d" % n for n in numbers)))
         out("\n")
 
     out("What was read\n")
@@ -950,6 +1046,13 @@ def report(result):
         out("  pull requests   NOT READ - %s\n" % pulls["why_not"])
         out("                  so TAKEN ON MAIN judges this checkout alone: a branch whose id\n"
             "                  main took since cannot be told from one that merged\n")
+    issues = result.get("issues") or {}
+    if issues.get("read"):
+        out("  issues          %d open on %s, read for the ids they name\n"
+            % (issues["count"], issues["repo"]))
+    else:
+        out("  issues          NOT READ - %s\n" % issues.get("why_not"))
+        out("                  so an id only an open issue names is not seen (row 5b-1928)\n")
     if trees is None:
         out("  worktrees       not read - --no-worktrees\n")
     for t in trees or []:

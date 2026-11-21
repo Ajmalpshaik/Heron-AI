@@ -129,7 +129,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 
 | Tool | What it is for | When you run it |
 |---|---|---|
-| [`next-id.py`](next-id.py) | the free group, 5b row, `Q-nn` and `D-nnn` on main, every branch, open pull request and worktree | before taking any id, and again before merging |
+| [`next-id.py`](next-id.py) | the free group, 5b row, `Q-nn` and `D-nnn` on main, every branch, open pull request, open issue and worktree | before taking any id, and again before merging |
 | [`renumber.py`](renumber.py) | renames an id this branch took that somebody else took first | when `next-id.py` says HELD TWICE or TAKEN ON MAIN |
 | [`open-defects.py`](open-defects.py) | the ids of the FRAGMENT-ISSUES rows still open | before picking up a defect |
 | [`open-issue.py`](open-issue.py) | a new row, check or question as a GitHub issue, its number written back into the register | the same change that writes the entry ([D-187](../docs/DECISIONS.md)) |
@@ -2451,6 +2451,15 @@ rest of its line, spaces and all, and their register files are read **from disk,
 not** - the row a session on the same PC has typed and not pushed. No gh, a gh not logged in, a remote that is
 not github.com, or a worktree whose folder is gone is **said in the report**, never guessed past, and never
 changes the exit code.
+
+**Since 2026-11-21 it reads the open issues too** ([row 5b-1928](../docs/fragment-issues/row-5b-1928.md)),
+through `gh api repos/OWNER/NAME/issues?state=open`, pull requests left out. Since D-187 an id is opened as an
+issue in the same change that writes it, so an issue can name a group, row, question or decision before any
+branch holding it is pushed - on 2026-11-20 this offered Group OW while open issues #1136 and #1142 already
+named OW and OX. An id an open issue names that main has not got and no branch, pull request or worktree holds
+is printed as **NAMED IN AN ISSUE**, with the issue's number, and counted, so `next` is above it; one main has,
+or a branch holds, is that id's own tracking and is not listed. Issues gh will not list are **NOT READ**, said,
+as the pull requests are.
 
 For each piece of work it lists **what it adds that main has not got** - its ids less those where it left
 main, at any number - and names two collisions **below main's highest as well as above it**: **HELD TWICE**,
