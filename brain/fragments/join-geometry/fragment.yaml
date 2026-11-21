@@ -319,3 +319,9 @@ utterances:
   # ADDED 2026-11-02, row 5b-1419. COPE_FRAMING's routing table sends this
   # sentence here; when SET_WALL_JOIN_TYPE was added, ranking moved it there.
   - join these walls
+  # ADDED 2026-11-21, row 5b-1932 (issue #956). On main "clean the join
+  # between them" reached DISALLOW_JOIN - the opposite job - on lexical and
+  # model, and "join these two roofs' geometry" SHAPE_WALL_TOPS_TO_ROOF on
+  # model. Declared at the END: the re-ranker's eight are unchanged.
+  - clean the join between them
+  - join these two roofs' geometry

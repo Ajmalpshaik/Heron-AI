@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,26 @@ semantic-identity: "one fire protection piping system's pipes, fittings, valves 
 kind: filter
 domain: revit.mep
 capability: REPORT_SPRINKLER_NETWORK
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-11-21, FRAGMENT-ISSUES row 5b-1910, GitHub issue #1126) - A
+# SPRINKLER'S LEVEL IS ASKED THE WAY FILTER_ELEMENTS_BY_CATEGORY ASKS IT, and
+# the card is DRAFT again. Version 1 asked LevelId, then an MEP curve's start
+# level, then the family's Level - never Schedule Level - so a head on a
+# ceiling's face or a level's plane, whose family Level is empty (row 5b-342)
+# and whose only level is its Schedule Level, was written "level": null. Its
+# own proof below shows every head of P1102 MEP's system that way, beside
+# pipes on Level 2. Version 2 asks LevelId, then five level parameters in
+# FILTER_ELEMENTS_BY_CATEGORY's order, and one that holds no level is passed
+# over and the next asked (row 5b-335) - with the instance's schedule-only
+# level after Schedule Level, the parameter REPORT_SPRINKLER_LAYOUT_SPACES
+# asks, whose proof of 2026-10-21 put head 545673 on Level 2 where this
+# card's proof put the same head on none. The Space probe for a head above its
+# Space (row 5b-338) asks at that same level. Every other answer is version
+# 1's. The proof below is version 1's, kept as the record; it is stale, and
+# the card stays DRAFT until NEEDS-CHECKING Group PA is run (D-30).
 
 purpose: >
   Reads the network a sprinkler system's hydraulic calculation is solved on

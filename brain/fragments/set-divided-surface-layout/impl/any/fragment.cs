@@ -30,6 +30,15 @@
 // moved anyway is reported in `readBack` and `findings`, never hidden and
 // never counted as asked.
 //
+// VERSION 2 (2026-11-21, row 5b-1908): REVIT'S GRIDLINE COUNTS UNDER ITS OWN
+// NAMES. Version 1 ended each grid's row with its same-letter count - "U grid:
+// ...; 9 gridline(s) before, 9 now" - and row 5b-303 measured on a Revit 2024
+// mass that each count moved with the OTHER rule. The counts now have a row of
+// their own, "Revit counts: U-gridlines A before, B now; V-gridlines C before,
+// D now", beside no grid - the same words as DIVIDE_FAMILY_SURFACE version 2.
+// Nothing is compared against a count, before or after; which rule makes which
+// lines is NEEDS-CHECKING BV21's to settle by eye.
+//
 // UNITS (D-71): the modeller's lengths are MILLIMETRES, turned into Revit's
 // feet once, at the write (/ 304.8), and back once, at the read. Angles are
 // DEGREES, turned into radians once. The bounds are for a number typed in the
@@ -761,9 +770,12 @@ if (refused.Length == 0)
             count(askRotationDegrees[d].HasValue, rotationChanged);
             count(askOffsetMm[d].HasValue, offsetChanged);
         }
-        rows.Add(letter + " grid: " + string.Join(", ", parts) + "; " + linesBefore[d] + " gridline(s) before, "
-            + linesNow[d] + " now");
+        rows.Add(letter + " grid: " + string.Join(", ", parts));
     }
+    // REVIT'S GRIDLINE COUNTS UNDER ITS OWN NAMES, beside no grid (version 2,
+    // row 5b-1908): which rule makes which lines is BV21's to settle.
+    rows.Add("Revit counts: U-gridlines " + linesBefore[0] + " before, " + linesNow[0] + " now; V-gridlines "
+        + linesBefore[1] + " before, " + linesNow[1] + " now");
 
     // THE SURFACE'S OWN SETTINGS.
     var allRotationNow = surface.AllGridRotation;
@@ -854,8 +866,10 @@ if (refused.Length == 0)
     if (moved.Count > 0)
         findings.Add("Revit moved what was NOT asked: " + string.Join("; ", moved) + ". It was not written by this "
             + "call - look at the surface before keeping the change.");
-    findings.Add("Gridline counts are what Revit made: whether a Number counts the divisions or the lines between "
-        + "them is NEEDS-CHECKING BV21, and whether a level's cut is counted among them is JL's.");
+    findings.Add("Gridline counts are what Revit made, given under Revit's own names and not beside a grid: on a "
+        + "test mass the U-gridline count moved with the V rule and the V-gridline count with the U rule. Which rule "
+        + "makes which lines, and whether a Number counts the divisions or the lines between them, is NEEDS-CHECKING "
+        + "BV21; whether a level's cut is counted among them is JL's.");
 }
 
 if (refused.Length > 0) findings.Add(refused);

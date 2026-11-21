@@ -25,6 +25,16 @@
 
 positive:
   - given: >
+      VERSION 2 (row 5b-1908, NEEDS-CHECKING PB3). The arrangement above;
+      surfaceLayout "u number=20; v layout=number; v number=4"
+    expect: >
+      readBack's "U grid: ..." and "V grid: ..." rows end at each grid's own
+      parts, with no gridline count in them; a row of its own reads "Revit
+      counts: U-gridlines A before, B now; V-gridlines C before, D now", A to
+      D what Revit reports; a finding names NEEDS-CHECKING BV21. Nothing is
+      refused or rolled back over a count
+
+  - given: >
       THE JOB FILE'S CASE, and the try-once run. The arrangement above;
       dividedSurface left out; surfaceLayout "u layout=distance; u
       distance=1500; u offset=750; v layout=number; v number=8; all
@@ -39,8 +49,10 @@ positive:
       was none)", the V justification, rotation and offset as they were, and
       "surface: all grid rotation 45 degrees (asked, was 0 degrees), border
       tiles Empty, component flip yes (asked, was no)", "cut by level Level 2,
-      level Level 3 (asked: 2 added)". RECORD each grid's gridline counts,
-      before and now, and whether the two level cuts are counted in either.
+      level Level 3 (asked: 2 added)". RECORD Revit's gridline counts from
+      readBack's own row - "Revit counts: U-gridlines A before, B now;
+      V-gridlines C before, D now", beside no grid since version 2 - and
+      whether the two level cuts are counted in either.
       LOOKED AT in the Family Editor: the grid runs at 45 degrees - diamonds;
       the cells along the border are empty; lines run across the face at
       3000 and 6000 mm; the surface's Properties read the same as readBack.

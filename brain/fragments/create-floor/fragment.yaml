@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -157,38 +157,47 @@ contract:
 # SELECT_BY_NUMERIC_PARAMETER - a circle, not the 77.25 m2 20-sided polygon.
 # Version 1's proof (2026-09-10) described the code before arcs (row 5b-1216).
 proof:
-  date: '2026-11-02'
+  date: '2026-11-21'
   by: Ajmal PS
-  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
-  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, arcs
-    0, asCeiling false, asFloor FloorType, asRoof (null), ceilingCategory Category, ceilingClass
-    RuntimeType, ceilingCreate (null), corners 4 item(s) [(0.000000000, -196.850393701, 0.000000000),
-    (16.404199475, -196.850393701, 0.000000000), (16.404199475, -180.446194226, 0.000000000),
-    ...], created 1 item(s) [id 1020212], creation Document, edges 0, findings 1 item(s) [Floor
-    created on ''Level 1'' using the pre-2022 call. It is a ...], heightAboveLevel NaN, heightAsked
-    false, heightFeet 0, invariant CultureInfo, kindWord floor, measuredMm , mm Func`2, newStyle
-    (null), numbers Func`2, oldStyle RuntimeMethodInfo, pointOf Func`3, problem (null), shortest
-    0.00256026455729167, through 4 item(s) [(null), (null), (null), ...], typeShown Floor:
-    STB 20.0. inputs came level as given; floorType as given; boundary as given; heightAboveLevel
-    not given - "NaN", the card''s own default (optional). on P1102 MEP'
-  negative_case: 'run with boundary=0,-60000,0; 5000,-60000,0, floorType=Floor: STB 20.0,
-    level=Level 1 instead - chosen because it should not contain what this fragment reports
-    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned MillimetresPerFoot 304.8, arcs 0, asCeiling false, asFloor FloorType, asRoof
-    (null), ceilingCategory Category, ceilingClass RuntimeType, ceilingCreate (null), corners
-    2 item(s) [(0.000000000, -196.850393701, 0.000000000), (16.404199475, -196.850393701,
-    0.000000000)], created (null), creation Document, edges 0, findings 1 item(s) [A floor
-    needs at least three boundary points and 2 were give...], heightAboveLevel NaN, heightAsked
-    false, heightFeet 0, invariant CultureInfo, kindWord floor, measuredMm , mm Func`2, newStyle
-    (null), numbers Func`2, oldStyle RuntimeMethodInfo, pointOf Func`3, problem (null), shortest
-    0.00256026455729167, through 2 item(s) [(null), (null)], typeShown Floor: STB 20.0. inputs
-    came level as given; floorType as given; boundary as given; heightAboveLevel not given
-    - "NaN", the card''s own default (optional). on P1102 MEP'
+  model: roofjoin-oy (3,273 elements), Revit 2024, session 35160
+  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-11-21; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned MillimetresPerFoot 304.8, arcs 0, asCeiling false, asFloor
+    (null), asRoof RoofType, ceilingCategory Category, ceilingClass RuntimeType, ceilingCreate
+    RuntimeMethodInfo, corners 4 item(s) [(0.000000000, 0.000000000, 0.000000000), (39.370078740,
+    0.000000000, 0.000000000), (39.370078740, 26.246719160, 0.000000000), ...], created 1
+    item(s) [id 352517], creation Document, edges 4, findings 2 item(s) [Roof created on ''Level
+    2'' with 4 edge(s). It is FLAT - no sl..., Measured back from Revit - see measuredMm],
+    heightAboveLevel NaN, heightAsked false, heightFeet 0, invariant CultureInfo, isFoundationSlab
+    false, kindWord roof, measuredMm 12000 x 8000 mm on plan, base at 3000 mm, level ''Level
+    2'' sits at 3000 mm, mm Func`2, newStyle RuntimeMethodInfo, numbers Func`2, oldStyle (null),
+    pointOf Func`3, problem (null), shortest 0.00256026455729167, through 4 item(s) [(null),
+    (null), (null), ...], typeShown Basic Roof: Generic - 400mm. inputs came level as given;
+    floorType as given; boundary as given; heightAboveLevel not given - "NaN", the card''s
+    own default (optional). on roofjoin-oy'
+  negative_case: 'run with level=Level 2, floorType=150mm Foundation Slab, boundary=0,0,0;
+    12000,0,0; 12000,8000,0; 0,8000,0 instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, arcs 0, asCeiling false, asFloor
+    FloorType, asRoof (null), ceilingCategory Category, ceilingClass RuntimeType, ceilingCreate
+    RuntimeMethodInfo, corners 4 item(s) [(0.000000000, 0.000000000, 0.000000000), (39.370078740,
+    0.000000000, 0.000000000), (39.370078740, 26.246719160, 0.000000000), ...], created (null),
+    creation Document, edges 0, findings 1 item(s) [''Foundation Slab: 150mm Foundation Slab''
+    is a Foundation Sla...], heightAboveLevel NaN, heightAsked false, heightFeet 0, invariant
+    CultureInfo, isFoundationSlab true, kindWord floor, measuredMm , mm Func`2, newStyle RuntimeMethodInfo,
+    numbers Func`2, oldStyle (null), pointOf Func`3, problem (null), shortest 0.00256026455729167,
+    through 4 item(s) [(null), (null), (null), ...], typeShown Foundation Slab: 150mm Foundation
+    Slab. inputs came level as given; floorType as given; boundary as given; heightAboveLevel
+    not given - "NaN", the card''s own default (optional). on roofjoin-oy'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: db997d34c6317f6a
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: f85f7efbcfd21434
+  fingerprint: 56b341c7fef6ce01
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -322,3 +331,10 @@ utterances:
   # CREATE_FOUNDATION_SLAB once that card came, on 2024 and 2020. Declared so
   # it reaches here by identity. Outside impl/, so the proof is not stale.
   - make the slab
+  # ADDED 2026-11-21, row 5b-1939 (issue #1159). The owner's own sentence on
+  # his PC reached CREATE_EXTRUSION_ROOF, the other kind of roof; a roof by
+  # footprint is this card with a roof type, left flat, and SLOPE_ROOF_EDGES
+  # slopes its edges after. Declared at the END, so the eight sentences the
+  # re-ranker reads (D-134) are unchanged.
+  - make a roof by footprint on Level 2 from 0,0 to 12000,8000 with the two long sides sloping at 30 degrees
+  - make a roof by footprint on this level

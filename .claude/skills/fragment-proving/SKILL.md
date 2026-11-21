@@ -291,7 +291,7 @@ Until IW1 passes, check in the morning that the log shows the warning closed whe
 | `POSITIVE UNREADABLE` | nothing it returned is a quantity | read the fragment's own source. Its results may need a `role:`; a sentence result needs `type: string` and `role: result` |
 | `NEG NOT EMPTY` | the negative returned content | a **finding**. The fragment may be falling back to something it was not given |
 | `NO NEGATIVE` | the second leg never ran | usually `needs_unbound` — the negative selection was empty. **Rule 3** |
-| `DID NOT RUN` | the positive never ran | read the message. Often a caller value the contract asks for |
+| `DID NOT RUN` | the positive never ran | read the message - it is `validate`'s refusal, never the note about an undeclared value printed above it (row 5b-1942). Often a caller value the contract asks for; *"in use by another chat"* is the lease - wait it out, or run `--unattended` |
 | `TIMEOUT` | Revit did not answer in time | **rule 1.** Retry on a smaller selection. It says nothing about the fragment |
 | `REFUSED` / `NO FRAGMENT` | the job file cannot be run as written - or, since row 5b-1403, the card's own `revit:` list leaves out the Revit that is connected | fix the file, or connect a release the card lists. No fragment was sent to Revit - for the release, Revit was pinged (above) |
 
