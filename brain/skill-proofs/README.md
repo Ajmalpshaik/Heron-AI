@@ -19,7 +19,7 @@ the cards ([FRAGMENT-ISSUES row 141](../../docs/fragment-issues/section-5-rows-1
    plan twice through `heron_bridge_client.py plan` - a positive leg where the answer is something and a
    negative where it must be nothing (D-30) - every change rolled back, and writes a draft to
    `brain/proof-drafts/skill-<skill>.yaml` (gitignored, with the two run records under `runs/`).
-2. A person reads the draft and signs it: `python brain/heron_skill_proof.py accept <skill> --by "Name"`.
+2. A person reads the draft and signs it: `python brain/heron_plan_proof.py accept <skill> --by "Name"`.
    Only a PASS is signed, and only while the skill and every step's fragment are as they were when it ran
    (the fingerprint).
 

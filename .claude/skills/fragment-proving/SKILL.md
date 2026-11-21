@@ -460,7 +460,7 @@ cannot do it - it refuses a PROVEN fragment, which most steps are. Use the skill
 ```bash
 python tools/run-skill.py tools/jobs/skills/count-elements-plan.yaml --dry-run   # refuses FILL IN; sends nothing
 python tools/run-skill.py tools/jobs/skills/count-elements-plan.yaml             # both legs, then a draft
-python brain/heron_skill_proof.py accept count-elements --by "Ajmal PS"          # a PERSON signs a PASS
+python brain/heron_plan_proof.py accept count-elements --by "Ajmal PS"          # a PERSON signs a PASS
 ```
 
 - **A plan job is not a batch-prove job.** `steps:` in the plan's order, each with `values` and, for the

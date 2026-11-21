@@ -564,7 +564,7 @@ def job_file(plan, by_slug, chain_supply, threshold_ordinal,
                 "composition runs through tools/run-skill.py, from a skill plan "
                 "job (tools/jobs/skills/count-elements-plan.yaml is one) - every "
                 "step in order on one chain, changes rolled back, a positive and "
-                "a negative leg, judged by brain/heron_skill_proof.py into a "
+                "a negative leg, judged by brain/heron_plan_proof.py into a "
                 "draft a person signs. FRAGMENT-ISSUES row 141.", 78, "# "):
             add(line)
         add("#")

@@ -3097,7 +3097,7 @@ def cmd_plan(plan_path, out=None, session=None):
     runs ONE fragment. A skill is a composition, so this runs every step of it
     in the order the plan gives, reads through `run_fragment_read` and changes
     through `run_fragment_write`, and writes the whole run down for
-    `brain/heron_skill_proof.py` to judge - the same seam `validate` keeps with
+    `brain/heron_plan_proof.py` to judge - the same seam `validate` keeps with
     `brain/heron_validate.py`. It draws no conclusion and signs nothing.
 
     `plan_path` is a JSON file `tools/run-skill.py` writes, one per leg:

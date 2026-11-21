@@ -38,7 +38,7 @@
 # tools/run-skill.py, from a skill plan job
 # (tools/jobs/skills/count-elements-plan.yaml is one) - every step in order on
 # one chain, changes rolled back, a positive and a negative leg, judged by
-# brain/heron_skill_proof.py into a draft a person signs. FRAGMENT-ISSUES row
+# brain/heron_plan_proof.py into a draft a person signs. FRAGMENT-ISSUES row
 # 141.
 #
 #     python mcp/client/heron_bridge_client.py prove \

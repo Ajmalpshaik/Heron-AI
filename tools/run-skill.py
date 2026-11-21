@@ -25,9 +25,9 @@ composition, so this runs the plan WHOLE - chain, write and judgement:
   1. `heron_bridge_client.py plan` runs every step in order on one lease and
      one chain, the positive leg and then the negative, each into a run
      record. A change is rolled back, always: a plan run keeps nothing.
-  2. `brain/heron_skill_proof.py` judges the two records and writes a draft.
+  2. `brain/heron_plan_proof.py` judges the two records and writes a draft.
   3. A person reads the draft and signs it with
-     `python brain/heron_skill_proof.py accept <skill> --by "Name"`.
+     `python brain/heron_plan_proof.py accept <skill> --by "Name"`.
      Nothing here signs, and nothing here writes a skill's status.
 
 THE JOB FILE
@@ -69,7 +69,7 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 import yaml                                                    # noqa: E402
 
 import heron_skill as SKILL                                    # noqa: E402
-import heron_skill_proof as PROOF                              # noqa: E402
+import heron_plan_proof as PROOF                              # noqa: E402
 import heron_validate as HV                                    # noqa: E402
 
 try:
@@ -243,7 +243,7 @@ def main(argv=None, runner=subprocess.call):
         print("  gap: %s" % gap)
     print("draft: %s" % path)
     print("Nothing was signed. Read the draft; then a person signs it:")
-    print('  python brain/heron_skill_proof.py accept %s --by "Your Name"' % skill.id)
+    print('  python brain/heron_plan_proof.py accept %s --by "Your Name"' % skill.id)
     return 0 if body["verdict"] == PROOF.PASS else 1
 
 

@@ -10,9 +10,9 @@
 A SKILL's composition proof - judged from two plan runs, drafted, and signed
 only by a person. FRAGMENT-ISSUES row 141.
 
-    python brain/heron_skill_proof.py draft <skill> --positive <rec> --negative <rec>
-    python brain/heron_skill_proof.py review <skill>
-    python brain/heron_skill_proof.py accept <skill> --by "Your Name"
+    python brain/heron_plan_proof.py draft <skill> --positive <rec> --negative <rec>
+    python brain/heron_plan_proof.py review <skill>
+    python brain/heron_plan_proof.py accept <skill> --by "Your Name"
 
 WHY A SKILL NEEDS A PROOF OF ITS OWN
 ------------------------------------

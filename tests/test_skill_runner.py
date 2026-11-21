@@ -21,7 +21,7 @@ WHAT THIS HOLDS, WITHOUT REVIT
      step refuses the plan before Revit is asked anything; a failed step
      stops the plan and the rest are recorded notRun; the run record is
      written where `--out` says.
-  2. THE JUDGE (`brain/heron_skill_proof.py`) - PASS on the count-elements
+  2. THE JUDGE (`brain/heron_plan_proof.py`) - PASS on the count-elements
      plan as it ran on 2026-09-19 (8 ducts, then a level with none), and each
      refusal on the record that earns it: a step the skill does not declare,
      a positive step that failed, a step that expected its producer and bound
@@ -70,9 +70,9 @@ import heron_validate as HV                                   # noqa: E402
 
 PROOF = None
 try:
-    import heron_skill_proof as PROOF                         # noqa: E402
+    import heron_plan_proof as PROOF                         # noqa: E402
 except ImportError as exc:
-    print("brain/heron_skill_proof.py cannot be imported: %s" % exc)
+    print("brain/heron_plan_proof.py cannot be imported: %s" % exc)
 
 _spec = importlib.util.spec_from_file_location(
     "run_skill", os.path.join(ROOT, "tools", "run-skill.py"))
@@ -236,7 +236,7 @@ def neg_steps(count="0", ok=True):
 def section_2(skill, library):
     print("2. the judge")
     if PROOF is None:
-        check(False, "brain/heron_skill_proof.py exists to judge a plan")
+        check(False, "brain/heron_plan_proof.py exists to judge a plan")
         return
     verdict, why, gaps, _ = PROOF.judge(skill, record(pos_steps()),
                                         record(neg_steps(), "negative"), library)
@@ -285,7 +285,7 @@ def section_2(skill, library):
 def section_3(skill, library):
     print("3. accept - a person signs, and only a PASS")
     if PROOF is None:
-        check(False, "brain/heron_skill_proof.py exists to sign a proof")
+        check(False, "brain/heron_plan_proof.py exists to sign a proof")
         return
     work = tempfile.mkdtemp(prefix="heron-skill-proofs-")
     saved = (PROOF.DRAFTS_DIR, PROOF.RUNS_DIR, PROOF.PROOFS_DIR)
