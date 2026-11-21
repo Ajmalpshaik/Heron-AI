@@ -1,0 +1,67 @@
+# NEEDS-CHECKING Group OU - CREATE_FROM_ROOM_BOUNDARIES version 3 (DRAFT), row
+# OU16 - HELD behind Group HX: the card is signed only on a positive that
+# MAKES WALL FINISHES (row 5b-1643), so this is HX1 and HX2, Group HX's job
+# (tools/jobs/create-from-room-boundaries-wall-finish-2026-10-19.yaml) for
+# version 3. Version 3 changed floors with holes before Revit 2022 (WN-1,
+# issue #1005); the wall-finish path is version 2's. Built 2026-11-21 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ou-heron-wall-finish-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ou-heron-wall-finish-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL is "Heron Wall Finish", Revit 2020 - a scratch project from the
+# default metric template, SAVED, with HX0's rig built and kept first (Group
+# HX, every coordinate there): room A, 6000 x 4000 at the origin in four
+# Generic - 200mm walls 3000 high, a door M_Single-Flush: 0915 x 2134mm in the
+# south wall at x = 1500 and a window M_Fixed: 0915 x 1220mm in the north wall
+# at x = 3000; room B at x = 10000, north and east edges curtain walls, south
+# and west room separation lines; the type "Finish - Plaster 15mm" (one 15 mm
+# layer). Never a working model.
+#
+# THE ARRANGEMENT is HX's: select-in-region with Rooms only - room A's box on
+# the positive, room B's on the negative, one room each (binding note
+# "elements from the selection (1)", rule 5). The negative is a DIFFERENT
+# selection: a room whose every edge is glass or a line on the floor.
+# negative-set REPLACES set, so it carries every value.
+#
+# KNOWN BEFORE IT RUNS - a contract question, recorded, not fixed here:
+# `finishSummary` is declared `role: result`, and HX2 expects it FILLED on the
+# negative ("<B's number> <name>: 0 finish walls, 4 edges not lined"). The
+# runner judges the negative on every declared result, so a negative that does
+# exactly what HX2 asks reads NEG NOT EMPTY on finishSummary alone. Read it:
+# finishWalls 0 and skippedEdges 4 is HX2 passing.
+#
+# Every run is ROLLED BACK. ONE job - a run record is kept per card. HX3 (the
+# kept run, try-once, the owner's Keep) and OU16's floor rows (2020 shaft room,
+# 2024 shaft room and round column) are by hand.
+model: "Heron Wall Finish - a scratch project from Revit 2020's default metric template with Group HX's HX0 rig built and saved, Revit 2020"
+defaults:
+  in: "Heron Wall Finish"
+  write: true
+  setup: [select-in-region, set-selection]
+jobs:
+  - fragment: create-from-room-boundaries
+    expect: finishWalls
+    set:
+      minMm: "-1000,-1000,-1000"
+      maxMm: "7000,5000,4000"
+      exact: "false"
+      categories: Rooms
+      hostType: "Basic Wall: Finish - Plaster 15mm"
+      heightAboveLevel: 2400
+    negative-set:
+      minMm: "9000,-1000,-1000"
+      maxMm: "17000,5000,4000"
+      exact: "false"
+      categories: Rooms
+      hostType: "Basic Wall: Finish - Plaster 15mm"
+      heightAboveLevel: 2400
+    note: >
+      HX1 then HX2. Positive (room A): finishWalls 9 - south: left of the
+      door, a strip over its head, right of it; north: left of the window,
+      under its sill, over its head, right of it; one each east and west;
+      finishSummary "<A's number> <name>: 9 finish walls, a gap at 1 door or
+      opening to the floor, built round 1 window or opening"; skippedEdges 0.
+      Negative (room B): finishWalls 0, skippedEdges 4, skippedSummary "a
+      curtain wall: 2; a room separation line: 2". FAIL: any finish on glass
+      or on a line on the floor. Then HX3 by hand.
