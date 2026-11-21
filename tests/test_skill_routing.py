@@ -117,12 +117,12 @@ def skill_file(folder, sid, risk, said):
             newline="\n").write(body)
 
 
-def fragment_file(folder, fid, capability, risk, said):
+def fragment_file(folder, fid, capability, risk, said, status=None):
     os.makedirs(os.path.join(folder, fid))
     io.open(os.path.join(folder, fid, "fragment.yaml"), "w", encoding="utf-8",
             newline="\n").write(
-        "id: %s\ncapability: %s\nrisk: %s\nutterances:\n%s\n"
-        % (fid, capability, risk,
+        "%sid: %s\ncapability: %s\nrisk: %s\nutterances:\n%s\n"
+        % ("heron-status: %s\n" % status if status else "", fid, capability, risk,
            "\n".join("  - '%s'" % one for one in said)))
 
 
@@ -239,6 +239,14 @@ def main():
                       ["how many pipes"])
         fragment_file(fragments, "grey-out", "SET_HALFTONE", "MODIFY",
                       ["grey out the ducts"])
+        # A RETIRED CARD THAT STILL DECLARES A SENTENCE (2026-11-21, the review
+        # of that day's merges): CREATE_SHEETS_FROM_TABLE, merged into
+        # CREATE_SHEETS and DEPRECATED, kept its words as its record, and the
+        # report named it as the IDENTITY answer to sheets-from-excel's own
+        # sentences - an OUT, "a guaranteed disagreement" - though retrieval
+        # never offers a retired card (heron_retrieve.OFFERABLE).
+        fragment_file(fragments, "old-count", "OLD_COUNT", "READ",
+                      ["how many pipes"], status="DEPRECATED")
         was_root = tool.ROOT
         try:
             tool.ROOT = home
@@ -260,6 +268,9 @@ def main():
         check(("mep-grayout", "grey out the ducts", False) in declared,
               "and one answered outside the plan is an OUT - a guaranteed "
               "disagreement, not a probable one")
+        check(not [c for _s, _sr, _p, _f, c, _fr, _ok in identity if c == "OLD_COUNT"],
+              "a DEPRECATED card's declared sentence is not an identity answer - "
+              "retrieval never offers it: %r" % (identity,))
         check([p for _s, _r, p in ranked] == ["count pipes"],
               "a phrase no fragment declares goes to RANKING, and it listed "
               "%r" % ([p for _s, _r, p in ranked],))

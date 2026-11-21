@@ -1630,7 +1630,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ow.md`](needs-checking/group-ow.md)
 
-## Group OX - a job that works only outside the model opens no transaction group in it (D-192): a new family from a chat, and an export of families - BUILT, NOT RUN IN REVIT (2026-11-20)
+## Group OX - a job that works only outside the model opens no transaction group in it (D-192): a new family from a chat, and an export of families - BUILT 2026-11-20; OX1 and OX2's positive RUN ON REVIT 2024 2026-11-21, OX2's negative and OX3 to OX5 owed
 
 **Its own file:** [`needs-checking/group-ox.md`](needs-checking/group-ox.md)
 
