@@ -217,8 +217,9 @@ negative:
   # VERSION 5 (2026-11-21, row 5b-1921, NEEDS-CHECKING PB6). FAILS on version
   # 4, which tested loops against each other only and sent this one to Revit.
   - given: >
-      a figure-of-eight, one loop whose corners cross: kind=extrusion
-      workPlane=Ref. Level profile=0,0; 400,400; 400,0; 0,400 startMm=0
+      a figure-of-eight with area (a symmetric one has none, and the older
+      area check refuses it first), one loop whose corners cross: kind=extrusion
+      workPlane=Ref. Level profile=0,0; 400,400; 400,0; 0,200 startMm=0
       endMm=100 solid=true
     expect: >
       refused before anything is made: the row, "the profile crosses or

@@ -12,8 +12,8 @@
 // leaves the script; no output was renamed or dropped. `twoDList` had no
 // bound: it now holds the first `formsDescribed` (60) 2D lines, and past that
 // ONE line says how many more, their ids (the first 240) and how to read them
-// - `formList`'s rule. `twoDCount` and `elements` still count and hand on
-// every 2D element read.
+// - `formList`'s rule. `twoDCount` still counts every 2D element read, and
+// `elements` still hands on every one a 2D kind or an id named (version 5's rule).
 //
 // VERSION 6 (2026-11-20, issue #1051 item A1) - ONE COPY OF THE LIST, AND A
 // BOUND ON IT. Version 5 kept each form's line in a list beside `formList`,
