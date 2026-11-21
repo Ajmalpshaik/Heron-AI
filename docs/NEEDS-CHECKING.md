@@ -1646,6 +1646,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pa.md`](needs-checking/group-pa.md)
 
+## Group PB - four family-editor tools repaired from issue #1111: divided-surface counts under Revit's own names, a loop that crosses itself, and lists no longer printed twice - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pb.md`](needs-checking/group-pb.md)
+
 ## Group PD - row 106: is a clearance check slow on a real MEP model? One timed run before any fix is written (2026-11-21)
 
 **Its own file:** [`needs-checking/group-pd.md`](needs-checking/group-pd.md)

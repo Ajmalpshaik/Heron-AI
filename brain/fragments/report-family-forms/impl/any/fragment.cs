@@ -2,6 +2,19 @@
 // `formList`, `combinationList`, `scanned`, `notAFamily`, `elements`,
 // `twoDCount`, `twoDList`, `refused` and `findings` behind.
 //
+// VERSION 7 (2026-11-21, row 5b-1911, issue #1111) - NOTHING TYPED IS ECHOED,
+// AND A BOUND ON `twoDList`. The add-in sends every list of text a fragment
+// leaves at its top level whole beside the answer, and version 6 still left
+// four: `parts` and `ids` printed every id typed in `which` twice more (a
+// 60-id call added about 120 echoed lines), `words` the kinds typed, and
+// `problems` repeated `refused` - which `findings` carries too. Everything
+// after the outputs is now read inside ONE block, so none of those lists
+// leaves the script; no output was renamed or dropped. `twoDList` had no
+// bound: it now holds the first `formsDescribed` (60) 2D lines, and past that
+// ONE line says how many more, their ids (the first 240) and how to read them
+// - `formList`'s rule. `twoDCount` still counts every 2D element read, and
+// `elements` still hands on every one a 2D kind or an id named (version 5's rule).
+//
 // VERSION 6 (2026-11-20, issue #1051 item A1) - ONE COPY OF THE LIST, AND A
 // BOUND ON IT. Version 5 kept each form's line in a list beside `formList`,
 // and the add-in sends such a list whole, so every line came twice: 98 forms
@@ -114,6 +127,11 @@ Func<GenericForm, string> planeOf = f =>
     return plane == null ? "(no sketch plane)" : "on " + plane.Name;
 };
 
+// VERSION 7 (row 5b-1911): EVERYTHING BELOW IS ONE BLOCK, closed at the end of
+// the file, so the lists it keeps - `parts`, `ids`, `words`, `problems` and the
+// rest - stay inside the read and are not sent whole beside the answer. Only
+// the outputs above leave the script. (Not re-indented, so the change reads.)
+{
 var known = new[] { "solid", "void", "extrusion", "revolve", "revolution", "blend", "sweep", "sweptblend",
                     "freeform" };
 // LEFT OUT, `which` is the card's "not named": every form read, none handed
@@ -351,6 +369,7 @@ else
     // ids were named (then only those). A call naming only form words reads
     // none, so it answers as version 4 did.
     var rows2D = new List<string>();
+    var rowIds2D = new List<string>();
     var scanned2D = 0;
     var locks2D = 0;
     var dimensionsUnread = 0;
@@ -591,10 +610,26 @@ else
             locks2D += holds.Count(h => h.StartsWith("locked") || h.StartsWith("labelled") || h.StartsWith("EQ"));
             bits.Add(holds.Count == 0 ? "nothing holds it" : string.Join("; ", holds));
             rows2D.Add(string.Join(", ", bits));
+            rowIds2D.Add(e.UniqueId);
         }
     }
     twoDCount = rows2D.Count;
-    twoDList = string.Join("  ||  ", rows2D);
+    // VERSION 7 (row 5b-1911): the first `formsDescribed` 2D lines, then ONE
+    // line for the rest - `formList`'s rule, so a family of thousands of lines
+    // still answers in a size the chat shows.
+    var listed2D = rows2D.Take(formsDescribed).ToList();
+    if (twoDCount > formsDescribed)
+    {
+        var rest2D = rowIds2D.Skip(formsDescribed).ToList();
+        listed2D.Add("and " + rest2D.Count + " more 2D element(s), not described here so that this answer stays "
+            + "short enough to be shown - their ids"
+            + (rest2D.Count > idsNamedBeyond ? ", the first " + idsNamedBeyond + " of them" : "") + ": "
+            + string.Join(", ", rest2D.Take(idsNamedBeyond))
+            + (rest2D.Count > idsNamedBeyond ? " (and " + (rest2D.Count - idsNamedBeyond) + " more, not named here)" : "")
+            + ". Read them by naming those ids, up to " + formsDescribed + " at a time, or by a 2D kind - \"detail "
+            + "line\", \"filled region\", \"nested\" - to read fewer at once.");
+    }
+    twoDList = string.Join("  ||  ", listed2D);
     if (read2D && edgesUnread > 0)
         findings.Add("Revit did not give the sketch edges of " + edgesUnread + " filled region(s): those regions read "
             + "\"0 sketch edge(s)\", their edges may be listed as loose lines, and locks on them are not read.");
@@ -649,3 +684,4 @@ else
         : elements.Count + (read2D ? " form(s) and 2D element(s)" : " form(s)") + " handed on as elements - "
           + "SET_SELECTION highlights them; DELETE_ELEMENTS deletes them once the modeller has said yes.");
 }
+}   // VERSION 7 (row 5b-1911): the end of the one block opened after the outputs.
