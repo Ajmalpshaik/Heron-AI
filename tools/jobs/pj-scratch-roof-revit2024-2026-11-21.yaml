@@ -1,0 +1,86 @@
+# NEEDS-CHECKING Group PJ - COPY_ELEMENTS version 6 (DRAFT, `proof-held`): a
+# copy by an offset asked with the offset alone, toLevels, turnDegrees and
+# turnCentreMm left out (row 5b-1949, issue #1175; the group is issue #1201).
+# Built 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/pj-scratch-roof-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/pj-scratch-roof-revit2024-2026-11-21.yaml
+#
+# THE MODEL (docs/needs-checking/group-pj.md): a NEW scratch project from
+# Revit's default template, on Revit 2024 (where the fault was seen), with
+# ONE basic roof by footprint on Level 1 about 8 m deep - roofjoin-oy's
+# arrangement - saved under %TEMP%\heron-work\pj, never a working model. NO
+# NAME FOR IT IS RECORDED, so `in:` is left out: put that project in front,
+# or add `in: "<its title>"` under `defaults:` once it is saved and named. Not
+# `roofjoin-oy` itself: it holds four roofs, so the selection below would be
+# four, not one (fragment-proving, rule 1).
+#
+# THE SELECTION. filter-elements-by-category with category Roofs over the
+# whole model, then set-selection - in a project holding ONE roof that is the
+# roof, and the binding note must read `elements from the selection (1)`
+# (rule 5). Any other count: stop, the model is not the group's.
+#
+# WHICH RUN IS KEPT - THE GROUP SAYS IT, AND IT IS NOT THIS FILE. Every batch
+# run is ROLLED BACK. PJ1 is KEPT ONCE, ON REVIT 2024 ONLY, through
+# `try-once` (D-119: a version is kept once) - the owner's step, with the
+# roof selected by hand in Revit, AFTER this batch and the PJ2/PJ4 line
+# below, because once the copy is kept the project holds two roofs and the
+# Roofs selection here would be two:
+#
+#   python mcp/client/heron_bridge_client.py try-once copy-elements --set offset=0,30000,0
+#
+# then press Keep, and read REPORT_BOUNDING_BOX (report-bounding-box) on the
+# original and the copy: the copy's box 30000 mm further along y, the same in
+# x and z. On Revit 2020, the group's second release, PJ1 is rolled back -
+# this same file. The card's standing proof is already a Revit 2020 one
+# (P1102 MEP, impl/ unchanged), so once the hold is released `--release 2020`
+# reports ALREADY; the 2020 run is then the group's rolled-back check alone.
+#
+# THE ARRANGEMENT. One job, PJ1 against PJ3 - a run record and a proof draft
+# are kept per card, so a second job here would replace the first. The
+# positive is the call refused on 2026-11-21 (PJ1): the offset and NO OTHER
+# copy value - the three are left out of `set:` on purpose, which is the whole
+# of version 6. The negative is a DIFFERENT VALUE on the same roof (rule 3):
+# a turn with toLevels left out (PJ3), which must still be refused - leaving
+# toLevels out reads as blank, never as a level. `negative-set:` replaces
+# `set:`, so it carries the selection's category and the offset again.
+#
+# PJ2 AND PJ4 - the same copy typed blank, against the proof's own negative
+# (toLevels "Level 99") - are their own `validate` line with their own record,
+# rolled back. One line in PowerShell:
+#
+#   python mcp/client/heron_bridge_client.py validate --out brain/proof-drafts/runs/copy-elements-pj2.json --write
+#     --setup filter-elements-by-category --setup set-selection
+#     --set category=Roofs --set offset=0,30000,0 --set toLevels= --set turnDegrees= --set turnCentreMm=
+#     --negative-set category=Roofs --negative-set offset=0,0,0 --negative-set "toLevels=Level 99"
+#     copy-elements
+#
+# PJ2 passes when it gives PJ1's answer - one copy, `copiedTo` empty - with
+# the inputs line reading "given empty" for the three. PJ4: refused naming
+# "Level 99" and the project's levels, lowest first, "Nothing was copied."
+model: "a new scratch project from Revit's default template with one basic roof by footprint on Level 1, saved under %TEMP%\\heron-work\\pj, Revit 2024 - its name not recorded"
+
+defaults:
+  write: true
+  setup: [filter-elements-by-category, set-selection]
+
+jobs:
+  - fragment: copy-elements
+    expect: copies
+    set:
+      category: "Roofs"
+      offset: "0,30000,0"
+    negative-set:
+      category: "Roofs"
+      offset: "0,30000,0"
+      turnDegrees: "15"
+    note: >
+      PJ1 then PJ3. Negative FIRST (PJ3): refused "A turn is applied only when
+      copying onto levels - name them in toLevels ...", ending "Nothing was
+      copied."; `copies` 0 items; the roof count unchanged. Positive (PJ1):
+      NOT refused - one copy, `copies` 1 id, `notCopied` 0, `copiedTo` empty;
+      the inputs line reads toLevels not given - "", the card's own default
+      (optional), and the same for turnDegrees and turnCentreMm. A refusal
+      `needs_request_values` naming the three is version 5 and FAILS. Both
+      phases: `elements from the selection (1)`. Rolled back - PJ1's kept run
+      is try-once, above.

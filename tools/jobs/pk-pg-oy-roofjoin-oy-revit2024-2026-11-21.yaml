@@ -1,0 +1,116 @@
+# NEEDS-CHECKING Groups PG and PK - REPORT_ROOF_SLOPES version 2 (PG1, PG2,
+# PK4) - and Group OY's version 2 rows - EXTEND_ROOF_TO_ROOF version 2 on a
+# roof by footprint (OY6, OY7). Written 2026-11-21 in a cloud session with no
+# Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/pk-pg-oy-roofjoin-oy-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/pk-pg-oy-roofjoin-oy-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE MODEL, Revit 2024: "roofjoin-oy", the scratch project Group OY built on
+# 2026-11-21 and saved as %TEMP%\heron-work\runs-1121\roofjoin-oy.rvt
+# (docs/needs-checking/group-oy.md, the run's read-back boxes): the main roof
+# by footprint (0,0,3000) to (12000,8000,5771) mm; the wing roof by extrusion
+# from (4000,-6000,3038), 4000 x 3000; the far roof x 20000 to 24000, y 0 to
+# 3000; the main roof's copy y 30000 to 38000; the 3D view {3D}, nothing
+# hidden, no section box. Never a working model.
+#
+# WHAT THE OWNER ADDS FIRST, AND SAVES - neither is in the model yet:
+#   - FOR PG1 AND PK4: ONE WALL, anywhere inside x 0 to 24000 and y -6000 to
+#     38000 mm (Level 1 will do). OY1 built no wall, and the roof-slopes
+#     negative is "only a wall selected".
+#   - FOR OY6 AND OY7: WING F - a roof by footprint on Level 2, "Generic -
+#     400mm", the rectangle 4000,11000 to 8000,17000 mm, its east and west
+#     edges Defining Slope at 30 degrees, north and south upright. Write down
+#     each of its four lines' Defines Slope and Slope.
+#   - PG's FLAT ROOF (PG3) and PK4's ROOF BY FACE are hand runs from the
+#     group; wherever they go, keep them OUT of the two boxes below
+#     (x -500 to 12500, y -500 to 17500), or these selections take them in.
+#
+# THE ARRANGEMENT. Every selection is select-in-region then set-selection,
+# Roofs only, a box round the roofs wanted - so read the binding note
+# (fragment-proving, rule 5):
+#   - REPORT_ROOF_SLOPES positive: the main roof ALONE, box (-500,-500,2500)
+#     to (12500,8500,9000) - `elements from the selection (1)`. The wing (y
+#     below -3000), Wing F (y above 11000), the far roof and the copy are
+#     outside it. Negative: a DIFFERENT selection - the walls in a box round
+#     the whole model, (-1000,-7000,-1000) to (25000,39000,10000), Walls only:
+#     the one wall added above, no roof (rule 3, never an empty selection).
+#     A read: nothing changes.
+#   - EXTEND_ROOF_TO_ROOF: Wing F and the main roof, box (-500,-500,2500) to
+#     (12500,17500,9000) - `elements from the selection (2)`; positive
+#     maxExtendMm 10000, negative maxExtendMm 500 - a DIFFERENT value on the
+#     same pair, and the negative-set carries EVERY value (a negative-set
+#     replaces the set, it does not add to it). Every write is ROLLED BACK.
+#
+# THE RUN RECORD IS KEPT PER CARD. tools/jobs/extend-roof-to-roof-oy-2026-11-20.yaml
+# (OY2/OY3, the wing) writes the same brain/proof-drafts/runs/extend-roof-to-roof.json
+# as the job below, and so does the Revit 2020 file
+# tools/jobs/oy-roofjoin-oy-revit2020-2026-11-21.yaml (OY8). Run one, read its
+# draft, then the next - never two back to back without reading.
+#
+# NOT IN THIS FILE, by hand from the groups: PG3 (the wing, the flat roof, a
+# wall with the main roof), PG4 (a slope arrow), PG5 (nothing selected), PK4's
+# roof by face, OY7's second half (Wing F made a hip), OY5.
+
+model: "roofjoin-oy (Group OY's scratch project) with one wall and Wing F added by hand, Revit 2024"
+
+defaults:
+  in: "roofjoin-oy"
+  setup: [select-in-region, set-selection]
+
+jobs:
+  - fragment: report-roof-slopes
+    expect: roofsRead
+    setup-set:
+      minMm: "-500,-500,2500"
+      maxMm: "12500,8500,9000"
+      exact: "false"
+      categories: Roofs
+    negative-setup-set:
+      minMm: "-1000,-7000,-1000"
+      maxMm: "25000,39000,10000"
+      exact: "false"
+      categories: Walls
+    set: {}
+    negative-set: {}
+    note: >
+      PG1 and PK4's negative - THE FIRST CASE TO RUN, the wall alone:
+      roofsRead 0, report empty, skippedRoofs 0 - a wall is not a roof passed
+      over - the first finding exactly version 1's "No roof by footprint or by
+      extrusion is among the elements selected, so no slope was read", and
+      "Walls <id> is not a roof, so it was left out". PG2 and PK4's positive,
+      the main roof - THE UNITS CASE: roofsRead 1, skippedRoofs 0; the two long
+      sides "slopes at 30 degrees (rise 0.577 per 1 of run)" - 30 degrees, NOT
+      0.577 called an angle - the two ends "defines no slope", lengths 12000
+      and 8000 mm; line for line as Edit Footprint shows (write those down
+      first, then Cancel).
+
+  - fragment: extend-roof-to-roof
+    write: true
+    expect: extended
+    set:
+      minMm: "-500,-500,2500"
+      maxMm: "12500,17500,9000"
+      exact: "false"
+      categories: Roofs
+      view3d: "{3D}"
+      maxExtendMm: "10000"
+    negative-set:
+      minMm: "-500,-500,2500"
+      maxMm: "12500,17500,9000"
+      exact: "false"
+      categories: Roofs
+      view3d: "{3D}"
+      maxExtendMm: "500"
+    note: >
+      OY7 then OY6 - version 2, a roof by footprint, Revit 2022 on. Negative -
+      THE FIRST CASE TO RUN, maxExtendMm 500: extended 0, refused "... has to
+      extend <needMm> mm to meet ..., more than the 500 mm allowed. Nothing was
+      changed", Wing F's sketch as it was. Positive, maxExtendMm 10000:
+      extended 1, extendedRoof Wing F's id, report "EXTENDED: roof by footprint
+      ...'s end line <id> moved <needMm> mm out, with the two lines beside it
+      lengthened to meet it ... every footprint line kept its slope". Rolled
+      back, so to SEE it (Edit Footprint, the section through x = 6000) run
+      OY6 by hand on a copy. If Revit refuses the sketch edit or the read-back
+      throws, write Revit's words down word for word - that is the answer row
+      5b-1930 owes.

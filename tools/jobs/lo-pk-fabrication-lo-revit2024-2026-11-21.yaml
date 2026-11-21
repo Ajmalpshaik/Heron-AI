@@ -1,0 +1,57 @@
+# NEEDS-CHECKING Groups LO and PK - REPORT_FABRICATION_SETUP version 2 (LO2,
+# PK6): palette buttons Revit gives back as nothing are counted in
+# skippedButtons. Written 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/lo-pk-fabrication-lo-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/lo-pk-fabrication-lo-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE MODEL, Revit 2024: "fabrication-lo", Group LO's scratch project from
+# Revit's metric Mechanical template, saved under %TEMP%\heron-work (LO1, and
+# tools/jobs/fabrication-setup-and-convert-lo-2026-11-02.yaml, whose first job
+# this replaces for version 2): Systems > Fabrication > MEP Fabrication
+# Settings, one of Autodesk's sample configurations, ONE ductwork and ONE
+# pipework service loaded - write their exact names down. Never a working
+# model.
+#
+# THE ARRANGEMENT. Nothing is selected. The positive asks the configuration
+# and every loaded service's buttons, so no service name has to be known in
+# advance (LO2 finds it): `show` "configuration; buttons". The negative is
+# PK6's own - `show` buttons for a service no service is called,
+# "ZZNOTASERVICE": a DIFFERENT value, never an empty one (fragment-proving,
+# rules 3 and 5). A read: nothing changes.
+#
+# EXPECT NEG NOT EMPTY ON configurationName. The card fills
+# `configurationName` (role: result) on any model with a configuration,
+# whatever `service` names, so the runner and `accept` - which judge the
+# negative on every declared result - will find it filled. If they do: the
+# negative D-30 wants is LO1's SECOND scratch project, the one with NO
+# configuration, as `negative-in:` - its name was not recorded; write it in.
+#
+# NOT IN THIS FILE: PK6's positive with ONE service named (its name comes from
+# this run's `names`), LO2's second project, LO3 to LO6 (the two writes, in
+# the LO job file).
+
+model: "fabrication-lo scratch project (metric Mechanical template), a sample fabrication configuration with one ductwork and one pipework service loaded, Revit 2024"
+
+defaults:
+  in: "fabrication-lo"
+  setup: []
+
+jobs:
+  - fragment: report-fabrication-setup
+    expect: loadedServices
+    set:
+      show: "configuration; buttons"
+    negative-set:
+      show: "buttons"
+      service: "ZZNOTASERVICE"
+    note: >
+      PK6's negative - THE FIRST CASE TO RUN: loadedServices 0, version 1's
+      "No loaded service has a name or abbreviation matching "ZZNOTASERVICE".
+      The loaded services are: ..." naming both, skippedButtons 0 and no
+      "could not be read - Revit gave each back as nothing" sentence. LO2 and
+      PK6's positive: configurationName as MEP Fabrication Settings shows it,
+      loadedServices 2, `names` the two services quoted - WRITE THEM DOWN for
+      the LO job file's second job; each palette's buttons named as version 1
+      names them, skippedButtons written down (0 expected), no such sentence
+      while any button is named.

@@ -1,0 +1,61 @@
+# NEEDS-CHECKING Group OU - MANAGE_SHEET_SETS version 5 (DRAFT), row OU8: mode
+# by-parameter counts the parameter's name on each sheet first, and a name
+# carried TWICE is NOT READ - the whole run refused, nothing changed (row
+# 5b-1534, row 5b-203's repair). Built 2026-11-21 in a cloud session with no
+# Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ou-heron-sheet-sets-ka-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ou-heron-sheet-sets-ka-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL is "Heron Sheet Sets KA", Revit 2020 - the scratch project Group KA
+# made (tools/jobs/sheet-sets-by-parameter-scratch-2026-11-01.yaml): a Text
+# instance project parameter "HERON Browser 1" on Sheets, sheets A101 to A106,
+# A101-A103 "01_IAB-ISSUED AS-BUILT", A104-A105 "02_IFI-ISSUED FOR
+# INFORMATION", A106 empty. Never a working model. "HERON Browser 1" is carried
+# ONCE on each sheet, with two values - OU8's positive exactly.
+#
+# MAKE THIS FIRST, BY HAND, AND SAVE (OU8's negative; nothing records it yet):
+# a parameter called "Sheet Group" bound to Sheets TWICE - a Text project
+# parameter "Sheet Group" (Manage > Project Parameters), and a shared parameter
+# of the same name from a shared parameter file (Manage > Project Parameters >
+# Shared parameter), both instance, both on Sheets - with a value typed in at
+# least one sheet. Neither touches "HERON Browser 1". Without it the negative
+# is still refused (no sheet carries the name), which reads as a pass and
+# proves nothing about version 5: read `refused` for "TWO OR MORE parameters".
+#
+# BEFORE RUNNING: File > Print > Settings must list no set the job would make
+# ("01_IAB-ISSUED AS-BUILT", "02_IFI-ISSUED FOR INFORMATION") - a set left by
+# a kept KA run makes the positive answer setsUnchanged instead of created.
+# The print manager is not transactional: open File > Print afterwards and
+# check the range reads Current window and no new set is listed.
+#
+# THE NEGATIVE IS A VALUE - the parameter name - on the same sheets, never an
+# empty selection; nothing is selected in either leg (mode by-parameter reads
+# every sheet). negative-set REPLACES set, so it carries every value. Every run
+# is ROLLED BACK. ONE job - a run record is kept per card.
+model: "Heron Sheet Sets KA - Group KA's scratch project from Revit 2020's default metric template, with OU8's doubled Sheet Group added by hand, Revit 2020"
+defaults:
+  in: "Heron Sheet Sets KA"
+  write: true
+  setup: []
+jobs:
+  - fragment: manage-sheet-sets
+    expect: created
+    set:
+      mode: "by-parameter"
+      parameterName: "HERON Browser 1"
+      setPrefix: "none"
+      values: "all"
+    negative-set:
+      mode: "by-parameter"
+      parameterName: "Sheet Group"
+      setPrefix: "none"
+      values: "all"
+    note: >
+      OU8. Positive - version 4's answer: created "'01_IAB-ISSUED AS-BUILT'
+      (3); '02_IFI-ISSUED FOR INFORMATION' (2)", memberCount 5, ambiguous
+      EMPTY, A106 in neither, printRange put back to Current window.
+      Negative: done false, refused naming each doubled sheet "TWO OR MORE
+      parameters called 'Sheet Group' - NOT READ ... Nothing was changed",
+      ambiguous holding their ids, created empty; the Print dialog's set list
+      as before.

@@ -1,0 +1,55 @@
+# NEEDS-CHECKING Group EN (and Group OL, whose OL1 read SAVE_DOCUMENT jobs in
+# the add-in log) - SAVE_DOCUMENT version 3 (DRAFT, was PROVEN v2): ANOTHER
+# open document's save, and the close of its window, are the add-in's, AFTER
+# the group (row 5b-1824, D-171). Built 2026-11-21 in a cloud session with no
+# Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ol-en-heronnest-car-revit2024-2026-11-21.yaml --dry-run
+#
+# PUBLISH - NO BATCH SENDS IT (D-106). The dry run says WILL NOT RUN IN A BATCH
+# and prints the `validate --allow-publish ... --write` line: that line is the
+# owner's, with Changes AND Publish on in Heron's Settings. A proof rolls the
+# model back; it does NOT unwrite a file - the save stands, which is what is
+# being measured (EN11: a preview saves too, D-171).
+#
+# THE MODELS: Group CS's scratch families in %TEMP%\heron-work\nest, the ones
+# version 2 was proved on (Revit 2024, session 9240, 2026-10-07) and EN11
+# names: "HeronNest_Car" IN FRONT - Heron works in it - and "HeronNest_Hub"
+# open BEHIND it with ONE form added by hand since it was last saved. Note
+# HeronNest_Hub.rfa's Date modified in Explorer before the run. The path below
+# is the one the proof recorded; if the PC's %TEMP% differs, write the Hub's
+# own full path in both legs.
+#
+# THE ARRANGEMENT is EN11 (a). Nothing selected, `setup: []`. The positive
+# names the Hub's file. The negative is a DIFFERENT VALUE (rule 3): a path no
+# open document was opened from - refused, the path said back and the open
+# titles listed, nothing asked, nothing written. Version 2's negative (the
+# Car's own file) is no negative now: version 3 SAVES the model Heron works in
+# (Q-69). Each leg carries every value. EN11 (b) and (c), the close and the
+# nothing-to-save case, are by hand, as the group writes them. ONE job.
+
+model: "HeronNest_Car (a scratch family, in front) with HeronNest_Hub open behind it holding one unsaved form, %TEMP%\\heron-work\\nest, Revit 2024"
+
+defaults:
+  in: "HeronNest_Car"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: save-document
+    expect: saveAsked
+    set:
+      documentPath: 'C:\Users\AjmalAlavudheen\AppData\Local\Temp\heron-work\nest\HeronNest_Hub.rfa'
+      closeWindow: false
+    negative-set:
+      documentPath: 'C:\nope\missing.rfa'
+      closeWindow: false
+    note: >
+      EN11 (a). Negative: refused naming "C:\nope\missing.rfa" and listing
+      the open titles; `saveAsked false`, no save block, nothing written.
+      Positive: the verdict ROLLED BACK and, under it, SAVED - the save block
+      `kind saveOther`, `done true`, `preview true`, saying the change was
+      rolled back AND the save was done and that a save cannot be undone;
+      `saveAsked true`, `saveAskedTo` the Hub's file, `closeAsked false`. Then
+      Explorer: HeronNest_Hub.rfa's time moved to now, HeronNest_Car.rfa's did
+      not. Write down any dialog Revit raised during the save.

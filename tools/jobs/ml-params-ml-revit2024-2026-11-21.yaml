@@ -1,0 +1,48 @@
+# REMOVE_PROJECT_PARAMETER (DRAFT, ADMIN) - NEEDS-CHECKING Group ML, row ML6,
+# and the 2026-11-16 night's morning list (Group OI: "No batch sends one").
+# Not in tools/jobs/framing-justification-tread-numbers-ml-2026-11-02.yaml.
+# Written 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ml-params-ml-revit2024-2026-11-21.yaml --dry-run
+#
+# ADMIN. No batch sends one (D-106): the dry run reports WILL NOT RUN IN A
+# BATCH and prints the `validate --allow-publish ... --write` command that IS
+# the proof - ML6, the owner's line, his Admin and Changes switches on.
+#
+# THE MODEL (Group ML, "The models", and the card's tests/cases.yaml):
+# "params-ml", a scratch project from Revit's metric ARCHITECTURAL template,
+# Revit 2024, saved under %TEMP%\heron-work, never a working model - four
+# basic walls on Level 1, two text INSTANCE project parameters on Walls,
+# HERON_ML_TEMP (shared, from a scratch shared parameter file) with "a" on two
+# walls and HERON_ML_KEEP (not shared) with "a" on three, and a wall schedule
+# "ML Walls" with a HERON_ML_KEEP column.
+#
+# THE ARRANGEMENT. One parameter, two VALUES (rule 5): confirm repeating its
+# name exactly, and confirm naming the other parameter - nothing removed. No
+# selection: every input is a value. Every run is ROLLED BACK. ML6's other
+# cases - HERON_ML_TEMP confirmed, "heron_ml_keep", "No Such Parameter" and a
+# family - are by hand.
+
+model: "params-ml: metric architectural scratch with HERON_ML_KEEP and HERON_ML_TEMP on Walls and the ML Walls schedule, Revit 2024"
+
+defaults:
+  write: true
+  in: "params-ml"
+  setup: []
+
+jobs:
+  - fragment: remove-project-parameter
+    expect: removed
+    set:
+      parameterName: "HERON_ML_KEEP"
+      confirm: "HERON_ML_KEEP"
+    negative-set:
+      parameterName: "HERON_ML_KEEP"
+      confirm: "HERON_ML_TEMP"
+    note: >
+      ML6. Negative - THE FIRST CASE TO RUN: removed false, valuesLost 3,
+      alsoAffected the schedule "ML Walls", "... NOTHING WAS REMOVED.", both
+      parameters still in Manage > Project Parameters with every value.
+      Positive: removed true, valuesLost 3, "... deleted from the project with
+      its binding ... Read back: no longer a project parameter." RECORD what
+      happened to the "ML Walls" column (row 5b-1447).

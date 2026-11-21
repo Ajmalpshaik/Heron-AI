@@ -1,0 +1,96 @@
+# NEEDS-CHECKING Groups PA, PK and OX on one model - REPORT_SPRINKLER_NETWORK
+# version 2 (PA1, PA2), REPORT_VIEW_FILTERS version 6 (PK8, after OR13) and
+# EXPORT_FAMILIES version 2 (OX3, PUBLISH). Written 2026-11-21 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/pa-pk-ox-p1102-mep-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/pa-pk-ox-p1102-mep-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL, Revit 2020: "P1102 MEP", the scratch copy of Revit 2020's own
+# Samples\rme_advanced_sample_project.rvt in %TEMP%\heron-work\prove-1102 -
+# the model REPORT_SPRINKLER_NETWORK's and REPORT_VIEW_FILTERS' last proofs
+# ran on (tools/jobs/p1102-round8-2026-11-02.yaml, p1102-round4-2026-11-02.yaml),
+# and row 5b-1407's for EXPORT_FAMILIES. Its six sprinklers are all on "Fire
+# Protection Wet 1". The negative of REPORT_VIEW_FILTERS is "Project1", a new
+# project open in the same Revit (as tools/jobs/p1102-round2-reads-2026-11-02.yaml
+# used it): read Manage > Filters on it first - PK8 asks for a project with NO
+# filter, and a template can bring some. If it has any, use "P1102 Family"
+# (version 5's proof's negative) and say so on the PK8 row. Never a working
+# model.
+#
+# THE ARRANGEMENT. No card here takes a selection. Each negative is a
+# DIFFERENT value or model, never a cleared one (fragment-proving, rules 3
+# and 5): a system name no system has; viewName "*" on a model whose views
+# carry no filter; a family name nothing contains. The two reads change
+# nothing.
+#
+# EXPORT_FAMILIES IS PUBLISH (D-106, D-107): the dry run reports WILL NOT RUN
+# IN A BATCH and prints the `validate --allow-publish ... --write` line - the
+# owner's line, with Publish on in Heron's Settings. A proof rolls the model
+# back; it does NOT unwrite a file, so the folder is a scratch folder: make
+# %TEMP%\heron-work\ox\families EMPTY first (OX3). The path below is that
+# folder as the owner's PC spells %TEMP% in the other job files
+# (C:/Users/ajmal/AppData/Local/Temp); if this Revit's user is another, change
+# both `folder:` lines.
+#
+# NOT IN THIS FILE, by hand from the groups: PA1's reading of one head's
+# Properties before the run, PA2 (a) - one head's Schedule Level changed by
+# hand - and PA3; OR13 to OR15 (a plan with more than 25 filters, narrowed);
+# OX4 (Revit 2024, Snowdon Towers Sample Structural).
+
+model: "P1102 MEP (scratch copy of rme_advanced_sample_project.rvt) and Project1 (a new project, no filter), Revit 2020"
+
+defaults:
+  in: "P1102 MEP"
+  setup: []
+
+jobs:
+  - fragment: report-sprinkler-network
+    expect: elementCount
+    set:
+      systemName: "Fire Protection Wet 1"
+    negative-set:
+      systemName: "ZZZ No Such System"
+    note: >
+      PA2 (b) - THE FIRST CASE TO RUN: elementCount 0, system null, the
+      finding "No fire protection system is named ...", as version 1's
+      negative. PA1: elementCount 29 and the same elements, connectors and
+      spaces as version 1's proof; every one of the six heads carries "level"
+      equal to the Schedule Level its Properties show - NEVER null, as version
+      1 wrote all six; every pipe and fitting still "level":"Level 2" - a pipe
+      reading another level is a FAIL.
+
+  - fragment: report-view-filters
+    expect: filterSettings
+    set:
+      viewName: "*"
+    negative-in: "Project1"
+    negative-set:
+      viewName: "*"
+    note: >
+      PK8 - THE FIRST CASE TO RUN, Project1: filterSettings empty,
+      unusedFilters empty, skippedViews 0 - the project and system browsers
+      throw here, take no graphic override and are not counted - and the
+      finding exactly version 5's "No view in this model has a filter on it."
+      A "passed over because Revit would not give their filter list" sentence,
+      or skippedViews above 0, is written down with the views it came from.
+      P1102 MEP: every view with a filter listed as version 5 lists them,
+      skippedViews written down, and no "passed over" sentence.
+
+  - fragment: export-families
+    expect: saved
+    set:
+      folder: "C:/Users/ajmal/AppData/Local/Temp/heron-work/ox/families"
+      nameContains: "M_Rectangular Elbow"
+    negative-set:
+      folder: "C:/Users/ajmal/AppData/Local/Temp/heron-work/ox/families"
+      nameContains: "ZZZNOTHINGHERE"
+    note: >
+      OX3, PUBLISH - the owner's own `validate --allow-publish --write` line,
+      with Publish on. Negative - THE FIRST CASE TO RUN: saved 0, nothing
+      written. Positive: saved 2, two .rfa files in the folder, refused empty
+      - not "Revit refused to open it for editing"; the verdict "A ROLLBACK
+      CANNOT TAKE ALL OF THIS BACK ... no transaction group open",
+      outsideStands true; the proof draft says "run with NO transaction group
+      open"; P1102 MEP unchanged (its count, and not marked changed). Open one
+      saved file in Revit - the second route.

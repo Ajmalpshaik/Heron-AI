@@ -1,0 +1,51 @@
+# CREATE_WORKSET_3D_VIEWS (DRAFT) - NEEDS-CHECKING Group I, row I1 ("both
+# legs created: 2 - identical ... The negative was not a different case"),
+# Group V, and the 2026-11-16 night's morning list (Group OI: "A workshared
+# model ... none on the night's model"). Written 2026-11-21 in a cloud
+# session with no Revit. NOT RUN. It REPLACES the card's job in
+# sweep-project1.yaml, which is left as it was: its negative was namePrefix
+# "" - a cleared value - and impl/any/fragment.cs only puts the prefix in
+# front of each workset's name, so both legs made the same two views.
+#
+#     python tools/batch-prove.py tools/jobs/fix-project1-work-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/fix-project1-work-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE MODELS, both open in ONE Revit 2024:
+#   "Project1 work_ajmal.al" - workshared; the sweep's run made one view per
+#     user workset on it, `created: 2` (Group I I1), so it holds two user
+#     worksets. Their names were not recorded. A saved scratch copy, never a
+#     working model.
+#   "night-scratch" - the 2026-11-16 night's model (Group OI): a file copy of
+#     Heron's DefaultMetric scratch project, never workshared.
+#
+# THE ARRANGEMENT. The positive: no selection, one value - namePrefix
+# "HERON WS - ", a name no view in the model carries (cases.yaml: "views
+# named WS - <workset>"). The negative is a DIFFERENT CASE, a model that is
+# NOT workshared (cases.yaml's first negative): `negative-in` night-scratch,
+# the same prefix - refused "This model is not workshared ...", created
+# empty. Never a cleared value (rule 5). The negative-set carries every
+# value, because it replaces the set. Every write is ROLLED BACK.
+
+model: "Project1 work_ajmal.al (workshared, two user worksets) and night-scratch (not workshared), Revit 2024"
+
+defaults:
+  in: "Project1 work_ajmal.al"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: create-workset-3d-views
+    expect: created
+    negative-in: "night-scratch"
+    set:
+      namePrefix: "HERON WS - "
+    negative-set:
+      namePrefix: "HERON WS - "
+    note: >
+      Group I I1, re-arranged. Negative - THE FIRST CASE TO RUN, in
+      night-scratch: refused "This model is not workshared, so it has no user
+      worksets at all ...", created empty, alreadyExisted empty. Positive, in
+      Project1 work_ajmal.al: created 2 entries, "HERON WS - <workset>" each,
+      alreadyExisted empty, refused empty. Write the two workset names down
+      on the row. Rolled back - so the views are gone afterwards; the second
+      route (open one, turn the other worksets back on) needs a kept run.

@@ -88,7 +88,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 |---|---|---|
 | [`batch-prove.py`](batch-prove.py) | many fragments against a real model in one pass; never accepts, never promotes | on the PC, Revit open; `--dry-run` first; `--unattended` overnight |
 | [`generate-jobs.py`](generate-jobs.py) | the derivable half of a job file - names, risk, setup chain | before writing a job file |
-| [`jobs/`](jobs/example.yaml) | the job files of past proving rounds, and `example.yaml` to start from | when writing the next one |
+| [`jobs/`](jobs/README.md) | the job files of past proving rounds, `example.yaml` to start from, and the index of which file covers which DRAFT cards on which model | when writing the next one |
 | [`prove-skill.py`](prove-skill.py) | is a skill proved: its words, its chain, and the Revit half written out as a job file | before proving a skill |
 | [`run-skill.py`](run-skill.py) | a skill's plan run whole on a real model - every step in order on one chain, changes rolled back, a positive and a negative leg - judged by `brain/heron_plan_proof.py` into a draft a person signs (row 141) | on the PC, Revit open; `--dry-run` first |
 | [`prove-agent.py`](prove-agent.py) | the proof path for an add-in agent, signed by a person | on the PC, Revit open |
