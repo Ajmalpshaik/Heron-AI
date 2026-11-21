@@ -1,0 +1,65 @@
+# NEEDS-CHECKING Group OK - CREATE_LINE_STYLE version 3 (DRAFT): a
+# subcategory of Reference Planes, "Secondary References", gray (row 5b-1849,
+# issue #1034), row OK1. Built 2026-11-21 in a cloud session with no Revit.
+# NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ok-heron-nf-generic-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ok-heron-nf-generic-revit2020-2026-11-21.yaml --session <2020 pid>
+#
+# READ THIS FIRST - A DRAFT MAY ALREADY BE WAITING. OK1 HELD on 2026-11-20 on
+# Revit 2020 in "Column Scratch 1044": the positive KEPT by the owner through
+# try-once, the negative run on the kept model with `validate --kept`, and
+# brain/proof-drafts/create-line-style.yaml written from that run, NOT
+# SIGNED (docs/needs-checking/group-ok.md, OK1). If that draft is still on
+# the PC, review and sign IT (python brain/heron_validate.py review
+# create-line-style) and DO NOT RUN THIS FILE: batch-prove writes
+# brain/proof-drafts/runs/create-line-style.json and the draft afresh, and
+# the kept run's draft is replaced. This file is for when that draft is gone.
+#
+# THE MODEL - A RECORDED SCRATCH FAMILY: "Heron NF Generic", a saved scratch
+# family from Revit 2020's metric Generic Model template under
+# %TEMP%\heron-work\family-2d-widen (tools/jobs/family-2d-widen-nf-2026-11-11.yaml).
+# Group OK's rig is "a new family from the metric Generic Model template,
+# saved as a scratch file" with no subcategory of Reference Planes yet; this
+# one was made before Group OK existed. NOT "Column Scratch 1044": OK1 was
+# KEPT there, so Secondary References already exists in it and the positive
+# would be refused as already there. If "Heron NF Generic" turns out to hold
+# a Reference Planes subcategory of that name, the positive is refused the
+# same way - use a new Generic Model family and its own title in `in:`.
+#
+# THE ARRANGEMENT - OK1's values exactly. Positive: styleName "Secondary
+# References", colour 128,128,128, weight 0, no pattern, parentCategory
+# "Reference Planes". Negative: the same with parentCategory "No Such
+# Category" - a DIFFERENT value, refused, nothing made (rules 3 and 5); it
+# carries every value, because a negative-set replaces the set. The write is
+# ROLLED BACK. ONE job: the run record is kept per card.
+
+model: "Heron NF Generic (a saved scratch family from Revit 2020's metric Generic Model template, no Reference Planes subcategory), Revit 2020"
+
+defaults:
+  in: "Heron NF Generic"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: create-line-style
+    expect: madeNew
+    set:
+      styleName: "Secondary References"
+      colour: "128,128,128"
+      weight: "0"
+      patternName: ""
+      parentCategory: "Reference Planes"
+    negative-set:
+      styleName: "Secondary References"
+      colour: "128,128,128"
+      weight: "0"
+      patternName: ""
+      parentCategory: "No Such Category"
+    note: >
+      OK1. Negative FIRST: madeNew false, refused "This family has no category
+      named "No Such Category", so NOTHING WAS CHANGED ...". Positive: madeNew
+      true, "Made subcategory "Secondary References" of Reference Planes:
+      colour 128,128,128, weight 1, pattern Solid (read back)." - weight 0 is
+      asked and Revit's lowest is 1, as the 2026-11-20 run read. Manage >
+      Object Styles > Annotation Objects is looked at only on a KEPT run.

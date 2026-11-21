@@ -1,0 +1,53 @@
+# NEEDS-CHECKING Group OT - PLACE_FAMILY_INSTANCES version 7 (DRAFT): a Work
+# Plane-Based family whose own Offset from Host is not 0 is placed and the
+# offset explained, never refused (row 5b-301, issue #944), rows OT11 and
+# OT12. Built 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ot-round-void-generic-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ot-round-void-generic-revit2020-2026-11-21.yaml --session <2020 pid>
+#
+# THE MODEL (group-ot.md OT11, OT12; brain/fragments/place-family-instances/
+# tests/cases.yaml, VERSION 7): a scratch family from Revit 2020's metric
+# Generic Model template, saved under %TEMP%\heron-work\ot, never the owner's
+# own work, with `Round void : HWC 10 cm` loaded into it - a Work Plane-Based
+# family from Revit's Structural Precast library, the one row 5b-301 was found
+# with, whose Offset from Host is -200 mm when placed. LOADED AND KEPT before
+# this runs (LOAD_FAMILY, PROVEN, with the library file's path on the PC -
+# no row records that path, so it is not typed here). If the library is not
+# installed, the row's other choice is a scratch Work Plane-Based family with
+# a -200 mm offset: then its "Family : Type" goes in `symbol` below. NO `in:`
+# BELOW: no row records the host family's own name, so the job runs on the
+# document in front - bring it to the front, or add `in: "<its title>"` under
+# defaults once it is saved.
+#
+# THE ARRANGEMENT - NO ID. Positive OT11: the void at 0,-1000,0 on "Ref.
+# Level", workPlane left out. Negative OT12: the same family at 0,-1000,300 -
+# a point OFF the plane, a DIFFERENT value, refused before anything is placed
+# (rules 3 and 5). Both carry every value, because a negative-set replaces
+# the set. Every run is ROLLED BACK. ONE job: the run record is kept per card.
+
+model: "a scratch Generic Model family (Revit 2020 metric template) with Round void : HWC 10 cm (Structural Precast library, Work Plane-Based, Offset from Host -200 mm) loaded"
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: place-family-instances
+    expect: placed
+    set:
+      symbol: "Round void : HWC 10 cm"
+      points: "0,-1000,0"
+      level: "Ref. Level"
+    negative-set:
+      symbol: "Round void : HWC 10 cm"
+      points: "0,-1000,300"
+      level: "Ref. Level"
+    note: >
+      OT11 then OT12. Negative FIRST: refused, "The point 0, -1000, 300 mm is
+      300 mm off "Ref. Level" - a Work Plane-Based family sits ON its plane",
+      placed 0, nothing placed. Positive: placed 1, NOT refused; readBack "...
+      at 0, -1000, -200 mm - its point on "Ref. Level" is 0, -1000, 0 mm, and
+      it sits 200 mm below "Ref. Level": the family's own offset (Offset from
+      Host -200 mm)". Version 6 threw "stands at 0, -1000, -200 mm, not 0,
+      -1000, 0 mm" and rolled back.
