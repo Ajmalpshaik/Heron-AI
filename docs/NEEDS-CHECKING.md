@@ -1670,9 +1670,9 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pg.md`](needs-checking/group-pg.md)
 
-## Group PK - a carried id list naming elements here and not here is refused whole, and a read whose answer was lost says it reached Revit - BUILT, NOT RUN IN REVIT (2026-11-21)
+## Group PL - a carried id list naming elements here and not here is refused whole, and a read whose answer was lost says it reached Revit - BUILT, NOT RUN IN REVIT (2026-11-21)
 
-**Its own file:** [`needs-checking/group-pk.md`](needs-checking/group-pk.md)
+**Its own file:** [`needs-checking/group-pl.md`](needs-checking/group-pl.md)
 
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
