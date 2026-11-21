@@ -3133,6 +3133,218 @@ def cmd_prove(names, in_document=None, values=None, session=None, keep_going=Fal
     return 1 if failures else 0
 
 
+def cmd_plan(plan_path, out=None, session=None):
+    """
+    Run a SKILL'S PLAN - its steps in order, on one lease and one chain - and
+    record what each step did. FRAGMENT-ISSUES row 141.
+
+    THE THIRD OF A SKILL PROOF'S THREE PARTS THAT NO RUNNER HAD. `prove` runs a
+    chain but only reads, and judges nothing; `validate` judges and writes but
+    runs ONE fragment. A skill is a composition, so this runs every step of it
+    in the order the plan gives, reads through `run_fragment_read` and changes
+    through `run_fragment_write`, and writes the whole run down for
+    `brain/heron_plan_proof.py` to judge - the same seam `validate` keeps with
+    `brain/heron_validate.py`. It draws no conclusion and signs nothing.
+
+    `plan_path` is a JSON file `tools/run-skill.py` writes, one per leg:
+
+        {"skill": "count-elements", "phase": "positive", "document": "...",
+         "steps": [{"name": "filter-elements-by-category",
+                    "values": {"category": "Ducts"}},
+                   {"name": "count-elements", "expect": "previous"}]}
+
+    A CHANGE IS NEVER KEPT. A MODIFY step goes as `run_fragment_write` with no
+    `apply`, so Revit runs it inside a transaction group and rolls it back -
+    D-55's preview, and the preview D-99 says a skill runner needs. A PUBLISH
+    or ADMIN step is refused before anything is sent: rolling back does not
+    unwrite a file.
+
+    EACH STEP NAMES WHAT IT TAKES. The first step resets the chain. A later
+    step with `expect` sends it as `expectChain` - "previous" is the step
+    before it - so the add-in refuses values some other run left (docs/36), and
+    one with no `expect` continues the chain as `prove` does.
+
+    IT STOPS AT THE STEP THAT FAILED (row 148). A step after a failed one would
+    answer from what was left before it, so it is recorded `notRun` with the
+    step that stopped it, and nothing more is sent.
+
+    Exit 0 when every step ran, 1 when one failed or did not answer, 2 when the
+    plan was refused before anything was sent.
+    """
+    if refuse_off_windows():
+        return 2
+
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    try:
+        with io.open(plan_path, "r", encoding="utf-8") as fh:
+            plan = json.load(fh)
+    except (OSError, ValueError) as exc:
+        print("The plan %s cannot be read: %s. Nothing was sent to Revit." % (plan_path, exc))
+        return 2
+    steps = plan.get("steps") if isinstance(plan, dict) else None
+    if not steps or not isinstance(steps, list):
+        print("The plan %s has no steps. Nothing was sent to Revit." % plan_path)
+        return 2
+
+    # EVERY STEP IS CHECKED BEFORE THE FIRST IS SENT - a plan refused at step
+    # four after three ran would leave the chain half made.
+    prepared = []
+    for number, step in enumerate(steps, 1):
+        name = (step or {}).get("name") if isinstance(step, dict) else None
+        path = os.path.join(root, "brain", "fragments", name or "?", "impl", "any",
+                            "fragment.cs")
+        if not name or not os.path.isfile(path):
+            print("Step %d names no fragment Heron has (%r). Nothing was sent to Revit."
+                  % (number, name))
+            return 2
+        risk = fragment_risk(os.path.join(root, "brain", "fragments", name, "fragment.yaml"))
+        if risk in READ_PATH_RISKS:
+            operation = "run_fragment_read"
+        elif risk == "MODIFY":
+            operation = "run_fragment_write"
+        else:
+            print("Step %d, %s, is %s. A plan run keeps nothing, and rolling back does "
+                  "not unwrite a file, so a %s step is not run here. Nothing was sent "
+                  "to Revit." % (number, name, risk or "of a risk Heron cannot read",
+                                 risk or "such"))
+            return 2
+        refusal = risk_refusal(root, name, switched=False)
+        if refusal is not None:
+            print(refusal)
+            return 2
+        needs = needs_for(root, name)
+        if needs is None:
+            return 2
+        values = step.get("values") or {}
+        if not isinstance(values, dict):
+            print("Step %d, %s: its values are not name=value pairs. Nothing was sent "
+                  "to Revit." % (number, name))
+            return 2
+        values = dict((str(k), str(v)) for k, v in values.items())
+        # Sent as {name, value} pairs, as caller_values makes them - the
+        # add-in reads them with the parser `needs` uses.
+        pairs = [{"name": k, "value": v} for k, v in sorted(values.items())]
+        report_undeclared(name, pairs, needs)
+        expect = step.get("expect")
+        if expect == "previous":
+            expect = prepared[-1]["name"] if prepared else None
+            if expect is None:
+                print("Step 1 expects the step before it, and there is none. Nothing "
+                      "was sent to Revit.")
+                return 2
+        with io.open(path, "r", encoding="utf-8") as fh:
+            source = fh.read()
+        prepared.append({"number": number, "name": name, "operation": operation,
+                         "risk": risk, "source": source, "needs": needs,
+                         "values": values, "pairs": pairs, "expect": expect})
+
+    live, starting, _, mismatched = discover()
+    if not live and starting:
+        print("Revit is still starting - its bridge is not answering yet. Try again shortly.")
+        report_mismatched(mismatched)
+        return 1
+    if not live:
+        print("No Revit is connected. Press Heron on the ribbon to connect first.")
+        report_mismatched(mismatched)
+        return 1
+    chosen, refusal = only_session(live, session)
+    if refusal is not None:
+        for b in live:
+            b.close()
+        print(refusal)
+        return 2
+    bridge = chosen[0]
+    for other in chosen[1:]:
+        other.close()
+
+    opening = bridge.request("count_elements")
+    if opening is None or not opening.get("ok"):
+        print("Could not identify the active model - refusing to run a plan against a "
+              "model that will not name itself.")
+        bridge.close()
+        return 1
+
+    document = plan.get("document")
+    print("Revit %s, session %s - %s, %s leg, %d step(s)"
+          % (bridge.revit_version, bridge.pid, plan.get("skill") or "(no skill named)",
+             plan.get("phase") or "(no phase named)", len(prepared)))
+    print("active: %s" % opening.get("document"))
+    print("")
+
+    recorded = []
+    stopped_by = None
+    for step in prepared:
+        row = {"step": step["number"], "name": step["name"], "operation": step["operation"],
+               "risk": step["risk"], "values": step["values"], "expect": step["expect"]}
+        if stopped_by is not None:
+            row.update({"ok": False, "notRun": True,
+                        "message": "%s failed before it, so this step would answer from "
+                                   "what was left before that step" % stopped_by})
+            print("%-30s NOT RUN - %s failed before it" % (step["name"], stopped_by))
+            recorded.append(row)
+            continue
+        args = {"name": step["name"], "source": step["source"], "needs": step["needs"]}
+        if step["number"] == 1:
+            args["chain"] = "reset"
+        elif step["expect"]:
+            args["expectChain"] = step["expect"]
+        if step["pairs"]:
+            args["values"] = step["pairs"]
+        if document:
+            args["document"] = document
+        # NEVER `apply` - every change in a plan run is rolled back.
+        reply = bridge.request(step["operation"], op_args=args,
+                               response_timeout=heron_config.fragment_timeout(
+                                   waiting=waits_for_modeller(step["needs"])),
+                               idempotent=False)
+        if reply is None:
+            row.update({"ok": False, "error": "no_reply",
+                        "message": "Revit did not answer"})
+            print("%-30s NO REPLY" % step["name"])
+            stopped_by = step["name"]
+            recorded.append(row)
+            continue
+        row.update({"ok": bool(reply.get("ok")), "error": reply.get("error"),
+                    "message": reply.get("message"), "provides": reply.get("provides") or {},
+                    "bound": reply.get("bound"), "document": reply.get("document"),
+                    "rolledBack": reply.get("rolledBack"), "verdict": reply.get("verdict")})
+        recorded.append(row)
+        if not reply.get("ok"):
+            print("%-30s %s" % (step["name"], reply.get("error")))
+            print("%s %s" % (" " * 30, reply.get("message")))
+            stopped_by = step["name"]
+            continue
+        print("%-30s ok%s" % (step["name"], "  (rolled back)" if step["operation"]
+                              == "run_fragment_write" else ""))
+        if reply.get("bound"):
+            print("%s   <- %s" % (" " * 30, reply.get("bound")))
+        provides = reply.get("provides") or {}
+        for key in sorted(provides):
+            print("%s   %-20s %s" % (" " * 30, key, provides[key]))
+
+    bridge.release()
+    bridge.close()
+
+    ran = len([r for r in recorded if r.get("ok")])
+    print("")
+    print("%d of %d step(s) ran%s" % (ran, len(recorded),
+                                      "; stopped at %s" % stopped_by if stopped_by else ""))
+    record = {"skill": plan.get("skill"), "phase": plan.get("phase"),
+              "date": time.strftime("%Y-%m-%d"),
+              "revit": bridge.revit_version, "session": bridge.pid,
+              "activeDocument": opening.get("document"),
+              "activeCount": opening.get("count"),
+              "document": document, "steps": recorded}
+    if out:
+        folder = os.path.dirname(os.path.abspath(out))
+        if not os.path.isdir(folder):
+            os.makedirs(folder)
+        with io.open(out, "w", encoding="utf-8") as fh:
+            fh.write(json.dumps(record, indent=1, ensure_ascii=False))
+        print("run record: %s" % out)
+    return 1 if stopped_by else 0
+
+
 def model_line(opening, phases, revit_version, pid):
     """The `model:` header a proof carries, built from where the phases RAN.
 
@@ -4300,6 +4512,22 @@ def main(argv):
             print("Nothing was sent to Revit.")
             return 2
         return cmd_stop(session=session)
+    if argv[1] == "plan":
+        # plan <plan.json> [--out record.json] [--session pid] - row 141.
+        rest, session = pull_session(argv[2:])
+        out = None
+        if "--out" in rest:
+            at = rest.index("--out")
+            if at + 1 >= len(rest):
+                print("--out needs a path for the run record.")
+                return 2
+            out = rest[at + 1]
+            rest = rest[:at] + rest[at + 2:]
+        if len(rest) != 1:
+            print("plan takes one plan file: plan <plan.json> [--out record.json]")
+            print("tools/run-skill.py writes the plan file from a skill's job.")
+            return 2
+        return cmd_plan(rest[0], out=out, session=session)
     if argv[1] == "prove":
         rest, pairs, _, _, _ = pull_values(argv[2:])
         if rest is None:
