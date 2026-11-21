@@ -13,6 +13,28 @@ positive:
       AA, AB after Z - not a stop, and not A1. Letters increment the way a
       drawing does
 
+  # VERSION 4 (2026-11-21, row 5b-1948, issue #1174) - what was made is
+  # said in `findings`, and `refused` holds a refusal and nothing else. Each
+  # FAILS on version 3, which put the line saying what was made in `refused`.
+  # NOT RUN - NEEDS-CHECKING Group PI (PI1 to PI3).
+  - given: >
+      VERSION 4, gridLines "4000,-6000,0; 8000,-6000,0" and gridNames "Wing"
+      - the call seen on 2026-11-21 - kept
+    expect: >
+      one grid named Wing; `refused` EMPTY; `findings` one line, "1 grid
+      line(s) drawn between the points given, each one level"
+  - given: VERSION 4, spacingsAcross "6000, 6000" and spacingsUp "6000, 6000"
+    expect: >
+      six grids; `refused` empty; `findings` "2 spacing(s) across gave 3
+      lettered grid(s), and 2 spacing(s) up gave 3 numbered grid(s) ..."
+  - given: >
+      VERSION 4, centreMm "0,0", radiiMm "6000", spokeAnglesDegrees "0, 180",
+      sweep 0 to 90
+    expect: >
+      one arc and two spokes; `refused` empty; `findings` the line naming
+      the arcs and spokes and the names Revit gave, and a line saying the 180
+      spoke lies outside the sweep
+
 negative:
   - given: four spacings across
     expect: >
@@ -100,27 +122,9 @@ negative:
       where Revit refuses the grid. CREATE_RADIAL_GRIDS kept the others; not
       carried, on purpose
 
-  # VERSION 4 (2026-11-21, row 5b-1948, issue #1174) - what was made is
-  # said in `findings`, and `refused` holds a refusal and nothing else. Each
-  # FAILS on version 3, which put the line saying what was made in `refused`.
-  # NOT RUN - NEEDS-CHECKING Group PI.
-  - given: >
-      VERSION 4, gridLines "4000,-6000,0; 8000,-6000,0" and gridNames "Wing"
-      - the call seen on 2026-11-21 - kept
-    expect: >
-      one grid named Wing; `refused` EMPTY; `findings` one line, "1 grid
-      line(s) drawn between the points given, each one level"
-  - given: VERSION 4, spacingsAcross "6000, 6000" and spacingsUp "6000, 6000"
-    expect: >
-      six grids; `refused` empty; `findings` "2 spacing(s) across gave 3
-      lettered grid(s), and 2 spacing(s) up gave 3 numbered grid(s) ..."
-  - given: >
-      VERSION 4, centreMm "0,0", radiiMm "6000", spokeAnglesDegrees "0, 180",
-      sweep 0 to 90
-    expect: >
-      one arc and two spokes; `refused` empty; `findings` the line naming
-      the arcs and spokes and the names Revit gave, and a line saying the 180
-      spoke lies outside the sweep
+  # VERSION 4 (2026-11-21, row 5b-1948, issue #1174) - a refusal says
+  # nothing was made. Its positives are under `positive:`. NOT RUN -
+  # NEEDS-CHECKING Group PI (PI4).
   - given: VERSION 4, gridLines "0,0,0; 30000,0,500"
     expect: >
       refused as version 3 refused - 500 mm named, nothing created - and

@@ -29,9 +29,8 @@ of it has run in Revit.** The card's own `tests/cases.yaml` holds the same cases
 
 **The model - Heron builds it, and it is nobody's work.** A new scratch project from Revit's default
 template, on Revit 2024 (where the fault was seen) and then Revit 2020, saved under `%TEMP%\heron-work\pi`.
-Every run is ROLLED BACK. While the card is DRAFT, `revit_change` refuses it
-([D-117](../decisions/D-117.md)): each run goes through the proving client - a rolled-back preview, or
-`try-once` with the owner's Keep.
+Every run is ROLLED BACK - no check here keeps a grid. While the card is DRAFT, `revit_change` refuses
+it ([D-117](../decisions/D-117.md)): each run goes through the proving client as a rolled-back preview.
 
 | ID | Do this | Pass looks like |
 |---|---|---|
