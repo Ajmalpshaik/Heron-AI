@@ -1694,6 +1694,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pm.md`](needs-checking/group-pm.md)
 
+## Group PN - REPORT_CATEGORY_OVERRIDES version 6: a whole-dialog read that failed says NOT READ, never "shown" or "no override" - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pn.md`](needs-checking/group-pn.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

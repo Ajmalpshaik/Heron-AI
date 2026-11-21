@@ -1539,6 +1539,16 @@ returns `found: 0` when its exemplar has no type and nothing separates that from
 this type"* — which is exactly why `FILTER_ELEMENTS_BY_CATEGORY` reports `unresolvedLevel`. One
 fragment already solved this; 59 have not. [`Q-46`](../docs/OPEN-QUESTIONS.md).
 
+**A dropped count is known by what the contract says it is, not only by seven words** (since 2026-11-21,
+[row 5b-1958](../docs/fragment-issues/row-5b-1958.md)). A provide whose name holds `unresolved`, `skipped`,
+`refused`, `dropped`, `missing`, `failed` or `weakened` counts, as before; so does one the contract declares
+`role: accounting` - *"handed and could not use, or work done"* - with a negative name (`noAnalytical`,
+`withoutLocation`, `notLinear`, `sectionsNotChecked`) or one of `unreadable`, `unmeasured`, `unbounded`,
+`outOfScope` and `heldBack`. Never a bool (`notAFamily` refuses the whole document and counts nothing a loop
+passed over), never a `result`, and never `unused` or `unassigned`, which are what those cards found. The words
+are `DROP_WORDS`, `DROP_SHAPE` and `DROP_WORDS_ACCOUNTING` in the tool; `tests/test_revit_gate.py` §3f holds a
+case for each and the four that must stay raised.
+
 **Question 12 went 7 → 0.** It asked *does it guard against null* and raised seven fragments that
 touch nothing nullable — `count-elements` counts a list it was handed, `set-selection` selects one,
 `group-and-count` groups one. It asks now whether the code dereferences something **Revit can hand back

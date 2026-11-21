@@ -1007,7 +1007,7 @@ def _done_here_by(RETRIEVE, store, walled, here, ceiling):
             "words": reached[best][0]}
 
 
-def lookup(request, revit=None, question=False):
+def lookup(request, revit=None, question=False, ceiling=None):
     """
     What the user asked for, resolved to a CAPABILITY through retrieval.
 
@@ -1026,9 +1026,18 @@ def lookup(request, revit=None, question=False):
     the user meant, Heron never does). Then every fragment above
     `question_ceiling()` is left out before ranking, and the answer says how
     many. False, the default, is exactly the lookup this always was.
+
+    `ceiling` is a DOOR's own: the highest risk the tool that asked will run,
+    a word on the ladder ("EXECUTE"). Given, it is the ceiling whatever
+    `question` says, and the answer carries it and its count the same way -
+    so a door that refuses everything above its own risk is never handed a
+    list of only what it will refuse (row 5b-1951: revit_show, "select the
+    level named Level 2", five MODIFY cards and no select). None, the
+    default, leaves `question` to decide, as before.
     """
     _S, _CAP, SKILL, _SE, _E, RETRIEVE = _brain()
-    ceiling = question_ceiling() if question else None
+    if ceiling is None:
+        ceiling = question_ceiling() if question else None
     opened = _Open()
     with opened as store:
         answer = RETRIEVE.find(store, request, revit=revit, ceiling=ceiling)
