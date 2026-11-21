@@ -1,6 +1,15 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `show` and `service` are in scope,
 // and leaves `configurationName`, `loadedServices`, `buttons`,
-// `fabricationParts`, `report`, `names`, `notFabrication` and `findings` behind.
+// `fabricationParts`, `report`, `names`, `notFabrication`, `skippedButtons` and
+// `findings` behind.
+//
+// VERSION 2 (2026-11-21, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A BUTTON REVIT WILL NOT HAND BACK IS COUNTED. Version 1 counted
+// every button a palette holds in `buttons`, but passed over one Revit gave
+// back as nothing when naming them, without a word - so a palette could read
+// "12 button(s)" and name none. `skippedButtons` carries the count every time;
+// the sentence naming it rides only on the empty answer (buttons asked for and
+// none named), so an answer that names buttons reads as version 1's.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -49,6 +58,8 @@ var fabricationParts = 0;
 var report = "";
 var names = new List<string>();
 var notFabrication = new List<string>();
+// VERSION 2 (D-64): buttons a palette counts that Revit gave back as nothing.
+var skippedButtons = 0;
 var findings = new List<string>();
 
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
@@ -132,6 +143,9 @@ else
         || (s.Name ?? "").IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0
         || string.Equals((s.Abbreviation ?? "").Trim(), needle, StringComparison.OrdinalIgnoreCase);
 
+    // VERSION 2 (D-64): how many buttons were named, so an empty answer can be
+    // told from buttons that would not read.
+    var buttonsNamed = 0;
     if (wantServices)
     {
         var shown = loaded.Where(s => s != null && serviceWanted(s)).ToList();
@@ -164,7 +178,9 @@ else
                     for (var b = 0; b < count; b++)
                     {
                         var button = s.GetButton(p, b);
-                        if (button == null) continue;
+                        // VERSION 2: counted, never silently dropped (D-64).
+                        if (button == null) { skippedButtons++; continue; }
+                        buttonsNamed++;
                         buttonNames.Add(quoted(button.Name)
                             + (string.IsNullOrEmpty(button.Code) ? "" : " code " + button.Code)
                             + (button.IsStraight ? ", straight" : "")
@@ -200,6 +216,12 @@ else
         else if (loaded.Count == 0)
             findings.Add("The configuration " + quoted(configurationName)
                 + " is loaded but no service is - services are loaded in MEP Fabrication Settings");
+
+        // VERSION 2 (D-64): ON THE EMPTY ANSWER ONLY - buttons asked for and
+        // none named - what was passed over.
+        if (wantButtons && buttonsNamed == 0 && skippedButtons > 0)
+            findings.Add(skippedButtons + " button(s) the palettes hold could not be read - Revit gave each back as "
+                + "nothing - so no button is named. They are still in the palettes' button counts.");
     }
 
     // ---- Fabrication parts -------------------------------------------------

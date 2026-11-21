@@ -41,7 +41,12 @@ capability: REPORT_VIEW_FILTERS
 # A big plan's answer is narrowed and counted first (version 5): one category
 # or words in a name, and a short line each past 25 - a plan of 90 answered
 # 123,531 characters in version 4, more than the chat takes.
-version: 5
+# VERSION 6 (2026-11-21, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005): asked for every view ("*"), a view whose filter list Revit will not
+# give is counted in `skippedViews`, and the empty answer says so instead of
+# "No view in this model has a filter on it." Its C# moved, so it stays DRAFT
+# until NEEDS-CHECKING Group PK runs (D-30).
+version: 6
 source: OFFICIAL
 risk: READ
 
@@ -170,6 +175,14 @@ contract:
       # that controls its filters, named in findings.
       role: result
       type: bool
+    - name: skippedViews
+      # VERSION 6 (D-64). Asked for every view ("*"), the views passed over
+      # because Revit would not give their filter list - views that take
+      # graphic overrides only, so never the browsers. 0 when views are named
+      # - a named view that cannot be read says so in `findings`. Always
+      # carried; it changes the sentence only on the empty answer.
+      role: accounting
+      type: int
 
 proof:
   date: '2026-11-02'

@@ -40,7 +40,12 @@ semantic-identity: "how steep is this roof: read the slope of each roof edge"
 kind: action
 domain: revit.elements
 capability: REPORT_ROOF_SLOPES
-version: 1
+# VERSION 2 (2026-11-21, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005): every roof passed over is counted in `skippedRoofs`, and the empty
+# answer says how many instead of "this model has no roof by footprint or by
+# extrusion". Its C# moved, so it stays DRAFT until NEEDS-CHECKING Group PK
+# runs, after Group PG (D-30).
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -70,6 +75,13 @@ contract:
       # count.
       role: accounting
       type: string
+    - name: skippedRoofs
+      # VERSION 2 (D-64). Roofs passed over - a footprint or profile that would
+      # not read or has no lines, or a roof by face or in place - each also
+      # named in `findings`. Never an element that is not a roof. Always
+      # carried; on the empty answer the first finding gives the count.
+      role: accounting
+      type: int
     - name: findings
       type: IList<string>
 

@@ -2,7 +2,17 @@
 // leaves `findings`, `overriddenCategories`, `overrideList`,
 // `modelCategoryList`, `subCategoryList`, `annotationCategoryList`,
 // `elementOverrideList`, `hiddenCategories`, `hiddenCategoryList`,
-// `templateOwnedCategories` and `visibilityTemplate` behind.
+// `templateOwnedCategories`, `visibilityTemplate` and `skippedCategories`
+// behind.
+//
+// VERSION 5 (2026-11-21, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A CATEGORY DRAWN IN THE VIEW THAT WILL NOT GIVE ITS OVERRIDES IS
+// COUNTED. Version 4 passed over one whose overrides Revit would not read,
+// without a word, and then said "nothing is overridden at CATEGORY level here"
+// - of categories it had not looked at. `skippedCategories` carries the count
+// every time; the sentence naming it rides only on that empty answer, so an
+// answer that lists overrides reads as version 4's. Only the version 1 block's
+// scan is counted; the blocks below it are unchanged.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -50,6 +60,9 @@ var overriddenCategories = new List<ElementId>();
 // Every overridden category, in full, joined. Empty when nothing is
 // overridden, so a clean view reads as nothing rather than as a sentence.
 var overrideList = "";
+// VERSION 5 (D-64): categories drawn in this view whose overrides Revit would
+// not give.
+var skippedCategories = 0;
 
 if (!view.AreGraphicsOverridesAllowed())
 {
@@ -73,9 +86,10 @@ else
     foreach (var pair in present)
     {
         OverrideGraphicSettings settings = null;
+        // VERSION 5: counted, never silently dropped (D-64).
         try { settings = view.GetCategoryOverrides(pair.Key); }
-        catch { continue; }
-        if (settings == null) continue;
+        catch { skippedCategories++; continue; }
+        if (settings == null) { skippedCategories++; continue; }
 
         checkedCount++;
         var parts = new List<string>();
@@ -147,6 +161,11 @@ else
     {
         findings.Add("nothing is overridden at CATEGORY level here. If something still looks wrong, it "
             + "is a per-element override (READ_GRAPHIC_OVERRIDES), a view filter, or the view template");
+        // VERSION 5 (D-64): ON THE EMPTY ANSWER ONLY, what was not looked at.
+        if (skippedCategories > 0)
+            findings.Add(string.Format("{0} more category(ies) drawn in '{1}' would not give their overrides, so "
+                + "they are not among the {2} looked at - \"nothing is overridden\" is not said of them",
+                skippedCategories, view.Name, checkedCount));
     }
 }
 

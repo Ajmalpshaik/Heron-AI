@@ -41,6 +41,12 @@ positive:
       templateOwned true, naming the template. Version 4 read the plan's own
       include list and could say either
 
+  - given: >
+      VERSION 6. viewName "*" on the scratch copy with filters on views
+    expect: >
+      every view with a filter listed as version 5 lists them; skippedViews a
+      number, and no "passed over" sentence, because the answer lists views
+
 negative:
   - given: version 5 - onlyCategory "Duct Accesories" (misspelt)
     expect: >
@@ -149,6 +155,16 @@ negative:
       the heading says the order is Revit's, not the dialog's - GetOrderedFilters
       is absent there - and `disabled` empty with the no-tick sentence, never
       counted as passed
+
+  - given: >
+      VERSION 6, NEGATIVE. viewName "*" on a model where no view carries a
+      filter (a new project)
+    expect: >
+      filterSettings empty, skippedViews 0 - the project and system browsers,
+      which throw, take no graphic override and are not counted - and the
+      version 5 words exactly, "No view in this model has a filter on it."
+      The "passed over" sentence, or skippedViews above 0, is written down
+      with the views it came from
 
 second_route:
   - Revit's own Manage then Filters for the list, and one view's Visibility/Graphics for the usage

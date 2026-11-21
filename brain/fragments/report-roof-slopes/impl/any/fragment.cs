@@ -1,5 +1,15 @@
 // NOT STANDALONE. Assumes `doc` and `elements` are in scope; leaves `roofsRead`,
-// `report` and `findings` behind. Reads only - no transaction, nothing changed.
+// `report`, `skippedRoofs` and `findings` behind. Reads only - no transaction,
+// nothing changed.
+//
+// VERSION 2 (2026-11-21, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A ROOF PASSED OVER IS COUNTED. Version 1 named each roof it could
+// not read, but its empty answer still began "This model has no roof by
+// footprint or by extrusion" when every one of them had been passed over - a
+// roof whose footprint would not read is still a roof by footprint.
+// `skippedRoofs` carries the count every time; on the empty answer the first
+// finding says how many were passed over instead. An answer that reads a roof
+// is version 1's.
 //
 // SLOPEANGLE IS A RISE OVER A RUN, NOT AN ANGLE, WHATEVER ITS NAME SAYS.
 // FootPrintRoof.get_SlopeAngle(edge) gives 0.5 for one up in two across, which
@@ -24,6 +34,9 @@ var degreesPerRadian = 180.0 / Math.PI;
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
 
 var roofsRead = 0;
+// VERSION 2 (D-64): every roof passed over - unreadable, no lines, or a kind
+// not read here. Never an element that is not a roof.
+var skippedRoofs = 0;
 var findings = new List<string>();
 var lines = new List<string>();
 
@@ -72,12 +85,14 @@ foreach (var element in candidates)
         {
             findings.Add(string.Format(invariant, "Roof by footprint {0} \"{1}\": its footprint could not "
                 + "be read - {2}", element.Id, typeName, unread.Message));
+            skippedRoofs++;
             continue;
         }
         if (loops == null || loops.Size == 0)
         {
             findings.Add(string.Format(invariant, "Roof by footprint {0} \"{1}\" has no footprint lines "
                 + "to read", element.Id, typeName));
+            skippedRoofs++;
             continue;
         }
 
@@ -133,12 +148,14 @@ foreach (var element in candidates)
         {
             findings.Add(string.Format(invariant, "Roof by extrusion {0} \"{1}\": its profile could not "
                 + "be read - {2}", element.Id, typeName, unread.Message));
+            skippedRoofs++;
             continue;
         }
         if (profile == null || profile.Size == 0)
         {
             findings.Add(string.Format(invariant, "Roof by extrusion {0} \"{1}\" has no profile lines "
                 + "to read", element.Id, typeName));
+            skippedRoofs++;
             continue;
         }
 
@@ -177,6 +194,7 @@ foreach (var element in candidates)
     {
         findings.Add(string.Format(invariant, "{0} \"{1}\" is a roof this does not read - not a roof by "
             + "footprint or by extrusion (a roof by face, or one modelled in place)", element.Id, typeName));
+        skippedRoofs++;
     }
     else if (fromSelection)
     {
@@ -186,7 +204,16 @@ foreach (var element in candidates)
 }
 
 var report = string.Join("\n", lines);
-if (roofsRead == 0)
+if (roofsRead == 0 && skippedRoofs > 0)
+{
+    // VERSION 2 (D-64): the empty answer names what was passed over, and never
+    // says "no roof" of roofs it could not read. Each is named in a finding
+    // below.
+    findings.Insert(0, string.Format(invariant, "No roof's slope was read: {0} roof(s){1} were passed over, "
+        + "each named below - not the same as there being no roof", skippedRoofs,
+        fromSelection ? " among the elements selected" : " in this model"));
+}
+else if (roofsRead == 0)
 {
     findings.Insert(0, fromSelection
         ? "No roof by footprint or by extrusion is among the elements selected, so no slope was read. "

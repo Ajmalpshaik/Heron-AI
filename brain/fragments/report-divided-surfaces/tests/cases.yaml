@@ -42,6 +42,27 @@ positive:
       Properties show. Nothing in the family changes: this opens no
       transaction
 
+  - given: >
+      VERSION 4. NEEDS-CHECKING PB1's surface - a 3000 x 2000 x 2500 mm mass
+      box, its top face divided uGrid 20, vGrid 4, which row 5b-303 measured
+      at 7 and 23 gridlines on Revit 2024 - read with withNodes true
+    expect: >
+      50 nodes listed, then "the list stops at 50: N more node(s) not listed",
+      N being the U-gridline count times the V-gridline count less the 50
+      listed and any that gave no point; missingNodes the sum of each line's
+      "node(s) gave no point" among the nodes tried before its list stopped,
+      0 where no line says it. A surface of 50 nodes or fewer has no "stops
+      at 50" words
+
+  - given: >
+      VERSION 4. a divided path of more than 50 nodes - a model line in the
+      same family divided by hand (Divide Path, Fixed Number 60) - with
+      withNodes true
+    expect: >
+      its line lists 50 nodes and then "the list stops at 50: N more node(s)
+      not listed", N being the points its geometry gave less 50; write N down
+      beside the line's own node count
+
 negative:
   - given: a new project with nothing in it
     expect: >
@@ -59,6 +80,12 @@ negative:
       surface's line still reads as in the second positive. Level 1 is named
       on neither line. No line says "not read"; one that does is recorded
       with Revit's reason, never read as a no
+
+  - given: >
+      VERSION 4, NEGATIVE. PB1's surface read with withNodes false
+    expect: >
+      missingNodes 0 and no node list at all - nothing was asked, so nothing
+      is counted as left out
 
 second_route:
   - Revit's Properties of the divided surface and the divided path
