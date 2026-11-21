@@ -12,7 +12,14 @@ schedule, not a register.
 the two agents it does not build are deferred by [D-77](../../DECISIONS.md), and the ones the host
 provides are listed by the same tool ([D-01](../../DECISIONS.md), [D-80](../../DECISIONS.md)). So the building half of the closure condition is met.
 What the plan taught - build the seam before the agent - is kept in `tools/new-agent.py` and
-`brain/heron_contract.py`. Deleting this note is the owner's call.
+`brain/heron_contract.py`, and since 2026-11-21 in [docs/28 §10, *The order the agents were built in*](../../28-agent-registry.md#the-order-the-agents-were-built-in---seams-first).
+
+**Read 2026-11-21: nothing here is left that is not kept elsewhere, and it is kept only because two
+docstrings name it by path** - `tools/new-agent.py` and `brain/heron_contract.py`. Re-pointing them is a code
+change, so it is [row 5b-1964](../../fragment-issues/row-5b-1964.md), issue
+[#1225](https://github.com/Ajmalpshaik/Heron-AI/issues/1225); retire this note in that change. The owner's yes
+asked for in WN-34 is taken under his standing words of 2026-11-21, *"do not ask me for routine development
+decisions"*.
 
 > Where this disagrees with [DECISIONS.md](../../DECISIONS.md), the
 > [Golden Rules](../../14-golden-rules.md) or the [Constitution](../../../HERON_CONSTITUTION.md),

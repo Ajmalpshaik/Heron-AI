@@ -100,7 +100,7 @@ for every command until then.
 | | |
 |---|---|
 | **PASS** | `tests/test_commands.py` - the store, filling, the runner against a stand-in server; runs everywhere |
-| **PASS** | `tests/test_commands_tool.py` - the MCP tool through the real fragment contracts; needs the MCP SDK, so CI lists it as not runnable |
+| **PASS** | `tests/test_commands_tool.py` - the MCP tool through the real fragment contracts; needs the MCP SDK, which CI's tests job runs it with, on a venv holding the pinned lock (since 2026-11-21) |
 | **PASS** | `tests/test_command_store.py` - a command the Python side saved is read by the panel's C#; every input survives the Windows command line whole |
 | **PASS** | `tools/check-compile.py` - every project on Revit 2020 to 2027 |
 | **NEEDS REAL REVIT** | the pane docks and shows; Commands opens it; a save in the chat appears without restart; Run starts the runner, reaches this Revit, Keep or Discard is asked, the answer is shown; a run while a chat holds the model is refused in words; a run with the bridge off says to press Heron |

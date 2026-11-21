@@ -371,7 +371,8 @@ they are two.**
   destination inside the bin.
 - **So a file in `docs/` that WILL be deleted is in the wrong place**, and two were:
   `FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md` and `PROMPT-fragment-validation-agent.md` moved to
-  `work-notes/plans/` on 2026-09-10. Both are one-time jobs that end in deletion.
+  `work-notes/plans/` on 2026-09-10. Both are one-time jobs that end in deletion - and the second
+  ended there on 2026-11-21, retired once its lasting parts were kept elsewhere.
 - **[`HANDOVER.md`](HANDOVER.md) is the one deliberate exception, and it is not a quiet one.** Its own
   first line says *"It is a work note, not specification"* — true, and it stays in `docs/` anyway
   because it is the documented cold start and **sixteen files reference it, two of them tools**

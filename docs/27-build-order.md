@@ -378,7 +378,7 @@ parameter with confidence, and in a system that can modify a model that is worse
 
 **Build:** embeddings computed **on the machine** ([D-24](DECISIONS.md), [D-26](DECISIONS.md) — no cloud
 opt-in, no setting), stored with `sqlite-vec`, indexed **by content hash** so a git checkout does not
-trigger a full re-embed ([05 §7](05-heron-brain.md)).
+trigger a full re-embed ([05 §7](05-heron-brain.md)). *(Since 2026-11-21, [D-194](decisions/D-194.md): the vectors are stored in the scope's own SQLite file and compared in plain Python; sqlite-vec is not used.)*
 
 **Prove it:** ask in words the fragment does not contain and still find it. Then **turn the network off**
 and do it again. Installing Heron must still need no API key and no account.
@@ -552,7 +552,7 @@ exists"*, and only this table tells them apart.
 step that exists — which is how three of them came to.
 
 **It has happened again, in source headers rather than fragments: `Heron-Step: 18`.** It first appeared
-on 2026-09-12 in [docs/34](work-notes/plans/project-perfection-and-continuous-upgrade-plan-2026-09-12.md) - the upgrade plan, a work note since 2026-11-15 - and since then heads
+on 2026-09-12 in `docs/34` - the upgrade plan, a work note from 2026-11-15 until it retired on 2026-11-21, its research rule moved to [31 §6](31-studying-the-existing-libraries.md#6-studying-an-outside-project---the-research-rule) - and since then heads
 tools, tests and documents written after that day; no section of this file defines it. Count where it is
 used with:
 

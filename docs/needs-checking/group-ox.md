@@ -5,7 +5,7 @@
 > this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py) reads it back
 > into the register for every tool that reads it, so a row here is seen exactly as it was seen there.
 
-## Group OX - a job that works only outside the model opens no transaction group in it (D-192): a new family from a chat, and an export of families - BUILT, NOT RUN IN REVIT (2026-11-20)
+## Group OX - a job that works only outside the model opens no transaction group in it (D-192): a new family from a chat, and an export of families - BUILT 2026-11-20; OX1 and OX2's positive RUN ON REVIT 2024 2026-11-21, OX2's negative and OX3 to OX5 owed
 
 **Tracked as GitHub issue [#1142](https://github.com/Ajmalpshaik/Heron-AI/issues/1142) since 2026-11-20** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 

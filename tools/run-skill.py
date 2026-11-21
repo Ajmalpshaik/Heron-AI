@@ -37,9 +37,9 @@ THE JOB FILE
     document: "..."             # optional: run on this open model, not the one in front
     negative_document: "..."    # optional: the negative on another open model
     steps:
-      - name: select-by-category-name      # a step that only ARRANGES the model
+      - name: select-in-region             # a step that only ARRANGES the model
         setup: true
-        values: {categoryName: Ducts}
+        values: {minMm: "0,0,0", maxMm: "12000,8000,4000", exact: false, categories: Ducts}
       - name: filter-elements-by-category
         values: {category: Ducts, levelId: "Level 1"}
         negative_values: {levelId: "Level 9"}    # merged over values, negative leg only
@@ -107,6 +107,16 @@ def check_job(job, skills, library):
         frag = by_slug.get(step.get("name"))
         if frag is None:
             problems.append("step %d names no fragment (%r)" % (number, step.get("name")))
+            continue
+        status = (frag.status or "").upper()
+        if status in ("DEPRECATED", "ARCHIVED"):
+            # A retired card is never offered to a chat, so a plan that runs
+            # one proves a route nobody takes - name what replaced it.
+            instead = ((frag.data.get("deprecated") or {}).get("superseded-by")
+                       if isinstance(frag.data.get("deprecated"), dict) else None)
+            problems.append("step %d, %s, is %s - name the card that replaced it%s"
+                            % (number, frag.slug, status,
+                               (" (%s)" % instead) if instead else ""))
             continue
         risk = (frag.data.get("risk") or "").upper()
         if risk not in PLAN_RISKS:
