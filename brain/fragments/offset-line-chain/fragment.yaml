@@ -25,7 +25,7 @@ semantic-identity: "offset a chain of model lines, detail lines or walls by a di
 #     of a chain each offset alone overlap or part at the corner. PROVEN, so
 #     its impl/ is not touched (a change makes its proof stale); a duct, pipe
 #     or other run handed in here is left alone and named as its.
-#   COPY_ELEMENTS (PROVEN)  duplicates by one vector or onto levels; a
+#   COPY_ELEMENTS           duplicates by one vector or onto levels; a
 #     parallel copy of a chain needs every piece trimmed to a new length,
 #     which no single vector gives.
 #   MOVE_ELEMENTS (PROVEN)  one vector for everything.

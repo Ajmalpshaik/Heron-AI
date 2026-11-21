@@ -7,6 +7,8 @@
 
 ## Group PG - REPORT_ROOF_SLOPES, the pitch of each roof read edge by edge, changing nothing - DRAFT until proved (2026-11-21)
 
+**Tracked as GitHub issue [#1202](https://github.com/Ajmalpshaik/Heron-AI/issues/1202) since 2026-11-21** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Why:** row [5b-1940](../fragment-issues/row-5b-1940.md), GitHub issue
 [#1161](https://github.com/Ajmalpshaik/Heron-AI/issues/1161): asked *"what pitch is this roof"* or *"how steep is this
 roof"*, every backend answered `SLOPE_ROOF_EDGES`, a write: no read in the library read a roof's slope edge by edge

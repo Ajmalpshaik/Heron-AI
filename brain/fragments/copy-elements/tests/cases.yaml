@@ -55,6 +55,18 @@ positive:
       exactly version 2 - the copies on the active workset A, onWorksets empty,
       refused empty; the binding note says toWorkset not given - "active"
 
+  # VERSION 6 (2026-11-21, row 5b-1949, issue #1175) - toLevels,
+  # turnDegrees and turnCentreMm may be left out. FAILS on version 5, which
+  # refused it `needs_request_values`. NOT RUN - NEEDS-CHECKING Group PJ
+  # (PJ1, PJ2).
+  - given: >
+      VERSION 6, one roof selected, offset "0,30000,0" and nothing else - the
+      call refused on 2026-11-21
+    expect: >
+      one copy 30 m along, kept; `copies` its id; `copiedTo` empty and
+      `notCopied` 0 - the same copy as the call with toLevels=, turnDegrees=
+      and turnCentreMm= typed blank, which version 5 needed
+
 negative:
   - given: an empty element list
     expect: >
@@ -150,6 +162,17 @@ negative:
     expect: >
       the originals stay where they are and copies appear - rotating what is
       there is ROTATE_ELEMENTS
+
+  # VERSION 6 (2026-11-21, row 5b-1949, issue #1175) - leaving toLevels
+  # out reads as blank, never as a level. Its positive is under `positive:`.
+  # NOT RUN - NEEDS-CHECKING Group PJ (PJ3).
+  - given: >
+      VERSION 6, one roof selected, offset "0,30000,0", turnDegrees "15" and
+      toLevels left out
+    expect: >
+      refused as version 5 refused it - a turn is applied only when copying
+      onto levels - nothing copied. Leaving toLevels out reads as blank, never
+      as a level
 
 second_route:
   - a count of that category before and after, differing by exactly the number copied
