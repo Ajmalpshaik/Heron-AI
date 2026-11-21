@@ -414,6 +414,30 @@ User work -> audit log -> Capability Gap -> Agent HR -> new capability
 passes a human gate. Heron proposes continuously; it promotes only with approval
 ([Golden Rule 6](14-golden-rules.md), [13](14-golden-rules.md)).
 
+### The order the agents were built in - seams first
+
+**Moved here on 2026-11-21 from the work note `agent-build-order-2026-09-13.md`**, written 2026-09-13 when
+the owner asked for the order that makes each agent easier to build than the one before it - *"if we create
+something it can be used for next creation easily"*. Every block it ordered is built: `python
+tools/agent-count.py` reports none left, the two it does not build are deferred by
+[D-77](DECISIONS.md), and those the host provides are listed by the same tool ([D-01](DECISIONS.md)).
+
+> **Build the seams before the agents that plug into them.** An agent built before its seam exists
+> invents one; twenty built that way are twenty private conventions, and the twenty-first can reuse none of
+> them. So agents were ordered by **how many later agents could reuse each**, not by department or by how
+> much each was wanted.
+
+| Block | Built | What it is, and why it came there |
+|---|---|---|
+| 0 - the contract | 2026-09-13 | `HERON-AHR-CON-017`, [`brain/heron_contract.py`](../brain/heron_contract.py): what every agent declares, and a breaking contract change detected between versions. **Tier and risk are not declared in a contract** - this page carries them, and a second home is drift; **`retry.on-failures` must name the failures it retries** ([D-21](DECISIONS.md)). [`tools/new-agent.py`](../tools/new-agent.py) scaffolds the next agent from its row here, and is what made the blocks after it cheap |
+| 1 - the kernel seams | 2026-09-14 | Instructions, model router, availability, budget, secrets, event bus - everything with a model call waited on these. None calls a model: under [D-01](DECISIONS.md) the host owns that |
+| 2 - the agent spine | 2026-09-14 | Registry, Workforce Planning, sandbox, validation, deployment, retirement. **Workforce Planning is the agent that says no**, so it came before the agents it guards |
+| 3 - the factory | 2026-09-14 | The eight of §10's hiring lifecycle, each built around what it refuses to do - in five cases the thing that would make its own numbers better. No agent approves itself ([Golden Rule 7](14-golden-rules.md)) |
+| 4 - the departments | after | Each reusing the blocks above, with **Import & Migration and Standards & BIM QA last**, because their proof needs a model |
+
+**Built is not proven.** Every block was code and offline tests on a machine with no Revit
+([D-30](DECISIONS.md)): the machine gathers, a person signs.
+
 ---
 
 ## 11. Kernel & Platform — 19

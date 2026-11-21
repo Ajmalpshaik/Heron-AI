@@ -1130,6 +1130,77 @@ def main():
         check(not any(line.strip() == "1. x" for line in stray_items),
               "items for a name the reply does not carry print nowhere")
 
+        # A LIST ALREADY PRINTED ELSEWHERE IN THE SAME REPLY IS NAMED, NOT
+        # PRINTED AGAIN (row 5b-1941, issue #1162). The add-in sends every list
+        # of text a fragment leaves at its top level, so a card that joins one
+        # into an output, or adds it into `findings`, printed each line two or
+        # three times. The shape REPORT_FAMILY_FORMS v6 left (row 5b-1911): its
+        # lines in `rows`, joined into `formList`, and the same lines added
+        # into `findings` - here with names that sort the joined text both
+        # above the lists and below them, so the rule cannot lean on the order.
+        first = ("Extrusion 41 on Ref. Level: 600 x 400 mm, Z 0 to 40 mm, "
+                 "material Steel")
+        second = ("Revolution 42 about Center (Left/Right): 360 degrees, "
+                  "radius 150 mm")
+        pair = {"1": first, "2": second}
+        pair_summary = "2 item(s) [Extrusion 41 on Ref. Level: 600 x 400 mm, Z 0 to..., ...]"
+        joined = first + "\n" + second
+        for text_name in ("aFormList", "zFormList"):
+            doubled = with_items({"findings": pair_summary, "rows": pair_summary,
+                                  text_name: joined},
+                                 {"findings": dict(pair), "rows": dict(pair)})
+            body = "\n".join(doubled)
+            check(body.count(first) == 1 and body.count(second) == 1,
+                  "with the joined text named %s, each line reaches the reply "
+                  "ONCE - it was printed three times: %d and %d"
+                  % (text_name, body.count(first), body.count(second)))
+            check(all(any(line.split()[:1] == [name] for line in doubled)
+                      for name in ("findings", "rows", text_name)),
+                  "and every value is still named on its own line")
+            named = [line for line in doubled
+                     if "not printed again" in line and text_name in line]
+            check(len(named) == 2,
+                  "each list left unprinted says where its lines are - %s: %s"
+                  % (text_name, named))
+        twins = with_items({"findings": pair_summary, "rows": pair_summary},
+                           {"findings": dict(pair), "rows": dict(pair)})
+        twin_body = "\n".join(twins)
+        check(twin_body.count(first) == 1 and twin_body.count(second) == 1,
+              "two lists holding the same lines print them once between them, "
+              "never zero times: %d and %d"
+              % (twin_body.count(first), twin_body.count(second)))
+        check(any("not printed again" in line and "findings" in line for line in twins)
+              or any("not printed again" in line and "rows" in line for line in twins),
+              "and the one left unprinted names the one that was")
+        partly = with_items({"findings": pair_summary, "note": first},
+                            {"findings": dict(pair)})
+        check(any(line.strip() == "2. %s" % second for line in partly)
+              and any(line.strip() == "1. %s" % first for line in partly),
+              "a list with even one line found nowhere else prints whole, as before")
+        cut_short = with_items({"findings": "3 item(s) [a, b, c, ...]", "report": joined},
+                               {"findings": dict(pair)})
+        check(any(line.strip() == "1. %s" % first for line in cut_short),
+              "a list longer than what arrived prints as before - its last line "
+              "was never seen, so it cannot be said to be printed elsewhere")
+        sample_only = with_items({"findings": pair_summary, "rows": pair_summary},
+                                 {"findings": dict(pair)})
+        check(any(line.strip() == "1. %s" % first for line in sample_only),
+              "another list's summary - three items, each cut at 60 characters - "
+              "is not where a line is printed, so it never stands in for it")
+        digits = {"1": "1", "2": "2", "3": "3", "4": "4"}
+        inside = with_items({"levels": "4 item(s) [1, 2, 3, ...]",
+                             "copied": "Copied 1020206, 1020317 and 1020438 to Level 4"},
+                            {"levels": dict(digits)})
+        check(all(any(line.strip() == "%s. %s" % (k, k) for line in inside) for k in digits)
+              and not any("not printed again" in line for line in inside),
+              "a line is printed elsewhere only WORD FOR WORD - \"1\" inside "
+              "\"1020206\" is not \"1\", so a list of short values still prints")
+        whole_word = with_items({"levels": "4 item(s) [1, 2, 3, ...]",
+                                 "copied": "Copied to levels 1, 2, 3 and 4"},
+                                {"levels": dict(digits)})
+        check(any("not printed again" in line and "copied" in line for line in whole_word),
+              "while the same short values standing whole in a sentence are found there")
+
         # WHAT CREATE_FAMILY_EXTRUSION LEFT on 2026-10-09, cut to one of each
         # shape: 29% of a 107-form family's replies were helpers like these,
         # carried by every later turn. 5b-407. The values beside them are

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -104,7 +104,22 @@ capability: COPY_ELEMENTS
 # Version 3's proof below no longer described the code (impl/ changed) and
 # was kept as the record; DRAFT at the time, until version 5 is proved on a
 # real model (D-30).
-version: 5
+#
+# VERSION 6 (2026-11-21, FRAGMENT-ISSUES row 5b-1949, issue #1175) changed
+# the CONTRACT, not impl/: `toLevels`, `turnDegrees` and `turnCentreMm` MAY
+# BE LEFT OUT, `optional: true` with `absent: ""`. Seen on the owner's PC
+# that day, Revit 2024, scratch project roofjoin-oy: one roof copied 30 m
+# along by `offset` alone was refused `needs_request_values`, naming the
+# three, and was copied and kept only once they were typed blank. Version 2
+# chose blank strings because "only an optional bool may be left out"; a
+# declared `absent:` came later (row 5b-488), and an empty one binds as empty
+# text since row 5b-1841 (in the add-in the owner ran that day). Left out, each
+# is now the blank version 2 reads - the C# trims all three - so a value
+# given, blank or not, does exactly what it did. impl/ is byte for byte what
+# the 2026-11-02 proof ran, so its fingerprint still stands; the card is held
+# at DRAFT (`proof-held`, below) until NEEDS-CHECKING Group PJ runs an offset
+# copy with the three left out against the same copy with them typed blank.
+version: 6
 source: OFFICIAL
 risk: MODIFY
 
@@ -168,19 +183,29 @@ contract:
       # and extra spaces forgiven - or "A..B" for every level from A to B by
       # height. BLANK COPIES BY THE OFFSET, as version 1. The order given is the
       # order of the turn. A name the model does not have refuses the call.
+      # Version 6: LEFT OUT IS BLANK (row 5b-1949) - an offset copy is asked
+      # with `offset` alone.
       type: string
       source: request
+      optional: true
+      absent: ""
     - name: turnDegrees
       # Version 2. Degrees each level's copy turns more than the one before,
       # anticlockwise in plan; negative turns clockwise. Blank or 0 is no turn.
-      # Given without toLevels it is refused rather than ignored.
+      # Given without toLevels it is refused rather than ignored. Version 6:
+      # left out is blank.
       type: string
       source: request
+      optional: true
+      absent: ""
     - name: turnCentreMm
       # Version 2. The plan point the copies turn about, "x, y" in MILLIMETRES.
-      # Blank is the middle of the originals' box in plan.
+      # Blank is the middle of the originals' box in plan. Version 6: left out
+      # is blank.
       type: string
       source: request
+      optional: true
+      absent: ""
     - name: toWorkset
       # Version 3. Which workset the copies go on, in a workshared model.
       # "source" - each copy on its own original's workset ("same", "own" and
@@ -270,6 +295,15 @@ contract:
       # thing found (D-52).
       role: accounting
       type: double
+
+# HELD, NOT STALE (version 6). The proof below ran version 5's code, which
+# is version 6's code: only the contract moved. Promoting it again is the
+# owner's step once Group PJ has run.
+proof-held: >
+  waiting on NEEDS-CHECKING Group PJ - version 6 lets toLevels, turnDegrees
+  and turnCentreMm be left out (row 5b-1949), and no run has yet copied by
+  an offset with the three left out and compared it with the same copy typed
+  blank. impl/ is unchanged since this proof, so its fingerprint stands.
 
 # WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
 # read that block's own date and fingerprint, not this comment, for what ran.
