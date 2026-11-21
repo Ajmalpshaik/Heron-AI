@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-172
+semantic-identity: "how steep is this roof: read the slope of each roof edge"
+
+# WHY IT EXISTS - comments, not `purpose`, because `purpose` is searched.
+#
+# FRAGMENT-ISSUES row 5b-1940, issue #1161 (2026-11-21). Asked "what pitch is
+# this roof", "how steep is this roof" or "what angle is this roof sloped at",
+# every backend answered SLOPE_ROOF_EDGES - a write that SETS a slope - on
+# main. No read in the library read a roof's slope: READ_ELEMENT_PARAMETERS
+# reads one named parameter, and a roof by footprint keeps its slope on each
+# footprint line, not on the roof (FootPrintRoof.get_SlopeAngle per
+# ModelCurve), while a roof by extrusion has no slope parameter at all - its
+# pitch is the angle of its profile's lines. So the question had nowhere to go
+# but the write. Checked first: no fragment's C# but SLOPE_ROOF_EDGES and
+# EXTEND_ROOF_TO_ROOF calls get_SlopeAngle or get_DefinesSlope, and both are
+# writes.
+#
+# WHAT IT READS - RevitAPI.xml 2020.2.90 to 2027.4.0, the same members on
+# every release: FootPrintRoof.GetProfiles, get_DefinesSlope, get_SlopeAngle;
+# ExtrusionRoof.GetProfile; CurveElement.GeometryCurve. SlopeAngle is a RISE
+# OVER A RUN, not an angle, whatever its name says (SLOPE_ROOF_EDGES' header):
+# 0.5 is 26.57 degrees, turned into degrees here by its arctangent.
+#
+# ROUTING - repeated in SLOPE_ROOF_EDGES and READ_ELEMENT_PARAMETERS.
+#
+#   "what pitch is this roof"        -> here. A question, answered by reading
+#   "how steep is this roof"         -> here
+#   "what is the slope of this roof" -> READ_ELEMENT_PARAMETERS keeps it
+#                                       (row 5b-1929): the roof's Slope
+#                                       parameter, when every sloped edge
+#                                       shares one; here gives each edge
+#   "slope this roof", "make it a gable at 30 degrees"
+#                                    -> SLOPE_ROOF_EDGES. A change
+kind: action
+domain: revit.elements
+capability: REPORT_ROOF_SLOPES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports how steep each roof is, as a read only. A roof by footprint is read
+  edge by edge: whether each footprint line defines slope and, where it does,
+  its slope as an angle and as a rise over a run. A roof by extrusion is read
+  from its profile: the angle of each straight line from level. The roofs
+  selected are read, or every roof in the model when none is selected.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The roofs, FROM THE SELECTION. Anything that is not a roof is named and
+    # left out. Empty, every roof in the model is read.
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: roofsRead
+      # How many roofs were read - a roof by footprint or by extrusion.
+      role: result
+      type: int
+    - name: report
+      # ONE STRING, one line per roof: its kind, type and id, then each
+      # edge's slope - so no cut on the way to a chat can shorten it to a
+      # count.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. FootPrintRoof.GetProfiles,
+  get_DefinesSlope and get_SlopeAngle, ExtrusionRoof.GetProfile and
+  CurveElement.GeometryCurve are present 2020 through 2027. Degrees come from
+  the arctangent of the rise over run as plain arithmetic - no units API,
+  which is what changed shape at 2021. Lengths are feet times 304.8.
+
+utterances:
+  - what pitch is this roof
+  - how steep is this roof
+  - what angle is this roof sloped at
+  - what is the roof pitch
+  - what are the slopes of the edges of this roof
+  - which edges of this roof define slope
+  - report the slope of every roof
+  - how steep are the roofs in this model

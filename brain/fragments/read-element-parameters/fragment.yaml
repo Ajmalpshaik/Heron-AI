@@ -264,6 +264,12 @@ compatibility-note: >
 #   Notes inViewOnly=<the view> handed on the same 109. Both were merged into
 #   FILTER_ELEMENTS_BY_CATEGORY on 2026-11-01.
 #   "which level are these walls on"      -> here, Level (5b-468)
+#   "what is the slope of this roof"      -> here, Slope - what the roof's
+#                                           Properties show (row 5b-1929)
+#   "what pitch is this roof", "how steep is this roof" -> REPORT_ROOF_SLOPES,
+#                                           each footprint line's slope, or a
+#                                           roof by extrusion's profile, which
+#                                           has no Slope parameter (5b-1940)
 #   "what is the base constraint of these walls" -> here, Base Constraint
 #   "change the walls' base level"        -> SET_ELEMENT_LEVEL, which
 #                                           re-hosts them without moving them

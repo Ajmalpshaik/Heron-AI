@@ -1662,6 +1662,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pe.md`](needs-checking/group-pe.md)
 
+## Group PG - REPORT_ROOF_SLOPES, the pitch of each roof read edge by edge, changing nothing - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pg.md`](needs-checking/group-pg.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

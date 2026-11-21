@@ -1,0 +1,63 @@
+# D-30: the negative case is what catches "succeeded and said the wrong
+# thing" - for a read of slopes, a ratio reported as degrees, an upright end
+# reported as sloped, or a flat roof reported as pitched.
+#
+# THE ARRANGEMENT (NEEDS-CHECKING Group PG). The scratch project
+# "roofjoin-oy" of Group OY, never a working model: the MAIN ROOF (a roof by
+# footprint, its two long sides Defining Slope at 30 degrees, its two ends
+# upright), the WING ROOF (a roof by extrusion, profile "0,500; 2000,1655;
+# 4000,500" - two lines at 30 degrees), and one more: a FLAT ROOF, a roof by
+# footprint with no edge Defining Slope. Write down each roof's footprint
+# lines' Defines Slope and Slope from Edit Footprint before the run.
+
+positive:
+  - given: >
+      the main roof selected
+    expect: >
+      roofsRead 1; report "Roof by footprint <id> "Generic - 400mm": 2 of its
+      4 footprint lines define slope." then each line - the two long sides
+      "slopes at 30 degrees (rise 0.577 per 1 of run)", the two ends "defines
+      no slope", each with its length (12000 and 8000 mm). The same as
+      written down from Edit Footprint
+
+  - given: >
+      the wing roof selected
+    expect: >
+      roofsRead 1; report "Roof by extrusion <id> ..." with its two profile
+      lines each "at 30 degrees" (to within 0.1 - the profile's 1155 mm rise
+      over 2000 mm is 29.99)
+
+  - given: >
+      nothing selected
+    expect: >
+      every roof in the model read - the main roof, the wing, the far roof,
+      the copy and the flat roof - and the finding says "every roof in the
+      model, as none was selected"; nothing changed (the undo list has no new
+      entry)
+
+negative:
+  - given: >
+      the main roof selected - THE FIRST CASE TO RUN
+    expect: >
+      30 degrees, NOT 0.577 degrees and NOT 0.58 called an angle. A slope read
+      as an angle is the mistake SLOPE_ROOF_EDGES' header warns of, and the
+      number looks plausible either way
+
+  - given: >
+      the flat roof selected
+    expect: >
+      "0 of its 4 footprint lines define slope - it is flat", and no line
+      given a pitch
+
+  - given: >
+      a wall and the main roof selected
+    expect: >
+      roofsRead 1; a finding "Walls <id> is not a roof, so it was left out";
+      the main roof read as in the positive
+
+second_route:
+  - given: >
+      the main roof, by hand
+    expect: >
+      Edit Footprint, each line's Properties: Defines Slope and Slope as the
+      report says, line for line

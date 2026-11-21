@@ -239,14 +239,15 @@ compatibility-note: >
 #                                           A roof by extrusion takes its slope
 #                                           from its profile; this card refuses
 #                                           one by name
-#   "what pitch is this roof"            -> NOT HERE, and nowhere yet. A
-#                                           question must not land on a write,
-#                                           and nothing reads a roof's pitch
-#                                           edge by edge. Measured 2026-09-24
-#                                           through heron_lookup: that sentence
-#                                           resolved to CREATE_ROOF, another
-#                                           write. READ_ELEMENT_PARAMETERS reads
-#                                           what the roof's Properties show
+#   "what pitch is this roof", "how steep is this roof"
+#                                        -> REPORT_ROOF_SLOPES (2026-11-21, row
+#                                           5b-1940), which reads each edge's
+#                                           slope and changes nothing. Before
+#                                           it nothing read a roof's pitch edge
+#                                           by edge, and the question landed
+#                                           here, a write, on every backend.
+#                                           READ_ELEMENT_PARAMETERS reads what
+#                                           the roof's Properties show
 #   "change a value in the roof's Properties"
 #                                        -> WRITE_ELEMENT_PARAMETERS. It writes
 #                                           one parameter and cannot choose which

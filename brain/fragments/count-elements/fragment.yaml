@@ -126,3 +126,6 @@ utterances:
   # REPOINT_VIEW_REFERENCE, a write, on the trained model, and so did each of
   # the four other door wordings tried here. Without it, "how many doors are
   # there" reaches GROUP_AND_COUNT on lexical: a read either way.
+  # ADDED 2026-11-21, row 5b-1940 (issue #1161): reached SHAPE_WALL_TOPS_TO_ROOF,
+  # a write, on lexical.
+  - count the roofs

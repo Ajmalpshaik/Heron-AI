@@ -114,6 +114,10 @@ utterances:
   - how much clearance is there between them
   - what is the vertical distance between these
   - how much headroom is left
+  # EIGHTH ON PURPOSE (row 5b-1940, issue #1161): the re-ranker reads a card's
+  # first eight sentences (D-134), and two roofs touching reached
+  # CONNECT_OPEN_ENDS or EXTEND_ROOF_TO_ROOF there.
+  - do these two roofs meet
   # MOVED 2026-11-20 from CREATE_DIMENSION (row 158, GitHub issue #954). Both
   # are questions this read answers as a number, drawing nothing; on the
   # write they resolved by identity to a tool that annotates the model
@@ -125,3 +129,9 @@ utterances:
   # on every backend.
   - how far is the wing roof from the main roof
   - does the wing roof touch the main roof
+  # ADDED 2026-11-21, row 5b-1940 (issue #1161): the same two questions said
+  # another way reached SHAPE_WALL_TOPS_TO_ROOF, EXTEND_ROOF_TO_ROOF or
+  # TRIM_EXTEND_ELEMENTS - writes.
+  - is the wing roof touching the main roof
+  - what is the distance between these two roofs
+  - how far apart are the two roofs

@@ -661,3 +661,8 @@ utterances:
   # elements that reached SHAPE_WALL_TOPS_TO_ROOF, SLOPE_ROOF_EDGES or
   # CREATE_EXTRUSION_ROOF - writes - on every backend.
   - which roofs are in this model
+  # ADDED 2026-11-21, row 5b-1940 (issue #1161): the same question said
+  # another way reached SHAPE_WALL_TOPS_TO_ROOF, EXTEND_ROOF_TO_ROOF or
+  # CREATE_PARTS - writes.
+  - how many roofs are there
+  - how many roofs does this model have
