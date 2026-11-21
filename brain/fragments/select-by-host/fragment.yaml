@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SEL-009
-semantic-identity: "the things really hosted on this element, not the things near it"
+semantic-identity: "the doors, windows and other things really hosted in this wall or element, not the things near it"
 kind: filter
 domain: revit.selection
 capability: SELECT_BY_HOST

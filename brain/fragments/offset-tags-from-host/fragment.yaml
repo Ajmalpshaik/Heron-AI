@@ -398,6 +398,7 @@ compatibility-note: >
 utterances:
   - move the tags beside the diffusers
   - offset the duct tags with a leader
+  - put each tag above its duct or pipe on a leader
   - move the tags off the elements
   - move each tag 8 mm right and 6 mm up from its element
   - turn this tag vertical

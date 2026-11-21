@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-040
-semantic-identity: "which units, symbols and rounding does this project use for lengths and every other value"
+semantic-identity: "which units, symbols and rounding does this project use for lengths, heating and cooling loads, airflow and every other value"
 # IDENTITY WIDENED 2026-11-21 (row 5b-1924, GitHub issue #1127): "for lengths
 # and every other value" added. Measured main 4ae650e6 against the branch with
 # tools/score-routing.py --sentences on a set frozen before the edit: "what

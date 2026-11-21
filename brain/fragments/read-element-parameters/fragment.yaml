@@ -301,6 +301,7 @@ utterances:
   # SET_MEP_INSULATION on every backend; the re-ranker reads only a card's first
   # eight sentences (D-134). "read the mark values" moved below.
   - what is the insulation thickness of this duct
+  - how thick is the insulation
   - get the size parameter
   - which ones have no value
   # ADDED 2026-09-20. Measured: this sentence reached REPOINT_VIEW_REFERENCE, a
