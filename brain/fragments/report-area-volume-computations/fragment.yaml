@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-056
-semantic-identity: "the Area and Volume Computations settings - volumes on or off, which wall face room areas are measured to, and every area scheme"
+semantic-identity: "the Area and Volume Computations settings - volumes on or off, where room areas are measured, and every area scheme"
 kind: action
 domain: revit.rooms
 capability: REPORT_AREA_VOLUME_COMPUTATIONS

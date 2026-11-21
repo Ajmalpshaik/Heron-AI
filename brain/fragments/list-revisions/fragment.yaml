@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SHT-005
-semantic-identity: "every revision in the project, the numbering each one uses, and which sheets carry each one"
+semantic-identity: "every revision in the project and which sheets carry each one"
 
 # BACK TO DRAFT ON 2026-09-28, AND THE PROOF BLOCK BELOW WAS KEPT ON PURPOSE.
 # The code was widened to read the whole Sheet Issues/Revisions dialog, so the

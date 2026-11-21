@@ -445,9 +445,12 @@ utterances:
   # on lexical and the model on main 4ae650e6. A duct or pipe carries
   # "Insulation Thickness" and "Insulation Type" as parameters of its own,
   # read here by name. Declared after the eighth line, so what the re-ranker
-  # reads of this card (D-134) is unchanged.
+  # reads of this card (D-134) is unchanged. The row's third, "how thick is
+  # the insulation on this duct", was declared beside them and measured: with
+  # all three, "what insulation does this duct have" (held out) went from
+  # SELECT_BY_INSULATION to SET_MEP_INSULATION on lexical - a near tie on main
+  # (0.02587 against 0.02581) - so it was taken back and is still open.
   - what insulation thickness is on these pipes
-  - how thick is the insulation on this duct
   - what insulation type is on this pipe
   # ADDED 2026-11-21, row 5b-224 (GitHub issue #955). It reached
   # SET_ROOM_LIMITS, a write, on lexical and the model on main 4ae650e6. A

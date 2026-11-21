@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-001
-semantic-identity: "which models are linked into this one, are they actually loaded, and is each one room bounding"
+semantic-identity: "which models are linked into this one, and are they actually loaded"
 kind: filter
 domain: revit.document
 capability: LIST_LINKED_MODELS

@@ -6,6 +6,12 @@ heron-layer: brain
 
 id: FRG-DOC-040
 semantic-identity: "which units, symbols and rounding does this project use for lengths and every other value"
+# IDENTITY WIDENED 2026-11-21 (row 5b-1924, GitHub issue #1127): "for lengths
+# and every other value" added. Measured main 4ae650e6 against the branch with
+# tools/score-routing.py --sentences on a set frozen before the edit: "what
+# units are lengths shown in" (held out, never declared) left SET_PROJECT_UNITS,
+# an Admin write, for this read on lexical; nothing moved the wrong way on
+# lexical or the model. The re-ranked backends are in the pull request.
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
 # Nothing in the library read Manage > Project Units (a search for GetUnits

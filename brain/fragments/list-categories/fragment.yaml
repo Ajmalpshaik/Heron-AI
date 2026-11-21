@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-031
-semantic-identity: "what categories does this model actually have, and the object style of each one - the line weights, colours and material it has in Object Styles"
+semantic-identity: "what categories does this model actually have, and the object style of each one - how it draws in Object Styles"
 kind: filter
 domain: revit.document
 capability: LIST_CATEGORIES
