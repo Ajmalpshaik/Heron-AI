@@ -142,6 +142,23 @@ positive:
 
   - given: the 70-form family, which = the 10 ids from that last entry, as given
     expect: formCount 10, every one of the ten described, no "more" entry, elements 10
+
+  # VERSION 7 (2026-11-21, row 5b-1911, NEEDS-CHECKING PB7). FAILS on version
+  # 6, whose reply also printed the typed ids as numbered lists under `parts`
+  # and `ids`.
+  - given: the 70-form family, which = 20 of its form ids, as given
+    expect: >
+      formCount 20, the twenty described, elements 20; the reply holds no
+      numbered list under `parts`, `ids` or `words` - each typed id appears in
+      formList's lines and nowhere else
+
+  - given: >
+      a scratch metric Generic Model family holding 70 detail lines in its
+      Ref. Level view and no forms, which "detail line"
+    expect: >
+      twoDCount 70; twoDList holds 60 detail-line rows, then ONE row "and 10
+      more 2D element(s), not described here ..." naming those 10 ids;
+      elements 70 - the bound is on the words, never on what is handed on
 negative:
   - given: which "revolve" on the same family, which holds no revolve
     expect: formCount 0, formList empty, scanned 2 - the forms were looked at and none matched
@@ -223,6 +240,14 @@ negative:
     expect: >
       60 form lines after the count entry and NO "more form(s)" entry - the
       bound cuts only past 60
+
+  # VERSION 7 (2026-11-21, row 5b-1911, NEEDS-CHECKING PB8).
+  - given: the 70-form family, which "123456" - an element number, not a form's long id
+    expect: >
+      refused "Nothing was read. "123456" is not an id in this family - that
+      is an element number ..."; nothing read, elements 0. The refusal is in
+      `refused` and `findings` and NOT a third time as a numbered list under
+      `problems`; no numbered list under `parts` or `ids` either
 second_route:
   - >
       In the Family Editor, select each form and read its Properties and its

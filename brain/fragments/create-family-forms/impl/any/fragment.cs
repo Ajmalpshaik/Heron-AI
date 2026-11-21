@@ -50,6 +50,13 @@
 //   split the rows across calls of about 300 loops. 600 is a budget from one
 //   measured run on Revit 2020, not a limit of Revit's.
 //
+// VERSION 5 (2026-11-21, row 5b-1921, issue #1111) refuses A LOOP THAT CROSSES
+// OR TOUCHES ITSELF - a figure-of-eight, corners out of order - the same way:
+// each loop's own sides that are not next to each other are measured with
+// version 4's arithmetic, and two nearer than a hundredth of a millimetre
+// refuse the call, naming the row, the loop and the two sides. Version 4
+// tested loops against each other only, never one loop against itself.
+//
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one - so the
 // whole list is ONE entry in the Family Editor's undo list, and one Undo takes
 // every form back (Article 8).
@@ -1016,6 +1023,50 @@ else
                         + "side of the axis - draw half the section, from the axis outwards.");
                 if (!left && !right)
                     problems.Add(where + ": the profile lies on its axis, so turning it encloses nothing.");
+            }
+        }
+
+        // VERSION 5 (row 5b-1921, issue #1111) - A LOOP THAT CROSSES OR TOUCHES
+        // ITSELF IS REFUSED HERE, before anything is made: a figure-of-eight, or
+        // corners written in an order that makes one side run across another.
+        // Version 4 tested every PAIR of loops but never one loop against
+        // itself, so such a loop reached Revit, which answers only "unexpected
+        // internal error". The same arithmetic, `sidesApart`, is run on each
+        // loop's own sides that are NOT next to each other - two sides next to
+        // each other share their corner by design. A plain outline's sides that
+        // are not neighbours never meet, so any two nearer than `touchMm` are a
+        // crossing, a shared corner or an overlap. A blend's or a swept blend's
+        // top loop is tested too. Skipped over the loop budget, as below.
+        if (problems.Count == problemsBefore && loops.Count == loopTexts.Count && loopsInCall <= mostLoops)
+        {
+            var ownLoops = new List<Tuple<List<double[]>, string>>();
+            for (var i = 0; i < loops.Count; i++)
+                ownLoops.Add(Tuple.Create(loops[i], kindIs == "blend" ? "the base profile"
+                    : kindIs == "swept blend" ? "the bottom profile"
+                    : loops.Count == 1 ? "the profile" : "loop " + (i + 1) + " of the profile"));
+            if (topLoop != null) ownLoops.Add(Tuple.Create(topLoop, "the top profile"));
+            foreach (var own in ownLoops)
+            {
+                var sides = own.Item1;
+                var sideCount = sides.Count;
+                string crossing = null;
+                for (var i = 0; i < sideCount && crossing == null; i++)
+                    for (var j = i + 2; j < sideCount && crossing == null; j++)
+                    {
+                        if (i == 0 && j == sideCount - 1) continue;   // the closing side meets the first
+                        if (sidesApart(sides[i], sides[j]) <= touchMm)
+                            crossing = "side " + (i + 1) + " (from " + plain(sides[i][1]) + "," + plain(sides[i][2])
+                                + ") and side " + (j + 1) + " (from " + plain(sides[j][1]) + "," + plain(sides[j][2])
+                                + ")";
+                    }
+                if (crossing != null)
+                {
+                    problems.Add(where + ": " + own.Item2 + " crosses or touches itself - its " + crossing
+                        + " meet, though they are not next to each other - and Revit cannot build that; it answers "
+                        + "only \"unexpected internal error\". Write the corners in order round the outline, an "
+                        + "arc's middle point on the side it bulges to; a figure-of-eight is two forms.");
+                    break;
+                }
             }
         }
 

@@ -134,4 +134,7 @@ utterances:
   - keep the top flat through the reducer
   - set the justification on these ducts
   - align the bottoms of these pipes
-  - set the mep offset
+  # "set the mep offset" TAKEN OUT 2026-11-21 (row 5b-1918, issue #1114):
+  # since version 2 this card sets Horizontal and Vertical Justification and
+  # no offset, so the sentence pulled a request for a run's elevation here.
+  # Measured with tools/score-routing.py --sentences before and after.
