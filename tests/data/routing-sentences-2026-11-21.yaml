@@ -18,6 +18,11 @@
 # (DRAFT, refused live) - row 5b-1950 records the PROVEN pair doing the job on
 # the owner's PC. Groups for rows 5b-1950 and 5b-1947 were added, frozen before
 # their edit. 67 sentences.
+#
+# ROUND 3, later on 2026-11-21: a group of 19 held-out sentences for rows 5b-424,
+# 5b-1007, 5b-476, 5b-1832, 5b-1946, 5b-1947 and 5b-1950, frozen before their
+# edits. The two attach sentences expect SHAPE_WALL_TOPS_TO_ROOF because this file
+# is asked with --revit 2024, where ATTACH_WALLS is not offered. 84 sentences.
 groups:
 - group: 'new-a: a level''s elevation (owner''s PC 2026-11-21, and held-out)'
   sentences:
@@ -74,6 +79,46 @@ groups:
   - say: stop the wall ends cleaning up
     expect: want DISALLOW_JOIN
   - say: unjoin the floor from the wall
+    expect: want JOIN_GEOMETRY
+- group: round 3, written 2026-11-21 before its edits
+  sentences:
+  - say: set the keynote of this type
+    expect: want SET_FAMILY_TYPE_VALUES
+  - say: give this family type the keynote 08 71 00
+    expect: want SET_FAMILY_TYPE_VALUES
+  - say: change the keynote value in the family type
+    expect: want SET_FAMILY_TYPE_VALUES
+  - say: what is the keynote of this type
+    expect: not-a-write
+  - say: read the text of these notes
+    expect: want READ_ELEMENT_PARAMETERS
+  - say: what is written in these text notes
+    expect: want READ_ELEMENT_PARAMETERS
+  - say: read me the wording of the selected notes
+    expect: want READ_ELEMENT_PARAMETERS
+  - say: line up the views on all the sheets
+    expect: want CENTER_VIEWPORTS_ON_SHEETS
+  - say: make the viewports sit in the same place on each sheet
+    expect: want CENTER_VIEWPORTS_ON_SHEETS
+  - say: put Level 5 at 15000 mm
+    expect: want WRITE_ELEMENT_PARAMETERS
+  - say: the roof level should be at 9600, fix it
+    expect: want WRITE_ELEMENT_PARAMETERS
+  - say: on the level named Roof set the parameter Elevation to 9000
+    expect: want WRITE_ELEMENT_PARAMETERS
+  - say: at what height is Level 4
+    expect: not-a-write
+  - say: put a footprint roof on the top level
+    expect: want CREATE_FLOOR
+  - say: load the edited excel back into revit
+    expect: want SET_PARAMETER_VALUES_BY_ID
+  - say: are the detail lines in this family locked
+    expect: not-a-write
+  - say: pull the levels in from the linked structural model
+    expect: want COPY_ELEMENTS_BETWEEN_DOCUMENTS
+  - say: these two walls should not join at the corner
+    expect: want DISALLOW_JOIN
+  - say: join the beam and the slab
     expect: want JOIN_GEOMETRY
 - group: '1039 / 5b-1848: bring datums in from a link'
   sentences:
@@ -165,11 +210,7 @@ groups:
     expect: want PLACE_AREA_REINFORCEMENT
   - say: add four more floor levels
     expect: want CREATE_LEVELS
-  - say: set the keynote of this type
-    expect: want SET_FAMILY_TYPE_VALUES
   - say: attach these walls to the roof above
     expect: want SHAPE_WALL_TOPS_TO_ROOF
   - say: attach the top of these walls to the roof
     expect: want SHAPE_WALL_TOPS_TO_ROOF
-  - say: read the text of these notes
-    expect: want READ_ELEMENT_PARAMETERS

@@ -217,3 +217,8 @@ utterances:
   # sentence itself: an exact match on this PROVEN write may run unasked and
   # names no method, where the owner wants Heron to ask first.
   - the roofs will not join, so make the walls meet the roof instead
+  # ADDED 2026-11-21, row 5b-1832 (issue #956), on the owner's word that day
+  # ("fix the remaining open rows in 956"). On Revit 2024, where ATTACH_WALLS is not
+  # offered, the attach requests reached ATTACH_COLUMNS. At the END - and the card has
+  # fewer than eight, so the re-ranker reads this line too (D-134).
+  - attach the tops of the walls up to the roof

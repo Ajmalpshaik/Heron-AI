@@ -367,3 +367,8 @@ utterances:
   # ADDED 2026-11-11, row 5b-1504 - version 5, every type at once.
   - blank these values in all the family types
   - set the same value in all the family types
+  # ADDED 2026-11-21, row 5b-424 (issue #956), on the owner's word that day
+  # ("fix the remaining open rows in 956"). On main it reached REPORT_KEYNOTES, a
+  # read; a type's Keynote is one of its values. At the END, so the eight the
+  # re-ranker reads (D-134) are unchanged.
+  - set the keynote of this type
