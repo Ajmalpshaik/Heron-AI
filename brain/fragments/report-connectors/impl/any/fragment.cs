@@ -1,7 +1,7 @@
 // NOT STANDALONE. Assumes `elements` and `sizeTolerance` are in scope, and
 // leaves `connectorFacts`, `connections`, `openConnectors`, `flagDisagrees`,
-// `noConnectors`, `connectorSummary`, `mismatched`, `unconnectedSpigots` and
-// `findings` behind.
+// `noConnectors`, `connectorSummary`, `mismatched`, `unconnectedSpigots`,
+// `findings`, `connectorMeasurements` and `connectorKinds` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -27,6 +27,24 @@
 // the description uses: refs owned by the element itself or by an MEPSystem
 // are dropped first, and a spigot with no physical partner is OPEN whatever
 // the flag says.
+//
+// VERSION 4 (2026-11-21, work-note item WN-4 of issue #1005) - THE
+// MEASUREMENTS AS NUMBERS, NOT ONLY AS TEXT. A size filter or a connection
+// planner that reads `connectorFacts` has to parse a sentence to get a
+// diameter back. `connectorMeasurements` holds each connector's numbers, one
+// entry a number, keyed "<element id>/<connector number>/<measure>": the
+// connector number counts the element's connectors from 1 in the order Revit
+// lists them - the same number `findings` uses - and the measures are
+// diameterMm on a round connector, widthMm and heightMm on a rectangular or
+// oval one, xMm, yMm and zMm for where it sits (MILLIMETRES from Revit's
+// internal origin, the unit in each key's own name, since a bare double is
+// not converted at the boundary), and facingX, facingY and facingZ for the
+// way it faces (a unit vector, no unit). A measure Revit will not give is
+// LEFT OUT, never written as 0 - an electrical connector has no size, so it
+// has no size keys. `connectorKinds` holds "<element id>/<connector number>"
+// -> its domain, system and shape in the words `connectorFacts` uses, so
+// every connector has an entry even where no number could be read. The text
+// outputs are unchanged.
 //
 // THE FLAG IS REPORTED, NEVER TRUSTED.
 //
@@ -105,6 +123,8 @@
 // the input to geometry, where feet is what everything else speaks.
 
 var connectorFacts = new Dictionary<ElementId, IList<string>>();
+var connectorMeasurements = new Dictionary<string, double>();
+var connectorKinds = new Dictionary<string, string>();
 var connections = new Dictionary<ElementId, IList<ElementId>>();
 var openConnectors = new Dictionary<ElementId, int>();
 var flagDisagrees = new List<ElementId>();
@@ -292,6 +312,41 @@ foreach (var element in elements)
             var direction = connector.CoordinateSystem.BasisZ;
             facing = "facing (" + direction.X.ToString("0.##") + ", " +
                      direction.Y.ToString("0.##") + ", " + direction.Z.ToString("0.##") + ")";
+        }
+        catch { }
+
+        // VERSION 4: the same reads as numbers, each on its own so one that
+        // throws costs only itself. Millimetres, as the keys say.
+        var measured = element.Id.ToString() + "/" + index;
+        connectorKinds[measured] = domain + ", " + shape;
+        try
+        {
+            if (connector.Shape == ConnectorProfileType.Round)
+                connectorMeasurements[measured + "/diameterMm"] = connector.Radius * 2 * MillimetresPerFoot;
+            else if (connector.Shape == ConnectorProfileType.Rectangular
+                     || connector.Shape == ConnectorProfileType.Oval)
+            {
+                var wide = connector.Width * MillimetresPerFoot;
+                var high = connector.Height * MillimetresPerFoot;
+                connectorMeasurements[measured + "/widthMm"] = wide;
+                connectorMeasurements[measured + "/heightMm"] = high;
+            }
+        }
+        catch { }
+        try
+        {
+            var at = connector.Origin;
+            connectorMeasurements[measured + "/xMm"] = at.X * MillimetresPerFoot;
+            connectorMeasurements[measured + "/yMm"] = at.Y * MillimetresPerFoot;
+            connectorMeasurements[measured + "/zMm"] = at.Z * MillimetresPerFoot;
+        }
+        catch { }
+        try
+        {
+            var way = connector.CoordinateSystem.BasisZ;
+            connectorMeasurements[measured + "/facingX"] = way.X;
+            connectorMeasurements[measured + "/facingY"] = way.Y;
+            connectorMeasurements[measured + "/facingZ"] = way.Z;
         }
         catch { }
 

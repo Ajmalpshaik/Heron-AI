@@ -57,7 +57,9 @@ purpose: >
   **A SHEET THAT DOES NOT EXIST YET CAN STILL BE ON THE INDEX.** Revit calls it
   a placeholder sheet - a number and a name with no titleblock and no views -
   and it appears on a sheet list like any other. That is how a drawing register
-  is set up before the drawings are. CREATE_SHEETS makes them; this lists them.
+  is set up before the drawings are. CREATE_SHEETS makes them, with
+  titleBlockName placeholder, since its version 5 (2026-11-21, WN-6 of issue
+  #1005) - until then this line said so and no card did; this lists them.
 
   **A VIEW LIST IS THE SAME JOB, ONE CALL OVER.** `listKind` = `views` makes
   Revit's View List through `ViewSchedule.CreateViewList` - a schedule of the

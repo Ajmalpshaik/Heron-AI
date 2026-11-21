@@ -172,7 +172,7 @@ Outer and inner boundaries are separated, but every inner loop is flattened into
 
 ### C08 — Provide structured connector measurements (P2)
 
-*Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-4) - work it there.*
+*done 2026-11-21 (WN-4, issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005)): `REPORT_CONNECTORS` version 4 (DRAFT) adds `connectorMeasurements` - each connector's diameter, width and height and its position in millimetres, and its facing vector, one entry a number, keyed "<element id>/<connector number>/<measure>" - and `connectorKinds` (domain, system and shape); a measure Revit will not give is left out, never 0, and the text outputs are unchanged. Not run in Revit - NEEDS-CHECKING [Group PE](../../needs-checking/group-pe.md) PE2.*
 
 **Fragment:** `report-connectors`  
 **Evidence:** [contract](../../../brain/fragments/report-connectors/fragment.yaml), `connectorFacts: IDictionary<ElementId, IList<string>>`.
