@@ -57,6 +57,43 @@ save waits for Keep *"NOTHING IS SAVED YET"*, not that its save *"is done alread
 its host, `tests/test_fragment_ambient.py`) - **NOT RUN IN REVIT.** EN11 and EN12 run TODAY as previews; EN13
 waits.
 
+**2026-11-21 - issue [#1028](https://github.com/Ajmalpshaik/Heron-AI/issues/1028): the FAMILY in front, and
+why Heron makes no "save-helper" model.** Seen on the owner's PC on 2026-11-19 (two fixed-size families, Revit
+2020 - a chat made an empty `save-helper.rfa` to save the real family from as *another document*, five calls a
+save, [row 5b-1885](../fragment-issues/row-5b-1885.md)) and again on 2026-11-21 (a scratch roof model - every
+save between steps was the owner's own Ctrl+S). Written in a cloud container, no Revit; **no C#, no card
+contract and no decision changed.**
+
+- **What Revit allows - read, not run.** `Document.Save` refuses while any transaction, sub-transaction or
+  transaction group the API opened is still open (the card's compatibility-note: the 2020, 2024 and 2027
+  reference XML, read 2026-10-07). That remark says nothing against the document in front; `Document.Close`'s
+  does. So
+  the save can never be inside Heron's one group (Article 8), and is made after it - [D-171](../decisions/D-171.md),
+  built as `SAVE_DOCUMENT` version 3 and [`RevitFragmentSave.cs`](../../revit/Heron.Revit.Addin/RevitFragmentSave.cs),
+  for a family as for a project (`.rfa` for a family's Save As). Whether Revit lets Heron's ExternalEvent
+  callback save at all is EN4 and EN6 - **not measured**.
+- **The "save-helper" is the add-in, not a model.** It saves the pinned document once its Undo entry has
+  closed, so no helper model - seen or hidden - is needed. A hidden helper (a document opened with no window)
+  was considered and not built: one more document Revit holds open, one more pin to manage, and nothing it
+  could save that version 3 cannot. The family method already says never to make one.
+- **[D-192](../decisions/D-192.md)'s `noGroupOpen` is not the route.** It is for a job that works only outside
+  the model it is aimed at; a save is of that model's own file, and D-171 point 5 keeps the group as it is.
+  Using it would change two accepted decisions for nothing - the card would still be DRAFT. Not proposed.
+- **Why a chat still cannot save it today:** version 3 is DRAFT. [D-117](../decisions/D-117.md) refuses a
+  DRAFT's kept run from `revit_change`; [D-119](../decisions/D-119.md)'s one try is offered only for a change
+  to the model (`ask_needs_change_path`); D-155 keeps a chat from previewing a Publish job. Until it is
+  PROVEN only the proving client runs it - and a preview saves too (D-171 point 6), which is how EN6 to EN16
+  run.
+- **What the owner switches on: Changes and Publish**, in Heron > Settings ([D-106](../decisions/D-106.md),
+  [D-150](../decisions/D-150.md)), on an add-in that offers `saveWhenKept` - `python tools/heron-ready.py` and
+  a Revit restart, where issue [#1051](https://github.com/Ajmalpshaik/Heron-AI/issues/1051) item D found the
+  Revit 2020 add-in older. Nothing else. A save is still made only when the modeller asks for it (Article 10,
+  D-171 point 2).
+- **What makes it one call:** EN6 (a), EN8 (a), EN9, EN11 (a) and **EN14 to EN16** below - the family in
+  front, which no row ran before - as previews, then the proof signed with the owner
+  (`heron_bridge_client.py validate save-document --write --allow-publish`). Once PROVEN, *"save the family"*
+  from a chat is one `revit_change` call.
+
 **SCRATCH ONLY, never a working model.** A new project from the default metric template, left unsaved.
 
 | # | Run | Look for |
@@ -74,3 +111,6 @@ waits.
 | **EN11** | *`SAVE_DOCUMENT` v3, ANOTHER open document saved AFTER the group, on a PREVIEW - runs today, on scratch families ([row 5b-1824](../fragment-issues/row-5b-1824.md)).* Changes and Publish on. A scratch host family in front, Heron working in it, and a scratch part family open BEHIND it with one form added since it was saved - [Group CS](group-cs.md)'s `HeronNest_Car` and `HeronNest_Hub` will do. (a) `heron_bridge_client.py fragment save-document --write --set documentPath=<the part's file>`, no `--apply`. (b) Another form added to the part, then the same with `--set closeWindow=true`. (c) (b) again at once, with nothing unsaved in the part | (a): the verdict ROLLED BACK and, under it, **SAVED** - the `save` block `kind saveOther`, `done true`, `preview true`, its words saying the change was rolled back AND the save was done, and that a save cannot be undone; `saveAsked true`, `closeAsked false`; the part's file time on disk moves to now and the host's does not. (b): the block `closed true`, *"Its window is closed"*; `REPORT_OPEN_DOCUMENTS` no longer lists the part; then `LOAD_FAMILY` into the host brings in both forms - `family-creation` step 11 f and g. **Write down any dialog Revit raised during the save or the close, and whether the reply came back at all** - the close is the first Heron makes after its group; CS2's was inside the run. (c): `saveAsked false`, `closeAsked true`, the block `nothingToSave true` and `closed true`; the file's time unchanged |
 | **EN12** | *The rules read again after the group - runs today, as previews (row 5b-1824).* EN11's two families. (a) The part IN FRONT, Heron working in the host behind it, one form unsaved, `closeWindow=true`. (b) A workshared LOCAL copy of a scratch central open behind the host, one wall unsaved, `documentPath` its file | (a): `closeAsked false` and the finding saying Revit lets no tool close the window in front; the `save` block `done true`, `closed false`; the part's file time moves, its window is still open and Revit still running. (b): `done true` and *"NOTHING WENT TO CENTRAL"* in the block's words; a second user's Reload Latest does NOT show the wall |
 | **EN13** | *A Discard saves and closes NEITHER document, and Revit's box says what waits for Keep - waits for the card to be proved, Ask to Keep on, AND for a run that changes the model and asks a save in one group:* Revit shows its box only for a change it counts, and `SAVE_DOCUMENT` alone changes nothing ([row 5b-1834](../fragment-issues/row-5b-1834.md)). EN11's part behind the host, one form unsaved, `closeWindow=true`; Discard pressed. Then the same with Keep | The box says *"NOTHING IS SAVED YET. Keep keeps the change, then saves"* the part's file *"and closes its window"* and *"saves nothing and closes nothing"* for Discard - never *"is done already"*. Discard: the `save` block `kind saveOther`, `done false`, `closed false`, saying Discard was pressed and *"Its window was left open"*; the part's file time UNCHANGED, the part still open with its unsaved form. Keep: `done true`, `closed true`, `preview false` |
+| **EN14** | *The FAMILY in front, Heron working in it, saved to its own file - runs today, as a PREVIEW (issue [#1028](https://github.com/Ajmalpshaik/Heron-AI/issues/1028)).* Revit 2020 first, then 2024. Changes and Publish on. A scratch Generic Model family saved as `%TEMP%\heron-work\en\EN14.rfa`, in front - the document Heron works in - and one extrusion drawn by hand since its last save. `REPORT_OPEN_DOCUMENTS` read first. Then `heron_bridge_client.py fragment save-document --write --set documentPath=<EN14.rfa>`, no `--apply` | The verdict ROLLED BACK and, under it, **SAVED** - the `save` block `kind save`, `done true`, `preview true`, saying the change was rolled back AND the save was done, and that a save cannot be undone; `EN14.rfa`'s time on disk moves to now. File > Close then raises no *"save changes?"* question, and the family reopened holds the hand-drawn extrusion. `REPORT_OPEN_DOCUMENTS` lists the SAME documents as before - **no helper model made or opened**. Write down any dialog Revit raised and how long the save took |
+| **EN15** | *EN14's negative - runs today, as previews.* The same family. (a) EN14's run again at once, nothing unsaved since. (b) `--set saveAsPath=%TEMP%\heron-work\en\EN15.rfa` on this family, which HAS a file | (a): `saveAsked false`, NO `save` block, the finding saying it had no unsaved changes; `EN14.rfa`'s time on disk UNCHANGED. (b): refused, naming `EN14.rfa` - it is saved there, never under a new name; `saveAsked false`, no `EN15.rfa` written. A SAVED line on either is the failure |
+| **EN16** | *A never-saved FAMILY saved as the path the modeller typed - runs today, as previews; its chat half once the card is proved.* Revit 2020 (a family has no `creationGuid` on any release). A new scratch family from a template, never saved, in front, one extrusion. (a) `--set saveAsPath=%TEMP%\heron-work\en\EN16.rvt`. (b) `--set saveAsPath=%TEMP%\heron-work\en\EN16.rfa`. (c) Once proved: through a chat pinned to a second never-saved family, the same Save As kept, then one more extrusion asked for | (a), the negative: refused - *"A family is saved as a .rfa file"*; `saveAsked false`, no file written. (b): `EN16.rfa` on disk, Revit's title `EN16`, the `save` block `kind saveAs` naming it, `preview true`. (c): the reply says the chat now works on the family under its new name, and **the extrusion goes in with no "use this model"** - the pin followed the rename (D-171 point 6) |
