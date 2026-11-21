@@ -57,6 +57,28 @@ positive:
       chat's NEXT change goes into the same model with no "use this model" -
       on Revit 2020, where the model has no CreationGUID, and on 2024
 
+  # ISSUE #1028 (2026-11-21): THE FAMILY IN FRONT, Heron working in it - the
+  # case a chat met on 2026-11-19 and worked round with a "save-helper"
+  # family. NEEDS-CHECKING Group EN EN14 to EN16.
+  - given: >
+      a saved scratch FAMILY in front, Heron working in it, one extrusion drawn
+      by hand since its last save, documentPath = its own .rfa, run as a
+      PREVIEW
+    expect: >
+      saveAsked true, saveAskedTo its .rfa; the verdict ROLLED BACK and the
+      save block kind save, done true, preview true; the .rfa's time on disk
+      moves to now, and the family reopened holds the extrusion. What is open
+      is the same before and after - no helper model made or opened
+
+  - given: >
+      a NEVER-saved scratch family in front, Heron working in it,
+      saveAsPath = a new full .rfa path under %TEMP%\heron-work, run as a
+      PREVIEW
+    expect: >
+      the .rfa exists at that path; Revit's title is the new name; the save
+      block kind saveAs names it. Through a chat once proved: the chat's NEXT
+      change goes into the same family with no "use this model"
+
   - given: the first case KEPT (revit_change once proved, Ask to Keep off - or Keep pressed)
     expect: >
       the save block done true, preview false; one Undo entry, and Ctrl+Z
@@ -99,6 +121,13 @@ negative:
       refused, naming the file and saying Heron replaces one only when told to;
       saveAsked false, the file untouched. With replaceFile=true the same run -
       a preview does it - replaces it, and the save block says it REPLACED it
+
+  - given: >
+      a never-saved FAMILY in front, Heron working in it, saveAsPath ending
+      .rvt (issue #1028, Group EN EN16)
+    expect: >
+      refused - a family is saved as a .rfa file; saveAsked false, no file
+      written
 
   - given: saveAsPath for a model that already HAS a file, or a relative path, or a .txt
     expect: >
