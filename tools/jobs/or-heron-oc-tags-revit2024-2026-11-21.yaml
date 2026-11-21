@@ -1,0 +1,54 @@
+# NEEDS-CHECKING Group OR (docs/needs-checking/group-or.md), OR18, with Group
+# OQ's OQ1 and OQ2 (group-oq.md) - ARRANGE_TAGS version 4 (row 5b-1652, each
+# tag spaced by its own size) on version 3's paper millimetres (row 5b-240).
+# Written 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/or-heron-oc-tags-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/or-heron-oc-tags-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE MODEL: "Heron OC Tags", Revit 2024 - the scratch project Heron built
+# from English\DefaultMetric.rte under %TEMP%\heron-work\oc (group-oc.md, OC0)
+# on which version 2 was proved on 2026-11-16 (OC6 PASS, moved 2). In
+# FloorPlan: Level 1, D1's door tag sits ON Room 1's room tag, and the two
+# room tags stand apart in two rooms. Never a working model.
+#
+# WHY HERE, NOT OR18'S PLAN. OR18 asks the NR1 plan of P1102 MEP NR on Revit
+# 2020, kept once - 349 tags on a plan Group NR left with its arranging kept,
+# a heavy write and a reading row 5b-1651 says can come back partial; it is
+# the owner's chat check, by hand. OQ1 and OQ2 name oq-blank.rvt, not made
+# yet. This is the last proof's model and release, with version 3's values.
+#
+# THE VALUES ARE PAPER MILLIMETRES now (version 3): version 2's proof sent
+# minGapMm 200 and fallbacks 1500 by 500, model millimetres at this plan's
+# scale; here 2, and 15 by 5 - the same figures divided by 100. The plan's
+# scale is not recorded: the gap in the run record is 2 mm times it (0.656 ft
+# at 1:100). The fallbacks are used only when every tag has a leader; none
+# here has one.
+#
+# THE NEGATIVE IS A DIFFERENT SELECTION (OC6's): the two room tags alone,
+# nothing clashing - so it carries its own `negative-setup-set:`. Every run is
+# ROLLED BACK.
+
+model: "Heron OC Tags - Heron's DefaultMetric scratch with doors, rooms and their tags in FloorPlan: Level 1, Revit 2024"
+
+defaults:
+  in: "Heron OC Tags"
+
+jobs:
+  - fragment: arrange-tags
+    write: true
+    expect: moved
+    setup: [filter-elements-by-category, set-selection]
+    setup-set: {categories: "Door Tags, Room Tags", inViewOnly: "FloorPlan: Level 1"}
+    negative-setup-set: {categories: "Room Tags", inViewOnly: "FloorPlan: Level 1"}
+    set: {view: "FloorPlan: Level 1", minGapMm: 2, maxPasses: 10, fallbackTagWidthMm: 15, fallbackTagHeightMm: 5}
+    negative-set: {view: "FloorPlan: Level 1", minGapMm: 2, maxPasses: 10, fallbackTagWidthMm: 15, fallbackTagHeightMm: 5}
+    note: >
+      OR18's question on OC6's pair, and OQ1 then OQ2. Binding note: elements
+      from the selection (5 - three door tags, two room tags, as version 2's
+      proof read). Positive: D1's tag and Room 1's pushed apart - moved 1 or
+      2, notTags EMPTY, stillOverlapping empty, measuredFrom 5; in the run
+      record gap 2 mm times the plan's scale, and the door tags and room tags
+      spaced each by their OWN measured size (version 4), never one median for
+      all. Negative: the two room tags alone - moved 0, stillOverlapping empty,
+      notTags empty. Rolled back.

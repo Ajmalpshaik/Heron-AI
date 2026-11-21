@@ -1,0 +1,240 @@
+# NEEDS-CHECKING Group OR (docs/needs-checking/group-or.md) on Revit 2020 -
+# seven cards changed for issues #942, #943, #951 and #1058, each DRAFT again
+# until proved. Written 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#   set-mep-justification       SET_MEP_JUSTIFICATION      v2  OR1 with OR3 (c)
+#   place-accessory-on-run      PLACE_ACCESSORY_ON_RUN     v2  OR8 (d) with OR9 (a)
+#   check-minimum-clearance     CHECK_MINIMUM_CLEARANCE    v4  OR24
+#   frame-elements-in-camera    FRAME_ELEMENTS_IN_CAMERA   v7  OR23
+#   count-by-spatial-container  COUNT_BY_SPATIAL_CONTAINER v3  OR25/OR26's label check
+#   move-annotation             MOVE_ANNOTATION            v3  OR12
+#   export-model-to-ifc         EXPORT_MODEL_TO_IFC        v2  OR22 (PUBLISH)
+#
+#     python tools/batch-prove.py tools/jobs/or-p1102-mep-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/or-p1102-mep-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL: "P1102 MEP", the scratch copy of Revit 2020's own
+# Samples\rme_advanced_sample_project.rvt in %TEMP%\heron-work\prove-1102 -
+# never a working model. The callout "Callout of Level 1 HVAC WSHP TYP" holds
+# 10 rectangular ducts, 9 duct fittings and 2 air terminals (read before
+# p1102-round3-2026-11-02.yaml, and row 5b-1397's set); the model has 7 sheets,
+# the 3D view "3D Duct & Equipment", the text type "1.5mm Arial", the duct
+# type "Rectangular Duct: Mitered Elbows / Tees" and its spaces (89, as the
+# fresh copy P1102 MEP NR read in Group NR).
+#
+# THE ARRANGEMENTS reuse the proven ones of rounds 3, 5, 6 and 11 on this
+# model, updated for the new rows. Every negative is a DIFFERENT selection
+# (Duct Fittings, Air Terminals, Sheets) or a DIFFERENT value - never an empty
+# one - and every `negative-set:` carries every value its leg needs, because
+# it REPLACES the `set:` (heron_bridge_client.py). EVERY WRITE IS ROLLED BACK;
+# the kept looks (OR1's section, OR18-style) are the owner's, by hand.
+#
+# WHAT IS NOT HERE, AND WHY:
+#   - OR7, place-accessory-on-run's FIRST CASE (one LONE duct drawn along Y in
+#     a scratch metric project). A creation chain (create-mep-runs, load-family)
+#     can make the lone duct, but then both legs are handed a duct - and a run
+#     handed any duct, a riser included, always lands in `placed` (the card's
+#     own C#), so no value makes that leg's negative empty. It is a
+#     one-at-a-time `validate --write` on the owner's scratch project; see the
+#     note on the job below.
+#   - OR24's sprinkler half and OR25's two-storey arrangement: by hand.
+#   - export-model-to-ifc is PUBLISH: the dry run says WILL NOT RUN IN A BATCH
+#     and prints the `validate --allow-publish ... --write` command - the
+#     owner's line, his Publish and Changes switches on. It WRITES A FILE the
+#     rollback does not take back, into the prove-1102\exports folder the
+#     export-views-to-dwg proof on this model wrote to.
+#
+# RUN ORDER: filter-elements-by-category and set-selection are PROVEN; the
+# chain create-text-note -> move-annotation is OS10's case (one id handed to a
+# list), which has not met a Revit yet - if move-annotation is DID NOT RUN with
+# a cast error, that is OS10, not OR12.
+
+model: "P1102 MEP - scratch copy of Revit 2020's rme_advanced_sample_project.rvt, Revit 2020"
+
+defaults:
+  in: "P1102 MEP"
+  setup: []
+
+jobs:
+  - fragment: set-mep-justification
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: set
+    set:
+      categories: "Ducts"
+      inViewOnly: "Callout of Level 1 HVAC WSHP TYP"
+      vertical: "Top"
+    negative-set:
+      categories: "Duct Fittings"
+      inViewOnly: "Callout of Level 1 HVAC WSHP TYP"
+      vertical: "Top"
+    note: >
+      OR1 then OR3 (c). Binding note first: elements from the selection (10) -
+      the callout's 10 rectangular ducts. Positive: set 10 (less any already at
+      Top, which are in unchanged), withoutJustification 0 - version 1 gave set
+      0 with ten "2 of 2 offset(s) did not take" here. Negative, the callout's 9
+      duct fittings: set 0, every fitting in withoutJustification - not
+      refused, not set. Rolled back: whether the drawn run MOVES in section is
+      OR1's kept run, by hand. OR2 and OR3 (a), (b), (d) are one call each.
+
+  - fragment: place-accessory-on-run
+    write: true
+    setup: [filter-elements-by-category, set-selection, load-family]
+    expect: placed
+    set:
+      categories: "Ducts"
+      inViewOnly: "Callout of Level 1 HVAC WSHP TYP"
+      familyPath: "C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Duct/Accessories/Dampers/M_Fire Damper - Rectangular - Simple.rfa"
+      reload: false
+      overwriteValues: false
+      accessorySymbol: "M_Fire Damper - Rectangular - Simple: Standard"
+      positionAlong: 0.5
+    negative-set:
+      categories: "Duct Fittings, Air Terminals"
+      inViewOnly: "Callout of Level 1 HVAC WSHP TYP"
+      familyPath: "C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Duct/Accessories/Dampers/M_Fire Damper - Rectangular - Simple.rfa"
+      reload: false
+      overwriteValues: false
+      accessorySymbol: "M_Fire Damper - Rectangular - Simple: Standard"
+      positionAlong: 0.5
+    note: >
+      OR8 (d) and (c) then OR9 (a). The damper is the one Revit 2020's US Metric
+      library path is recorded for (p1102-round17); OR7 names M_Balancing Damper
+      - Rectangular, whose path nobody recorded - write it here to use it. If
+      load-family answers that the family is already loaded, that is fine: the
+      symbol binds by name after the setup. Binding note: elements from the
+      selection (10). Positive: placed 10, leftSevered empty, notTurned empty,
+      no "modified to be in the opposite direction" failure; a failure here
+      only is the turn or the pairing breaking what version 1 did. Negative,
+      the callout's 9 fittings and 2 air terminals: all 11 in notARun, placed 0,
+      nothing broken. OR7 - THE FIRST CASE of version 2 - is not this job: on a
+      saved scratch project from the metric template, one lone rectangular
+      Supply Air duct along Y and the damper loaded, run validate
+      place-accessory-on-run --write with positionAlong=0.5, and for its
+      negative the same call handed an element that is not a run (OR9 (a)).
+
+  - fragment: check-minimum-clearance
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: tooClose
+    set:
+      categories: "Ducts"
+      inViewOnly: "Callout of Level 1 HVAC WSHP TYP"
+      defaultClearance: 5000
+      rules: ""
+      includeInsulation: false
+    negative-set:
+      categories: "Sheets"
+      defaultClearance: 5000
+      rules: ""
+      includeInsulation: false
+    note: >
+      OR24, version 3's proven positive and version 4's own negative. Keep-chain
+      on purpose: elements and targets both come from the filter (targets binds
+      elements). Positive: the callout's 10 ducts at 5000 mm - tooClose about the
+      45 pairs version 3's proof read, gapsMm filled. Negative - row 5b-1400:
+      the model's 7 sheets, the same 5000 mm - tooClose EMPTY and a finding that
+      7 elements were skipped, all with no model geometry - not checked, never
+      passed. Version 3 reported 21 pairs here. The sprinkler half of OR24
+      (defaultClearance 1, then a large one) is one validate each.
+
+  - fragment: frame-elements-in-camera
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: framed
+    set:
+      categories: "Ducts"
+      inViewOnly: "Callout of Level 1 HVAC WSHP TYP"
+      viewName: "Heron Frame - Callout Ducts"
+      direction: "south-east"
+      lookDownDeg: "30"
+    negative-set:
+      categories: "Sheets"
+      viewName: "Heron Frame - Sheets"
+      direction: "south-east"
+      lookDownDeg: "30"
+    note: >
+      OR23, p1102-round6's arrangement. Negative - THE FIRST CASE TO RUN, row
+      5b-1399: the 7 sheets - refused, noGeometry 7, framed 0, madeNew false and
+      NO camera view "Heron Frame - Sheets" in the Project Browser. Version 6
+      gave framed 7 and made a camera. Positive: the callout's ducts framed as
+      before - framed 10, a camera "Heron Frame - Callout Ducts". Rolled back.
+
+  - fragment: count-by-spatial-container
+    setup: [filter-elements-by-category, set-selection]
+    expect: groupCounts
+    set:
+      categories: "Air Terminals"
+      inViewOnly: "Callout of Level 1 HVAC WSHP TYP"
+      containerKind: "space"
+    negative-set:
+      categories: "Air Terminals"
+      inViewOnly: "Callout of Level 1 HVAC WSHP TYP"
+      containerKind: "ZZZNOTHINGHERE"
+    note: >
+      Version 3's label fix (row 5b-1858) on real spaces, the version 2 proof's
+      negative. READ. Binding note: elements from the selection (2). Positive:
+      both air terminals counted in Level 1's spaces, and every label reads the
+      space's name and number ONCE - never "Office 101 101". Negative: placed 0,
+      groupNames empty, a finding that ZZZNOTHINGHERE is not a container this
+      card knows. NOT OR25 itself: the stacked-storey case (an accessory in the
+      ceiling void under Level 2's space) needs the owner's two-storey scratch
+      model, and is one validate there; OR26 (b) needs an unloaded link.
+
+  - fragment: move-annotation
+    write: true
+    setup: [create-text-note]
+    keep-chain: true
+    expect: moved
+    set:
+      view: "Callout of Level 1 HVAC WSHP TYP"
+      at: "0,0,0"
+      noteText: "OR12 MOVE ME"
+      textTypeId: "1.5mm Arial"
+      target: "1000,0,0"
+      arrange: ""
+    negative-set:
+      view: "Callout of Level 1 HVAC WSHP TYP"
+      at: "0,0,0"
+      noteText: "OR12 MOVE ME"
+      textTypeId: "1.5mm Arial"
+      target: "1000,0,0"
+      arrange: "align left"
+    note: >
+      OR12, row 5b-1115. The note is made by create-text-note INSIDE the
+      rolled-back run (p1102-round11's values; OR12 names 3.5mm Arial, which
+      nobody recorded in this model - 1.5mm Arial is). Binding note: elements
+      from create-text-note (1) - OS10's case. Positive: moved 1, notMovable 0,
+      "1 moved - 0 by its tag head, 1 by its location point or text position" -
+      version 2 gave notMovable 1. Negative, a DIFFERENT VALUE on the same note:
+      arrange "align left" with one note - moved 0, "Lining up or spreading out
+      needs two annotations or more ... NOTHING WAS MOVED". OR12's two-note
+      align and its duct case (notMovable, never called a text note) are one
+      validate each.
+
+  - fragment: export-model-to-ifc
+    write: true
+    expect: created
+    set:
+      folder: "C:/Users/ajmal/AppData/Local/Temp/heron-work/prove-1102/exports"
+      fileName: "or22-p1102-ifc2x3"
+      schema: "IFC2x3"
+      scopeViewId: "3D Duct & Equipment"
+      withQuantities: false
+    negative-set:
+      folder: "C:/Users/ajmal/AppData/Local/Temp/heron-work/prove-1102/exports"
+      fileName: "or22-p1102-ifc4x3-negative"
+      schema: "IFC 4x3"
+      scopeViewId: "3D Duct & Equipment"
+      withQuantities: false
+    note: >
+      OR22, row 5b-1402. PUBLISH: WILL NOT RUN IN A BATCH - the owner runs the
+      printed validate --allow-publish --write line, Publish and Changes on in
+      Heron's Settings. Negative - THE FIRST CASE TO RUN: "IFC 4x3" refused
+      before anything is written, listing the schemas Revit 2020 has (IFC4x3 is
+      not one), and NO or22-p1102-ifc4x3-negative.ifc in the folder. Positive:
+      it BINDS - no bad_request_value - and created names
+      exports\or22-p1102-ifc2x3.ifc. The folder must exist (the card refuses a
+      missing one); it is the one the export-views-to-dwg proof wrote to on
+      this PC. Delete the .ifc afterwards by hand if wanted - the rollback does
+      not.
