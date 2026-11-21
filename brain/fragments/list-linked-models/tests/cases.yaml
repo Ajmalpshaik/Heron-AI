@@ -20,6 +20,14 @@ positive:
       each placement pinned or NOT pinned and its workset as Properties
       shows. Not one setting reads NOT READ on a loaded link
 
+  - given: >
+      VERSION 3. Snowdon Towers Sample HVAC, six links loaded (the version 1
+      proof's model)
+    expect: >
+      the six files as version 2 lists them, skippedPlacements 0, and no
+      "link placement(s) are in this model but Revit gives no link type"
+      sentence
+
 negative:
   # VERSION 2 - the settings are READ, never set.
   - given: >
@@ -43,6 +51,12 @@ negative:
       it is reported NOT LOADED. The recorded status describes what Revit last
       wrote down; the missing document describes what can actually be read, and
       every question after this one depends on the second
+
+  - given: >
+      VERSION 3, NEGATIVE. a project with no link (Project1)
+    expect: >
+      `summary` empty, skippedPlacements 0, and no passed-over sentence -
+      an empty answer that is "no link", not "links not read"
 
 second_route:
   - Revit's own Manage > Manage Links dialog, read against the same project for the file list and the loaded state

@@ -1,5 +1,13 @@
 // NOT STANDALONE. Assumes `doc` is in scope; leaves `elements`, `findings`,
-// `notLoaded` and `summary` behind.
+// `notLoaded`, `summary` and `skippedPlacements` behind.
+//
+// VERSION 3 (2026-11-21, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A PLACEMENT WITH NO LINK TYPE IS COUNTED, NOT DROPPED. Version 2
+// passed over a placement whose type Revit would not give: it stayed in
+// `elements` but no file row named it, so `summary` could read empty - the
+// answer for "no link" - with placements on screen. `skippedPlacements`
+// carries the count every time; the sentence naming it rides only on the empty
+// answer (no file listed), so an answer that lists files reads as version 2's.
 //
 // VERSION 2 (2026-11-20) - WHAT A MODELLER ASKS ABOUT A LINK, BESIDE LOADED.
 // Row 5b-474, the owner's yes of 2026-11-20 (Ajmalpshaik/Heron-AI#921):
@@ -42,6 +50,7 @@ var elements = new List<Element>();
 var findings = new List<string>();
 var notLoaded = new List<ElementId>();
 var summary = "";
+var skippedPlacements = 0;
 
 var placements = new Dictionary<ElementId, int>();
 var loaded = new Dictionary<ElementId, bool>();
@@ -62,7 +71,8 @@ foreach (var instance in new FilteredElementCollector(doc)
     elements.Add(instance);
 
     var typeId = instance.GetTypeId();
-    if (typeId == null || typeId == ElementId.InvalidElementId) continue;
+    // VERSION 3: counted, never silently dropped (D-64).
+    if (typeId == null || typeId == ElementId.InvalidElementId) { skippedPlacements++; continue; }
 
     if (!placements.ContainsKey(typeId))
     {
@@ -172,3 +182,10 @@ foreach (var typeId in order)
     block.AddRange(placementLines[typeId]);
     summary += (summary.Length == 0 ? "" : "\n") + string.Join("\n", block.ToArray());
 }
+
+// VERSION 3 (D-64): ON THE EMPTY ANSWER ONLY, what was passed over - so an
+// empty `summary` is never the "no link" answer for placements that are there.
+if (order.Count == 0 && skippedPlacements > 0)
+    findings.Add(skippedPlacements + " link placement(s) are in this model but Revit gives no link type for "
+        + "them, so no file is listed for them. They are still among the placements handed back, so they can be "
+        + "selected and looked at.");
