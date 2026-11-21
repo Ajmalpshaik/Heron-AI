@@ -113,3 +113,9 @@ utterances:
   - which system is this duct on
   - which pipes are not in a system
   - what is the system classification of this pipe
+  # ADDED 2026-11-21, row 132 (GitHub issue #959). The find-blank-parameters
+  # skill's own sentence: an element with no system is `noSystem` here, the
+  # answer the sentence asks for. It reached SET_MEP_SYSTEM_TYPE, a write, on
+  # lexical (tools/score-routing.py, this card 3rd). Declared on the read that
+  # answers it (D-86); the skill now lists READ_MEP_SYSTEM in its needs.
+  - which ducts have no system name
