@@ -10,7 +10,7 @@
 
 
 **Nothing here has been near Revit, and no fragment status moved.** Full ledger, every phase note and
-every measurement: [`work-notes/plans/improvement-gate-execution-record.md`](../work-notes/plans/improvement-gate-execution-record.md).
+every measurement: `work-notes/plans/improvement-gate-execution-record.md` (retired 2026-11-21; its row in [the work notes' table](../work-notes/README.md) says where each part went, and git history holds it).
 
 **What exists now that did not before.** Four things, and each answers a question nothing in this
 repository was asking:

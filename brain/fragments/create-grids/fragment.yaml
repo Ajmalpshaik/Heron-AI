@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 15
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "set out a whole grid from bay spacings"
 kind: action
 domain: revit.datums
 capability: CREATE_GRIDS
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -61,7 +61,8 @@ risk: MODIFY
 # is not a number, neither radius nor spoke, a radius of 0 or less, spokes
 # with no radius. Its outputs: made -> the count of `created`; gridIds ->
 # `created` (the grids themselves); gridNames -> `namedAs`; refused and
-# findings -> `refused`, which after a run says what was made.
+# findings -> `refused`, which after a run said what was made - in
+# `findings` since version 4 (row 5b-1948), and `refused` a refusal only.
 #
 # HOW RADIAL GRIDS ARE NAMED: BY REVIT, as they were on that card. Revit gives
 # each new grid the next free name after the last grid made, so one can never
@@ -79,6 +80,20 @@ risk: MODIFY
 #
 # DRAFT at the time, until version 3 is proved on a real
 # model (D-30).
+#
+# VERSION 4 (2026-11-21, FRAGMENT-ISSUES row 5b-1948, issue #1174) changed
+# impl/: WHAT WAS MADE IS SAID IN `findings`, AND `refused` HOLDS A REFUSAL
+# AND NOTHING ELSE. Seen on the owner's PC that day, Revit 2024, scratch
+# project roofjoin-oy: one grid named Wing drawn between two points and kept
+# came back with `refused` holding "1 grid line(s) drawn between the points
+# given, each one level". Versions 2 and 3 did it on purpose in all three ways
+# - the bay-spacing, between-points and radial sentences, and a spoke outside
+# the arcs' sweep - so an item in `refused` told a caller nothing, and only
+# `created`'s count said whether the call refused. Those lines go in
+# `findings` now, word for word; no refusal moved and no output was renamed.
+# Version 3's proof below (2026-11-02, P1102 MEP) no longer describes the
+# code and is kept as the record; DRAFT until NEEDS-CHECKING Group PI proves
+# version 4 (D-30).
 
 purpose: >
   Sets out a whole column grid from a start point and a list of bay dimensions -
@@ -212,9 +227,17 @@ contract:
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
       # "did this come back empty" (D-52). Since version 2 a refusal means
-      # NOTHING was created; after a run it holds one line saying what was
-      # made.
+      # NOTHING was created. Since version 4 it holds nothing else - what
+      # was made is in `findings` (row 5b-1948).
       role: accounting
+      type: IList<string>
+    - name: findings
+      # Version 4. After a run, what was made: one line for the way the grids
+      # were set out - "2 spacing(s) across gave 3 lettered grid(s) ...",
+      # "1 grid line(s) drawn between the points given, each one level", or
+      # the arcs and spokes with the names Revit gave them - and, for a
+      # radial grid, a line for each spoke drawn outside the arcs' sweep.
+      # Empty when the call refused. Prose, never a count (D-51).
       type: IList<string>
 
 proof:
