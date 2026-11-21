@@ -1,7 +1,16 @@
 // NOT STANDALONE. Assumes `doc`, `origin`, `spacingsAcross`, `spacingsUp`,
 // `firstLetter`, `firstNumber`, `gridLines`, `gridNames`, `centreMm`,
 // `radiiMm`, `spokeAnglesDegrees`, `startDegrees` and `endDegrees` are in
-// scope; leaves `created`, `namedAs` and `refused` behind.
+// scope; leaves `created`, `namedAs`, `refused` and `findings` behind.
+//
+// VERSION 4 (2026-11-21, FRAGMENT-ISSUES row 5b-1948, issue #1174) - WHAT
+// WAS MADE IS SAID IN `findings`, NEVER IN `refused`. Seen on Revit 2024 that
+// day: one grid drawn between two points and kept came back with `refused`
+// holding "1 grid line(s) drawn between the points given, each one level" -
+// all three ways did it on purpose, so an item in `refused` told a caller
+// nothing. Now `refused` holds a reason nothing was made and nothing else,
+// and the line saying what was made - each way's own sentence, and a spoke
+// outside the arcs' sweep - goes in `findings`. No other line moved.
 //
 // VERSION 3 (2026-11-01) - CREATE_RADIAL_GRIDS MERGED IN, on the owner's
 // instruction ("make sure there is no duplicate tools"; "in every conflict
@@ -91,6 +100,7 @@ var up = (spacingsUp ?? new List<double>()).ToList();
 var created = new List<Element>();
 var namedAs = new List<string>();
 var refused = new List<string>();
+var findings = new List<string>();
 
 var taken = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(Grid)))
@@ -443,18 +453,20 @@ if (refused.Count == 0)
             "{0} grid(s) could not be made as asked: {1}. Nothing this call did is kept - one request, "
             + "one change, whole or not at all", declined.Count, string.Join("; ", declined.Distinct())));
 
+    // WHAT WAS MADE IS SAID IN `findings` (version 4, FRAGMENT-ISSUES row
+    // 5b-1948): `refused` holds a reason nothing was made and nothing else.
     if (byRadial)
     {
-        refused.Add(string.Format("{0} arc grid(s) and {1} spoke grid(s) about the centre, named by Revit - "
+        findings.Add(string.Format("{0} arc grid(s) and {1} spoke grid(s) about the centre, named by Revit - "
             + "the next free name after the last grid made - and read back: {2}", arcCount, spokeCount,
             string.Join(", ", namedAs)));
-        refused.AddRange(radialNotes);
+        findings.AddRange(radialNotes);
     }
     else if (byLines)
-        refused.Add(string.Format("{0} grid line(s) drawn between the points given, each one level",
+        findings.Add(string.Format("{0} grid line(s) drawn between the points given, each one level",
             created.Count));
     else
-        refused.Add(string.Format("{0} spacing(s) across gave {1} lettered grid(s), and {2} spacing(s) up "
+        findings.Add(string.Format("{0} spacing(s) across gave {1} lettered grid(s), and {2} spacing(s) up "
             + "gave {3} numbered grid(s). Spacings are GAPS - n of them make n+1 grids",
             acrossPositions.Count == 0 ? 0 : across.Count, acrossPositions.Count,
             upPositions.Count == 0 ? 0 : up.Count, upPositions.Count));
