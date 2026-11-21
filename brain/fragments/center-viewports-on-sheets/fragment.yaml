@@ -283,3 +283,9 @@ utterances:
   # sentence ranking must decide, so it is never declared word for word.
   # Measured 2026-11-01, lexical backend: with that card retired it reaches
   # REPORT_VIEWPORT_TYPES, a read. Recorded for the owner, not reworded.
+  # ADDED 2026-11-21, row 5b-476 (issue #956), on the owner's word that day
+  # ("fix the remaining open rows in 956"). "line the viewports up" is still NOT declared
+  # (the routing-phrases suite holds it for ranking); this nearby wording
+  # is. At the END, so the eight the
+  # re-ranker reads (D-134) are unchanged.
+  - line the viewports up across these sheets

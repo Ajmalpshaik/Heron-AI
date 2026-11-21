@@ -467,3 +467,8 @@ utterances:
   # (BuiltInParameter ROOF_SLOPE, "Slope", 2020 to 2027); the question reached
   # SLOPE_ROOF_EDGES or EXTEND_ROOF_TO_ROOF - writes - on every backend.
   - what is the slope of this roof
+  # ADDED 2026-11-21, row 5b-1007 (issue #956), on the owner's word that day
+  # ("fix the remaining open rows in 956"). On main it reached EDIT_TEXT_VALUES (a
+  # write) or REPORT_TEXT_TYPES; a note's text is the parameter it reads. At the END, so the eight the
+  # re-ranker reads (D-134) are unchanged.
+  - read the text of these notes
