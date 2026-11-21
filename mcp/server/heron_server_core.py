@@ -546,6 +546,27 @@ ROLLED_BACK_HELD = (
     "model is as it was; send it again only once what stopped it is fixed, or "
     "the modeller asks")
 
+# AND OF AN ADMIN OR PUBLISH JOB REFUSED AFTER ITS CODE RAN (row 5b-1933).
+# Its group in the model was rolled back, or - D-192 - it had none; a file it
+# wrote, or a document it made, saved or closed, is outside both and stands.
+# The table's own line says "send it again once what stopped it is fixed",
+# which would do that part a second time. The add-in says it with
+# `outsideStands`, and `ranOutsideTheModel` for a job with no group at all.
+# The word is still the table's.
+_OUTSIDE_STANDS = (
+    " - but what it did outside the model before it stopped (a file written, "
+    "a document made, opened, saved or closed) still stands, and no undo takes "
+    "it back; look at that before sending it again, which would do it a "
+    "second time")
+ROLLED_BACK_OUTSIDE_HELD = (
+    "Heron rolled back what it did in the model, and Revit's Heron said the "
+    "rollback held" + _OUTSIDE_STANDS)
+ROLLED_BACK_OUTSIDE_ASKED = (
+    "Heron asked Revit to roll back what it did in the model" + _OUTSIDE_STANDS)
+ROLLED_BACK_NO_GROUP = (
+    "it ran with no transaction group open in the model, and Heron counted "
+    "that model unchanged before and after" + _OUTSIDE_STANDS)
+
 #: How every outcome line starts. One spelling, here.
 OUTCOME_LINE = "outcome: "
 _OUTCOME_TAIL = " - "
@@ -934,10 +955,21 @@ def _failure_ended(failure):
     AND THE WORD FOR THE OUTCOME LINE, which keeps apart the four endings
     that label folds into one (`_failure_outcome`, row 5b-1159) - with
     ROLLED_BACK_HELD's words when the add-in said the rollback held (row
-    5b-1901). `_said_outcome` drops them wherever ROLLED BACK is not printed."""
+    5b-1901) - and, for an Admin or Publish job the add-in says did work
+    outside the model, words saying that part stands (row 5b-1933): after a
+    rollback that held, after one only asked for, or with no group at all
+    (D-192). `_said_outcome` drops them wherever ROLLED BACK is not printed."""
     word = _failure_outcome(failure)
-    held = word == ROLLED_BACK and getattr(failure, "rollback_held", None) is True
-    _outcome(word, says=ROLLED_BACK_HELD if held else None)
+    says = None
+    if word == ROLLED_BACK:
+        held = getattr(failure, "rollback_held", None) is True
+        if getattr(failure, "ran_outside", None) is True:
+            says = ROLLED_BACK_NO_GROUP
+        elif getattr(failure, "outside_stands", None) is True:
+            says = ROLLED_BACK_OUTSIDE_HELD if held else ROLLED_BACK_OUTSIDE_ASKED
+        elif held:
+            says = ROLLED_BACK_HELD
+    _outcome(word, says=says)
     return "refused" if failure.outcome == FAILURE_REFUSED else "failed"
 
 

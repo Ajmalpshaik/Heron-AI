@@ -1650,6 +1650,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pb.md`](needs-checking/group-pb.md)
 
+## Group PC - an Admin or Publish job stopped part way says its outside work stands, a read that commits a transaction is refused, every fragment job notes Revit's memory, and the log names who takes the pipe - BUILT, NOT RUN IN REVIT (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pc.md`](needs-checking/group-pc.md)
+
 ## Group PD - row 106: is a clearance check slow on a real MEP model? One timed run before any fix is written (2026-11-21)
 
 **Its own file:** [`needs-checking/group-pd.md`](needs-checking/group-pd.md)

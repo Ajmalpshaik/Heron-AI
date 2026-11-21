@@ -1190,6 +1190,14 @@ read as success, and *"never ran"* said of an answer that was lost.
   - **A dry run that held carries its own words after the word**, `ROLLED_BACK_AS_ASKED` beside the
     table: *asked as a dry run ... Revit's Heron said the rollback held*. The table's line ends *"once
     what stopped it is fixed"*, and nothing stopped a dry run.
+  - **So does an Admin or Publish job refused after its code ran** (since 2026-11-21,
+    [row 5b-1933](fragment-issues/row-5b-1933.md)). Heron's clock, a stop, a Revit dialog, the run guard
+    or a throw can end one part way: its group in the model is rolled back, or - [D-192](decisions/D-192.md) -
+    it had none, and a file it wrote or a document it made, saved or closed is outside both. The add-in's
+    refusal says so in `outsideStands`, and `ranOutsideTheModel` for a job with no group, and the line's
+    words after ROLLED BACK say that part still stands and that sending the job again would do it twice -
+    `ROLLED_BACK_OUTSIDE_HELD`, `ROLLED_BACK_OUTSIDE_ASKED` or `ROLLED_BACK_NO_GROUP` beside the table. The
+    word itself is unchanged. Not yet run in Revit.
   - **A reply has one line that starts `outcome:`, whatever it quotes.** A door's reply can quote text
     Heron did not write - a refusal's message, a fragment's exception. Any other line that starts the way
     the outcome line does is set in by two spaces, with every word kept
