@@ -7,7 +7,7 @@
 
 # The balance of work
 
-> **GENERATED 2026-11-21 19:41 by `python tools/balance-of-work.py --write`.**
+> **GENERATED 2026-11-21 19:52 by `python tools/balance-of-work.py --write`.**
 > **If that stamp is not today, this page is history and not a work list.** Every figure
 > below was read back out of the tool that owns it, and each row names the command that
 > derives it. Nothing here is typed by hand, so where this page and a register disagree,
@@ -32,7 +32,7 @@ business here. When every row does, delete the file and the tool with it.
 | 3b | — and **deferred by a decision**, which is neither left nor done | **2** | `python tools/agent-count.py` |
 | 4 | **Agent proofs drafted but unsigned** | **0** | `ls brain/agent-proof-drafts/*.yaml` |
 | 5 | **Proving-register rows still open** | **2836** of **3370** | `python tools/owner-queue.py` |
-| 6 | **Heron's own defects still open** | **13** of **1402** | `python tools/open-defects.py` |
+| 6 | **Heron's own defects still open** | **13** of **1403** | `python tools/open-defects.py` |
 | 7 | **Questions unanswered** | **2** | `python tools/check-docs.py` |
 | 8 | **Proposals awaiting the owner** | **11** of **37** | `python tools/owner-queue.py` |
 | 9 | **Signatures gone stale — proved, then the code moved under them** | **68** | `python tools/check-signatures.py` |
@@ -71,18 +71,15 @@ and the reason is the second column — read it before deleting one.
 | Note | Why it is still here |
 |---|---|
 | `plans/FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md` | Active, partly implemented |
-| `plans/PROMPT-fragment-validation-agent.md` | Built, and both halves have run - it looks finished |
 | `plans/rag/00-structure.md` | Active — the shape is decided, and parts are built |
 | `plans/rag/01-requirements.md` | Active, partly built |
 | `plans/rag/02-implementation.md` | Active, and some stages are built |
-| `plans/improvement-gate-execution-record.md` | Active — the gate is built and piloted; two things are still owed |
-| `plans/project-perfection-and-continuous-upgrade-plan-2026-09-12.md` | Completed, and kept for its reasoning |
 | `investigations/rag-engineering-practices-2026-09-10.md` | All four take-rows taken; three owner's calls open |
 | `plans/agent-build-order-2026-09-13.md` | Every block built - retiring it is the owner's call |
 | `investigations/2026-09-17-risk-crossings-not-deterministic.md` | Active, and pinned open by a register |
 | `investigations/2026-11-01-export-setups.md` | Looked finished on 2026-11-11, and one card has gone back to DRAFT since; retiring it is the owner's call |
 | `investigations/2026-11-01-schedule-settings.md` | Nearly finished - all but one of its cards say PROVEN (read 2026-11-11) |
-| `plans/earlier-brain/README.md` | Nearly spent — every package merged or dropped except C8; the status is in [02 §0](plans/earlier-brain/02-work-packages.md) |
+| `plans/earlier-brain/README.md` | Nearly spent — every package merged, done or dropped, C8 too since it was read again on 2026-11-21; the status is in [02 §0](plans/earlier-brain/02-work-packages.md) |
 | `plans/earlier-brain/01-findings.md` | Complete as a record |
 | `plans/earlier-brain/02-work-packages.md` | Active — the only copy of the packages' status |
 | `plans/earlier-brain/03-owner-data.md` | Active, and not product content |

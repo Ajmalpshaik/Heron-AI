@@ -83,3 +83,15 @@ Delete the file. Nothing depends on it, and rejecting a draft costs nothing. Tha
 **if the agent produces three hundred drafts and most get rejected, it has made the backlog worse** —
 somebody now has to read three hundred wrong things instead of proving three hundred right ones. It is
 built to do ten well.
+
+## How to know the agent is working
+
+Moved here on 2026-11-21 from the brief it was built from (`docs/work-notes/plans/PROMPT-fragment-validation-agent.md`,
+retired that day - git history holds it). **Not by a count of drafts.** Three things:
+
+1. A person reviewing a draft **accepts it unchanged** more often than not.
+2. Some drafts say **"I could not establish this"** in `gaps:` and name why. An agent that never reports
+   an unknown is not looking.
+3. A draft's fingerprint makes `tests/test_golden.py` call the proof **STALE** once the fragment's C#
+   changes - and only then. `python brain/heron_validate.py restamp` exists because a fingerprint once
+   hashed Windows' paths and line endings and called sixteen good proofs stale on Linux.
