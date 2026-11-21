@@ -1095,7 +1095,8 @@ def _fragment_for(capability):
     so `heron_resolve` could name one card and `revit_change` run another - a
     DRAFT ahead of a PROVEN. One card needs no order, and no brain. With
     several and the brain not there, NONE is chosen: a guess between two
-    cards is the defect this replaced.
+    cards is the defect this replaced. With several, a card whose `revit:`
+    does not claim the Revit in front is passed over for one that does.
     """
     folder_root = os.path.join(_repo_root(), "brain", "fragments")
     if not os.path.isdir(folder_root):
@@ -1129,6 +1130,18 @@ def _fragment_for(capability):
     if not matches:
         return None, None
     if len(matches) > 1:
+        # AND A CARD THAT DOES NOT CLAIM THE REVIT IN FRONT IS SKIPPED FOR THE
+        # NEXT (row 5b-1131; the owner, 2026-11-21: "yes skip it and take the
+        # next card"), as `resolve` drops one for the release it is given.
+        # The release is LOOKED AT, never claimed (`_revit_version`). Not
+        # known, or claimed by none of them, and the order alone decides, as
+        # with one card: it is sent, and Revit's compile answers.
+        release, _how = _revit_version()
+        if release:
+            claims = [m for m in matches if str(release) in (
+                bridge.fragment_releases(os.path.join(m["folder"], "fragment.yaml")) or [])]
+            if claims:
+                matches = claims
         try:
             matches = brain.order_providers(matches)
         except brain.BrainUnavailable:
