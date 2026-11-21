@@ -2149,18 +2149,19 @@ def held_reason(found):
 def held_proof(found):
     """What a held card's recorded proof is, in one true sentence (row 5b-1960).
 
-    Three answers, as D-30 keeps them apart: none recorded; recorded, and its
-    code has moved since, so it no longer describes what would run; recorded,
-    and it still matches its code - the case the old words got wrong.
+    Three answers, as D-30 keeps them apart: none recorded; recorded, and not
+    shown to match its code (it moved, or the proof recorded no fingerprint);
+    recorded, and it still matches its code - the case the old words got
+    wrong. Only the fingerprint is spoken for: whether that proof would also
+    be enough to promote the card (signed, a negative case) is not said.
     """
     if not found.get("proof"):
         return "No proof is recorded for it yet."
     of = " of %s" % found["date"] if found.get("date") else ""
     if found.get("stale"):
-        return ("Its recorded proof%s was taken before its code last changed, so "
-                "that proof no longer describes what would run (D-30)." % of)
-    return ("Its recorded proof%s still matches its code - the hold, not a missing "
-            "proof, is what keeps it at DRAFT." % of)
+        return ("Its recorded proof%s cannot be shown to match its code as it is "
+                "now, so it does not describe what would run (D-30)." % of)
+    return "Its recorded proof%s still matches its code." % of
 
 
 def proof_of(name):
