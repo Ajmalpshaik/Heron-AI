@@ -261,16 +261,37 @@ def resolve(store, name, revit=None):
     if not rows:
         return None
 
-    # TRUST, THEN VERSION, NEWEST FIRST, THEN ID - as the sentence above says.
-    # The sort had trust and id alone until 2026-11-20, so two providers at one
-    # status were ordered by id whatever their versions (row 5b-1862). The
-    # store holds no version, so it is read from each card on disk - only when
-    # there is more than one provider to order.
+    # TRUST, THEN VERSION, NEWEST FIRST, THEN ID - as the sentence above says,
+    # in `order_providers`, which the revit_ doors use too (row 5b-1131).
+    return Capability(name, order_providers(rows))
+
+
+def provider_order(row):
+    """
+    THE ONE ORDER A CAPABILITY'S PROVIDERS ARE CHOSEN IN - `resolve`'s, and
+    the revit_ doors' (mcp/server/heron_mcp_server.py `_fragment_for`, row
+    5b-1131), each over its own source: the store here, the card files
+    there. TRUST first, then version, newest first (the owner, 2026-11-20:
+    *"keep newer version first"*, row 5b-1862), then id - so the order never
+    depends on luck. `row` has "status", "id" and, where read, "version".
+    """
+    return (-TRUST.get(row.get("status"), 0), -(row.get("version") or 0),
+            row.get("id") or "")
+
+
+def order_providers(rows):
+    """
+    `rows` sorted by `provider_order`, in place, and returned. The store
+    holds no version, so it is read from each card on disk (`folder`) - only
+    when there is more than one provider to order. The sort had trust and id
+    alone until 2026-11-20, so two providers at one status were ordered by id
+    whatever their versions (row 5b-1862).
+    """
     if len(rows) > 1:
         for row in rows:
             row["version"] = _version_on_disk(row.get("folder"))
-    rows.sort(key=lambda r: (-TRUST.get(r["status"], 0), -r.get("version", 0), r["id"]))
-    return Capability(name, rows)
+    rows.sort(key=provider_order)
+    return rows
 
 
 def _version_on_disk(folder):
