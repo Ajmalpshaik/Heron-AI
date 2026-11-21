@@ -36,7 +36,13 @@ capability: REPORT_DIVIDED_SURFACES
 # the record of what it proved); its C# moved, so it is DRAFT again until
 # NEEDS-CHECKING Group PB (PB1, PB2) is run (D-30) - on the owner's word that a
 # fragment found wrong may be changed even though it is proven.
-version: 3
+# VERSION 4 (2026-11-21, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005): `missingNodes` declares how many grid nodes gave no point, among the
+# nodes tried before each list stopped at 50, and a node list that stops at 50
+# says how many more it left out.
+# Its C# moved again, so it stays DRAFT until NEEDS-CHECKING Group PK runs,
+# with Group PB (D-30).
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -94,6 +100,13 @@ contract:
       type: int
     - name: pathCount
       role: result
+      type: int
+    - name: missingNodes
+      # VERSION 4 (D-64). With withNodes true, the grid nodes over every
+      # surface that gave Revit no point, among the nodes tried before each
+      # list stopped at 50 - counted, never placed by a guess. 0 with
+      # withNodes false, when no node was asked for.
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

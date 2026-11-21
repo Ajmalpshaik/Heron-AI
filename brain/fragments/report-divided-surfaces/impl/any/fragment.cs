@@ -1,5 +1,15 @@
 // NOT STANDALONE. Assumes `doc` and `withNodes` are in scope; leaves
-// `divided`, `surfaceCount`, `pathCount` and `findings` behind.
+// `divided`, `surfaceCount`, `pathCount`, `missingNodes` and `findings`
+// behind.
+//
+// VERSION 4 (2026-11-21, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - WHAT THE NODE LISTS LEAVE OUT IS COUNTED. With withNodes true,
+// `missingNodes` is how many grid nodes gave Revit no point, over every
+// surface, among the nodes tried before each list stopped at 50 - each
+// surface's line already said its own count, and now the whole read declares
+// it. And a list that stops at 50 says so on its line - "the
+// list stops at 50: N more node(s) not listed" - where version 3 stopped
+// without a word. A line with 50 nodes or fewer reads as version 3's.
 //
 // READ ONLY - opens no transaction.
 //
@@ -42,6 +52,8 @@ var divided = "";
 var findings = new List<string>();
 var surfaceCount = 0;
 var pathCount = 0;
+// VERSION 4 (D-64): grid nodes that gave no point, over every surface read.
+var missingNodes = 0;
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
 
 Func<XYZ, string> mm = p => "(" + Math.Round(p.X * MmPerFoot) + ", " + Math.Round(p.Y * MmPerFoot) + ", " + Math.Round(p.Z * MmPerFoot) + ")";
@@ -141,6 +153,11 @@ foreach (DividedSurface surface in new FilteredElementCollector(doc).OfClass(typ
                 places.Add(u + "," + v + " " + mm(point.Coord));
             }
         line += "; nodes " + (places.Count > 0 ? string.Join(" ", places) : "none read") + (none > 0 ? "; " + none + " node(s) gave no point" : "");
+        // VERSION 4 (D-64): counted for the whole read, and the cap said.
+        missingNodes += none;
+        var unlisted = surface.NumberOfUGridlines * surface.NumberOfVGridlines - places.Count - none;
+        if (places.Count >= 50 && unlisted > 0)
+            line += "; the list stops at 50: " + unlisted + " more node(s) not listed";
     }
     report.Add(line);
 }
@@ -163,16 +180,22 @@ foreach (DividedPath path in new FilteredElementCollector(doc).OfClass(typeof(Di
     if (withNodes)
     {
         var places = new List<string>();
+        // VERSION 4 (D-64): every point is counted, so the cap can be said.
+        var pointsRead = 0;
         try
         {
             foreach (GeometryObject item in path.get_Geometry(options))
             {
                 var point = item as Point;
-                if (point != null && places.Count < 50) places.Add(mm(point.Coord));
+                if (point == null) continue;
+                pointsRead++;
+                if (places.Count < 50) places.Add(mm(point.Coord));
             }
         }
         catch { }
         line += "; nodes " + (places.Count > 0 ? string.Join(" ", places) : "none read from its geometry");
+        if (pointsRead > places.Count)
+            line += "; the list stops at 50: " + (pointsRead - places.Count) + " more node(s) not listed";
     }
     report.Add(line);
 }

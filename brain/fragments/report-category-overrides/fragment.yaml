@@ -32,7 +32,12 @@ capability: REPORT_CATEGORY_OVERRIDES
 # 5b-1854) - its own include list, as REPORT_VIEW_TEMPLATE_CONTROL reads it.
 # Version 3 read it off the view, so "the template sets this tab" could be
 # wrong either way.
-version: 4
+# VERSION 5 (2026-11-21, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005): a category drawn in the view whose overrides Revit will not give is
+# counted in `skippedCategories`, not dropped, and named on the empty answer
+# only. Its C# moved, so it stays DRAFT until NEEDS-CHECKING Group PK runs
+# (D-30).
+version: 5
 source: OFFICIAL
 risk: READ
 
@@ -100,6 +105,13 @@ contract:
     - name: overriddenCategories
       role: result
       type: IList<ElementId>
+    - name: skippedCategories
+      # VERSION 5 (D-64). Categories with elements in the view whose overrides
+      # Revit would not give, so they are not among those looked at. Always
+      # carried; a sentence in `findings` names it only on the empty answer,
+      # when no category is overridden.
+      role: accounting
+      type: int
     - name: overrideList
       # EVERY OVERRIDDEN CATEGORY, EACH LINE IN FULL, JOINED - the answer this
       # fragment exists to give, and the one to read when this is the read
