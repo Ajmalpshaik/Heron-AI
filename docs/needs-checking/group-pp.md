@@ -7,6 +7,8 @@
 
 ## Group PP - a central model opened beside is not saved, a nested part kept upright says so, the session list names a wait, and the camera's eye on the sample house - BUILT, NOT RUN IN REVIT (2026-11-21)
 
+**Tracked as GitHub issue [#1234](https://github.com/Ajmalpshaik/Heron-AI/issues/1234) since 2026-11-21** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Why:** the open rows of section 5b that were never moved to a GitHub issue, worked on 2026-11-21 in a cloud
 container with no Revit. Four were fixed in code there - rows
 [5b-1833](../fragment-issues/row-5b-1833.md) and [5b-1834](../fragment-issues/row-5b-1834.md) (issue
