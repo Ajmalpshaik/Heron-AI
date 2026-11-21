@@ -420,17 +420,31 @@ def ask(root, **kw):
 
 
 class FakeGh(object):
-    """gh, answering from a script: what it was asked, and what it says."""
+    """gh, answering from a script: what it was asked, and what it says. The
+    open issues (row 5b-1928) have an answer of their own - none, unless the
+    script gives one - so a script written for the pull requests alone still
+    answers the issues call with an empty list."""
 
-    def __init__(self, code=0, out="", err="", missing=False):
+    def __init__(self, code=0, out="", err="", missing=False, issues=None,
+                 issues_code=None, issues_err=""):
         self.code, self.out, self.err, self.missing = code, out, err, missing
+        self.issues, self.issues_code, self.issues_err = issues, issues_code, issues_err
         self.calls = []
 
     def __call__(self, args, root):
         self.calls.append(list(args))
         if self.missing:
             raise OSError(2, "No such file or directory: 'gh'")
+        if any("/issues?" in str(a) for a in args):
+            code = self.code if self.issues_code is None else self.issues_code
+            if code != 0:
+                return code, "", self.issues_err or self.err
+            return 0, self.issues or "", ""
         return self.code, self.out, self.err
+
+
+def issue_line(number, title, body=""):
+    return json.dumps([number, title + "\n" + body]) + "\n"
 
 
 def pull_line(number, branch, sha, repo):
@@ -528,9 +542,12 @@ def section_10_and_11(home):
     pulls, regs = got.get("pull_requests", {}), got.get("registers", {})
     check(pulls.get("read") is True and len(pulls.get("open", [])) == 5,
           "five open pull requests are read: %s" % pulls.get("why_not"))
-    check(len(gh.calls) == 1 and "repos/acme/heron/pulls?state=open&per_page=100" in gh.calls[0]
-          and gh.calls[0][0] == "api",
-          "gh is asked once, through the REST api, with the repository NAMED: %s" % gh.calls)
+    asked_pulls = [c for c in gh.calls if any("/pulls?" in str(a) for a in c)]
+    check(len(asked_pulls) == 1
+          and "repos/acme/heron/pulls?state=open&per_page=100" in asked_pulls[0]
+          and asked_pulls[0][0] == "api",
+          "the pull requests are asked for once, through the REST api, with the "
+          "repository NAMED: %s" % gh.calls)
     by_number = {p["number"]: p for p in pulls.get("open", [])}
     check(by_number.get(11, {}).get("read_as") == "origin/feat/one",
           "a pull request whose head is a branch read is that branch")
@@ -567,6 +584,55 @@ def section_10_and_11(home):
     check("HELD TWICE  5b-50" in text and "TAKEN ON MAIN  5b-31" in text
           and "origin/feat/one (#11)" in text and "PR #7" in text,
           "the plain report names the clash, the taken row, the labels and the fork")
+
+    print("\n10b. an id only an open issue names (row 5b-1928)")
+    issue_names = named("issue_ids", lambda issues: {})
+    sample = [(901, "Revit run: x - Group BF\nsee row 5b-31 and D-12, not D-1234567x5b-9"),
+              (902, "Fix: y\nrow 5b-75; Q-9; also 5b-75 again")]
+    got_ids = issue_names(sample)
+    check(got_ids == {"group": {"BF": [901]}, "5b": {31: [901], 75: [902]}, "Q": {9: [902]},
+                      "D": {12: [901], 1234567: [901]}},
+          "each register's ids are read from an issue's title and body, each issue "
+          "once per id, and an id run into a word ('...x5b-9') is not one: %s" % got_ids)
+    pulls_out = (pull_line(11, "feat/one", sha("origin/feat/one"), "acme/heron")
+                 + pull_line(13, "feat/three", sha("origin/feat/three"), "acme/heron")
+                 + pull_line(14, "feat/four", sha("origin/feat/four"), "acme/heron"))
+    with_issues = FakeGh(out=pulls_out, issues=(
+        issue_line(901, "Revit run: the new tools - Group BF", "rows 5b-31 and 5b-50")
+        + issue_line(902, "Fix: something", "row 5b-75, recorded, its branch not pushed")))
+    got = ask(work, gh=with_issues, github="acme/heron")
+    regs, read = got.get("registers", {}), got.get("issues") or {}
+    asked_issues = [c for c in with_issues.calls if any("/issues?" in str(a) for a in c)]
+    check(read.get("read") is True and read.get("count") == 2 and len(asked_issues) == 1
+          and "repos/acme/heron/issues?state=open&per_page=100" in asked_issues[0],
+          "the open issues are read once, through the REST api, the repository named: %s"
+          % read)
+    check(regs.get("group", {}).get("named_in_issues") == {"BF": [901]}
+          and regs.get("group", {}).get("next") == "BG",
+          "Group BF, named only in issue #901, is taken: next is BG (got %s, %s)"
+          % (regs.get("group", {}).get("named_in_issues"), regs.get("group", {}).get("next")))
+    check(regs.get("5b", {}).get("named_in_issues") == {"5b-75": [902]}
+          and regs.get("5b", {}).get("next") == "5b-76",
+          "and 5b-75 the same, while 5b-31 (on main) and 5b-50 (held by branches) are "
+          "that issue's tracking, not listed (got %s, next %s)"
+          % (regs.get("5b", {}).get("named_in_issues"), regs.get("5b", {}).get("next")))
+    code, text = run_with(work, with_issues, github="acme/heron")
+    check("NAMED IN AN ISSUE  BF is in open issue #901" in text
+          and "issues          2 open on acme/heron" in text,
+          "the plain report names it and the issue, and says the issues were read")
+    plain = ask(work, gh=FakeGh(out=pulls_out), github="acme/heron")
+    refused = FakeGh(out=pulls_out, issues_code=1, issues_err="HTTP 403: Forbidden\n")
+    got = ask(work, gh=refused, github="acme/heron")
+    check((got.get("pull_requests") or {}).get("read") is True
+          and (got.get("issues") or {}).get("read") is False
+          and "403" in ((got.get("issues") or {}).get("why_not") or "")
+          and got.get("registers", {}).get("group", {}).get("next")
+          == plain.get("registers", {}).get("group", {}).get("next"),
+          "issues gh will not list are NOT READ, saying why; the pull requests are "
+          "still read and the answer stands (%s)" % (got.get("issues") or {}).get("why_not"))
+    code, text = run_with(work, refused, github="acme/heron")
+    check("issues          NOT READ - gh did not list them" in text,
+          "and the plain report says NOT READ for them")
 
     print("\n11. without gh")
     for fake, said in ((FakeGh(missing=True), "not installed"),

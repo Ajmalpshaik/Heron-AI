@@ -25,14 +25,19 @@ jobs:
     set:
       defaultClearance: 99999
       includeInsulation: true
+      rules: ""
     negative-set:
       defaultClearance: 99999
       includeInsulation: true
+      rules: ""
     expect: tooClose
     note: >
       A clearance nothing can meet, against a selection with no geometry to
-      measure. `rules` is a dictionary and is left unset - if the fragment
-      demands it, that is a D-54 gap worth recording rather than working around.
+      measure. `rules` was left unset here to see whether the fragment demands
+      it; it does (version 4, a required value), and it is given EMPTY - no
+      per-category rule, defaultClearance for every pair - as the card's own
+      proof run gave it ("rules as given (0)", `rules=`). Added 2026-11-21, row
+      5b-1934: without it the dry run refuses this job.
 
   - fragment: check-flow-direction
     set:

@@ -129,7 +129,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 
 | Tool | What it is for | When you run it |
 |---|---|---|
-| [`next-id.py`](next-id.py) | the free group, 5b row, `Q-nn` and `D-nnn` on main, every branch, open pull request and worktree | before taking any id, and again before merging |
+| [`next-id.py`](next-id.py) | the free group, 5b row, `Q-nn` and `D-nnn` on main, every branch, open pull request, open issue and worktree | before taking any id, and again before merging |
 | [`renumber.py`](renumber.py) | renames an id this branch took that somebody else took first | when `next-id.py` says HELD TWICE or TAKEN ON MAIN |
 | [`open-defects.py`](open-defects.py) | the ids of the FRAGMENT-ISSUES rows still open | before picking up a defect |
 | [`open-issue.py`](open-issue.py) | a new row, check or question as a GitHub issue, its number written back into the register | the same change that writes the entry ([D-187](../docs/DECISIONS.md)) |
@@ -1190,6 +1190,24 @@ only whether it is there; its closing line says which happened - a dry run with 
 nothing and still says *"Nothing was sent to Revit"*. **The logic is held by
 [`tests/test_batch_prove.py`](../tests/test_batch_prove.py) on a stand-in Revit; the run against a real
 one is still owed** - NEEDS REAL REVIT, [Group NI](../docs/needs-checking/group-ni.md), NI1 to NI4.
+
+**Each leg is checked against the values it will really be given**
+([row 5b-1931](../docs/fragment-issues/row-5b-1931.md)). The client hands the negative leg the
+`negative-set:` **instead of** the `set:` - card and setup chain alike, unless `negative-setup-set:` gives
+the chain its own - so a `negative-set:` carrying only the value it varies leaves the chain's region and
+every other value unbound. The dry run said `WOULD RUN` for exactly that job on 2026-11-20. Now every card
+of each leg - the setup steps and the fragment - is read for the request values it cannot run without
+(`heron_fragment.need_may_be_absent`, the add-in's rule), and a leg that leaves one unbound is `REFUSED`,
+naming the leg, the card and the values. Measured 2026-11-21 over the 1,297 jobs in `tools/jobs/`: 32
+leave a value unbound, 25 of them for PROVEN cards, which the dry run reports `ALREADY` before it asks;
+of the 7 it refused for this, 3 were given their values and 4 were retired cards
+([row 5b-1934](../docs/fragment-issues/row-5b-1934.md)). None is refused for it now.
+
+**A retired card is refused for what it is** ([row 5b-1934](../docs/fragment-issues/row-5b-1934.md)). A
+`DEPRECATED` or `ARCHIVED` card is offered by nothing and can never be promoted
+(`heron_fragment.can_promote` - both sit after `PROVEN`), so a batch run of one is a draft nobody can
+sign. It is `REFUSED`, naming its date and the capability in its `deprecated: superseded-by:` - "prove that
+card instead". Measured the same day: 161 jobs in 84 files, 154 of which had read `WOULD RUN`.
 
 **Hole 2 — it passed fragments that had done nothing.** `heron_validate` judges whether the NEGATIVE
 came back empty, which is [D-30](../docs/DECISIONS.md)'s leg and which a fragment that does nothing
@@ -2433,6 +2451,15 @@ rest of its line, spaces and all, and their register files are read **from disk,
 not** - the row a session on the same PC has typed and not pushed. No gh, a gh not logged in, a remote that is
 not github.com, or a worktree whose folder is gone is **said in the report**, never guessed past, and never
 changes the exit code.
+
+**Since 2026-11-21 it reads the open issues too** ([row 5b-1928](../docs/fragment-issues/row-5b-1928.md)),
+through `gh api repos/OWNER/NAME/issues?state=open`, pull requests left out. Since D-187 an id is opened as an
+issue in the same change that writes it, so an issue can name a group, row, question or decision before any
+branch holding it is pushed - on 2026-11-20 this offered Group OW while open issues #1136 and #1142 already
+named OW and OX. An id an open issue names that main has not got and no branch, pull request or worktree holds
+is printed as **NAMED IN AN ISSUE**, with the issue's number, and counted, so `next` is above it; one main has,
+or a branch holds, is that id's own tracking and is not listed. Issues gh will not list are **NOT READ**, said,
+as the pull requests are.
 
 For each piece of work it lists **what it adds that main has not got** - its ids less those where it left
 main, at any number - and names two collisions **below main's highest as well as above it**: **HELD TWICE**,

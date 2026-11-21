@@ -132,11 +132,17 @@ jobs:
       the one duplicate-sheets was arranged against on 2026-09-09.
 
   - fragment: place-flow-arrows
+    # `view` ADDED 2026-11-21 (row 5b-1934): the card needs the one view the
+    # arrows are placed in, and this job never named it, so it could not run.
+    # It is the view this file's selection is taken in (`inViewOnly`), on both
+    # legs - the ducts are selected there, and the arrows go there.
     set:
+      view: "FloorPlan: M1"
       arrowFamilyName: "Flow Arrow"      # CONFIRM the family is loaded
       arrowTypeName: "Standard"          # CONFIRM
       spacingMm: 2000
     negative-set:
+      view: "FloorPlan: M1"
       arrowFamilyName: "Flow Arrow"
       arrowTypeName: "Standard"
       spacingMm: 2000

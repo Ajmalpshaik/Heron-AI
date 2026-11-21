@@ -507,8 +507,13 @@ def relinked_case(root):
                   FENCE + "text", "[row 5b-51](fragment-issues/%s)" % old, FENCE,
                   "And [row 5b-26](fragment-issues/%s), whose row stays." % old]
     wrapped = "A wrapped one, ([row" + NL + "5b-51](fragment-issues/%s)), follows as well."
+    # ROW 5b-1926: a lone opening bracket in a fenced block used to pair with
+    # the next real link's closing one, and the match - starting in code - was
+    # dropped, taking that link with it.
+    after_fence = "After a lone bracket in code, [row 5b-51](fragment-issues/%s) follows too."
+    lone = [FENCE + "bash", 'grep -n "[" docs/x.md', FENCE, after_fence % old]
     put(row_links, NL.join(["See [row 5b-51](fragment-issues/%s) and [5b-51 again](./fragment-issues/%s#top)."
-                            % (old, old), wrapped % old] + kept_lines) + NL)
+                            % (old, old), wrapped % old] + lone + kept_lines) + NL)
     a_py = os.path.join(root, "tools", "y.py")
     put(a_py, "# See [row 5b-51](../docs/fragment-issues/%s)." % old + NL)
     a_yaml = os.path.join(root, "docs", "notes.yaml")
@@ -543,6 +548,9 @@ def relinked_case(root):
     check("See [row 5b-51](fragment-issues/%s) and [5b-51 again](./fragment-issues/%s#top)." % (new, new) in linked,
           "a document elsewhere follows it, its ./ and its anchor kept")
     check(wrapped % new in linked, "and so does a link whose words a line break wraps")
+    check(after_fence % new in linked,
+          "and one after a fenced block holding a lone opening bracket - the code is blanked "
+          "before the links are read, not skipped after (row 5b-1926)")
     check(linked.endswith(NL.join(kept_lines) + NL),
           "and in it a link naming two rows, an example in code, fenced code and a row that stays are left")
     check(read(a_py) == "# See [row 5b-51](../docs/fragment-issues/%s)." % new + NL, "so does a .py")

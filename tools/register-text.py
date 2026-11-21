@@ -103,8 +103,17 @@ EACH_MID = " on, one file each:** "
 EACH_ANY = "NNNN"
 NAME = "[a-z0-9][a-z0-9-]*[.]md"
 
-# check-docs.py's link pattern, [text](target), built as archive-fragment-issues.py builds it.
+# The link pattern, [text](target), built as archive-fragment-issues.py builds it -
+# what move_links() rewrites, a link at a time.
 LINK = re.compile(BS + "[([^" + BS + "]]*)" + BS + "]" + BS + "(([^)]+)" + BS + ")")
+# A LINK AS GITHUB SHOWS ONE, for reading links rather than rewriting them:
+# its words may wrap to the next line but never cross a blank line, which ends
+# the paragraph a link is in. Run over code_blanked(text), so a link written
+# in code is not read. check-docs.py's section 1 and row_links() both read
+# links with it - one pattern, so the two cannot read a page differently
+# (rows 5b-1907 and 5b-1926).
+PROSE_LINK = re.compile(BS + "[((?:[^" + BS + "]" + NL + "]|" + NL + "(?![ " + BS + "t]*"
+                        + NL + "))*)" + BS + "]" + BS + "(([^)]+)" + BS + ")")
 # open-defects.py's row pattern: a table line whose first cell is a number, bold or not.
 ROW = re.compile("^[|]" + BS + "s*[*]{0,2}([0-9]+)[*]{0,2}" + BS + "s*[|]")
 # The line under a table's header.
@@ -343,29 +352,22 @@ def row_links(text, label):
     example, not a link, and is left out; so is one whose words name two
     rows, or none - which row it means is not for a tool to choose.
 
-    THE LINKS ARE FOUND IN THE WHOLE TEXT, NOT LINE BY LINE, so a link whose
-    words a line break wraps - '[row' at the end of one line and '5b-322](...)'
-    at the start of the next - is read as check-docs.py's section 1 reads it.
-    Where it starts decides whether it is in fenced code or a code span."""
+    THE LINKS ARE READ AS check-docs.py's SECTION 1 READS THEM: PROSE_LINK over
+    code_blanked(text). A link whose words a line break wraps - '[row' at the
+    end of one line and '5b-322](...)' at the start of the next - is one link.
+
+    THE CODE IS BLANKED FIRST, NOT SKIPPED AFTER (row 5b-1926). This used to
+    run the pattern over the whole text and drop a match that STARTED in code,
+    but the match had already taken the text after it: a lone opening bracket
+    in a fenced block - grep -n "[" - paired with the next real row link's
+    closing bracket, so that link was dropped with it, unjudged by check-docs
+    section 12 and not re-pointed by split-register.py. code_blanked() keeps
+    every position, so `start` and `end` index TEXT itself."""
     named = re.compile("(?<![0-9A-Za-z-])" + re.escape(label) + "-([0-9]+)(?![0-9])")
-    lines = text.split(NL)
-    fenced = fenced_lines(lines)
-    starts, at = [], 0
-    for line in lines:
-        starts.append(at)
-        at += len(line) + 1
-    spans, found = {}, []
-    for m in LINK.finditer(text):
+    found = []
+    for m in PROSE_LINK.finditer(code_blanked(text)):
         rows = set(int(n) for n in named.findall(m.group(1)))
         if len(rows) != 1:
-            continue
-        i = bisect.bisect_right(starts, m.start()) - 1
-        if i in fenced:
-            continue
-        if i not in spans:
-            spans[i] = code_spans(lines[i])
-        column = m.start() - starts[i]
-        if any(start <= column < end for start, end in spans[i]):
             continue
         found.append((rows.pop(), m.start(2), m.end(2)))
     return found
