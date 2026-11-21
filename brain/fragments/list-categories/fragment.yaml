@@ -5,7 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-031
-semantic-identity: "what categories does this model actually have, and the object style of each one - how it draws in Object Styles"
+semantic-identity: "what categories does this model actually have, and the object style of each one - its line weights, colours, pattern and material in Object Styles"
+# IDENTITY NAMES THE MATERIAL (2026-11-21, row 5b-1954, issue #1188): it said
+# "how it draws in Object Styles", and every object-style MATERIAL question
+# reached SET_OBJECT_STYLE, a write, on both re-ranked backends, which read
+# the identity and the first eight sentences. Measured on all four backends.
 kind: filter
 domain: revit.document
 capability: LIST_CATEGORIES
@@ -295,6 +299,11 @@ utterances:
   - what colour are the lines in this family
   - what colour is the signature subcategory
   - what line weight is the hidden lines subcategory
+  # EIGHTH ON PURPOSE (row 5b-1954, issue #1188): the re-ranker reads a card's
+  # first eight sentences (D-134), and with no material question among them
+  # every object-style material question reached SET_OBJECT_STYLE, a write, on
+  # both re-ranked backends. Moved up from the end.
+  - what material is set for generic models in object styles
   - list the object styles in this family
   # ADDED 2026-11-02, row 5b-1414 (FIXED). The routing table above claims it;
   # it reached this card by ranking until REPORT_DIMENSION_TYPES - another read
@@ -317,5 +326,4 @@ utterances:
   # TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS, writes. Declared with SET_OBJECT_STYLE's
   # "set the material of generic models in object styles" beside them, which the
   # first try lost to this read on the model backend.
-  - what material is set for generic models in object styles
   - which categories have a material in object styles
