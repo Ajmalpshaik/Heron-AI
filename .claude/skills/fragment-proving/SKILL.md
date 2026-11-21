@@ -451,6 +451,31 @@ entry. **The rules, all in [`heron_fragment.py`](../../../brain/heron_fragment.p
 - **An add-in older than this records no build**, so its runs draft as NOT RECORDED. First check on the
   owner's PC that a real run record carries all four fields ([NEEDS-CHECKING group OF](../../../docs/needs-checking/group-of.md)).
 
+## Proving a SKILL - its plan, whole
+
+A skill is a composition, and its proof is not any fragment's: every step can be PROVEN and the skill
+still unproved, because nothing yet says the first step hands the second what it needs. `batch-prove.py`
+cannot do it - it refuses a PROVEN fragment, which most steps are. Use the skill runner (row 141):
+
+```bash
+python tools/run-skill.py tools/jobs/skills/count-elements-plan.yaml --dry-run   # refuses FILL IN; sends nothing
+python tools/run-skill.py tools/jobs/skills/count-elements-plan.yaml             # both legs, then a draft
+python brain/heron_plan_proof.py accept count-elements --by "Ajmal PS"          # a PERSON signs a PASS
+```
+
+- **A plan job is not a batch-prove job.** `steps:` in the plan's order, each with `values` and, for the
+  negative leg, `negative_values` merged over them; `expect: previous` on every step that takes the step
+  before's output, so the add-in refuses a chain some other run left (row 148's stale selection); `setup:
+  true` on a step that only arranges the model. The `*-model-half.yaml` files beside it are batch-prove's,
+  for the steps that are still DRAFT.
+- **The five rules above apply to the plan's first step and its last.** The negative is the same plan where
+  the skill's answer must be nothing - a level with none of the category, not a cleared selection - and it
+  must run to its last step: a negative that stopped is NEGATIVE DID NOT RUN, never a pass.
+- **Every change is rolled back**, and a PUBLISH or ADMIN step refuses the plan. Whether a step after a
+  rolled-back change sees it is NEEDS-CHECKING PH4 - until then, prefer plans whose write is the last step.
+- **Signing promotes nothing.** The proof is written to `brain/skill-proofs/`; the skill stays DRAFT until
+  the owner decides.
+
 ## Honesty
 
 - **A pass here is not a proof.** It means the evidence held. The signature is still owed, and it is a
