@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-041
-semantic-identity: "change the units, symbol and rounding the project shows a kind of value in"
+semantic-identity: "change the units, symbol and rounding the project shows a kind of value in - lengths, heating and cooling loads, airflow"
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
 # Nothing in the library could set Manage > Project Units. The building loads
