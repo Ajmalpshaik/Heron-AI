@@ -7,18 +7,21 @@
 // form= or facing= was given; left out, it still counted every solid face on
 // the plane, so the issue's two refusals came back exactly as before. Now:
 // (1) A FACE THAT FACES INTO ANOTHER SOLID IS NOT A PORT. Points spread over
-// the face are stepped 0.5 to 1.5 mm out along its normal; where every one
+// the face, out to 4% from its edges, are stepped 0.5 to 1.5 mm out along its
+// normal; where every one
 // lands inside a solid of the family, the face is covered all over on the
 // side it points - the raised face's underside sitting on the flange top -
 // and it is left out, counted, and said. A face covered only in part still
-// counts. (2) `at`, optional: the connector's centre, "X, Y, Z" in mm - only
+// counts. (2) `at`, optional: the connector's centre, "X, Y, Z" in mm (the
+// refusal's own "X 0, Y 0, Z 884 mm" is taken as written) - only
 // a face whose centre (the one this card's own refusal lists) lies within
 // 1 mm of it counts, so a screw top 1 m away on the same plane drops out; a
 // point more than 1 mm off the plane is refused. (3) THE CONNECTOR IS NEVER
 // PUT INSIDE THE BODY: where the face chosen is covered at its own centre on
 // the side it points - the flange top under its raised face, a box top under
 // its neck - the call is refused, naming the form that covers it, because
-// the face meant is the one on top. Left out, `at` binds "none"; form= and
+// the face meant is the one on top. A ring's centre is in its opening, so
+// there the opening's edge, 1 mm onto the face, is looked out of instead. Left out, `at` binds "none"; form= and
 // facing= are version 6's.
 //
 // VERSION 6 (2026-11-20, Ajmalpshaik/Heron-AI#1029) - form= AND facing= PICK
@@ -206,7 +209,7 @@ systems.Add(Tuple.Create("conduit", "Conduit", (object)null));
 Func<Element, string> kindOf = element =>
     element is Extrusion ? "an extrusion" : element is Revolution ? "a revolve" : element is Blend ? "a blend"
     : element is SweptBlend ? "a swept blend" : element is Sweep ? "a sweep" : element is GenericForm ? "a form"
-    : "the element";
+    : element is GeomCombination ? "the joined or cut forms" : "the element";
 
 // THE WAY ROUND A JOIN OR CUT, when Revit will not take a connector on its face
 // (row 5b-410): a thin solid on that face, in no combination, takes one - a
@@ -375,15 +378,18 @@ else
     XYZ wantedAt = null;
     if (atSaid.Length > 0)
     {
-        var numbers = atSaid.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => x.Trim().TrimEnd('m', 'M').Trim()).Where(x => x.Length > 0).ToList();
+        // The numbers, in order; around them only the words a refusal prints
+        // its centre with - "X 0, Y 0, Z 884 mm" - and separators.
+        var numberPattern = new System.Text.RegularExpressions.Regex(@"[-+]?[0-9]*\.?[0-9]+");
         var read = new List<double>();
-        foreach (var number in numbers)
+        foreach (System.Text.RegularExpressions.Match found in numberPattern.Matches(atSaid))
         {
             double value;
-            if (double.TryParse(number, System.Globalization.NumberStyles.Float, invariant, out value)) read.Add(value);
+            if (double.TryParse(found.Value, System.Globalization.NumberStyles.Float, invariant, out value)) read.Add(value);
         }
-        if (read.Count == 3 && numbers.Count == 3) wantedAt = new XYZ(read[0] / 304.8, read[1] / 304.8, read[2] / 304.8);
+        var leftOver = numberPattern.Replace(atSaid, "").ToLowerInvariant();
+        var onlyWords = leftOver.All(c => " ,;:=xyzm\t".IndexOf(c) >= 0);
+        if (read.Count == 3 && onlyWords) wantedAt = new XYZ(read[0] / 304.8, read[1] / 304.8, read[2] / 304.8);
         else
             problems.Add("\"" + atSaid + "\" given in at= is not a point - give the connector's centre as three "
                 + "numbers in millimetres, X, Y, Z, as a refusal lists each face's centre.");
@@ -427,7 +433,20 @@ else
             var forms = everything.OfType<GenericForm>().Where(f => f.IsSolid).ToList();
             // VERSION 7: every solid of the family with the element it is of,
             // to tell a face that faces into another solid.
-            var bodies = new List<Tuple<Solid, Element>>();
+            // A form in a combination is left out: its own geometry reads
+            // empty (row 5b-410), and if a release ever gave back its uncut
+            // solid, a bore would read as solid. The combination stands for it.
+            // Each body's box is worked out once, for the probes' first test.
+            var bodies = new List<Tuple<Solid, Element, BoundingBoxXYZ>>();
+            var joinedMembers = new HashSet<ElementId>();
+            foreach (var join in everything.OfType<GeomCombination>())
+            {
+                try
+                {
+                    foreach (CombinableElement member in join.AllMembers) joinedMembers.Add(member.Id);
+                }
+                catch (Exception) { }
+            }
             foreach (var solidForm in forms)
             {
                 var geometry = solidForm.get_Geometry(new Options { ComputeReferences = true });
@@ -436,7 +455,8 @@ else
                 {
                     var solid = piece as Solid;
                     if (solid == null) continue;
-                    if (solid.Volume > 0) bodies.Add(Tuple.Create(solid, (Element)solidForm));
+                    if (solid.Volume > 0 && !joinedMembers.Contains(solidForm.Id))
+                        bodies.Add(Tuple.Create(solid, (Element)solidForm, solidForm.get_BoundingBox(null)));
                     foreach (Face each in solid.Faces)
                         if (onDatum(each) && each.Reference != null)
                         {
@@ -468,7 +488,7 @@ else
                     // negative volume, and a join of voids is no solid face.
                     var solid = piece as Solid;
                     if (solid == null || solid.Volume <= 0) continue;
-                    bodies.Add(Tuple.Create(solid, (Element)join));
+                    bodies.Add(Tuple.Create(solid, (Element)join, join.get_BoundingBox(null)));
                     foreach (Face each in solid.Faces)
                         if (onDatum(each))
                         {
@@ -534,7 +554,7 @@ else
                 var margin = 2.0 / 304.8;
                 foreach (var body in bodies)
                 {
-                    var box = body.Item2.get_BoundingBox(null);
+                    var box = body.Item3;
                     if (box != null && (point.X < box.Min.X - margin || point.X > box.Max.X + margin
                             || point.Y < box.Min.Y - margin || point.Y > box.Max.Y + margin
                             || point.Z < box.Min.Z - margin || point.Z > box.Max.Z + margin))
@@ -549,24 +569,43 @@ else
                 return null;
             };
             // VERSION 7: A FACE THAT FACES INTO ANOTHER SOLID ALL OVER - the
-            // element it faces into, else null. Points spread over the face
-            // (its triangles' middles, at most twelve) are each looked out of;
-            // only when every one is covered is the face inside the body. A
+            // element it faces into, else null. Points spread over the face are
+            // each looked out of; only when every one is covered is the face
+            // inside the body. The points reach the edges - a 5 x 5 grid over
+            // the face's own box, 4% in from each side, kept where it lies ON
+            // the face - and its triangles' middles, at most twelve, add the
+            // inside of a curved outline. Triangle middles alone sat a sixth of
+            // the way in on a rectangle, so a box top with a neck over its
+            // middle read as covered all over (found in review, 2026-11-21). A
             // face whose points cannot be read is counted, as version 6 did.
             Func<PlanarFace, Element> facesInto = f =>
             {
                 var points = new List<XYZ>();
                 try
                 {
+                    var range = f.GetBoundingBox();
+                    var fractions = new[] { 0.04, 0.27, 0.5, 0.73, 0.96 };
+                    foreach (var fu in fractions)
+                        foreach (var fv in fractions)
+                        {
+                            var uv = new UV(range.Min.U + (range.Max.U - range.Min.U) * fu,
+                                range.Min.V + (range.Max.V - range.Min.V) * fv);
+                            if (f.IsInside(uv)) points.Add(f.Evaluate(uv));
+                        }
+                }
+                catch (Exception) { }
+                try
+                {
                     var mesh = f.Triangulate();
                     var step = Math.Max(1, mesh.NumTriangles / 12);
-                    for (var t = 0; t < mesh.NumTriangles && points.Count < 12; t += step)
+                    var added = 0;
+                    for (var t = 0; t < mesh.NumTriangles && added < 12; t += step, added++)
                     {
                         var triangle = mesh.get_Triangle(t);
                         points.Add((triangle.get_Vertex(0) + triangle.get_Vertex(1) + triangle.get_Vertex(2)) / 3);
                     }
                 }
-                catch (Exception) { points.Clear(); }
+                catch (Exception) { }
                 if (points.Count == 0) return null;
                 Element first = null;
                 foreach (var point in points)
@@ -685,15 +724,69 @@ else
             // that very point on the side the face points - a flange top under
             // its raised face, a box top under its neck - the port would sit
             // inside that solid, so nothing is made and the solid is named.
+            //
+            // A RING'S CENTRE IS IN ITS OPENING, where nothing covers it - a
+            // bored flange with a bored raised face on it (found in review,
+            // 2026-11-21). So where the centre is not on the face itself, the
+            // port's edge is looked out of instead: the points of the loop
+            // nearest the centre, each pushed 1 mm away from it onto the face;
+            // only when every one is covered is the port inside the body.
+            Func<PlanarFace, Element> portCoveredBy = f =>
+            {
+                var middle = centreAt(f);
+                if (middle == null) return null;
+                var onFace = false;
+                try
+                {
+                    var projected = f.Project(middle);
+                    onFace = projected != null && f.IsInside(projected.UVPoint);
+                }
+                catch (Exception) { onFace = true; }
+                if (onFace) return coveredBy(middle, f.FaceNormal);
+                List<XYZ> nearest = null;
+                var nearestDistance = double.MaxValue;
+                try
+                {
+                    foreach (EdgeArray edgeLoop in f.EdgeLoops)
+                    {
+                        var loopPoints = new List<XYZ>();
+                        foreach (Edge loopEdge in edgeLoop) loopPoints.AddRange(loopEdge.Tessellate());
+                        if (loopPoints.Count == 0) continue;
+                        var mean = loopPoints.Average(q => q.DistanceTo(middle));
+                        if (mean < nearestDistance) { nearestDistance = mean; nearest = loopPoints; }
+                    }
+                }
+                catch (Exception) { nearest = null; }
+                if (nearest == null) return null;
+                var step = Math.Max(1, nearest.Count / 12);
+                Element first = null;
+                var looked = 0;
+                for (var k = 0; k < nearest.Count; k += step)
+                {
+                    var away = nearest[k] - middle;
+                    if (away.GetLength() < 1e-9) continue;
+                    var point = nearest[k] + away.Normalize() * (1.0 / 304.8);
+                    try
+                    {
+                        var projected = f.Project(point);
+                        if (projected == null || !f.IsInside(projected.UVPoint)) continue;
+                    }
+                    catch (Exception) { continue; }
+                    looked++;
+                    var over = coveredBy(point, f.FaceNormal);
+                    if (over == null) return null;
+                    if (first == null) first = over;
+                }
+                return looked == 0 ? null : first;
+            };
             if (face != null)
             {
-                var middle = centreAt(face);
-                var over = middle == null ? null : coveredBy(middle, face.FaceNormal);
+                var over = portCoveredBy(face);
                 if (over != null)
                 {
                     problems.Add("The connector would go at the centre of the face on \"" + datum.Item3 + "\" ("
                         + centreOf(face) + ", facing " + pointing(face.FaceNormal) + "), and " + kindOf(over) + " "
-                        + over.UniqueId + " covers that point on the side the face points - the port would sit "
+                        + over.UniqueId + " covers its port there on the side the face points - the port would sit "
                         + "inside it. The face meant is probably that one's own outer face: name the plane it lies on"
                         + (wantedAt == null && formSaid.Length == 0 ? "" : ", and give form= or at= for it") + ".");
                     face = null;

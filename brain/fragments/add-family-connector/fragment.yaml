@@ -19,15 +19,19 @@ risk: MODIFY
 # issue's two refusals came back exactly as before. Now (1) a face that faces
 # into another solid all over - the raised face's underside sitting on the
 # flange top - is left out, counted and said, whatever was given: points spread
-# over the face are stepped 0.5 to 1.5 mm out along its normal, and only when
+# over the face, out to 4% from its edges, are stepped 0.5 to 1.5 mm out along
+# its normal, and only when
 # every one lands inside a solid of the family is the face inside the body;
 # (2) `at`, optional, the connector's centre "X, Y, Z" in mm - only a face whose
 # centre (the one a refusal lists) lies within 1 mm of it counts, so the lid
 # screws 1 m away drop out; a point more than 1 mm off the plane is refused;
 # (3) the connector is never put inside the body: where another solid covers
 # the chosen face at its own centre on the side it points - a flange top under
-# its raised face, a box top under its neck - nothing is made and that solid is
-# named. Left out, `at` binds "none". The card was DRAFT at version 6, never
+# its raised face, a box top under its neck; for a ring, at the opening's edge -
+# nothing is made and that solid is named. An independent review the same day
+# found three faults in the first draft, all fixed before merge: two points
+# alone judged a rectangle, at= refused the refusal's own "X 0, Y 0, Z 884 mm",
+# and a bored ring's cover went unseen. Left out, `at` binds "none". The card was DRAFT at version 6, never
 # proved; it stays DRAFT at version 7 until NEEDS-CHECKING Group PO is run.
 #
 # VERSION 6 (2026-11-20) - form= AND facing= PICK THE FACE, and back to DRAFT.
@@ -195,7 +199,8 @@ contract:
       optional: true
       absent: none
     # VERSION 7 (#1029). The connector's centre, "X, Y, Z" in millimetres -
-    # the centre a refusal lists for each face. Only a face whose centre lies
+    # the centre a refusal lists for each face, taken as it prints it ("X 0,
+    # Y 0, Z 884 mm") or as three bare numbers. Only a face whose centre lies
     # within 1 mm of it counts; a point more than 1 mm off `facePlane` is
     # refused. Left out ("none"): a face anywhere on the plane counts.
     - name: at

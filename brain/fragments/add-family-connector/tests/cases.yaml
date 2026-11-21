@@ -100,12 +100,6 @@ positive:
       a round pipe connector 150 mm at the raised face's centre, pointing up,
       on the face lying on "Discharge Face"; findings "1 other face(s) lie on
       "Discharge Face" and were left out by form=" - the screw's top
-  - given: >
-      facePlane "Discharge Flange Top", the same system and size, facing "up"
-    expect: >
-      SINCE VERSION 7 a NEGATIVE - see "Discharge Flange Top" below: the
-      flange disc's top is covered at its centre by the raised face, so no
-      connector is put inside it. Version 6 would have made it there
   - given: the same as the first case with form and facing both left out
     expect: >
       refused - "2 solid faces lie on "Discharge Face" (facing up, up)" - each
@@ -114,8 +108,9 @@ positive:
       face's centre, then makes the connector
 
   # VERSION 7 (2026-11-21, issue #1029). NOT RUN. The same scratch pump
-  # family. Each FAILS on version 6, which counts every face on the plane
-  # when form= and facing= are left out.
+  # family. The first FAILS on version 6, which has no at=; the second is a
+  # regression guard - version 6 made it too, and version 7 must still. The
+  # rest guard the cases v7's always-on filters now pass through.
   - given: >
       facePlane "Discharge Face", system "Domestic Cold Water", sizeParameters
       "Discharge Dia", at = the raised face's centre as the refusal above lists
@@ -132,6 +127,23 @@ positive:
       the connector on the raised face's top, as version 6 made it - a face
       that faces out is still taken with nothing given; no "facing into"
       finding
+  - given: >
+      at = the raised face's centre written as the refusal prints it,
+      "X 0, Y 0, Z 884 mm"
+    expect: the same connector as at = "0, 0, 884"
+  - given: >
+      a 600 x 400 box whose top is on "Box Top" with a 400 x 300 neck
+      centred on it, the neck's top on "Neck Top"; facePlane "Neck Top"
+    expect: >
+      the connector on the neck top - and no finding that the box top faces
+      into the body (it is covered only in part)
+  - given: >
+      the version 5 ring (Casing Right), the version 3 joined face (Port
+      Left) and the thin-solid side step flush with a cut face, each exactly
+      as its own case above
+    expect: >
+      each made exactly as its own case says - no "facing into" finding and
+      no "covers its port" refusal
 
 negative:
   - given: system "Global" in a Generic Models family
@@ -240,6 +252,21 @@ negative:
     expect: refused - the point is 16 mm off "Discharge Face" - nothing made
   - given: facePlane "Discharge Face", at = "150, 0"
     expect: refused - two numbers are not a point, three are asked for - nothing made
+  - given: >
+      the 600 x 400 box with its 400 x 300 neck, facePlane "Box Top"
+    expect: >
+      refused because the neck covers the box top's centre, the neck named -
+      NOT "no solid face that faces out of the body": the box top is open
+      round the neck, so it is not left out as facing into the body
+  - given: >
+      a bored flange ring (Z 870 to 882, 200 across, bore 150) with a bored
+      raised-face ring on it (Z 882 to 884, 170 across, bore 150), facePlane
+      "Discharge Flange Top"
+    expect: >
+      refused, nothing made: the raised ring's underside faces into the
+      flange and is left out; the flange top's port - the opening's edge -
+      is covered by the raised ring, which is named. Never a connector
+      inside the raised ring's bore
 
 second_route:
   - >
