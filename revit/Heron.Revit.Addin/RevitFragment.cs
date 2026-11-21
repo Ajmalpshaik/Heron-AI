@@ -119,6 +119,10 @@ namespace Heron.Revit.Addin
             // refusal or a read must not leave it the list a previous job made.
             Elements = null;
 
+            // Nor whether an earlier job's code ran, or ran with no group - OutsideStood.
+            CodeRan = false;
+            RanWithNoGroup = false;
+
             // NOR WHAT A REQUEST WITH NO CONVERSATION CARRIED (D-141). Jobs
             // run one at a time on this thread, so any such chain is a
             // finished request's, and its chat ended with it.
@@ -131,6 +135,11 @@ namespace Heron.Revit.Addin
 
             var source = Json.ReadString(request, "source");
             var name = Json.ReadString(request, "name") ?? "(unnamed)";
+
+            // ROW 5b-1110: ONE LOG LINE WHEN THE JOB ENDS, however it returns -
+            // the compiled scripts Heron holds and Revit's committed memory,
+            // before and after, so a long proving run shows what grows.
+            using var memoryNote = new MemoryNote(name);
 
             if (string.IsNullOrEmpty(source))
             {
@@ -857,12 +866,26 @@ namespace Heron.Revit.Addin
                 // ran out of time. A stop asked meanwhile still trips it: a
                 // pause holds the time, never the stop (HeronRunClock.Pause).
                 // Any other card runs exactly as before, on its clock.
-                if (waitsForPerson) RevitDispatcher.AwaitingClick();
-                using (waitsForPerson ? HeronRunClock.Pause() : null)
+                //
+                // AND EVERY TRANSACTION REVIT COMMITS IN THE MODEL WHILE IT RUNS,
+                // HEARD (row 5b-977) - as the D-192 branch below hears them. The
+                // count above misses a commit that only edits elements in a
+                // model already marked changed; Revit's own DocumentChanged
+                // does not. Nothing of the read's is open, so any commit there
+                // is the read's own, and a read that changes the model is not a
+                // read.
+                HeronChangeReport.Described heard;
+                using (var readChanges = new RevitChangedSet(app.Application, target, "Heron: " + name))
                 {
-                    threw = RunScript(script, globals, name, out state);
+                    readChanges.Begin();
+                    if (waitsForPerson) RevitDispatcher.AwaitingClick();
+                    using (waitsForPerson ? HeronRunClock.Pause() : null)
+                    {
+                        threw = RunScript(script, globals, name, out state);
+                    }
+                    heard = readChanges.Describe();
                 }
-                var changed = ReadChangedModel(name, target, counted, threw);
+                var changed = ReadChangedModel(name, target, counted, heard, threw);
                 if (changed != null) return changed;
 
                 // A STOPPED RUN IS STOPPED WHETHER OR NOT IT THREW. The
@@ -913,6 +936,7 @@ namespace Heron.Revit.Addin
                 // run - what it does outside the model is done as it runs, seconds
                 // after the gate asked.
                 var outsideLabel = "Heron: " + name;
+                RanWithNoGroup = true;
                 counted = ReadFootprint.Of(target);
                 using (var outsideChanges = new RevitChangedSet(app.Application, target, outsideLabel))
                 {
@@ -1438,6 +1462,138 @@ namespace Heron.Revit.Addin
             var taken = Elements;
             Elements = null;
             return taken;
+        }
+
+        /// <summary>
+        /// Whether any of the job's own code - a setup step or the fragment -
+        /// has started to run, and whether it ran with no group open in its
+        /// model (D-192). Set by Run and RunScript, read by OutsideStood
+        /// straight after Run returns, on the same thread - Elements' rule.
+        /// Cleared at the start of every Run, so one job's never reads as the next's.
+        /// </summary>
+        private static bool CodeRan;
+        private static bool RanWithNoGroup;
+
+        /// <summary>
+        /// ONE LINE IN THE ADD-IN LOG WHEN A FRAGMENT JOB ENDS - FRAGMENT-ISSUES
+        /// 5b row 1110. A long proving run on Revit 2020 grew about 0.27 GB a
+        /// job until Revit ran out of memory, and what holds it was never found.
+        /// The candidate is the compiled scripts: Compiled keeps every one for
+        /// the Revit session, and on .NET Framework an assembly is never
+        /// unloaded. This line puts the two numbers side by side for every job
+        /// - how many compiled scripts Heron holds, how many this job added,
+        /// and Revit's committed memory before and after - so the log of the
+        /// next long run says whether memory grows with the compiles or without
+        /// them. It changes nothing and decides nothing, and a number it cannot
+        /// read is left out rather than guessed.
+        ///
+        /// Committed memory is the process's paged memory - the figure the row
+        /// measured with Get-Process (PagedMemorySize64), not its working set.
+        /// </summary>
+        private sealed class MemoryNote : IDisposable
+        {
+            private readonly string _name;
+            private readonly int _compiledBefore;
+            private readonly long _committedBefore;
+
+            internal MemoryNote(string name)
+            {
+                _name = name;
+                _compiledBefore = CompiledCount();
+                _committedBefore = Committed();
+            }
+
+            public void Dispose()
+            {
+                try
+                {
+                    var compiled = CompiledCount();
+                    var committed = Committed();
+                    var line = new StringBuilder("Fragment job '").Append(_name)
+                        .Append("' ended: Heron holds ")
+                        .Append(compiled.ToString(CultureInfo.InvariantCulture))
+                        .Append(" compiled fragment script(s) in this Revit (")
+                        .Append(Signed(compiled - _compiledBefore)).Append(" this job)");
+                    if (committed >= 0 && _committedBefore >= 0)
+                    {
+                        line.Append("; Revit's committed memory ")
+                            .Append(Megabytes(committed).ToString(CultureInfo.InvariantCulture))
+                            .Append(" MB (").Append(Signed(Megabytes(committed) - Megabytes(_committedBefore)))
+                            .Append(" MB this job)");
+                    }
+                    HeronApplication.Log(line.Append(" - row 5b-1110.").ToString());
+                }
+                catch (Exception)
+                {
+                    // A note that cannot be written must not cost the job its answer.
+                }
+            }
+
+            private static int CompiledCount()
+            {
+                lock (Compiled) { return Compiled.Count; }
+            }
+
+            /// <summary>Revit's committed memory in bytes, or -1 when it cannot be read.</summary>
+            private static long Committed()
+            {
+                try
+                {
+                    using (var revit = System.Diagnostics.Process.GetCurrentProcess())
+                        return revit.PagedMemorySize64;
+                }
+                catch (Exception)
+                {
+                    return -1;
+                }
+            }
+
+            private static long Megabytes(long bytes)
+            {
+                return bytes / (1024L * 1024L);
+            }
+
+            private static string Signed(long value)
+            {
+                return (value >= 0 ? "+" : "") + value.ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        /// <summary>The words every add-in sentence saying the outside work stands starts with.</summary>
+        internal const string OutsideStandsMark = "What it did outside the model before";
+
+        /// <summary>
+        /// Said of an Admin or Publish job that was refused after its code ran,
+        /// when its own message has not said it - FRAGMENT-ISSUES 5b row 1933.
+        /// </summary>
+        internal const string OutsideStandsSentence =
+            OutsideStandsMark + " it was stopped - a file written, a document made, opened, "
+            + "saved or closed - still stands: no rollback takes that back. Look at it before "
+            + "sending the job again, which would do it a second time.";
+
+        /// <summary>
+        /// AN ADMIN OR PUBLISH JOB REFUSED AFTER ITS CODE RAN, SAYING THAT WHAT
+        /// IT DID OUTSIDE THE MODEL STANDS - FRAGMENT-ISSUES 5b row 1933. Heron's
+        /// clock, a stop, a Revit dialog, the run guard, a throw or a switch
+        /// turned off can end such a job part way: its group in the model is
+        /// rolled back, or - D-192 - it had none, and a file it wrote or a
+        /// document it made, saved or closed is outside both. Until 2026-11-21
+        /// the refusal said nothing of that in a field, and the chat's outcome
+        /// line read ROLLED BACK, "send it again once what stopped it is fixed"
+        /// - which would do the outside part twice.
+        ///
+        /// Called by RevitOperations for `run_fragment_admin` and
+        /// `run_fragment_publish` alone, with Run's reply, before the dispatcher
+        /// adds whether a rollback held. A reply from a job whose code never ran
+        /// - a binding refused, a compile that failed - is unchanged: nothing
+        /// went out of the model. So is every answer that is not a refusal: a
+        /// verdict says the same for itself (OutsideVerdict, WithVerdict).
+        /// </summary>
+        internal static string OutsideStood(string reply)
+        {
+            if (!CodeRan) return reply;
+            return Json.WithOutsideStands(reply, RanWithNoGroup, OutsideStandsSentence,
+                                          OutsideStandsMark);
         }
 
         /// <summary>
@@ -2711,7 +2867,12 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// The refusal for a read run that changed the model, or null when the
-        /// second measurement agrees with the first.
+        /// second measurement agrees with the first AND Revit committed no
+        /// transaction in that model while it ran (`heard`, row 5b-977 - the
+        /// one change the counts cannot see: an edit to existing elements of a
+        /// model already marked changed). Only `Events` is read, as
+        /// OutsideChangedModel reads it: an event whose content could not be
+        /// read may not have been this model's.
         ///
         /// IT OUTRANKS WHATEVER THE FRAGMENT SAID, a throw included. In row
         /// 5b-350 the fragment's own answer was Revit's refusal, which reads as
@@ -2727,7 +2888,9 @@ namespace Heron.Revit.Addin
         /// read path opens a transaction", so it is not done on a guess.
         /// </summary>
         private static string ReadChangedModel(string name, Document target,
-                                               ReadFootprint before, string threw)
+                                               ReadFootprint before,
+                                               HeronChangeReport.Described heard,
+                                               string threw)
         {
             if (!target.IsValidObject)
             {
@@ -2740,11 +2903,19 @@ namespace Heron.Revit.Addin
             var placed = after.Placed - before.Placed;
             var types = after.Types - before.Types;
             var marked = !before.Modified && after.Modified;
-            if (placed == 0 && types == 0 && !marked) return null;
+
+            // ROW 5b-977: a transaction the read committed in this model, which
+            // the counts above cannot see when it only edits existing elements
+            // of a model already marked changed.
+            var commits = heard == null ? 0 : heard.Events;
+            if (placed == 0 && types == 0 && !marked && commits == 0) return null;
 
             var what = new List<string>();
             if (placed != 0) what.Add(Moved(placed, "element"));
             if (types != 0) what.Add(Moved(types, "type"));
+            if (commits != 0)
+                what.Add("Revit committed " + commits.ToString(CultureInfo.InvariantCulture)
+                         + " transaction(s) in it");
             if (marked) what.Add("Revit now marks the model as changed");
 
             var title = "";
@@ -2753,10 +2924,14 @@ namespace Heron.Revit.Addin
             var message = new StringBuilder()
                 .Append("THIS READ CHANGED THE MODEL: ").Append(string.Join("; ", what))
                 .Append(" in \"").Append(title).Append("\" while '").Append(name)
-                .Append("' ran with no transaction open. A read must leave the model as it was, ")
-                .Append("so its answer is not given (FRAGMENT-ISSUES row 5b-350). ")
-                .Append("No transaction recorded this, so Undo may not take it back - ")
-                .Append("look at the model and remove what appeared by hand.");
+                .Append("' ran with no transaction of Heron's open. A read must leave the model as ")
+                .Append("it was, so its answer is not given (FRAGMENT-ISSUES rows 5b-350 and 5b-977). ")
+                .Append(commits != 0
+                    ? "The read opened and committed a transaction of its own, so Revit's undo "
+                      + "list may hold it - look at the model, and undo it there or put it right "
+                      + "by hand. The card needs correcting."
+                    : "No transaction recorded this, so Undo may not take it back - "
+                      + "look at the model and remove what appeared by hand.");
 
             var said = threw == null ? null : Json.ReadString(threw, "message");
             if (!string.IsNullOrEmpty(said)) message.Append(" The run itself said: ").Append(said);
@@ -2768,6 +2943,7 @@ namespace Heron.Revit.Addin
                 + ", " + Json.Str("document", title)
                 + ", " + Json.Num("elementsAppeared", placed)
                 + ", " + Json.Num("typesAppeared", types)
+                + ", " + Json.Num("transactionsCommitted", commits)
                 + ", " + Json.Bool("markedChanged", marked) + "}";
         }
 
@@ -2956,6 +3132,10 @@ namespace Heron.Revit.Addin
                                         string name, out IList<HeronScriptHost.Variable> state)
         {
             state = null;
+
+            // FROM HERE THE JOB'S OWN CODE HAS RUN, whatever it returns - what
+            // an Admin or Publish job did outside the model may stand (row 5b-1933).
+            CodeRan = true;
             try
             {
                 // The fragments never await, so this completes inline on the

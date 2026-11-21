@@ -47,6 +47,17 @@
 // name; a name that differs from the filter's own only in capitals is a
 // rename.
 //
+// VERSION 3 (2026-11-21, row 5b-1364 item 1, issue #950): "HAS NO VALUE" IS
+// A RULE HERE TOO, as CREATE_VIEW_FILTER version 4 has made it since
+// 2026-11-01. The value "has no value" - or "is blank", the same rule in
+// plainer words - IS the operator, with nothing after it, and builds Revit's
+// CreateHasNoValueParameterRule on the parameter: it catches the elements
+// whose parameter holds no value. "has no value Level 1" is refused, and
+// "equals has no value" matches those words. The read-back names such a rule
+// "<parameter> has no value". Version 2 read "has no value" as text to match
+// with equals, so the filter caught only an element whose value was those
+// three words. Not run in Revit: NEEDS-CHECKING Group PE.
+//
 // THE RULE IS WRITTEN THE WAY CREATE_VIEW_FILTERS_BY_RULE VERSION 2 TAKES IT -
 // the operator in front of the value, in Revit's Filters dialog words: "does
 // not contain TRG_MEC", "begins with M_", "equals Level 1"; none means equals.
@@ -172,15 +183,20 @@ if (categories != null)
 }
 
 // The new rule's value split into the operator in front of it and the text it
-// matches - CREATE_VIEW_FILTERS_BY_RULE's grammar, kept in step by hand.
-// Longest first, so "does not contain" is never read as something shorter.
+// matches - CREATE_VIEW_FILTER's grammar, kept in step by hand. Longest first,
+// so "does not contain" is never read as something shorter.
 var operatorWords = new[]
 {
     "does not begin with", "does not end with", "does not contain", "does not equal",
-    "begins with", "ends with", "contains", "equals",
+    "has no value", "begins with", "ends with", "is blank", "contains", "equals",
 };
+// VERSION 3: THE OPERATORS THAT TAKE NO TEXT - the value IS the operator, and
+// text after one is refused. "is blank" is the same rule in plainer words.
+var noTextOperators = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "has no value", "is blank" };
 var operatorMethods = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 {
+    { "has no value", "CreateHasNoValueParameterRule" },
+    { "is blank", "CreateHasNoValueParameterRule" },
     { "does not begin with", "CreateNotBeginsWithRule" },
     { "does not end with", "CreateNotEndsWithRule" },
     { "does not contain", "CreateNotContainsRule" },
@@ -193,15 +209,20 @@ var operatorMethods = new Dictionary<string, string>(StringComparer.OrdinalIgnor
 var ruleOperator = "equals";
 var ruleText = ruleValue;
 var bareOperator = false;
+var noTextWithText = false;
 foreach (var word in operatorWords)
 {
     if (string.Equals(ruleValue, word, StringComparison.OrdinalIgnoreCase))
     {
-        bareOperator = true;
+        // "has no value" alone IS the rule; any other word alone has nothing
+        // to match.
+        if (noTextOperators.Contains(word)) { ruleOperator = word; ruleText = ""; }
+        else bareOperator = true;
         break;
     }
     if (ruleValue.StartsWith(word + " ", StringComparison.OrdinalIgnoreCase))
     {
+        if (noTextOperators.Contains(word)) { noTextWithText = true; break; }
         ruleOperator = word;
         ruleText = ruleValue.Substring(word.Length).Trim();
         break;
@@ -246,7 +267,13 @@ else if (bareOperator)
     refused = string.Format("NOTHING WAS CHANGED. '{0}' is an operator with nothing after it - write "
         + "what it should match, \"{0} TRG\", or \"equals {0}\" to match the word itself", ruleValue);
 }
-else if (changingRule && ruleText.Length == 0)
+else if (noTextWithText)
+{
+    refused = string.Format("NOTHING WAS CHANGED. \"{0}\" - \"has no value\" and \"is blank\" take "
+        + "nothing after them; they catch the elements whose parameter is empty. Type the operator "
+        + "alone, or \"equals {0}\" to match those words", ruleValue);
+}
+else if (changingRule && ruleText.Length == 0 && !noTextOperators.Contains(ruleOperator))
 {
     refused = "NOTHING WAS CHANGED. The rule's value was an operator with nothing after it - write the "
         + "text it should match";
@@ -526,6 +553,12 @@ ruleWords = (held, exact, top) =>
                 else if (inverted) verb = "NOT " + verb;
                 parts.Add(string.Format("{0} {1} '{2}'", parameterText, verb, textRule.RuleString));
             }
+            else if (heldRule is HasNoValueFilterRule)
+            {
+                // VERSION 3: the Filters dialog's words for the rule this card
+                // can now make.
+                parts.Add(string.Format("{0} {1}", parameterText, inverted ? "has a value" : "has no value"));
+            }
             else
             {
                 parts.Add(string.Format("{0} ({1}{2})", parameterText, inverted ? "NOT " : "",
@@ -571,7 +604,10 @@ conditionCount = held =>
 
 System.Reflection.MethodInfo withoutFlag = null;
 System.Reflection.MethodInfo withFlag = null;
-if (refused.Length == 0 && changingRule)
+// VERSION 3: "has no value" takes the parameter alone and is called by name
+// below - CreateHasNoValueParameterRule(ElementId) is in every release 2020 to
+// 2027 - so only a text rule is looked for here.
+if (refused.Length == 0 && changingRule && !noTextOperators.Contains(ruleOperator))
 {
     foreach (var candidate in typeof(ParameterFilterRuleFactory).GetMethods())
     {
@@ -715,7 +751,9 @@ if (refused.Length == 0 && targets.Count > 0)
                     var cause = "";
                     try
                     {
-                        made = withoutFlag != null
+                        made = noTextOperators.Contains(ruleOperator)
+                            ? ParameterFilterRuleFactory.CreateHasNoValueParameterRule(ruleParameter)
+                            : withoutFlag != null
                             ? withoutFlag.Invoke(null, new object[] { ruleParameter, ruleText }) as FilterRule
                             : withFlag.Invoke(null, new object[] { ruleParameter, ruleText, false }) as FilterRule;
                     }

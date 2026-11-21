@@ -303,7 +303,9 @@ def core_pieces():
         source = fh.read()
     wanted_names = set(["KEPT", "NOTHING_CHANGED", "ANSWERED", "NOT_ANSWERED", "REFUSED",
                         "NOT_RUN", "ROLLED_BACK", "STILL_RUNNING", "UNKNOWN",
-                        "ROLLED_BACK_HELD", "_BY_FAILURE"])
+                        "ROLLED_BACK_HELD", "_BY_FAILURE", "_OUTSIDE_STANDS",
+                        "ROLLED_BACK_OUTSIDE_HELD", "ROLLED_BACK_OUTSIDE_ASKED",
+                        "ROLLED_BACK_NO_GROUP"])
     wanted_functions = set(["_failure_outcome", "_failure_ended"])
     body = []
     for node in ast.parse(source).body:
@@ -437,6 +439,112 @@ def beside_the_code():
     reason = fa._KNOWN.get("needs_write_path", (None, None, ""))[2]
     check("edit mode" not in reason and "opens its own transactions" in reason,
           "needs_write_path no longer says the fragment works in one of Revit's edit modes")
+
+
+def outside_stands():
+    """
+    AN ADMIN OR PUBLISH JOB REFUSED AFTER ITS CODE RAN - row 5b-1933.
+
+    Heron's clock, a stop, a Revit dialog or the run guard can end such a job
+    part way. Its group in the model is rolled back, or - D-192 - it had
+    none; a file it wrote, or a document it made, saved or closed, still
+    stands. Since 2026-11-21 the add-in says so with `outsideStands`, and
+    `ranOutsideTheModel` for a job with no group. Until then the outcome line
+    said only ROLLED BACK, "send it again once what stopped it is fixed" -
+    which would do the outside part a second time.
+
+    Seen to FAIL on the code as it stood - every check below, no traceback.
+    """
+    print("\nan Admin or Publish job stopped part way (row 5b-1933)")
+    core = core_pieces()
+    held_words = core.get("ROLLED_BACK_OUTSIDE_HELD")
+    asked_words = core.get("ROLLED_BACK_OUTSIDE_ASKED")
+    no_group_words = core.get("ROLLED_BACK_NO_GROUP")
+    check(held_words is not None and asked_words is not None and no_group_words is not None,
+          "the server has words for a job whose outside work stands")
+    said = []
+    core["_outcome"] = lambda word, answer=None, says=None: said.append((word, says))
+
+    def ended(reply):
+        failure = analyse(reply, writes=True)
+        del said[:]
+        try:
+            core["_failure_ended"](failure)
+        except Exception as exc:                              # noqa: BLE001 - one clean failure
+            return ("raised %s" % type(exc).__name__, None)
+        return said[-1] if said else (None, None)
+
+    stopped = {"ok": False, "error": "ran_too_long", "message": "It ran too long.",
+               "outsideStands": True}
+    failure = analyse(stopped, writes=True)
+    check(getattr(failure, "outside_stands", None) is True
+          and getattr(failure, "ran_outside", "absent") is None,
+          "outsideStands is read off the reply")
+
+    word, says = ended(dict(stopped, rolledBack=True, rollbackReported=True))
+    check(word == "ROLLED BACK" and says is not None and says == held_words
+          and "still stands" in says and "rollback held" in says
+          and "a second time" in says,
+          "after a group's rollback that held: ROLLED BACK, the rollback held, and what it "
+          "did outside the model still stands - found %r" % ((word, (says or "")[:50]),))
+    word, says = ended(stopped)
+    check(word == "ROLLED BACK" and says is not None and says == asked_words
+          and "still stands" in says and "held" not in says,
+          "with no word on the rollback: asked for, never claimed to have held - found %r"
+          % ((word, (says or "")[:50]),))
+    for code in ("stopped_mid_run", "dialog_refused", "run_guard", "fragment_threw",
+                 "permission_withdrawn"):
+        word, says = ended({"ok": False, "error": code, "message": "Stopped.",
+                            "outsideStands": True, "rolledBack": True,
+                            "rollbackReported": True})
+        check(word == "ROLLED BACK" and says == held_words,
+              "%s: the same words - found %r" % (code, (word, (says or "")[:40])))
+
+    no_group = {"ok": False, "error": "stopped_mid_run", "message": "Stopped.",
+                "outsideStands": True, "ranOutsideTheModel": True, "elementsCounted": 12}
+    failure = analyse(no_group, writes=True)
+    check(getattr(failure, "ran_outside", None) is True, "ranOutsideTheModel is read")
+    word, says = ended(no_group)
+    check(word == "ROLLED BACK" and says is not None and says == no_group_words
+          and "no transaction group" in says and "rolled back" not in says
+          and "still stands" in says,
+          "a D-192 job with no group: nothing rolled back is claimed, the model counted "
+          "unchanged, and the outside work stands - found %r" % ((word, (says or "")[:50]),))
+
+    # WHAT IS NOT CHANGED.
+    word, says = ended(dict(stopped, rolledBack=False, rollbackReported=True))
+    check(word == "OUTCOME UNKNOWN" and says is None,
+          "a rollback that did not hold is still OUTCOME UNKNOWN, outside work or not")
+    word, says = ended({"ok": False, "error": "changed_outside_group",
+                        "message": "It changed the model.", "outsideStands": True,
+                        "ranOutsideTheModel": True})
+    check(word == "OUTCOME UNKNOWN" and says is None,
+          "a D-192 job that changed its model is still OUTCOME UNKNOWN")
+    word, says = ended({"ok": False, "error": "ran_too_long", "message": "It ran too long.",
+                        "rolledBack": True, "rollbackReported": True})
+    check(word == "ROLLED BACK" and says == core.get("ROLLED_BACK_HELD"),
+          "a Changes job's refusal, which says nothing of outside work, reads as before")
+    for flag in ("true", 1, None):
+        odd = analyse(dict(stopped, outsideStands=flag, ranOutsideTheModel=flag), writes=True)
+        check(getattr(odd, "outside_stands", "absent") is None
+              and getattr(odd, "ran_outside", "absent") is None,
+              "an outsideStands that is not true (%r) says nothing" % (flag,))
+
+    # THE RUN RECORD'S WORDS for the same refusal.
+    try:
+        import heron_run_records as RUNS
+        ended_line = RUNS._ended
+    except Exception as exc:                                  # noqa: BLE001 - one clean failure
+        ended_line = None
+        print("  (could not read heron_run_records: %s)" % exc)
+    line = ended_line(stopped) if ended_line else ""
+    check("outside the model still stands" in line and line != "refused",
+          "the run record says the outside work stands - found %r" % line)
+    line = ended_line(no_group) if ended_line else ""
+    check("no group was open" in line and "still stands" in line,
+          "and that no group was open, for a D-192 job - found %r" % line)
+    line = ended_line({"ok": False, "error": "ran_too_long", "message": "x"}) if ended_line else ""
+    check(line == "refused", "a refusal that says nothing of outside work reads as before")
 
 
 def main():
@@ -661,6 +769,7 @@ def main():
 
     arrived_unusable()
     beside_the_code()
+    outside_stands()
 
     print()
     if FAILURES:

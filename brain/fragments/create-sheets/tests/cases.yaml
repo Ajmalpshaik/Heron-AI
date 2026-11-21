@@ -247,6 +247,20 @@ negative:
       ticked and unticked as asked and "maybe" in valuesNotSet "a tick box
       takes Yes or No" - that sheet still made (D-183)
 
+  - given: >
+      VERSION 5. numbers "PH-101, PH-102", names "Plumbing Ground, Plumbing
+      First", titleBlockName placeholder
+    expect: >
+      two sheets made and read back as PH-101 and PH-102 with their names; each
+      is a placeholder (ViewSheet.IsPlaceholder true) with no title block on it;
+      findings says they were made as PLACEHOLDER sheets; noTitleblock false
+
+  - given: >
+      VERSION 5, NEGATIVE. titleBlockName placeholder with numbers "PH-101",
+      where PH-101 is already a placeholder in the register
+    expect: >
+      nothing made; numberTaken names PH-101 - a placeholder holds its number
+
 second_route:
   - >
     open the Sheets branch of the Project Browser and read the numbers - that

@@ -67,6 +67,51 @@ namespace Heron.Bridge
     /// </summary>
     public sealed class BridgeServer : IDisposable
     {
+        /// <summary>
+        /// " (process 1234, claude)" for the process at the client end of a
+        /// connected pipe, or "" when that cannot be read - FRAGMENT-ISSUES 5b
+        /// row 361: a reply was lost when something connected mid-call, and
+        /// which process it was is what NEEDS-CHECKING CS6 has to name.
+        ///
+        /// Windows only, by Windows' own call for a named pipe's client; on any
+        /// other system - the bridge's test host - and on any failure it says
+        /// nothing rather than guess. A process that has already gone, or one
+        /// this user may not read, is named by its id alone. Read only for the
+        /// log line: nothing decides by it, and the token is still what admits
+        /// a request.
+        /// </summary>
+        private static string WhoConnected(NamedPipeServerStream pipe)
+        {
+            try
+            {
+                if (pipe == null || Environment.OSVersion.Platform != PlatformID.Win32NT) return "";
+
+                uint id;
+                if (!GetNamedPipeClientProcessId(pipe.SafePipeHandle.DangerousGetHandle(), out id))
+                    return "";
+
+                var name = "";
+                try
+                {
+                    using (var process = System.Diagnostics.Process.GetProcessById((int)id))
+                        name = process.ProcessName;
+                }
+                catch (Exception)
+                {
+                    name = "";
+                }
+                return " (process " + id.ToString(CultureInfo.InvariantCulture)
+                     + (string.IsNullOrEmpty(name) ? "" : ", " + name) + ")";
+            }
+            catch (Exception)
+            {
+                return "";
+            }
+        }
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GetNamedPipeClientProcessId(IntPtr pipe, out uint clientProcessId);
+
         // THE LONGEST REQUEST HERON WILL READ ON ONE LINE, in characters.
         // Generous by design: a select-by-id request naming several thousand
         // elements is legitimate and nowhere near this. It is a backstop
@@ -266,16 +311,21 @@ namespace Heron.Bridge
                 }
                 if (displaced != null)
                 {
+                    // WHICH PROCESS CONNECTED - FRAGMENT-ISSUES 5b row 361. A reply
+                    // was lost when a Revit window opened mid-call and something
+                    // took the pipe, and what connected was never established
+                    // (NEEDS-CHECKING CS6). The log now names it.
+                    var who = WhoConnected(accepted.Pipe);
                     if (displaced.Displace())
                     {
                         Dispose(displaced.Pipe);
-                        _log("A newer connection took the session.");
+                        _log("A newer connection took the session" + who + ".");
                     }
                     else
                     {
                         lock (_pipeLock) { _finishing.Add(displaced); }
-                        _log("A newer connection took the session. The one it displaced is " +
-                             "waiting on Revit and will close once its answer is written.");
+                        _log("A newer connection took the session" + who + ". The one it " +
+                             "displaced is waiting on Revit and will close once its answer is written.");
                     }
                 }
 

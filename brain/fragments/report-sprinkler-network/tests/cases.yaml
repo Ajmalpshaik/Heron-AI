@@ -30,6 +30,17 @@ positive:
       its outline matching the Space's boundary on plan to the millimetre and its
       area_m2 the schedule's Area
 
+  # Row 5b-1910, version 2, added 2026-11-21. NOT RUN - NEEDS-CHECKING Group PA.
+  - given: >
+      a wet system whose heads are hosted on a ceiling's face (a face-based
+      pendent sprinkler, as P1102 MEP's M_Sprinkler - Pendent - Hosted), one
+      head's Properties open on screen
+    expect: >
+      every head's level is the level its Properties palette shows as Schedule
+      Level - never null, as version 1 wrote every head of P1102 MEP's system -
+      and the pipes and fittings read the same level as version 1's proof
+      (Level 2 there)
+
 negative:
   - given: one head moved out of every Space (above a corridor with no Space)
     expect: >
@@ -67,6 +78,16 @@ negative:
       its angle_deg is null, as for a family with none - never either value -
       one finding names it and says two parameters share the name, and qa()
       calls it "elbow, angle not read" (row 5b-203)
+
+  # Row 5b-1910, version 2, added 2026-11-21. NOT RUN - NEEDS-CHECKING Group PA.
+  - given: >
+      one ceiling-hosted head of the same system whose Schedule Level is set in
+      Properties to a level it does not hang under (Level 1, with the head
+      under Level 2's ceiling) - by hand, on a scratch copy, undone after
+    expect: >
+      that head's level is the level Properties shows (Level 1), never the
+      level its height would suggest and never null: the level is read from
+      Revit, not guessed. Every other head is unchanged
 
 second_route: >
   Revit's own System Browser for the system: the count of pipes, fittings,

@@ -362,6 +362,13 @@ def _ended(reply, word=None):
         return "THE ROLLBACK DID NOT HOLD - the model still holds part of it"
     if kind == "notConfirmed":
         return "ROLLBACK NOT CONFIRMED - the model may still hold it"
+    if reply.get("ok", True) is False and reply.get("outsideStands") is True:
+        # Row 5b-1933: an Admin or Publish job refused after its code ran - its
+        # group rolled back, or none opened (D-192) - and its outside work stands.
+        if reply.get("ranOutsideTheModel") is True:
+            return ("refused part way - no group was open in the model; what it did "
+                    "outside the model still stands")
+        return "refused part way - what it did outside the model still stands"
     return "outcome not recorded" if reply.get("ok", True) else "refused"
 
 

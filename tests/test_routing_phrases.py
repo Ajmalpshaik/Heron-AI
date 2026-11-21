@@ -329,6 +329,20 @@ NO_TOOL = []
 DECLARED = [
     ("what is the insulation thickness of this duct", "READ_ELEMENT_PARAMETERS",
      "5b-1882: answered SET_MEP_INSULATION on all four backends, 2026-11-20"),
+    # 2026-11-21, issues #955, #1078, #1127 and #1130: each reached a write on
+    # lexical and the model on main 4ae650e6 (tools/score-routing.py --sentences).
+    ("what insulation thickness is on these pipes", "READ_ELEMENT_PARAMETERS",
+     "5b-1882: answered SET_MEP_INSULATION on lexical and the model"),
+    ("what insulation type is on this pipe", "READ_ELEMENT_PARAMETERS",
+     "5b-1882: answered SET_MEP_INSULATION on lexical and the model"),
+    ("what is the upper limit of these rooms", "READ_ELEMENT_PARAMETERS",
+     "5b-224: answered SET_ROOM_LIMITS on lexical and the model"),
+    ("the door schedule reads backwards", "REPORT_DOOR_ROOM_LINKS",
+     "5b-1925: answered FLIP_ELEMENTS whenever that card was PROVEN"),
+    ("what room does this door swing into", "REPORT_DOOR_ROOM_LINKS",
+     "5b-321: answered PLACE_HOSTED_FAMILY on lexical, FLIP_ELEMENTS on the model"),
+    ("which roofs are in this model", "FILTER_ELEMENTS_BY_CATEGORY",
+     "5b-1929: answered SHAPE_WALL_TOPS_TO_ROOF on the model"),
     ("how high is this off the floor", "READ_ELEMENT_LEVEL",
      "146: answered SET_ROOM_LIMITS on the model, MOVE_TO_RAY_HIT on spelling"),
     # SELECT_BY_FAMILY was merged into SELECT_BY_PARAMETER_VALUE on 2026-11-01.

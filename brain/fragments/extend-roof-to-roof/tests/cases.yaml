@@ -29,6 +29,14 @@
 # before the first run. EVERY RUN ROLLED BACK unless the case says kept.
 
 positive:
+  # VERSION 2, Revit 2022 or later, NOT RUN - the look row 5b-1930 asked for:
+  # Wing F (below) and the main roof, maxExtendMm 10000. Expect extended 1 and
+  # report "EXTENDED: roof by footprint ...'s end line <id> moved <needMm> mm
+  # out, with the two lines beside it lengthened to meet it ... every
+  # footprint line kept its slope"; Edit Footprint shows the south line moved
+  # north and the east and west lines lengthened to it, each line's Defines
+  # Slope and Slope as written down. If Revit refuses the sketch edit or the
+  # read-back throws, write Revit's words down: that is the answer.
   - given: >
       the wing roof and the main roof selected (select-in-region over both,
       Roofs only), view3d {3D}, maxExtendMm 10000 - "lengthen the extruded
@@ -77,12 +85,41 @@ negative:
 
   - given: >
       the main roof and its copy 30000 mm north selected, maxExtendMm 10000 -
-      two roofs by footprint
+      two roofs by footprint whose gable ends face east and west, not each
+      other
     expect: >
-      extended 0; refused "Both roofs are roofs by footprint, and this tool
-      does not extend a roof by footprint on Revit <release> ... Modify >
-      Join/Unjoin Roof ... Nothing was changed", naming the release Revit
-      reports
+      extended 0, nothing changed. On Revit 2020 or 2021: refused "Both roofs
+      are roofs by footprint, and Revit <release>'s API has no sketch editing
+      for an add-in ... Modify > Join/Unjoin Roof", naming the release. From
+      2022 (version 2): refused begins "NOTHING MET"
+
+  # VERSION 2 (2026-11-21, row 5b-1930) - A ROOF BY FOOTPRINT, REVIT 2022 ON.
+  # NOT RUN. Add WING F: a roof by footprint on Level 2, "Generic - 400mm",
+  # the rectangle 4000,11000 to 8000,17000 mm, its east and west edges
+  # Defining Slope at 30 degrees, north and south upright - its south gable
+  # end faces the main roof's north slope 3000 mm away. Write down each of its
+  # four lines' Defines Slope and Slope first.
+  - given: >
+      version 2, Revit 2022 or later - Wing F and the main roof, maxExtendMm
+      500
+    expect: >
+      extended 0; refused "... has to extend <needMm> mm to meet ..., more
+      than the 500 mm allowed. Nothing was changed"; Wing F's sketch as it was
+
+  - given: >
+      version 2, Revit 2022 or later - Wing F with all four edges Defining
+      Slope (a hip), and the main roof, maxExtendMm 10000
+    expect: >
+      extended 0; refused begins "NOTHING MET" and names gable ends - "lines
+      that define no slope"; a hip has none
+
+  - given: >
+      version 2 on Revit 2020 or 2021 - Wing F and the main roof, maxExtendMm
+      10000
+    expect: >
+      extended 0; findings "Revit <release>'s API has no sketch editing for an
+      add-in (SketchEditScope came in 2022) ... Modify > Join/Unjoin Roof",
+      naming the release; nothing changed
 
 second_route:
   - given: >

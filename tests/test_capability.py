@@ -53,6 +53,21 @@ def add(store, fid, capability, status="DRAFT", risk="READ",
     store.db.commit()
 
 
+def _door_chooser(repo):
+    """The server's own `_fragment_for`, read from its source and run with
+    its library at `repo` - the doors' chooser, without the MCP SDK."""
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    import heron_tools as TOOLS
+    import heron_brain as BRAIN
+    import io as _io
+    text = TOOLS.server_text()
+    start = text.index("\ndef _fragment_for(")
+    end = text.index("\n# ", start)
+    names = {"os": os, "io": _io, "brain": BRAIN, "_repo_root": lambda: repo}
+    exec(compile(text[start:end], "heron_mcp_server.py", "exec"), names)
+    return names["_fragment_for"]
+
+
 def _top_level_id(path):
     """The fragment's own `id:` line, or None."""
     try:
@@ -280,6 +295,45 @@ def main():
                   "then version 2, then the card with no version, and the "
                   "DRAFT last whatever its version - trust first (%s)"
                   % ", ".join(order))
+
+            print()
+            print("9. The revit_ doors choose the provider resolve chooses "
+                  "(5b-1131)")
+            # The doors' _fragment_for took the first card IN FOLDER-NAME
+            # ORDER whose capability matched, whatever its status; resolve
+            # orders by trust, then version, then id. Read from the server's
+            # own source and run over a fixture library - the MCP SDK is not
+            # needed to read it - and asked of the same cards resolve is.
+            doors = _door_chooser(os.path.join(home, "repo"))
+            library = os.path.join(home, "repo", "brain", "fragments")
+            for folder, fid, status, version, case in (
+                    ("aaa-draft-newest", "FRG-TWO-009", "DRAFT", "9", "TWO_CASE"),
+                    ("mmm-proven-older", "FRG-TWO-001", "PROVEN", "2", "TWO_CASE"),
+                    ("zzz-proven-newer", "FRG-TWO-002", "PROVEN", "5", "TWO_CASE"),
+                    ("aaa-tie-later-id", "FRG-TIE-002", "PROVEN", "3", "TIE_CASE"),
+                    ("zzz-tie-first-id", "FRG-TIE-001", "PROVEN", "3", "TIE_CASE"),
+                    ("only-one", "FRG-ONE-001", "DRAFT", "1", "ONE_CASE")):
+                path = os.path.join(library, folder)
+                os.makedirs(path)
+                with open(os.path.join(path, "fragment.yaml"), "w") as handle:
+                    handle.write("id: %s\ncapability: %s\nheron-status: %s\n"
+                                 "version: %s\n" % (fid, case, status, version))
+                add(store, fid, case, status=status, folder=path)
+            for case, want, what in (
+                    ("TWO_CASE", "zzz-proven-newer",
+                     "a PROVEN card over a DRAFT that sorts first by name, and the "
+                     "newer of two PROVEN"),
+                    ("TIE_CASE", "zzz-tie-first-id",
+                     "two PROVEN at one version: the first id, not the first folder"),
+                    ("ONE_CASE", "only-one", "one provider: that one, whatever it is")):
+                got = doors(case)
+                chosen = CAP.resolve(store, case)
+                agreed = (chosen is not None and got[0] is not None
+                          and _top_level_id(os.path.join(library, got[0], "fragment.yaml"))
+                          == chosen.providers[0])
+                check(got[0] == want and agreed,
+                      "%s -> the doors take %s, resolve %s" % (
+                          what, got[0], chosen.providers[0] if chosen else "nothing"))
         finally:
             store.close()
     finally:

@@ -20,7 +20,8 @@ semantic-identity: "lengthen a roof by extrusion: move its Extrusion Start or En
 # 2022.1.80, 2023.1.90, 2024.3.60, 2025.4.60, 2026.4.10 and 2027.4.0: a roof by
 # EXTRUSION's extent is its Extrusion Start and End (EXTRUSION_START_PARAM,
 # EXTRUSION_END_PARAM) on every release, so its end can be moved. A roof by
-# FOOTPRINT's edges are its sketch: FootPrintRoof has GetProfiles and, per
+# FOOTPRINT's edges are its sketch (VERSION 2 extends one from 2022 - its
+# VERSION comment above; what follows is what version 1 found): FootPrintRoof has GetProfiles and, per
 # edge, Offset, Overhang, SlopeAngle, DefinesSlope and ExtendIntoWall, and no
 # SketchId; from 2022 its sketch can be found (Sketch.OwnerId) and edited in a
 # SketchEditScope (IsSketchEditingSupported 2022, ...ForSketchBasedElement
@@ -70,11 +71,34 @@ semantic-identity: "lengthen a roof by extrusion: move its Extrusion Start or En
 # first (tests/test_brain_reachable.py), and that method now offers this card
 # in its step 1 for a roof by extrusion.
 #
-# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+# RUNS WITH NO TRANSACTION OPEN, inside Heron's group, since version 2
+# (D-112): it declares `editScopeFailures` and opens its own transactions, as
+# SHAPE_WALL_TOPS_TO_ROOF does - a footprint's sketch is edited only in a
+# SketchEditScope, which cannot start while a transaction is open.
 kind: action
 domain: revit.elements
 capability: EXTEND_ROOF_TO_ROOF
-version: 1
+# VERSION 2 (2026-11-21, row 5b-1930, issue #1143) - A ROOF BY FOOTPRINT
+# FROM REVIT 2022. Version 1 refused every footprint roof. From 2022 the
+# roof's sketch is found among its dependents and edited in a SketchEditScope:
+# the gable-end line facing the other roof - a straight line that defines no
+# slope, the outermost of its loop that way, with two straight lines beside it
+# running the way it moves - is moved out by the distance the rays measured,
+# and the two lines beside it lengthened to the new corners, each with
+# CurveElement.SetGeometryCurve so every line keeps its own Defines Slope and
+# Slope. Read back: the end moved by the distance, the other end not at all,
+# every line's slope as it was - or it THROWS and the group rolls the call
+# back. On 2020 and 2021 there is no SketchEditScope and the answer says so,
+# naming the release (`#if REVIT2020 || REVIT2021`). A roof by extrusion is
+# done as in version 1, now in a transaction of its own that is rolled back
+# when the read-back disagrees. NOTHING OF THE FOOTPRINT WAY HAS RUN IN REVIT:
+# its first run is the look row 5b-1930 asked for (Group OY, OY6 to OY8).
+# BACK TO DRAFT. Version 1 was run on Revit 2024 on 2026-11-21 (Group OY,
+# OY1 to OY4 PASS) and signed PROVEN by Ajmal PS the same day - the proof below,
+# kept as the record of what version 1 did. Its fingerprint is version 1's C#;
+# version 2's is new, so the card is DRAFT until OY2 to OY4 are run again on
+# version 2 and OY6 to OY8 are run, and a new proof is signed.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -89,15 +113,22 @@ purpose: >
   read back off the roof's geometry. The end is flat, so it goes to its
   farthest point and elsewhere further - through the other roof and under
   it; cleaning the overlap is offered as the next step, and the part under
-  the other roof stays, said. A roof by footprint is never extended by this
-  tool, and the answer names the release and says it is done by hand. Two
-  ends that both meet are not chosen between. The other roof must show in the
+  the other roof stays, said. From Revit 2022 a roof by footprint's gable end
+  is moved the same way, in sketch edit mode; on 2020 and 2021 the answer
+  names the release and says it is done by hand. Two ends that both meet are
+  not chosen between. The other roof must show in the
   3D view: rays only see what the view shows.
 
 contract:
   needs:
     - name: doc
       type: Document
+    # Heron's failure discipline for the card's own transactions and its
+    # sketch edit scope - the switch that runs it with no transaction open,
+    # inside Heron's group (D-112), since version 2.
+    - name: editScopeFailures
+      type: IFailuresPreprocessor
+      source: ambient
     # The 3D view the rays are cast in. It must show the roof to be met -
     # not hidden, not cut away by a section box - or every ray misses and
     # nothing changes.
@@ -155,31 +186,95 @@ contract:
     - name: findings
       type: IList<string>
 
+proof:
+  date: '2026-11-21'
+  by: Ajmal PS
+  model: roofjoin-oy (3,273 elements), Revit 2024, session 35160
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, endOf Func`3, extended 1, extendedRoof 1 item(s) [id 352563], findings 4 item(s)
+    [1 roof extended to meet the other - EXTENDED: roof by extrus..., 2 of the 6 point(s)
+    of the end met no upper face of roof by ..., The end is flat and went to its FARTHEST
+    point, so elsewhere..., ...], invariant CultureInfo, labelOf Func`2, lines 3 item(s) [roof
+    by extrusion 352563 ''Generic - 400mm'', its end toward (..., roof by extrusion 352563
+    ''Generic - 400mm'', its end toward (..., EXTENDED: roof by extrusion 352563 ''Generic
+    - 400mm''''s Extru...], maxExtendMm 10000, mm Func`2, needMm 5066.54408652649, noFootprint
+    this tool does not extend a roof by footprint on Revit 2024: its edges are its sketch,
+    and Heron edits a roof''s sketch nowhere yet (row 5b-1930). Join it by hand: Modify >
+    Join/Unjoin Roof, then pick the edge of the roof to extend and the face it is to meet,
+    onUpperFace Func`5, oneMillimetre 0.00328083989501312, pointsOf Func`2, refused (null),
+    release 2024, report roof by extrusion 352563 ''Generic - 400mm'', its end toward (0,
+    1, 0): 4 of 6 point(s) of its end meet the upper face of roof by footprint 352517 ''Generic
+    - 400mm'', nearest 3066 mm, farthest 5067 mm away | roof by extrusion 352563 ''Generic
+    - 400mm'', its end toward (0, -1, 0): 0 of 6 point(s) of its end meet the upper face of
+    roof by footprint 352517 ''Generic - 400mm'' | EXTENDED: roof by extrusion 352563 ''Generic
+    - 400mm''''s Extrusion End is 8067 mm (was 3000 mm), and its end moved 5067 mm toward
+    roof by footprint 352517 ''Generic - 400mm'' - read back off the roof''s geometry, its
+    other end where it was, roofs 2 item(s) [Generic - 400mm, Generic - 400mm]. inputs came
+    view3d as given; elements from the selection (2); maxExtendMm as given; extend not given
+    - "", the card''s own default (optional). on roofjoin-oy'
+  negative_case: 'run with categories=Roofs, exact=false, maxExtendMm=500, maxMm=12500,8500,9000,
+    minMm=-500,-6500,2500, view3d={3D} instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running select-in-region,
+    set-selection with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, endOf
+    Func`3, extended 0, extendedRoof (null), findings 3 item(s) [Nothing was changed - see
+    refused for why, 2 of the 6 point(s) of the end met no upper face of roof by ..., Revit
+    2024''s API has no Join/Unjoin Roof; this tool extends ...], invariant CultureInfo, labelOf
+    Func`2, lines 2 item(s) [roof by extrusion 352563 ''Generic - 400mm'', its end toward
+    (..., roof by extrusion 352563 ''Generic - 400mm'', its end toward (...], maxExtendMm
+    500, mm Func`2, needMm 5066.54408652649, noFootprint this tool does not extend a roof
+    by footprint on Revit 2024: its edges are its sketch, and Heron edits a roof''s sketch
+    nowhere yet (row 5b-1930). Join it by hand: Modify > Join/Unjoin Roof, then pick the edge
+    of the roof to extend and the face it is to meet, onUpperFace Func`5, oneMillimetre 0.00328083989501312,
+    pointsOf Func`2, refused roof by extrusion 352563 ''Generic - 400mm'' has to extend 5067
+    mm to meet roof by footprint 352517 ''Generic - 400mm'', more than the 500 mm allowed.
+    Nothing was changed, release 2024, report roof by extrusion 352563 ''Generic - 400mm'',
+    its end toward (0, 1, 0): 4 of 6 point(s) of its end meet the upper face of roof by footprint
+    352517 ''Generic - 400mm'', nearest 3066 mm, farthest 5067 mm away | roof by extrusion
+    352563 ''Generic - 400mm'', its end toward (0, -1, 0): 0 of 6 point(s) of its end meet
+    the upper face of roof by footprint 352517 ''Generic - 400mm'', roofs 2 item(s) [Generic
+    - 400mm, Generic - 400mm]. inputs came view3d as given; elements from the selection (2);
+    maxExtendMm as given; extend not given - "", the card''s own default (optional). on roofjoin-oy'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: f85f7efbcfd21434
+  fingerprint: 6c77dad09bca2590
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  One implementation for every release. ExtrusionRoof.GetProfile,
-  CurveElement.SketchPlane, SketchPlane.GetPlane, Plane.Normal and Origin,
-  the ReferenceIntersector(ElementId, FindReferenceTarget, View3D)
-  constructor, ReferenceIntersector.Find, ReferenceWithContext.Proximity,
-  Solid.Edges, Edge.Tessellate, GeometryInstance.GetInstanceGeometry,
-  Element.GroupId, Parameter.IsReadOnly and View.IsTemplate read the same
-  2020 through 2027 with tools/api-surface --members on 2026-11-20, and
-  BuiltInParameter EXTRUSION_START_PARAM and EXTRUSION_END_PARAM are in
-  RevitAPI.xml for every release. ExtrusionRoof has no ExtrusionStart or
-  ExtrusionEnd property on any release, so the extents are those two
-  parameters. NewExtrusionRoof's reference says both are measured from the
-  reference plane in the direction of its normal; the card reads the
-  profile's sketch plane, whose normal may point the other way, so the
-  direction is read off the roof's geometry and the write is read back.
+  One implementation, the footprint way inside `#if !REVIT2020 &&
+  !REVIT2021`. SketchEditScope (Start, IsSketchEditingSupported, IsPermitted,
+  Commit, IsActive, Cancel), Sketch.GetAllElements and Sketch.OwnerId are in
+  the API from 2022 only - "the type is not in these" for 2020 and 2021 with
+  tools/api-surface --members on 2026-11-21 - so on those two releases a roof
+  by footprint is refused, naming the release. Element.GetDependentElements,
+  ElementClassFilter, CurveElement.SetGeometryCurve(Curve, bool),
+  CurveElement.GeometryCurve, FootPrintRoof.GetProfiles and its DefinesSlope
+  and SlopeAngle (get_DefinesSlope, get_SlopeAngle), ExtrusionRoof.GetProfile,
+  CurveElement.SketchPlane, SketchPlane.GetPlane, Plane.Normal and Origin, the
+  ReferenceIntersector(ElementId, FindReferenceTarget, View3D) constructor,
+  ReferenceIntersector.Find, ReferenceWithContext.Proximity, Solid.Edges,
+  Edge.Tessellate, GeometryInstance.GetInstanceGeometry,
   Element.GetGeometryObjectFromReference, Face.Project,
-  IntersectionResult.UVPoint and Face.ComputeNormal - the upper-face test -
-  read the same 2020 through 2027. A footprint roof's sketch is edited only
-  in a SketchEditScope (2022 on), which cannot start inside the open
-  transaction this card runs in, so on every release the refusal says this
-  tool does not, with the release Revit reports.
+  IntersectionResult.UVPoint, Face.ComputeNormal, Element.GroupId,
+  Parameter.IsReadOnly and View.IsTemplate read the same 2020 through 2027,
+  and BuiltInParameter EXTRUSION_START_PARAM and EXTRUSION_END_PARAM are in
+  RevitAPI.xml for every release. ExtrusionRoof has no ExtrusionStart or
+  ExtrusionEnd property, so the extents are those two parameters;
+  NewExtrusionRoof's reference says both are measured from the reference
+  plane along its normal, and the card reads the profile's sketch plane,
+  whose normal may point the other way, so the direction is read off the
+  roof's geometry and every write is read back.
 
 # ROUTING (2026-11-20) - every row a sentence of the frozen set measured with
 # tools/score-routing.py, main against this card, on all four backends, and

@@ -9,7 +9,12 @@ semantic-identity: "how far apart are these two"
 kind: action
 domain: revit.geometry
 capability: MEASURE_DISTANCE
-version: 1
+# VERSION 2 (2026-11-21, row 5b-1363 item 4, issue #950): words only - the
+# finding for two elements that touch names FIND_CLASHES, where it named
+# SELECT_TOUCHING, retired into it on 2026-11-01, and no longer says that card
+# tells touching from overlapping: neither does. Nothing runs differently;
+# still DRAFT until proved - NEEDS-CHECKING Group PE (D-30).
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -109,9 +114,24 @@ utterances:
   - how much clearance is there between them
   - what is the vertical distance between these
   - how much headroom is left
+  # EIGHTH ON PURPOSE (row 5b-1940, issue #1161): the re-ranker reads a card's
+  # first eight sentences (D-134), and two roofs touching reached
+  # CONNECT_OPEN_ENDS or EXTEND_ROOF_TO_ROOF there.
+  - do these two roofs meet
   # MOVED 2026-11-20 from CREATE_DIMENSION (row 158, GitHub issue #954). Both
   # are questions this read answers as a number, drawing nothing; on the
   # write they resolved by identity to a tool that annotates the model
   # (D-86: a write keeps a question only when answering it needs the write).
   - how far apart are these pipes on the drawing
   - how far apart are these on the drawing
+  # ADDED 2026-11-21, row 5b-1929 (issue #1078): how far apart two roofs are, and
+  # whether they touch, is this card's gap; both questions reached roof writes
+  # on every backend.
+  - how far is the wing roof from the main roof
+  - does the wing roof touch the main roof
+  # ADDED 2026-11-21, row 5b-1940 (issue #1161): the same two questions said
+  # another way reached SHAPE_WALL_TOPS_TO_ROOF, EXTEND_ROOF_TO_ROOF or
+  # TRIM_EXTEND_ELEMENTS - writes.
+  - is the wing roof touching the main roof
+  - what is the distance between these two roofs
+  - how far apart are the two roofs

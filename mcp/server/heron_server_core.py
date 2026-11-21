@@ -546,6 +546,27 @@ ROLLED_BACK_HELD = (
     "model is as it was; send it again only once what stopped it is fixed, or "
     "the modeller asks")
 
+# AND OF AN ADMIN OR PUBLISH JOB REFUSED AFTER ITS CODE RAN (row 5b-1933).
+# Its group in the model was rolled back, or - D-192 - it had none; a file it
+# wrote, or a document it made, saved or closed, is outside both and stands.
+# The table's own line says "send it again once what stopped it is fixed",
+# which would do that part a second time. The add-in says it with
+# `outsideStands`, and `ranOutsideTheModel` for a job with no group at all.
+# The word is still the table's.
+_OUTSIDE_STANDS = (
+    " - but what it did outside the model before it stopped (a file written, "
+    "a document made, opened, saved or closed) still stands, and no undo takes "
+    "it back; look at that before sending it again, which would do it a "
+    "second time")
+ROLLED_BACK_OUTSIDE_HELD = (
+    "Heron rolled back what it did in the model, and Revit's Heron said the "
+    "rollback held" + _OUTSIDE_STANDS)
+ROLLED_BACK_OUTSIDE_ASKED = (
+    "Heron asked Revit to roll back what it did in the model" + _OUTSIDE_STANDS)
+ROLLED_BACK_NO_GROUP = (
+    "it ran with no transaction group open in the model, and Heron counted "
+    "that model unchanged before and after" + _OUTSIDE_STANDS)
+
 #: How every outcome line starts. One spelling, here.
 OUTCOME_LINE = "outcome: "
 _OUTCOME_TAIL = " - "
@@ -568,6 +589,14 @@ _BY_FAILURE = {
 # the (word, says) form `_said_outcome` already reads; says None is the
 # table's own words.
 _ANSWERED_BY_REPLY = (ANSWERED, None)
+
+# AND THE WORD A TOOL SAYS ONCE ITS ONE READ HAS ANSWERED AND IT GOES ON TO
+# WORK ON WHAT CAME BACK - a Companion panel's (row 5b-1563). ANSWERED, a
+# second object like the one above, so `_ended` can tell it apart: a refusal
+# said after it speaks instead, as there; and a FAILURE said after it is NOT
+# ANSWERED - Heron's own working stopped after the read, and the read opened
+# nothing to keep anything.
+_ANSWERED_THEN_WORKED = (ANSWERED, None)
 
 # The two labels `_ended` is given that are a word by themselves. "ok" is not
 # one - it is KEPT at one door and ANSWERED at another, and the door says
@@ -798,15 +827,7 @@ def _said_outcome(tool, reply, label, how):
     """
     if tool not in tools.STATES_OUTCOME or not isinstance(reply, str):
         return reply
-    says = None
-    if isinstance(how, tuple) and len(how) == 2:
-        how, says = how
-    word = how if how in _WORDS else _BY_LABEL.get(label, UNKNOWN)
-    if word != how:
-        says = None
-    if word == ROLLED_BACK and not _changes_model(tool):
-        word = NOT_ANSWERED if tools.risk_of(tool) <= tools.ANALYZE else UNKNOWN
-        says = None
+    word, says = word_said(tool, label, how)
     if not reply.strip():
         return outcome_line(word, says)
     # NO OTHER LINE OF THE REPLY MAY PASS FOR THIS ONE (second review,
@@ -820,6 +841,25 @@ def _said_outcome(tool, reply, label, how):
     # that may span lines by design, such as a compile error.
     first, newline, rest = _not_the_line(reply).partition(NEWLINE)
     return first + NEWLINE + outcome_line(word, says) + newline + rest
+
+
+def word_said(tool, label, how):
+    """
+    (word, says): the word `_said_outcome` puts on `tool`'s line for this
+    label and this word said - read once, here, for the line and for a
+    caller that needs the word of a body it ran without a reply to print
+    (heron_checklist's checks, row 5b-1563), so the two cannot disagree.
+    """
+    says = None
+    if isinstance(how, tuple) and len(how) == 2:
+        how, says = how
+    word = how if how in _WORDS else _BY_LABEL.get(label, UNKNOWN)
+    if word != how:
+        says = None
+    if word == ROLLED_BACK and not _changes_model(tool):
+        word = NOT_ANSWERED if tools.risk_of(tool) <= tools.ANALYZE else UNKNOWN
+        says = None
+    return word, says
 
 
 def _not_the_line(text):
@@ -886,7 +926,24 @@ def _ended(outcome, answer=None):
     # label it gives then is the word, through `_BY_LABEL`, as it is the label.
     if outcome in ("refused", "failed") and getattr(_ctx, "how", None) is _ANSWERED_BY_REPLY:
         _ctx.how = None
+    # AND ONE THAT GOES ON TO WORK ON ITS READ (`_answered_by_read`): a
+    # refusal after it is the label's word, a failure after it NOT ANSWERED.
+    if getattr(_ctx, "how", None) is _ANSWERED_THEN_WORKED:
+        if outcome == "refused":
+            _ctx.how = None
+        elif outcome == "failed":
+            _ctx.how = NOT_ANSWERED
     return answer
+
+
+def _answered_by_read():
+    """
+    Said by a tool whose one revit_read has answered, before it works on what
+    came back - a Companion panel's (row 5b-1563): ANSWERED, unless it then
+    says "refused" (the label's word) or "failed" (NOT ANSWERED) - so each
+    `return _ended(...)` after the read keeps the one form it is written in.
+    """
+    _ctx.how = _ANSWERED_THEN_WORKED
 
 
 def _failure_ended(failure):
@@ -898,10 +955,21 @@ def _failure_ended(failure):
     AND THE WORD FOR THE OUTCOME LINE, which keeps apart the four endings
     that label folds into one (`_failure_outcome`, row 5b-1159) - with
     ROLLED_BACK_HELD's words when the add-in said the rollback held (row
-    5b-1901). `_said_outcome` drops them wherever ROLLED BACK is not printed."""
+    5b-1901) - and, for an Admin or Publish job the add-in says did work
+    outside the model, words saying that part stands (row 5b-1933): after a
+    rollback that held, after one only asked for, or with no group at all
+    (D-192). `_said_outcome` drops them wherever ROLLED BACK is not printed."""
     word = _failure_outcome(failure)
-    held = word == ROLLED_BACK and getattr(failure, "rollback_held", None) is True
-    _outcome(word, says=ROLLED_BACK_HELD if held else None)
+    says = None
+    if word == ROLLED_BACK:
+        held = getattr(failure, "rollback_held", None) is True
+        if getattr(failure, "ran_outside", None) is True:
+            says = ROLLED_BACK_NO_GROUP
+        elif getattr(failure, "outside_stands", None) is True:
+            says = ROLLED_BACK_OUTSIDE_HELD if held else ROLLED_BACK_OUTSIDE_ASKED
+        elif held:
+            says = ROLLED_BACK_HELD
+    _outcome(word, says=says)
     return "refused" if failure.outcome == FAILURE_REFUSED else "failed"
 
 

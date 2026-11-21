@@ -1,0 +1,175 @@
+# ROUTING SENTENCES FROZEN 2026-11-21, BEFORE ANY CARD WAS EDITED - the
+# session's own 60, for rows 5b-1938, 5b-1939, 5b-1848, 5b-1855, 5b-1524,
+# 5b-1496, 5b-1932 and the rows of issue #956 measured only.
+#
+# Read by tools/score-routing.py --sentences. Measured in a cloud container on
+# lexical and model only (origin/main 4ae650e6 against the branch, with and
+# without --revit 2024). OWED ON THE OWNER'S PC, which ranks model+rerank:
+#
+#   python tools/score-routing.py --sentences tests/data/routing-sentences-2026-11-21.yaml \
+#       --revit 2024 --backend model+rerank
+#
+# The FIRST sentence of the new-a group and of the new-b group is the owner's own
+# sentence from his PC; the rest are a session's words, never declared on a
+# card except where a row says so. Never reworded to buy back a rank.
+#
+# EXPECTATION CHANGED, NOT A SENTENCE, later on 2026-11-21: the level-elevation
+# group now wants WRITE_ELEMENT_PARAMETERS (PROVEN), not SET_PARAMETER_VALUES_BY_ID
+# (DRAFT, refused live) - row 5b-1950 records the PROVEN pair doing the job on
+# the owner's PC. Groups for rows 5b-1950 and 5b-1947 were added, frozen before
+# their edit. 67 sentences.
+groups:
+- group: 'new-a: a level''s elevation (owner''s PC 2026-11-21, and held-out)'
+  sentences:
+  - say: change the elevation of Level 2 to 3000 mm
+    expect: want WRITE_ELEMENT_PARAMETERS
+  - say: set the elevation of Level 3 to 6000
+    expect: want WRITE_ELEMENT_PARAMETERS
+  - say: raise Level 2 to 3500 mm
+    expect: want WRITE_ELEMENT_PARAMETERS
+  - say: change the height of the Roof level to 9000 mm
+    expect: want WRITE_ELEMENT_PARAMETERS
+  - say: Level 1 should be at 150 mm, change its elevation
+    expect: want WRITE_ELEMENT_PARAMETERS
+  - say: lower level 4 to 12000
+    expect: want WRITE_ELEMENT_PARAMETERS
+  - say: what is the elevation of Level 2
+    expect: not-a-write
+  - say: how high is level 3
+    expect: not-a-write
+- group: 'new-b: a roof by footprint (owner''s PC 2026-11-21, and held-out)'
+  sentences:
+  - say: make a roof by footprint on Level 2 from 0,0 to 12000,8000 with the two long sides sloping at 30 degrees
+    expect: want CREATE_FLOOR
+  - say: make a footprint roof on the roof level from these corners
+    expect: want CREATE_FLOOR
+  - say: add a roof by footprint over this outline
+    expect: want CREATE_FLOOR
+  - say: create a roof by footprint on Level 3 from 0,0 to 10000,6000
+    expect: want CREATE_FLOOR
+  - say: draw a footprint roof 12 by 8 metres on Level 2
+    expect: want CREATE_FLOOR
+  - say: model a hip roof by footprint over the house
+    expect: want CREATE_FLOOR
+  - say: slope the two long edges of this roof at 30 degrees
+    expect: want SLOPE_ROOF_EDGES
+  - say: what is the slope of this roof
+    expect: not-a-write
+- group: '5b-1950: a level''s Elevation as a parameter (owner''s PC)'
+  sentences:
+  - say: set the parameter elevation to 3000 on the level called level 2
+    expect: want WRITE_ELEMENT_PARAMETERS
+  - say: set the Elevation parameter of Level 3 to 6500
+    expect: want WRITE_ELEMENT_PARAMETERS
+  - say: set the global parameter Floor Height to 3500
+    expect: want SET_GLOBAL_PARAMETER
+- group: '5b-1947: stop walls joining'
+  sentences:
+  - say: stop these walls joining
+    expect: want DISALLOW_JOIN
+  - say: don't let these two walls join at the end
+    expect: want DISALLOW_JOIN
+  - say: keep these walls from joining each other
+    expect: want DISALLOW_JOIN
+  - say: stop the wall ends cleaning up
+    expect: want DISALLOW_JOIN
+  - say: unjoin the floor from the wall
+    expect: want JOIN_GEOMETRY
+- group: '1039 / 5b-1848: bring datums in from a link'
+  sentences:
+  - say: get the levels and grids from the structural link into this model
+    expect: want COPY_ELEMENTS_BETWEEN_DOCUMENTS
+  - say: bring the architect's levels into our model
+    expect: want COPY_ELEMENTS_BETWEEN_DOCUMENTS
+  - say: pull the grids across from the architectural model
+    expect: want COPY_ELEMENTS_BETWEEN_DOCUMENTS
+  - say: copy the grids from the linked architectural model into ours
+    expect: want COPY_ELEMENTS_BETWEEN_DOCUMENTS
+  - say: take the levels over from the structural link
+    expect: want COPY_ELEMENTS_BETWEEN_DOCUMENTS
+  - say: do our grids match the architect's link
+    expect: want CHECK_DATUMS_AGAINST_LINK
+  - say: check the levels against the structural link
+    expect: want CHECK_DATUMS_AGAINST_LINK
+  - say: are our grids in the same place as the linked model's
+    expect: want CHECK_DATUMS_AGAINST_LINK
+- group: '1054 / 5b-1855: filter order questions'
+  sentences:
+  - say: what order are the filters in on this view
+    expect: not-a-write
+  - say: which filter is on top in this view
+    expect: not-a-write
+  - say: list the filters on this view in priority order
+    expect: not-a-write
+  - say: show me the filter priority on this plan
+    expect: not-a-write
+  - say: what is the top filter on this view
+    expect: not-a-write
+  - say: in which order do the filters apply on this plan
+    expect: not-a-write
+  - say: tell me the filter sequence on this view
+    expect: not-a-write
+  - say: which view filter comes first here
+    expect: not-a-write
+  - say: what filter has the highest priority in this view
+    expect: not-a-write
+  - say: which filter overrides the others on this view
+    expect: not-a-write
+  - say: which filter wins on this view
+    expect: not-a-write
+  - say: which filter is last on this view
+    expect: not-a-write
+  - say: is the fire filter above the duct filter on this view
+    expect: not-a-write
+  - say: move the supply air filter to the top of the list
+    expect: want REORDER_VIEW_FILTERS
+  - say: put the fire filter below the duct filter on this view
+    expect: want REORDER_VIEW_FILTERS
+- group: '956 / 5b-1524: an edited spreadsheet back'
+  sentences:
+  - say: update parameters from this Excel
+    expect: want SET_PARAMETER_VALUES_BY_ID
+  - say: I exported the parameters to excel and edited them, now put them back
+    expect: want SET_PARAMETER_VALUES_BY_ID
+  - say: bring the edited spreadsheet back into the model
+    expect: want SET_PARAMETER_VALUES_BY_ID
+  - say: export parameters to excel so I can edit them
+    expect: want EXPORT_PARAMETERS_TO_CSV
+  - say: read the edited csv back into revit
+    expect: want SET_PARAMETER_VALUES_BY_ID
+  - say: apply the changes I made in the spreadsheet to the model
+    expect: want SET_PARAMETER_VALUES_BY_ID
+- group: '956 / 5b-1496: family lock questions'
+  sentences:
+  - say: what is locked to the reference planes in this family
+    expect: not-a-write
+  - say: which lines in this family are not locked
+    expect: not-a-write
+  - say: is the arrow line locked to the plane
+    expect: not-a-write
+- group: '956 / 5b-1932: join geometry'
+  sentences:
+  - say: clean the join between them
+    expect: want JOIN_GEOMETRY
+  - say: join these two roofs' geometry
+    expect: want JOIN_GEOMETRY
+  - say: clean up the join between the wall and the floor
+    expect: want JOIN_GEOMETRY
+  - say: join the floor and the beam so they cut each other
+    expect: want JOIN_GEOMETRY
+- group: 956 / other rows, measured only
+  sentences:
+  - say: line the viewports up
+    expect: want CENTER_VIEWPORTS_ON_SHEETS
+  - say: T10 at 150 both faces of these walls
+    expect: want PLACE_AREA_REINFORCEMENT
+  - say: add four more floor levels
+    expect: want CREATE_LEVELS
+  - say: set the keynote of this type
+    expect: want SET_FAMILY_TYPE_VALUES
+  - say: attach these walls to the roof above
+    expect: want SHAPE_WALL_TOPS_TO_ROOF
+  - say: attach the top of these walls to the roof
+    expect: want SHAPE_WALL_TOPS_TO_ROOF
+  - say: read the text of these notes
+    expect: want READ_ELEMENT_PARAMETERS

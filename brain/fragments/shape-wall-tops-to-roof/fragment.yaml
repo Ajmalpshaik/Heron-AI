@@ -67,9 +67,10 @@ purpose: >
   **WHEN A ROOF WILL NOT JOIN.** Revit's API has no Join/Unjoin Roof on any
   release, so no tool makes that join (the `join-roofs` method). Where the
   walls under the roof are what has to meet it, this is the other way -
-  offered, and run only on a yes. A roof by extrusion is brought to another
-  roof by EXTEND_ROOF_TO_ROOF; a roof by footprint is joined to another by
-  hand: Modify > Join/Unjoin Roof.
+  offered, and run only on a yes. A roof by extrusion - or, from Revit 2022,
+  a roof by footprint's gable end - is brought to another roof by
+  EXTEND_ROOF_TO_ROOF; otherwise the join is done by hand: Modify >
+  Join/Unjoin Roof.
 
 contract:
   needs:
