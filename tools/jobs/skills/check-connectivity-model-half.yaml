@@ -12,20 +12,8 @@
 #   reports where it is not.
 #
 # THE WORDS IT CLAIMS, AND WHERE EACH ONE ACTUALLY LANDED:
-#   reach     is the ductwork still connected          -> TRACE_CONNECTIVITY (identity)
-#   crossing  check the connections                    -> MIRROR_ELEMENTS (hybrid)
-#                                                         and the RETRIEVER said so itself: a coin toss - no route preferred the winner
-#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
-#   reach     did anything come apart                  -> SELECT_BY_CONNECTION_STATUS (identity)
-#   crossing  check the system is complete             -> AUTO_SIZE_MEP (hybrid)
-#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
-#
-# A `miss` is not automatically a defect - a skill composes several
-# capabilities and `lookup` returns ONE, so the single best answer sitting
-# outside the plan may mean the plan is short a capability or that the
-# sentence names a composition no fragment can win. A `crossing` is not that:
-# it is a question answered by something that changes the model, and it is the
-# line to read first.
+#   NOT MEASURED on this run - see --plan-only. Run without it
+#   before trusting the order below to be the thing Ajmal asked for.
 #
 # ONE THING HERE NEEDS A HAND ON THE MOUSE BEFORE THE BATCH RUNS:
 #   trace-connectivity wants `start (Element)` - one PARTICULAR element, not a
@@ -43,13 +31,15 @@
 #     python tools/batch-prove.py <this file> --dry-run
 #     python tools/batch-prove.py <this file>
 #
-# READ THIS BEFORE RUNNING IT: 2 of the 4 step(s) below are fragments already
+# READ THIS BEFORE RUNNING IT: 4 of the 4 step(s) below are fragments already
 # at PROVEN or PRODUCTION, and batch-prove refuses those - it reports ALREADY
 # and sends nothing to Revit. There is deliberately no flag to override that.
 # So this file is a PLAN a person reads, and only the steps not listed here
 # will actually run.
 #   ALREADY  filter-elements-by-category    PROVEN
+#   ALREADY  report-findings                PROVEN
 #   ALREADY  select-by-connection-status    PROVEN
+#   ALREADY  trace-connectivity             PROVEN
 #
 # THE COMPOSITION IS WHAT IS STILL OWED, AND THIS FILE DOES NOT RUN ONE:
 # batch-prove proves fragments one at a time. The composition runs through
@@ -64,7 +54,7 @@
 #         trace-connectivity \
 #         select-by-connection-status \
 #         report-findings \
-#         --set categoryName=FILL-IN --set inViewOnly=FILL-IN
+#         --set categories=FILL-IN --set inViewOnly=FILL-IN
 #
 # `write: true` is not typed here by hand - it is the fragment's own `risk:`
 # against the risk run_fragment_write carries in the operation registry, which
@@ -79,7 +69,7 @@ defaults:
   # Only the first step resets the chain - step two consumes what step
   # one left. The order of these two is not interchangeable.
   setup:
-    - select-by-category-name
+    - filter-elements-by-category
     - set-selection
 
   set:
@@ -87,7 +77,7 @@ defaults:
     # number of them - a heavy write on a big selection is not a stronger
     # test, it is a slower one, and a timeout says nothing about the
     # fragment. Rule 1.
-    categoryName: "FILL IN"
+    categories: "FILL IN"
     inViewOnly: "FILL IN"
 
   negative-set:
@@ -95,7 +85,7 @@ defaults:
     # `elements` unbound and the executor refuses, which proves nothing.
     # It must be a category that IS visible in the view named, and one
     # the model genuinely has nothing of for this fragment. Rules 3 and 5.
-    categoryName: "FILL IN"
+    categories: "FILL IN"
     inViewOnly: "FILL IN"
 
 jobs:
@@ -103,47 +93,60 @@ jobs:
     # STEP 1 of 4 in check-connectivity's plan, which is FILTER_ELEMENTS_BY_CATEGORY
     setup: []          # it needs nothing another fragment provides
     set:
-      category: "FILL IN"   # BuiltInCategory - resolved BY NAME in Revit; a name matching twice is refused
-      levelId:  "FILL IN"   # ElementId
+      category:     "FILL IN"   # BuiltInCategory - resolved BY NAME in Revit; a name matching twice is refused
+      # categories (IList<BuiltInCategory>) comes from the shared arrangement above
+      categoryName: "FILL IN"   # string
+      levelId:      "FILL IN"   # ElementId - the NAME of the thing, never its number - "Level 1" for a levelId. The field's own name says which kind
+      # inViewOnly (View) comes from the shared arrangement above
+      notShowingIn: "FILL IN"   # View - resolved BY NAME in Revit; a name matching twice is refused
+      withoutLevel: "FILL IN"   # bool - true or false
+      cutByView:    "FILL IN"   # bool - true or false
+      includeLinks: "FILL IN"   # bool - true or false
     negative-set:
       # FILL IN. The negative may be driven by the VALUE rather than the
       # selection - a parameter no element carries, a name the model has not
       # got. If it answers anyway it is falling back, and that is a finding.
-      category: "FILL IN"   # BuiltInCategory - resolved BY NAME in Revit; a name matching twice is refused
-      levelId:  "FILL IN"   # ElementId
+      category:     "FILL IN"   # BuiltInCategory - resolved BY NAME in Revit; a name matching twice is refused
+      categoryName: "FILL IN"   # string
+      levelId:      "FILL IN"   # ElementId - the NAME of the thing, never its number - "Level 1" for a levelId. The field's own name says which kind
+      notShowingIn: "FILL IN"   # View - resolved BY NAME in Revit; a name matching twice is refused
+      withoutLevel: "FILL IN"   # bool - true or false
+      cutByView:    "FILL IN"   # bool - true or false
+      includeLinks: "FILL IN"   # bool - true or false
     # expect: names the one result that has to move off zero, and it beats
     # every pattern the runner has. Left off because choosing it is
     # knowledge of the fragment, not of the library. This one declares:
-    # elements
+    # elements, found, findings
 
   - fragment: trace-connectivity
     # STEP 2 of 4 in check-connectivity's plan, which is TRACE_CONNECTIVITY
     set:
       start:     "FILL IN"   # the ONE element selected in Revit - type `selected`
-      tolerance: "FILL IN"   # double
+      tolerance: "FILL IN"   # double - digits only - 250 or 250.5, not 250mm
     negative-set:
       # FILL IN. The negative may be driven by the VALUE rather than the
       # selection - a parameter no element carries, a name the model has not
       # got. If it answers anyway it is falling back, and that is a finding.
       start:     "FILL IN"   # the ONE element selected in Revit - type `selected`
-      tolerance: "FILL IN"   # double
+      tolerance: "FILL IN"   # double - digits only - 250 or 250.5, not 250mm
     # expect: names the one result that has to move off zero, and it beats
     # every pattern the runner has. Left off because choosing it is
     # knowledge of the fragment, not of the library. This one declares:
-    # reached, joinedByGeometry
+    # reached, joinedByGeometry, islandOf, islandSizes, sourceless
 
   - fragment: select-by-connection-status
     # STEP 3 of 4 in check-connectivity's plan, which is SELECT_BY_CONNECTION_STATUS
     setup: []          # it needs nothing another fragment provides
     set:
-      categories:   "FILL IN"   # IList<BuiltInCategory> - comma separated, resolved BY NAME in Revit; a name matching twice is refused
-      wantOpenEnds: "FILL IN"   # bool
+      # categories (IList<BuiltInCategory>) comes from the shared arrangement above
+      wantOpenEnds: "FILL IN"   # bool - true or false
+      includeLinks: "FILL IN"   # bool - true or false
     negative-set:
       # FILL IN. The negative may be driven by the VALUE rather than the
       # selection - a parameter no element carries, a name the model has not
       # got. If it answers anyway it is falling back, and that is a finding.
-      categories:   "FILL IN"   # IList<BuiltInCategory> - comma separated, resolved BY NAME in Revit; a name matching twice is refused
-      wantOpenEnds: "FILL IN"   # bool
+      wantOpenEnds: "FILL IN"   # bool - true or false
+      includeLinks: "FILL IN"   # bool - true or false
     # expect: names the one result that has to move off zero, and it beats
     # every pattern the runner has. Left off because choosing it is
     # knowledge of the fragment, not of the library. This one declares:
@@ -151,32 +154,14 @@ jobs:
 
   - fragment: report-findings
     # STEP 4 of 4 in check-connectivity's plan, which is REPORT_FINDINGS
-    setup:             # the earlier steps of this skill, because nothing else
-                       # leaves findings
-      - select-by-category-name
-      - set-selection
-      - filter-elements-by-category
-      - trace-connectivity
-      - select-by-connection-status
-    keep-chain: true   # without it the chain those steps filled is reset
-                       # a moment before this fragment runs (defect row 11)
-    # AND THE SETUP STEPS ABOVE WANT THEIR OWN VALUES OUT OF THE SAME
-    # `set:` BLOCK. Add these to `set:` and `negative-set:` below, or the
-    # setup fails and the report blames the arrangement, not the fragment:
-    #   category (BuiltInCategory) for filter-elements-by-category
-    #   levelId (ElementId) for filter-elements-by-category
-    #   start (Element) for trace-connectivity
-    #   tolerance (double) for trace-connectivity
-    #   categories (IList<BuiltInCategory>) for select-by-connection-status
-    #   wantOpenEnds (bool) for select-by-connection-status
     set:
-      checkedCount:   "FILL IN"   # int
+      checkedCount:   "FILL IN"   # int - digits only - 250, not 250mm
       whatWasChecked: "FILL IN"   # string
     negative-set:
       # FILL IN. The negative may be driven by the VALUE rather than the
       # selection - a parameter no element carries, a name the model has not
       # got. If it answers anyway it is falling back, and that is a finding.
-      checkedCount:   "FILL IN"   # int
+      checkedCount:   "FILL IN"   # int - digits only - 250, not 250mm
       whatWasChecked: "FILL IN"   # string
     # expect: names the one result that has to move off zero, and it beats
     # every pattern the runner has. Left off because choosing it is

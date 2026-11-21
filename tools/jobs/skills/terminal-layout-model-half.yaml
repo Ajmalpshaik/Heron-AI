@@ -9,25 +9,16 @@
 #
 # WHAT THE SKILL SAYS IT DOES:
 #   Works out how many air terminals a room needs and places them on a
-#   sensible grid.
+#   sensible grid. The count and spacing come from the tool heron_hvac's
+#   diffuser_layout calculation on the room's airflow and the throw or
+#   coverage the modeller confirms for this request - every design value
+#   asked, never filled in (D-33) - and diffuser_select where the modeller
+#   asks which terminal; then the terminals are placed and their coverage read
+#   back.
 #
 # THE WORDS IT CLAIMS, AND WHERE EACH ONE ACTUALLY LANDED:
-#   miss      how many diffusers for this room         -> COUNT_BY_SPATIAL_CONTAINER (hybrid)
-#                                                         and the RETRIEVER said so itself: a coin toss - no route preferred the winner
-#   reach     lay out the air terminals                -> READ_ROOM_GEOMETRY (hybrid)
-#                                                         and the RETRIEVER said so itself: a coin toss - no route preferred the winner
-#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
-#   reach     place the grilles                        -> PLACE_FAMILY_INSTANCES (hybrid)
-#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
-#   reach     how many at 3 m coverage and where       -> REPORT_COVERAGE (hybrid)
-#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
-#
-# A `miss` is not automatically a defect - a skill composes several
-# capabilities and `lookup` returns ONE, so the single best answer sitting
-# outside the plan may mean the plan is short a capability or that the
-# sentence names a composition no fragment can win. A `crossing` is not that:
-# it is a question answered by something that changes the model, and it is the
-# line to read first.
+#   NOT MEASURED on this run - see --plan-only. Run without it
+#   before trusting the order below to be the thing Ajmal asked for.
 #
 # EVERY VALUE BELOW IS BLANK AND THAT IS DELIBERATE. Which category this model
 # has, which view holds a small number of them, and what makes the answer
@@ -39,15 +30,12 @@
 #     python tools/batch-prove.py <this file> --dry-run
 #     python tools/batch-prove.py <this file>
 #
-# READ THIS BEFORE RUNNING IT: 5 of the 5 step(s) below are fragments already
+# READ THIS BEFORE RUNNING IT: 2 of the 5 step(s) below are fragments already
 # at PROVEN or PRODUCTION, and batch-prove refuses those - it reports ALREADY
 # and sends nothing to Revit. There is deliberately no flag to override that.
 # So this file is a PLAN a person reads, and only the steps not listed here
 # will actually run.
 #   ALREADY  filter-elements-by-category    PROVEN
-#   ALREADY  filter-elements-in-room        PROVEN
-#   ALREADY  place-family-instances         PROVEN
-#   ALREADY  read-room-geometry             PROVEN
 #   ALREADY  report-coverage                PROVEN
 #
 # THE COMPOSITION IS WHAT IS STILL OWED, AND THIS FILE DOES NOT RUN ONE:
@@ -64,7 +52,7 @@
 #         place-family-instances \
 #         filter-elements-in-room \
 #         report-coverage \
-#         --set categoryName=FILL-IN --set inViewOnly=FILL-IN
+#         --set categories=FILL-IN --set inViewOnly=FILL-IN
 #
 # `write: true` is not typed here by hand - it is the fragment's own `risk:`
 # against the risk run_fragment_write carries in the operation registry, which
@@ -79,7 +67,7 @@ defaults:
   # Only the first step resets the chain - step two consumes what step
   # one left. The order of these two is not interchangeable.
   setup:
-    - select-by-category-name
+    - filter-elements-by-category
     - set-selection
 
   set:
@@ -87,7 +75,7 @@ defaults:
     # number of them - a heavy write on a big selection is not a stronger
     # test, it is a slower one, and a timeout says nothing about the
     # fragment. Rule 1.
-    categoryName: "FILL IN"
+    categories: "FILL IN"
     inViewOnly: "FILL IN"
 
   negative-set:
@@ -95,7 +83,7 @@ defaults:
     # `elements` unbound and the executor refuses, which proves nothing.
     # It must be a category that IS visible in the view named, and one
     # the model genuinely has nothing of for this fragment. Rules 3 and 5.
-    categoryName: "FILL IN"
+    categories: "FILL IN"
     inViewOnly: "FILL IN"
 
 jobs:
@@ -103,33 +91,45 @@ jobs:
     # STEP 1 of 5 in terminal-layout's plan, which is FILTER_ELEMENTS_BY_CATEGORY
     setup: []          # it needs nothing another fragment provides
     set:
-      category: "FILL IN"   # BuiltInCategory - resolved BY NAME in Revit; a name matching twice is refused
-      levelId:  "FILL IN"   # ElementId
+      category:     "FILL IN"   # BuiltInCategory - resolved BY NAME in Revit; a name matching twice is refused
+      # categories (IList<BuiltInCategory>) comes from the shared arrangement above
+      categoryName: "FILL IN"   # string
+      levelId:      "FILL IN"   # ElementId - the NAME of the thing, never its number - "Level 1" for a levelId. The field's own name says which kind
+      # inViewOnly (View) comes from the shared arrangement above
+      notShowingIn: "FILL IN"   # View - resolved BY NAME in Revit; a name matching twice is refused
+      withoutLevel: "FILL IN"   # bool - true or false
+      cutByView:    "FILL IN"   # bool - true or false
+      includeLinks: "FILL IN"   # bool - true or false
     negative-set:
       # FILL IN. The negative may be driven by the VALUE rather than the
       # selection - a parameter no element carries, a name the model has not
       # got. If it answers anyway it is falling back, and that is a finding.
-      category: "FILL IN"   # BuiltInCategory - resolved BY NAME in Revit; a name matching twice is refused
-      levelId:  "FILL IN"   # ElementId
+      category:     "FILL IN"   # BuiltInCategory - resolved BY NAME in Revit; a name matching twice is refused
+      categoryName: "FILL IN"   # string
+      levelId:      "FILL IN"   # ElementId - the NAME of the thing, never its number - "Level 1" for a levelId. The field's own name says which kind
+      notShowingIn: "FILL IN"   # View - resolved BY NAME in Revit; a name matching twice is refused
+      withoutLevel: "FILL IN"   # bool - true or false
+      cutByView:    "FILL IN"   # bool - true or false
+      includeLinks: "FILL IN"   # bool - true or false
     # expect: names the one result that has to move off zero, and it beats
     # every pattern the runner has. Left off because choosing it is
     # knowledge of the fragment, not of the library. This one declares:
-    # elements
+    # elements, found, findings
 
   - fragment: read-room-geometry
     # STEP 2 of 5 in terminal-layout's plan, which is READ_ROOM_GEOMETRY
     setup: []          # it needs nothing another fragment provides
     set:
-      room: "FILL IN"   # SpatialElement
+      room: "FILL IN"   # SpatialElement - a room or space by its NAME - "Office 101"
     negative-set:
       # FILL IN. The negative may be driven by the VALUE rather than the
       # selection - a parameter no element carries, a name the model has not
       # got. If it answers anyway it is falling back, and that is a finding.
-      room: "FILL IN"   # SpatialElement
+      room: "FILL IN"   # SpatialElement - a room or space by its NAME - "Office 101"
     # expect: names the one result that has to move off zero, and it beats
     # every pattern the runner has. Left off because choosing it is
     # knowledge of the fragment, not of the library. This one declares:
-    # boundary, holes, area, height, unbounded, heightKnown
+    # boundary, holes, holeLoops, area, height, unbounded, heightKnown
 
   - fragment: place-family-instances
     # STEP 3 of 5 in terminal-layout's plan, which is PLACE_FAMILY_INSTANCES
@@ -137,30 +137,40 @@ jobs:
     write: true        # risk: MODIFY. Without `apply` the run is wrapped
                        # in a TransactionGroup and rolled back (D-55)
     set:
-      symbol: "FILL IN"   # FamilySymbol - by name, as Revit writes it
-      points: "FILL IN"   # IList<XYZ> - MILLIMETRES, "x,y,z"; several separated by semicolons - "0,0,0; 5000,0,0"
-      level:  "FILL IN"   # Level - resolved BY NAME in Revit; a name matching twice is refused
+      symbol:          "FILL IN"   # FamilySymbol - by name, as Revit writes it
+      points:          "FILL IN"   # IList<XYZ> - MILLIMETRES, "x,y,z"; several separated by semicolons - "0,0,0; 5000,0,0"
+      level:           "FILL IN"   # Level - resolved BY NAME in Revit; a name matching twice is refused
+      structuralType:  "FILL IN"   # string
+      topLevelName:    "FILL IN"   # string
+      topOffset:       "FILL IN"   # string
+      workPlane:       "FILL IN"   # string
+      rotationDegrees: "FILL IN"   # string
     negative-set:
       # FILL IN. The negative may be driven by the VALUE rather than the
       # selection - a parameter no element carries, a name the model has not
       # got. If it answers anyway it is falling back, and that is a finding.
-      symbol: "FILL IN"   # FamilySymbol - by name, as Revit writes it
-      points: "FILL IN"   # IList<XYZ> - MILLIMETRES, "x,y,z"; several separated by semicolons - "0,0,0; 5000,0,0"
-      level:  "FILL IN"   # Level - resolved BY NAME in Revit; a name matching twice is refused
+      symbol:          "FILL IN"   # FamilySymbol - by name, as Revit writes it
+      points:          "FILL IN"   # IList<XYZ> - MILLIMETRES, "x,y,z"; several separated by semicolons - "0,0,0; 5000,0,0"
+      level:           "FILL IN"   # Level - resolved BY NAME in Revit; a name matching twice is refused
+      structuralType:  "FILL IN"   # string
+      topLevelName:    "FILL IN"   # string
+      topOffset:       "FILL IN"   # string
+      workPlane:       "FILL IN"   # string
+      rotationDegrees: "FILL IN"   # string
     # expect: names the one result that has to move off zero, and it beats
     # every pattern the runner has. Left off because choosing it is
     # knowledge of the fragment, not of the library. This one declares:
-    # placed
+    # placed, instanceId, findings
 
   - fragment: filter-elements-in-room
     # STEP 4 of 5 in terminal-layout's plan, which is FILTER_ELEMENTS_IN_ROOM
     set:
-      room: "FILL IN"   # SpatialElement
+      room: "FILL IN"   # SpatialElement - a room or space by its NAME - "Office 101"
     negative-set:
       # FILL IN. The negative may be driven by the VALUE rather than the
       # selection - a parameter no element carries, a name the model has not
       # got. If it answers anyway it is falling back, and that is a finding.
-      room: "FILL IN"   # SpatialElement
+      room: "FILL IN"   # SpatialElement - a room or space by its NAME - "Office 101"
     # expect: names the one result that has to move off zero, and it beats
     # every pattern the runner has. Left off because choosing it is
     # knowledge of the fragment, not of the library. This one declares:
@@ -169,12 +179,12 @@ jobs:
   - fragment: report-coverage
     # STEP 5 of 5 in terminal-layout's plan, which is REPORT_COVERAGE
     set:
-      coverageRadius: "FILL IN"   # double
+      coverageRadius: "FILL IN"   # double - digits only - 250 or 250.5, not 250mm
     negative-set:
       # FILL IN. The negative may be driven by the VALUE rather than the
       # selection - a parameter no element carries, a name the model has not
       # got. If it answers anyway it is falling back, and that is a finding.
-      coverageRadius: "FILL IN"   # double
+      coverageRadius: "FILL IN"   # double - digits only - 250 or 250.5, not 250mm
     # expect: names the one result that has to move off zero, and it beats
     # every pattern the runner has. Left off because choosing it is
     # knowledge of the fragment, not of the library. This one declares:
