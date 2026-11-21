@@ -11,7 +11,7 @@ semantic-identity: "insert drafting views or legends from a Revit file on disk t
 # 2026-11-03: asked for as a gap on Revit's ribbon - "Insert views from file
 # (Insert > Insert from File > Insert Views from File / Insert 2D Elements
 # from File)". The ribbon coverage note
-# (docs/work-notes/investigations/2026-11-01-revit-ribbon-coverage.md) put it
+# (docs/52-revit-ribbon-coverage.md) put it
 # PARTIAL: "the source file must already be open; nothing pulls from a closed
 # file". heron_duplicates.look: 0 already here.
 #

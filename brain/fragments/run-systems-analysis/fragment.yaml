@@ -10,7 +10,7 @@ semantic-identity: "start Revit's Systems Analysis of this model's HVAC systems 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
 # 2026-11-03: asked for as a gap on Revit's ribbon - "Systems Analysis
 # (Analyze > Systems Analysis)". The ribbon coverage note
-# (docs/work-notes/investigations/2026-11-01-revit-ribbon-coverage.md) put it
+# (docs/52-revit-ribbon-coverage.md) put it
 # MISSING, with "ViewSystemsAnalysisReport.Create + RequestSystemsAnalysis
 # (SystemsAnalysisOptions) ... Earliest release: UNSURE". No card in the
 # library names ViewSystemsAnalysisReport (grep, 2026-11-03, main and every

@@ -16,7 +16,8 @@ WHAT IT IS FOR (docs/28, HERON-KRN-TRU-019)
 "Enforces Golden Rule 19. Scans everything Heron READS BUT DOES NOT
 CONTROL - family names, parameter descriptions, model text, imported
 folders, community packages - for text addressed to the agent. Surfaces
-it to the user; NEVER ACTS ON IT." T2, risk READ.
+it to the user; NEVER ACTS ON IT." T2 when this was written, T1 since
+2026-11-21 (row 5b-1177); risk READ.
 
 Golden Rule 19 in full, because the whole file is one sentence of it:
 
@@ -28,8 +29,9 @@ Golden Rule 19 in full, because the whole file is one sentence of it:
 
 THE ONE AGENT THAT MUST NOT CALL A MODEL
 ------------------------------------------
-The register gives this agent T2 - one scoped model call. It makes none,
-and the reason is not thrift.
+The register gave this agent T2 - one scoped model call - until
+2026-11-21, and gives it T1 now (row 5b-1177). It makes none, and the
+reason is not thrift.
 
 This is the agent that reads text nobody trusts. Handing that text to a
 model to ask "is this an instruction?" is handing the instruction to the

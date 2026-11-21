@@ -1,8 +1,9 @@
 # Content Trust Agent - HERON-KRN-TRU-019
 #
 # NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
-# status (the module's Heron-Status header owns it). The register gives this
-# agent T2 - one scoped model call - AND IT MAKES NONE. See allowed-tools
+# status (the module's Heron-Status header owns it). The register gave this
+# agent T2 - one scoped model call - until 2026-11-21, and gives it T1 now
+# (row 5b-1177), because IT MAKES NONE. See allowed-tools
 # below: this is the agent that reads text nobody trusts, and asking a model
 # whether that text is an instruction is handing the instruction to the thing
 # it was written for.

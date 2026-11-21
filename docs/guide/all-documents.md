@@ -15,7 +15,7 @@ flowchart LR
     Q["<b>Safety and quality</b><br/>12 · 13 · 16 · 21"]
     M["<b>What a modeller gets</b><br/>40 – 50"]
     H["<b>How the work is done</b><br/>17 · 27 · 29 · 30 · 37 · 38"]
-    R["<b>Research</b><br/>26 · 31 – 35 · 39 · 45 · 48 · 51"]
+    R["<b>Research</b><br/>26 · 31 – 35 · 39 · 45 · 48 · 51 · 52"]
 
     D --- S
     D --- W
@@ -45,7 +45,7 @@ Knowledge and trust       09, 10, 20, 24, 36
 Safety and quality        12, 13, 16, 21
 What a modeller gets      40 - 44, 46, 47, 49, 50
 How the work is done      17, 27, 29, 30, 37, 38
-Research                  26, 31 - 35, 39, 45, 48, 51
+Research                  26, 31 - 35, 39, 45, 48, 51, 52
 ```
 
 </details>
@@ -138,7 +138,7 @@ Research                  26, 31 - 35, 39, 45, 48, 51
 | 49 | [Saved Commands and the Heron Panel](../49-saved-commands-and-the-heron-panel.md) | **A job the modeller kept, saved from the chat as a named command with its inputs, and run again from a panel docked in Revit.** One capability per command (one click, one undo); run through `revit_change`'s own body, so every rule and Keep or Discard apply as for a chat. [D-151](../decisions/D-151.md), proposed. Compiled for 2020 to 2027 and tested without Revit; not run in a real Revit |
 | 50 | [QA Checklists](../50-qa-checklists.md) | **Checks written in the modeller's own words, saved as a named checklist and run in one go** — from the chat, or the Companion's QA Checklist page. Each check is one capability that only reads, with a pass rule on one output it declares. PASS means *meets the value checked*; NOT RUN says why and is never a pass. [D-152](../decisions/D-152.md), proposed. Tested without Revit; not run in a real Revit |
 
-Research — 26, 31 to 35, 39, 45, 48 and 51 — is on its own page: [Research](research.md).
+Research — 26, 31 to 35, 39, 45, 48, 51 and 52 — is on its own page: [Research](research.md).
 
 ## Reading conventions
 
