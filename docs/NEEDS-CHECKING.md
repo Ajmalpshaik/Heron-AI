@@ -1670,6 +1670,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pg.md`](needs-checking/group-pg.md)
 
+## Group PI - CREATE_GRIDS version 4: what was made is said in findings, and refused holds a refusal and nothing else - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pi.md`](needs-checking/group-pi.md)
+
+## Group PJ - COPY_ELEMENTS version 6: a copy by an offset asked with the offset alone, the three level values left out - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pj.md`](needs-checking/group-pj.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
