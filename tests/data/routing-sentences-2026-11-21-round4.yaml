@@ -1,0 +1,309 @@
+# ROUTING SENTENCES FROZEN 2026-11-21, BEFORE ANY CARD WAS EDITED - the
+# sentences of the rows still open in GitHub issues #954, #955, #956, #958 and
+# #1127 (rows 176, 158, 5b-477, 5b-478, 5b-396, 5b-224, 5b-246, 5b-321, 5b-337,
+# 5b-346, 5b-496, 5b-1882, 5b-1924), with held-out paraphrases written the
+# same day, before any card was read for wording, and guards for the writes
+# next to them.
+#
+# Read by tools/score-routing.py --sentences. Measured in a cloud container,
+# origin/main against the branch. OWED ON THE OWNER'S PC, which ranks
+# model+rerank:
+#
+#   python tools/score-routing.py --sentences tests/data/routing-sentences-2026-11-21-round4.yaml \
+#       --backend model+rerank
+#
+# Each row's own sentence is quoted from its row; a group marked HELD OUT is
+# this session's words, never declared on a card. A sentence of
+# tests/test_routing_phrases.py is that suite's, and is never declared word for
+# word (the suite refuses it). Never reworded to buy back a rank.
+groups:
+- group: '5b-496: the suite checks that fail on the model alone (tests/test_routing_phrases.py)'
+  sentences:
+  - say: change the area scheme name from rentable to lettable
+    expect: want SET_AREA_VOLUME_COMPUTATIONS
+  - say: put the duct tags above the ducts with a leader
+    expect: want OFFSET_TAGS_FROM_HOST
+  - say: which units does this model show cooling load in
+    expect: not-a-write
+  - say: select all walls of type Curtain Wall
+    expect: not-a-write
+  - say: select all the curtain walls of type Storefront
+    expect: not-a-write
+  - say: select all instances of the Storefront curtain wall type
+    expect: not-a-write
+  - say: select all elements of type Curtain Wall
+    expect: not-a-write
+- group: '5b-496: HELD OUT paraphrases of the failing checks'
+  sentences:
+  - say: rename the gross area scheme to building gross
+    expect: want SET_AREA_VOLUME_COMPUTATIONS
+  - say: change the name of the area scheme to GIA
+    expect: want SET_AREA_VOLUME_COMPUTATIONS
+  - say: call the rentable scheme lettable instead
+    expect: want SET_AREA_VOLUME_COMPUTATIONS
+  - say: move the duct tags above the ducts with leaders
+    expect: want OFFSET_TAGS_FROM_HOST
+  - say: put the pipe tags over the pipes with a leader line
+    expect: want OFFSET_TAGS_FROM_HOST
+  - say: place the tags above their ducts and add a leader
+    expect: want OFFSET_TAGS_FROM_HOST
+  - say: what units are the heating loads shown in
+    expect: not-a-write
+  - say: is cooling load shown in watts or btu in this project
+    expect: not-a-write
+  - say: which unit does this project use for airflow
+    expect: not-a-write
+  - say: select every curtain wall of type Exterior Glazing
+    expect: not-a-write
+  - say: pick all walls whose type is Curtain Wall
+    expect: not-a-write
+  - say: select all the storefront walls in the model
+    expect: not-a-write
+- group: 'guards: the writes beside those checks'
+  sentences:
+  - say: tag all the ducts in this view
+    expect: want TAG_ELEMENTS_IN_VIEW
+  - say: run the heating and cooling loads analysis
+    expect: want RUN_HEATING_COOLING_LOADS
+  - say: add a curtain grid line to this curtain wall
+    expect: want SET_CURTAIN_WALL_GRID
+  - say: set the cooling load units to kW
+    expect: want SET_PROJECT_UNITS
+  - say: create a new area scheme called gross building
+    expect: want SET_AREA_VOLUME_COMPUTATIONS
+- group: '5b-1882 / 5b-1924: insulation questions, and the writes beside them'
+  sentences:
+  - say: how thick is the insulation on this duct
+    expect: want READ_ELEMENT_PARAMETERS
+  - say: how thick is the insulation on these pipes
+    expect: want READ_ELEMENT_PARAMETERS
+  - say: what insulation does this duct have
+    expect: not-a-write
+  - say: what time zone does the model use
+    expect: not-a-write
+  - say: what does the Mark parameter say on these doors
+    expect: not-a-write
+  - say: add 25 mm insulation to these pipes
+    expect: want SET_MEP_INSULATION
+  - say: insulate these ducts with 50 mm insulation
+    expect: want SET_MEP_INSULATION
+  - say: change the insulation thickness on these pipes to 40
+    expect: want SET_MEP_INSULATION
+- group: '5b-1882 / 5b-1924: HELD OUT insulation questions'
+  sentences:
+  - say: how much insulation is on this pipe
+    expect: want READ_ELEMENT_PARAMETERS
+  - say: tell me the insulation thickness of these ducts
+    expect: want READ_ELEMENT_PARAMETERS
+  - say: what thickness of insulation do these pipes have
+    expect: want READ_ELEMENT_PARAMETERS
+- group: '5b-1924: link room bounding'
+  sentences:
+  - say: is the architectural link set to room bounding
+    expect: want LIST_LINKED_MODELS
+  - say: which linked models bound the rooms
+    expect: want LIST_LINKED_MODELS
+  - say: make the architectural link room bounding
+    expect: want SET_LINK_ROOM_BOUNDING
+  - say: turn room bounding off for the structural link
+    expect: want SET_LINK_ROOM_BOUNDING
+- group: '5b-1924: HELD OUT link room bounding'
+  sentences:
+  - say: does the structural link bound rooms
+    expect: want LIST_LINKED_MODELS
+  - say: is room bounding on for the linked model
+    expect: want LIST_LINKED_MODELS
+  - say: which links are room bounding
+    expect: want LIST_LINKED_MODELS
+- group: '5b-1924 / 5b-246: revision numbering and cloud arc length'
+  sentences:
+  - say: what numbering does revision C use
+    expect: want LIST_REVISIONS
+  - say: which numbering sequence does each revision use
+    expect: want LIST_REVISIONS
+  - say: what arc length does this project use for revision clouds
+    expect: want LIST_REVISIONS
+  - say: what is the revision cloud arc length
+    expect: want LIST_REVISIONS
+  - say: are the revisions numbered per sheet or per project
+    expect: not-a-write
+  - say: what revision is on this sheet
+    expect: not-a-write
+  - say: set the revision cloud arc length to 10 mm
+    expect: want SET_REVISION_SETTINGS
+  - say: change revision C to use the numeric sequence
+    expect: want EDIT_REVISION
+- group: '5b-1924 / 5b-246: HELD OUT revision questions'
+  sentences:
+  - say: is revision 3 numbered alphabetic or numeric
+    expect: want LIST_REVISIONS
+  - say: which sequence numbers revision B
+    expect: want LIST_REVISIONS
+  - say: how big are the arcs on revision clouds in this model
+    expect: want LIST_REVISIONS
+- group: '5b-1924 / 5b-224: selections of air terminals and duct fittings'
+  sentences:
+  - say: pick all the air terminals
+    expect: not-a-write
+  - say: select all the duct fittings
+    expect: not-a-write
+  - say: find every air terminal of this type
+    expect: not-a-write
+  - say: connect these air terminals to the duct
+    expect: want CONNECT_AIR_TERMINALS
+  - say: set the airflow of these air terminals to 200 l/s
+    expect: want SET_AIR_TERMINAL_FLOW
+- group: '5b-1924 / 5b-224: HELD OUT selections'
+  sentences:
+  - say: select every air terminal in the model
+    expect: not-a-write
+  - say: grab all the duct fittings on this level
+    expect: not-a-write
+  - say: pick every pipe fitting in the model
+    expect: not-a-write
+- group: '5b-1924: watched only - cards another session owns, or no read exists'
+  sentences:
+  - say: what line weight do ducts have in object styles
+    expect: not-a-write
+  - say: what colour are pipes in object styles
+    expect: not-a-write
+  - say: which walls are attached to the roof
+    expect: not-a-write
+  - say: what length units does this project use
+    expect: not-a-write
+  - say: what rounding do lengths use in this project
+    expect: not-a-write
+- group: '5b-337: where room area is measured'
+  sentences:
+  - say: is the room area at wall centre
+    expect: want REPORT_AREA_VOLUME_COMPUTATIONS
+  - say: which wall face does the room area go to
+    expect: want REPORT_AREA_VOLUME_COMPUTATIONS
+  - say: are rooms measured to the inside face of the walls
+    expect: want REPORT_AREA_VOLUME_COMPUTATIONS
+  - say: where is room area measured from
+    expect: want REPORT_AREA_VOLUME_COMPUTATIONS
+  - say: what boundary does room area use
+    expect: want REPORT_AREA_VOLUME_COMPUTATIONS
+  - say: is room area measured at wall finish or center
+    expect: want REPORT_AREA_VOLUME_COMPUTATIONS
+  - say: list every area scheme in this model
+    expect: not-a-write
+  - say: change room area computation to wall finish
+    expect: want SET_AREA_VOLUME_COMPUTATIONS
+  - say: switch room area measurement to wall centre
+    expect: want SET_AREA_VOLUME_COMPUTATIONS
+  - say: dimension these rooms
+    expect: want DIMENSION_ROOMS
+- group: '5b-337: HELD OUT room area questions'
+  sentences:
+  - say: is room area computed at the wall core
+    expect: want REPORT_AREA_VOLUME_COMPUTATIONS
+  - say: are the room areas to wall centre or to finish face
+    expect: want REPORT_AREA_VOLUME_COMPUTATIONS
+  - say: does the room area stop at the face of the wall
+    expect: want REPORT_AREA_VOLUME_COMPUTATIONS
+- group: '5b-321: doors and windows already in a wall'
+  sentences:
+  - say: list the doors in the corridor walls
+    expect: want SELECT_BY_HOST
+  - say: are there any doors in the stair wall
+    expect: want SELECT_BY_HOST
+  - say: count the windows in the external walls
+    expect: not-a-write
+  - say: which doors are in this wall
+    expect: want SELECT_BY_HOST
+  - say: which windows sit in this wall
+    expect: want SELECT_BY_HOST
+  - say: which doors are hosted in the stair core wall
+    expect: want SELECT_BY_HOST
+  - say: how many windows are in this wall
+    expect: not-a-write
+  - say: show me every window hosted in the facade walls
+    expect: want SELECT_BY_HOST
+  - say: select the doors hosted in this wall
+    expect: want SELECT_BY_HOST
+  - say: put two windows in the north wall
+    expect: want PLACE_HOSTED_FAMILY
+  - say: place a door in this wall at this point
+    expect: want PLACE_HOSTED_FAMILY
+- group: '5b-321: HELD OUT hosted questions'
+  sentences:
+  - say: what doors does this wall have in it
+    expect: want SELECT_BY_HOST
+  - say: find the windows in the selected walls
+    expect: want SELECT_BY_HOST
+  - say: are there windows in the corridor walls
+    expect: want SELECT_BY_HOST
+- group: '5b-224: zones, room limits'
+  sentences:
+  - say: read the parameter values of the hvac zones
+    expect: not-a-write
+  - say: show the settings of the hvac zones
+    expect: not-a-write
+  - say: what outdoor air is set on each zone
+    expect: not-a-write
+  - say: which rooms go up to the slab
+    expect: not-a-write
+  - say: what is the limit offset of this room
+    expect: not-a-write
+  - say: create an hvac zone from these spaces
+    expect: want CREATE_HVAC_ZONE
+- group: '5b-346: the project''s site'
+  sentences:
+  - say: what is the project's latitude
+    expect: want REPORT_LOCATION
+  - say: what latitude and time zone is the site set to
+    expect: want REPORT_LOCATION
+  - say: which city is this model located in
+    expect: want REPORT_LOCATION
+  - say: does this project use daylight saving
+    expect: want REPORT_LOCATION
+  - say: set the project location to Doha
+    expect: want SET_PROJECT_LOCATION
+- group: '5b-346: HELD OUT site questions'
+  sentences:
+  - say: what longitude is this project at
+    expect: want REPORT_LOCATION
+  - say: where is the site of this model on the map
+    expect: want REPORT_LOCATION
+- group: '5b-396: what an element is made of'
+  sentences:
+  - say: what material do these walls have
+    expect: not-a-write
+  - say: what material is assigned to those beams
+    expect: not-a-write
+  - say: what material was this duct created with
+    expect: not-a-write
+  - say: find the elements made of stainless steel
+    expect: want SELECT_BY_MATERIAL
+  - say: which materials do we never use
+    expect: not-a-write
+  - say: which materials has nothing been assigned
+    expect: not-a-write
+  - say: create a copper material for the pipes
+    expect: want CREATE_MATERIAL
+- group: '5b-396: HELD OUT material questions'
+  sentences:
+  - say: what are these columns made of
+    expect: not-a-write
+  - say: which material does this floor use
+    expect: not-a-write
+- group: '176 and 158: questions that ask for no change'
+  sentences:
+  - say: Ping the Revit model.
+    expect: not-a-write
+  - say: What is the biggest duct size?
+    expect: not-a-write
+  - say: Select any one air terminal of this family so I can check it.
+    expect: not-a-write
+  - say: which room is each device in
+    expect: not-a-write
+  - say: which forms are joined in this family
+    expect: not-a-write
+  - say: is this grid 2d or 3d here
+    expect: not-a-write
+  - say: what paper sizes can i print
+    expect: not-a-write
+  - say: why will this material not purge
+    expect: not-a-write
