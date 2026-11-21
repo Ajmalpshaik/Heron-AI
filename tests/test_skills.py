@@ -309,6 +309,40 @@ def main():
              "" if not _broken else ": " + ", ".join(_broken[:5])))
 
     print()
+    print("9. A METHOD NEVER CALLS A CARD PROVEN THAT IS NOT")
+    # ROW 5b-1957. heron_method serves a method's purpose and preconditions
+    # whole, and a step written "LIST_LINKED_MODELS (PROVEN)" is read as the
+    # card's status. Four methods said it of seven cards that were DRAFT -
+    # sent back when their C# moved, or never proved - so a host was told a
+    # change would go through revit_change, which refuses a DRAFT (D-117).
+    # Only this direction is held: a card sent back to DRAFT turns this red
+    # and names the method that still calls it PROVEN, while a card that is
+    # signed never does - a step that undersells a card is stale, not unsafe.
+    import re as _re9
+    _proven9 = set(f.data.get("capability") for f in _frags.values()
+                   if f.data.get("heron-status") == "PROVEN")
+    _said9 = _re9.compile(r"\b([A-Z][A-Z0-9]+(?:_[A-Z0-9]+)+)\s*\(\s*PROVEN\b")
+    _methods9 = SKILL.load_all()[0]
+    for _s9 in sorted(_methods9.values(), key=lambda s_: s_.id):
+        _text9 = _re9.sub(r"\s+", " ", "%s %s" % (
+            _s9.purpose, " ".join(str(p) for p in _s9.preconditions())))
+        _claims9 = set(_said9.findall(_text9))
+        _wrong9 = sorted(c for c in _claims9 if c not in _proven9)
+        if _claims9:
+            check(not _wrong9,
+                  "%s calls PROVEN only cards that are (%d named)%s"
+                  % (_s9.id, len(_claims9),
+                     "" if not _wrong9 else " - not: " + ", ".join(_wrong9)))
+    # AND IT CAN FAIL: a method planted to call a DRAFT card PROVEN.
+    _draft9 = sorted(set(f.data.get("capability") for f in _frags.values()
+                         if f.data.get("heron-status") == "DRAFT"
+                         and f.data.get("capability")) - _proven9)
+    check(_draft9 and not set(_said9.findall(
+        "0. %s (PROVEN, version 2): a step" % _draft9[0])) <= _proven9,
+          "a step calling a DRAFT card PROVEN is caught (%s planted)"
+          % (_draft9[0] if _draft9 else "no DRAFT card to plant"))
+
+    print()
     print("The HVAC skills name heron_hvac calculations that exist (PROPOSALS F42-3)")
     import re as _re
     import heron_hvac as _HVAC

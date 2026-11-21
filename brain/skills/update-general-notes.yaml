@@ -105,9 +105,9 @@ purpose: >
 # notes and keep their numbering". These keep its words and leave out three
 # things on purpose: a lookup names a method by the words it shares with the
 # request: "view" is a word of most questions about a view, and
-# heron_skill._words reads "this" as "thi" and never drops it, and splits
-# "view's" into "view" and "s". Each would offer this change beside requests
-# that are not it.
+# heron_skill._words read "this" as "thi" and never dropped it (it drops it
+# since 2026-11-20, row 5b-650), and splits "view's" into "view" and "s".
+# Each would offer this change beside requests that are not it.
 utterances:
   - update the general notes and keep their numbering
   - update the general notes in the legend and keep the numbering
