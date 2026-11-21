@@ -41,7 +41,8 @@ capability: CONVERT_TO_FLEX_DUCT
 # neighbours' system only when the change ends (measured, NEEDS-CHECKING Group
 # OI, OI29) - so version 1 put every duct back as "not on" its system. The
 # system is now judged by the two connectors the flex joined when the flex's
-# own reads none. Unproved: Group OI, OI31.
+# own reads none. Unproved: Group OI, OI31. SIGNED 2026-11-21: OI31 PASSED
+# on Revit 2024 and Ajmal PS signed version 2 PROVEN - the proof below.
 version: 2
 source: OFFICIAL
 risk: MODIFY
