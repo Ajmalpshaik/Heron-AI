@@ -19,7 +19,7 @@
 | **Risk** | Highest permission level it can require ([12 §1](12-security-and-permissions.md)) |
 | **Step** | Build step it first appears in ([27](27-build-order.md)). `—` = not in Phase 0/1 |
 
-**Totals: 252 agents · 169 T1 · 63 T2 · 20 T3.**
+**Totals: 252 agents · 171 T1 · 61 T2 · 20 T3.**
 Roughly two thirds never call a model at all. The totals, the department headings, the summary table
 and the tier figures in prose are rewritten from the rows by `python tools/recount-agent-registry.py`,
 never typed; `python tools/agent-count.py` fails when the line above disagrees with the rows, and is
@@ -431,7 +431,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | `HERON-KRN-TOL-009` | Tool Registry Agent | Tools, schemas, declared risk levels | T1 | — | 3 |
 | `HERON-KRN-MDL-010` | Model Router | Declares reasoning intent; resolution is pluggable | T1 | — | — |
 | `HERON-KRN-PRO-011` | Prompt / Instruction Registry | One versioned, testable home for all instructions | T1 | ADMIN | — |
-| `HERON-KRN-TRU-019` | **Content Trust Agent** | Enforces [Golden Rule 19](14-golden-rules.md). Scans everything Heron **reads but does not control** — family names, parameter descriptions, model text, imported folders, community packages — for text addressed to the agent. Surfaces it to the user; never acts on it ↗ | T2 | READ | — |
+| `HERON-KRN-TRU-019` | **Content Trust Agent** | Enforces [Golden Rule 19](14-golden-rules.md). Scans everything Heron **reads but does not control** — family names, parameter descriptions, model text, imported folders, community packages — for text addressed to the agent. Surfaces it to the user; never acts on it ↗ **T1 since 2026-11-21, was T2** ([row 5b-1177](fragment-issues/section-5b-rows-1176-1200.md)): it makes no model call, by design - asking a model whether untrusted text is an instruction hands the instruction to the thing it was written for ([`heron_trust.py`](../brain/heron_trust.py)). The owner left the tier to the session that settled the row | T1 | READ | — |
 | `HERON-KRN-SEC-012` | Secret Manager | Credentials outside the workspace. Redaction on the way out | T1 | ADMIN | — |
 | `HERON-KRN-DEP-013` | Dependency Graph Agent | Skills → fragments → API → runtime → packages. Makes blast radius computable | T1 | READ | — |
 | `HERON-KRN-EVD-014` | Evidence Agent | Records *why* a decision was made. **No evidence, no MODIFY** | T1 | — | 6 |
@@ -574,15 +574,15 @@ keeps discovering it believed.
 | Standards & BIM QA | 14 | 1 | 12 | 1 |
 | Development | 21 | 11 | 7 | 3 |
 | Agent Lifecycle & HR | 17 | 6 | 8 | 3 |
-| Kernel & Platform | 19 | 17 | 2 | 0 |
+| Kernel & Platform | 19 | 18 | 1 | 0 |
 | Workspace & Folder Architecture | 12 | 10 | 2 | 0 |
 | Naming & Taxonomy | 7 | 5 | 2 | 0 |
 | GitHub | 10 | 8 | 2 | 0 |
 | Installation & Update | 13 | 11 | 2 | 0 |
 | Operations, Health & Resilience | 12 | 12 | 0 | 0 |
 | Documentation | 9 | 6 | 3 | 0 |
-| **Reporting & Output** | **4** | 2 | 2 | 0 |
-| **Total** | **252** | **169** | **63** | **20** |
+| **Reporting & Output** | **4** | 3 | 1 | 0 |
+| **Total** | **252** | **171** | **61** | **20** |
 
 > ### Some of these need no building, and that is not the same as missing
 >
@@ -614,10 +614,10 @@ keeps discovering it believed.
 > LEFT is work.
 
 
-**[NOTE]** The distribution is the point. **169 of 252 agents never call a model** — they are ordinary
-classes with a method or two. Of the rest, 63 make one scoped call and 20 run a real agentic loop.
+**[NOTE]** The distribution is the point. **171 of 252 agents never call a model** — they are ordinary
+classes with a method or two. Of the rest, 61 make one scoped call and 20 run a real agentic loop.
 
-Read that way, the platform is a normal application with about 169 services, 63 narrow model calls, and
+Read that way, the platform is a normal application with about 171 services, 61 narrow model calls, and
 20 genuine agentic workflows. That is a tractable system, not an intimidating one.
 
 **Phase 0 and Phase 1 need 49 of these** — the ones carrying a step number in the tables above.
@@ -730,8 +730,8 @@ concept is precisely the six-competing-vocabularies problem that
 
 | Company role | Heron | Count | What it means in practice |
 |---|---|---|---|
-| **Worker** | **T1** — deterministic service | 169 | Does one job, the same way every time. No judgement, no model call, no cost |
-| **Pro / skilled** | **T2** — one scoped model call | 63 | One judgement over ambiguous input, then out of the way |
+| **Worker** | **T1** — deterministic service | 171 | Does one job, the same way every time. No judgement, no model call, no cost |
+| **Pro / skilled** | **T2** — one scoped model call | 61 | One judgement over ambiguous input, then out of the way |
 | **Senior / lead** | **T3** — agentic loop | 20 | Owns a hard problem end to end, decides its own steps |
 | **Manager** | **Orchestrator** + **Workflow Engine** | 2 | Decides *what* happens and ensures it *happens correctly*. Deliberately **not** one manager per department — [Part 2 §83](00b-master-specification-agent-os.md) forbids the extra hops |
 | **Researcher** | `Research Agent` | 1 | Finds out what is already known. Everything it returns carries a citation |
@@ -813,7 +813,7 @@ is a separate agent with its own gate rather than a step inside rendering.
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-RPT-CMP-001` | **Report Composition Agent** | Decides *what goes in* and at what depth ~~for this reader — a modeller wants the 47 failures, a BIM manager wants the trend~~ **for this request** ([D-27](DECISIONS.md); rewritten 2026-11-15, [PROPOSALS F19](PROPOSALS.md)). Judgement, so a model call ↗. **As built (2026-10-18):** [`heron_compose.py`](../brain/heron_compose.py) follows [D-27](DECISIONS.md) instead - the shape of the answer comes from the shape of the **request** (a count, a breakdown, a narrowed set, a finished job, a comparison), not from the reader, and it calls no model ([PROPOSALS F19](PROPOSALS.md)). The tier in this row is the register's, and changing it is the owner's | T2 | READ | — |
+| `HERON-RPT-CMP-001` | **Report Composition Agent** | Decides *what goes in* and at what depth ~~for this reader — a modeller wants the 47 failures, a BIM manager wants the trend~~ **for this request** ([D-27](DECISIONS.md); rewritten 2026-11-15, [PROPOSALS F19](PROPOSALS.md)). Judgement, so a model call ↗. **As built (2026-10-18):** [`heron_compose.py`](../brain/heron_compose.py) follows [D-27](DECISIONS.md) instead - the shape of the answer comes from the shape of the **request** (a count, a breakdown, a narrowed set, a finished job, a comparison), not from the reader, and it calls no model ([PROPOSALS F19](PROPOSALS.md)). ~~The tier in this row is the register's, and changing it is the owner's~~ **T1 since 2026-11-21, was T2** ([row 5b-1177](fragment-issues/section-5b-rows-1176-1200.md)): it calls no model - the answer's shape comes from a table of request shapes (D-27). The owner left the tier to the session that settled the row | T1 | READ | — |
 | `HERON-RPT-RND-002` | **Report Rendering Agent** | Deterministic templates → page, PDF, schedule, CSV, image. **No model call** — data in, document out, same input same output ↗ | T1 | READ | — |
 | `HERON-RPT-VAL-004` | **Report Validation Agent** | Does the report say what the data says. Counts match the query, nothing dropped silently, every figure traceable to its source. A report claiming 47 failures when there are 52 is worse than no report ↗ | T2 | READ | — |
 | `HERON-RPT-RED-003` | **Report Redaction & Release Agent** | The gate before a report can be shared or leave the machine. ~~Strips project identifiers,~~ **Strips nothing: project names, file names, content names and element data are fine in the conversation, and what [D-26](DECISIONS.md) keeps on the machine is the Revit files themselves - models, families, templates - which a report is refused for carrying, as it is for a credential (rewritten 2026-11-15, [PROPOSALS F20](PROPOSALS.md)). It** enforces scope, blocks confidential-project egress. **A report is an egress surface** ↗. **As built (2026-10-18):** it strips nothing - [D-26](DECISIONS.md) puts project names among what is fine in the conversation - and **refuses** instead: a Revit file attached, a credential in the text, more than one project, or a project that has not said it may leave ([`heron_release.py`](../brain/heron_release.py), [PROPOSALS F20](PROPOSALS.md)) | T1 | PUBLISH | — |

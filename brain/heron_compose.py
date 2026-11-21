@@ -16,7 +16,8 @@ WHAT IT IS FOR (docs/28, HERON-RPT-CMP-001)
 --------------------------------------------
 "Decides WHAT GOES IN and at what depth FOR THIS READER - a modeller
 wants the 47 failures, a BIM manager wants the trend. Judgement, so a
-model call." T2, risk READ.
+model call." T2 when this was written, T1 since 2026-11-21 (row 5b-1177);
+risk READ.
 
 Both halves of that row are written against a decision that superseded
 them, and this file is built on the decision instead. PROPOSALS F19.

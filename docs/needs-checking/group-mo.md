@@ -13,7 +13,7 @@ Asked for as the last four gaps on Revit's ribbon: *"Offset (Modify > Offset) fo
 model/detail lines or a chain by a distance, copy or move"*, *"Insert views from file (Insert > Insert from File >
 Insert Views from File / Insert 2D Elements from File)"*, *"Systems Analysis (Analyze > Systems Analysis)"* and
 *"Publish Coordinates (Manage > Coordinates > Publish Coordinates)"*. The ribbon coverage note
-([2026-11-01](../work-notes/investigations/2026-11-01-revit-ribbon-coverage.md)) had Offset and Insert from File
+([2026-11-01](../52-revit-ribbon-coverage.md)) had Offset and Insert from File
 PARTIAL and the other two MISSING. No card in the library or on any branch called `CurveLoop.CreateViaOffset`,
 `ViewSystemsAnalysisReport` or `Document.PublishCoordinates`, and none opened a project file to copy views from it.
 The duplicate check (`heron_duplicates.look`) and the Matcher found nothing equal for any of the four.

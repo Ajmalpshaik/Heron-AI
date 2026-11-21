@@ -17,7 +17,7 @@ risk: MODIFY
 # 2026-11-02: asked for with the Energy Settings gap - "and, if the API allows
 # from a fragment, create the energy analytical model
 # (EnergyAnalysisDetailModel.Create)". The ribbon coverage note
-# (docs/work-notes/investigations/2026-11-01-revit-ribbon-coverage.md) lists
+# (docs/52-revit-ribbon-coverage.md) lists
 # Energy Model as MISSING. brain/heron_retrieve.py's find() on a scratch store
 # of this tree (Revit 2024) sent "create the energy analytical model" to
 # CREATE_ANALYTICAL_ELEMENTS (structural analytical members) and "make the
