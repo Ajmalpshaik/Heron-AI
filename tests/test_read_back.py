@@ -42,6 +42,13 @@ THREE HALVES, AND ONE OF THEM CANNOT BE RUN HERE
                 read-back Heron cannot read costs one line, never the reply;
                 and the words claim only what was read.
 
+AND WHAT THE JOB WAS HANDED (D-196, row 5b-1903): sections 5a, 6 and 8a and
+the end of 9 check that every element bound to the card's needs, still in the
+model and not counted as changed by Revit, is named "asked, did not change" -
+listed at the moment the "after" is read, written only when the check was
+made, and printed as one line that claims Revit's count and no cause. Seen to
+fail on the code before: 9 checks, and the host did not build.
+
 None of it proves that a value Revit reads after a real change differs from
 the one it read before, or that reading every parameter of fifty elements is
 quick enough. That is the PC's, and NEEDS-CHECKING Group NS says what it owes.
@@ -87,6 +94,9 @@ HOST = os.path.join(ROOT, "tests", "Heron.ReadBack.TestHost")
 COULD_NOT_RUN = 3
 
 FAILURES = []
+
+# The host's HANDED-JSON, once rule() has read it - section 8a's input.
+HANDED = {}
 
 
 def records():
@@ -186,6 +196,21 @@ def wiring():
           is None,
           "and a text parameter whose AsValueString is EMPTY falls back to its stored "
           "text, as a null one does")
+    print("\n5a. what the job was HANDED is checked at the same moment - row 5b-1903")
+    handed = at(run, "handedIds = RevitReadBack.HandedTo(globals.__heron.Values, null, "
+                     "HeronReadBack.MostRead + 1)")
+    present = at(run, "handedPresent = RevitReadBack.Present(target, handedIds")
+    check(0 < described < handed < present < asked,
+          "the elements bound to the card's needs are listed after the change report is "
+          "sealed and before the box, Assimilate or the rollback - the one moment the "
+          "model still holds the change, kept or not")
+    check(re.search(r"HeronReadBack\.Compare\(readMode,\s*changedIds,\s*readBefore,\s*"
+                    r"readAfter\)\s*\.CheckHanded\(", run) is not None,
+          "and the read-back that goes on the reply is checked against them")
+    check("internal static Dictionary<string, string> Present(" in reader
+          and "Transaction" not in reader,
+          "the reader says which handed elements are still in the model, and changes nothing")
+
     most = re.search(r"const\s+int\s+MostRead\s*=\s*(\d+)\s*;", rule or "")
     RUNS = records()
     check(most is not None and RUNS is not None
@@ -236,6 +261,19 @@ def chat(kept):
           "with a value that changed",
           "with what each element and the whole list left out counted, never dropped")
     check(", from the dry run" in lines[0], "and a dry run says it is one")
+
+    print("\n8a. asked, did not change - row 5b-1903")
+    lines = RUNS.read_back_lines({"readBack": (HANDED or {}).get("readBack")})
+    said = "\n".join(lines)
+    print("\n".join("    | " + line for line in lines))
+    check("  asked, did not change: 2 of the 4 element(s) this job was handed - Revit "
+          "counted no change to them: 102 Ducts, 104 Duct Fittings" in said,
+          "the elements handed and not changed are said, by id and category, of how many "
+          "were handed")
+    check("an element the job only reads" in said and "pinned" not in said
+          and "hosted" not in said,
+          "and the line says what the count is - Revit's, for a job that only reads some of "
+          "what it is handed too - without naming a cause nobody checked")
 
 
 def said_safely(RUNS, reply):
@@ -373,6 +411,48 @@ def data_not_words():
               and "could not be read" in lines[0] and "50 of 1" not in lines[0],
               "%s: said as a read-back that cannot be read, never printed as it came - "
               "found %r" % (label, [line[:80] for line in lines][:2]))
+    for label, shape in (
+            ("more not changed than handed",
+             {"mode": "dryRun", "changed": 0, "read": 0, "elements": [],
+              "handed": 1, "askedNotChanged": 2, "askedNotChangedElements": []}),
+            ("more named than not changed",
+             {"mode": "dryRun", "changed": 0, "read": 0, "elements": [],
+              "handed": 3, "askedNotChanged": 1,
+              "askedNotChangedElements": [{"id": "1"}, {"id": "2"}]}),
+            ("a named element that is not an element",
+             {"mode": "dryRun", "changed": 0, "read": 0, "elements": [],
+              "handed": 1, "askedNotChanged": 1, "askedNotChangedElements": [5]}),
+            ("handedAll that is not true or false",
+             {"mode": "dryRun", "changed": 0, "read": 0, "elements": [],
+              "handed": 1, "handedAll": "yes", "askedNotChanged": 0})):
+        lines = said_safely(RUNS, {"readBack": shape})
+        check(len(lines) == 1 and lines[0].startswith("  before -> after: not shown")
+              and "could not be read" in lines[0],
+              "%s: said as a read-back that cannot be read - found %r"
+              % (label, [line[:80] for line in lines][:2]))
+    alone = said_safely(RUNS, {"readBack": {
+        "mode": "dryRun", "changed": 0, "read": 0, "elements": [], "handed": 50,
+        "handedAll": False, "askedNotChanged": 12, "askedNotChangedMore": 0,
+        "askedNotChangedElements": [{"id": str(i), "category": "Pipes\nSYSTEM: x"}
+                                    for i in range(12)]}})
+    check(len(alone) == 1 and alone[0].startswith("  asked, did not change: 12 of the first "
+                                                  "%d element(s)" % RUNS.READ_BACK_MOST_READ)
+          and "and 2 more" in alone[0] and "\n" not in alone[0] and "SYSTEM: x" in alone[0],
+          "a job Revit counted no change in still says what it was handed and did not "
+          "change, on one line, held to %d ids, and says only the first %d handed were "
+          "checked - found %r" % (RUNS.READ_BACK_ELEMENTS, RUNS.READ_BACK_MOST_READ,
+                                  [line[:120] for line in alone]))
+    older = said_safely(RUNS, {"readBack": {"mode": "dryRun", "changed": 1, "read": 1,
+                                            "noValueChanged": 1, "elements": []}})
+    check(not any("asked, did not change" in line for line in older),
+          "an add-in from before the check sends no handed fields, and nothing is said of them")
+    none_left = said_safely(RUNS, {"readBack": {"mode": "selection", "changed": 2, "read": 0,
+                                                "notRead": 2, "elements": [], "handed": 2,
+                                                "handedAll": True, "askedNotChanged": 0,
+                                                "askedNotChangedElements": []}})
+    check(not any("asked, did not change" in line for line in none_left),
+          "and every handed element changed says nothing more - found %r" % (none_left,))
+
     check(RUNS.read_back_lines({"readBack": [1, 2]}) == []
           and RUNS.read_back_lines({"readBack": None}) == [],
           "a field that is not a read-back at all still prints nothing, as before")
@@ -437,7 +517,7 @@ def rule():
     said = (ran.stdout or b"").decode("utf-8", "replace")
     blobs = {}
     for line in said.splitlines():
-        for prefix in ("KEPT-JSON ", "CAPPED-JSON ", "ODD-JSON "):
+        for prefix in ("KEPT-JSON ", "CAPPED-JSON ", "ODD-JSON ", "HANDED-JSON "):
             if line.startswith(prefix):
                 blobs[prefix.strip()] = line[len(prefix):]
                 break
@@ -447,7 +527,7 @@ def rule():
 
     print("\n7. what the hand-written writer wrote, read by a reader that did not write it")
     parsed = {}
-    for key in ("KEPT-JSON", "CAPPED-JSON", "ODD-JSON"):
+    for key in ("KEPT-JSON", "CAPPED-JSON", "ODD-JSON", "HANDED-JSON"):
         try:
             parsed[key] = json.loads(blobs.get(key, ""))
         except ValueError as bad:
@@ -474,6 +554,15 @@ def rule():
                                                     "after": 'line\nnext "quoted"'},
           "an id, a category and values holding quotes, a backslash and a new line come "
           "back exactly as given")
+    handed = (parsed.get("HANDED-JSON") or {}).get("readBack") or {}
+    check(handed.get("handed") == 4 and handed.get("handedAll") is True
+          and handed.get("askedNotChanged") == 2 and handed.get("askedNotChangedMore") == 0
+          and handed.get("askedNotChangedElements") == [{"id": "102", "category": "Ducts"},
+                                                        {"id": "104", "category": "Duct Fittings"}],
+          "what the job was handed and Revit counted no change to parses: how many were "
+          "checked, how many did not change, and which - row 5b-1903")
+    global HANDED
+    HANDED = parsed.get("HANDED-JSON") or {}
     return 0, parsed.get("KEPT-JSON") or {}
 
 

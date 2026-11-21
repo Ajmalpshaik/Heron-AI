@@ -267,6 +267,62 @@ namespace Heron.ReadBack.TestHost
             var quoted = HeronReadBack.Compare(HeronReadBack.DryRun, new List<string> { "9\"9" }, before, after);
 
             Console.WriteLine();
+            Console.WriteLine("6. what the job was handed and Revit counted no change to - row 5b-1903");
+            // Four ducts handed to a move. 101 moved (and its fitting 105 with
+            // it, which was not handed); 102 and the fitting 104 stayed where
+            // they were - pinned, say; 103 is no longer in the model.
+            before = Side();
+            after = Side();
+            before["101"] = Element("Ducts", "Offset", "0 mm");
+            after["101"] = Element("Ducts", "Offset", "200 mm");
+            var present = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                { "101", "Ducts" }, { "102", "Ducts" }, { "104", "Duct Fittings" }
+            };
+            var asked = HeronReadBack.Compare(HeronReadBack.Selection, new List<string> { "101", "105" },
+                                              before, after)
+                                     .CheckHanded(new List<string> { "101", "102", "103", "104" }, true, present);
+            Check(asked.Handed == 4 && asked.HandedAll,
+                  "four handed, and every one of them checked");
+            Check(asked.AskedNotChanged.Count == 2
+                  && asked.AskedNotChanged[0].Id == "102" && asked.AskedNotChanged[0].Category == "Ducts"
+                  && asked.AskedNotChanged[1].Id == "104" && asked.AskedNotChanged[1].Category == "Duct Fittings",
+                  "the two still in the model that Revit counted no change to are named, in the order handed, "
+                  + "each with its category");
+            Check(!asked.AskedNotChanged.Exists(e => e.Id == "101" || e.Id == "103" || e.Id == "105"),
+                  "and never one Revit counted as changed, one no longer in the model, or one it was not handed");
+            Check(asked.Changed == 2 && asked.Read == 1 && asked.WithDifference.Count == 1,
+                  "and D-156's own counts are what they were without it");
+
+            var noHandedCheck = HeronReadBack.Compare(HeronReadBack.Selection, new List<string> { "101" }, before, after);
+            Check(!noHandedCheck.ReplyField().Contains("\"handed\"") && !noHandedCheck.ReplyField().Contains("askedNotChanged"),
+                  "a comparison nobody checked the handed elements on carries no handed fields - nothing claimed");
+
+            var stood = HeronReadBack.Compare(HeronReadBack.DryRun, new List<string>(), Side(), Side())
+                                     .CheckHanded(new List<string> { "7" }, true,
+                                                  new Dictionary<string, string>(StringComparer.Ordinal) { { "7", "Walls" } });
+            Check(stood.Changed == 0 && stood.AskedNotChanged.Count == 1 && stood.AskedNotChanged[0].Id == "7",
+                  "a job Revit counted nothing changed in still names what it was handed");
+
+            var lots = new List<string>();
+            var lotsThere = new Dictionary<string, string>(StringComparer.Ordinal);
+            for (var i = 0; i < 30; i++)
+            {
+                lots.Add((3000 + i).ToString());
+                lotsThere[(3000 + i).ToString()] = "Pipes";
+            }
+            var crowd = HeronReadBack.Compare(HeronReadBack.DryRun, new List<string>(), Side(), Side())
+                                     .CheckHanded(lots, false, lotsThere);
+            var crowdField = crowd.ReplyField();
+            Check(crowd.AskedNotChanged.Count == 30 && crowdField.Contains("\"askedNotChangedMore\": 10")
+                  && crowdField.Contains("\"handedAll\": false"),
+                  "thirty not changed: the reply names " + HeronReadBack.MostShown
+                  + ", counts the rest, and says not every handed element was checked");
+            Check(HeronReadBack.Compare(HeronReadBack.DryRun, null, null, null)
+                               .CheckHanded(null, true, null).Handed == 0,
+                  "and nothing handed is nothing checked, never a throw");
+
+            Console.WriteLine();
             if (Failures.Count > 0)
             {
                 Console.WriteLine("FAILED  " + Failures.Count + " of " + _checks + " check(s)");
@@ -279,6 +335,7 @@ namespace Heron.ReadBack.TestHost
             Console.WriteLine("KEPT-JSON {" + kept.ReplyField() + "}");
             Console.WriteLine("CAPPED-JSON {" + field + "}");
             Console.WriteLine("ODD-JSON {" + quoted.ReplyField() + "}");
+            Console.WriteLine("HANDED-JSON {" + asked.ReplyField() + "}");
             return Failures.Count == 0 ? 0 : 1;
         }
     }

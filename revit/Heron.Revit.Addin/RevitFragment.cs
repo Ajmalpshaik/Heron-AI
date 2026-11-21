@@ -838,6 +838,13 @@ namespace Heron.Revit.Addin
             Dictionary<string, HeronReadBack.Values> readAfter = null;
             List<string> changedIds = null;
 
+            // ROW 5b-1903, D-196: WHAT THE CARD WAS HANDED - the elements bound
+            // to its needs - and which of them are still in the model, read at
+            // the moment readAfter is. So an element it was given and Revit
+            // counted no change to is said. Null on the read path.
+            List<ElementId> handedIds = null;
+            Dictionary<string, string> handedPresent = null;
+
             // What the read path counted before the run - null on the write
             // path, which keeps what it changes on purpose and says so.
             ReadFootprint counted = null;
@@ -1249,6 +1256,15 @@ namespace Heron.Revit.Addin
                     readAfter = RevitReadBack.Read(target, changed.Changed, HeronReadBack.MostRead,
                                                    RevitReadBack.Keys(readBefore));
 
+                    // ROW 5b-1903, D-196: AND WHAT THE CARD WAS HANDED, at the same
+                    // moment - so a pinned duct a move left where it was is said,
+                    // kept or rolled back. Only its bound needs, never the
+                    // selection: a selection the card was not given is not what it
+                    // was asked to change. One more than MostRead, so the reply can
+                    // say when there were more than were checked.
+                    handedIds = RevitReadBack.HandedTo(globals.__heron.Values, null, HeronReadBack.MostRead + 1);
+                    handedPresent = RevitReadBack.Present(target, handedIds);
+
                     // D-142: ANYTHING A KEPT CHANGE DELETES IS ASKED FIRST, in a
                     // box of its own, whatever Ask to Keep says and before D-138's
                     // grant is looked at - by Revit's count, never a card's flag.
@@ -1423,8 +1439,17 @@ namespace Heron.Revit.Addin
             string readMode = apply ? HeronReadBack.Selection
                             : answered == null && !keptNothing ? HeronReadBack.DryRun : null;
             if (readMode != null && changedIds != null)
+            {
+                // ROW 5b-1903, D-196: checked against what the card was handed -
+                // the first MostRead of them, and the reply says if there were more.
+                var handedTexts = IdTexts(handedIds);
+                var handedAll = handedTexts.Count <= HeronReadBack.MostRead;
+                if (!handedAll) handedTexts = handedTexts.GetRange(0, HeronReadBack.MostRead);
                 verdict = WithReadBack(verdict, HeronReadBack.Compare(readMode, changedIds,
-                                                                      readBefore, readAfter));
+                                                                      readBefore, readAfter)
+                                                             .CheckHanded(handedTexts, handedAll,
+                                                                          handedPresent));
+            }
 
             // Q-69, D-171: THE SAVE THE FRAGMENT ASKED FOR, done here - after
             // the group's block has closed and the reply above is built, so
