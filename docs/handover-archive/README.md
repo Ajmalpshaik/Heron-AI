@@ -30,6 +30,7 @@ this folder exists to remove.
 
 | Date | Sitting |
 |---|---|
+| 2026-11-21 | [THIRTY PULL REQUESTS MERGE IN A DAY: THE NEW WORK WAITS FOR REVIT, AND FIVE QUESTIONS WAIT FOR THE OWNER](2026-11-21-thirty-pull-requests-merge-the-new-work-waits-for-revit-and-the-owner.md) |
 | 2026-11-14 | [A NIGHT ON REVIT 2024 ALONE: SCRATCH MODELS HERON MADE, TEN DRAFTS AND SEVEN DEFECTS](2026-11-14-a-night-on-revit-2024-alone-scratch-models-heron-made-and-seven-defects.md) |
 | 2026-11-13 | [THE OWNER'S PC PROVES WHAT #855 BUILT, AND THE PROVING FINDS NEW DEFECTS ON THE WAY](2026-11-13-the-owner-s-pc-proves-what-855-built-and-the-proving-finds-new.md) |
 | 2026-11-12 | [EVERY REPLY SAYS HOW IT ENDED IN ONE WORD, PROVEN TOOLS THAT ANSWERED WRONGLY ARE REPAIRED AND DRAFT AGAIN, AND A DEFECT ROW GETS A FILE OF ITS OWN](2026-11-12-every-reply-says-how-it-ended-in-one-word-proven-tools-that.md) |
