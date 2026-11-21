@@ -324,6 +324,25 @@ def section_3(skill, library):
               "the proof file names who signed, the steps and the fingerprint")
         check(io.open(skill.path, "rb").read() == before,
               "the skill's own file - its heron-status with it - is untouched")
+
+        # THE GUARD BEHIND THAT, MADE TO FIRE. A copy of the skill, and a
+        # proof path pointed at the copy itself, so writing the proof moves
+        # the skill's file under accept. It must say so, not report signed.
+        copy = os.path.join(work, "copy", os.path.basename(skill.path))
+        os.makedirs(os.path.dirname(copy))
+        shutil.copy(skill.path, copy)
+        twin = SKILL.load(copy)
+        PROOF.write_draft(skill.id, body)
+        real_path = PROOF.proof_path
+        PROOF.proof_path = lambda skill_id: copy
+        try:
+            code, message = PROOF.accept(skill.id, "A Person", skills={skill.id: twin},
+                                         library=library)
+        finally:
+            PROOF.proof_path = real_path
+        check(code == 1 and "status" in message,
+              "a write that moved the skill's own file is caught, not reported signed (%r: %s)"
+              % (code, message))
     finally:
         PROOF.DRAFTS_DIR, PROOF.RUNS_DIR, PROOF.PROOFS_DIR = saved
         shutil.rmtree(work, ignore_errors=True)

@@ -331,13 +331,23 @@ def accept(skill_id, by, skills=None, library=None):
     record["gaps"] = body.get("gaps") or []
     if not os.path.isdir(PROOFS_DIR):
         os.makedirs(PROOFS_DIR)
+    # THE SKILL'S OWN FILE IS READ BEFORE AND AFTER, and must not move. It
+    # should never fire - nothing here writes it - and it exists because
+    # "nothing here writes it" is the sentence that stops being true when
+    # somebody adds a feature. It read the skill object already in memory
+    # until a test pointed the proof at the skill's own file and it said
+    # "signed".
     status_before = skill.status
+    with io.open(skill.path, "rb") as fh:
+        skill_before = fh.read()
     with io.open(proof_path(skill_id), "w", encoding="utf-8") as fh:
         fh.write(yaml.safe_dump(record, allow_unicode=True, sort_keys=False,
                                 default_flow_style=False, width=88))
-    after = SKILL.load_all()[0].get(skill_id) if skills is None else skill
-    if after is not None and after.status != status_before:
-        return 1, "the skill's status moved while signing - this file never writes it"
+    with io.open(skill.path, "rb") as fh:
+        if fh.read() != skill_before:
+            return 1, ("the skill's own file - its status with it - moved while signing, "
+                       "and this file never writes it: read %s before trusting it"
+                       % skill.path)
     return 0, ("signed by %s: %s. The skill's heron-status is unchanged (%s) - "
                "promoting it is the owner's decision." % (by.strip(), proof_path(skill_id),
                                                            status_before))
