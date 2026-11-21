@@ -109,9 +109,8 @@ purpose: >
   read back off the roof's geometry. The end is flat, so it goes to its
   farthest point and elsewhere further - through the other roof and under
   it; cleaning the overlap is offered as the next step, and the part under
-  the other roof stays, said. From Revit 2022 a roof by footprint is extended
-  the same way, by moving its gable-end line - one that defines no slope - in
-  sketch edit mode, every line keeping its slope; on 2020 and 2021 the answer
+  the other roof stays, said. From Revit 2022 a roof by footprint's gable end
+  is moved the same way, in sketch edit mode; on 2020 and 2021 the answer
   names the release and says it is done by hand. Two ends that both meet are
   not chosen between. The other roof must show in the
   3D view: rays only see what the view shows.

@@ -249,10 +249,14 @@ utterances:
   - the handing is wrong
   - flip them
   - fix the from and to room on these doors
+  - flip the work plane of the nested part
   # ADDED 2026-11-21, row 5b-1925 (issue #1130): the request this card's own
   # routing row names - on main it reached REPORT_DOOR_ROOM_LINKS, the read,
-  # on all four backends. And "the door schedule reads backwards" came out of
-  # this card's purpose, where it was the only write saying it word for word,
-  # so the question stays with the read whichever of the two is PROVEN.
+  # on all four backends. NINTH ON PURPOSE: the re-ranker reads a card's first
+  # eight (D-134), and as the eighth it sent "the door schedule reads
+  # backwards" and "is the door schedule right" to this write and the work-plane
+  # request away, on both re-ranked backends (measured). And "the door schedule
+  # reads backwards" came out of this card's purpose, where it was the only
+  # write saying it word for word, so the question stays with the read
+  # whichever of the two is PROVEN.
   - the door schedule rooms read backwards, fix them
-  - flip the work plane of the nested part
