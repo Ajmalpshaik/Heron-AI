@@ -479,6 +479,13 @@ _KNOWN = {
                            "a read ran with no transaction open and the model's count or "
                            "its changed flag moved anyway, so something may be in the "
                            "model that nothing can undo"),
+    # D-192: a job that works only outside the model it was aimed at, run with
+    # no transaction group open there - and that model moved after all, or a
+    # transaction was left open in it. Nothing could roll it back.
+    "changed_outside_group": (UNKNOWN, LOOK_AT_THE_MODEL,
+                          "it ran with no transaction group open in the model it was aimed "
+                          "at and changed that model, which it said it would not - Heron had "
+                          "nothing to roll it back with"),
     "read_unverified":   (UNKNOWN, LOOK_AT_THE_MODEL,
                           "the model a read ran in closed before it could be counted "
                           "again, so whether the read changed it is not known"),

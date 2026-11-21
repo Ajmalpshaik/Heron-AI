@@ -260,6 +260,7 @@ an edit.
 | [D-189](#d-189--a-development-session-never-pulls-into-the-main-heron-folder) | A development session never pulls into the main Heron folder | ✅ Accepted · 2026-11-20 |
 | [D-190](#d-190--the-readme-stops-asking-modellers-not-to-install-before-a-release-is-signed-and-says-plainly-the-build-is-unsigned-and-what-was-checked) | The README stops asking modellers not to install before a release is signed, and says plainly the build is unsigned and what was checked | ✅ Accepted · 2026-11-20 |
 | [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) | The usage counter keeps offered, helped and the last date it helped; "helped" is only the modeller's word; it moves a clause less than one rank; and no question text is kept | ✅ Accepted · 2026-11-20 |
+| [D-192](#d-192--a-job-that-works-only-outside-the-model-it-is-aimed-at-declares-nogroupopen-and-an-admin-or-publish-job-then-opens-no-transaction-group-in-that-model) | A job that works only outside the model it is aimed at declares noGroupOpen, and an Admin or Publish job then opens no transaction group in that model | ✅ Accepted · 2026-11-21 |
 
 ## Format
 
@@ -1723,3 +1724,12 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`brain/heron_usage.py`](../brain/heron_usage.py) · [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) `USAGE_SPAN` · the `heron_helped` tool · [`tests/test_usage_counter.py`](../tests/test_usage_counter.py)
 
 **Full record:** [`decisions/D-191.md`](decisions/D-191.md)
+
+## D-192 — A job that works only outside the model it is aimed at declares noGroupOpen, and an Admin or Publish job then opens no transaction group in that model
+
+**Status:** Accepted · **Date:** 2026-11-20 · **Accepted:** Ajmal PS, 2026-11-21, in conversation with the session that built it: *"yes to D-192, merge #1150"* · **Written by:** a cloud session overnight, for issues [#1121](https://github.com/Ajmalpshaik/Heron-AI/issues/1121) and [#941](https://github.com/Ajmalpshaik/Heron-AI/issues/941), held unmerged as Proposed until he had read it. Taking the need off the two cards still puts every run back as it was, with no C# change.
+**Numbering:** D-192 is the id `tools/next-id.py` printed free on 2026-11-20, with `origin/main` at `dea262c6` ending at D-190 and D-191 held by pull request #1135.
+**Answers:** [D-125](decisions/D-125.md)'s question for a job that only makes a new document (row 5b-1912) · **Keeps:** D-125, D-112, Article 8, D-30, D-155 · **Leaves open:** row 99 and row 5b-1408, the owner's
+**Affects:** `RevitFragment.cs`, `HeronDialogNote.cs`, `heron_fragment.py`, `heron_failure.py`, `heron_bridge_client.py`, `check-revit-gate.py`, `create-family-document` (version 4), `export-families` (version 2)
+
+**Full record:** [`decisions/D-192.md`](decisions/D-192.md)

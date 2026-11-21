@@ -1630,6 +1630,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ow.md`](needs-checking/group-ow.md)
 
+## Group OX - a job that works only outside the model opens no transaction group in it (D-192): a new family from a chat, and an export of families - BUILT, NOT RUN IN REVIT (2026-11-20)
+
+**Its own file:** [`needs-checking/group-ox.md`](needs-checking/group-ox.md)
+
 ## Group OY - EXTEND_ROOF_TO_ROOF, a roof by extrusion extended to meet another roof by rays: the owner's other way to Join/Unjoin Roof - DRAFT until proved (2026-11-20)
 
 **Its own file:** [`needs-checking/group-oy.md`](needs-checking/group-oy.md)

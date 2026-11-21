@@ -220,6 +220,7 @@ namespace Heron.DialogNote.TestHost
             var undone = later.Refusal("'load-family'", HeronDialogNote.Outcome.RolledBack);
             var unsure = later.Refusal("'load-family'", HeronDialogNote.Outcome.RollbackUnconfirmed);
             var kept = later.Refusal("This job", HeronDialogNote.Outcome.NotUndone);
+            var outside = later.Refusal("'export-families'", HeronDialogNote.Outcome.OutsideOnly);
 
             Check(Json.ReadString(read, "error") == "dialog_refused"
                   && Has(Json.ReadString(read, "message"), "nothing in the model was changed"),
@@ -242,7 +243,15 @@ namespace Heron.DialogNote.TestHost
                   && Has(Json.ReadString(kept, "message"), "MAY STILL BE IN THE MODEL")
                   && !Has(Json.ReadString(kept, "message"), "rolled back"),
                   "a write nothing undid: dialog_unconfirmed, and no rollback is claimed");
-            foreach (var refusal in new[] { read, uncounted, undone, unsure, kept })
+            // D-192: a job that ran with no group open in its model - counted
+            // unchanged, and what it did outside stands; never "rolled back".
+            Check(Json.ReadString(outside, "error") == "dialog_refused"
+                  && Has(Json.ReadString(outside, "message"), "nothing in it was changed")
+                  && Has(Json.ReadString(outside, "message"), "outside the model")
+                  && !Has(Json.ReadString(outside, "message"), "rolled back"),
+                  "a job outside the model: dialog_refused, its model counted unchanged, and "
+                  + "what it did outside said to stand - no rollback claimed (D-192)");
+            foreach (var refusal in new[] { read, uncounted, undone, unsure, kept, outside })
             {
                 var said = Json.ReadString(refusal, "message");
                 Check(Has(said, "Catch_Basin new.rfa") && Has(said, "do this step in Revit yourself"),

@@ -438,6 +438,24 @@ namespace Heron.Revit.Addin
             // nothing those paths did not already allow.
             var wantsNoTransaction = DeclaresNeed(needs, NoTransactionNeed);
 
+            // A JOB THAT WORKS ONLY OUTSIDE THE MODEL IT WAS AIMED AT - D-192.
+            // Starting a new family, exporting a project's families to a folder:
+            // neither changes the model the chat is pinned to, and Revit refuses
+            // part of each while Heron's TransactionGroup is open there -
+            // EditFamily outright (rows 21, 5b-1407 and 5b-1411), and a new
+            // family's window while the model in front is modifiable
+            // (CREATE_FAMILY_DOCUMENT's own note). Until 2026-11-20 every write
+            // opened that group all the same, so a family started while a real
+            // project was pinned opened a write in a model nobody chose for the
+            // job (row 5b-1912). A card that declares this runs on the write
+            // path with NO group open in its model - as an Admin or a Publish
+            // job only, never as a change to the model - and is measured as a
+            // read is: counted before and after, Revit's change events for that
+            // model heard, and refused loudly if the model moved. It opens no
+            // transaction of its own either: the source scan below holds it to
+            // that, as it holds noTransactionOpen.
+            var wantsNoGroup = DeclaresNeed(needs, NoGroupNeed);
+
             // A FRAGMENT THAT WAITS FOR THE MODELLER - Q-86, decided
             // 2026-11-15. Revit's own pick returns when the modeller clicks or
             // presses Esc, so the time it takes is theirs, not the fragment's.
@@ -486,17 +504,46 @@ namespace Heron.Revit.Addin
             // code before anything runs - see HeronSourceScan for what it can
             // and cannot see.
             var opens = HeronSourceScan.OpensTransaction(source);
-            if (opens != null && !ownsTransactions && (!writing || wantsNoTransaction))
+            if (opens != null && !ownsTransactions && (!writing || wantsNoTransaction || wantsNoGroup))
             {
                 return Json.Error("opens_own_transaction",
                     "'" + name + "' opens a Revit " + opens + " of its own, and it runs where "
                     + "none may be opened - "
                     + (wantsNoTransaction
                         ? "it declares noTransactionOpen, a promise to open none (D-125). "
+                        : wantsNoGroup
+                        ? "it declares " + NoGroupNeed + ", a promise to change nothing in the "
+                          + "model it is aimed at and open no transaction (D-192). "
                         : "a read, or a run that changes only what is on screen. ")
                     + "Nothing was run. A fragment that changes the model is declared MODIFY "
                     + "and runs through revit_change; one that must open its own transactions "
                     + "declares editScopeFailures (D-112).");
+            }
+
+            // AND ONLY WHERE IT CAN BE TRUE - D-192. A change to the model is one
+            // named group, whatever else it does (Article 8), so a card sent as a
+            // change is never run without one: only an Admin or a Publish job may
+            // declare the need, and a card that also opens its own transactions
+            // inside Heron's group (editScopeFailures) contradicts itself. Both
+            // are a fault in the card, refused before anything runs. On the read
+            // and show paths it changes nothing - no group is open there.
+            if (wantsNoGroup && writing)
+            {
+                var op = Json.ReadString(request, "op");
+                var outward = string.Equals(op, "run_fragment_admin", StringComparison.Ordinal)
+                           || string.Equals(op, "run_fragment_publish", StringComparison.Ordinal);
+                if (!outward || ownsTransactions)
+                {
+                    return Json.Error("bad_contract",
+                        "'" + name + "' declares " + NoGroupNeed + " - run with no transaction "
+                        + "group open in the model it is aimed at (D-192) - "
+                        + (ownsTransactions
+                            ? "and also " + EditScopeNeed + ", which opens transactions of its "
+                              + "own inside Heron's group. The two cannot both be true. "
+                            : "and was sent as a change to the model, which always runs inside "
+                              + "one named group. Only an Admin or a Publish job may declare it. ")
+                        + "Nothing was run; the card needs correcting.");
+                }
             }
 
             // THE CALLER'S HALF. A contract may declare a need as
@@ -786,6 +833,10 @@ namespace Heron.Revit.Addin
             // path, which keeps what it changes on purpose and says so.
             ReadFootprint counted = null;
 
+            // D-192: the job ran with no group open in its model - the verdict
+            // is OutsideVerdict's, not WithVerdict's.
+            var ranOutside = false;
+
             if (!writing)
             {
                 // MEASURED, NOT TRUSTED - row 5b-350. Before the run and after
@@ -839,6 +890,68 @@ namespace Heron.Revit.Addin
                 // vouch for on a read (row 5b-350).
                 var stoppedRead = DialogRefusal(name, null);
                 if (stoppedRead != null) return WithCount(stoppedRead, counted);
+            }
+            else if (wantsNoGroup)
+            {
+                // D-192: NO GROUP IN THE MODEL IT WAS AIMED AT. Only an Admin or
+                // a Publish job reaches here (refused above otherwise), and only
+                // kept or as a proving tool's run - AskRefusal keeps the Keep or
+                // Discard box to a change to the model. There is nothing in that
+                // model to keep, discard or roll back, so none of the group's
+                // machinery runs: no Keep box, no delete box, no grant, no
+                // rollback check, and no undo entry is made or watched.
+                //
+                // MEASURED, NOT TRUSTED - the read path's rule (row 5b-350): the
+                // model's count before and after, and every transaction Revit
+                // commits in it while this runs, heard. Anything there is the
+                // card breaking its promise, and is refused loudly - with no
+                // group, Heron has nothing to roll it back with.
+                //
+                // NO SWITCH IS READ AGAIN HERE. A path that keeps a group reads
+                // them again before the Keep, because the gate's answer is as old
+                // as the job by then (Article 13); here nothing is kept after the
+                // run - what it does outside the model is done as it runs, seconds
+                // after the gate asked.
+                var outsideLabel = "Heron: " + name;
+                counted = ReadFootprint.Of(target);
+                using (var outsideChanges = new RevitChangedSet(app.Application, target, outsideLabel))
+                {
+                    outsideChanges.Begin();
+                    threw = RunScript(script, globals, name, out state);
+
+                    // A TRANSACTION LEFT OPEN in that model: the source scan
+                    // refused a card that opens one before it ran, and this is
+                    // what the scan cannot see.
+                    var leftOpen = false;
+                    try { leftOpen = target.IsValidObject && target.IsModifiable; }
+                    catch (Exception) { leftOpen = false; }
+                    if (leftOpen)
+                    {
+                        return LeftOpen(target, name, Json.Error("changed_outside_group",
+                            "'" + name + "' left a transaction open in the model it was aimed "
+                            + "at, which it declared it would not touch (" + NoGroupNeed
+                            + ", D-192), and Heron had no group there to roll it back. Press "
+                            + "Undo in Revit and look at the model before trusting it."));
+                    }
+
+                    described = outsideChanges.Describe();
+                    var moved = OutsideChangedModel(name, target, counted, described, threw);
+                    if (moved != null) return moved;
+                }
+
+                if (HeronRunClock.Tripped) return WithCount(OutsideStopped(name), counted);
+
+                var guardedOutside = Guarded(threw, OutsideNothingHere);
+                if (guardedOutside != null) return WithCount(guardedOutside, counted);
+
+                var metOutside = HeronDialogWatch.Armed;
+                if (metOutside != null && metOutside.Refused)
+                    return WithCount(metOutside.Refusal("'" + name + "'",
+                                                        HeronDialogNote.Outcome.OutsideOnly),
+                                     counted);
+
+                if (threw != null) return WithCount(threw, counted);
+                ranOutside = true;
             }
             else
             {
@@ -1268,6 +1381,8 @@ namespace Heron.Revit.Addin
             answer = WithIds(answer, state, Json.ReadString(request, "sendIds"));
 
             if (!writing) return WithCount(answer, counted);
+            if (ranOutside) return OutsideVerdict(answer, name, apply, askToKeep, target,
+                                                  counted, described);
             var verdict = WithVerdict(answer, apply, name, rolledBack, keptNote, said,
                                       nothingToAsk,
                                       answered != null && answered != Keep && answered != RestOfJob,
@@ -2654,6 +2769,154 @@ namespace Heron.Revit.Addin
                 + ", " + Json.Num("elementsAppeared", placed)
                 + ", " + Json.Num("typesAppeared", types)
                 + ", " + Json.Bool("markedChanged", marked) + "}";
+        }
+
+        /// <summary>
+        /// D-192: whether a job that ran with no group open in its model
+        /// changed that model after all - by the read's count (row 5b-350) and
+        /// by any transaction Revit committed in it while the job ran. Null when
+        /// it is as it was. A refusal otherwise, said loudly: with no group,
+        /// Heron had nothing to roll it back with, and the card broke a promise.
+        /// </summary>
+        private static string OutsideChangedModel(string name, Document target,
+                                                  ReadFootprint before,
+                                                  HeronChangeReport.Described described,
+                                                  string threw)
+        {
+            if (!target.IsValidObject)
+            {
+                return Json.Error("changed_outside_group",
+                    "'" + name + "' ran with no transaction group open in the model it was "
+                    + "aimed at (D-192), and that model is no longer open, so Heron cannot say "
+                    + "whether the run changed it. Look at the model before trusting it.");
+            }
+
+            var after = ReadFootprint.Of(target);
+            var placed = after.Placed - before.Placed;
+            var types = after.Types - before.Types;
+            var marked = !before.Modified && after.Modified;
+            var commits = described == null ? 0 : described.Events;
+            if (placed == 0 && types == 0 && !marked && commits == 0) return null;
+
+            var what = new List<string>();
+            if (placed != 0) what.Add(Moved(placed, "element"));
+            if (types != 0) what.Add(Moved(types, "type"));
+            if (commits != 0)
+                what.Add("Revit committed " + commits.ToString(CultureInfo.InvariantCulture)
+                         + " transaction(s) in it");
+            if (marked) what.Add("Revit now marks the model as changed");
+
+            var title = "";
+            try { title = target.Title; } catch { }
+
+            var message = new StringBuilder()
+                .Append("THIS CHANGED THE MODEL IT SAID IT WOULD NOT TOUCH: ")
+                .Append(string.Join("; ", what)).Append(" in \"").Append(title)
+                .Append("\" while '").Append(name).Append("' ran with no transaction group open ")
+                .Append("there (").Append(NoGroupNeed).Append(", D-192). Heron had no group to ")
+                .Append("roll it back with, so Undo may or may not take it back - look at the ")
+                .Append("model and put right what changed by hand. The card needs correcting.");
+
+            var said = threw == null ? null : Json.ReadString(threw, "message");
+            if (!string.IsNullOrEmpty(said)) message.Append(" The run itself said: ").Append(said);
+
+            var refusal = Json.Error("changed_outside_group", message.ToString());
+            return refusal.Substring(0, refusal.Length - 1)
+                + ", " + Json.Str("document", title)
+                + ", " + Json.Num("elementsAppeared", placed)
+                + ", " + Json.Num("typesAppeared", types)
+                + ", " + Json.Num("transactionsCommitted", commits)
+                + ", " + Json.Bool("markedChanged", marked) + "}";
+        }
+
+        /// <summary>D-192: what the run guard's refusal says of the model it was aimed at.</summary>
+        private const string OutsideNothingHere =
+            "It ran with no transaction group open in the model it was aimed at, which it changes "
+            + "nothing in, and Heron counted that model before and after it - nothing in it was "
+            + "changed. What it did outside the model before it was stopped stands.";
+
+        /// <summary>D-192: a job with no group that Heron's clock or a stop ended part way.</summary>
+        private static string OutsideStopped(string name)
+        {
+            var said = "'" + name + "' " + HeronRunClock.Why + " " + OutsideNothingHere;
+            if (HeronRunClock.StoppedByPerson)
+                return Json.Error("stopped_mid_run", said + " " + HeronStop.StaysStopped);
+            return Json.Error("ran_too_long", said);
+        }
+
+        /// <summary>
+        /// D-192: the verdict of a job that ran with no group open in its model -
+        /// the fields WithVerdict writes, said of what is true here. Kept (sent
+        /// with apply): `verdictKind` "kept", with no undo entry and nothing
+        /// asked, because nothing in the model changed. Not kept (a proving
+        /// tool's run): "rolledBack" with `outsideStands`, row 5b-1594's shape -
+        /// and `rolledBack` true means the model is as it was BY COUNT, since no
+        /// group existed to report a rollback (`rollbackReported` false).
+        /// `ranOutsideTheModel` says which, for every reader.
+        /// </summary>
+        private static string OutsideVerdict(string answer, string name, bool applied,
+                                             bool askToKeep, Document target,
+                                             ReadFootprint counted,
+                                             HeronChangeReport.Described described)
+        {
+            if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
+                return answer;
+
+            var title = "";
+            try { title = target.Title; } catch { }
+            var measured = "Heron counted \"" + title + "\" before and after it"
+                + (counted == null ? ""
+                   : " - " + counted.Placed.ToString(CultureInfo.InvariantCulture)
+                     + " element(s) both times -")
+                + " and Revit committed nothing in it, so nothing in that model was changed.";
+            const string outside = "a file written, a document made, opened, saved or closed";
+
+            var who = "'" + name + "'";
+            string verdict, kind, brief;
+            if (applied)
+            {
+                verdict = who + " RAN OUTSIDE THE MODEL. It works only outside \"" + title
+                        + "\", so it ran with no transaction group open there (" + NoGroupNeed
+                        + ", D-192). " + measured + " There is no undo entry for it in \"" + title
+                        + "\" and nothing there to keep or discard"
+                        + (askToKeep ? ", so Revit did not ask" : "")
+                        + ". What it did outside the model - " + outside + " - is done, and no "
+                        + "undo takes it back.";
+                kind = "kept";
+                brief = who + " ran outside \"" + title + "\" and changed nothing in it. "
+                      + "What it did outside is done, and no undo takes it back (D-192).";
+            }
+            else
+            {
+                verdict = "A ROLLBACK CANNOT TAKE ALL OF THIS BACK. " + who + " ran for real "
+                        + "with no transaction group open in \"" + title + "\" (" + NoGroupNeed
+                        + ", D-192), so there was nothing there to roll back. " + measured
+                        + " What it did outside the model - " + outside + " - STILL STANDS, and "
+                        + "no undo takes it back. The counts above are what it actually did. Do "
+                        + "not send it again with apply to keep it: that would do the outside "
+                        + "part a second time.";
+                kind = "rolledBack";
+                brief = null;
+            }
+
+            var fields = new List<string>
+            {
+                Json.Str("verdictKind", kind),
+                Json.Str("verdictShort", brief),
+            };
+            if (described != null) fields.AddRange(described.ReplyFields());
+
+            return answer.Substring(0, answer.Length - 1)
+                 + "," + Json.Bool("applied", applied)
+                 + "," + Json.Bool("rolledBack", !applied)
+                 + "," + Json.Bool("rollbackReported", false)
+                 + "," + Json.Bool("outsideStands", !applied)
+                 + "," + Json.Bool("ranOutsideTheModel", true)
+                 + "," + Json.Num("elementsCounted", counted == null ? 0 : counted.Placed)
+                 + "," + Json.Num("warnings", 0)
+                 + "," + Json.Arr("warningsDismissed", new List<string>())
+                 + "," + Json.Str("verdict", verdict)
+                 + "," + string.Join(",", fields) + "}";
         }
 
         /// <summary>
@@ -4555,6 +4818,18 @@ namespace Heron.Revit.Addin
                     bound.Add(name);
                     lines.Append("bool ").Append(name).Append(" = true;\n");
                     how.Add(name + " - run with no transaction open (D-125)");
+                    continue;
+                }
+
+                // D-192: the switch that says "open no group in the model I am
+                // aimed at - I work only outside it". Bound as a constant for
+                // D-125's reason: the declaration is the point, and Run reads it.
+                if (name == NoGroupNeed)
+                {
+                    bound.Add(name);
+                    lines.Append("bool ").Append(name).Append(" = true;\n");
+                    how.Add(name + " - run with no transaction group open in the model it is "
+                            + "aimed at, which it changes nothing in (D-192)");
                     continue;
                 }
 
@@ -7955,6 +8230,14 @@ namespace Heron.Revit.Addin
         /// brain/heron_fragment.py's AMBIENT.
         /// </summary>
         private const string NoTransactionNeed = "noTransactionOpen";
+
+        /// <summary>
+        /// D-192: the ambient need of a card that works only OUTSIDE the model
+        /// it is aimed at - a new family, an export of families - and so runs,
+        /// as an Admin or a Publish job, with no TransactionGroup open there.
+        /// Measured as a read is, and refused if that model moved.
+        /// </summary>
+        private const string NoGroupNeed = "noGroupOpen";
 
         /// <summary>
         /// The ambient need that says a fragment waits for the modeller -

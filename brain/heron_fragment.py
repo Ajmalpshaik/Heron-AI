@@ -161,6 +161,12 @@ AMBIENT = {
     # one. The add-in binds it true, and lets it through on the read and show
     # paths, where editScopeFailures is refused.
     "noTransactionOpen": "bool",
+    # D-192. Declaring it says the fragment works only OUTSIDE the model it is
+    # aimed at - a new family, an export of families - so an Admin or Publish
+    # job runs it with no transaction group open in that model, measured as a
+    # read is and refused if the model moved. The add-in binds it true; a card
+    # sent as a change to the model is refused.
+    "noGroupOpen": "bool",
     # Q-86, decided 2026-11-15. Declaring it says the fragment WAITS FOR THE
     # MODELLER - Revit's own pick, which returns when they click or press Esc.
     # The add-in binds it true and, on the read and show paths, holds its
