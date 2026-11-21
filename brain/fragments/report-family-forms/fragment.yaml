@@ -380,3 +380,10 @@ utterances:
   - show me the 2D lines in this family with their ends
   - what is the nested arrow family linked to
   - read back the plan symbol of this family
+  # ADDED 2026-11-21, row 5b-1496 (issue #956). Both reached
+  # LOCK_FAMILY_LINES_TO_PLANES, a CHANGE, before this read, which since
+  # version 5 says what each line is locked to. Declared word for word, so
+  # identity answers them before ranking; at the END, so the re-ranker's
+  # eight (D-134) are unchanged.
+  - what is locked to the reference planes in this family
+  - which lines in this family are not locked
