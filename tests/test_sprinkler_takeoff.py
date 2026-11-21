@@ -131,6 +131,36 @@ def test_a_head_above_its_space_is_asked_again_at_its_level():
     assert first < guard < retry, "only when the first ask found no Space"
 
 
+def test_a_head_whose_only_level_is_its_schedule_level_is_read_there():
+    # Row 5b-1910: a sprinkler on a ceiling's face has no LevelId and an EMPTY
+    # family Level (row 5b-342); its level is only in Schedule Level. Version 1
+    # never asked it, so every such head read "level": null - its own proof
+    # shows P1102 MEP's heads that way. Version 2 asks FILTER_ELEMENTS_BY_
+    # CATEGORY's five level parameters in its order and passes over one that
+    # holds no level. The C# cannot run off Revit, so this reads the source.
+    path = os.path.join(ROOT, "brain", "fragments", "report-sprinkler-network",
+                        "impl", "any", "fragment.cs")
+    with open(path, encoding="utf-8") as fh:
+        code = fh.read()
+    order = ["FAMILY_LEVEL_PARAM", "SCHEDULE_LEVEL_PARAM", "LEVEL_PARAM,",
+             "INSTANCE_REFERENCE_LEVEL_PARAM", "RBS_START_LEVEL_PARAM"]
+    start = code.find("var levelParameterOrder = new[]")
+    assert start >= 0, "the level parameters are one list, in one place"
+    block = code[start:code.find("};", start)]
+    at = [block.find("BuiltInParameter." + name) for name in order]
+    assert all(i >= 0 for i in at), "all five are asked, Schedule Level among them: %r" % at
+    assert at == sorted(at), "in FILTER_ELEMENTS_BY_CATEGORY's order"
+    lookup = code[code.find("Func<Element, ElementId> levelIdOf"):]
+    lookup = lookup[:lookup.find("\n};")]
+    assert "foreach (var candidate in levelParameterOrder)" in lookup, \
+        "each is asked in turn"
+    assert "continue;" in lookup and "is Level) return held;" in lookup, \
+        "one that holds no level is passed over, and only a LEVEL answers"
+    assert "doc.GetElement(levelIdOf(element))" in code, "the level written is that lookup's"
+    assert "doc.GetElement(levelIdOf(instance))" in code, \
+        "and a head above its Space is asked again at that same level (row 5b-338)"
+
+
 def test_read_refuses_whole():
     assert "format" in raises(T.read, {"format": 2})
     assert "JSON" in raises(T.read, "{not json")
