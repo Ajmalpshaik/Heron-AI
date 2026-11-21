@@ -1,6 +1,18 @@
 // NOT STANDALONE. Assumes `doc` and `viewName` are in scope; leaves
 // `findings`, `unusedFilters`, `filterCount`, `filterSettings`, `disabled`,
-// `hidden`, `blankOverride`, `nothingToActOn` and `templateOwned` behind.
+// `hidden`, `blankOverride`, `nothingToActOn`, `templateOwned` and
+// `skippedViews` behind.
+//
+// VERSION 6 (2026-11-21, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A VIEW WHOSE FILTERS WILL NOT READ IS COUNTED. Asked for every view
+// ("*"), version 5 passed over a view whose filter list Revit would not give,
+// without a word, and then said "No view in this model has a filter on it."
+// `skippedViews` carries the count every time - of views that take graphic
+// overrides, so the two browsers, which throw on every model, are not in it;
+// on that empty answer the sentence says how many views were passed over
+// instead. A view asked for by
+// name already says why it could not be read, and is not counted here. An
+// answer that lists views reads as version 5's.
 //
 // VERSION 5 (2026-11-20) - NARROWED, COUNTED FIRST, AND BOUNDED. Issue #1058
 // A2 (row 5b-1915): on a real Revit 2020 MEP plan with 90 filters the answer
@@ -107,6 +119,9 @@ var hidden = new List<ElementId>();
 var blankOverride = new List<ElementId>();
 var nothingToActOn = new List<ElementId>();
 var templateOwned = false;
+// VERSION 6 (D-64): views passed over, asked for every view, because Revit
+// would not give their filter list.
+var skippedViews = 0;
 
 var filters = new FilteredElementCollector(doc).OfClass(typeof(FilterElement))
     .Cast<FilterElement>().OrderBy(f => f.Name).ToList();
@@ -527,11 +542,23 @@ if (asked.Count > 0)
     {
         var everyView = name == "*";
         var matched = new List<View>();
+        // VERSION 6: one count for the every-view pass, however often "*" is typed.
+        if (everyView) skippedViews = 0;
         foreach (var view in views)
         {
             if (everyView)
             {
-                try { if (view.GetFilters().Count > 0) matched.Add(view); } catch { }
+                // VERSION 6: counted, never silently dropped (D-64) - where
+                // the view could carry a filter at all. The project and system
+                // browsers throw here on every model (the header above), and a
+                // view that takes no graphic override has no filter to miss.
+                try { if (view.GetFilters().Count > 0) matched.Add(view); }
+                catch
+                {
+                    var acceptsOverrides = false;
+                    try { acceptsOverrides = view.AreGraphicsOverridesAllowed(); } catch { }
+                    if (acceptsOverrides) skippedViews++;
+                }
                 continue;
             }
             var typed = view.ViewType + ": " + view.Name;
@@ -546,8 +573,13 @@ if (asked.Count > 0)
         // and a view that cannot carry one.
         if (matched.Count == 0)
         {
+            // VERSION 6 (D-64): never "no view has a filter" past views that
+            // were not read.
             readNotes.Add(everyView
-                ? "No view in this model has a filter on it."
+                ? (skippedViews == 0 ? "No view in this model has a filter on it."
+                    : string.Format("No view read has a filter on it - and {0} view(s) were passed over because "
+                        + "Revit would not give their filter list, so whether they carry one is not known.",
+                        skippedViews))
                 : string.Format("No view called '{0}' - type it as the Project Browser shows it, or as "
                     + "'FloorPlan: {0}'. Nothing was read for it.", name));
             continue;

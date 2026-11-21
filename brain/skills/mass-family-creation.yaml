@@ -22,7 +22,9 @@ purpose: >
   FAMILY-CREATION do not apply here.
 
   The status in brackets after each capability is what that capability's
-  own fragment.yaml said on 2026-10-28.
+  own fragment.yaml said on 2026-10-28, read again on 2026-11-21. The list
+  of capabilities after this method is read from the library every time it
+  is served: where the two differ, the list is right.
 
   WHAT IT CANNOT DO, said first: an IN-PLACE mass (no API makes one on any
   release - a loaded mass family is what Heron builds, and it behaves the
@@ -30,7 +32,8 @@ purpose: >
   family's TYPES drive - a form the conceptual tools make is a fixed shape.
   To change it, the form is made again and the family reloaded (step 7).
 
-  0. REPORT_FAMILY_TEMPLATE (PROVEN) FIRST - confirm the family in front is
+  0. REPORT_FAMILY_TEMPLATE (DRAFT since its version 5 of 2026-11-20, a
+     read, so it runs and says so) FIRST - confirm the family in front is
      a CONCEPTUAL MASS; any other kind is said and nothing is built. A new
      one is started by the modeller with File > New > Conceptual Mass, or by
      CREATE_FAMILY_DOCUMENT (PROVEN) with the Mass template's path the
@@ -63,7 +66,8 @@ purpose: >
        profile beside it: a REVOLVE.
      solid=false makes a VOID of the same kinds - a cut-back corner, a
      notch, a void through the middle.
-  5. A VOID CUTS NOTHING BY BEING MADE: COMBINE_FAMILY_FORMS (PROVEN) with
+  5. A VOID CUTS NOTHING BY BEING MADE: COMBINE_FAMILY_FORMS (DRAFT since its
+     version 3 of 2026-11-20) with
      the solid's and the void's ids makes the cut, and the volume is
      measured before and after - a void that took nothing away fails the
      call. Whether it is accepted in a mass family is owed in NEEDS-CHECKING
@@ -82,7 +86,8 @@ purpose: >
      is loaded again with reload=true and every instance follows. The
      MASSING-STUDY method takes it from there - mass floors, usage, areas.
 
-  A FACADE PANELISED ON THE MASS, when asked: DIVIDE_FAMILY_SURFACE (PROVEN)
+  A FACADE PANELISED ON THE MASS, when asked: DIVIDE_FAMILY_SURFACE (DRAFT
+  since its version 2 of 2026-11-20)
   divides a face of the form by number or distance, and a pattern-based
   panel built by PATTERN-BASED-FAMILY-CREATION fills it.
 

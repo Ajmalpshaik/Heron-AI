@@ -9,7 +9,12 @@ semantic-identity: "which models are linked into this one, and are they actually
 kind: filter
 domain: revit.document
 capability: LIST_LINKED_MODELS
-version: 2
+# VERSION 3 (2026-11-21, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005): a link placement whose link type Revit will not give is counted in
+# `skippedPlacements`, not dropped, and named on the empty answer only. Its C#
+# moved, so it stays DRAFT until NEEDS-CHECKING Group PK runs, after Group OQ
+# (D-30).
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -75,6 +80,13 @@ contract:
       # RESULT, and EMPTY when the model has no link - the negative case.
       role: result
       type: string
+    - name: skippedPlacements
+      # VERSION 3 (D-64). Link placements passed over because Revit gives no
+      # link type for them, so no file row names them - they stay in
+      # `elements`. Always carried; a sentence in `findings` names it only on
+      # the empty answer, when no file is listed.
+      role: accounting
+      type: int
 
 proof:
   date: '2026-09-13'
