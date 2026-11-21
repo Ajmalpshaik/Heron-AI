@@ -245,7 +245,10 @@ compatibility-note: >
 #                                           slope and changes nothing. Before
 #                                           it nothing read a roof's pitch edge
 #                                           by edge, and the question landed
-#                                           here, a write, on every backend.
+#                                           here, a write, on every backend
+#                                           (measured 2026-09-24 through
+#                                           heron_lookup, it resolved to
+#                                           CREATE_ROOF, another write).
 #                                           READ_ELEMENT_PARAMETERS reads what
 #                                           the roof's Properties show
 #   "change a value in the roof's Properties"
