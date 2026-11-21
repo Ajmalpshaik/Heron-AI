@@ -457,3 +457,7 @@ utterances:
   # room's "Upper Limit" holds a level, read as the level's name - the same
   # case as "what is the base constraint of these walls" above.
   - what is the upper limit of these rooms
+  # ADDED 2026-11-21, row 5b-1929 (issue #1078): a roof's Slope is a parameter
+  # (BuiltInParameter ROOF_SLOPE, "Slope", 2020 to 2027); the question reached
+  # SLOPE_ROOF_EDGES or EXTEND_ROOF_TO_ROOF - writes - on every backend.
+  - what is the slope of this roof

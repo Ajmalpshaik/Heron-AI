@@ -980,6 +980,52 @@ def main():
                   [u["capability"] for u in layout["uses"]],
                   "and never syncs - it asks the modeller to")
 
+            # A QUESTION IS NEVER OFFERED A METHOD THAT CHANGES THE MODEL
+            # (row 5b-650, part 3). D-128 leaves every write out of a
+            # question's candidates, and methods_for never looked at that
+            # ceiling, so a MODIFY method was named beside a question whose
+            # reads it needs. Measured 2026-11-21 on the spelling backend:
+            # "how many sprinklers are in this room" with question=True
+            # answered REPORT_SPRINKLER_LAYOUT_SPACES and named
+            # sprinkler-layout and terminal-layout, both MODIFY. The
+            # capabilities are the ones that lookup returned.
+            import heron_capability as _CAP
+            asked = ("how many sprinklers are in this room",
+                     ["REPORT_SPRINKLER_LAYOUT_SPACES", "COUNT_ELEMENTS",
+                      "REPORT_COVERAGE", "FILTER_ELEMENTS_IN_ROOM",
+                      "COUNT_BY_SPATIAL_CONTAINER"])
+            ceiling = BRAIN.question_ceiling()
+            above = lambda skill: (_CAP.RISK_ORDER.index(skill.risk)
+                                   > _CAP.RISK_ORDER.index(ceiling))
+            plain = SKILL.methods_for(jobs_now, *asked)
+            check(any(above(s) for s in plain),
+                  "without a ceiling, %r names a method that changes the model "
+                  "- %s (the case the ceiling is for)"
+                  % (asked[0], [(s.id, s.risk) for s in plain]))
+            try:
+                capped_methods = SKILL.methods_for(jobs_now, *asked,
+                                                   ceiling=ceiling)
+            except TypeError:
+                capped_methods = plain        # no ceiling taken - fails below
+            check(not any(above(s) for s in capped_methods),
+                  "under the question ceiling (%s) it names none above it - %s"
+                  % (ceiling, [(s.id, s.risk) for s in capped_methods]))
+            try:
+                counted = SKILL.methods_for(
+                    jobs_now, "count the ducts on this level",
+                    ["COUNT_ELEMENTS", "FILTER_ELEMENTS_BY_CATEGORY"],
+                    ceiling=ceiling)
+            except TypeError:
+                counted = []
+            check([s.id for s in counted][:1] == ["count-elements"],
+                  "and a READ method is still named beside a question - %s"
+                  % [s.id for s in counted])
+            live = BRAIN.lookup(asked[0], question=True)
+            named = [m["id"] for m in live.get("methods") or []]
+            check(not any(above(SKILL.load_all()[0][m]) for m in named),
+                  "and the live lookup, asked as a question, names no method "
+                  "above %s - %s" % (ceiling, named))
+
             # THREE EVERYDAY MEP JOBS, 2026-11-12 (NEEDS-CHECKING Group NR):
             # annotate a view, colour a view by system, spaces and zones from
             # the architect's link. Each was written from cards the library

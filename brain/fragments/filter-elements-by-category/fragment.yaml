@@ -657,8 +657,7 @@ utterances:
   # lexical sent it to SET_REBAR_VIEW_STATE, a write, and the trained model to
   # DIAGNOSE_VISIBILITY.
   - what is visible in this view
-  # ADDED 2026-11-21, row 5b-1929 (GitHub issue #1078). It reached
-  # SHAPE_WALL_TOPS_TO_ROOF, a write, on the model on main 4ae650e6, and
-  # FIND_CLASHES - a read that cannot say - on lexical. Every roof in the
-  # model is the Roofs category, which this read gives.
+  # ADDED 2026-11-21, row 5b-1929 (issue #1078): a question about a category's
+  # elements that reached SHAPE_WALL_TOPS_TO_ROOF, SLOPE_ROOF_EDGES or
+  # CREATE_EXTRUSION_ROOF - writes - on every backend.
   - which roofs are in this model

@@ -619,6 +619,79 @@ def section_8(home):
           "and a --to that is a row's own file on main is refused (%d)" % code)
 
 
+def section_9(home):
+    """Row 5b-1923. Since #1056 (option 2) CI reads the pull request's merge
+    commit, so the branch's own history counts: a branch that wrote D-116
+    BEFORE main gave D-116 to another decision owes two Numbering lines - its
+    moved decision names D-116 (renumber.py writes that one) and main's D-116
+    quotes the title the branch wrote first. renumber.py never edits main's
+    decision, so it must NAME that line in what it leaves for a person."""
+    print("\n9. the Numbering line main's decision owes when the branch wrote the number first (row 5b-1923)")
+    start = {"docs/DECISIONS.md": "# Decision log\n\n## D-115 \u2014 The last before the fork\n\n"
+                                  "**Status:** Accepted\n"}
+    branch_adds = {"docs/DECISIONS.md": start["docs/DECISIONS.md"]
+                   + "\n## D-116 \u2014 The branch's sixteen\n\n**Status:** Accepted\n"}
+    main_adds = {"docs/DECISIONS.md": start["docs/DECISIONS.md"]
+                 + "\n## D-116 \u2014 Main's sixteen\n\n**Status:** Accepted\n"}
+
+    def at(where, files, message, day):
+        stamp = "2026-10-%02dT12:00:00+00:00" % day
+        write(where, files)
+        git(where, "add", "--", *sorted(files))
+        env = dict(os.environ, GIT_AUTHOR_DATE=stamp, GIT_COMMITTER_DATE=stamp)
+        done = subprocess.run(["git", "-c", "core.autocrlf=false", "commit", "-q", "-m", message],
+                              cwd=where, capture_output=True, text=True, env=env, timeout=60)
+        if done.returncode != 0:
+            raise RuntimeError("git commit failed: %s" % done.stderr)
+
+    def build(name, branch_day, main_day, branch_commits=True):
+        origin = os.path.join(home, name + "-origin.git")
+        seed = os.path.join(home, name + "-seed")
+        work = os.path.join(home, name + "-work")
+        git(home, "init", "-q", "--bare", origin)
+        git(origin, "symbolic-ref", "HEAD", "refs/heads/main")
+        git(home, "clone", "-q", origin, seed)
+        configure(seed)
+        git(seed, "checkout", "-q", "-b", "main")
+        at(seed, start, "before the fork", 1)
+        git(seed, "push", "-q", "origin", "main")
+        git(home, "clone", "-q", origin, work)
+        configure(work)
+        git(work, "checkout", "-q", "-b", "feat/first")
+        if branch_commits:
+            at(work, branch_adds, "the branch takes D-116", branch_day)
+        else:
+            write(work, branch_adds)
+        at(seed, main_adds, "main takes D-116", main_day)
+        git(seed, "push", "-q", "origin", "main")
+        git(work, "fetch", "-q", "origin")
+        return work
+
+    work = build("wrote-first", 2, 3)
+    code, text = run(work, "--from", "D-116", "--to", "D-131")
+    check(code == 1, "a branch that wrote D-116 before main did exits 1 - it left a line for a person (%d)" % code)
+    check("Main's sixteen" in text and "The branch's sixteen" in text and "**Numbering:**" in text
+          and "LEFT ALONE" in text,
+          "it names main's D-116 and the branch's first title that main's Numbering line must quote")
+    check("## D-131 \u2014 The branch's sixteen" in read(work, "docs/DECISIONS.md"),
+          "and the branch's own decision is still renumbered")
+    owed = [line for line in text.split("\n") if "main's D-116" in line]
+    check(bool(owed) and '"The branch\'s sixteen"' in owed[0],
+          "the line it names quotes the title to write: %s" % (owed[0].strip() if owed else "none named"))
+
+    work = build("main-first", 3, 2)
+    code, text = run(work, "--from", "D-116", "--to", "D-131")
+    check(code == 0 and "main's D-116" not in text,
+          "THE NEGATIVE CASE - main wrote D-116 first, so main's decision owes nothing and it exits 0 (%d)"
+          % code)
+
+    work = build("uncommitted", 2, 3, branch_commits=False)
+    code, text = run(work, "--from", "D-116", "--to", "D-131")
+    check(code == 0 and "main's D-116" not in text,
+          "and a branch whose D-116 was never committed has no history CI could read - nothing owed (%d)"
+          % code)
+
+
 def main():
     home = tempfile.mkdtemp(prefix="heron-renumber-")
     try:
@@ -631,6 +704,7 @@ def main():
         section_6(home)
         section_7(home)
         section_8(home)
+        section_9(home)
     finally:
         shutil.rmtree(home, ignore_errors=True)
     print()
