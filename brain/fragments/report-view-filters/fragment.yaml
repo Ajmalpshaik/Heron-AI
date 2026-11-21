@@ -2532,3 +2532,12 @@ utterances:
   - my filter change did not save
   - the colours are not showing on this drawing
   - list every filter on this view in order with its rules
+  # ADDED 2026-11-21, row 5b-1855 (issue #1054). The three order questions
+  # the row left reaching REORDER_VIEW_FILTERS, a write - two on both
+  # re-rankers, one on lexical. Declared word for word, so identity answers
+  # them before any ranking runs, the re-ranker included (the DECLARED kind
+  # in tests/test_routing_phrases.py). At the END: the eight the re-ranker
+  # reads for a paraphrase (D-134) are unchanged.
+  - what order are the filters in on this view
+  - which filter is on top in this view
+  - what is the top filter on this view

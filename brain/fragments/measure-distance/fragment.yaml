@@ -9,7 +9,12 @@ semantic-identity: "how far apart are these two"
 kind: action
 domain: revit.geometry
 capability: MEASURE_DISTANCE
-version: 1
+# VERSION 2 (2026-11-21, row 5b-1363 item 4, issue #950): words only - the
+# finding for two elements that touch names FIND_CLASHES, where it named
+# SELECT_TOUCHING, retired into it on 2026-11-01, and no longer says that card
+# tells touching from overlapping: neither does. Nothing runs differently;
+# still DRAFT until proved - NEEDS-CHECKING Group PE (D-30).
+version: 2
 source: OFFICIAL
 risk: READ
 
