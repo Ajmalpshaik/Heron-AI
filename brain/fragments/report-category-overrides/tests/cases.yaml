@@ -61,6 +61,12 @@ positive:
       tab" line - the plan sets them. Second: they carry it, naming the
       template. Version 3 read the view's own list and could say either
 
+  - given: >
+      VERSION 5. a view with one category overridden
+    expect: >
+      overrideList and findings exactly as version 4's, with no "would not
+      give their overrides" sentence whatever skippedCategories holds
+
 negative:
   - given: a view with NOTHING overridden at category level
     expect: >
@@ -127,6 +133,15 @@ negative:
 
   - given: VERSION 3. a schedule as the view
     expect: no crash - each category is asked inside its own guard
+
+  - given: >
+      VERSION 5, NEGATIVE. the view with NOTHING overridden at category level,
+      again
+    expect: >
+      the same plain zero; skippedCategories a number, and the "would not give
+      their overrides" sentence present exactly when it is above 0 - write the
+      number down: it says whether Revit refuses some category drawn in an
+      ordinary plan. Never the sentence beside a listed override
 
 second_route:
   - Open the view's Visibility/Graphics and look down the Model Categories tab for a non-default row

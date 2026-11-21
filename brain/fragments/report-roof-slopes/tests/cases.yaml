@@ -9,6 +9,8 @@
 # 4000,500" - two lines at 30 degrees), and one more: a FLAT ROOF, a roof by
 # footprint with no edge Defining Slope. Write down each roof's footprint
 # lines' Defines Slope and Slope from Edit Footprint before the run.
+# VERSION 2 adds a ROOF BY FACE (Massing & Site > Roof by Face on the face of
+# a mass, made by hand in the copy and saved) - NEEDS-CHECKING Group PK, PK4.
 
 positive:
   - given: >
@@ -48,7 +50,18 @@ positive:
       every roof in the model read - the main roof, the wing, the far roof,
       the copy and the flat roof, and Wing F if Group OY's OY6 has been run -
       and the finding says "every roof in the model, as none was selected";
-      nothing changed (the undo list has no new entry)
+      nothing changed (the undo list has no new entry). Version 2, once the
+      copy has the roof by face: it is named as a roof this does not read,
+      and skippedRoofs is 1
+
+  - given: >
+      VERSION 2. only a roof by face selected (Massing & Site > Roof by Face
+      on a mass face)
+    expect: >
+      roofsRead 0, skippedRoofs 1; the first finding "No roof's slope was
+      read: 1 roof(s) among the elements selected were passed over, each named
+      below - not the same as there being no roof", and the roof named as one
+      this does not read
 
 negative:
   - given: >
@@ -68,6 +81,13 @@ negative:
       made up from the arrow. Write down whether GetProfiles listed the
       arrow's line among the footprint lines: if it did, it is reported as a
       line that defines no slope, and that is a finding
+
+  - given: >
+      VERSION 2, NEGATIVE. the wall alone again
+    expect: >
+      skippedRoofs 0 - a wall is not a roof passed over - and the first
+      finding exactly version 1's "No roof by footprint or by extrusion is
+      among the elements selected ..."
 
 second_route:
   - given: >

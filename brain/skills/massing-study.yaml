@@ -73,7 +73,7 @@ purpose: >
   7. JOIN WHERE BLOCKS MEET: REPORT_MASSES names every pair of masses that
      overlap and are NOT joined, with the volume they share - both count it
      in volume and floor area until they are joined (Autodesk Help, joining
-     mass instances). JOIN_GEOMETRY (DRAFT, version 2 - version 1 was PROVEN; merged 2026-11-01, and until it is proved on a real model a kept change from it is refused, D-117) joins each pair named, then
+     mass instances). JOIN_GEOMETRY (PROVEN at version 4 on 2026-11-16, read 2026-11-21; it was DRAFT at version 2, after the merge of 2026-11-01, and a DRAFT's kept change is refused, D-117) joins each pair named, then
      REPORT_MASSES again: the finding gone and the total smaller.
   8. THE NUMBERS: REPORT_MASSES with siteArea - the m2 from step 1, or
      "property lines" - gives gross floor area by level and by Usage, the

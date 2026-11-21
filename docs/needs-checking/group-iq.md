@@ -55,3 +55,23 @@ written: `ADD_FAMILY_MODEL_TEXT` reads PROVEN on its card, at version 2 - its `p
 2026-10-22, on N22 M_Downlight - Recessed Can, Revit 2020, session 60544. So where this page calls a card named here
 DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date as a statement about the
 card. Whether IQ0 to IQ8 were what that proof ran is NOT sorted here: for the owner.
+
+### Row 5b-1351's read-back - which reading is wrong (added 2026-11-21)
+
+**Written in a cloud container (no Revit) - nothing here has run.** [Row 5b-1351](../fragment-issues/section-5b-rows-1351-1375.md)
+(issue [#944](https://github.com/Ajmalpshaik/Heron-AI/issues/944)): on Revit 2020, 2026-10-31, eight texts 1 mm deep
+on offset planes read back as reaching from the plane out to twice the offset - 1131.5 mm deep - while a picture
+showed them flat on their plates. Both `ADD_FAMILY_MODEL_TEXT`'s landing check and its *"Its letters reach"* line
+read `get_BoundingBox(null)`, and nothing says yet whether that box or the letters' solid is wrong, so **no tool
+changes before these two run.** Both use tools Heron already has: `MEASURE_ELEMENT_VOLUME` with `detail=edges`
+prints, for each element, Revit's box (`get_BoundingBox(null)`) and then every edge of its solid read at Fine detail;
+`REPORT_BOUNDING_BOX` reads the same box on its own. The family is this group's *Heron IQ Text.rfa*, on **Revit
+2020** first, then the newest Revit on the PC. Keep each text long enough to measure it, then Undo.
+
+| # | Run | Look for |
+|---|---|---|
+| **IQ9** | *Row 5b-1351's own case.* `ADD_FAMILY_MODEL_TEXT` `texts` = `text=1 workPlane=Center (Front/Back) at=1500,400 heightMm=30 depthMm=1 align=center offsetMm=-1124` - the row's front texts, clear of the family's box at X -1000 to 1000 - and Keep. With the text selected after the call: `MEASURE_ELEMENT_VOLUME` `detail=edges`; `REPORT_BOUNDING_BOX`; by hand, Selection Box (BX) on the text in the family's 3D view; `revit_view_image` of the text from the left. Then Undo | Write down side by side, in Y: the `placed` line's *"Its letters reach"*, and whether it says *"placed a second time"*; the box from both cards; the lowest and highest Y of the solid's edges; the depth of the section box; where the picture puts the letters. **The edges at about Y -1124 to -1125 while the box reaches about -2255: the box is wrong, and the fix is to measure the solid** - the `landing` and thickness checks in `add-family-model-text`. **The edges reaching about -2255 as well: the geometry itself is out there**, the box is not to blame, and the row stays open with that written in it |
+| **IQ10** | *IQ9's negative - no offset.* The same text with no `offsetMm`, so it is sketched on *Center (Front/Back)* itself, then the same four readings | The box, the edges and the picture agree - Y 0 to -1 within half a millimetre - with no thickness finding and nothing placed a second time. **If the box and the edges disagree here too**, the box is wrong for every model text and not only an offset one: write that down, because it widens the fix |
+
+A result is written in this file and in row 5b-1351's state, release, family and date with it. Nothing in a row
+changes to make it pass.

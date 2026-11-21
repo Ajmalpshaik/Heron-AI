@@ -75,6 +75,9 @@ def main():
         check(how == "python" and "sqlite-vec" in words and "5b-1171" in words,
               "it says vectors are compared in Python and names sqlite-vec and "
               "row 5b-1171: %r" % (words[:90],))
+        check(not hasattr(E, "_try_vec_extension") and "D-194" in words,
+              "and nothing in it loads sqlite-vec - D-194, the comparison is "
+              "plain Python")
         ready = io.open(os.path.join(ROOT, "tools", "heron-ready.py"),
                         encoding="utf-8").read()
         check("EMBED.comparison()" in ready,
@@ -93,6 +96,29 @@ def main():
               "and the one condition that install needs is said with it")
         check("OPTIONAL" in words and "STILL ANSWERS" in words,
               "and it says out loud the piece is optional and Heron answers without it")
+
+        print()
+        print("0b. With no trained model, the cut is NOT MEASURED - never 'no card is cut' (row 5b-320)")
+        check(getattr(E, "MODEL_READS", None) == 512,
+              "heron_embed states how many word-pieces the model reads: %r"
+              % (getattr(E, "MODEL_READS", None),))
+        reach = getattr(E, "reach", None)
+        cutter = getattr(E, "cut_before_opening", None)
+        check(callable(reach) and callable(cutter),
+              "heron_embed.reach() and cut_before_opening() exist")
+        if callable(reach) and callable(cutter):
+            held = list(E._MODEL_CACHE)
+            E._MODEL_CACHE[:] = [None]          # no trained model, for these two asks
+            try:
+                import heron_fragment as FRAG
+                cards, _ = FRAG.load_all()
+                some = list(cards.values())[:3]
+                check(reach(some[0]) is None,
+                      "reach() answers None, not a count it cannot make")
+                check(cutter(some) is None,
+                      "cut_before_opening() answers None, never an empty list")
+            finally:
+                E._MODEL_CACHE[:] = held
 
         print()
         print("1. The same text embeds the same way in a DIFFERENT process")

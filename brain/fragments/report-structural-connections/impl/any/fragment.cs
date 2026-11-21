@@ -1,6 +1,14 @@
 // NOT STANDALONE. Assumes `doc`, `elements` and `show` are in scope, and
-// leaves `connectionCount`, `typeCount`, `report`, `names`, `notConnected` and
-// `findings` behind.
+// leaves `connectionCount`, `typeCount`, `report`, `names`, `notConnected`,
+// `unresolvedConnections` and `findings` behind.
+//
+// VERSION 2 (2026-11-21, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A CONNECTION THAT WILL NOT SAY WHAT IT JOINS IS COUNTED. Version 1
+// read its joined elements as none when Revit threw, so a narrowed read could
+// not match it to a member handed in, and named that member "joined by no
+// connection" without a word about it. `unresolvedConnections` carries the
+// count every time; the sentence naming it rides only on the narrowed empty
+// answer, so an answer that lists connections reads as version 1's.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -36,6 +44,7 @@ var typeCount = 0;
 var report = "";
 var names = new List<string>();
 var notConnected = new List<ElementId>();
+var unresolvedConnections = 0;
 var findings = new List<string>();
 
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
@@ -103,6 +112,8 @@ foreach (var c in connections)
 {
     IList<ElementId> ids = null;
     try { ids = c.GetConnectedElementIds(); } catch (Exception) { ids = null; }
+    // VERSION 2: counted, never silently read as joining nothing (D-64).
+    if (ids == null) unresolvedConnections++;
     joined[c.Id] = ids ?? new List<ElementId>();
 }
 
@@ -210,4 +221,11 @@ if (wantConnections && connectionCount > 0)
         + "are not read - Revit's API does not reach them; the Advance Steel API does.");
 if (narrowed && wantConnections && connectionCount == 0 && notConnected.Count == 0)
     findings.Add("No connection joins what was handed in.");
+// VERSION 2 (D-64): ON THE NARROWED EMPTY ANSWER ONLY, what could not be
+// matched - so "joined by no connection" is never said alone past a
+// connection that was not read.
+if (narrowed && wantConnections && connectionCount == 0 && unresolvedConnections > 0)
+    findings.Add(unresolvedConnections + " connection(s) in this model would not say what they join, so none of "
+        + "them could be matched to what was handed in - one of them may join it. Read with nothing selected, "
+        + "each is listed as joining nothing Revit reports.");
 findings.Add("Read only - nothing in the model changed.");

@@ -259,7 +259,12 @@ def _load_model():
                 raise
             model = StaticModel.from_pretrained(which)
         _WHICH_MODEL[0] = "model2vec:%s" % which
-        _MODEL_CACHE.append(lambda t: list(model.encode([t])[0]))
+        # THE CUT IS SAID HERE, NOT LEFT TO THE LIBRARY'S DEFAULT (row
+        # 5b-320): model2vec reads MODEL_READS word-pieces of a text and
+        # drops the rest, and a default is a number nothing in Heron states.
+        _MODEL_CACHE.append(
+            lambda t: list(model.encode([t], max_length=MODEL_READS)[0]))
+        _PIECES[:] = [model.tokenizer]
         return _MODEL_CACHE[0]
     except Exception:
         pass
@@ -315,6 +320,32 @@ def _on_disk(which):
 # semantic route quietly stops working and nothing says so. Found by a review
 # 2026-09-11.
 _WHICH_MODEL = [None]
+
+# HOW MUCH OF A CARD THE TRAINED MODEL READS - FRAGMENT-ISSUES row 5b-320.
+#
+# model2vec averages the word-pieces of a text, and reads the first
+# MODEL_READS of them: everything after is dropped. Measured 2026-11-21
+# (model2vec 0.10.0, potion-base-8M, main 4ae650e6): 178 of the 610 live
+# cards are longer than that, so the model never reads their ends, and
+# whatever opens a long card is what nearness thinks the card is.
+#
+# WHAT IS EMBEDDED WAS NOT CHANGED, AND THAT WAS MEASURED, NOT ASSUMED. The
+# same day, `tools/score-routing.py --sentences` on 281 frozen sentences (the
+# owner's 79, the 124 plain questions, tests/test_routing_phrases.py's own),
+# main against a tree embedding only identity, utterances and the purpose's
+# first paragraph: on the model 9 answers better and 8 worse, on lexical 7
+# better and 17 worse; against a tree reading every word-piece (no cut): on
+# the model 4 better and 6 worse. Neither is a repair. So the rule stays the
+# one in PLACE_HOSTED_FAMILY's card - A PURPOSE OPENS WITH WHAT A MODELLER
+# ASKS THE TOOL FOR - and `cut_before_opening()` below names any card whose
+# opening the model does not read in full, which tests/test_routing_phrases.py
+# asks of every live card.
+MODEL_READS = 512
+
+# The trained model's own tokenizer, set when model2vec loads - the one thing
+# that can count its word-pieces. Empty for any other encoder, whose limit and
+# tokenizer are its own: reach() then answers None rather than a guess.
+_PIECES = []
 
 
 def stamp():
@@ -411,8 +442,9 @@ PYTHON_COMPARISON = "python"
 def comparison():
     """(how vectors are compared, why) - said, never assumed (PROPOSALS F7).
 
-    Always Python today: sqlite-vec has no caller (row 5b-1171). The answer
-    says whether it is installed, because the one wrong belief worth
+    Always Python: D-194 (the owner, 2026-11-21) decided every stored vector
+    is compared in plain Python and sqlite-vec is not used (row 5b-1171). The
+    answer says whether it is installed, because the one wrong belief worth
     preventing is that installing it made search faster.
     """
     try:
@@ -422,9 +454,9 @@ def comparison():
         installed = False
     return PYTHON_COMPARISON, (
         "vectors are compared in Python - same answers, slower. sqlite-vec is "
-        + ("installed but not used: nothing in Heron loads it yet"
+        + ("installed but not used: nothing in Heron loads it"
            if installed else "not installed, and would not be used if it were")
-        + " (row 5b-1171).")
+        + " (D-194, row 5b-1171).")
 
 
 def vector(text):
@@ -473,13 +505,14 @@ def encoder():
 # Storing vectors, in the scope's own file
 # ---------------------------------------------------------------------------
 #
-# D-23 names sqlite-vec. IT IS NOT WIRED: `_try_vec_extension` below has had no
-# caller since it was written (row 5b-1171), so every vector is compared in
-# Python over the stored bytes, installed or not - identical answers, slower,
-# and nothing to install. `comparison()` says so, and tools/heron-ready.py
-# prints it (PROPOSALS F7), so nobody takes the slow path for the fast one.
-# Where it would load, some Python builds ship with extension loading compiled
-# out - exactly the locked-down machine Heron's install promise is about.
+# EVERY VECTOR IS COMPARED IN PLAIN PYTHON - D-194, the owner's decision of
+# 2026-11-21, superseding D-23's "sqlite-vec for meaning" (row 5b-1171). It is
+# done over the stored bytes, identical answers, nothing to install, and
+# nothing refused on a Python build with extension loading compiled out - the
+# locked-down machine Heron's install promise is about. `comparison()` says so,
+# and tools/heron-ready.py prints it (PROPOSALS F7). The loader that never had
+# a caller, and sqlite-vec in the install lists, came out the same day (row
+# 5b-1955); loading it again needs a new decision.
 #
 # Both keep the vectors IN THE SCOPE'S OWN FILE, which is the part that matters:
 # one file per scope stays true either way (Golden Rule 5), and a vector never
@@ -491,22 +524,6 @@ def _pack(vec):
 
 def _unpack(blob):
     return list(struct.unpack("%df" % (len(blob) // 4), blob))
-
-
-def _try_vec_extension(db):
-    try:
-        import sqlite_vec
-    except ImportError:
-        return False
-    try:
-        db.enable_load_extension(True)
-        sqlite_vec.load(db)
-        db.enable_load_extension(False)
-        return True
-    except (AttributeError, sqlite3.OperationalError):
-        # Extension loading compiled out, or refused. Normal on a hardened
-        # build, and the fallback below gives the same answers.
-        return False
 
 
 FRAGMENT = "fragment"
@@ -553,6 +570,61 @@ def _text_for(row, frag):
     return " ".join([row["semantic_identity"], row["capability"],
                      row["domain"]] + said +
                     ([frag.data.get("purpose", "")] if frag else []))
+
+
+def opening(frag):
+    """What a card OPENS with, as `_text_for` lays it out: the identity, the
+    capability, the domain, every utterance, and the purpose's first paragraph.
+
+    A folded purpose keeps a blank line as a line break, so the first line of
+    the loaded purpose is its first paragraph - the place a card says what a
+    modeller asks the tool for (row 5b-320).
+    """
+    data = getattr(frag, "data", None) or {}
+    purpose = (data.get("purpose") or "").strip()
+    return " ".join([data.get("semantic-identity") or "",
+                     data.get("capability") or "", data.get("domain") or ""]
+                    + list(frag.utterances()) + [purpose.split("\n")[0]])
+
+
+def reach(frag):
+    """(read in full, word-pieces counted) for a card's opening, or None.
+
+    True when the trained model reads the whole of `opening(frag)` - fewer
+    word-pieces than MODEL_READS. Counted with the model's own tokenizer,
+    which may itself cut at MODEL_READS: a count that reaches the cut is
+    read as cut, so the answer is right either way. None when the encoder is
+    not model2vec - nothing here can count another encoder's pieces.
+    """
+    if _load_model() is None or not _PIECES:
+        return None
+    pieces = len(_PIECES[0].encode(opening(frag), add_special_tokens=False).ids)
+    return pieces < MODEL_READS, pieces
+
+
+# The statuses search never offers - the same slice heron_search's
+# RETIRED_FRAGMENTS takes, from the one list of statuses (never typed here).
+RETIRED = FRAG.STATUSES[FRAG.STATUSES.index("DEPRECATED"):]
+
+
+def cut_before_opening(frags):
+    """[(capability, pieces)] for every card whose opening the model cuts.
+
+    `frags` is any iterable of cards; a retired one is skipped, since search
+    never offers it. None when reach() cannot count (another encoder, or no
+    trained model) - an empty list would read as "every card is fine".
+    """
+    out = []
+    for frag in frags:
+        if getattr(frag, "status", None) in RETIRED:
+            continue
+        got = reach(frag)
+        if got is None:
+            return None
+        if not got[0]:
+            out.append(((getattr(frag, "data", None) or {}).get("capability"),
+                        got[1]))
+    return out
 
 
 def index(store, force=False, source=SCOPE.ASK):
@@ -697,9 +769,10 @@ def nearest(store, text, limit=5, kind=FRAGMENT):
             # at the same dimension IS compared (FRAGMENT-ISSUES row 5b-107,
             # measured: a model-stamped row of 256 floats scored against a
             # lexical query). `index()` re-embeds a row whose stamp differs on
-            # every open, which closes most of that window; what a mismatch
-            # that slips through should return - nothing, or this - is the
-            # owner's decision, not this comment's (D-52).
+            # every open, which closes most of that window. A mismatch that
+            # slips through at the same length IS COMPARED, below - the
+            # owner's decision of 2026-11-21 ("keep comparing as now"), asked
+            # on issue #957 under D-52.
             continue
         scored.append((row["id"], sum(a * b for a, b in zip(want, got))))
 
