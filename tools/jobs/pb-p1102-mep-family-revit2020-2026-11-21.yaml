@@ -1,0 +1,45 @@
+# NEEDS-CHECKING Group PB - REPORT_FAMILY_FORMS version 7 (PB7, PB8): a list
+# is no longer printed a third time, and an element number typed for an id is
+# refused in words. Written 2026-11-21 in a cloud session with no Revit. NOT
+# RUN.
+#
+#     python tools/batch-prove.py tools/jobs/pb-p1102-mep-family-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/pb-p1102-mep-family-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL, Revit 2020: "P1102 MEP Family", the scratch copy of Revit 2020's
+# own Samples\rme_advanced_sample_family.rfa in %TEMP%\heron-work\prove-1102 -
+# Mechanical Equipment with 6 connectors and 7 forms
+# (tools/jobs/p1102-round4-2026-11-02.yaml). Version 6's proof ran on "Heron
+# Link Detail Test", a family with 2D elements and NO forms; version 7's rows
+# are about forms, so the recorded family that has them is used. Group PB
+# names Group OT's OT3 family of more than 60 forms; its name and its form
+# ids were not recorded, so PB7 itself - twenty of its ids typed, and 70
+# detail lines - is a hand run from the group. Open the family in the Family
+# Editor. Never a working model.
+#
+# NO SETUP CHAIN: `which` is the input. THE NEGATIVE IS A VALUE - "123456", an
+# element number where a form's long id belongs (PB8) - never an empty one
+# (fragment-proving, rules 2 and 5). A read: nothing changes.
+
+model: "P1102 MEP Family (scratch copy of rme_advanced_sample_family.rfa, 7 forms), Revit 2020"
+
+defaults:
+  in: "P1102 MEP Family"
+  setup: []
+
+jobs:
+  - fragment: report-family-forms
+    expect: formCount
+    set:
+      which: "all"
+    negative-set:
+      which: "123456"
+    note: >
+      PB8 - THE FIRST CASE TO RUN, which "123456": refused "Nothing was read.
+      "123456" is not an id in this family - that is an element number ...";
+      elements 0, formCount 0. The refusal is in `refused` and `findings` and
+      NOT a third time as a numbered list under `problems`; no numbered list
+      under `parts` or `ids` either. Positive, which "all": formCount 7, each
+      form described in formList, elements 7, and no numbered list under
+      `parts`, `ids` or `words`. Group OT's OT3 and OT4 are owed on this card
+      as well.
