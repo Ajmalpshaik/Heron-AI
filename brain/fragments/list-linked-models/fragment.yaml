@@ -152,6 +152,8 @@ compatibility-note: >
 #   "is the structural link in the right place" -> CHECK_LINK_COORDINATES
 utterances:
   - list the linked models
+  - is the link room bounding
+  - which links are room bounding
   - which links do we have
   - is the link loaded
   - what models are linked in
@@ -159,7 +161,6 @@ utterances:
   - are all the links loaded
   - which link is this from
   # VERSION 2 (row 5b-474) - questions about a link's settings.
-  - is the link room bounding
   - are the links relative or absolute
   - which links are pinned
   - is the link overlay or attachment
@@ -167,4 +168,3 @@ utterances:
   # version 2 answers - each link's Room Bounding is read - and it reached
   # SET_LINK_ROOM_BOUNDING, a write, on lexical and model. Declared here, where
   # the answer is, as D-86 says; the write's own words are left as they are.
-  - which links are room bounding

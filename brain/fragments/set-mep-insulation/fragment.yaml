@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-007
-semantic-identity: "put insulation on these ducts or pipes, at a stated thickness"
+semantic-identity: "insulate these ducts or pipes - add insulation, or replace it, at a stated thickness"
 kind: action
 domain: revit.mep
 capability: SET_MEP_INSULATION
