@@ -92,9 +92,8 @@ purpose: >
      there and press Apply - their own act, one entry in Revit's undo list,
      and nothing is written if a row changed in Revit since the table was
      read. Whether the table's rows come in the order above is not
-     measured. Or they number in Revit's own room schedule. Heron does not
-     work the numbers out and write them itself until RENUMBER_SEQUENTIAL
-     is proved.
+     measured. Or they number in Revit's own room schedule. While the list
+     says DRAFT, Heron does not work the numbers out and write them itself.
      ONCE IT IS PROVEN: after the order above, the modeller's yes for that
      one write - a bulk parameter write (Constitution Article 7) - then
      RENUMBER_SEQUENTIAL through revit_change with parameterName=Number,
@@ -154,8 +153,7 @@ purpose: >
   values the other chat left. Read the model before repeating a change whose
   answer never came: rooms placed twice are two rooms in one region.
 
-  NOT HERE: HERON WRITING THE ROOM NUMBERS IN ORDER - a gap until
-  RENUMBER_SEQUENTIAL is proved; step 5 says what is done meanwhile. A room
+  NOT HERE: a room
   schedule on a sheet - CREATE_SCHEDULE and the drawing-set method. Room finishes as parameters, areas and area plans, colouring the
   rooms on a plan, and an MEP model's Spaces kept in step with an
   architect's rooms (SYNC_SPACES_WITH_LINKED_ROOMS) are separate changes
@@ -203,9 +201,9 @@ needs:
   - CREATE_ROOM_SEPARATION_LINES
   - FILTER_ELEMENTS_BY_CATEGORY
   - ORDER_ELEMENTS_BY_POSITION
-  # DRAFT, its proof older than its code: NO CHAT TOOL KEEPS ITS CHANGE, and
-  # step 5 says what is done instead. Named here so the list served with the
-  # method shows the day it is proved.
+  # Step 5's numbers. PROVEN at version 3 on 2026-11-14; it was DRAFT when
+  # this was written, and step 5 still says what is done while the list
+  # served with the method says DRAFT (row 5b-1981).
   - RENUMBER_SEQUENTIAL
   # The names, by room number - step 6.
   - SET_PARAMETER_VALUES_BY_ID
