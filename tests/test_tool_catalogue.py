@@ -2,7 +2,7 @@
 # Heron-Agent:  HERON-DOC-FRG-004
 # Heron-Step:   17
 # Heron-Status: DRAFT
-# Heron-Since:  0.3.0
+# Heron-Since:  0.1.0
 # Heron-Layer:  test
 # See docs/29-metadata-standard.md
 
