@@ -274,6 +274,16 @@ WORKSPACE_KEEP = [
     "docs",                         # what the AI reads to answer
     ".mcp.json",                    # Claude Code reads this from the folder it opens
     "README.md",
+    # And the pages README.md and docs/guide/install.md link at the top of the
+    # folder - row 5b-1988, issue #1267. v0.3.0's download carried README.md
+    # and not these, so each link opened nothing on a modeller's PC. LICENSE
+    # and NOTICE also ride in the Setup (build-setup.py ALSO_SHIP); the zip
+    # alone needs them too, as the licence travels with what it licenses.
+    "CHANGELOG.md",
+    "LICENSE",
+    "NOTICE",
+    "DISCLAIMER.md",
+    "SECURITY.md",
     "requirements.txt",             # the list check-dependencies reads
     "requirements-optional.txt",    # and check-dependencies reads both
     "requirements-lock.txt",        # the pinned packages PythonSetup and WHAT-TO-INSTALL step 4 install
