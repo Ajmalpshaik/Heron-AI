@@ -61,6 +61,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 | [`check-fragments-compile.py`](check-fragments-compile.py) | every fragment's C# against every release it claims, its contract included | CI; after any fragment change |
 | [`recount-agent-registry.py`](recount-agent-registry.py) | rewrites docs/28's counts from its rows - CI fails on a stale one | after adding, removing or re-tiering an agent |
 | [`generate-fragment-catalog.py`](generate-fragment-catalog.py) | the fragment library on one searchable page | CI runs it; whenever you want to read the library |
+| [`generate-tool-catalogue.py`](generate-tool-catalogue.py) | the COMMITTED Revit tool catalogue a modeller reads, `docs/guide/revit-tool-catalogue.md` and its job pages | after changing any card's words, status or proof - `tests/test_tool_catalogue.py` fails until you do |
 | [`generate-agent-map.py`](generate-agent-map.py) | every agent on one filterable page | CI runs it; whenever you want the map |
 
 **Reports** - read them; none of these stops a build.
@@ -838,6 +839,33 @@ negative case can actually be run — and got that wrong on its first run, repor
 across a library holding **18**. A generator that only draws needs no test; one that concludes does.
 
 The working prototype of `HERON-DOC-FRG-004`.
+
+---
+
+## `generate-tool-catalogue.py` — the catalogue a modeller reads
+
+```bash
+python tools/generate-tool-catalogue.py            # write the pages
+python tools/generate-tool-catalogue.py --check    # exit 1 if a page is out of date
+```
+
+Writes [`docs/guide/revit-tool-catalogue.md`](../docs/guide/revit-tool-catalogue.md) and one page per
+job under `docs/guide/tool-catalogue/`: every live tool, what it does, what it needs selected or said,
+what comes back, how a modeller reaches it, and the Revit releases it is **built for** (`revit:`) and
+**proved on** (`heron_matrix.proven_releases`) - two claims, printed as two. The front page also lists
+the Heron tab's buttons, read out of the add-ins' ribbon code, and which products the installer does
+not offer (`platform/heron-products.json`).
+
+**Unlike `generate-fragment-catalog.py`, its pages are committed**, because a modeller reads Heron on
+GitHub and never runs a script. So they can go stale, and
+[`tests/test_tool_catalogue.py`](../tests/test_tool_catalogue.py) fails when they are: **after changing a
+card's words, status or proof, run this tool and commit what it wrote.** Two branches that both did
+will conflict on these pages; resolve by running it again on the merged tree.
+
+**It decides, for every tool, whether a chat can use it today** - by the rules the runtime applies,
+asked of the same code: usable when PROVEN with a proof that still matches the code; a DRAFT or a
+stale proof that would change the model is refused (D-117); one that only reads or only changes what
+is shown still runs and says DRAFT. A proof's model name never reaches the page - it can be a client's.
 
 ---
 

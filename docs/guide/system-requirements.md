@@ -23,7 +23,7 @@ Windows figures are **not yet measured**, and Windows wheels differ in size:
 | PyYAML and `mcp`, with what `mcp` pulls in | Yes | about 17 MB | the installed packages, counted file by file |
 | The knowledge store, built from Heron's own library | Yes | about 5 MB | `global.db` after `python brain/heron_scope.py --rebuild` |
 | **Minimum, all of the above** | | **about 70 MB, plus 6 to 8 MB for each Revit release** | the four lines above |
-| The download itself, while you keep it | - | 120 MB | `HeronSetup-0.2.0-unsigned.exe`, the v0.2.0 release page |
+| The download itself, while you keep it | - | 120 MB | `HeronSetup-0.2.0-unsigned.exe`, the v0.2.0 release page; each release page gives its own Setup's size |
 | The trained search add-on, `model2vec` | No | about 130 MB on disk - the package with what it pulls in, and the weights | `heron_embed.SIZE`, printed by `python brain/heron_embed.py` before anything is fetched |
 | The re-ranker, `sentence-transformers` | No | 500 MB to 2 GB | `heron_rerank.SIZE` - a reading from the field, 2026-09-10, not measured here |
 | Reading PDFs, `pypdf` | No | about 2 MB | `heron_ingest.PDF_READER_SIZE`, said when a PDF cannot be read without it |

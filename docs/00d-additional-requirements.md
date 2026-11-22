@@ -1037,7 +1037,9 @@ Deprecated:  Old Dimension Fragment
 > not been revisited. The repository has no changelog file. **2026-11-20:** a second release, v0.2.0, was
 > published on 2026-11-16 (`gh api repos/Ajmalpshaik/Heron-AI/releases`); D-77 has still not been revisited,
 > `python tools/agent-count.py` still lists the Change Log Agent under DEFERRED, and there is still no
-> changelog file.
+> changelog file. **2026-11-22:** there is one now - [`CHANGELOG.md`](../CHANGELOG.md), written for v0.3.0
+> from the pull requests merged since the v0.2.0 tag, on the owner's request; the Change Log Agent is
+> still DEFERRED and D-77 still not revisited.
 
 ## 42. Dependency Intelligence
 

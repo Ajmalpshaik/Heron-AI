@@ -184,6 +184,11 @@ sees. It was `HEAD^1` until then, which let such a branch pass and turned every 
 for t in tests/test_*.py; do python "$t" >/dev/null 2>&1 || echo "FAIL $t"; done
 ```
 
+**Changed a card's words, status or proof? Run `python tools/generate-tool-catalogue.py` and commit
+what it wrote** (since 2026-11-22). The Revit tool catalogue under `docs/guide/` is committed for
+modellers to read, and `tests/test_tool_catalogue.py` fails while it is behind the cards. Two branches
+that both regenerated it conflict there: run the tool again on the merged tree.
+
 Derive the number — `ls tests/test_*.py | wc -l`. Do not read a pass total here either. What matters is
 that the failures **do not share a reason**, because a lump total is how a real regression hides.
 

@@ -26,6 +26,8 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 
 ## What you can ask it today
 
+**Every Revit tool, by job, with the words that reach it:** [the Revit tool catalogue](revit-tool-catalogue.md).
+
 Every request goes through Heron's **MCP tools**. They fall into five groups:
 
 ```mermaid
@@ -112,7 +114,9 @@ reads the model and changes nothing until you turn **Changes** on. The whole sto
 | [How Heron works](how-heron-works.md) | The four parts and the path of one request |
 | [01 — Vision & Principles](../01-vision-and-principles.md) | What Heron is meant to be, and why |
 | [15 — Glossary](../15-glossary.md) | Every word on these pages, defined |
-| [What to install](../WHAT-TO-INSTALL.md) | For when it is announced — not before |
+| [Installing Heron](install.md) | Download to first request, troubleshooting, update and removal |
+| [Revit tool catalogue](revit-tool-catalogue.md) | Every tool by job - what it does, what it needs, and whether a chat can use it today |
+| [What to install](../WHAT-TO-INSTALL.md) | The whole picture of what a PC needs, and what is optional |
 
 ---
 
