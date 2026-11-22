@@ -94,41 +94,45 @@ it makes is one entry in Revit's Undo list. The full picture, part by part:
 
 ## Install
 
-The latest release is **[v0.2.0](https://github.com/Ajmalpshaik/Heron-AI/releases/latest)**: one file,
-`HeronSetup-0.2.0-unsigned.exe`. It puts Heron into every Revit on your PC, 2020 to 2027, for your own
-Windows user, with **no administrator rights**.
+The latest release is **[v0.3.0](https://github.com/Ajmalpshaik/Heron-AI/releases/latest)**: one file,
+`HeronSetup-0.3.0-unsigned.exe`. It puts Heron into every Revit on your PC, 2020 to 2027, for your own
+Windows user, with **no administrator rights**. Step by step, with troubleshooting, updating and
+removing: [**Installing Heron**](docs/guide/install.md).
 
 1. **Install Python once.** In Windows Terminal: `winget install Python.Python.3.12 --scope user`
 2. **Close Revit**, and close Claude too if you want Heron added to Claude Code in the same go.
-3. **Double-click `HeronSetup-0.2.0-unsigned.exe`.** Windows says *"Windows protected your PC"*
+3. **Double-click `HeronSetup-0.3.0-unsigned.exe`.** Windows says *"Windows protected your PC"*
    because it is not signed yet: **More info**, then **Run anyway**.
 4. In the **Heron Installer** window, leave the Revit years and both ticks on (*Set up Heron's AI
    side too* and *Add Heron to Claude Code*), press **Install**, wait for the report, then **Close**.
 5. **Open Revit** and press **Heron** on the Heron tab. Then open Claude, **Code**, **This computer**,
    and ask, for example, *"total duct length by size"*.
 
-**To remove it:** Settings › Apps › Installed apps › Heron AI › Uninstall. Your own Heron settings and
-history stay.
+**To update:** run the newer Setup over the old one. **To remove it:** Settings › Apps › Installed
+apps › Heron AI › Uninstall. Your own Heron settings and history stay.
 
-**What has been checked, and what has not** (the release notes say the same):
+**What has been checked, and what has not** (the release notes say the same, for that exact file):
 
 | | |
 |---|---|
-| **Run on the owner's PC, 2026-11-16** | The Setup installed Heron into Revit 2020, 2024, 2026 and 2027, its Python side said `READY`, and Uninstall took everything back out |
-| **Not checked yet** | Revit loading this exact build, and the *Add Heron to Claude Code* tick on a PC that is not a Heron developer's |
+| **v0.3.0's Setup** | Built from the `v0.3.0` tag out of the release workflow's own files, each checked against `checksums.txt`, and its contents checked. **Not yet run in a Revit** - that check comes next, and the release notes are updated when it has |
+| **Run on the owner's PC with v0.2.0's Setup, 2026-11-16** | Installed Heron into Revit 2020, 2024, 2026 and 2027, its Python side said `READY`, and Uninstall took everything back out |
 | **Never run** | Revit 2021, 2022, 2023 and 2025 |
 | **Not signed** | No code-signing certificate yet ([D-190](docs/DECISIONS.md)). Every file on the release page is listed with its SHA-256 in `checksums.txt`, and the Setup's own SHA-256 is in the release notes |
 
 Heron starts **read-only**: it changes nothing until you turn **Changes** on in its Settings window.
-Everything a PC needs, step by step, and what is optional: [**What to install**](docs/WHAT-TO-INSTALL.md) ·
-the disk cost of each piece: [**System requirements**](docs/guide/system-requirements.md).
+**What each tool does, and how to reach it:** [**the Revit tool catalogue**](docs/guide/revit-tool-catalogue.md) ·
+**what changed:** [**CHANGELOG**](CHANGELOG.md) · everything a PC needs, and what is optional:
+[**What to install**](docs/WHAT-TO-INSTALL.md) · the disk cost of each piece:
+[**System requirements**](docs/guide/system-requirements.md).
 Something wrong? Please [open an Issue](https://github.com/Ajmalpshaik/Heron-AI/issues).
 
 ## Where to go next
 
 | You are… | Go to | You will find |
 |---|---|---|
-| **a BIM modeller** | [**Using Heron**](docs/guide/using-heron.md) | What you can ask, and what keeps your model safe |
+| **a BIM modeller** | [**Using Heron**](docs/guide/using-heron.md) · [**Revit tool catalogue**](docs/guide/revit-tool-catalogue.md) | What you can ask, every tool by job, and what keeps your model safe |
+| **installing Heron** | [**Installing Heron**](docs/guide/install.md) · [**CHANGELOG**](CHANGELOG.md) | Download to first request, troubleshooting, updating, and what changed in each version |
 | **setting up a PC** | [**What to install**](docs/WHAT-TO-INSTALL.md) · [**System requirements**](docs/guide/system-requirements.md) | Everything a PC needs, Python first, what is optional, and what each piece costs on disk |
 | **changing Heron** | [**Changing Heron**](docs/guide/changing-heron.md) | Where each kind of code lives, the rules, and the checks before a pull request |
 | **checking what is proven** | [**What is proven**](docs/guide/what-is-proven.md) | Built versus proven, item by item, and the commands that count it |
