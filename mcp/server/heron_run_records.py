@@ -485,7 +485,7 @@ READ_BACK_LONGEST_LABEL = 80
 # The counts a read-back carries. Each is a whole number or absent - anything
 # else and the field is not one Heron wrote (`_whole`).
 _READ_BACK_COUNTS = ("changed", "read", "withDifference", "noValueChanged", "notRead",
-                     "elementsMore")
+                     "elementsMore", "handed", "askedNotChanged", "askedNotChangedMore")
 
 
 class _NotAReadBack(Exception):
@@ -500,6 +500,14 @@ def read_back_lines(reply):
     the `changed:` line above already says what Revit counted, and until
     2026-11-12 every such write also printed "0 of 0 changed element(s) read
     on both sides".
+
+    WHAT THE JOB WAS HANDED AND REVIT COUNTED NO CHANGE TO IS SAID TOO (row
+    5b-1903, D-196, the owner's yes of 2026-11-21): one line, "asked, did not
+    change", naming them by id and category - a pinned duct a move left where
+    it was - even when Revit counted nothing changed at all. It is Revit's
+    count and nothing more, and says so: a job that only reads some of what it
+    is handed (the hosts it tags) lists those too. An add-in from before the
+    check sends no such field, and nothing is said of it.
 
     WHAT WAS NOT READ IS SAID, NEVER CALLED UNCHANGED. An element Revit
     counted as changed and nobody read on both sides is counted apart; on a
@@ -580,8 +588,9 @@ def _read_back_lines(back):
             or len(rows) + counts["elementsMore"] + counts["noValueChanged"] > read):
         raise _NotAReadBack("its counts do not agree with each other")
     dry = mode == "dryRun"
+    asked = _asked_line(back, counts)
     if not changed and not rows:
-        return []
+        return asked
 
     # NOTHING OF IT WAS READ: one line, and it says why.
     if not read and not rows:
@@ -589,10 +598,10 @@ def _read_back_lines(back):
             return ["  before -> after: none of the %d changed element(s) was read on both "
                     "sides - Revit's Heron reads at most %d on each side, and reads no "
                     "\"before\" when the rollback did not hold"
-                    % (changed, READ_BACK_MOST_READ)]
+                    % (changed, READ_BACK_MOST_READ)] + asked
         return ["  before -> after: not read - none of the %d changed element(s) was "
                 "selected before the change ran, and a kept change reads only what was "
-                "(up to %d elements)" % (changed, READ_BACK_MOST_READ)]
+                "(up to %d elements)" % (changed, READ_BACK_MOST_READ)] + asked
 
     lines = ["  before -> after: %d of %d changed element(s) read on both sides%s"
              % (read, changed, ", from the dry run" if dry else "")]
@@ -621,7 +630,43 @@ def _read_back_lines(back):
                         if dry else
                         "a kept change reads only what was selected before it ran "
                         "(up to %d elements)" % READ_BACK_MOST_READ))
-    return lines
+    return lines + asked
+
+
+def _asked_line(back, counts):
+    """
+    Row 5b-1903, D-196: the elements the job was handed that Revit counted no
+    change to, as one line - or no line when there are none, or when the
+    add-in sent no handed check at all. Checked whole first, like the rest of
+    the field: counts that cannot all be true are a read-back Heron cannot
+    read, never a line printed as sent.
+    """
+    named = back.get("askedNotChangedElements")
+    if named is None:
+        named = []
+    if not isinstance(named, list) or not all(isinstance(one, dict) for one in named):
+        raise _NotAReadBack("its `askedNotChangedElements` is not a list of elements")
+    every = back.get("handedAll", True)
+    if not isinstance(every, bool):
+        raise _NotAReadBack("its `handedAll` is not true or false")
+    count, handed = counts["askedNotChanged"], counts["handed"]
+    if count > handed or len(named) + counts["askedNotChangedMore"] > count:
+        raise _NotAReadBack("its handed counts do not agree with each other")
+    if not count:
+        return []
+
+    ids = ["%s%s" % (_label(one.get("id")),
+                     " " + _label(one.get("category")) if one.get("category") else "")
+           for one in named[:READ_BACK_ELEMENTS]]
+    more = max(0, len(named) - READ_BACK_ELEMENTS) + counts["askedNotChangedMore"]
+    of = ("the %d element(s) this job was handed" % handed if every else
+          "the first %d element(s) this job was handed (it was handed more, and only "
+          "these were checked)" % handed)
+    return ["  asked, did not change: %d of %s - Revit counted no change to them: %s%s. "
+            "This is Revit's count, not a reason: an element the job only reads, such as "
+            "one it tags, is listed too"
+            % (count, of, ", ".join(ids) if ids else "(none named)",
+               "; and %d more" % more if more > 0 else "")]
 
 
 # MODEL TEXT IS DATA, AND IT WAS PRINTED AS IF IT WERE HERON'S OWN WORDS.

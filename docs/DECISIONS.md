@@ -264,6 +264,7 @@ an edit.
 | [D-193](#d-193--making-sheets-keeps-three-rules-for-a-table-and-typed-numbers-alike-a-sheet-whose-number-or-name-revit-refuses-is-taken-back-a-number-asked-for-twice-makes-neither-and-1000-is-the-most-in-one-call) | Making sheets keeps three rules for a table and typed numbers alike: a sheet whose number or name Revit refuses is taken back, a number asked for twice makes neither, and 1,000 is the most in one call | ✅ Accepted · 2026-11-21 |
 | [D-194](#d-194--every-stored-vector-is-compared-in-plain-python-sqlite-vec-is-not-used) | Every stored vector is compared in plain Python; sqlite-vec is not used | ✅ Accepted · 2026-11-21 |
 | [D-195](#d-195--the-loads-panels-finalize-goes-to-revit-as-one-change---the-space-values-and-the-diffusers-flows-as-steps-of-one-request-in-one-undo-entry---with-every-step-gated-as-if-sent-alone) | The Loads panel's Finalize goes to Revit as one change - the Space values and the diffusers' flows as steps of one request, in one undo entry - with every step gated as if sent alone | ⏳ Proposed · 2026-11-21 |
+| [D-196](#d-196--a-writes-read-back-also-names-what-the-job-was-handed-and-revit-counted-no-change-to-asked-did-not-change) | A write's read-back also names what the job was handed and Revit counted no change to: asked, did not change | ✅ Accepted · 2026-11-21 |
 
 ## Format
 
@@ -1767,3 +1768,13 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects (if accepted):** `heron_mcp_server.py` `_loads_finalize` and `revit_change` · `RevitFragment.cs` (setup steps on a kept change) · `tests/test_loads_finalize.py` · [Group CC](needs-checking/group-cc.md) CC11
 
 **Full record:** [`decisions/D-195.md`](decisions/D-195.md)
+
+## D-196 — A write's read-back also names what the job was handed and Revit counted no change to: asked, did not change
+
+**Status:** Accepted · **Date:** 2026-11-21 · **Accepted:** Ajmal PS, 2026-11-22, **on his delegation in the coordinator session on his PC**: *"no i did not say ... you can say take a best desition and tell"*. **Correction:** this line first quoted him as *"5b-1903: yes, also check handed elements"*; on 2026-11-22 he said he never gave those words, so they are struck. The coordinator chose on the evidence: the check only reads, can change nothing in the model, is bounded (50 checked, 20 named), follows D-156's read-back and the house rule that a write is proved by reading it back; its one cost, a card that only reads some of what it is handed listing those too, is what item 3's wording carries
+**Numbering:** D-196 is the id `tools/next-id.py` printed free on 2026-11-21, with `origin/main` at `0429fc1c` ending at D-195.
+**Extends:** [D-156](decisions/D-156.md) item 1 · **Settles:** [row 5b-1903](fragment-issues/row-5b-1903.md) · item 2 of [#1057](https://github.com/Ajmalpshaik/Heron-AI/issues/1057)
+**Keeps:** D-156 items 2 to 6 · [D-126](decisions/D-126.md) · [D-160](decisions/D-160.md)
+**Affects:** `HeronReadBack.cs`, `RevitReadBack.cs`, `RevitFragment.cs` (`Run`), `heron_run_records.py`, `tests/test_read_back.py`, `tests/Heron.ReadBack.TestHost` · [Group NS](needs-checking/group-ns.md) NS13
+
+**Full record:** [`decisions/D-196.md`](decisions/D-196.md)
