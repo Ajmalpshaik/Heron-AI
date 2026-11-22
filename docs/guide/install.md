@@ -36,7 +36,7 @@ What has actually been watched working is narrower, and it is said plainly:
 
 | Revit | What was run |
 |---|---|
-| **2020, 2024, 2026, 2027** | The v0.2.0 Setup installed into each on the owner's PC and uninstalled cleanly (2026-11-16). Heron's add-in built from its main code was seen loading in Revit 2020 and 2024 on 2026-11-21; loading from a Setup's own build is checked by a final verification still to come. Heron's tools are proved almost entirely on Revit 2020 and 2024 models; on 2026 and 2027 they are built, and loaded only by deployment, with next to none proved. Each tool's own releases are in [the catalogue](revit-tool-catalogue.md) |
+| **2020, 2024, 2026, 2027** | The v0.2.0 Setup installed into each on the owner's PC and uninstalled cleanly (2026-11-16). Heron's add-in built from its main code was seen loading in Revit 2020 and 2024 on 2026-11-21; loading from a Setup's own build is **not yet checked** - the v0.3.0 verification on 2026-11-22 did not run a Revit, so it stays owed as check OA13. Heron's tools are proved almost entirely on Revit 2020 and 2024 models; on 2026 and 2027 they are built, and loaded only by deployment, with next to none proved. Each tool's own releases are in [the catalogue](revit-tool-catalogue.md) |
 | **2021, 2022, 2023, 2025** | **Never run** - there is no such Revit on the owner's PC. Built for, and expected to work; not watched working |
 
 **For the version you are installing:** its release notes say what was run with that exact Setup and
