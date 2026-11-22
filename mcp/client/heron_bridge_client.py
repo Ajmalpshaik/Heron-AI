@@ -1054,8 +1054,24 @@ def availability(bridge):
         return "(free)"
     if mine:
         return "(in use by this chat)"
+    if lease_waits_for_modeller(bridge):
+        return "(in use by another chat, waiting for an answer in Revit)"
     minutes = max(1, int((seconds + 59) // 60))
     return "(in use by another chat, ~%d min left)" % minutes
+
+
+def lease_waits_for_modeller(bridge):
+    """
+    Whether the lease is held for a job waiting on the modeller - the Keep or
+    Discard box, the delete box, a pick - from `info`, lease-exempt. While one
+    waits the lease cannot lapse, and `leaseSecondsRemaining` says only the
+    least it can then last, so another chat was told "~5 min left" for as long
+    as the box stayed open (row 5b-1838). False when the add-in does not say -
+    one from before 2026-11-21 - which leaves the time as it was.
+    """
+    reply = bridge.request("info")
+    return isinstance(reply, dict) and reply.get("ok") is True \
+        and reply.get("leaseWaitingForModeller") is True
 
 
 def open_model_named(bridge):

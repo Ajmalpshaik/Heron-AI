@@ -172,6 +172,23 @@ positive:
     expect: >
       placed 1, `readBack` "... at 0, -1000, 0 mm" with no "sits ... below"
       - word for word version 6's answer
+  # VERSION 8 (row 5b-1883): an Always Vertical family on a vertical plane.
+  - given: >
+      Group JB's part left at its template's default - Work Plane-Based yes,
+      Always Vertical yes - nested on the vertical reference plane "JB Front"
+      (front-back, at Y -300), point "0,-300,0", workPlane "JB Front"
+    expect: >
+      placed 1, `readBack` "... nested on "JB Front" at 0, -300, 0 mm - read
+      back", AND a finding that it is hosted on "JB Front" but kept upright,
+      does not stand on it, and has no work plane to flip - naming Always
+      Vertical and SET_FAMILY_SETTINGS always vertical=no. REPORT_BOUNDING_BOX
+      reads it flat (100 x 150 x 44 mm)
+  - given: >
+      the same part with SET_FAMILY_SETTINGS always vertical=no, saved and
+      loaded again, nested the same way
+    expect: >
+      placed 1, standing on "JB Front", and NO kept-upright finding; on a level
+      plane - "Ref. Level" - no such finding either, Always Vertical or not
 
 negative:
   - given: an empty point list

@@ -552,6 +552,12 @@ namespace Heron.Revit.Addin
             var refused = OpenToSave(other, title);
             if (refused != null) return NotSavedOther(ask, refused);
 
+            // ROW 5b-1833: the central model opened directly is refused as
+            // another open document too, as SaveNow refuses it for the model
+            // Heron works in - asked again here, after the run asked it.
+            var central = CentralItself(other, title, PathOf(other));
+            if (central != null) return NotSavedOther(ask, central);
+
             var workshared = false;
             try { workshared = other.IsWorkshared; } catch (Exception) { workshared = false; }
             var unsaved = true;
