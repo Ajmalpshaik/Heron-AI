@@ -88,8 +88,9 @@ request - every one is listed at the end of this section.
 
 - **Not signed.** No code-signing certificate yet; the Setup's name says `unsigned` ([D-173](docs/decisions/D-173.md), [D-190](docs/decisions/D-190.md)).
 - **The v0.3.0 Setup itself** - the release notes say what was run with it and what was not.
-- **Revit 2021, 2022, 2023 and 2025 have never been run**; 2026 and 2027 load Heron and have next to no
-  tool proved on them.
+- **Revit 2021, 2022, 2023 and 2025 have never been run.** On 2026 and 2027 Heron is built and was
+  installed by v0.2.0's Setup, with next to no tool proved on them; Revit loading a Setup's own build is
+  still to be checked.
 
 <details>
 <summary>Every pull request merged between v0.2.0 and this release (119)</summary>
