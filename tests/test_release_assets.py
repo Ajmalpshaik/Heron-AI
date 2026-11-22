@@ -348,6 +348,14 @@ def main():
                            "requirements-optional.txt"):
                 check(needed in names, "it carries %s" % needed)
 
+            # AND THE PAGES ITS OWN README AND INSTALL GUIDE LINK - row 5b-1988,
+            # issue #1267. v0.3.0 shipped README.md linking CHANGELOG.md,
+            # LICENSE, DISCLAIMER.md and SECURITY.md, and none was in the zip.
+            for needed in ("CHANGELOG.md", "LICENSE", "NOTICE",
+                           "DISCLAIMER.md", "SECURITY.md"):
+                check(needed in names, "it carries %s, which its pages link"
+                      % needed)
+
             # AND THE FOLDER LIST THOSE TWO SCRIPTS READ - Q-58, 2026-11-16.
             # HeronPaths writes the Addins and backup folders down for them,
             # and they stop by name without it, so a download missing it is
