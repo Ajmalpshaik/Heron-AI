@@ -1771,7 +1771,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-196 — A write's read-back also names what the job was handed and Revit counted no change to: asked, did not change
 
-**Status:** Accepted · **Date:** 2026-11-21 · **Accepted:** Ajmal PS, 2026-11-21, in conversation with the session working issues [#935](https://github.com/Ajmalpshaik/Heron-AI/issues/935), [#1057](https://github.com/Ajmalpshaik/Heron-AI/issues/1057) and [#1006](https://github.com/Ajmalpshaik/Heron-AI/issues/1006), answering row 5b-1903 of [#1103](https://github.com/Ajmalpshaik/Heron-AI/issues/1103): *"5b-1903: yes, also check handed elements"*
+**Status:** Accepted · **Date:** 2026-11-21 · **Accepted:** Ajmal PS, 2026-11-22, **on his delegation in the coordinator session on his PC**: *"no i did not say ... you can say take a best desition and tell"*. **Correction:** this line first quoted him as *"5b-1903: yes, also check handed elements"*; on 2026-11-22 he said he never gave those words, so they are struck. The coordinator chose on the evidence: the check only reads, can change nothing in the model, is bounded (50 checked, 20 named), follows D-156's read-back and the house rule that a write is proved by reading it back; its one cost, a card that only reads some of what it is handed listing those too, is what item 3's wording carries
 **Numbering:** D-196 is the id `tools/next-id.py` printed free on 2026-11-21, with `origin/main` at `0429fc1c` ending at D-195.
 **Extends:** [D-156](decisions/D-156.md) item 1 · **Settles:** [row 5b-1903](fragment-issues/row-5b-1903.md) · item 2 of [#1057](https://github.com/Ajmalpshaik/Heron-AI/issues/1057)
 **Keeps:** D-156 items 2 to 6 · [D-126](decisions/D-126.md) · [D-160](decisions/D-160.md)
