@@ -9,10 +9,18 @@ semantic-identity: "save an open document to its own file, and close its window 
 kind: action
 domain: revit.document
 capability: SAVE_DOCUMENT
-version: 3
+version: 4
 source: OFFICIAL
 risk: PUBLISH
 
+# VERSION 4 (2026-11-21, still DRAFT) - A CENTRAL MODEL OPENED DIRECTLY IS
+# REFUSED AS ANOTHER OPEN DOCUMENT TOO (row 5b-1833, issue #1216). Version 3
+# asked only the model Heron works in whether it is the central model itself,
+# so another open document that was one was saved - the file everybody on the
+# job works from - under a reply that said "local copy only". The run refuses
+# it now, and the add-in's SaveOtherNow asks again before it saves. Its Revit
+# check is NEEDS-CHECKING Group PP. Not run in Revit.
+#
 # VERSION 3 (2026-11-16) - THE MODEL HERON WORKS IN IS SAVED TOO, BY THE ADD-IN
 # AFTER ITS UNDO ENTRY HAS CLOSED, and back to DRAFT. OPEN-QUESTIONS Q-69,
 # answered by Ajmal PS that day in his own words, "go with you suggetions":
@@ -168,9 +176,11 @@ contract:
 # below is version 2's, kept as its record: its negative case - the document
 # Heron works in, refused - is the case version 3 now saves, after the group.
 # Version 3 is proved by NEEDS-CHECKING Group EN EN6 to EN10, and EN11 and
-# EN12 for another document's save after the group (row 5b-1824), as previews
-# on a scratch model - a preview saves too (D-171) - and its save after a Keep
-# is looked at once it is PROVEN, since D-117 refuses a DRAFT kept for real.
+# EN12 for another document's save after the group (row 5b-1824), and EN14 to
+# EN16 for the FAMILY in front (issue #1028, 2026-11-21 - the case a chat once
+# worked round with an empty "save-helper" family), as previews on scratch
+# models - a preview saves too (D-171) - and its save after a Keep is looked
+# at once it is PROVEN, since D-117 refuses a DRAFT kept for real.
 
 proof:
   date: '2026-10-07'

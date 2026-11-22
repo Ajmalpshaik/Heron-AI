@@ -1,0 +1,57 @@
+# NEEDS-CHECKING Group OT - LINK_FAMILY_PARAMETER version 5 (DRAFT): which way
+# Extrusion Start and Extrusion End run on a form whose sketch plane faces -X,
+# and where the form now runs (row 177, issue #944), rows OT13 and OT14. Built
+# 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ot-port-right-generic-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ot-port-right-generic-revit2020-2026-11-21.yaml --session <2020 pid>
+#
+# THE MODEL (group-ot.md OT13, OT14; brain/fragments/link-family-parameter/
+# tests/cases.yaml, VERSION 5): a scratch family from Revit 2020's metric
+# Generic Model template, saved under %TEMP%\heron-work\ot, never the owner's
+# own work. A vertical reference plane "Port Right" at X 48 whose normal faces
+# -X (drawn bottom to top); a thin solid extrusion sketched on it; Length
+# parameters "Cap Start" = 0 and "Cap End" = 1 mm; a Yes/No parameter "Show
+# Cap". KEPT before this runs - this runner rolls everything back. NO `in:`
+# BELOW: no row records the family's own name, so the job runs on the
+# document in front - bring the family to the front, or add
+# `in: "<its title>"` under defaults once it is saved.
+#
+# ONE ID IS A PLACEHOLDER: CAP-FORM-ID, the thin extrusion's unique id as the
+# tool that made it gave it back (or REPORT_FAMILY_FORMS). Type it in before
+# running - THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN (row 5b-264).
+#
+# THE ARRANGEMENT. Positive OT13: links "Extrusion Start=Cap Start; Extrusion
+# End=Cap End". Negative: the same form, links "Extrusion End=Show Cap" - the
+# Yes/No parameter where a length is wanted, refused before anything is
+# linked and with no direction read (cases.yaml, VERSION 5 negative). OT14's
+# own case - links "Visible=Show Cap" - LINKS (changed 1), so it is not D-30's
+# empty half; it is a by-hand line in the note. Every run is ROLLED BACK. ONE
+# job: the run record is kept per card.
+
+model: "a scratch Generic Model family (Revit 2020 metric template): plane Port Right at X 48 facing -X, a thin extrusion sketched on it, Cap Start = 0, Cap End = 1, Yes/No Show Cap"
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: link-family-parameter
+    expect: changed
+    set:
+      forms: "CAP-FORM-ID"
+      links: "Extrusion Start=Cap Start; Extrusion End=Cap End"
+    negative-set:
+      forms: "CAP-FORM-ID"
+      links: "Extrusion End=Show Cap"
+    note: >
+      OT13 then the Yes/No negative. Negative FIRST: refused naming both kinds
+      and the Length parameters that could drive Extrusion End; changed 0,
+      nothing linked, no "runs along" sentence. Positive: changed 2, linked;
+      linkReport "... Extrusion Start and Extrusion End run along -X here: its
+      sketch plane, on "Port Right", faces -X, so a positive value goes left;
+      the form now runs X 47 to 48 mm" - check it against Properties and the
+      Ref. Level plan. Then OT14 by hand, rolled back:
+      heron_bridge_client.py fragment link-family-parameter --write --set
+      forms=<the extrusion's id> --set "links=Visible=Show Cap" - linked,
+      changed 1, with NO "runs along" note.

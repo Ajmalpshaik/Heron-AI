@@ -1040,6 +1040,14 @@ was written** — [NEEDS-CHECKING Group ES](needs-checking/group-es.md).
   answer says how many were left out ([`heron_retrieve.py`](../brain/heron_retrieve.py)). The host
   decides that it is a question; Heron does not
   ([D-01](DECISIONS.md#d-01--execution-host-claude-code-plugin)).
+- **Each door that does not write looks the user's words up under a ceiling** — built 2026-11-21.
+  `revit_read` asks them as a question (D-128 above). `revit_show` asks them under its own declared
+  risk, EXECUTE, read from the tool registry, so no card it would refuse is ranked or listed, and its
+  hand-back says how many were left out
+  ([row 5b-1951](fragment-issues/row-5b-1951.md)). And because a question keeps EXECUTE in its
+  ranking while `revit_read` runs nothing above ANALYZE, an EXECUTE card in the read door's list is
+  marked *run it with revit_show, not revit_read*
+  ([row 5b-1961](fragment-issues/row-5b-1961.md)). `revit_change` still ranks everything.
 
 ### 8.11 What a lookup says of each capability — built 2026-11-11
 

@@ -325,5 +325,12 @@ utterances:
   # column this card reads (version 4) that reached SET_OBJECT_STYLE or
   # TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS, writes. Declared with SET_OBJECT_STYLE's
   # "set the material of generic models in object styles" beside them, which the
-  # first try lost to this read on the model backend.
+  # first try lost to this read on the model backend. The other of the two,
+  # "what material is set for generic models in object styles", was moved up
+  # to eighth the same day (row 5b-1954, above); this one stays here.
   - which categories have a material in object styles
+  # ADDED 2026-11-21, row 5b-1954 (issue #1188). The material question in
+  # other words. At the END, so the eight the re-ranker reads (D-134) are
+  # unchanged; the row's own sentences are not declared.
+  - what material does each category use in object styles
+  - tell me the object style material of each category

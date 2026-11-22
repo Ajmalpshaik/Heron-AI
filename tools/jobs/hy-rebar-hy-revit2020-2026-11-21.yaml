@@ -1,0 +1,64 @@
+# PLACE_FABRIC_REINFORCEMENT (DRAFT) - NEEDS-CHECKING Group HY, row HY12, and the
+# 2026-11-16 night's morning list (Group OI: "Rebar and connection content the
+# structural template carries and DefaultMetric does not"). Not in
+# tools/jobs/rebar-hy-2026-10-19.yaml. Written 2026-11-21 in a cloud session
+# with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/hy-rebar-hy-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/hy-rebar-hy-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL (Group HY, "The model"): the rebar-hy scratch project, new from
+# Revit's metric STRUCTURAL template, saved to %TEMP%\heron-work\rebar-hy,
+# never a working model - among the rest, S1 (a 200 mm structural concrete
+# floor), W1 (a 200 mm structural concrete wall) and N2 (an architectural,
+# non-structural floor) on Level 1. HY: "Run every row on Revit 2020". Use a
+# FRESH COPY of the file (HY12). NEEDS THE MODEL'S OWN NAME: no document name
+# was recorded for it (rebar-hy-2026-10-19.yaml has no `in:` either), so the
+# job runs in the model in front.
+#
+# THE FABRIC SHEET TYPE IS NOT RECORDED. HY12 asks for "a loaded fabric sheet
+# type by name" and nobody wrote one down. Run the NEGATIVE first: it is
+# refused NAMING THE FABRIC SHEET TYPES LOADED - write one of them below in
+# place of the capitals. If none is loaded, the template has no fabric and
+# the positive needs one loaded first (Group HY17 read "no fabric" in Revit
+# 2020's rst_advanced_sample_project, a different model).
+#
+# THE ARRANGEMENT. The floors in "FloorPlan: Level 1" - S1, and N2, which is
+# skipped as not a rebar host (the selection rebar-hy-2026-10-19.yaml's
+# place-area-reinforcement job makes). The negative is the same selection with
+# a sheet type no type has - a different VALUE (rule 5) - and carries every
+# value, because a negative-set replaces the set. Every write is ROLLED BACK.
+# HY12's other negatives - a second run on the KEPT fabric, and W1 with
+# location bottom - are by hand.
+
+model: "rebar-hy scratch project (metric structural template), fresh copy, S1 and N2 in FloorPlan: Level 1, Revit 2020"
+
+defaults:
+  write: true
+  setup:
+    - filter-elements-by-category
+    - set-selection
+
+jobs:
+  - fragment: place-fabric-reinforcement
+    expect: placed
+    set:
+      categoryName: Floors
+      inViewOnly: "FloorPlan: Level 1"
+      fabricSheetType: "A LOADED FABRIC SHEET TYPE'S NAME"
+      majorDirection: x
+      location: bottom
+    negative-set:
+      categoryName: Floors
+      inViewOnly: "FloorPlan: Level 1"
+      fabricSheetType: "HY No Such Fabric Sheet"
+      majorDirection: x
+      location: bottom
+    note: >
+      HY12. Negative - THE FIRST CASE TO RUN: placed 0, refused naming the
+      fabric sheet types loaded - write one into the set. Positive: placed 1
+      (S1), hostsReinforced S1, sheets above 0, report naming the sheet type
+      and the bottom face; N2 in skipped. Count Structural Fabric Areas in
+      {3D} before and after. Second route: select the fabric area and read
+      Fabric Sheet, Location and its sheets in Properties; the sheets visible
+      in a plan at Detail Level Fine.

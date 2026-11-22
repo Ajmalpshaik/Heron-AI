@@ -368,6 +368,20 @@ def section_4(skill, library):
     problems = RUN.check_job(stray, skills, library)
     check(any("PUBLISH" in p for p in problems) and any("does not declare" in p for p in problems),
           "a PUBLISH step, and one the skill does not declare, are refused: %r" % problems)
+    # A RETIRED CARD IS NEVER A STEP (2026-11-21, the review of that day's
+    # merges). The module's own example job named select-by-category-name, a
+    # DEPRECATED card - the one row 5b-1956 took out of every job file - and a
+    # dry run of it read right. Retrieval never offers a retired card, so a
+    # plan that runs one proves a route no chat takes.
+    retired = json.loads(json.dumps(job))
+    retired["steps"].insert(0, {"name": "select-by-category-name", "setup": True,
+                                "values": {"categoryName": "Ducts"}})
+    problems = RUN.check_job(retired, skills, library)
+    check(any("DEPRECATED" in p and "select-by-category-name" in p for p in problems),
+          "a step naming a DEPRECATED card is refused, naming it: %r" % problems)
+    docs = RUN.__doc__ or ""
+    check("select-by-category-name" not in docs,
+          "and the module's example job names no retired card")
     negative = RUN.plan_for(job, "negative")
     check(negative["steps"][0]["values"] == {"category": "Ducts", "levelId": "Level 9"}
           and negative["steps"][1].get("expect") == "previous",

@@ -5,6 +5,16 @@
 // `templateOwnedCategories`, `visibilityTemplate` and `skippedCategories`
 // behind.
 //
+// VERSION 6 (2026-11-21, row 5b-1959, issue #1207) - IN THE WHOLE-DIALOG
+// READ (`allCategories` true) A READ THAT FAILED SAYS "NOT READ" ON ITS ROW,
+// never "shown", "no override" or "not a row" - a read that throws, or an
+// override Revit gives back as nothing. A category whose kind or whose
+// sub-categories will not read is named, and an element whose own override
+// will not read is counted with its ids, never one "without" an override.
+// D-52: a failed read is never a no. The totals count only what WAS read, and
+// the sentence saying what was not rides only on an answer with one, so an
+// answer with none reads as version 5's.
+//
 // VERSION 5 (2026-11-21, D-64, row 5b-1909, work-note item WN-7 of issue
 // #1005) - A CATEGORY DRAWN IN THE VIEW THAT WILL NOT GIVE ITS OVERRIDES IS
 // COUNTED. Version 4 passed over one whose overrides Revit would not read,
@@ -323,6 +333,7 @@ if (allCategories && view.AreGraphicsOverridesAllowed())
     // one pass over the view.
     var drawnByCategory = new Dictionary<ElementId, int>();
     var ownOverrideGroups = new Dictionary<string, List<ElementId>>();
+    var ownNotRead = new List<ElementId>();
     foreach (var drawn in new FilteredElementCollector(doc, view.Id).WhereElementIsNotElementType())
     {
         var drawnCategory = drawn.Category;
@@ -333,9 +344,17 @@ if (allCategories && view.AreGraphicsOverridesAllowed())
             drawnByCategory[drawnCategory.Id] = already + 1;
         }
 
+        // VERSION 6 (row 5b-1959): an element whose own override Revit will
+        // not give - it throws, or gives nothing back - is COUNTED, never read
+        // as one without an override (D-52).
         var own = "";
-        try { own = overrideOf(view.GetElementOverrides(drawn.Id)); }
-        catch (Exception) { own = ""; }
+        try
+        {
+            var read = view.GetElementOverrides(drawn.Id);
+            if (read == null) { ownNotRead.Add(drawn.Id); continue; }
+            own = overrideOf(read);
+        }
+        catch (Exception) { ownNotRead.Add(drawn.Id); continue; }
         if (own.Length == 0) continue;
 
         var groupKey = (drawnCategory == null ? "(no category)" : drawnCategory.Name) + ": " + own;
@@ -353,27 +372,69 @@ if (allCategories && view.AreGraphicsOverridesAllowed())
     var annotationRows = new List<string>();
     int dialogRows = 0, modelHidden = 0, modelOverridden = 0, annotationHidden = 0, annotationOverridden = 0;
 
+    // VERSION 6 (row 5b-1959, issue #1207) - A READ THAT FAILED SAYS SO ON ITS
+    // ROW. Version 5 turned a GetCategoryHidden that threw into "shown", a
+    // GetCategoryOverrides that threw into "no override" and an
+    // AllowsVisibilityControl that threw into "not a row" - the same words as a
+    // category that was read and is plain. D-52: a failed read is never a no.
+    // Each now reads "NOT READ" with Revit's own words and the row is listed
+    // whatever else it holds. The totals on each first line stay what they
+    // were - rows that WERE read hidden, overridden or drawn - and a sentence
+    // after them counts the rows with something unread, only when there is
+    // one, so an answer with none reads as version 5's.
+    Func<Exception, string> revitSays = thrown =>
+        ((thrown.InnerException ?? thrown).Message ?? "").Replace("\r", " ").Replace("\n", " ").Trim();
+    const string gaveNothing = "it gave no settings back";
+    int modelListed = 0, subListed = 0, annotationListed = 0;
+    int modelNotRead = 0, subNotRead = 0, annotationNotRead = 0, rowFlagNotRead = 0;
+    var kindNotRead = new List<string>();
+    var subsNotRead = new List<string>();
+    Func<Category, string> nameOf = named =>
+    {
+        try { return named.Name; }
+        catch (Exception) { return "(a category whose name will not read)"; }
+    };
+
     foreach (Category asked in doc.Settings.Categories)
     {
         if (asked == null) continue;
         CategoryType kind;
         try { kind = asked.CategoryType; }
-        catch (Exception) { continue; }
+        catch (Exception thrown)
+        {
+            // Neither list can hold it, and its sub-categories are not read -
+            // so it is NAMED, never a category with nothing set.
+            kindNotRead.Add(nameOf(asked) + " (Revit says: " + revitSays(thrown) + ")");
+            continue;
+        }
         if (kind != CategoryType.Model && kind != CategoryType.Annotation) continue;
 
         // A row of THIS view's dialog. Revit 2020 makes it an indexed
         // property, and so does every release since - get_ is the call.
         var isDialogRow = false;
+        string rowNotRead = null;
         try { isDialogRow = asked.get_AllowsVisibilityControl(view); }
-        catch (Exception) { isDialogRow = false; }
+        catch (Exception thrown) { isDialogRow = false; rowNotRead = revitSays(thrown); }
 
         var isHidden = false;
+        string hiddenNotRead = null;
         try { isHidden = view.GetCategoryHidden(asked.Id); }
-        catch (Exception) { isHidden = false; }
+        catch (Exception thrown) { isHidden = false; hiddenNotRead = revitSays(thrown); }
 
         var setHere = "";
-        try { setHere = overrideOf(view.GetCategoryOverrides(asked.Id)); }
-        catch (Exception) { setHere = ""; }
+        string overrideNotRead = null;
+        try
+        {
+            var read = view.GetCategoryOverrides(asked.Id);
+            if (read == null) overrideNotRead = gaveNothing;
+            else setHere = overrideOf(read);
+        }
+        catch (Exception thrown) { setHere = ""; overrideNotRead = revitSays(thrown); }
+
+        var anyNotRead = rowNotRead != null || hiddenNotRead != null || overrideNotRead != null;
+        var overrideText = overrideNotRead != null
+            ? "override NOT READ - Revit says: " + overrideNotRead
+            : setHere.Length > 0 ? setHere : "no override";
 
         int drawnCount;
         drawnByCategory.TryGetValue(asked.Id, out drawnCount);
@@ -381,49 +442,76 @@ if (allCategories && view.AreGraphicsOverridesAllowed())
         // Listed whether or not it is a dialog row here, and said so - a
         // gate on that flag would make a hidden or overridden category vanish
         // from the report if Revit ever answered it false.
-        var state = (isHidden ? "HIDDEN" : "shown")
+        var state = (hiddenNotRead != null ? "visibility NOT READ - Revit says: " + hiddenNotRead
+                : isHidden ? "HIDDEN" : "shown")
             + (drawnCount > 0 ? ", " + drawnCount + " in view" : "")
-            + (isDialogRow ? "" : ", not a row of this view's Visibility/Graphics");
+            + (rowNotRead != null ? ", whether it is a row of this view's Visibility/Graphics NOT READ - Revit says: "
+                + rowNotRead
+                : isDialogRow ? "" : ", not a row of this view's Visibility/Graphics");
 
         // THE COUNTS ARE OF THE DIALOG'S ROWS, so they read as the dialog does;
         // a category listed below that is not a row says so on its own line.
+        // What WAS read is counted; what Revit would not give is not.
         if (kind == CategoryType.Model)
         {
             if (isDialogRow) dialogRows++;
+            if (rowNotRead != null) rowFlagNotRead++;
             if (isDialogRow && isHidden) modelHidden++;
             if (isDialogRow && setHere.Length > 0) modelOverridden++;
-            if (isHidden || setHere.Length > 0 || drawnCount > 0)
+            if (anyNotRead) modelNotRead++;
+            if (isHidden || setHere.Length > 0 || drawnCount > 0) modelListed++;
+            if (isHidden || setHere.Length > 0 || drawnCount > 0 || anyNotRead)
             {
                 modelRows.Add(string.Format("{0} [{1}] V/G: {2} | {3}", asked.Name, state,
-                    setHere.Length > 0 ? setHere : "no override", objectStyleOf(asked)));
+                    overrideText, objectStyleOf(asked)));
             }
         }
-        else if (isHidden || setHere.Length > 0)
+        else if (isHidden || setHere.Length > 0 || anyNotRead)
         {
             if (isDialogRow && isHidden) annotationHidden++;
             if (isDialogRow && setHere.Length > 0) annotationOverridden++;
+            if (anyNotRead) annotationNotRead++;
+            if (isHidden || setHere.Length > 0) annotationListed++;
             annotationRows.Add(string.Format("{0} [{1}] V/G: {2} | {3}", asked.Name, state,
-                setHere.Length > 0 ? setHere : "no override", objectStyleOf(asked)));
+                overrideText, objectStyleOf(asked)));
         }
 
         CategoryNameMap subs = null;
         try { subs = asked.SubCategories; }
-        catch (Exception) { subs = null; }
+        catch (Exception thrown)
+        {
+            subsNotRead.Add(asked.Name + " (Revit says: " + revitSays(thrown) + ")");
+            continue;
+        }
         if (subs == null) continue;
 
         foreach (Category sub in subs)
         {
             if (sub == null) continue;
             var subHidden = false;
+            string subHiddenNotRead = null;
             try { subHidden = view.GetCategoryHidden(sub.Id); }
-            catch (Exception) { subHidden = false; }
+            catch (Exception thrown) { subHidden = false; subHiddenNotRead = revitSays(thrown); }
             var subSet = "";
-            try { subSet = overrideOf(view.GetCategoryOverrides(sub.Id)); }
-            catch (Exception) { subSet = ""; }
-            if (!subHidden && subSet.Length == 0) continue;
+            string subSetNotRead = null;
+            try
+            {
+                var read = view.GetCategoryOverrides(sub.Id);
+                if (read == null) subSetNotRead = gaveNothing;
+                else subSet = overrideOf(read);
+            }
+            catch (Exception thrown) { subSet = ""; subSetNotRead = revitSays(thrown); }
+            var subAnyNotRead = subHiddenNotRead != null || subSetNotRead != null;
+            if (!subHidden && subSet.Length == 0 && !subAnyNotRead) continue;
+            if (subAnyNotRead) subNotRead++;
+            if (subHidden || subSet.Length > 0) subListed++;
 
             subRows.Add(string.Format("{0} > {1} [{2}] V/G: {3} | {4}", asked.Name, sub.Name,
-                subHidden ? "HIDDEN" : "shown", subSet.Length > 0 ? subSet : "no override", objectStyleOf(sub)));
+                subHiddenNotRead != null ? "visibility NOT READ - Revit says: " + subHiddenNotRead
+                    : subHidden ? "HIDDEN" : "shown",
+                subSetNotRead != null ? "override NOT READ - Revit says: " + subSetNotRead
+                    : subSet.Length > 0 ? subSet : "no override",
+                objectStyleOf(sub)));
         }
     }
 
@@ -431,20 +519,42 @@ if (allCategories && view.AreGraphicsOverridesAllowed())
     subRows.Sort(StringComparer.OrdinalIgnoreCase);
     annotationRows.Sort(StringComparer.OrdinalIgnoreCase);
 
-    modelCategoryList = string.Format("{0} model categories are rows of Visibility/Graphics in '{1}': {2} of "
+    // VERSION 6: what would not read, said after the section's first line and
+    // only when there is some. A template note ends with no full stop, so one
+    // is put between the two.
+    Func<string, string, string> thenSay = (head, note) => note.Length == 0 ? head
+        : head + (head.EndsWith(".") ? "" : ".") + note;
+    Func<int, string, string> notReadNote = (count, what) => count == 0 ? ""
+        : string.Format(" {0} {1} listed below would not give all of their Visibility/Graphics - what Revit "
+            + "would not give says NOT READ on its row, with Revit's words, and is not counted above.", count, what);
+
+    var modelHead = string.Format("{0} model categories are rows of Visibility/Graphics in '{1}': {2} of "
         + "them hidden, {3} overridden. Listed: every model category hidden, overridden or with host elements "
         + "in this view ({4}) - one that is not a row here says so. 'in view' counts HOST elements only - an "
         + "override on a category the host has none of still acts on linked models drawn By Host View.{5}",
-        dialogRows, view.Name, modelHidden, modelOverridden, modelRows.Count, templateNote(BuiltInParameter.VIS_GRAPHICS_MODEL))
+        dialogRows, view.Name, modelHidden, modelOverridden, modelListed, templateNote(BuiltInParameter.VIS_GRAPHICS_MODEL));
+    var modelNote = notReadNote(modelNotRead, "model category(ies)")
+        + (rowFlagNotRead == 0 ? "" : string.Format(" {0} of them would not say whether they are a row of "
+            + "Visibility/Graphics here, so are not in the {1} rows.", rowFlagNotRead, dialogRows))
+        + (kindNotRead.Count == 0 ? "" : string.Format(" {0} category(ies) would not say whether they are model "
+            + "or annotation, so are in no list below and their sub-categories were not read - NOT READ, never "
+            + "a category with nothing set: {1}.", kindNotRead.Count, string.Join("; ", kindNotRead)));
+    modelCategoryList = thenSay(modelHead, modelNote)
         + (modelRows.Count == 0 ? "" : "\n  " + string.Join("\n  ", modelRows));
 
-    subCategoryList = string.Format("{0} sub-categories hidden or overridden in '{1}', written category > "
-        + "sub-category.", subRows.Count, view.Name)
+    var subNote = notReadNote(subNotRead, "sub-category(ies)")
+        + (subsNotRead.Count == 0 ? "" : string.Format(" {0} category(ies) would not give their sub-categories, "
+            + "so none of theirs was read - NOT READ, never none hidden or overridden: {1}.",
+            subsNotRead.Count, string.Join("; ", subsNotRead)))
+        + (kindNotRead.Count == 0 ? "" : string.Format(" The sub-categories of {0} category(ies) whose kind "
+            + "would not read were not read either - named in the model categories.", kindNotRead.Count));
+    subCategoryList = thenSay(string.Format("{0} sub-categories hidden or overridden in '{1}', written category > "
+        + "sub-category.", subListed, view.Name), subNote)
         + (subRows.Count == 0 ? "" : "\n  " + string.Join("\n  ", subRows));
 
-    annotationCategoryList = string.Format("{0} annotation categories hidden or overridden in '{1}' - of the "
-        + "rows of Visibility/Graphics, {2} hidden and {3} overridden; one that is not a row here says so.{4}", annotationRows.Count, view.Name, annotationHidden, annotationOverridden,
-        templateNote(BuiltInParameter.VIS_GRAPHICS_ANNOTATION))
+    annotationCategoryList = thenSay(string.Format("{0} annotation categories hidden or overridden in '{1}' - of the "
+        + "rows of Visibility/Graphics, {2} hidden and {3} overridden; one that is not a row here says so.{4}", annotationListed, view.Name, annotationHidden, annotationOverridden,
+        templateNote(BuiltInParameter.VIS_GRAPHICS_ANNOTATION)), notReadNote(annotationNotRead, "annotation category(ies)"))
         + (annotationRows.Count == 0 ? "" : "\n  " + string.Join("\n  ", annotationRows));
 
     var groupRows = new List<string>();
@@ -458,12 +568,29 @@ if (allCategories && view.AreGraphicsOverridesAllowed())
             group.Value.Count > 5 ? " and " + (group.Value.Count - 5) + " more" : ""));
     }
 
+    // VERSION 6: an element whose own override would not read is never one
+    // "without" an override - version 5 said "No element ... carries its own
+    // override" of elements it had not read. Said on the first line, with the
+    // first five ids, as a group is.
+    var ownNotReadNote = ownNotRead.Count == 0 ? ""
+        : string.Format(" {0} element(s) in view would not give their own override, so are NOT READ - never "
+            + "counted as without one (ids {1}{2}).", ownNotRead.Count,
+            string.Join(", ", ownNotRead.Take(5).Select(memberId => memberId.ToString())),
+            ownNotRead.Count > 5 ? " and " + (ownNotRead.Count - 5) + " more" : "");
     elementOverrideList = withOwn == 0
-        ? string.Format("No element in '{0}' carries its own override (Override Graphics in View > By "
-            + "Element).", view.Name)
-        : string.Format("{0} element(s) in '{1}' carry their own override (Override Graphics in View > By "
-            + "Element), in {2} group(s) of one category and one identical override:", withOwn, view.Name,
-            groupRows.Count) + "\n  " + string.Join("\n  ", groupRows);
+        ? (ownNotRead.Count == 0
+            ? string.Format("No element in '{0}' carries its own override (Override Graphics in View > By "
+                + "Element).", view.Name)
+            : string.Format("No element read in '{0}' carries its own override (Override Graphics in View > By "
+                + "Element).", view.Name) + ownNotReadNote)
+        : (ownNotRead.Count == 0
+            ? string.Format("{0} element(s) in '{1}' carry their own override (Override Graphics in View > By "
+                + "Element), in {2} group(s) of one category and one identical override:", withOwn, view.Name,
+                groupRows.Count)
+            : string.Format("{0} element(s) in '{1}' carry their own override (Override Graphics in View > By "
+                + "Element), in {2} group(s) of one category and one identical override.", withOwn, view.Name,
+                groupRows.Count) + ownNotReadNote + " The groups:")
+            + "\n  " + string.Join("\n  ", groupRows);
 }
 
 // ---- VERSION 3: WHICH CATEGORIES ARE SWITCHED OFF, ALWAYS -------------------

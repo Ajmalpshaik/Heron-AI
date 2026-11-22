@@ -34,7 +34,7 @@ and passes); a rectangle, an L, a hexagon, a slot of two arcs and a circle passe
 not of Revit.
 
 **The models - Heron builds them, on Revit 2020 first, and none is the owner's own work.** PB1 to PB4 in a
-scratch family from `Metric Mass.rft`, saved under `%TEMP%\heron-work\pa`; PB5 to PB8 in a scratch family from
+scratch family from `Metric Mass.rft`, saved under `%TEMP%\heron-work\pb`; PB5 to PB8 in a scratch family from
 `Metric Generic Model.rft` - Group OT's OT2 and OT3 family serves. Every run is ROLLED BACK unless its row says
 KEPT. While a tool is DRAFT, `revit_change` refuses it ([D-117](../decisions/D-117.md)): each is run through the
 proving client - a preview, or the try-once with the owner's Keep. `REPORT_DIVIDED_SURFACES` and

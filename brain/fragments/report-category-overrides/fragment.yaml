@@ -37,7 +37,17 @@ capability: REPORT_CATEGORY_OVERRIDES
 # counted in `skippedCategories`, not dropped, and named on the empty answer
 # only. Its C# moved, so it stays DRAFT until NEEDS-CHECKING Group PK runs
 # (D-30).
-version: 5
+# VERSION 6 (2026-11-21, row 5b-1959, issue #1207): in the whole-dialog read
+# (`allCategories` true) a category or sub-category whose hidden state, override
+# or dialog row Revit will not give says "NOT READ" on its row with Revit's
+# words, where version 5 said "shown", "no override" or "not a row" - D-52, a
+# failed read is never a no. A category whose kind or sub-categories will not
+# read is named, and an element whose own override will not read is counted
+# with its ids, never one without an override. The totals count what WAS read;
+# the sentence on what was not rides only on an answer with one, so an answer
+# with none reads as version 5's. Its C# moved, so it stays DRAFT until NEEDS-CHECKING Group PN
+# runs, after PK7 (D-30).
+version: 6
 source: OFFICIAL
 risk: READ
 
@@ -136,7 +146,9 @@ contract:
       # 128,128,128, weight 1; halftone | Object Styles: colour 0,0,0,
       # projection weight 1, cut weight 3, pattern Solid". A category with
       # nothing in the host is still listed when it is hidden or overridden -
-      # that override acts on the linked models.
+      # that override acts on the linked models. VERSION 6: a read Revit
+      # would not give says "NOT READ - Revit says: ..." on its row, never
+      # "shown" or "no override", and the first line counts such rows.
       role: result
       type: string
     - name: subCategoryList

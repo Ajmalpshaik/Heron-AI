@@ -47,7 +47,7 @@ purpose: >
      revit_levels for the levels and grids already there, LIST_WORKSETS
      (PROVEN) - which also says whether the model is workshared at all -
      LIST_LINKED_MODELS (DRAFT since its version 2 of
-     2026-11-20, a read, so it runs and says so) and REPORT_LOCATION (PROVEN, version 4).
+     2026-11-20, a read, so it runs and says so) and REPORT_LOCATION (PROVEN, version 5).
      What is already right is left alone and said.
   2. PROJECT INFORMATION. SET_PROJECT_INFORMATION (PROVEN, version 2) with
      the values the modeller gives, each by its exact name as step 1 listed
@@ -86,8 +86,9 @@ purpose: >
      includeLinks give its levels to read the heights from - typed by the
      host, never guessed. A LEVEL MADE THIS WAY COMES WITH NO PLAN VIEW: the
      plans are the views-per-level method, the job after this one.
-  6. GRIDS. CREATE_GRIDS (PROVEN, version 3) from an origin and the bay
-     dimensions each way - GAPS, not positions: four gaps make five grids -
+  6. GRIDS. CREATE_GRIDS (its version and its proof are on its card) from
+     an origin and the bay dimensions each way - GAPS, not positions: four
+     gaps make five grids -
      with the first letter and the first number, or as lines between points
      with gridNames. Then LIST_GRIDS (PROVEN, version 4), which reads the
      names in drawing order and the spacing between neighbours back; with

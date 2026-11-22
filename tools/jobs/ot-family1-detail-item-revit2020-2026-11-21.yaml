@@ -1,0 +1,48 @@
+# NEEDS-CHECKING Group OT - REPORT_FAMILY_TEMPLATE version 5 (DRAFT): a family
+# never saved is named by its Title, never "" (row 5b-304), rows OT19 and
+# OT20. Built 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ot-family1-detail-item-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ot-family1-detail-item-revit2020-2026-11-21.yaml --session <2020 pid>
+#
+# THE MODELS, both open in one Revit 2020, neither the owner's own work:
+#   "Family1"   a NEW family from Revit 2020's metric Detail Item template,
+#               NEVER SAVED - the row's own words (OT19): Family "Family1".
+#               Revit gives a new family the next free number, so if its tab
+#               reads Family2 or later (another new family was made in this
+#               session - tools/jobs/ot-family1-generic-revit2020-2026-11-21.yaml
+#               makes one), that title is its own name: put it in `in:`.
+#   "Project1"  a scratch project, the one
+#               tools/jobs/ot-project1-rooms-revit2020-2026-11-21.yaml runs on
+#               (or any project open beside it - put its title in
+#               `negative-in:`).
+#
+# THE ARRANGEMENT. This card takes nothing but the document, so generate-jobs
+# lists it as a D-53 tracking card; it is batchable the way version 4 was
+# proved (2026-11-02, P1102 MEP Family against P1102 MEP): the positive in
+# the family, the negative in a PROJECT - notAFamily true, and every result
+# empty. A DIFFERENT document, not an empty selection. OT20's own case - the
+# same family saved as "Heron Name Test.rfa" and opened again - reads a FULL
+# report, so it is not D-30's empty half; it is the by-hand check in the note.
+# Reads only. ONE job: the run record is kept per card.
+
+model: "Family1 (a new, never-saved family from Revit 2020's metric Detail Item template) and Project1 (a scratch project), Revit 2020"
+
+defaults:
+  setup: []
+
+jobs:
+  - fragment: report-family-template
+    in: "Family1"
+    expect: templateReport
+    negative-in: "Project1"
+    note: >
+      OT19, and a project as the empty half. Negative: notAFamily true,
+      familyKind, templateReport and every list empty. Positive: templateReport
+      beginning Family "Family1" and the first finding "Family1" is a detail
+      item - never Family "" or "" is a ... (version 4 printed both). Then
+      OT20 by hand: save the family as Heron Name Test.rfa under
+      %TEMP%\heron-work\ot, close it, open it again, and
+      heron_bridge_client.py fragment --in "Heron Name Test"
+      report-family-template - Family "Heron Name Test", never "", never
+      Family1, never .rfa.

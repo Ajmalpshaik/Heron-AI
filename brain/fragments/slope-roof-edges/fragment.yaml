@@ -279,3 +279,12 @@ utterances:
   # VERSION 2, row 5b-1670.
   - slope only these edges of the roof
   - make only these roof edges define slope
+  # ADDED 2026-11-21, row 5b-1953 (issue #1187). A pitch asked for in degrees.
+  # The eighth line is a plain slope request, because the re-ranker reads the
+  # first eight (D-134) and a pitch sentence there pulled a pitch QUESTION to
+  # this write on both re-ranked backends (row 5b-1953, tried and taken back);
+  # the pitch line is ninth, read by words and nearness only. On the model
+  # alone it pulled "tell me the pitch of the selected roof" here, so
+  # REPORT_ROOF_SLOPES carries a pitch question ninth as its counterweight.
+  - slope every edge of this roof
+  - set this roof to a 30 degree pitch

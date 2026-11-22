@@ -1,0 +1,70 @@
+# NEEDS-CHECKING Group PK (D-64, the skipped counts) with Group OQ before it -
+# LIST_LINKED_MODELS version 3 (OQ5, OQ6, PK2) and REPORT_LINKED_VIEW_USAGE
+# version 2 (PK1). Written 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/pk-snowdon-scratch-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/pk-snowdon-scratch-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE MODEL, Revit 2024: "Snowdon-scratch_ajmal.al", the saved scratch copy of
+# Snowdon Towers Sample HVAC with its six links loaded (docs/needs-checking/
+# group-be.md names it as the six-link copy; tools/jobs/links-and-mep.yaml ran
+# on it). The negative of LIST_LINKED_MODELS is "Project1", Revit's own new
+# project with NO link - the negative of version 1's proof and of the card's
+# tests/cases.yaml (PK2). Group OQ names its own copies "oq-snowdon.rvt" and
+# "oq-blank.rvt" for the same two roles (OQ5, OQ6): if those are the copies
+# open, change `in:` and `negative-in:` to their names - the job file changes,
+# never the card. Read Manage Links on Project1 first: it must hold no link.
+#
+# THE ARRANGEMENT. Neither card takes a selection. LIST_LINKED_MODELS takes
+# nothing but the model, so its two legs are two MODELS (`in:` and
+# `negative-in:`), never the same run twice. REPORT_LINKED_VIEW_USAGE takes a
+# link name: the positive "" (every link), the negative "No Such Link" - a
+# DIFFERENT value, not a cleared one (fragment-proving, rules 3 and 5). Both are
+# reads: nothing is changed and the undo list gains no entry.
+#
+# NOT IN THIS FILE, by hand from the group: OQ5's reading of Manage Links and
+# Type Properties before the run, OQ6's second half (one link type's Room
+# Bounding turned off by hand), and PK1's Project1 with a link inserted by hand
+# (every view By Host View) and its Revit Links tab FILE row set By Linked View.
+# ONE job per card: the run record is kept per card.
+
+model: "Snowdon-scratch_ajmal.al (saved copy of Snowdon Towers Sample HVAC, six links loaded) and Project1 (no link), Revit 2024"
+
+defaults:
+  in: "Snowdon-scratch_ajmal.al"
+  setup: []
+
+jobs:
+  - fragment: list-linked-models
+    expect: summary
+    set: {}
+    negative-in: "Project1"
+    negative-set: {}
+    note: >
+      OQ6 and PK2's negative - THE FIRST CASE TO RUN: on Project1 `summary`
+      EMPTY, `elements` empty, `notLoaded` empty, skippedPlacements 0 and no
+      "link placement(s) are in this model but Revit gives no link type"
+      sentence. OQ5 and PK2's positive on Snowdon-scratch_ajmal.al: `summary`
+      names all six files, each with its path type, saved path, Room Bounding,
+      Overlay or Attachment and nested as Manage Links shows; each placement
+      pinned or NOT pinned and its workset as Properties shows; no setting
+      reads NOT READ on a loaded link; `elements` six placements, `notLoaded`
+      empty, skippedPlacements written down (0 expected) and no such sentence.
+
+  - fragment: report-linked-view-usage
+    expect: usage
+    set:
+      linkName: ""
+    negative-set:
+      linkName: "No Such Link"
+    note: >
+      PK1. Negative - THE FIRST CASE TO RUN: linkCount 0, skippedPairs 0, the
+      one finding "No link's name starts "No Such Link"." and nothing else.
+      Positive, every link: the views version 1 listed, listed the same, and
+      NO "passed over" sentence while notByHost is above 0; write down "N are
+      By Host View" beside version 1's (it may be larger, by the pairs version
+      1 dropped) and skippedPairs (0 expected). If no view of this copy shows a
+      link By Linked View or Custom the positive is EMPTY - that is the
+      arrangement (rule 2): set one plan's Revit Links tab By Linked View by
+      hand, save, and run again. If the binder refuses linkName "" as empty,
+      write the refusal into PK1.

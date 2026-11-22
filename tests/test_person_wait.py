@@ -405,6 +405,18 @@ def lease_section():
           and "_term++" not in rule_hold,
           "and a hold never takes a lease - only one its client holds already")
 
+    # ROW 5b-1838: `info` says when the lease is held for a job waiting on the
+    # modeller, so another chat's session list can say so rather than a time.
+    # Said through the rule's own Held, lease-exempt like the rest of `info`.
+    facade_waits = body_of(lease, "public static bool Waiting", "\n        }")
+    check("Session.Held(DateTime.UtcNow)" in facade_waits,
+          "HeronLease.Waiting asks the rule's own Held - whether a job waits for the modeller on "
+          "the lease now (row 5b-1838)")
+    info_at = bridge.find('Json.Num("leaseSecondsRemaining"')
+    check(info_at >= 0 and 'Json.Bool("leaseWaitingForModeller", HeronLease.Waiting)'
+          in bridge[info_at:info_at + 800],
+          "and `info` sends it beside leaseSecondsRemaining, as leaseWaitingForModeller")
+
 
 def failure_section():
     print()

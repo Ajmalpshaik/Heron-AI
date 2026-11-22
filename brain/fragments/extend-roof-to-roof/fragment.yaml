@@ -21,7 +21,7 @@ semantic-identity: "lengthen a roof by extrusion: move its Extrusion Start or En
 # EXTRUSION's extent is its Extrusion Start and End (EXTRUSION_START_PARAM,
 # EXTRUSION_END_PARAM) on every release, so its end can be moved. A roof by
 # FOOTPRINT's edges are its sketch (VERSION 2 extends one from 2022 - its
-# VERSION comment above; what follows is what version 1 found): FootPrintRoof has GetProfiles and, per
+# VERSION comment below, above `capability`; what follows is what version 1 found): FootPrintRoof has GetProfiles and, per
 # edge, Offset, Overhang, SlopeAngle, DefinesSlope and ExtendIntoWall, and no
 # SketchId; from 2022 its sketch can be found (Sketch.OwnerId) and edited in a
 # SketchEditScope (IsSketchEditingSupported 2022, ...ForSketchBasedElement
@@ -135,7 +135,8 @@ contract:
     - name: view3d
       type: View3D
       source: request
-    # The two roofs, FROM THE SELECTION: the roof by extrusion to extend and
+    # The two roofs, FROM THE SELECTION: the roof to extend - a roof by
+    # extrusion, or from Revit 2022 a roof by footprint (version 2) - and
     # the roof its end is to meet. Anything else is named and left alone.
     - name: elements
       type: IList<Element>
@@ -148,8 +149,8 @@ contract:
       optional: true
       absent: NaN
     # Which of the two to extend, by its element id as Revit shows it - only
-    # needed when both are roofs by extrusion and the end of each meets the
-    # other. Left out, the one end that meets is the one extended.
+    # needed when an end of each roof meets the other (from 2022 a roof by
+    # footprint's gable end counts too - version 2). Left out, the one end that meets is the one extended.
     - name: extend
       type: string
       source: request
@@ -172,7 +173,8 @@ contract:
       role: accounting
       type: double
     - name: report
-      # ONE STRING: for each end of each roof by extrusion, how many of its
+      # ONE STRING: for each end this tool can move (a roof by extrusion's,
+      # and from 2022 a roof by footprint's gable end), how many of its
       # points met the other roof and the nearest and farthest distance, and,
       # when it extended, the parameter changed, its value before and after,
       # and how far the end moved, read back.

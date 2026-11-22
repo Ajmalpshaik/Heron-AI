@@ -445,6 +445,13 @@ def declared_by_fragments():
             doc = yaml.safe_load(handle)
         if not doc:
             continue
+        # A RETIRED CARD IS NOT AN ANSWER (2026-11-21). DEPRECATED and ARCHIVED
+        # cards keep their words as their record, and retrieval never offers
+        # one (heron_retrieve.OFFERABLE) - counted here, a merged card's old
+        # sentences were reported as a GUARANTEED disagreement that no chat
+        # can meet: CREATE_SHEETS_FROM_TABLE against sheets-from-excel.
+        if str(doc.get("heron-status") or "").upper() in ("DEPRECATED", "ARCHIVED"):
+            continue
         for said in doc.get("utterances") or []:
             out.setdefault(said.strip().lower(), []).append(
                 (doc.get("id"), doc.get("capability"), doc.get("risk")))

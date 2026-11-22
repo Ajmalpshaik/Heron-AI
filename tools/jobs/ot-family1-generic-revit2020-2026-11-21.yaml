@@ -1,0 +1,76 @@
+# NEEDS-CHECKING Group OT - two family cards on a family never saved (row
+# 5b-304), built 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#   report-family-type-catalog  v2  fileName from the Title, never ".txt"   OT21, OT22
+#   set-family-settings         v5  changed counts only what was written,
+#                                   the family named by its Title           OT23, OT24
+#
+#     python tools/batch-prove.py tools/jobs/ot-family1-generic-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ot-family1-generic-revit2020-2026-11-21.yaml --session <2020 pid>
+#
+# THE MODELS, both open in one Revit 2020, neither the owner's own work:
+#   "Family1"   a NEW family from Revit 2020's metric Generic Model template,
+#               NEVER SAVED (OT21, OT23: the tab reads Family1), with one type
+#               and a Length type parameter "Width". Revit gives a new family
+#               the next free number, so if its tab reads Family2 or later
+#               (tools/jobs/ot-family1-detail-item-revit2020-2026-11-21.yaml
+#               makes one too), that title is its own name: put it in both
+#               `in:` lines.
+#   "Project1"  a scratch project, the one
+#               tools/jobs/ot-project1-rooms-revit2020-2026-11-21.yaml runs on
+#               (or any project open beside it - put its title in
+#               `negative-in:`).
+#
+# REPORT_FAMILY_TYPE_CATALOG reads only and takes nothing but the document;
+# its negative is a PROJECT, the way version 1 was proved (2026-10-03, Family1
+# against Project1): notAFamily true, every result empty. OT22's saved family
+# reads a FULL catalog, so it is not D-30's empty half - a by-hand line.
+#
+# SET_FAMILY_SETTINGS' negative is a VALUE in the same family: "Shared=no" on
+# a family that is not shared reads already as asked - changed 0, alreadySet
+# 1 - the shape of OT24, the value row 5b-285 is about. Its positive is the
+# row's never-saved case "Shared=yes" (OT23, last paragraph). OT23's first
+# part needs "Work Plane-Based=yes; Always Vertical=no" KEPT before it, so it
+# is a by-hand line, never this job: a kept DRAFT run is a try-once. Every
+# write is ROLLED BACK. One job per card: a run record is kept per card.
+
+model: "Family1 (a new, never-saved family from Revit 2020's metric Generic Model template, Length type parameter Width) and Project1 (a scratch project), Revit 2020"
+
+defaults:
+  in: "Family1"
+  setup: []
+
+jobs:
+  - fragment: report-family-type-catalog
+    expect: fileName
+    negative-in: "Project1"
+    note: >
+      OT21, and a project as the empty half. Negative: notAFamily true,
+      catalogText and fileName empty, typeCount 0. Positive: fileName
+      Family1.txt - never .txt alone - catalogText with Width##LENGTH##MILLIMETERS
+      in its header, and the first finding naming "Family1". Then OT22 by
+      hand: save the family under %TEMP%\heron-work\ot and
+      heron_bridge_client.py fragment --in "<its saved title>"
+      report-family-type-catalog - the saved path with .txt, never
+      Family1.txt and never .rfa.txt.
+
+  - fragment: set-family-settings
+    write: true
+    expect: changed
+    set:
+      settings: "Shared=yes"
+    negative-set:
+      settings: "Shared=no"
+    note: >
+      OT23's never-saved case, and OT24's already-as-asked shape. Negative
+      FIRST: changed 0, alreadySet 1, "Every setting named already read as
+      asked.", no "(Revit's own change)" row. Positive: changed 1, "Shared No
+      -> Yes" with NO "(Revit's own change)" tag, and the closing finding
+      reading 'on the family "Family1"', never 'on the family ""'. Then OT23
+      by hand: keep "Work Plane-Based=yes; Always Vertical=no" through
+      try-once, then heron_bridge_client.py fragment --in "Family1"
+      set-family-settings --write --set "settings=Work Plane-Based=no; Always
+      Vertical=yes" - changed plus alreadySet 2, never 3; RECORD whether Revit
+      turned Always Vertical on itself (NEEDS-CHECKING BS2) and whether that
+      row reads "(Revit's own change)"; then the first call again (OT24) -
+      changed 0, alreadySet 2.

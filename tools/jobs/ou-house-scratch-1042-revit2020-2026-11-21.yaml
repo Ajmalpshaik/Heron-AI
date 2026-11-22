@@ -1,0 +1,63 @@
+# NEEDS-CHECKING Group OU - FLIP_ELEMENTS version 4 (DRAFT), row OU6: a door's
+# rooms are read on a phase it stands in, and that phase is named (row
+# 5b-1881). Built 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/ou-house-scratch-1042-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/ou-house-scratch-1042-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL is "House Scratch 1042", Revit 2020 - a scratch copy of
+# rac_basic_sample_project.rvt whose rooms are on phase 'Working Drawings' and
+# whose last phase is 'Learning Content' (OU6, and the card's VERSION 4 note:
+# where row 5b-1881 was seen). Never a working model.
+#
+# THE ARRANGEMENT. Door 422466 (Hall 105 / Bath 103) handed in by id -
+# filter-elements-by-id elementIds=422466, `keep-chain: true`, binding note
+# "elements from filter-elements-by-id (1)" (rule 5).
+#   positive  OU6's first run: flipFacing=true flipHand=false - flipped 1, and
+#             the rooms swapped to match the new swing, ON 'Working Drawings'
+#   negative  OU6's second run: the SAME door, fromToRoomOnly=true, flipping
+#             nothing - "with From and To already right", so nothing to do. A
+#             DIFFERENT VALUE on the same door. It is not OU6's own negative
+#             (a door with no room on any phase): that door FLIPS, so `flipped`
+#             - a declared result - is 1 in that leg and the runner calls it
+#             NEG NOT EMPTY; and no such door's id is recorded. It is in the
+#             note below, by hand
+# negative-set REPLACES set, so it carries every value.
+#
+# CAUTION - THE GROUP ROW AND cases.yaml DISAGREE about this door's From and
+# To as the model stands: OU6 says "already right", cases.yaml's version 4
+# positive says "the wrong way round for its swing". If the negative comes
+# back NEG NOT EMPTY with roomsSwapped naming 422466 "on phase 'Working
+# Drawings'", the door was the wrong way round (cases.yaml's reading) - write
+# that on the row; it is an arrangement answer, not the card failing.
+#
+# Every run is ROLLED BACK. ONE job - a run record is kept per card.
+model: "House Scratch 1042 - a scratch copy of Revit 2020's rac_basic_sample_project.rvt, rooms on 'Working Drawings', last phase 'Learning Content', Revit 2020"
+defaults:
+  in: "House Scratch 1042"
+  write: true
+jobs:
+  - fragment: flip-elements
+    expect: roomsSwapped
+    setup: [filter-elements-by-id]
+    keep-chain: true
+    setup-set: {elementIds: "422466"}
+    negative-setup-set: {elementIds: "422466"}
+    set:
+      flipFacing: true
+      flipHand: false
+      fromToRoomOnly: false
+    negative-set:
+      flipFacing: false
+      flipHand: false
+      fromToRoomOnly: true
+    note: >
+      OU6. Positive: flipped 1; roomsSwapped names 422466, From and To swapped
+      to match its swing "on phase 'Working Drawings'" - version 3 answered "no
+      room on either side". Negative: flipped 0, roomsSwapped EMPTY, roomsLeft
+      "already right ... on phase 'Working Drawings'". A line naming no phase
+      fails. Then by hand, REPORT_DOOR_ROOM_LINKS on 'Working Drawings', and
+      OU6's own negative: a door with no room either side on any phase, flipped
+      - roomsSwapped empty, its roomsLeft line naming every phase tried
+      ('Working Drawings', 'Learning Content'). After signing,
+      tools/check-routing.py as OU6 says.

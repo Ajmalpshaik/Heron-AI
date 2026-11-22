@@ -402,6 +402,72 @@ def main():
               "and one that counts what it skipped is fine - which is what "
               "FILTER_ELEMENTS_BY_CATEGORY does with unresolvedLevel")
 
+        # A DROPPED COUNT IS KNOWN BY WHAT THE CONTRACT SAYS IT IS, NOT ONLY
+        # BY SEVEN WORDS (row 5b-1958, issue #1203). REPORT_STRUCTURAL_LOADS
+        # declares `noAnalytical` - the elements handed in with no analytical
+        # element - as `role: accounting`, and stayed on D-64's worklist for
+        # good because none of the seven words is in that name. The role is
+        # the contract's own word for "handed and could not use, or work
+        # done"; the negative name is what tells the first from the second.
+        silent = ("var found = new List<Element>();\n"
+                  "foreach (var c in new FilteredElementCollector(doc)) {\n"
+                  "  if (c == null) continue;\n  found.Add(c);\n}\n")
+
+        def declares(fid, name, role, kind):
+            return (BASE % (fid, "READ", "")).replace(
+                "    - name: done\n      type: int\n",
+                "    - name: done\n      role: result\n      type: int\n"
+                "    - name: %s\n      role: %s\n      type: %s\n"
+                % (name, role, kind))
+
+        for fid, slug, name, kind in (
+                ("FRG-T-032", "noanalytical", "noAnalytical",
+                 "IList<ElementId>"),
+                ("FRG-T-033", "withoutlocation", "withoutLocation", "int"),
+                ("FRG-T-034", "notlinear", "notLinear", "IList<ElementId>"),
+                ("FRG-T-035", "unreadable", "unreadable", "int"),
+                ("FRG-T-036", "outofscope", "outOfScope", "int"),
+                ("FRG-T-037", "heldback", "heldBack", "IList<string>"),
+                ("FRG-T-038", "sectionsnotchecked", "sectionsNotChecked",
+                 "int")):
+            make(work, slug, declares(fid, name, "accounting", kind), silent)
+            got = verdicts_for(tool, work, slug)[13]
+            check(got[0] == tool.ANSWERED and name in got[1],
+                  "a contract declaring `%s` as accounting has declared what "
+                  "it dropped (%s)" % (name, got[0]))
+
+        # AND THE NEGATIVE CASES - each one stays on the worklist.
+        make(work, "noasresult",
+             declares("FRG-T-039", "noAnalytical", "result",
+                      "IList<ElementId>"), silent)
+        got = verdicts_for(tool, work, "noasresult")[13]
+        check(got[0] == tool.LOOK,
+              "the same name declared a RESULT is a thing it found, never "
+              "what it dropped - still raised")
+
+        make(work, "notafamily",
+             declares("FRG-T-040", "notAFamily", "accounting", "bool"),
+             silent)
+        got = verdicts_for(tool, work, "notafamily")[13]
+        check(got[0] == tool.LOOK,
+              "a yes/no about the whole document counts nothing its loop "
+              "passed over - still raised")
+
+        make(work, "scannedonly",
+             declares("FRG-T-041", "scanned", "accounting", "int"), silent)
+        got = verdicts_for(tool, work, "scannedonly")[13]
+        check(got[0] == tool.LOOK,
+              "a tally of work done is accounting too, and says nothing of "
+              "what was dropped - still raised")
+
+        make(work, "nothinghit",
+             declares("FRG-T-042", "nothingHit", "accounting",
+                      "IList<ElementId>"), silent)
+        got = verdicts_for(tool, work, "nothinghit")[13]
+        check(got[0] == tool.LOOK,
+              "`nothingHit` begins with no-t-h, not with a negative word - "
+              "still raised")
+
         print()
         print("4. Question 13 knows a reader from a writer")
         print("-" * 66)

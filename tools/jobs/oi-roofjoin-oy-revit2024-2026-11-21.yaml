@@ -1,0 +1,55 @@
+# EXPORT_MODEL_TO_NWC (DRAFT, PUBLISH) - the 2026-11-16 night's morning list
+# (Group OI: "No batch sends one (D-106)"). No group of its own. Written
+# 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/oi-roofjoin-oy-revit2024-2026-11-21.yaml --dry-run
+#
+# PUBLISH. No batch sends one (D-106): the dry run reports WILL NOT RUN IN A
+# BATCH and prints the `validate --allow-publish ... --write` command that IS
+# the proof - the owner's line, his Publish and Changes switches on. A proof
+# rolls the model back; IT DOES NOT UNWRITE A FILE, so the folder below is a
+# scratch folder under %TEMP%\heron-work (the path form the 2026-11-16 night
+# job file records for this PC). The card makes the folder if it is missing.
+#
+# THE MODEL: "roofjoin-oy" (Group OY, OY1 and the 2026-11-21 run), Heron's
+# scratch from DefaultMetric.rte, Revit 2024, saved as
+# %TEMP%\heron-work\runs-1121\roofjoin-oy.rvt - four roofs, small, and a 3D
+# view "{3D}" that shows them all. Never a working model.
+#
+# THE MACHINE, NOT THE MODEL: the positive needs the Navisworks NWC exporter
+# installed for Revit 2024. Nothing recorded says it is. Without it the
+# positive comes back exporterMissing true and nothing written - the card's
+# own first negative, and then the positive is owed on a PC that has it.
+#
+# THE ARRANGEMENT. The positive: the export scoped to the 3D view "{3D}". The
+# negative is a different VALUE: scopeViewId a FLOOR PLAN - problem says it is
+# not a 3D view, no file, and NO fallback to the whole model
+# (tests/cases.yaml). NEEDS THE MODEL'S OWN NAME: "FloorPlan: Level 1" is the
+# name night-scratch (the same DefaultMetric template) records; confirm it in
+# roofjoin-oy's Project Browser, or write the plan that is there.
+
+model: "roofjoin-oy: Heron's DefaultMetric scratch with four roofs and the 3D view {3D}, Revit 2024"
+
+defaults:
+  write: true
+  in: "roofjoin-oy"
+  setup: []
+
+jobs:
+  - fragment: export-model-to-nwc
+    expect: exportedPath
+    set:
+      exportFolder: "C:/Users/ajmal/AppData/Local/Temp/heron-work/nwc-proof"
+      fileName: "roofjoin-oy-nwc-proof"
+      scopeViewId: "{3D}"
+    negative-set:
+      exportFolder: "C:/Users/ajmal/AppData/Local/Temp/heron-work/nwc-proof"
+      fileName: "roofjoin-oy-nwc-proof-negative"
+      scopeViewId: "FloorPlan: Level 1"
+    note: >
+      Negative - THE FIRST CASE TO RUN: the floor plan, problem "scopeViewId is
+      not a 3D view ...", exportedPath empty, NO roofjoin-oy-nwc-proof-negative
+      file in the folder. Positive: exportedPath names
+      nwc-proof\roofjoin-oy-nwc-proof.nwc, exporterMissing false, problem
+      empty. Then OPEN IT in Navisworks - a right-named file that will not open
+      is the failure a path cannot show (the second route).

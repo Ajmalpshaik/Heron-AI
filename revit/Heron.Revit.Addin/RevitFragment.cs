@@ -3844,7 +3844,7 @@ namespace Heron.Revit.Addin
                         catch (Exception failure)
                         {
                             _said.CouldNotDismiss(_step, batch[i].Text, batch[i].Elements,
-                                                  Innermost(failure).Message);
+                                                  batch[i].Ids, Innermost(failure).Message);
                             return FailureProcessingResult.ProceedWithRollBack;
                         }
                     }
@@ -3867,6 +3867,13 @@ namespace Heron.Revit.Addin
             /// BARE CATCHES, the guarded-read idiom this file uses everywhere
             /// else (`try { title = target.Title; } catch { }`): none of the
             /// three needs the exception, only the fallback.
+            ///
+            /// AND WHICH ELEMENTS (row 5b-1889): each failing id as Revit
+            /// prints it, ElementId.ToString() - on every release 2020 to
+            /// 2027, with no IntegerValue and no int/long split - so a reply
+            /// can say which of its own results a warning is about. Read in the
+            /// same guarded block as the count: ids that cannot be read leave
+            /// the count as it was and the message quoted as before.
             /// </summary>
             private static HeronFailureNote.Posted Read(FailureMessageAccessor message)
             {
@@ -3879,14 +3886,23 @@ namespace Heron.Revit.Addin
                 catch { }
 
                 var elements = 0;
+                List<string> named = null;
                 try
                 {
                     var ids = message.GetFailingElementIds();
                     elements = ids == null ? 0 : ids.Count;
+                    if (ids != null)
+                    {
+                        named = new List<string>(ids.Count);
+                        foreach (var id in ids)
+                        {
+                            if (id != null) named.Add(id.ToString());
+                        }
+                    }
                 }
                 catch { }
 
-                return new HeronFailureNote.Posted(severity, text, elements);
+                return new HeronFailureNote.Posted(severity, text, elements, named);
             }
 
             /// <summary>
@@ -4239,17 +4255,13 @@ namespace Heron.Revit.Addin
             // AND EVERY ONE OF THEM, for anything reading the reply rather than
             // the sentence: the sentence quotes a few kinds and counts the rest,
             // and this is where "the rest" is. `warnings` is the move path's
-            // field name for the same count, so the two replies agree.
+            // field name for the same count, so the two replies agree. Each
+            // one names the element ids Revit gave it (row 5b-1889), written
+            // by HeronFailureNote.Listed, the one writer of that object.
             var listed = new List<string>();
             if (said != null)
             {
-                foreach (var one in said.Dismissed)
-                {
-                    listed.Add(Json.Obj(Json.Str("text", one.Text),
-                                        Json.Num("times", one.Times),
-                                        Json.Num("elements", one.Elements),
-                                        Json.Str("step", one.Step)));
-                }
+                foreach (var one in said.Dismissed) listed.Add(HeronFailureNote.Listed(one));
             }
 
             // `rolledBack` MEANS THE ROLLBACK HELD AS FAR AS IT WAS CHECKED -

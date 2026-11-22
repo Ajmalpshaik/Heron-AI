@@ -1,0 +1,54 @@
+# PUBLISH_COORDINATES (DRAFT, ADMIN) - NEEDS-CHECKING Group MO, row MO6, and the
+# 2026-11-16 night's morning list (Group OI: "No batch sends one"). Not in
+# tools/jobs/offset-insert-views-systems-analysis-mo-2026-11-03.yaml. Written
+# 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/mo-heron-mo-host-revit2024-2026-11-21.yaml --dry-run
+#
+# ADMIN. No batch sends one (D-106): the dry run reports WILL NOT RUN IN A
+# BATCH and prints the `validate --allow-publish ... --write` command that IS
+# the proof - MO6, the owner's line, his Admin and Changes switches on.
+#
+# THE MODELS (Group MO, MO0 and MO1; the card's tests/cases.yaml): two scratch
+# projects under %TEMP%\heron-work, never working models. "Heron MO Link",
+# from the metric architectural template, four walls, its shared coordinates
+# never changed, saved and CLOSED. "Heron MO Host", from the metric
+# mechanical template, with "Heron MO Link.rvt" linked Origin to Origin and
+# then moved 10000 mm east; saved. MO says any release 2021 to 2027; Revit
+# 2024 here. After the run, close the host WITHOUT saving, so Revit never asks
+# to write the link (row 5b-1461).
+#
+# NEEDS THE MODEL'S OWN NAME: the link INSTANCE's name as the Project
+# Browser's Revit Links shows it was never recorded (MO6 writes "<the
+# instance's name>"). Write it below in place of the capitals.
+#
+# THE ARRANGEMENT. One link, two VALUES (rule 5): confirm repeating the link's
+# file name exactly, and confirm naming another file - nothing published.
+# `position` is left out both times (the linked model's current position).
+
+model: "Heron MO Host (metric mechanical template) with Heron MO Link.rvt linked origin to origin and moved 10000 mm east, Revit 2024"
+
+defaults:
+  write: true
+  in: "Heron MO Host"
+  setup: []
+
+jobs:
+  - fragment: publish-coordinates
+    expect: published
+    set:
+      linkInstance: "THE LINK INSTANCE'S NAME"
+      confirm: "Heron MO Link.rvt"
+    negative-set:
+      linkInstance: "THE LINK INSTANCE'S NAME"
+      confirm: "Heron MO Other.rvt"
+    note: >
+      MO6. Negative - THE FIRST CASE TO RUN: published false, refused "... It
+      is done only with confirm repeating the link's name exactly, \"Heron MO
+      Link.rvt\" ... (confirm was \"Heron MO Other.rvt\"). NOTHING WAS
+      PUBLISHED.", before and expected filled, after empty, waitingToSave
+      false. Positive: published true, positionName as Revit names it
+      (RECORD it), expected "E/W 10000 mm, N/S 0 mm, elevation 0 mm, angle to
+      True North 0 degrees" or this model's own values, after the same or
+      RECORD what it reads, waitingToSave true, the finding "THE LINKED FILE
+      IS NOT SAVED YET". Heron MO Link.rvt's file time on disk UNCHANGED.

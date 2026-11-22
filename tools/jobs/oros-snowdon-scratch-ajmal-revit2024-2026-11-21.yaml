@@ -1,0 +1,55 @@
+# NEEDS-CHECKING Group OR (docs/needs-checking/group-or.md) OR17 and OR28, and
+# Group OS (group-os.md) OS11 - COPY_VIEW_FILTERS version 3: the filters go in
+# the source's own order with Enable Filter kept (row 5b-1853), a target whose
+# template leaves V/G Overrides Filters out is copied onto (row 5b-1917), and
+# onlyFilterNamed may be left out (rows 5b-227, 101). Written 2026-11-21 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/oros-snowdon-scratch-ajmal-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/oros-snowdon-scratch-ajmal-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE MODEL: "Snowdon-scratch_ajmal.al", the scratch copy of Snowdon Towers
+# Sample HVAC that version 1 was proved on (2026-09-08, Revit 2024): the
+# source "FloorPlan: L2" carries 4 filters, and the target "Model Linking"
+# took all 4 (viewsChanged 1). Never a working model. OR17 asks Revit 2024
+# first, then 2020.
+#
+# THE ARRANGEMENT. NO SETUP CHAIN: every input is a value. The positive is
+# OS11's: onlyFilterNamed LEFT OUT, so every filter is copied - and with it
+# OR17's order finding on 2024. The negative is version 1's own: the same
+# source and target with onlyFilterNamed a filter the source does not carry -
+# a different value, carrying every value, because a negative-set replaces
+# the set. Every run is ROLLED BACK.
+#
+# BY HAND, NOT HERE: OR17's full arrangement (one of L2's filters moved up
+# with REORDER_VIEW_FILTERS and one with Enable Filter unticked, kept in the
+# copy, so the order and the tick can be seen on the target), OR17 on Revit
+# 2020, and OR28's two templated targets - each one validate, on a copy where
+# the owner made them.
+
+model: "Snowdon-scratch_ajmal.al - scratch copy of Snowdon Towers Sample HVAC, FloorPlan: L2 with 4 filters, Revit 2024"
+
+defaults:
+  in: "Snowdon-scratch_ajmal.al"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: copy-view-filters
+    expect: filtersApplied
+    set:
+      sourceView: "FloorPlan: L2"
+      targetViews: "Model Linking"
+    negative-set:
+      sourceView: "FloorPlan: L2"
+      targetViews: "Model Linking"
+      onlyFilterNamed: "ZZZNOTHINGHERE"
+    note: >
+      OS11, with OR17's negative. Positive: filtersApplied 4, viewsChanged 1,
+      and the binding note saying onlyFilterNamed took the card's empty text;
+      findings saying the filters went in the source's own order (Revit 2024
+      reads it). Open Model Linking's Filters tab only on a kept run - this one
+      is rolled back. Negative: refused naming what L2 carries, filtersApplied
+      0, viewsChanged 0, no finding of order. If Model Linking now has a view
+      template that controls its filters, it lands in blockedByTemplate - write
+      it down and choose a plan with no template.

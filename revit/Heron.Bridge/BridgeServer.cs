@@ -822,6 +822,12 @@ namespace Heron.Bridge
                     Json.Bool("inUse", holder != null),
                     Json.Bool("mine", holder != null && holder == Json.ReadString(request, "client")),
                     Json.Num("leaseSecondsRemaining", (long)HeronLease.SecondsRemaining),
+                    // WHETHER A JOB WAITS FOR THE MODELLER ON IT (row 5b-1838).
+                    // While one does the lease cannot lapse, and the number
+                    // above is only the least it can then last - so a session
+                    // list read "~5 min left" for as long as a box stayed
+                    // open. Said, claiming nothing; an older client ignores it.
+                    Json.Bool("leaseWaitingForModeller", HeronLease.Waiting),
                     // The model in front, as the add-in last saw it on Revit's
                     // thread - a title only, read without the lease and without
                     // Revit (5b-1470 c). Null before any view was activated.

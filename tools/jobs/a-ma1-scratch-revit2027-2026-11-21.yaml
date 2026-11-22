@@ -1,0 +1,61 @@
+# CREATE_RADIAL_DIMENSION version 2 (DRAFT) - NEEDS-CHECKING Group A, row A19
+# ("create-radial-dimension needs Revit 2025 or later"), and the 2026-11-16
+# night's morning list (Group OI: "a revit: list without 2024"). Written
+# 2026-11-21 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/a-ma1-scratch-revit2027-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/a-ma1-scratch-revit2027-2026-11-21.yaml --session <pid>
+#
+# THE RELEASE. The card claims 2025, 2026 and 2027 only - RadialDimension.Create
+# is not in 2020 to 2024 - so this cannot run on the night's Revit 2024. Revit
+# 2027 is the release Heron was installed into on the owner's PC
+# (docs/work-notes/plans/windows-setup-2026-11-16.md: 2020, 2024, 2026 and
+# 2027); 2026 does as well.
+#
+# THE MODEL. No group arranged a model for this card. The nearest recorded one
+# is Group MA's MA1 (tools/jobs/create-arc-length-dimension-ma-2026-11-02.yaml),
+# made for the sibling arc length card: a scratch project from Revit's metric
+# ARCHITECTURAL template, saved under %TEMP%\heron-work, never a working
+# model, holding L1 - an arc DETAIL line in "FloorPlan: Level 1", radius
+# 3000 mm, 60 degrees. Make it (or open the MA1 scratch) in Revit 2027, and
+# add ONE straight grid renamed "A" - the negative this card's own
+# tests/cases.yaml names. NEEDS THE MODEL'S OWN NAME: no document name was
+# recorded for MA1, so `in:` is left out and the job runs in the model in
+# front.
+#
+# L1'S ID IS NOT KNOWN until it is drawn. Read it off Revit (Manage > IDs of
+# Selection) and write it below in place of the capitals - until then the
+# positive is refused naming the line, expected, NOT RUN.
+#
+# THE ARRANGEMENT is typed, not selected: the positive the arc line, the
+# negative the straight grid "A" - a different reference, not an empty one,
+# and one with no arc to dimension (rules 3 and 5). The negative-set carries
+# every value, because it REPLACES the set. Every write is ROLLED BACK. ONE
+# job - a run record is kept per card; the diameter (isDiameter true) is the
+# card's second positive, run by hand afterwards (note).
+
+model: "scratch project from the metric architectural template, as Group MA's MA1 (arc detail line L1, radius 3000 mm) plus one straight grid A, Revit 2027"
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: create-radial-dimension
+    expect: created
+    set:
+      view: "FloorPlan: Level 1"
+      arc: "line L1'S ID"
+      isDiameter: "false"
+    negative-set:
+      view: "FloorPlan: Level 1"
+      arc: "grid A"
+      isDiameter: "false"
+    note: >
+      Negative - THE FIRST CASE TO RUN: "grid A", a straight grid, refused in
+      words naming the arc requirement (tests/cases.yaml), created empty, not a
+      raw Revit exception. Positive: created one id, measured "radius 3000 mm"
+      (the radius L1 was drawn at, not read off the report). Then by hand, the
+      same line with isDiameter true: a DIAMETER dimension reading 6000 mm -
+      the only route to one in a project on any release. Second route:
+      Annotate > Radial on the same arc.

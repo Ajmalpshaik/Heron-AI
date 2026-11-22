@@ -13,6 +13,28 @@ positive:
       AA, AB after Z - not a stop, and not A1. Letters increment the way a
       drawing does
 
+  # VERSION 4 (2026-11-21, row 5b-1948, issue #1174) - what was made is
+  # said in `findings`, and `refused` holds a refusal and nothing else. Each
+  # FAILS on version 3, which put the line saying what was made in `refused`.
+  # NOT RUN - NEEDS-CHECKING Group PI (PI1 to PI3).
+  - given: >
+      VERSION 4, gridLines "4000,-6000,0; 8000,-6000,0" and gridNames "Wing"
+      - the call seen on 2026-11-21 - kept
+    expect: >
+      one grid named Wing; `refused` EMPTY; `findings` one line, "1 grid
+      line(s) drawn between the points given, each one level"
+  - given: VERSION 4, spacingsAcross "6000, 6000" and spacingsUp "6000, 6000"
+    expect: >
+      six grids; `refused` empty; `findings` "2 spacing(s) across gave 3
+      lettered grid(s), and 2 spacing(s) up gave 3 numbered grid(s) ..."
+  - given: >
+      VERSION 4, centreMm "0,0", radiiMm "6000", spokeAnglesDegrees "0, 180",
+      sweep 0 to 90
+    expect: >
+      one arc and two spokes; `refused` empty; `findings` the line naming
+      the arcs and spokes and the names Revit gave, and a line saying the 180
+      spoke lies outside the sweep
+
 negative:
   - given: four spacings across
     expect: >
@@ -77,8 +99,8 @@ negative:
     expect: two arcs drawn just short of a closed circle - a grid cannot be closed
   - given: the same with a spoke at 180 degrees and the sweep 0 to 90
     expect: >
-      the 180 spoke drawn, and `refused` saying it lies outside the arcs'
-      sweep - never dropped
+      the 180 spoke drawn, and `findings` saying it lies outside the arcs'
+      sweep - never dropped. (`refused` until version 4, row 5b-1948)
   - given: radiiMm empty, spokeAnglesDegrees "0, 90", centreMm "0,0", sweep 0 to 90
     expect: refused - spokes need a radius to run to - and no grid made
   - given: radiiMm "0", centreMm "0,0", sweep 0 to 90
@@ -99,6 +121,14 @@ negative:
       cannot be built, or the call throws and the whole change rolls back
       where Revit refuses the grid. CREATE_RADIAL_GRIDS kept the others; not
       carried, on purpose
+
+  # VERSION 4 (2026-11-21, row 5b-1948, issue #1174) - a refusal says
+  # nothing was made. Its positives are under `positive:`. NOT RUN -
+  # NEEDS-CHECKING Group PI (PI4).
+  - given: VERSION 4, gridLines "0,0,0; 30000,0,500"
+    expect: >
+      refused as version 3 refused - 500 mm named, nothing created - and
+      `findings` EMPTY: a refusal says nothing was made, and nothing says it was
 
 second_route:
   - Dimension between two adjacent grids in the model and compare against the spacing that was asked for

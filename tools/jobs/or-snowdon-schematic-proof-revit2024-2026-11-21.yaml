@@ -1,0 +1,45 @@
+# NEEDS-CHECKING Group OR (docs/needs-checking/group-or.md), OR6 -
+# DRAW_MEP_SCHEMATIC version 2 (row 5b-1488): a run label whose pressure drop
+# is above 0 but rounds to 0.00 reads "< 0.01 in-wg", never a bare "0.00", and
+# findings counts them. Written 2026-11-21 in a cloud session with no Revit.
+# NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/or-snowdon-schematic-proof-revit2024-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/or-snowdon-schematic-proof-revit2024-2026-11-21.yaml --session <pid>
+#
+# THE MODEL: "Snowdon HVAC - schematic proof", the saved scratch copy of
+# Revit 2024's Snowdon Towers Sample HVAC that version 1 was proved on
+# (2026-11-09, Group MW: MW1 recorded "Mechanical Supply Air 1", 10 elements;
+# open the other Snowdon models beside it, or opening it stops on a Revit
+# warning). Never a working model. Version 1's own labels on it read
+# "dp 0.00 in-wg" (the pressure-drop line) for the runs from duct 1365662 and the two flex ducts -
+# the case OR6 checks.
+#
+# NO SETUP CHAIN, AS IN MW2 (draw-mep-schematic-mw-2026-11-08.yaml): the card
+# finds the system by its name. The negative is a DIFFERENT VALUE - a system
+# name no system has and none contains - and must refuse and make no view.
+# Every run is ROLLED BACK.
+
+model: "Snowdon HVAC - schematic proof - saved scratch copy of Snowdon Towers Sample HVAC, Revit 2024"
+
+defaults:
+  in: "Snowdon HVAC - schematic proof"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: draw-mep-schematic
+    expect: viewId
+    set:
+      systemName: "Mechanical Supply Air 1"
+    negative-set:
+      systemName: "ZZZ No Such System"
+    note: >
+      OR6. Negative - THE FIRST CASE TO RUN: refused, naming the systems the
+      model has, viewId null, no new view in the Project Browser. Positive:
+      viewId a new drafting view "Schematic - Mechanical Supply Air 1", 4
+      nodes, 4 segments and 2 terminals as version 1's proof read; NO run label
+      reading a bare "0.00 in-wg" where that run's Pressure Drop in Properties
+      is above 0 - such a label reads "< 0.01 in-wg", and findings counts them.
+      Check duct 1365662 (MW10) in Properties at a finer precision, set in
+      Project Units and undone. Rolled back.

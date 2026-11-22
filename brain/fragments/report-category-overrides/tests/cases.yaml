@@ -67,6 +67,18 @@ positive:
       overrideList and findings exactly as version 4's, with no "would not
       give their overrides" sentence whatever skippedCategories holds
 
+  - given: >
+      VERSION 6. allCategories true on Group ED's plan, the view that overrides
+      77 of 85 model categories for the linked architecture
+    expect: >
+      every row as version 5 gave it where every read came back; any row
+      reading "NOT READ - Revit says: ..." written down with Revit's words and
+      checked in Visibility/Graphics, and the section's first line counting
+      exactly those rows, never inside its hidden or overridden totals. Write
+      the number down: it says whether Revit ever refuses a row of an ordinary
+      plan, which nothing had measured. A zero is a pass and leaves the NOT
+      READ path itself not run - the proof says so in its words
+
 negative:
   - given: a view with NOTHING overridden at category level
     expect: >
@@ -142,6 +154,16 @@ negative:
       their overrides" sentence present exactly when it is above 0 - write the
       number down: it says whether Revit refuses some category drawn in an
       ordinary plan. Never the sentence beside a listed override
+
+  - given: >
+      VERSION 6, NEGATIVE. allCategories true on the view with NOTHING
+      overridden at category level
+    expect: >
+      the same rows as version 5, each "V/G: no override" CHECKED as plain in
+      Visibility/Graphics; no "NOT READ" anywhere and no "would not give all of
+      their Visibility/Graphics" sentence while every read came back - a
+      version that wrote it on a row that was read would make every plain
+      category look unread
 
 second_route:
   - Open the view's Visibility/Graphics and look down the Model Categories tab for a non-default row

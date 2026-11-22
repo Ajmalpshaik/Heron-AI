@@ -1,0 +1,74 @@
+# NEEDS-CHECKING Group OY, row OY8 - EXTEND_ROOF_TO_ROOF version 2 on Revit
+# 2020 (or 2021), where a roof by footprint cannot be extended: Revit's API
+# has no sketch editing for an add-in before 2022. Written 2026-11-21 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/oy-roofjoin-oy-revit2020-2026-11-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/oy-roofjoin-oy-revit2020-2026-11-21.yaml --session <pid>
+#
+# THE MODEL NEEDS THE OWNER'S OWN NAME, so `in:` is left out and the job runs
+# on the model in front of the Revit given to --session. The only roofjoin-oy
+# recorded was saved by Revit 2024 (docs/needs-checking/group-oy.md, the
+# 2026-11-21 run), and Revit 2020 cannot open it. So build it again on Revit
+# 2020 by OY1's recipe - Level 2 at 3000 mm; the main roof by footprint 0,0 to
+# 12000,8000 mm on Level 2, south and north edges Defining Slope at 30
+# degrees; the wing roof by extrusion on a plane from 4000,-6000 to
+# 8000,-6000 mm, profile 0,500; 2000,1655; 4000,500, Extrusion Start 0 and End
+# 3000 mm, running north - and add Wing F as OY6 says: a roof by footprint on
+# Level 2, the rectangle 4000,11000 to 8000,17000 mm, east and west edges
+# Defining Slope at 30 degrees. Save it under %TEMP%\heron-work, write its
+# name into `in:` below, and check {3D} shows the roofs with no section box.
+# Never a working model.
+#
+# THE ARRANGEMENT. On this release the D-30 pair is two DIFFERENT SELECTIONS,
+# each a box for select-in-region, Roofs only, with the same view and limit:
+#   - positive: the wing and the main roof, box (-500,-6500,2500) to
+#     (12500,8500,9000) - OY3 on Revit 2020: a roof by extrusion is extended
+#     on every release;
+#   - negative: Wing F and the main roof, box (-500,-500,2500) to
+#     (12500,17500,9000) - OY8: two roofs by footprint, nothing may change.
+# Both boxes are worked out from the boxes the Revit 2024 build read back;
+# read the binding note on each answer - `elements from the selection (2)`
+# both times (fragment-proving, rule 5). The negative-set carries EVERY
+# value. Every write is ROLLED BACK.
+#
+# THE RUN RECORD IS KEPT PER CARD: this job writes the same
+# brain/proof-drafts/runs/extend-roof-to-roof.json as
+# tools/jobs/pk-pg-oy-roofjoin-oy-revit2024-2026-11-21.yaml's Revit 2024 job
+# and tools/jobs/extend-roof-to-roof-oy-2026-11-20.yaml. Run it after the
+# Revit 2024 draft has been read, never before.
+
+model: "a roofjoin-oy built again on Revit 2020 by OY1's recipe, with Wing F (OY6) added - its document name to be written in by the owner"
+
+defaults:
+  write: true
+  setup: [select-in-region, set-selection]
+
+jobs:
+  - fragment: extend-roof-to-roof
+    expect: extended
+    set:
+      minMm: "-500,-6500,2500"
+      maxMm: "12500,8500,9000"
+      exact: "false"
+      categories: Roofs
+      view3d: "{3D}"
+      maxExtendMm: "10000"
+    negative-set:
+      minMm: "-500,-500,2500"
+      maxMm: "12500,17500,9000"
+      exact: "false"
+      categories: Roofs
+      view3d: "{3D}"
+      maxExtendMm: "10000"
+    note: >
+      OY8 - THE FIRST CASE TO RUN, Wing F and the main roof: extended 0,
+      refused begins "NOTHING MET" (or "Both roofs are roofs by footprint,
+      and Revit 2020's API has no sketch editing for an add-in ...", as OY4 (b)
+      reads on 2020) and the findings say "Revit 2020's API has no sketch
+      editing for an add-in (SketchEditScope came in 2022), so this tool
+      cannot extend a roof by footprint on this release ... Modify >
+      Join/Unjoin Roof", naming the release; nothing changed. Positive, the
+      wing and the main roof: extended 1, extendedRoof the wing's id, "EXTENDED:
+      ... its end moved <needMm> mm toward roof by footprint ..." - needMm
+      about 5067 if the build matches Revit 2024's; write it down beside it.

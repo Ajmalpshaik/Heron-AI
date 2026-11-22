@@ -1630,7 +1630,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ow.md`](needs-checking/group-ow.md)
 
-## Group OX - a job that works only outside the model opens no transaction group in it (D-192): a new family from a chat, and an export of families - BUILT, NOT RUN IN REVIT (2026-11-20)
+## Group OX - a job that works only outside the model opens no transaction group in it (D-192): a new family from a chat, and an export of families - BUILT 2026-11-20; OX1 and OX2's positive RUN ON REVIT 2024 2026-11-21, OX2's negative and OX3 to OX5 owed
 
 **Its own file:** [`needs-checking/group-ox.md`](needs-checking/group-ox.md)
 
@@ -1674,6 +1674,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ph.md`](needs-checking/group-ph.md)
 
+## Group PI - CREATE_GRIDS version 4: what was made is said in findings, and refused holds a refusal and nothing else - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pi.md`](needs-checking/group-pi.md)
+
+## Group PJ - COPY_ELEMENTS version 6: a copy by an offset asked with the offset alone, the three level values left out - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pj.md`](needs-checking/group-pj.md)
+
 ## Group PK - eight reading tools count what they pass over (D-64, work-note item WN-7) - DRAFT until proved (2026-11-21)
 
 **Its own file:** [`needs-checking/group-pk.md`](needs-checking/group-pk.md)
@@ -1681,6 +1689,22 @@ Step 6 is finished, and not before. At that point:
 ## Group PL - a carried id list naming elements here and not here is refused whole, and a read whose answer was lost says it reached Revit - BUILT, NOT RUN IN REVIT (2026-11-21)
 
 **Its own file:** [`needs-checking/group-pl.md`](needs-checking/group-pl.md)
+
+## Group PM - a dismissed warning names its elements, and a picture's longest side is the width asked - BUILT, NOT RUN IN REVIT (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pm.md`](needs-checking/group-pm.md)
+
+## Group PN - REPORT_CATEGORY_OVERRIDES version 6: a whole-dialog read that failed says NOT READ, never "shown" or "no override" - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pn.md`](needs-checking/group-pn.md)
+
+## Group PO - ADD_FAMILY_CONNECTOR version 7: only a face that faces out, and at the point given, counts - DRAFT until proved (2026-11-21)
+
+**Its own file:** [`needs-checking/group-po.md`](needs-checking/group-po.md)
+
+## Group PP - a central model opened beside is not saved, a nested part kept upright says so, the session list names a wait, and the camera's eye on the sample house - BUILT, NOT RUN IN REVIT (2026-11-21)
+
+**Its own file:** [`needs-checking/group-pp.md`](needs-checking/group-pp.md)
 
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 

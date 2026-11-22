@@ -228,8 +228,17 @@ def entries(record):
     for one in reply.get("warningsDismissed") or []:
         if not isinstance(one, dict):
             continue
-        lines.append("warning   %s (x%s, %s element(s)%s)"
-                     % (one.get("text"), one.get("times"), one.get("elements"),
+        # WHICH ELEMENTS, where the add-in sent them (row 5b-1889): its ids as
+        # Revit printed them, and how many the reply left out. An add-in older
+        # than this sends none, and the line reads as it did.
+        ids = one.get("elementIds")
+        named = ""
+        if isinstance(ids, list) and ids:
+            named = ", ids " + ", ".join(str(i) for i in ids)
+            if isinstance(one.get("elementIdsMore"), int) and one["elementIdsMore"] > 0:
+                named += " and %d more" % one["elementIdsMore"]
+        lines.append("warning   %s (x%s, %s element(s)%s%s)"
+                     % (one.get("text"), one.get("times"), one.get("elements"), named,
                         ", setup step " + one["step"] if one.get("step") else ""))
 
     if reply.get("verdict"):

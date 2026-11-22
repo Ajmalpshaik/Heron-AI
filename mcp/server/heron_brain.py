@@ -1007,7 +1007,7 @@ def _done_here_by(RETRIEVE, store, walled, here, ceiling):
             "words": reached[best][0]}
 
 
-def lookup(request, revit=None, question=False):
+def lookup(request, revit=None, question=False, ceiling=None):
     """
     What the user asked for, resolved to a CAPABILITY through retrieval.
 
@@ -1026,9 +1026,18 @@ def lookup(request, revit=None, question=False):
     the user meant, Heron never does). Then every fragment above
     `question_ceiling()` is left out before ranking, and the answer says how
     many. False, the default, is exactly the lookup this always was.
+
+    `ceiling` is a DOOR's own: the highest risk the tool that asked will run,
+    a word on the ladder ("EXECUTE"). Given, it is the ceiling whatever
+    `question` says, and the answer carries it and its count the same way -
+    so a door that refuses everything above its own risk is never handed a
+    list of only what it will refuse (row 5b-1951: revit_show, "select the
+    level named Level 2", five MODIFY cards and no select). None, the
+    default, leaves `question` to decide, as before.
     """
     _S, _CAP, SKILL, _SE, _E, RETRIEVE = _brain()
-    ceiling = question_ceiling() if question else None
+    if ceiling is None:
+        ceiling = question_ceiling() if question else None
     opened = _Open()
     with opened as store:
         answer = RETRIEVE.find(store, request, revit=revit, ceiling=ceiling)
@@ -1101,17 +1110,30 @@ def lookup(request, revit=None, question=False):
         # done by hand, while ATTACH_WALLS does that job there. _done_here_by
         # says which card, if any; the line is then not said, and that card
         # is the answer, with the walled one named beside it.
+        #
+        # AND A CARD'S OWN DECLARED WORDS NAME THAT CARD, WHATEVER THE RANKING
+        # (row 5b-1837). A card's exact phrase reaches it by identity only
+        # where it is offered, so on a release it leaves out its own words
+        # were ranked like any sentence and another card could come first: on
+        # Revit 2024 "dimension the radius" - CREATE_RADIAL_DIMENSION's words,
+        # 2025 on - reached LABEL_FAMILY_RADIUS, and nothing named the card
+        # they were written for. The identity table says whose words they are;
+        # only when they are nobody's is the request ranked again.
         other_release, done_here_by = None, None
         walled = set(e.id for e in excluded
                      if e.reason.startswith("declared for Revit"))
         if revit is not None and walled and answer.route != "identity":
-            wider, _all = RETRIEVE.retrieve(store, request, revit=None,
-                                            limit=1, ceiling=ceiling)
-            if wider and wider[0].id in walled:
-                row = wider[0].row
+            own, _status = _SE.short_circuit(store, request)
+            if own in walled:
+                row = next((r for r in store.fragments() if r["id"] == own), None)
+            else:
+                wider, _all = RETRIEVE.retrieve(store, request, revit=None,
+                                                limit=1, ceiling=ceiling)
+                row = wider[0].row if wider and wider[0].id in walled else None
+            if row is not None:
                 named = {
                     "capability": row["capability"],
-                    "provider": wider[0].id,
+                    "provider": row["id"],
                     "revit": _releases(row),
                 }
                 done_here_by = _done_here_by(RETRIEVE, store, row, _rows, ceiling)
@@ -3120,6 +3142,13 @@ def proof_status(folder):
     DRAFT's one try takes a card declared MODIFY and no other
     (heron_bridge_client.unproven_refusal).
 
+    `proof_held` IS THE CARD'S OWN `proof-held:` REASON, or None - row 5b-1960.
+    A card held at DRAFT on purpose says why there, and tools/check-signatures.py
+    reads it as a deliberate hold; without it here every refusal of such a card
+    said "no recorded proof stands behind its code", untrue of one whose proof
+    still matches its code. Carried as written - which statuses a hold speaks
+    for is the refusal's to decide.
+
     None rather than a guess. A caller told None says the status could not be
     read; it never says PROVEN.
     """
@@ -3143,6 +3172,7 @@ def proof_status(folder):
         "model": str(proof.get("model") or "") or None,
         "by": str(proof.get("by") or "") or None,
         "risk": str(frag.data.get("risk") or "").upper() or None,
+        "proof_held": " ".join(str(frag.data.get("proof-held") or "").split()) or None,
     }
 
 

@@ -429,8 +429,16 @@ class _FakeServer(object):
                 if not bound:
                     raise outer.NotBound("No Revit is connected.")
 
+        # The client's own words for a card held at DRAFT (row 5b-1960),
+        # handed through rather than copied - the client is stdlib only.
+        if os.path.join(ROOT, "mcp", "client") not in sys.path:
+            sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
+        import heron_bridge_client as real_client
+
         class bridge(object):
             KEEPABLE_STATUSES = ("PROVEN", "PRODUCTION")
+            held_reason = staticmethod(real_client.held_reason)
+            held_proof = staticmethod(real_client.held_proof)
 
             @staticmethod
             def proof_of(folder):
