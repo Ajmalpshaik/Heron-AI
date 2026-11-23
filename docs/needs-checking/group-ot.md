@@ -117,3 +117,11 @@ positive run once through `try-once` and KEPT by the owner: *"OmniClass Number 2
 Packaged Air Conditioners - Revit filled OmniClass Title"*, `changed 1`; negative (`validate --write --kept`)
 `OmniClass Number=99.99.99.99`: `changed 0`, *"Nothing was changed. "99.99.99.99" is not a code in the classification
 file ..."*; rolled back. OT23 and OT24 (Work Plane-Based / Always Vertical / Shared) are still owed.
+
+**Later the same day, scratch project `place-scratch` (Default_M_ENU.rte, `%TEMP%\heron-work\fam-prove`):**
+`PLACE_FAMILY_INSTANCES` v7 proved and signed on a project placement, not on OT11's arrangement - positive
+(`validate --write`, rolled back): `Air Conditioner-Outside Unit: 33" x 24" x 24"` at 0,0,0 and 3000,0,0 on Level 1
+with `rotationDegrees=-90` - `placed` 2, *"2 x level-based, on 'Level 1', standing 0 mm above it"*, each turned 90
+degrees clockwise; negative the same with `structuralType=sprinkler` - `placed` 0, *"'sprinkler' is not a structural
+type Revit knows ... Nothing was placed"*. (An empty point list is refused at binding, `bad_request_value`, so it
+cannot serve as the negative.) OT11 and OT12 are still owed.
