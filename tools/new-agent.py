@@ -21,7 +21,7 @@ Writes three files and nothing else:
 WHY THIS EXISTS
 ---------------
 146 agents can be built on a machine with no Revit
-(docs/work-notes/plans/agent-build-order-2026-09-13.md). Each one needs the
+(docs/28 section 10, "The order the agents were built in"). Each one needs the
 same five-field metadata header, a contract in the same shape, and a test. Done
 by hand 146 times that is 146 chances to mistype a layer, invent a field, or
 copy a header from a file in a different part - and check-metadata.py finds the
