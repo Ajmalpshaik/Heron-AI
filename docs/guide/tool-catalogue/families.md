@@ -189,7 +189,7 @@ Makes a FAMILY TYPE parameter in the family open in the Family Editor - the Fami
 |---|---|
 | **Kind** | Changes the model (`MODIFY`) |
 | **Reached by** | asking in a Claude chat |
-| **You say** | **parameter name** - text<br>**category** - text<br>**instance** - yes or no - true or false<br>**parameter group** - text<br>**elements** - text<br>**type values** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*" |
+| **You say** | **parameter name** - text<br>**category** - text<br>**instance** - yes or no - true or false<br>**parameter group** - text<br>**elements** - text<br>**type values** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; a value holding a ";" goes in double quotes - Note="a; b" |
 | **You get** | parameter report, linked, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | none |
@@ -724,7 +724,7 @@ Links a parameter of elements ALREADY in the family open in the Family Editor to
 |---|---|
 | **Kind** | Changes the model (`MODIFY`) |
 | **Reached by** | asking in a Claude chat |
-| **You say** | **category** - text; optional, left out means *none*<br>**system** - text; optional, left out means *none*<br>**forms** - text; optional, left out means *none*<br>**family** - text; optional, left out means *none*<br>**type** - text; optional, left out means *none*<br>**links** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*" |
+| **You say** | **category** - text; optional, left out means *none*<br>**system** - text; optional, left out means *none*<br>**forms** - text; optional, left out means *none*<br>**family** - text; optional, left out means *none*<br>**type** - text; optional, left out means *none*<br>**links** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; a value holding a ";" goes in double quotes - Note="a; b" |
 | **You get** | link report, changed, linked, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | none |
@@ -862,7 +862,7 @@ ALIGNS AND LOCKS a nested family to the planes of the family it sits in - the pa
 |---|---|
 | **Kind** | Changes the model (`MODIFY`) |
 | **Reached by** | asking in a Claude chat |
-| **You say** | **instance** - text<br>**locks** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*" |
+| **You say** | **instance** - text<br>**locks** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; a value holding a ";" goes in double quotes - Note="a; b" |
 | **You get** | locked, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | 2020 |
@@ -1228,7 +1228,7 @@ CHANGES A DIVIDED SURFACE THAT IS ALREADY THERE, in a mass or pattern-based fami
 |---|---|
 | **Kind** | Changes the model (`MODIFY`) |
 | **Reached by** | asking in a Claude chat |
-| **You say** | **divided surface** - text; optional, left out means *only*<br>**surface layout** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*" |
+| **You say** | **divided surface** - text; optional, left out means *only*<br>**surface layout** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; a value holding a ";" goes in double quotes - Note="a; b" |
 | **You get** | applied, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | none |
@@ -1424,7 +1424,7 @@ Sets IS REFERENCE and DEFINES ORIGIN on named reference planes in the family ope
 |---|---|
 | **Kind** | Changes the model (`MODIFY`) |
 | **Reached by** | asking in a Claude chat |
-| **You say** | **planes** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; optional, left out means *;*<br>**subcategories** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; optional, left out means *;*<br>**other planes subcategory** - text; optional, left out means *none* |
+| **You say** | **planes** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; a value holding a ";" goes in double quotes - Note="a; b"; optional, left out means *;*<br>**subcategories** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; a value holding a ";" goes in double quotes - Note="a; b"; optional, left out means *;*<br>**other planes subcategory** - text; optional, left out means *none* |
 | **You get** | plane report, changed, on subcategory, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | none |
@@ -1475,7 +1475,7 @@ Sets the switches in Family Category and Parameters for the family open in the F
 |---|---|
 | **Kind** | Changes the model (`MODIFY`) |
 | **Reached by** | asking in a Claude chat |
-| **You say** | **settings** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*" |
+| **You say** | **settings** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; a value holding a ";" goes in double quotes - Note="a; b" |
 | **You get** | changed, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | none |
@@ -1526,7 +1526,7 @@ Writes values into one TYPE of the family open in the Family Editor - "600 x 600
 |---|---|
 | **Kind** | Changes the model (`MODIFY`) |
 | **Reached by** | asking in a Claude chat |
-| **You say** | **type name** - text<br>**values** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"<br>**delete type** - yes or no - true or false; optional |
+| **You say** | **type name** - text<br>**values** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; a value holding a ";" goes in double quotes - Note="a; b"<br>**delete type** - yes or no - true or false; optional |
 | **You get** | type used, type created, written, drives, types written, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | 2024 |
