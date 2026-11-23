@@ -66,11 +66,10 @@ jobs:
     set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", parameterName: "System Type"}
     negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", parameterName: "ZZZNOTHINGHERE"}
 
-  - fragment: describe-blank-parameters
-    setup: [filter-elements-by-category, read-element-parameters]
-    keep-chain: true
-    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", parameterNames: "Comments", parameterName: "Comments"}
-    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", parameterNames: "Comments", parameterName: "ZZZ NO SUCH PARAMETER"}
+  # REMOVED 2026-11-23 (row 5b-1977): the negative changed only `parameterName`,
+  # the card's own wording, while read-element-parameters still read `Comments`,
+  # so both legs listed the same blanks. fix-p1102-mep-revit2020-2026-11-21.yaml
+  # arranges it with a negative whose field every element has filled.
 
   - fragment: report-findings
     setup: [filter-elements-by-category]

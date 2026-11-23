@@ -723,7 +723,10 @@ def test_a_batch_on_the_wrong_revit_says_so():
 
         os.environ["HERON_TEST_RAN_ON"] = "2025"
         report = os.path.join(workspace, "right.json")
-        BP.main([jobs, "--release", "2025", "--report", report])
+        # THE PREVIOUS RUN LEFT <slug>@2025.json, so a second run would REPLACE it -
+        # and says so and stops unless told to go on (row 5b-1978). This is the second
+        # run on purpose, so it goes on.
+        BP.main([jobs, "--release", "2025", "--replace", "--report", report])
         rows = json.loads(io.open(report, encoding="utf-8").read())["results"]
         check(rows[0]["verdict"] != BP.WRONG_RELEASE,
               "a run that came back from 2025 is judged on its evidence instead: %s"
