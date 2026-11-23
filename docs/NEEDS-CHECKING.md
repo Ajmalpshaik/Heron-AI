@@ -1710,6 +1710,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pr.md`](needs-checking/group-pr.md)
 
+## Group PS - a quoted value in a `name=value; name=value` list keeps its semicolon - BUILT, NOT RUN IN REVIT (2026-11-23)
+
+**Its own file:** [`needs-checking/group-ps.md`](needs-checking/group-ps.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

@@ -6487,6 +6487,10 @@ namespace Heron.Revit.Addin
         /// blanket clearance, no per-category exceptions - the one that cannot
         /// be asked for.
         ///
+        /// A VALUE IN DOUBLE QUOTES KEEPS ITS SEMICOLONS - `Note="a; b"` - and
+        /// its spaces, and \" inside it is a quote (row 5b-1993). The split
+        /// itself is HeronBindingNote.NamedEntries, proved without Revit.
+        ///
         /// A REPEATED KEY IS REFUSED rather than last-one-wins. Typing `Walls`
         /// twice means one of the two numbers is silently thrown away, and
         /// which one depends on an ordering nobody can see.
@@ -6501,32 +6505,17 @@ namespace Heron.Revit.Addin
             var shown = asNumbers ? "\"Walls=150; Structural Framing=50\""
                                   : "\"view=*-Mech*; sheet=A-*\"";
 
-            foreach (var piece in (text ?? "").Split(';'))
+            // THE SPLIT IS HeronBindingNote.NamedEntries - row 5b-1993. A value in
+            // double quotes keeps its semicolons and spaces there; an unquoted
+            // list splits exactly as it did here. Everything after the FIRST
+            // equals sign is the value, so a pattern may contain one.
+            var entries = HeronBindingNote.NamedEntries(text, need, shown, out problem);
+            if (entries == null) return null;
+
+            foreach (var entry in entries)
             {
-                var trimmed = piece.Trim();
-                if (trimmed.Length == 0) continue;
-
-                var split = trimmed.IndexOf('=');
-                if (split <= 0)
-                {
-                    problem = "\"" + trimmed + "\" is not an entry for '" + need + "'. Each one "
-                            + "is a name, an equals sign and a value, and several are separated "
-                            + "with semicolons - " + shown + ".";
-                    return null;
-                }
-
-                // Everything after the FIRST equals sign is the value, so a
-                // pattern may contain one.
-                var key = trimmed.Substring(0, split).Trim();
-                var value = trimmed.Substring(split + 1).Trim();
-
-                if (key.Length == 0)
-                {
-                    problem = "\"" + trimmed + "\" has a value with nothing named in front of "
-                            + "it. Each entry is a name, an equals sign and a value - " + shown
-                            + ".";
-                    return null;
-                }
+                var key = entry.Key;
+                var value = entry.Value;
 
                 if (numbers.ContainsKey(key) || words.ContainsKey(key))
                 {
