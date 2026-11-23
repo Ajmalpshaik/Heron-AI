@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -187,52 +187,162 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-23'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 MEP Family, P1102 MEP - active was
-    P1102 MEP, Revit 2020, session 59096'
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned alreadySet 0, catAlready false,
-    catAsked false, catKeys 2 item(s) [category, familycategory], catTarget (null), catWritten
-    false, category Mechanical Equipment, changed 1, clsAsked false, clsChosen (null), clsClear
-    false, clsCode BuiltInParameter, clsCodeLabel OmniClass Number, clsCodeRow (null), clsFiledUnder
-    Func`3, clsFiledWords Func`2, clsKeys 5 item(s) [omniclassnumber, omniclass, classificationnumber,
-    ...], clsLabelFor Func`3, clsList Func`2, clsLoad Action, clsNewNames false, clsPath (null),
-    clsProblem (null), clsRows 0 item(s), clsSaidCode , clsSample false, clsShown Func`2,
-    clsTidy Func`2, clsTitle BuiltInParameter, clsTitleLabel OmniClass Title, clsTried 0 item(s),
-    family Family, findings 2 item(s) [1 setting(s) changed and 0 already as asked, on the
-    family "..., Shared decides whether a copy nested in another family shows...], listOf
-    Func`3, named 4 entry(ies), namedTypes 4 entry(ies), noLightSource Func`1, notAFamily
-    false, parametersGained 0, plans 1 item(s) [((shared, Shared, FAMILY_SHARED), 1)], problems
-    0 item(s), refused (null), sectionShapeProperty RuntimePropertyInfo, settingReport Shared
-    No -> Yes, squash Func`2, stored Func`2, switches 14 item(s) [(workplanebased, Work Plane-Based,
-    FAMILY_WORK_PLANE_BASED), (alwaysvertical, Always Vertical, FAMILY_ALWAYS_VERTICAL), (shared,
-    Shared, FAMILY_SHARED), ...], wasCategory Mechanical Equipment, wordsFor Func`3, yesNo
-    Func`2. inputs came settings as given (1). on P1102 MEP Family
-  negative_case: run against 'P1102 MEP' with settings=Shared=yes instead - chosen because
+  model: TRG_Mechanical Equipment_Packaged Unit_Air Cooled_SKM APMR-52028AM (11,451 elements),
+    Revit 2020, session 35764
+  positive_case: run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-11-23; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned alreadySet 0, catAlready false, catAsked false, catKeys 2 item(s)
+    [category, familycategory], catTarget (null), catWritten false, category Mechanical Equipment,
+    changed 1, clsAsked true, clsChosen Tuple`4, clsClear false, clsCode BuiltInParameter,
+    clsCodeLabel OmniClass Number, clsCodeRow Parameter, clsFiledUnder Func`3, clsFiledWords
+    Func`2, clsKeys 5 item(s) [omniclassnumber, omniclass, classificationnumber, ...], clsLabelFor
+    Func`3, clsList Func`2, clsLoad Action, clsNewNames false, clsPath C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
+    Revit 2020\OmniClassTaxonomy.txt, clsProblem (null), clsRows 2645 item(s) [(23.10.00.00,
+    Site Products, , ), (23.10.05.00, Ground Anchorages, , ), (23.10.05.10, Retaining/Stabilizing
+    Ground Anchors, , ), ...], clsSaidCode 23.75.10.24.21.27.11, clsSample false, clsShown
+    Func`2, clsTidy Func`2, clsTitle BuiltInParameter, clsTitleLabel OmniClass Title, clsTried
+    1 item(s) [C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk Revit...], family Family,
+    findings 3 item(s) [OmniClass Number was read back before Revit commits the chan..., The
+    OmniClass Number was checked against the classification ..., 1 setting(s) changed and
+    0 already as asked, on the family "...], listOf Func`3, named 4 entry(ies), namedTypes
+    4 entry(ies), noLightSource Func`1, notAFamily false, parametersGained 0, plans 0 item(s),
+    problems 0 item(s), refused (null), sectionShapeProperty RuntimePropertyInfo, settingReport
+    OmniClass Number 23.75.00.00 -> 23.75.10.24.21.27.11 Packaged Air Conditioners - Revit
+    filled OmniClass Title, squash Func`2, stored Func`2, switches 14 item(s) [(workplanebased,
+    Work Plane-Based, FAMILY_WORK_PLANE_BASED), (alwaysvertical, Always Vertical, FAMILY_ALWAYS_VERTICAL),
+    (shared, Shared, FAMILY_SHARED), ...], wasCategory Mechanical Equipment, wordsFor Func`3,
+    yesNo Func`2. inputs came settings as given (1). on TRG_Mechanical Equipment_Packaged
+    Unit_Air Cooled_SKM APMR-52028AM
+  negative_case: 'run with settings=OmniClass Number=99.99.99.99 instead - chosen because
     it should not contain what this fragment reports - run inside a transaction, and Revit
     reported the transaction group ROLLED BACK afterwards. returned alreadySet 0, catAlready
     false, catAsked false, catKeys 2 item(s) [category, familycategory], catTarget (null),
-    catWritten false, category , changed 0, clsAsked false, clsChosen (null), clsClear false,
-    clsCode BuiltInParameter, clsCodeLabel OmniClass Number, clsCodeRow (null), clsFiledUnder
-    Func`3, clsFiledWords Func`2, clsKeys 5 item(s) [omniclassnumber, omniclass, classificationnumber,
-    ...], clsLabelFor Func`3, clsList Func`2, clsLoad Action, clsNewNames false, clsPath (null),
-    clsProblem (null), clsRows 0 item(s), clsSaidCode , clsSample false, clsShown Func`2,
-    clsTidy Func`2, clsTitle BuiltInParameter, clsTitleLabel OmniClass Title, clsTried 0 item(s),
-    family (null), findings 1 item(s) [The document in front, "P1102 MEP", is a project, not
-    a fami...], listOf Func`3, named 4 entry(ies), namedTypes 4 entry(ies), noLightSource
-    Func`1, notAFamily true, parametersGained 0, plans 0 item(s), problems 0 item(s), refused
-    The document in front, "P1102 MEP", is a project, not a family open in the Family Editor.
-    A family's own settings are set inside it - open it for editing first (OPEN_FAMILY_FOR_EDITING).
-    Nothing was changed., sectionShapeProperty RuntimePropertyInfo, settingReport , squash
-    Func`2, stored Func`2, switches 14 item(s) [(workplanebased, Work Plane-Based, FAMILY_WORK_PLANE_BASED),
-    (alwaysvertical, Always Vertical, FAMILY_ALWAYS_VERTICAL), (shared, Shared, FAMILY_SHARED),
-    ...], wasCategory , wordsFor Func`3, yesNo Func`2. inputs came settings as given (1).
-    on P1102 MEP
+    catWritten false, category Mechanical Equipment, changed 0, clsAsked true, clsChosen (null),
+    clsClear false, clsCode BuiltInParameter, clsCodeLabel OmniClass Number, clsCodeRow Parameter,
+    clsFiledUnder Func`3, clsFiledWords Func`2, clsKeys 5 item(s) [omniclassnumber, omniclass,
+    classificationnumber, ...], clsLabelFor Func`3, clsList Func`2, clsLoad Action, clsNewNames
+    false, clsPath C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk Revit 2020\OmniClassTaxonomy.txt,
+    clsProblem (null), clsRows 2645 item(s) [(23.10.00.00, Site Products, , ), (23.10.05.00,
+    Ground Anchorages, , ), (23.10.05.10, Retaining/Stabilizing Ground Anchors, , ), ...],
+    clsSaidCode 99.99.99.99, clsSample false, clsShown Func`2, clsTidy Func`2, clsTitle BuiltInParameter,
+    clsTitleLabel OmniClass Title, clsTried 1 item(s) [C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
+    Revit...], family Family, findings 1 item(s) [Nothing was changed. "99.99.99.99" is not
+    a code in the clas...], listOf Func`3, named 4 entry(ies), namedTypes 4 entry(ies), noLightSource
+    Func`1, notAFamily false, parametersGained 0, plans 0 item(s), problems 1 item(s) ["99.99.99.99"
+    is not a code in the classification file C:\Us...], refused Nothing was changed. "99.99.99.99"
+    is not a code in the classification file C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
+    Revit 2020\OmniClassTaxonomy.txt, and no nearby code is picked in its place. The file
+    gives Mechanical Equipment 199 code(s): 23.15.30.27.11 Tanks, Reservoirs || 23.15.30.27.11.11
+    Elevated Storage Tanks || 23.15.30.27.11.14 Ground Storage Tanks || 23.15.30.27.11.17
+    Underground Storage Tanks || 23.15.30.27.11.21 Portable Storage Tanks || 23.15.30.27.21
+    Gas Tanks and Gasholders || 23.40.40.14.21 Hood and Ventilation Equipment || 23.40.40.14.21.14
+    Ventilation Equipment || 23.40.40.14.21.17 Fire Suppression Systems || 23.40.40.14.21.21
+    Catering Ventilation || 23.40.70.11.11.11.14 Laboratory Fume Hoods || 23.55.10.14.11 Cooling
+    Towers || 23.60.30.21 Pumps || 23.60.30.21.11 Pump Components || 23.60.30.21.14 Manual
+    Pumps || 23.60.30.21.17 Motor Pumps || 23.60.30.21.21 Pump Sets || 23.60.30.21.24 Booster
+    Pumps || 23.65.35.00 Heaters for Supplied Liquids || 23.65.35.11 Supply Water Heaters
+    || 23.65.35.11.11 Storage Water Heaters || 23.65.35.11.14 Instantaneous Water Heaters
+    || 23.65.35.11.17 Thermodynamic Water Heaters || 23.65.35.99 Heaters for Other Supplied
+    Liquids || 23.65.50.11.11.11 Water Filters || 23.65.50.11.11.14 Water Softeners || 23.65.55.11
+    Supply Pumps and Compressors || 23.65.55.11.11 Gas Compressors/Vacuum Pumps || 23.65.70.17.11.11
+    Fire Hydrants || 23.65.70.17.11.14 Fire Hose Reels || 23.65.70.17.11.17 Fire Hoses ||
+    23.65.70.17.11.21 Fire Fighting Gas Terminals || 23.65.70.17.11.24 Fire Fighting Sprinkler
+    Heads || 23.65.70.17.11.27 Cabinets for Fire Hoses || 23.70.30.24.17 Dust Collectors ||
+    23.70.50.11 Pumps for Liquid Waste || 23.70.50.11.11 Surface Waste Water Pumps || 23.70.50.11.14
+    Sewage and Sludge Pumps || 23.70.50.11.14.11 Oil-Water Separators || 23.70.50.11.14.14
+    Packaged Sewage and Sludge Pump Stations || 23.70.50.11.14.17 Sewage Ejectors || 23.70.50.11.17
+    Combined Macerator-Pumps || 23.75.00.00 Climate Control (HVAC) || 23.75.10.00 Transformation
+    and Conversion of Energy || 23.75.10.11 Central Heat Generators || 23.75.10.11.14 Hot
+    Water Heat Generators || 23.75.10.11.14.11 Cast-Iron Boilers || 23.75.10.11.14.14 Condensing
+    Boilers || 23.75.10.11.14.17 Finned Water-Tube Boilers || 23.75.10.11.14.21 Firebox Heating
+    Boilers || 23.75.10.11.14.24 Flexible Water-Tube Boilers || 23.75.10.11.14.27 Pulse Combustion
+    Boilers || 23.75.10.11.14.31 Scotch Marine Boilers || 23.75.10.11.14.34 Steel Water-Tube
+    Boilers || 23.75.10.11.17 Warm Air Heat Generators || 23.75.10.11.17.11 Furnaces || 23.75.10.11.17.11.11
+    Electric-Resistance Furnaces || 23.75.10.11.17.11.14 Fuel-Fired Furnaces || 23.75.10.11.21
+    Steam Heat Generators || 23.75.10.11.24 Heat Generators, Thermal Liquid || 23.75.10.11.27
+    Fuel Burners || 23.75.10.11.27.11 Fuel Oil Filters || 23.75.10.11.27.14 Nozzles || 23.75.10.11.27.17
+    Burner Controls || 23.75.10.11.31 Solid Fuel Transport and Handling Equipment || 23.75.10.11.34
+    Fuel Gas Heat Recovery Devices || 23.75.10.14 Independent Electric Heating Units || 23.75.10.14.11
+    Electric Convectors || 23.75.10.14.11.11 Static Convectors || 23.75.10.14.11.14 Fan Convectors
+    || 23.75.10.14.14 Electric Radiators || 23.75.10.14.14.11 Storage Heaters || 23.75.10.14.14.14
+    Infrared Radiators/Plates || 23.75.10.14.14.17 Ultraviolet Radiators || 23.75.10.14.17
+    Electric Surface Heating Products || 23.75.10.14.17.11 Heating Sheets for Walls and Ceilings
+    || 23.75.10.14.17.14 Heating Sheets for Glazing || 23.75.10.14.17.17 Pipe Heating Tapes/Cable
+    Heating Trace || 23.75.10.14.21 Embedded Electric Heating Appliances || 23.75.10.14.21.11
+    Heating Sheets || 23.75.10.14.21.14 Heating Cables || 23.75.10.17 Non-Electric Local Heating
+    Units || 23.75.10.17.11 Non-Electric Stoves || 23.75.10.17.14 Fuel-Fired Heaters || 23.75.10.17.14.11
+    Fuel-Fired Duct Heaters || 23.75.10.17.14.14 Fuel-Fired Radiant Heaters || 23.75.10.17.14.17
+    Fuel-Fired Unit Heaters || 23.75.10.17.14.21 Fuel-Fired Air Heaters || 23.75.10.17.14.24
+    Fuel-Fired Domestic Heaters || 23.75.10.17.17 Combined Heating/Cooking Units || 23.75.10.17.17.11
+    Heat Pumps, Heating Function || 23.75.10.17.17.14 Heat Pumps, Cooling Function || 23.75.10.17.17.17
+    Heat Pumps, Heating-Cooling Function || 23.75.10.21 Heat Pumps || 23.75.10.21.11 Air-Source
+    Heat Pumps || 23.75.10.21.14 Rooftop Heat Pumps || 23.75.10.21.17 Water-Source Heat Pumps
+    || 23.75.10.24 Cooling and Freeze Plant || 23.75.10.24.11 Chilled Water Plant || 23.75.10.24.14
+    Refrigeration Plant || 23.75.10.24.17 Cold Room Plant || 23.75.10.24.21 Cooling and Freeze
+    Components || 23.75.10.24.21.11 Refrigerant Condensing Units || 23.75.10.24.21.11.11 Packaged
+    Refrigerant Condensing Coils and Fan Units || 23.75.10.24.21.11.14 Refrigerant Condensing
+    Coils || 23.75.10.24.21.14 Refrigerant Evaporators || 23.75.10.24.21.17 Refrigerant Compressors
+    || 23.75.10.24.21.17.11 Centrifugal Refrigerant Compressors || 23.75.10.24.21.17.14 Reciprocating
+    Refrigerant Compressors || 23.75.10.24.21.17.17 Rotary-Screw Refrigerant Compressors ||
+    23.75.10.24.21.21 Packaged Water Chillers || 23.75.10.24.21.21.11 Absorption Water Chillers
+    || 23.75.10.24.21.21.14 Centrifugal Water Chillers || 23.75.10.24.21.21.17 Reciprocating
+    Water Chillers || 23.75.10.24.21.21.21 Rotary-Screw Water Chillers || 23.75.10.24.21.24
+    Liquid Coolers and Evaporative Condensers || 23.75.10.24.21.27 Unitary Air Conditioning
+    Equipment || 23.75.10.24.21.27.11 Packaged Air Conditioners || 23.75.10.24.21.27.14 Packaged
+    Rooftop Air Conditioning Units || 23.75.10.24.21.27.17 Packaged Rooftop Make-Up Air Conditioning
+    Units || 23.75.10.24.21.27.21 Packaged Terminal Air Conditioning Units || 23.75.10.24.21.27.24
+    Room Air Conditioners || 23.75.10.24.21.27.27 Split System Air Conditioning Units || 23.75.10.24.21.31
+    Cooling/Freeze Plant Accessories || 23.75.10.24.21.31.11 Refrigerant Liquid || 23.75.10.27.17.21
+    Heat Exchangers, Tubular || 23.75.10.27.17.24 Heat Exchangers, Plate || 23.75.10.27.17.27
+    Heat Exchangers, Rotary || 23.75.10.34.21 Heat Exchangers for Ventilation Air || 23.75.10.37
+    Cooling Towers || 23.75.10.37.11 Mechanical-Draft Cooling Towers || 23.75.10.37.14 Natural-Draft
+    Cooling Towers || 23.75.35.00 Impelling Equipment || 23.75.35.14 Air Handling Units ||
+    23.75.35.14.11 Built-Up Indoor Air Handling Units || 23.75.35.14.14 Customized Rooftop
+    Air Handling Units || 23.75.35.14.17 Modular Indoor Air Handling Units || 23.75.35.14.21
+    Modular Rooftop Air Handling Units || 23.75.35.17 Fans || 23.75.35.17.11 Fans for Air
+    Ductwork || 23.75.35.17.14 Fans, Single Units || 23.75.35.17.17 Room Air Circulation Fans
+    || 23.75.35.17.17.11 Ceiling Fans || 23.75.35.17.21 Air Curtains || 23.75.35.17.24 Axial
+    Fans || 23.75.35.17.27 Centrifugal Fans || 23.75.35.21 Extractors || 23.75.35.21.11 Emergency
+    Smoke Extractors || 23.75.35.21.14 Extractors for Process Air || 23.75.35.21.17 Industrial
+    Ventilating Equipment || 23.75.35.21.21 Power Ventilators || 23.75.50.11 Treatment of
+    Circulation Liquids || 23.75.50.11.14 Feedwater Equipment || 23.75.50.11.14.11 Boiler
+    Feedwater Pumps || 23.75.50.11.14.14 Deaerators || 23.75.50.11.14.17 Packaged Deaerator
+    and Feedwater Equipment || 23.75.50.14 Steam Treatment || 23.75.50.14.11 Steam Dryers
+    || 23.75.50.17.14 Dust Collectors || 23.75.50.17.17 Electronic Air Cleaners || 23.75.50.17.21
+    Air Humidifiers || 23.75.50.17.24 Dehumidifiers || 23.75.50.17.24.11 Swimming Pool Dehumidification
+    Units || 23.75.65.00 Monitoring and Control Equipment || 23.75.65.11 Monitoring and Control
+    of Internal Climate || 23.75.65.11.11 Heating Controllers || 23.75.65.11.14 Heating Programmers
+    || 23.75.65.11.17 Heating Optimizers/Economizers || 23.75.65.14 Industrial Plant Performance
+    Controls || 23.75.65.14.14 Centralized Plant Controls || 23.75.65.14.14.11 Temperature
+    Controls || 23.75.65.14.14.14 Pressure Controls || 23.75.65.14.14.21 Concentration Controls
+    || 23.75.65.14.17 Control and Monitoring Boards/Panels || 23.75.70.00 HVAC Distribution
+    Devices || 23.75.70.11 Circulation Pipe Fittings || 23.75.70.11.11 Distribution Collectors
+    || 23.75.70.11.14 Expansion Vessels || 23.75.70.11.14.24 Air Mixers || 23.75.70.17 Water
+    Heated and Cooled Terminal Heating and Cooling Units || 23.75.70.17.11 Radiators || 23.75.70.17.14
+    Convectors || 23.75.70.17.17 Radiation Panels || 23.75.70.17.21 Embedded Water Heating
+    Terminals || 23.75.70.17.24 Finned-Tube Radiation || 23.75.70.17.27 Fan Coil Units ||
+    23.75.70.17.31 Induction Units || 23.75.70.17.34 Unit Heaters || 23.75.70.17.37 Unit Ventilators
+    || 23.75.70.21 Terminals for Air || 23.75.70.21.11 Supports, Mechanical Fasteners || 23.75.70.21.14
+    Coil Units || 23.75.70.21.17 Air Curtains || 23.75.70.21.21 Local Air-Conditioning Units
+    || 23.75.70.21.24 Air Terminal Units || 23.75.70.21.24.11 Constant Volume Air Terminal
+    Units || 23.75.70.21.24.14 Variable Volume Air Terminal Units || 23.85.80.11.21 Energy
+    Monitoring and Controls || 23.85.80.11.24 Environmental Controls., sectionShapeProperty
+    RuntimePropertyInfo, settingReport , squash Func`2, stored Func`2, switches 14 item(s)
+    [(workplanebased, Work Plane-Based, FAMILY_WORK_PLANE_BASED), (alwaysvertical, Always
+    Vertical, FAMILY_ALWAYS_VERTICAL), (shared, Shared, FAMILY_SHARED), ...], wasCategory
+    Mechanical Equipment, wordsFor Func`3, yesNo Func`2. inputs came settings as given (1).
+    on TRG_Mechanical Equipment_Packaged Unit_Air Cooled_SKM APMR-52028AM'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 8c840db1ed78f681
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: 3545dba0dc8cd0c7
+  fingerprint: f8c3fac8cd1efb5e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

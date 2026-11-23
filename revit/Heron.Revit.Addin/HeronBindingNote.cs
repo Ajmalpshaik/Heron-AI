@@ -576,6 +576,128 @@ namespace Heron.Revit.Addin
             return parts;
         }
 
+        /// <summary>
+        /// A `name=value; name=value` list split into its entries, in the
+        /// order typed - or null, with the reason in PROBLEM.
+        ///
+        /// FRAGMENT-ISSUES ROW 5b-1994. Every IDictionary need the binder
+        /// takes - SET_FAMILY_TYPE_VALUES' `values` above all - was split on
+        /// EVERY semicolon, so a text value holding one could not be written as
+        /// given. On 2026-11-23 (Revit 2020) a filter's efficiency, "... 70 %
+        /// ASHRAE 52/76; design 81 % / 91 %", was refused with "design 81 % /
+        /// 91 %" is not an entry, and the owner's text had to be rewritten with
+        /// commas.
+        ///
+        /// A VALUE WRITTEN WHOLE IN DOUBLE QUOTES KEEPS ITS SEMICOLONS AND ITS
+        /// SPACES - `Note="a; b"` is one entry, `prefix=" L1"` keeps its space,
+        /// `""` is blank - and \" inside it is a quote. Only a value that
+        /// BEGINS with a quote, after the equals sign and any spaces, is read
+        /// this way: the rule revit_change's own lines already follow (rows
+        /// 5b-215 and 5b-1475). A backslash before anything else is kept, so a
+        /// path reads as typed.
+        ///
+        /// AN UNQUOTED LIST SPLITS EXACTLY AS BEFORE: every semicolon ends an
+        /// entry, each is trimmed, an empty one is skipped, everything after
+        /// the FIRST equals sign is the value, and a quote anywhere but at the
+        /// start of a value is text - 12" duct.
+        ///
+        /// A QUOTE OPENED AND NEVER CLOSED IS REFUSED, and so is text after a
+        /// closing quote. Either way where the value ends cannot be told, and a
+        /// guess would write the rest of the list into one parameter.
+        ///
+        /// Nothing here touches an Autodesk type, so it is proved without
+        /// Revit in Heron.BindingNote.TestHost. NEED and SHOWN only word the
+        /// refusal: the need's name, and an example list.
+        /// </summary>
+        internal static List<KeyValuePair<string, string>> NamedEntries(
+            string text, string need, string shown, out string problem)
+        {
+            problem = null;
+            text = text ?? "";
+
+            var entries = new List<KeyValuePair<string, string>>();
+            var at = 0;
+            while (at < text.Length)
+            {
+                var start = at;
+                while (at < text.Length && text[at] != '=' && text[at] != ';') at++;
+
+                var key = text.Substring(start, at - start).Trim();
+                if (at >= text.Length || text[at] == ';' || key.Length == 0)
+                {
+                    // NO EQUALS SIGN, OR NOTHING NAMED IN FRONT OF IT - the piece
+                    // up to the next semicolon, refused in the words it always was.
+                    var end = text.IndexOf(';', at);
+                    if (end < 0) end = text.Length;
+                    var piece = text.Substring(start, end - start).Trim();
+                    at = end + 1;
+                    if (piece.Length == 0) continue;
+
+                    problem = "\"" + piece + "\" is not an entry for '" + need + "'. Each one "
+                            + "is a name, an equals sign and a value, and several are separated "
+                            + "with semicolons - " + shown + ". A value that holds a semicolon "
+                            + "goes in double quotes: Note=\"a; b\".";
+                    return null;
+                }
+
+                at++;   // past the equals sign
+                var first = at;
+                while (first < text.Length && char.IsWhiteSpace(text[first])) first++;
+
+                if (first < text.Length && text[first] == '"')
+                {
+                    var value = new System.Text.StringBuilder();
+                    var close = -1;
+                    for (var i = first + 1; i < text.Length; i++)
+                    {
+                        if (text[i] == '\\' && i + 1 < text.Length && text[i + 1] == '"')
+                        {
+                            value.Append('"');
+                            i++;
+                            continue;
+                        }
+                        if (text[i] == '"') { close = i; break; }
+                        value.Append(text[i]);
+                    }
+
+                    if (close < 0)
+                    {
+                        problem = "'" + key + "' in '" + need + "' opens a double quote and never "
+                                + "closes it, so where its value ends cannot be told and nothing "
+                                + "was taken from the list. Close the quote - " + key
+                                + "=\"text; with semicolons\" - and write a quote that belongs "
+                                + "to the text as \\\".";
+                        return null;
+                    }
+
+                    var next = close + 1;
+                    while (next < text.Length && char.IsWhiteSpace(text[next])) next++;
+                    if (next < text.Length && text[next] != ';')
+                    {
+                        var rest = text.IndexOf(';', next);
+                        if (rest < 0) rest = text.Length;
+                        problem = "'" + key + "' in '" + need + "' has text after its closing "
+                                + "quote - \"" + text.Substring(next, rest - next).Trim()
+                                + "\". Put the whole value inside the quotes, and write a quote "
+                                + "that belongs to the text as \\\": " + key + "=\"12\\\" duct\".";
+                        return null;
+                    }
+
+                    entries.Add(new KeyValuePair<string, string>(key, value.ToString()));
+                    at = next + 1;
+                    continue;
+                }
+
+                var stop = text.IndexOf(';', at);
+                if (stop < 0) stop = text.Length;
+                entries.Add(new KeyValuePair<string, string>(
+                    key, text.Substring(at, stop - at).Trim()));
+                at = stop + 1;
+            }
+
+            return entries;
+        }
+
         /// <summary>Whether TEXT is one or more of the ten ASCII digits and nothing else.</summary>
         private static bool AllDigits(string text)
         {
