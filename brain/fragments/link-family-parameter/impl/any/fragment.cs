@@ -57,6 +57,22 @@
 // the form reaches along that axis, read back off its geometry: "the form
 // now runs X 48 to 49 mm". Every other path is version 4's, unchanged.
 //
+// VERSION 6 (2026-11-22): A REFERENCE POINT TOO. The folded pattern-panel
+// tip: PLACE_ADAPTIVE_POINTS version 2 pushes a reference point off another
+// point's plane ("on point 7 normal 300"), and that distance is the point's
+// Offset (BuiltInParameter.POINT_ELEMENT_OFFSET, "Offset" in Properties) -
+// which the modeller then links to a Length family parameter such as "Tip
+// Depth" with the Associate Family Parameter button on the point's Offset
+// row. Ids in `forms` (or `selected`) may now name a REFERENCE POINT
+// (ReferencePoint), which version 5 refused by name. It is linked by the
+// Properties name, "Offset", like any other parameter: every check runs as it
+// did - the same kind on both sides (a Yes/No cannot drive a Length),
+// CanElementParameterBeAssociated, read back before and after, all or
+// nothing. A free point, hosted on nothing, has no Offset, and is refused as
+// any element lacking the parameter named is. The answer names it as the
+// Properties palette does, "Reference Point id N" - and so does a by-category
+// inventory, where version 5 printed its Revit category. Nothing else changed.
+//
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
 // THE "ASSOCIATE FAMILY PARAMETER" BUTTON, FOR ELEMENTS ALREADY IN THE FAMILY.
@@ -259,6 +275,8 @@ Func<Element, string> kindName = e =>
         return masking ? "Masking Region" : "Filled Region";
     }
     if (e is ModelText) return "Model Text";
+    // A REFERENCE POINT (version 6): the palette's words for it.
+    if (e is ReferencePoint) return "Reference Point";
     var nested = e as FamilyInstance;
     if (nested != null)
     {
@@ -540,8 +558,8 @@ else
     // THE ELEMENTS, NAMED ONE WAY (version 3).
     if (ways == 0)
         problems.Add("No elements were named - a category such as \"Duct Connector\" or \"Extrusion\", or \"all\" "
-            + "(with a system); or forms, nested parts, detail and symbolic lines, regions and model text by the "
-            + "ids the tools that made them gave back, or \"selected\"; or a nested family and its type, for its "
+            + "(with a system); or forms, nested parts, detail and symbolic lines, regions, model text and "
+            + "reference points by the ids the tools that made them gave back, or \"selected\"; or a nested family and its type, for its "
             + "type parameters.");
     else if (ways > 1)
         problems.Add("Name the elements ONE way in a call - a category, forms by id, or a nested family and its "
@@ -590,10 +608,12 @@ else
     // open in the Family Editor every FamilyInstance is a nested family's
     // placed copy. VERSION 4: a detail line, a symbolic line, a filled or
     // masking region and model text get in too - a family's 2D, whose Visible
-    // a plan symbol hangs on. Nothing else does.
+    // a plan symbol hangs on. VERSION 6: a reference point - its Offset off
+    // the plane it is hosted on, a folded panel's tip. Nothing else does.
     Func<Element, bool> canBeNamed = element =>
         element is GenericForm || element is FamilyInstance || element is DetailCurve
-        || element is SymbolicCurve || element is FilledRegion || element is ModelText;
+        || element is SymbolicCurve || element is FilledRegion || element is ModelText
+        || element is ReferencePoint;
     if (problems.Count == 0 && byForms)
     {
         var named = new List<Element>();
@@ -624,11 +644,12 @@ else
             if (!canBeNamed(element))
                 problems.Add("\"" + (element.Name ?? element.UniqueId) + "\" (" + element.UniqueId + ") is none of what "
                     + "this links by id - a form (an extrusion, revolve, blend, sweep or swept blend), a nested family "
-                    + "placed in this one, a detail line, a symbolic line, a filled or masking region, or model text.");
+                    + "placed in this one, a detail line, a symbolic line, a filled or masking region, model text, or "
+                    + "a reference point.");
             else if (!chosen.Any(c => c.Id == element.Id)) chosen.Add(element);
         }
         if (problems.Count == 0 && chosen.Count == 0)
-            problems.Add("No form, nested part, line, region or model text was named. Name them by the ids the "
+            problems.Add("No form, nested part, line, region, model text or reference point was named. Name them by the ids the "
                 + "tools that made them gave back, commas between, or select them and say \"selected\".");
         if (problems.Count > 0) chosen.Clear();
     }

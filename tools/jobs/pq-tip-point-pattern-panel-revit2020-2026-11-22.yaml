@@ -1,0 +1,80 @@
+# NEEDS-CHECKING Group PQ (PQ1, PQ2) - PLACE_ADAPTIVE_POINTS version 2 (DRAFT):
+# a point pushed off another point's plane along the panel's normal, the tip
+# of a folded pattern-based curtain panel. Written 2026-11-22 with no Revit.
+# NOT RUN.
+#
+# BEFORE RUNNING - the scratch panel family, made once in the chat:
+#   1. CREATE_FAMILY_DOCUMENT from "Metric Curtain Panel Pattern Based.rft"
+#      (C:\ProgramData\Autodesk\RVT 2020\Family Templates\English), saved as
+#      %TEMP%\heron-work\pq\PQ Tip Panel.rfa. Its title is "PQ Tip Panel".
+#      Leave the tile pattern as the template has it (Rectangle, points 1 to
+#      4) - this job needs no hand click.
+#   2. Nothing else in it. Save it.
+#
+#     python tools/batch-prove.py tools/jobs/pq-tip-point-pattern-panel-revit2020-2026-11-22.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/pq-tip-point-pattern-panel-revit2020-2026-11-22.yaml --session <2020 pid>
+#
+# RUN IT FROM THE PULL REQUEST'S CHECKOUT (the worktree that holds version
+# 2) - until it is merged, main has version 1, which refuses "normal" as not a
+# hosted point. Every run is ROLLED BACK.
+#
+# THE ARRANGEMENT. The host is placement point 1 ITSELF, so the job needs no
+# id: "on point 1 normal 300" finds the plane of point 1 that lies in the
+# panel points 1 to 4 span and pushes a point 300 mm off it. Negative: the
+# same with 0 mm - refused, nothing made (a refusal, never a throw).
+#   - If the positive comes back "no point 1", the template's points do not
+#     read as placement points (NEEDS-CHECKING BV4): write it on PQ1 and run
+#     the by-hand line below with point 1's id instead.
+#   - If it comes back "none of point 1's planes lies in the panel", write
+#     the three angles it gives on PQ1 - that is the measurement - and run
+#     the centroid case below, the one the folded panel uses.
+#
+# THE CENTROID CASE (PQ1, PQ4), by hand after this file, on the same family:
+# in the chat, KEEP these first (PROVEN tools, from main) - DRAW_FAMILY_POINT_
+# CURVES "1,3", referenceLines true (a diagonal); then PLACE_ADAPTIVE_POINTS
+# "on <that line's id> at 0.5", pointKind "reference" - the centre point C.
+# Save. Then, from this checkout, rolled back:
+#   python mcp/client/heron_bridge_client.py validate place-adaptive-points --write --in "PQ Tip Panel" \
+#       --set "points=on point <C's id> normal 300" --set pointKind=reference \
+#       --negative-set "points=on point <C's id> normal 0" --negative-set pointKind=reference
+# For the Triangle tile (PQ4) the modeller sets the tile pattern BY HAND -
+# the API cannot - and C is the centroid: the edge 2,3, its mid-point M "on
+# <2,3 line> at 0.5", the median "1,<M's id>", then "on <median> at 0.6667".
+#
+# TIP DEPTH (PQ5, PQ6), by hand once the tip T is KEPT (a DRAFT's one run is
+# asked - Keep) and a Length family parameter "Tip Depth" = 300 is added with
+# ADD_FAMILY_PARAMETERS (PROVEN). LINK_FAMILY_PARAMETER version 6, from this
+# checkout, rolled back - the negative a Yes/No parameter, "Show Tip", added
+# the same way:
+#   python mcp/client/heron_bridge_client.py validate link-family-parameter --write --in "PQ Tip Panel" \
+#       --set forms=<T's id> --set "links=Offset=Tip Depth" \
+#       --negative-set forms=<T's id> --negative-set "links=Offset=Show Tip"
+# Pass: linked and read back, then Tip Depth 500 in Family Types moves T to
+# 500 mm off (PQ5); the Yes/No link refused naming both kinds, nothing
+# changed (PQ6).
+
+model: "PQ Tip Panel (new from Metric Curtain Panel Pattern Based.rft, Rectangle tile, points 1 to 4, in %TEMP%\\heron-work\\pq), Revit 2020"
+
+defaults:
+  in: "PQ Tip Panel"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: place-adaptive-points
+    expect: pointIds
+    set:
+      points: "on point 1 normal 300"
+      pointKind: "reference"
+    negative-set:
+      points: "on point 1 normal 0"
+      pointKind: "reference"
+    note: >
+      Negative: refused "does not end with how far off the plane, in
+      millimetres and not 0"; pointIds and placedPoints empty, nothing made.
+      Positive: one reference point; findings "Pushed off: <id> is 300 mm off
+      point 1's <xy|yz|xz> plane, Offset 300 mm, on the side from which
+      placement points 1, 2, 3, 4 run anticlockwise (or clockwise)". RECORD
+      the plane (PQ1) and the side (PQ2), and whether the "(Revit's Offset on
+      this plane runs that way ...)" note was added - that says Revit's Offset
+      ran against the panel's normal on that plane.
