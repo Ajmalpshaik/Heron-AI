@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,23 @@ semantic-identity: "tap these diffusers into the duct running past them, or pipe
 kind: action
 domain: revit.mep
 capability: CONNECT_AIR_TERMINALS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 3 (2026-11-23, WN-79 - work note FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07
+# C05, GitHub issue #1005) - ONE KIND OF CONNECTION EVIDENCE, AND THE DUCT
+# CHOSEN FROM THE ONES THAT FIT. Version 2 took a terminal's first End
+# connector whatever its domain, let the IsConnected flag decide both the skip
+# and the result, and chose the nearest duct before asking whether it could
+# take the terminal. Version 3 taps Air Terminals only (by category), uses the
+# terminal's duct (HVAC) connector, reads "joined" off the physical partners as
+# REPORT_CONNECTORS does, filters the ducts first - a straight Duct not on the
+# opposite air system - and then takes the nearest within maxDistanceMm, and
+# after the tap counts the terminal only when it is joined to THAT duct. A
+# head's skip and join read the partners too. Version 2 was PROVEN (the proof
+# block below, kept as the record of what it proved); its C# moved, so it is
+# DRAFT again until NEEDS-CHECKING Group PZ proves version 3 (D-30).
 
 purpose: >
   Connects air terminals to the duct running past them. Revit cuts the tap into
@@ -48,6 +62,16 @@ purpose: >
 
   **A terminal already connected is skipped, not reconnected**, because
   reconnecting leaves the old tap behind as an orphan fitting.
+
+  **Only a duct that fits is chosen, and joined means joined (version 3).**
+  Only Air Terminals are tapped - equipment with a duct spigot is refused by
+  name. The ducts are filtered first: a straight duct, not on the opposite air
+  system (a supply diffuser never takes a return or exhaust duct), and then the
+  nearest of those within the distance allowed - so a nearer return duct never
+  hides the supply duct behind it, and one passed over is said by id. Whether a
+  terminal or a head is connected is read off what is physically joined to its
+  connector, never Revit's connected flag, both for the skip and after the tap;
+  a terminal joined to anything but the duct chosen is refused, not counted.
 
   **Sprinklers and fixtures too (version 2, 2026-11-01).** CREATE_FIXTURE_BRANCHES
   was merged in. An element with a pipe connector and no duct one - a pendent
@@ -205,6 +229,13 @@ compatibility-note: >
   `HasEnded`) are present 2020 through 2027. The connector overload of
   Pipe.Create is NOT used: RevitAPI.xml says that when it cannot join it still
   creates the pipe and THROWS, which leaves a pipe nothing here can name.
+
+  Version 3: `Connector.AllRefs` / `Owner` / `DuctSystemType`, `DuctSystemType`,
+  `Duct`, `MEPCurve.ConnectorManager`, `MEPSystem` and
+  `BuiltInCategory.OST_DuctTerminal` (through `new ElementId(BuiltInCategory)`,
+  never `IntegerValue`) compile against 2020, 2024 and 2027 and every release
+  between (`tools/check-fragments-compile.py`, 2026-11-23, a cloud container).
+  Compiling is not evidence of what Revit puts in AllRefs after a tap.
 
 # VERSION 2 (2026-11-01) - CREATE_FIXTURE_BRANCHES WAS MERGED INTO THIS CARD on
 # the owner's instruction ("make sure there is no duplicate tools", "in every
