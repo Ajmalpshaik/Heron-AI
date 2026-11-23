@@ -1922,6 +1922,12 @@ namespace Heron.Revit.Addin
             // loops for ever freezes Revit until Revit is ended, and saving
             // first is what makes that cost a reopen instead of lost work. A
             // model never saved has no file to reopen, whatever IsModified says.
+            //
+            // REVIT'S FLAG, READ HERE AND NOWHERE ELSE - row 5b-1999. Nothing
+            // above this line in Run opens a transaction, and a read run before
+            // it is measured for exactly this (ReadFootprint.Modified). So when
+            // a model just saved reads as changed, Revit marked it changed
+            // after the save, and the refusal says so with the file's time.
             var path = "";
             var unsaved = true;
             try
@@ -1932,13 +1938,23 @@ namespace Heron.Revit.Addin
             catch { }
             if (string.IsNullOrEmpty(path) || unsaved)
             {
+                // The file's last write, for the modeller to set beside their
+                // save. None for a cloud model or a file that cannot be read -
+                // the refusal then names no time rather than a wrong one.
+                DateTime? written = null;
+                if (!string.IsNullOrEmpty(path))
+                {
+                    try
+                    {
+                        if (System.IO.File.Exists(path))
+                            written = System.IO.File.GetLastWriteTime(path);
+                    }
+                    catch (Exception) { written = null; }
+                }
+
                 return Json.Error("ask_needs_saved_model",
-                    (string.IsNullOrEmpty(path)
-                        ? "\"" + title + "\" has never been saved"
-                        : "\"" + title + "\" has changes that are not saved")
-                    + ", and a tool that has never been proved runs only on a saved model - so "
-                    + "if it froze Revit, reopening the model would lose nothing. Nothing was "
-                    + "run. Save the model, then ask again.");
+                    HeronKeepQuestion.UnsavedRefusal(title, string.IsNullOrEmpty(path),
+                                                     written, DateTime.Now));
             }
 
             return null;

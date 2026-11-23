@@ -526,6 +526,54 @@ namespace Heron.KeepQuestion.TestHost
                   "a no says nothing was deleted, never to retry, and that their selection is back");
 
             DeleteBoxNamesAndCloses();
+            UnsavedRefusalNamesTheFile();
+        }
+
+        /// <summary>
+        /// FRAGMENT-ISSUES 5b-1999: a family saved with Ctrl+S, its file
+        /// written 15:52, still refused as "not saved" because Revit marked it
+        /// changed after the save. The refusal now says so, with the file's
+        /// time, and that saving once more is the fix. Asked by REFLECTION, so
+        /// this host still builds on the code as it stood and each check FAILS
+        /// rather than the build crashing (heron-ship 2a).
+        /// </summary>
+        private static void UnsavedRefusalNamesTheFile()
+        {
+            Console.WriteLine();
+            Console.WriteLine("17. a model refused as unsaved says when its file was written (5b-1999)");
+            var refusal = typeof(HeronKeepQuestion).GetMethod("UnsavedRefusal",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Check(refusal != null, "HeronKeepQuestion.UnsavedRefusal is there");
+            if (refusal == null) return;
+
+            Func<string, bool, DateTime?, DateTime, string> say = (t, never, w, n) =>
+                (string)refusal.Invoke(null, new object[] { t, never, w, n });
+            var now = new DateTime(2026, 11, 23, 15, 54, 10);
+
+            var saved = say("louvre-scratch", false, new DateTime(2026, 11, 23, 15, 52, 0), now);
+            Check(saved.Contains("Revit marked this document changed after its last save (file written 15:52, 2 min ago)"),
+                  "a saved file's time is named, with how long ago: " + Short(saved));
+            Check(saved.Contains("save it once more"),
+                  "and a second save is named as the fix");
+            Check(saved.Contains("Nothing was run") && saved.Contains("Save the model, then ask again"),
+                  "and it still says nothing ran and to save first (NEEDS-CHECKING EM4's words)");
+
+            var never = say("Family1", true, null, now);
+            Check(never.Contains("\"Family1\" has never been saved") && !never.Contains("file written")
+                  && !never.Contains("once more"),
+                  "a model never saved says so, and names no file and no second save");
+
+            var cloud = say("Tower", false, null, now);
+            Check(cloud.Contains("has changes that are not saved") && !cloud.Contains("file written")
+                  && !cloud.Contains("Revit marked"),
+                  "with no file to read, no time is guessed and no cause is claimed");
+
+            var yesterday = say("Tower", false, new DateTime(2026, 11, 22, 9, 5, 0), now);
+            Check(yesterday.Contains("file written 2026-11-22 09:05)"),
+                  "another day's write carries its date");
+
+            Check(say("", false, null, now).Contains("\"(unnamed)\""),
+                  "a model with no title is named (unnamed), not \"\"");
         }
 
         /// <summary>

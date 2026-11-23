@@ -1714,6 +1714,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pr.md`](needs-checking/group-pr.md)
 
+## Group PV - a family just saved reads as unsaved: what in Revit marks it changed, and the refusal that now names the file's time - BUILT, NOT RUN IN REVIT (2026-11-23)
+
+**Its own file:** [`needs-checking/group-pv.md`](needs-checking/group-pv.md)
+
 ## Group PW - ARRAY_FAMILY_FORMS version 6: a form already in an array, or in a group, is refused in a sentence, not thrown - DRAFT until proved (2026-11-23)
 
 **Its own file:** [`needs-checking/group-pw.md`](needs-checking/group-pw.md)

@@ -314,6 +314,82 @@ namespace Heron.Revit.Addin
                  + "This was their decision, not a failure - send it again only if they ask.";
         }
 
+        /// <summary>
+        /// D-121's refusal for a model that is not saved: the words of
+        /// `ask_needs_saved_model`, which RevitFragment.AskRefusal returns
+        /// before anything runs.
+        ///
+        /// IT NAMES WHEN THE FILE WAS WRITTEN - FRAGMENT-ISSUES row 5b-1999.
+        /// On 2026-11-23 the owner pressed Ctrl+S, the file read "written
+        /// 15:52", and this refusal still said "changes that are not saved";
+        /// a second save let the run through. The refusal reads Revit's own
+        /// Document.IsModified, and the code was traced: no Heron job between
+        /// that save and this refusal opens a transaction or marks the model
+        /// changed. So Revit marked the document changed after its save, and
+        /// the modeller is told so, with the file's time beside it, so a
+        /// second save reads as the fix rather than as Heron being wrong.
+        ///
+        /// `fileWritten` is the file's last-write time in local time, or null
+        /// when there is no file to read (never saved, a cloud model, a file
+        /// that cannot be read) - then the sentence says nothing about it
+        /// rather than guess one.
+        /// </summary>
+        internal static string UnsavedRefusal(string title, bool neverSaved,
+                                              DateTime? fileWritten, DateTime now)
+        {
+            var named = "\"" + Named(title) + "\"";
+            string opening;
+            if (neverSaved)
+            {
+                opening = named + " has never been saved";
+            }
+            else if (fileWritten.HasValue)
+            {
+                opening = named + " has changes that are not saved: Revit marked this document "
+                        + "changed after its last save (file written "
+                        + When(fileWritten.Value, now) + ")";
+            }
+            else
+            {
+                opening = named + " has changes that are not saved";
+            }
+
+            var text = opening
+                + ", and a tool that has never been proved runs only on a saved model - so "
+                + "if it froze Revit, reopening the model would lose nothing. Nothing was "
+                + "run. Save the model, then ask again.";
+
+            if (!neverSaved && fileWritten.HasValue)
+            {
+                text += " If you saved it just now and changed nothing since, Revit marked it "
+                      + "changed again by itself - save it once more and ask again.";
+            }
+            return text;
+        }
+
+        /// <summary>
+        /// "15:52, 2 min ago" - the clock time a modeller compares with the
+        /// file in Explorer, and how long ago. Another day's write carries its
+        /// date. A time ahead of now (a clock moved) gives the time alone.
+        /// </summary>
+        internal static string When(DateTime written, DateTime now)
+        {
+            var clock = written.Date == now.Date
+                ? written.ToString("HH:mm", CultureInfo.InvariantCulture)
+                : written.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+
+            var ago = now - written;
+            if (ago < TimeSpan.Zero) return clock;
+            if (ago.TotalMinutes < 1) return clock + ", less than a minute ago";
+            if (ago.TotalHours < 1)
+                return clock + ", " + ((int)ago.TotalMinutes).ToString(CultureInfo.InvariantCulture)
+                     + " min ago";
+            if (ago.TotalDays < 1)
+                return clock + ", " + ((int)ago.TotalHours).ToString(CultureInfo.InvariantCulture)
+                     + " h ago";
+            return clock;
+        }
+
         private static string TooMany(int count, string which)
         {
             return count.ToString("N0", CultureInfo.InvariantCulture) + " " + which
