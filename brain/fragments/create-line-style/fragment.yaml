@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -161,36 +161,44 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-23'
   by: Ajmal PS
-  model: Family1, Revit 2020, session 13520 - the count is NOT recorded because 3,035 elements
-    was measured on Project2, the document in front, and this ran against another one (row
-    15)
-  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned colourText 0,0,255, familyCategory
-    true, familyRefusal (null), findings 1 item(s) [Made subcategory "Heron Test Style" of
-    Generic Models: colou...], lines Category, madeNew true, name Heron Test Style, onCategory
-    false, parent Category, patternId 1 item(s) [id -3000010], readBack colour 0,0,255, weight
-    1, pattern Solid, refused (null), style GraphicsStyle, sub Category, updateExisting true,
-    wantedColour Color, wantedPattern Solid, weight 1. inputs came styleName as given; colour
-    as given; weight as given; patternName as given; updateExisting as given; familyCategory
-    as given. on Family1'
-  negative_case: run with categoryName=Walls, colour=0,0,255, familyCategory=True, inViewOnly=Heron
-    3D, patternName=ZZZ No Such Pattern, styleName=Heron Test Style, updateExisting=True,
-    weight=1 instead - chosen because it should not contain what this fragment reports - run
-    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned colourText 0,0,255, familyCategory true, familyRefusal (null), findings 1 item(s)
-    [No line pattern is named "ZZZ No Such Pattern", so NOTHING W...], lines Category, madeNew
-    false, name Heron Test Style, onCategory false, parent Category, patternId (null), readBack
-    , refused No line pattern is named "ZZZ No Such Pattern", so NOTHING WAS CHANGED. CREATE_LINE_PATTERN
-    makes one., style (null), sub (null), updateExisting true, wantedColour Color, wantedPattern
-    ZZZ No Such Pattern, weight 1. inputs came styleName as given; colour as given; weight
-    as given; patternName as given; updateExisting as given; familyCategory as given. on Family1
+  model: fp-scratch2 (1,503 elements), Revit 2020, session 35764
+  positive_case: run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-11-23; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned askedParent Reference Planes, colourText 128,128,128, familyCategory
+    false, familyRefusal (null), findings 1 item(s) [Made subcategory "Secondary References"
+    of Reference Planes:...], lines Category, madeNew true, name Secondary References, namedParent
+    true, onCategory false, ownCategory true, parent Category, patternId (null), readBack
+    colour 128,128,128, weight 1, pattern Solid, refused (null), style GraphicsStyle, sub
+    Category, updateExisting false, wantedColour Color, wantedPattern , weight 0. inputs came
+    styleName as given; colour as given; weight as given; patternName as given; updateExisting
+    not given - false (optional); familyCategory not given - false (optional); parentCategory
+    as given. on fp-scratch2
+  negative_case: run with styleName=Secondary References, colour=128,128,128, weight=0, patternName=,
+    parentCategory=No Such Category instead - chosen because it should not contain what this
+    fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned askedParent No Such Category, colourText 128,128,128,
+    familyCategory false, familyRefusal This family has no category named "No Such Category",
+    so NOTHING WAS CHANGED. Name it as Object Styles shows it - "Reference Planes" - or by
+    Revit's own OST_ name. LIST_CATEGORIES lists them., findings 1 item(s) [This family has
+    no category named "No Such Category", so NOT...], lines Category, madeNew false, name
+    Secondary References, namedParent true, onCategory false, ownCategory true, parent (null),
+    patternId (null), readBack , refused This family has no category named "No Such Category",
+    so NOTHING WAS CHANGED. Name it as Object Styles shows it - "Reference Planes" - or by
+    Revit's own OST_ name. LIST_CATEGORIES lists them., style (null), sub (null), updateExisting
+    false, wantedColour Color, wantedPattern , weight 0. inputs came styleName as given; colour
+    as given; weight as given; patternName as given; updateExisting not given - false (optional);
+    familyCategory not given - false (optional); parentCategory as given. on fp-scratch2
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 1b064d51d48521cd
-
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: 3545dba0dc8cd0c7
+  fingerprint: 97d9f257a66c1937
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
