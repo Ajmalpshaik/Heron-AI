@@ -7,6 +7,8 @@
 
 ## Group PX - a box's id from EXTRUDE_BETWEEN_PLANES, and an Integer or Yes/No formula read back by SET_FAMILY_FORMULA - DRAFT until proved (2026-11-23)
 
+**Tracked as GitHub issue [#1297](https://github.com/Ajmalpshaik/Heron-AI/issues/1297) since 2026-11-23** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Why:** two reply gaps found building a parametric louvre family in Revit 2020 on 2026-11-23 (session 49564,
 add-in 0.3.0.0). [Row 5b-2000](../fragment-issues/row-5b-2000.md): the box tool gave no id, so nine boxes each
 needed `REPORT_FAMILY_FORMS` and a match by extents before a later step could name them.
