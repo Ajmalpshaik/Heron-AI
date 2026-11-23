@@ -74,8 +74,10 @@ python mcp/client/heron_bridge_client.py fragment set-view-filter-categories --w
 **PE2:**
 
 ```text
-python mcp/client/heron_bridge_client.py fragment report-connectors --set "elements=<round duct>,<rectangular duct>,<fixture>"
+python mcp/client/heron_bridge_client.py fragment report-connectors
 ```
+
+**First SELECT the round duct, the rectangular duct and the fixture in Revit, then run it with no `--set`.** `elements` is not a typed input: the card reads the Revit selection, and a typed list of ids is never read - nothing says it was dropped (row 5b-1971). Or arrange them with a setup step: `filter-elements-by-id` with `elementIds` typed.
 
 **PE3** - negative, positive, preview:
 
@@ -94,7 +96,7 @@ python mcp/client/heron_bridge_client.py fragment create-sheets --write --set "n
 python mcp/client/heron_bridge_client.py fragment apply-view-filter --write --set "view=<a floor plan>"
 ```
 
-**PE5** - touching, then apart:
+**PE5** - touching, then apart. **CANNOT BE ARRANGED AS TYPED (row 5b-1970):** `first` and `second` are single-element needs, the only word that binds one is `selected`, and it means exactly one element - so two different ducts cannot be handed over yet, and `--set "first=<duct A>"` is refused. Following `selected` for both measures a duct against itself (0 mm), an answer and not a refusal. Do not run these two lines until a way to name two elements exists:
 
 ```text
 python mcp/client/heron_bridge_client.py fragment measure-distance --set "first=<duct A>" --set "second=<duct B touching A>"

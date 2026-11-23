@@ -39,7 +39,10 @@ positive:
       phase than its last: a copy of Revit 2020's rac_basic_sample_project.rvt
       (rooms on 'Working Drawings', last phase 'Learning Content'), door
       422466 between Hall 105 and Bath 103 with its From and To the wrong way
-      round for its swing, fromToRoomOnly true
+      round for its swing, fromToRoomOnly true. READ THE DOOR FIRST (row 5b-1973):
+      REPORT_DOOR_ROOM_LINKS on 'Working Drawings' must show its From and To the
+      wrong way round; NEEDS-CHECKING OU6 describes the same door and the model
+      says which text is right
     expect: >
       roomsSwapped names door 422466, From -> To swapped to match its swing,
       "on phase 'Working Drawings'" - the door's own Phase Created - and

@@ -46,6 +46,9 @@ positive:
       written: the count must not turn down a name that occurs once
 
 negative:
+  # READ BY HAND (row 5b-1972): the card THROWS on a doubled name, so a batch runner
+  # reads NO NEGATIVE for this case and cannot judge it. A negative a runner CAN judge
+  # is the misspelled material name further down (an answered refusal).
   # VERSION 3, row 5b-1534. NOT RUN - it needs a material carrying a name
   # twice, e.g. a project parameter "Keywords" bound to Materials twice
   # (instance and type, or two shared ones of that name).

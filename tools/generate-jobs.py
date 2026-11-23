@@ -627,8 +627,28 @@ def blockers(frag, supply, threshold_ordinal, ladder):
     # (b) A SHAPE REVIT CANNOT BE HANDED. D-54: values cross as text and become
     #     their declared type inside Revit, and the types with no rule yet are
     #     refused by name. 85 of the 120 unproven fragments stop here.
+    # TWO SINGLE-ELEMENT NEEDS CANNOT BE HANDED TWO ELEMENTS (row 5b-1970).
+    # `selected` binds the ONE element chosen in Revit, and binds it to every
+    # such need - so for `measure-distance` (`first`, `second`) the advice to
+    # "select it and pass `selected`" measured an element against itself, 0 mm,
+    # an answer and not a refusal.
+    singles = [n.get("name") for n in frag.needs()
+               if HF.need_source(n) == "request"
+               and (n.get("type") or "").replace(" ", "") == "Element"
+               and not is_type_need_name(n.get("name"))
+               and not HF.need_may_be_absent(n)]
     for need in frag.needs():
         if HF.need_source(need) != "request":
+            continue
+        if len(singles) > 1 and need.get("name") in singles:
+            found.append("`%s (%s)` is one of TWO single-element needs (%s): the "
+                         "only word that binds one is `selected`, it means "
+                         "exactly one element and binds that one to BOTH - so "
+                         "two different elements cannot be handed over yet, and "
+                         "following it measures an element against itself "
+                         "(row 5b-1970)"
+                         % (need.get("name"), need.get("type"),
+                            ", ".join(singles)))
             continue
         ok, why = receivable(need.get("type"), need.get("name"))
         if not ok:
