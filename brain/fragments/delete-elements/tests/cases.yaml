@@ -7,7 +7,7 @@ positive:
       `deleted` still reports the full blast radius and the model is unchanged -
       which is how a deletion preview is built, and what Golden Rule 17 needs
 
-  # VERSION 3 - WHAT WENT IS NAMED, READ BEFORE IT WENT (row 5b-1993). Every
+  # VERSION 3 - WHAT WENT IS NAMED, READ BEFORE IT WENT (row 5b-1996). Every
   # case below FAILS on version 2, which had no `deletedWhat` or
   # `deletedByCategory` and gave the extra elements as bare ids only.
   # NEEDS-CHECKING Group PS.
@@ -91,7 +91,7 @@ negative:
       only the walls under the deleted roof are in detachedWalls; the walls
       under the other roof are not in attachedBefore at all, and stay attached
 
-  # VERSION 3 negatives (row 5b-1993).
+  # VERSION 3 negatives (row 5b-1996).
   - given: >
       VERSION 3. 4 standalone ducts, nothing depending on them
     expect: >

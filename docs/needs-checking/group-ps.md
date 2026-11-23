@@ -9,7 +9,7 @@
 
 **Tracked as GitHub issue [#1283](https://github.com/Ajmalpshaik/Heron-AI/issues/1283) since 2026-11-23** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-**Why:** [row 5b-1993](../fragment-issues/row-5b-1993.md). On 2026-11-23 (Revit 2020, add-in 0.3.0.0, family documents)
+**Why:** [row 5b-1996](../fragment-issues/row-5b-1996.md). On 2026-11-23 (Revit 2020, add-in 0.3.0.0, family documents)
 the owner pressed Delete in Revit's box several times while the reply could not say what the extra elements were:
 `alsoWent 1`, `alsoWent 220`, and a run record holding only `{"change": "deleted", "id": "9021"}`.
 [`DELETE_ELEMENTS`](../../brain/fragments/delete-elements/fragment.yaml) version 3 tries each delete first in a
