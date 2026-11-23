@@ -139,7 +139,7 @@ def main():
                     executor) is not None,
           "WithUnasked says asked false and askSkipped")
     check('AskSkippedBySwitch = "askToDeleteOff"' in executor, "askSkipped's value is askToDeleteOff")
-    check("RevitFragment.AskSkippedBySwitch" in dispatcher and "Ask to Delete off" in dispatcher,
+    check("RevitFragment.AskSkippedBySwitch" in dispatcher and "Not asked in Revit - Ask to Delete off" in dispatcher,
           "the banner says it was kept without asking")
 
     section("5. Settings has the row, and the toggle asks on the way OFF only")

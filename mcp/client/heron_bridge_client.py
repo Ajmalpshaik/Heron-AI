@@ -3746,6 +3746,15 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
             return 2
         kept_phase = dict(once.get("phase") or {})
         kept_phase["phase"] = "positive"
+        # D-197: A RUN KEPT WITH NO BOX - Ask to Delete was off - is used, and
+        # said: nobody looked at it in Revit, so the signer must know before
+        # signing that this positive case is the run, not a person's Keep.
+        if once.get("asked") is False:
+            kept_phase["asked"] = False
+            print("NOTE: the kept run of %s was kept with NO Keep or Discard box (Ask to"
+                  % name)
+            print("Delete was off, D-197) - nobody looked at it in Revit. The proof drafted")
+            print("from this says so; the signer decides whether it stands as the positive.")
 
     # BOTH LEGS, because row 71's case was a value typed into the NEGATIVE that
     # the fragment never declared - `--set maxSteps=200` against

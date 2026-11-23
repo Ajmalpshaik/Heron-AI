@@ -259,14 +259,14 @@ ASK_TO_KEEP_ON = (
     "Ask to Keep is ON in this Revit right now: a change made through revit_change "
     "is shown in Revit's Keep or Discard box and kept only on Keep. Different for: "
     "a job the modeller chose in that box to keep the rest of, and a change Revit "
-    "counted nothing in (both kept unasked); a delete (asked in its own Delete box "
+    "counted nothing in (both kept unasked); a delete while Ask to Delete is on (asked in its own Delete box "
     "instead); an export, save or sync (already done when the box opens - Discard "
     "cannot take it back); a dry run (rolled back, so never kept and never asked "
     "about); and revit_apply_move (keeps the preview it showed, with no box).")
 ASK_TO_KEEP_OFF = (
     "Ask to Keep is off in this Revit right now: a change made through revit_change "
     "is kept at once, with no Keep or Discard box, as one entry in Revit's Undo "
-    "list. Different for: a delete (still asked first, in its own Delete box); an "
+    "list. Different for: a delete while Ask to Delete is on (still asked first, in its own Delete box); an "
     "export, save or sync (Undo cannot take back what has left the model); and a "
     "dry run (rolled back, so never kept and never asked about).")
 ASK_TO_KEEP_OLDER = (

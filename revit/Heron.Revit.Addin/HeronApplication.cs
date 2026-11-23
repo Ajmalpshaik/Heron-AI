@@ -550,7 +550,7 @@ namespace Heron.Revit.Addin
             SetBridgeIcon(false);
 
             // SETTINGS - D-150, the owner's word of 2026-11-07. The four
-            // switches - Changes, Admin, Publish, Ask to Keep - left the ribbon
+            // switches - Changes, Admin, Publish, Ask to Keep - left the ribbon (Ask to Delete, D-197, joined them)
             // for one window, where each switch's state is its own button and
             // its padlock picture sits beside it. Each still runs its own
             // command (WriteToggleCommand and the rest), so the question on the
