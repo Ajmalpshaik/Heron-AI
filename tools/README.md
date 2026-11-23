@@ -1350,9 +1350,13 @@ than the hand-written file.
 
 **Nothing is dropped silently.** Its last line says how many jobs it emitted and how many fragments
 it marked as unarrangeable — waiting on a risk Heron does not reach yet, on a shape
-[D-54](../docs/DECISIONS.md) has no rule for, on a value the setup chain does not leave behind, or
-having nothing to vary between the two legs at all, which makes them
-[D-53](../docs/DECISIONS.md) tracking work rather than batch work. Those numbers move as fragments are
+[D-54](../docs/DECISIONS.md) has no rule for, or on a value the setup chain does not leave behind.
+A card that takes only the model is **offered a two-model pair** (`in:` and `negative-in:`, both blank) rather than
+marked - the second leg is a second model with none of what it reads, or a family against a project
+([row 5b-1975](../docs/fragment-issues/row-5b-1975.md)); [D-53](../docs/DECISIONS.md) tracking is what the job's own
+comment names when no such model can be had. An optional need that cannot be typed is left out and said, and a
+card whose `elements` and `targets` are one set on purpose (`SAME_SET_ON_PURPOSE`) gets `keep-chain`. `--only`
+takes a comma-separated list and refuses a name no card has ([row 5b-1983](../docs/fragment-issues/row-5b-1983.md)). Those numbers move as fragments are
 proved, which is why **there is no generated job file committed here**: a snapshot of a moving library
 is stale by the afternoon, and this repository has already been bitten twice by a number typed into a
 file that then stopped being true. Regenerate it; it costs a second.
