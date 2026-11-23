@@ -97,6 +97,18 @@
 // group in `members` and in the same order, the unique id of the form inside it
 // - or of the nested family, for a row of one - so a later tool can be given
 // the form itself. The original keeps the id it was given by.
+//
+// A FORM ALREADY IN AN ARRAY, OR IN A GROUP, IS REFUSED (version 6, 2026-11-23,
+// row 5b-1998). Every member of an array is a model group, the original
+// included, so a form already in a row sits inside one. Measured on Revit 2020
+// (louvre-scratch, session 49564): a blade that was a copy in a row of five,
+// named again with a step out of its plane, made the call FAIL - the trial
+// row's failure was swallowed, and the array after it threw - where the same
+// step on a loose blade came back as a refusal. Now it is read before anything
+// is tried: the array that holds the form's group, said with its count and its
+// label and its original, and what to do instead - change that array's count,
+// or name a form in no array or group. A form in a plain model group is refused
+// the same way, naming the group: ungroup it first.
 
 var findings = new List<string>();
 var arrayId = "";
@@ -342,6 +354,76 @@ Func<GenericForm, Tuple<ReferencePlane, List<string>>> labelledPlaneOf = f =>
 // word for none; a plane's own name cannot hold one.
 Func<SketchPlane, bool> unnamedPlane = p => p != null && (p.Name ?? "").Trim().StartsWith("<");
 
+// VERSION 6 (row 5b-1998): WHY A FORM INSIDE A GROUP IS NOT ARRAYED, in words -
+// or null when it is in none. Every member of an array is a model group, the
+// original included (5b-358), so a form already in a row sits in one. Measured
+// 2026-11-23 on Revit 2020 (louvre-scratch): a blade that was a copy in a row of
+// five, named again, made the call FAIL - the trial row's own failure was
+// swallowed and the array below threw - where the same step on a loose blade
+// came back as a refusal. So a form in a group is refused before anything is
+// tried, naming the array that holds it, or the group.
+Func<Element, string> groupedIn = e =>
+{
+    if (e.GroupId == null || e.GroupId.Equals(ElementId.InvalidElementId)) return null;
+    // The group around it, and every group around that one, nearest first.
+    var around = new List<Group>();
+    var next = doc.GetElement(e.GroupId) as Group;
+    while (next != null && around.Count < 20)
+    {
+        around.Add(next);
+        next = next.GroupId == null || next.GroupId.Equals(ElementId.InvalidElementId) ? null
+            : doc.GetElement(next.GroupId) as Group;
+    }
+    var aroundIds = new HashSet<ElementId>(around.Select(g => g.Id));
+    BaseArray holding = null;
+    var isOriginal = false;
+    try
+    {
+        foreach (var array in new FilteredElementCollector(doc).WhereElementIsNotElementType().ToElements().OfType<BaseArray>())
+        {
+            var originals = new List<ElementId>();
+            var copied = new List<ElementId>();
+            try { originals.AddRange(array.GetOriginalMemberIds()); } catch (Exception) { }
+            try { copied.AddRange(array.GetCopiedMemberIds()); } catch (Exception) { }
+            if (originals.Any(id => aroundIds.Contains(id))) { holding = array; isOriginal = true; break; }
+            if (copied.Any(id => aroundIds.Contains(id))) { holding = array; break; }
+        }
+    }
+    catch (Exception) { holding = null; }
+    var outer = around.Count == 0 ? null : around[around.Count - 1];
+    var groupWords = outer == null ? "a group"
+        : "the group \"" + (string.IsNullOrEmpty(outer.Name) ? outer.UniqueId : outer.Name) + "\" " + outer.UniqueId;
+    if (holding == null)
+        return "The " + describe(e) + " sits inside " + groupWords + ", and a form or nested family inside a group "
+            + "is not arrayed on its own. Ungroup it in Revit first, then name it again.";
+    var memberCount = 0;
+    try { memberCount = holding.NumMembers; } catch (Exception) { memberCount = 0; }
+    FamilyParameter label = null;
+    try { label = holding.Label; } catch (Exception) { label = null; }
+    // The array's original, by the form inside its group, for the sentence.
+    var firstWords = "";
+    if (!isOriginal)
+    {
+        try
+        {
+            var firstGroup = holding.GetOriginalMemberIds().Select(id => doc.GetElement(id)).FirstOrDefault(x => x != null);
+            var firstGrouped = firstGroup as Group;
+            var firstForm = firstGrouped == null ? firstGroup : firstGrouped.GetMemberIds().Select(id => doc.GetElement(id))
+                .FirstOrDefault(x => x is GenericForm || x is FamilyInstance);
+            if (firstForm != null) firstWords = " The array's original is the " + describe(firstForm) + ".";
+        }
+        catch (Exception) { firstWords = ""; }
+    }
+    return "The " + describe(e) + " is already " + (isOriginal ? "the original of" : "a copy in") + " the array "
+        + holding.UniqueId + (memberCount > 0 ? " - " + memberCount + " in all" : "")
+        + (label != null ? ", its count following \"" + label.Definition.Name + "\"" : "")
+        + " - and sits inside " + groupWords + ", that array's member. A form already in an array is not arrayed "
+        + "again." + firstWords + " To change how many there are, change the array's count: "
+        + (label != null ? "\"" + label.Definition.Name + "\" in each type (SET_FAMILY_TYPE_VALUES)"
+            : "the number Revit shows on the array when a copy is selected")
+        + ". For a second row, name a form that is in no array or group.";
+};
+
 // The form, or the nested family, the row is made of.
 Element original = null;
 GenericForm originalForm = null;
@@ -392,9 +474,14 @@ else
         {
             originalForm = named[0] as GenericForm;
             original = originalForm != null ? named[0] : named[0] as FamilyInstance;
+            // VERSION 6 (row 5b-1998): a form already in an array, or in a
+            // model group, is refused before any trial row is tried.
+            var grouped = original == null ? null : groupedIn(original);
             if (original == null)
                 problems.Add("\"" + (named[0].Name ?? named[0].UniqueId) + "\" (" + named[0].UniqueId + ") is neither "
                     + "a form - an extrusion, revolve, blend, sweep or swept blend - nor a nested family.");
+            else if (grouped != null)
+                problems.Add(grouped);
             else if (originalForm == null && original.OwnerViewId != null
                 && !original.OwnerViewId.Equals(ElementId.InvalidElementId))
             {

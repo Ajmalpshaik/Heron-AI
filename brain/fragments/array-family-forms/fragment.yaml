@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,10 +9,25 @@ semantic-identity: "repeat one form or one nested family in a row - a linear arr
 kind: action
 domain: revit.families
 capability: ARRAY_FAMILY_FORMS
-version: 5
+version: 6
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 6 (2026-11-23) - A FORM ALREADY IN AN ARRAY, OR IN A GROUP, IS
+# REFUSED IN A SENTENCE, and the card stays DRAFT. FRAGMENT-ISSUES row 5b-1998:
+# measured 2026-11-23 on Revit 2020 (louvre-scratch, session 49564), a blade
+# arrayed (count Blade_Count, step Z 45, kept) was named again by its own id
+# with step X 45, and the call FAILED (`fragment_threw`) - the trial row's
+# failure was swallowed and the array after it threw - where the same step on
+# a loose blade came back as the clean refusal. Version 6 reads the form's
+# group before anything is tried: inside an array's member group it is
+# refused, naming the array, its count and label, and its original, and saying
+# to change that array's count or name a form in no array or group; inside a
+# plain model group it is refused naming the group. Version 5's proof
+# (2026-11-23, louvre-scratch) is in pull request #1275, not on main; it is a
+# proof of version 5's C#, and this card's C# moved, so it is DRAFT until
+# NEEDS-CHECKING Group PW is run (D-30).
+#
 # VERSION 5 (2026-11-20) - A FORM ON A PLANE A PARAMETER MOVES IS SAID, and
 # THE FORM IN EACH COPY IS GIVEN BACK, and back to DRAFT. FRAGMENT-ISSUES row
 # 5b-1261: measured 2026-10-20 on Revit 2020, forms sketched on reference
@@ -103,6 +118,12 @@ purpose: >
   array, any form in the row whose work plane now reads not associated - with
   FLEX_FAMILY as the next step. `memberForms` gives each copy's own form.
 
+  **A FORM ALREADY IN AN ARRAY** (version 6, row 5b-1998) is refused before
+  anything is tried - every member of an array is a group, so it is read by
+  its group: the array that holds it is named with its count, its label and
+  its original, and the way on is that array's count, or a form in no array
+  or group. A form in a plain model group is refused naming the group.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -171,40 +192,52 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-12'
+  date: '2026-11-23'
   by: Ajmal PS
-  model: Heron NF Generic (1,564 elements), Revit 2020, session 33000
-  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned arrayId 6f9fd345-b0af-49ed-9c09-c5879cbd9774-00001084,
-    arrayView Func`1, axis 0, axisLetters 3 item(s) [X, Y, Z], dbNamespace Autodesk.Revit.DB,
-    describe Func`2, driver (null), faceWord Func`3, findings 1 item(s) [Arrayed the nested
-    family "Heron NF Arrow : Heron NF Arrow" ...], flags BindingFlags, halfMillimetre 0.00164041994750656,
-    heldBy Func`2, insertionOf Func`2, invariant CultureInfo, isInteger Func`2, labelled false,
-    lowest Func`3, members 6f9fd345-b0af-49ed-9c09-c5879cbd9774-00001083,6f9fd345-b0af-49ed-9c09-c5879cbd9774-0000108a,6f9fd345-b0af-49ed-9c09-c5879cbd9774-0000108d,
-    n 4, notAFamily false, original FamilyInstance, originalForm (null), ownerView ViewPlan,
-    ownerless true, plain Func`2, problems 0 item(s), refused (null), revitAssembly RuntimeAssembly,
-    sameKind Func`3, shapeOf Func`2, sketchPlaneOf Func`2, stepMm 200, toLast false, unitAlong
-    Func`2. inputs came form as given; count as given; step as given. on Heron NF Generic'
-  negative_case: 'run with form=d09df1e6-65b3-4385-9279-48572506fe4e-00000fd3, count=3, step=Z
-    100 instead - chosen because it should not contain what this fragment reports - run inside
-    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    arrayId , arrayView Func`1, axis 2, axisLetters 3 item(s) [X, Y, Z], dbNamespace Autodesk.Revit.DB,
-    describe Func`2, driver (null), faceWord Func`3, findings 1 item(s) [Nothing was arrayed.
-    The nested family "Heron NF Arrow : Her...], flags BindingFlags, halfMillimetre 0.00164041994750656,
-    heldBy Func`2, insertionOf Func`2, invariant CultureInfo, isInteger Func`2, labelled false,
-    lowest Func`3, members , n 3, notAFamily false, original FamilyInstance, originalForm
-    (null), ownerView ViewPlan, ownerless true, plain Func`2, problems 1 item(s) [The nested
-    family "Heron NF Arrow : Heron NF Arrow" d09df1e6...], refused Nothing was arrayed. The
-    nested family "Heron NF Arrow : Heron NF Arrow" d09df1e6-65b3-4385-9279-48572506fe4e-00000fd3
-    is drawn in "Ref. Level" and stays in that view''s plane, so a row along Z - out of the
-    view - cannot be made. A row along X or Y stays in it. For a row along Z, draw it in a
-    view that looks across Z., revitAssembly RuntimeAssembly, sameKind Func`3, shapeOf Func`2,
-    sketchPlaneOf Func`2, stepMm 100, toLast false, unitAlong Func`2. inputs came form as
-    given; count as given; step as given. on Heron NF Generic'
+  model: louvre-scratch (1,598 elements), Revit 2020, session 49564
+  positive_case: run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-11-23; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned arrayId 6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b34, arrayView
+    Func`1, axis 2, axisLetters 3 item(s) [X, Y, Z], dbNamespace Autodesk.Revit.DB, describe
+    Func`2, driver FamilyParameter, faceWord Func`3, findings 2 item(s) [Arrayed the solid
+    extrusion 9bc1f173-118f-46a0-8986-057ae741..., When a type's count changes, Revit remakes
+    the copies, and t...], flags BindingFlags, halfMillimetre 0.00164041994750656, heldBy
+    Func`2, insertionOf Func`2, invariant CultureInfo, isInteger Func`2, labelled true, labelledPlaneOf
+    Func`2, lowest Func`3, memberForms 6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b2a,6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b3a,6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b46,6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b52,
+    members 6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b32,6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b42,6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b4e,6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b5a,
+    n 5, notAFamily false, original Extrusion, originalForm Extrusion, ownerView (null), ownerless
+    false, plain Func`2, problems 0 item(s), refused (null), revitAssembly RuntimeAssembly,
+    sameKind Func`3, shapeOf Func`2, sketchPlaneOf Func`2, stepMm 45, toLast false, unitAlong
+    Func`2, unnamedPlane Func`2. inputs came form as given; count as given; step as given.
+    on louvre-scratch
+  negative_case: 'run with form=9bc1f173-118f-46a0-8986-057ae7412ca8-00000a8f, count=Blade_Count,
+    step=X 45 instead - chosen because it should not contain what this fragment reports -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned arrayId , arrayView Func`1, axis 0, axisLetters 3 item(s) [X, Y, Z], dbNamespace
+    Autodesk.Revit.DB, describe Func`2, driver FamilyParameter, faceWord Func`3, findings
+    1 item(s) [Nothing was arrayed. A copy of this extrusion cannot leave t...], flags BindingFlags,
+    halfMillimetre 0.00164041994750656, heldBy Func`2, insertionOf Func`2, invariant CultureInfo,
+    isInteger Func`2, labelled false, labelledPlaneOf Func`2, lowest Func`3, memberForms ,
+    members , n 5, notAFamily false, original Extrusion, originalForm Extrusion, ownerView
+    (null), ownerless false, plain Func`2, problems 1 item(s) [A copy of this extrusion cannot
+    leave the plane it is sketch...], refused Nothing was arrayed. A copy of this extrusion
+    cannot leave the plane it is sketched on, Center (Left/Right), and a row along X leaves
+    it: a trial row of 3, rolled back, moved its copies 0 and 0 mm of the 45 and 90 mm asked,
+    so every copy would sit on the original. A row along Y or Z stays in that plane. For a
+    row along X, sketch the form on a plane the row runs along - Ref. Level or Center (Front/Back)
+    in Revit''s own templates - or, with a fixed count, make each one its own form at its
+    own place., revitAssembly RuntimeAssembly, sameKind Func`3, shapeOf Func`2, sketchPlaneOf
+    Func`2, stepMm 45, toLast false, unitAlong Func`2, unnamedPlane Func`2. inputs came form
+    as given; count as given; step as given. on louvre-scratch'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 8cd0313e7ef4050c
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: 3545dba0dc8cd0c7
+  fingerprint: 178d534c3db8b97a
   releases:
   - release: '2024'
     date: '2026-11-12'
@@ -212,33 +245,33 @@ proof:
     model: R24 Generic, Revit 2024, session 13164 - the count is NOT recorded because 3,209
       elements was measured on R24 Project, the document in front, and this ran against another
       one (row 15)
-    positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-      the transaction group ROLLED BACK afterwards. returned arrayId 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d3b,
+    positive_case: 'run as it would normally be run - run inside a transaction, and Revit
+      reported the transaction group ROLLED BACK afterwards. returned arrayId 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d3b,
       arrayView Func`1, axis 0, axisLetters 3 item(s) [X, Y, Z], dbNamespace Autodesk.Revit.DB,
       describe Func`2, driver (null), faceWord Func`3, findings 1 item(s) [Arrayed the nested
       family "R24 Arrow : R24 Arrow" 237ece53-3...], flags BindingFlags, halfMillimetre 0.00164041994750656,
-      heldBy Func`2, insertionOf Func`2, invariant CultureInfo, isInteger Func`2, labelled false,
-      lowest Func`3, members 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d3a,237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d41,237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d44,
+      heldBy Func`2, insertionOf Func`2, invariant CultureInfo, isInteger Func`2, labelled
+      false, lowest Func`3, members 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d3a,237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d41,237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d44,
       n 4, notAFamily false, original FamilyInstance, originalForm (null), ownerView ViewPlan,
       ownerless true, plain Func`2, problems 0 item(s), refused (null), revitAssembly RuntimeAssembly,
       sameKind Func`3, shapeOf Func`2, sketchPlaneOf Func`2, stepMm 200, toLast false, unitAlong
       Func`2. inputs came form as given; count as given; step as given. on R24 Generic'
-    negative_case: 'run with form=237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d1b, count=3, step=Z
-      100 instead - chosen because it should not contain what this fragment reports - run inside
-      a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-      arrayId , arrayView Func`1, axis 2, axisLetters 3 item(s) [X, Y, Z], dbNamespace Autodesk.Revit.DB,
-      describe Func`2, driver (null), faceWord Func`3, findings 1 item(s) [Nothing was arrayed.
-      The nested family "R24 Arrow : R24 Arro...], flags BindingFlags, halfMillimetre 0.00164041994750656,
-      heldBy Func`2, insertionOf Func`2, invariant CultureInfo, isInteger Func`2, labelled false,
-      lowest Func`3, members , n 3, notAFamily false, original FamilyInstance, originalForm
-      (null), ownerView ViewPlan, ownerless true, plain Func`2, problems 1 item(s) [The nested
-      family "R24 Arrow : R24 Arrow" 237ece53-33e4-4c24...], refused Nothing was arrayed. The
-      nested family "R24 Arrow : R24 Arrow" 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d1b is
-      drawn in "Ref. Level" and stays in that view''s plane, so a row along Z - out of the view
-      - cannot be made. A row along X or Y stays in it. For a row along Z, draw it in a view
-      that looks across Z., revitAssembly RuntimeAssembly, sameKind Func`3, shapeOf Func`2,
-      sketchPlaneOf Func`2, stepMm 100, toLast false, unitAlong Func`2. inputs came form as
-      given; count as given; step as given. on R24 Generic'
+    negative_case: 'run with form=237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d1b, count=3,
+      step=Z 100 instead - chosen because it should not contain what this fragment reports
+      - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+      returned arrayId , arrayView Func`1, axis 2, axisLetters 3 item(s) [X, Y, Z], dbNamespace
+      Autodesk.Revit.DB, describe Func`2, driver (null), faceWord Func`3, findings 1 item(s)
+      [Nothing was arrayed. The nested family "R24 Arrow : R24 Arro...], flags BindingFlags,
+      halfMillimetre 0.00164041994750656, heldBy Func`2, insertionOf Func`2, invariant CultureInfo,
+      isInteger Func`2, labelled false, lowest Func`3, members , n 3, notAFamily false, original
+      FamilyInstance, originalForm (null), ownerView ViewPlan, ownerless true, plain Func`2,
+      problems 1 item(s) [The nested family "R24 Arrow : R24 Arrow" 237ece53-33e4-4c24...],
+      refused Nothing was arrayed. The nested family "R24 Arrow : R24 Arrow" 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d1b
+      is drawn in "Ref. Level" and stays in that view''s plane, so a row along Z - out of
+      the view - cannot be made. A row along X or Y stays in it. For a row along Z, draw it
+      in a view that looks across Z., revitAssembly RuntimeAssembly, sameKind Func`3, shapeOf
+      Func`2, sketchPlaneOf Func`2, stepMm 100, toLast false, unitAlong Func`2. inputs came
+      form as given; count as given; step as given. on R24 Generic'
     fingerprint: 8cd0313e7ef4050c
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -267,7 +300,10 @@ compatibility-note: >
   same 2020 through 2027 (`tools/api-surface --members --inherited`,
   2026-11-11). Version 5's `ReferencePlane.GetPlane`, `SketchPlane.GetPlane`,
   `Group.GetMemberIds` and `BaseArray.GetCopiedMemberIds` read the same 2020
-  through 2027 (`tools/api-surface --members`, 2026-11-20).
+  through 2027 (`tools/api-surface --members`, 2026-11-20). Version 6's
+  `Element.GroupId`, `BaseArray.GetOriginalMemberIds`, `GetCopiedMemberIds`,
+  `NumMembers` and `Label` compile on every release 2020 through 2027
+  (`tools/check-fragments-compile.py`, 2026-11-23).
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #

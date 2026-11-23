@@ -290,7 +290,7 @@ Checks the model against the project's own naming and data conventions - view na
 |---|---|
 | **Kind** | Answers a question (`READ`) |
 | **Reached by** | asking in a Claude chat |
-| **You say** | **name patterns** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"<br>**required on** - comma separated, resolved BY NAME in Revit; a name matching twice is refused<br>**required parameters** - a list - comma separated<br>**suspect names** - a list - comma separated<br>**skip view templates** - yes or no - true or false<br>**max rows** - a whole number - digits only - 250, not 250mm |
+| **You say** | **name patterns** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; a value holding a ";" goes in double quotes - Note="a; b"<br>**required on** - comma separated, resolved BY NAME in Revit; a name matching twice is refused<br>**required parameters** - a list - comma separated<br>**suspect names** - a list - comma separated<br>**skip view templates** - yes or no - true or false<br>**max rows** - a whole number - digits only - 250, not 250mm |
 | **You get** | findings, failures, offenders |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | 2020 |

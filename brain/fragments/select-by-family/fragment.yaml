@@ -85,7 +85,10 @@ contract:
     - name: exactMatch
       type: bool
       source: request
-    # Empty means the whole model - see the purpose.
+    # Empty means the whole model - see the purpose. NOT REACHABLE, and it
+    # never was: the binder refuses an empty list ("No categories were
+    # named"), and this card's proof ran with Furniture. Kept as the record;
+    # the rule today is SELECT_BY_PARAMETER_VALUE's, row 5b-1997.
     - name: categories
       type: IList<BuiltInCategory>
       source: request

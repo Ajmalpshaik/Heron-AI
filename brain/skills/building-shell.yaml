@@ -193,7 +193,7 @@ purpose: >
      a point with no wall or with two.
      A DOOR IN A CURTAIN WALL is not placed: it takes the place of one panel,
      once the curtain wall is up (the curtain-wall method). LOAD_FAMILY
-     (PROVEN) the curtain-wall door family when its type is not in the model;
+     (DRAFT again, version 4) the curtain-wall door family when its type is not in the model;
      SELECT_IN_REGION (PROVEN) with categories=Curtain Panels, on a box inside
      that one panel only; then CHANGE_ELEMENT_TYPE (merged 2026-11-01) of that
      panel to the door type, with expect_from naming that select. On 2026-10-13
@@ -252,7 +252,7 @@ purpose: >
          while Heron holds it, and LOAD_FAMILY refuses a family open with
          unsaved work, because a load reads the file.
       e. With the project in front again - ACTIVATE_DOCUMENT with its file,
-         as the family method brings a host back - LOAD_FAMILY (PROVEN) the
+         as the family method brings a host back - LOAD_FAMILY (DRAFT again, version 4) the
          .rfa, then PLACE_FAMILY_INSTANCES (merged 2026-11-01) at 0,0,0 on the
          base level. A point's Z is its height in the model, so the family's
          origin lands on the project's.

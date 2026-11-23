@@ -1718,6 +1718,26 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-px.md`](needs-checking/group-px.md)
 
+## Group PV - a family just saved reads as unsaved: what in Revit marks it changed, and the refusal that now names the file's time - BUILT, NOT RUN IN REVIT (2026-11-23)
+
+**Its own file:** [`needs-checking/group-pv.md`](needs-checking/group-pv.md)
+
+## Group PW - ARRAY_FAMILY_FORMS version 6: a form already in an array, or in a group, is refused in a sentence, not thrown - DRAFT until proved (2026-11-23)
+
+**Its own file:** [`needs-checking/group-pw.md`](needs-checking/group-pw.md)
+
+## Group PT - a quoted value in a `name=value; name=value` list keeps its semicolon - BUILT, NOT RUN IN REVIT (2026-11-23)
+
+**Its own file:** [`needs-checking/group-pt.md`](needs-checking/group-pt.md)
+
+## Group PS - a kept delete names what went: every deleted id's category and name, read before it went, and a form's own sketches counted together: `DELETE_ELEMENTS` version 3 - BUILT, NOT RUN IN REVIT (2026-11-23)
+
+**Its own file:** [`needs-checking/group-ps.md`](needs-checking/group-ps.md)
+
+## Group PU - LOAD_FAMILY version 4: each material compared with itself by id, never with another of its name - DRAFT until proved (2026-11-23)
+
+**Its own file:** [`needs-checking/group-pu.md`](needs-checking/group-pu.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

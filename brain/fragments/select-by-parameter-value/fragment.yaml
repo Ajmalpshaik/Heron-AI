@@ -75,10 +75,9 @@ purpose: >
 
   **VERSION 4 ALSO FINDS BY FAMILY AND COMPARES NUMBERS** - SELECT_BY_FAMILY
   and SELECT_BY_NUMERIC_PARAMETER were merged in. Family as the parameter
-  finds every element of a named family wherever it is, the category
-  optional, `exactMatch` for one family whose name another contains; the
-  families that matched are counted in `matchedFamilies` and an unbounded
-  sweep is said in `scannedWholeModel`. Modes gt, gte, lt, lte, between, eq and
+  finds every element of a named family in the categories named,
+  `exactMatch` for one family whose name another contains; the families
+  that matched are counted in `matchedFamilies`. Modes gt, gte, lt, lte, between, eq and
   ne compare a stored number - "ducts 500 mm high", "pipes larger than 100" -
   with `compareValue` in Revit's internal unit (500 mm is 500/304.8), eq to a
   tolerance, and a parameter held as text is counted in `notNumeric`.
@@ -109,6 +108,15 @@ contract:
     - name: includeTypeParameters
       type: bool
       source: request
+    # AT LEAST ONE IS REQUIRED - the same rule as SELECT_TYPES, row 112. The
+    # BINDER (RevitFragment.cs) refuses an empty list before this code runs:
+    # "No categories were named". It is right to - guessing a category is how
+    # a job runs against the wrong thing. This card said "the category
+    # optional" and "empty = whole model" from version 4 until 2026-11-23,
+    # when a method that believed it was refused at its first step on Revit
+    # 2020 (row 5b-1997). The empty branch in impl/ is still there and
+    # unreachable from a request. For a family, name the category it sits
+    # under in the Project Browser, or ask the modeller.
     - name: categories
       type: IList<BuiltInCategory>
       source: request
@@ -197,7 +205,8 @@ contract:
       type: IDictionary<string, int>
     - name: scannedWholeModel
       # Version 4, from SELECT_BY_FAMILY. True when no category bounded the
-      # sweep - how it ran, never what it found.
+      # sweep - how it ran, never what it found. A request never sets it: the
+      # binder refuses an empty `categories` (row 5b-1997).
       role: accounting
       type: bool
     - name: found
@@ -274,8 +283,9 @@ compatibility-note: >
 #   "walls between 200 and 300"      -> here, between (version 4)
 #   "find all the VCDs" / "where are all the fire dampers" -> here,
 #                                       parameterName Family, when VCD is the
-#                                       FAMILY name - no category needed
-#                                       (version 4, SELECT_BY_FAMILY)
+#                                       FAMILY name, in its category - at
+#                                       least one is named (version 4,
+#                                       SELECT_BY_FAMILY; row 5b-1997)
 #   "all the 300x300 ducts"          -> A SKILL. On a duct, 300x300 is Width
 #                                       and Height - two numbers, not text -
 #                                       so it is this card's numeric mode
@@ -314,7 +324,8 @@ compatibility-note: >
 # tools"), and are DEPRECATED. Where their inputs and outputs are now:
 #   SELECT_BY_FAMILY    familyName -> parameterName=Family, matchText=<the
 #                       name>, matchMode=contains (or equals); exactMatch,
-#                       categories (empty = whole model), includeLinks,
+#                       categories (at least one - the binder refuses an
+#                       empty list, row 5b-1997), includeLinks,
 #                       elements, matchedFamilies, scannedWholeModel, found,
 #                       linksSearched, linkedMatches - the same names. One rule
 #                       is kept from it: no name to look for matches nothing.
