@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 16
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,18 @@ semantic-identity: "load this family file into the project or a family, or reloa
 kind: action
 domain: revit.families
 capability: LOAD_FAMILY
-version: 3
+# VERSION 4, 2026-11-23 - MATERIALS COMPARED BY ELEMENT ID, NOT BY NAME (row
+# 5b-1995). A NEW load into a Revit 2020 project reported 8 materials
+# "changed" that had not moved: the project held three materials named
+# Default, three named Poche and two each of Phase-Demo, Phase-Exist and
+# Phase-Temp, and versions 1 to 3 paired before and after by NAME, so they
+# compared two different materials. Now each material is read by its id
+# before and the same id after; a repeated name is labelled with the id and
+# named in `findings`. BACK TO DRAFT: the C# moved, so version 3's proof
+# below is the record of version 3 only. The new proof is owed - NEEDS-
+# CHECKING Group PU, with its negative: two same-named materials and a
+# family carrying that name must report 0 changed.
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -30,7 +41,9 @@ purpose: >
 
   **A reload can overwrite same-named materials in the target with no dialog
   naming it**, so materials are read before and after and every one that moved
-  is listed, colour and all. Constitution Article 7 puts family reloads among
+  is listed, colour and all. Each material is compared with ITSELF, by its
+  element id - a project can hold several materials of one name, and a name
+  held more than once is labelled with the id and said in `findings`. Constitution Article 7 puts family reloads among
   the operations that need explicit confirmation, so `reload=true` is never
   defaulted and a caller should confirm it with the modeller first.
 
@@ -93,8 +106,16 @@ contract:
       role: result
       type: IList<string>
     - name: materialsChanged
-      # "Name: before -> after" for every same-named material the load moved.
+      # "Name: before -> after" for every project material whose OWN reading
+      # moved - the same element id before and after, never a name match.
+      # A name the document holds more than once reads "Name (id N): ...".
       role: result
+      type: IList<string>
+    - name: findings
+      # One line, when the target holds more than one material of a name:
+      # every such name with its count, and that each material was compared
+      # with itself by id. A note about the reading, never a thing found (D-52).
+      role: accounting
       type: IList<string>
 
 # VERSION 3 PROVED 2026-10-07 on scratch family HeronNest_Car (Revit 2024),
@@ -148,7 +169,9 @@ compatibility-note: >
 
   `Document.LoadFamily(string, IFamilyLoadOptions, out Family)`,
   `IFamilyLoadOptions.OnFamilyFound/OnSharedFamilyFound` and `FamilySource`
-  are unchanged 2020 to 2027. `Material.Color`, `Transparency`, `Shininess`,
+  are unchanged 2020 to 2027. `ElementId` as a dictionary key compares by
+  value on every release, and is only read, never built from a number.
+  `Material.Color`, `Transparency`, `Shininess`,
   `Smoothness` and `AppearanceAssetId` likewise.
 
 # ROUTING - repeated in PLACE_FAMILY_INSTANCES and CHANGE_ELEMENT_TYPE.

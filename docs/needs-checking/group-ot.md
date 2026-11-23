@@ -93,3 +93,54 @@ material is [Group NY](group-ny.md) NY5, then NY6 and NY7 (since 2026-11-21), th
 
 **Signing, once OT1 to OT26 pass:** each tool's proof is written by `tools/batch-prove.py` with the owner, and
 `heron-status` set to PROVEN in the same change - never by a session, and never on a working model.
+
+### Results, 2026-11-23 - Revit 2020, session 35764, scratch family `fp-scratch`
+
+| Row | Result |
+|---|---|
+| OT2 | **Ring half PASS** (in PB5's kept call): the ring `rect 2000,0 2600,600 \| rect 2100,100 2500,500` made as one form, *"2 loop(s) (1 outline, 1 hole inside it)"*, 30 L. The 700-loop refusal half NOT RUN |
+| OT3 | **PASS.** `REPORT_FAMILY_FORMS` v7, `which=solid`, 74 forms: first line the count and extents (*"74 form(s), 74 solid and 0 void, together reaching X -1000 to 7180, Y -1000 to 1200, Z 0 to 300 mm"*), 60 forms described once each, then *"and 14 more form(s), not described here ... - their ids: ..."*; `elements` 74 |
+| OT1, OT4 | NOT RUN - still owed |
+
+`CREATE_FAMILY_FORMS` and `REPORT_FAMILY_FORMS` were signed on the owner's word this day; their proofs are PB5/PB6
+and OT3/PB8 (Group PB's results).
+
+**Later the same day, `fp-scratch2`:** `LINK_FAMILY_PARAMETER` v5 proved and signed on a material link, not on OT13's
+arrangement - a freeform sweep pipe (CREATE_FAMILY_FREEFORM_SOLID, kept) with `links=Material=TRG_Pipe Copper`:
+*"Form id 2711: Material <By Category> -> TRG_Pipe Copper"*, `changed 1`; negative `links=Material=No Such Material`:
+`changed 0`, *"Nothing was changed. "No Such Material" is neither a family parameter nor a material ..."*; both rolled
+back. OT13 and OT14 (the "runs along" note on an extrusion's start and end) are still owed.
+
+**Later the same day, the SKM packaged-unit family (`TRG_Mechanical Equipment_Packaged Unit_Air Cooled_SKM APMR-52028AM`,
+saved, Revit 2020):** `SET_FAMILY_SETTINGS` v5 proved and signed on its OmniClass setting, not on OT23's arrangement -
+positive run once through `try-once` and KEPT by the owner: *"OmniClass Number 23.75.00.00 -> 23.75.10.24.21.27.11
+Packaged Air Conditioners - Revit filled OmniClass Title"*, `changed 1`; negative (`validate --write --kept`)
+`OmniClass Number=99.99.99.99`: `changed 0`, *"Nothing was changed. "99.99.99.99" is not a code in the classification
+file ..."*; rolled back. OT23 and OT24 (Work Plane-Based / Always Vertical / Shared) are still owed.
+
+**Later the same day, scratch project `place-scratch` (Default_M_ENU.rte, `%TEMP%\heron-work\fam-prove`):**
+`PLACE_FAMILY_INSTANCES` v7 proved and signed on a project placement, not on OT11's arrangement - positive
+(`validate --write`, rolled back): `Air Conditioner-Outside Unit: 33" x 24" x 24"` at 0,0,0 and 3000,0,0 on Level 1
+with `rotationDegrees=-90` - `placed` 2, *"2 x level-based, on 'Level 1', standing 0 mm above it"*, each turned 90
+degrees clockwise; negative the same with `structuralType=sprinkler` - `placed` 0, *"'sprinkler' is not a structural
+type Revit knows ... Nothing was placed"*. (An empty point list is refused at binding, `bad_request_value`, so it
+cannot serve as the negative.) OT11 and OT12 are still owed.
+
+**Same day, `place-scratch`:** `SET_PARAMETER_VALUES_BY_ID` proved and signed - positive (`validate --write`, rolled
+back) the keyed form `key=Type Name|in=Mechanical Equipment|types=yes;33" x 24" x 24"|Description=Heron proof write`:
+`written 1`, its read back inside `resultJson` (type 204975, Description asked and read back the same - the top-level
+`readBack` list stays empty for the keyed form, a reporting gap worth a row); negative the same with a type name no
+element carries - `written 0`, refused for that row. Then used on the real model 4355-BHVD-3D-60P00-BL003A with a CSV
+(26 values x 3 new packaged units, Equipment Tag by GUID e133774c): `written 78`, read back 26 of 26 on each.
+
+### Results, later 2026-11-23 - Revit 2020, session 49564, scratch family `louvre-scratch` (Metric Generic Model, `%TEMP%\heron-work\louvre`)
+
+Proved and **signed Ajmal PS** on his word, for a parametric louvre whose blades follow its width and height:
+
+| Tool | Positive (once, through `try-once`, KEPT by the owner) | Negative (`validate --write --kept`, rolled back) |
+|---|---|---|
+| `ARRAY_FAMILY_FORMS` v5 | a 45-degree blade on Center (Left/Right), `count=Blade_Count` (formula `rounddown((Test_Height - 36 mm) / 45 mm)`), `step=Z 45`: *"Arrayed ... 5 in all, 45 mm apart along +Z, the count following Blade_Count"* | the same with `step=X 45` on a loose blade: *"Nothing was arrayed. A copy of this extrusion cannot leave the plane it is sketched on ... moved its copies 0 and 0 mm"*. A first negative on the arrayed blade itself THREW (it sits in the array's group) and was not used |
+| `FLEX_FAMILY` v3 | `trials=Test_Height=600 \| Test_Height=200`: 13 and 4 solids read back (12 and 3 arrayed blades + one loose blade), every labelled size read its parameter, put back | `trials=No_Such_Size=600`: *"Nothing was tried. "No_Such_Size" is not a parameter of this family."* |
+| `LINK_FAMILY_PARAMETER` v6 | a loose blade's `Extrusion Start=Blade_Start; Extrusion End=Blade_End` (formulas `-Test_Width / 2`, `Test_Width / 2`): `changed 2`, *"its sketch plane ... faces +X ... the form now runs X -200 to 200 mm"* | `Extrusion End=No_Such_Parameter`: *"Nothing was changed. No family parameter is called ..."*, `changed 0` |
+
+**Found on the way, not a tool defect:** an arrayed blade whose end faces were LOCKED to width planes (`LOCK_FORM_TO_PLANES`) holds those planes - a width flex was refused: *"the dimension labelled Test_Width reads 400 mm and the parameter holds 800 mm"*. Driving each blade's Extrusion Start/End by width parameters instead of locks is the route the louvre family uses.

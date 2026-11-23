@@ -18,7 +18,8 @@ No Revit API, no MCP yet. Just: can something outside Revit reach inside it?
     python mcp/client/heron_bridge_client.py count     # count elements in the open model
     python mcp/client/heron_bridge_client.py count 24312
     python mcp/client/heron_bridge_client.py doctor    # diagnose a failure
-    python mcp/client/heron_bridge_client.py release   # hand this Revit back
+    python mcp/client/heron_bridge_client.py release   # hand this Revit back, and the
+                                                       # models this conversation holds
     python mcp/client/heron_bridge_client.py stop      # stop Heron, and the job
                                                        # Revit is running now
     python mcp/client/heron_bridge_client.py stop --session 63712
@@ -4334,6 +4335,20 @@ def cmd_release():
     give up its own claim, so running this while somebody else is working says
     so and changes nothing. The one thing that frees another chat's session is
     still the Heron button, which is a person deciding at the machine.
+
+    TWO THINGS ARE HANDED BACK, BECAUSE TWO THINGS ARE HELD - row 5b-1993.
+    The LEASE on the Revit is the person's (`client`, D-22) and `release`
+    frees it; the HOLD on a model is the conversation's (`conversation`,
+    D-141) and only `release_models` frees it. This used to send `release`
+    alone, so a series run with HERON_CONVERSATION_ID set - which is not
+    handed back at each exit (hand_back_models) - kept its model held after
+    `release` said "Nothing to hand back", and every other chat was refused
+    for three quiet minutes (seen five times on 2026-11-23, Revit 2020).
+    So the models go first, then the lease: `release_models` passes the
+    lease like any request, and claiming after giving it up would take it
+    back. The add-in frees only this conversation's holds, so run this with
+    the series' own HERON_CONVERSATION_ID; without it this command is a
+    conversation of its own and holds no model.
     """
     # This one needs a pipe. Said here rather than in main(), so that a
     # command line nobody could run anywhere is refused on its own terms
@@ -4352,14 +4367,29 @@ def cmd_release():
         return 1
 
     for index, bridge in enumerate(live):
+        print(describe(bridge, index))
+        # The model's own Revit thread answers this one, so it is given the
+        # wait batch-prove gives it, not the bridge-only two seconds.
+        models = bridge.request("release_models", timeout=2.0, response_timeout=20.0)
+        print("   models   %s" % _said(models))
         reply = bridge.request("release")
-        if reply is None:
-            print("%s  no reply" % describe(bridge, index))
-        else:
-            print("%s  %s" % (describe(bridge, index),
-                              reply.get("message") or reply.get("error")))
+        print("   session  %s" % _said(reply))
         bridge.close()
+    if not os.environ.get("HERON_CONVERSATION_ID"):
+        print("HERON_CONVERSATION_ID is not set, so this was a conversation of its own and "
+              "held no model. To free a series' models, run this with the series' own "
+              "HERON_CONVERSATION_ID.")
     return 0
+
+
+def _said(reply):
+    """One reply to `release` or `release_models`, as one line for a person."""
+    if reply is None:
+        return "no reply"
+    if reply.get("error") == "unknown_op":
+        # An add-in from before D-141 has no model hold to free.
+        return "this add-in keeps no model hold, so there was none to free."
+    return reply.get("message") or reply.get("error") or "no message"
 
 
 def cmd_stop(session=None):

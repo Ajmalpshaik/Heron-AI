@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -110,36 +110,41 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-23'
   by: Ajmal PS
-  model: Family4 (2,157 elements), Revit 2020, session 64176
-  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned allHeld true, dbNamespace Autodesk.Revit.DB,
-    findings 4 item(s) [Flexed 2 size(s) and put the family back: solid 150 x 674 x ..., Trial
-    1 (Duct Width=900, Duct Height=450): solid 150 x 974 x..., Trial 2 (Duct Width=400, Duct
-    Height=200): solid 150 x 474 x..., ...], flags BindingFlags, invariant CultureInfo, kindOf
-    Func`2, kindsNew 5 item(s) [[length, ], [angle, ], [number, ], ...], kindsOld 5 entry(ies),
-    mm Func`2, notAFamily false, originals 2 entry(ies), planned 2 item(s) [System.Collections.Generic.List`1[System.Tuple`3[Autodesk.Re...,
+  model: louvre-scratch (1,598 elements), Revit 2020, session 49564
+  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-11-23; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned allHeld true, dbNamespace Autodesk.Revit.DB, findings 4 item(s)
+    [Flexed 2 size(s) and put the family back: solid 400 x 40 x 2..., Trial 1 (Test_Height=600):
+    solid 400 x 40 x 537.8 mm, centre..., Trial 2 (Test_Height=200): solid 400 x 40 x 132.8
+    mm, centre..., ...], flags BindingFlags, invariant CultureInfo, kindOf Func`2, kindsNew
+    5 item(s) [[length, ], [angle, ], [number, ], ...], kindsOld 5 entry(ies), mm Func`2,
+    notAFamily false, originals 1 entry(ies), planned 2 item(s) [System.Collections.Generic.List`1[System.Tuple`3[Autodesk.Re...,
     System.Collections.Generic.List`1[System.Tuple`3[Autodesk.Re...], refused (null), restored
     true, revitAssembly RuntimeAssembly, sameKind Func`3, specNamed Func`3, tolerance 3.28083989501312E-05,
-    touched 2 entry(ies), trialResults 2 item(s) [Trial 1 (Duct Width=900, Duct Height=450):
-    solid 150 x 974 x..., Trial 2 (Duct Width=400, Duct Height=200): solid 150 x 474 x...].
-    inputs came trials as given. on Family4'
-  negative_case: run with trials=No Such Size=500 instead - chosen because it should not contain
+    touched 1 entry(ies), trialResults 2 item(s) [Trial 1 (Test_Height=600): solid 400 x 40
+    x 537.8 mm, centre..., Trial 2 (Test_Height=200): solid 400 x 40 x 132.8 mm, centre...].
+    inputs came trials as given. on louvre-scratch'
+  negative_case: run with trials=No_Such_Size=600 instead - chosen because it should not contain
     what this fragment reports - run inside a transaction, and Revit reported the transaction
     group ROLLED BACK afterwards. returned allHeld false, dbNamespace Autodesk.Revit.DB, findings
-    1 item(s) [Nothing was tried. "No Such Size" is not a parameter of this...], flags BindingFlags,
+    1 item(s) [Nothing was tried. "No_Such_Size" is not a parameter of this...], flags BindingFlags,
     invariant CultureInfo, kindOf Func`2, kindsNew 5 item(s) [[length, ], [angle, ], [number,
     ], ...], kindsOld 5 entry(ies), mm Func`2, notAFamily false, originals 0 entry(ies), planned
-    0 item(s), refused Nothing was tried. "No Such Size" is not a parameter of this family.,
+    0 item(s), refused Nothing was tried. "No_Such_Size" is not a parameter of this family.,
     restored false, revitAssembly RuntimeAssembly, sameKind Func`3, specNamed Func`3, tolerance
     3.28083989501312E-05, touched 0 entry(ies), trialResults 0 item(s). inputs came trials
-    as given. on Family4
+    as given. on louvre-scratch
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: ad913c5340001029
-
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: 3545dba0dc8cd0c7
+  fingerprint: 45c07425cb0038db
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

@@ -260,6 +260,74 @@ def envelope():
           "and hands its models back when the batch ends, rather than holding them three minutes")
 
 
+def release_by_hand():
+    """Row 5b-1993: `release` frees the series' model holds, not the lease alone."""
+    print("\n2c. `release` hands back this conversation's models, then the lease (row 5b-1993)")
+    # TWO ANSWERS ON ONE PIPE, one for each request `release` now sends. The
+    # add-in keeps the model hold per conversation (D-141) and the lease per
+    # person (D-22); `release` alone frees only the second, which is what left
+    # a HERON_CONVERSATION_ID series holding its family for three minutes.
+    class _Answers(_Pipe):
+        """Answers each request with the next reply, once it is written."""
+
+        def __init__(self, *replies):
+            _Pipe.__init__(self)
+            self._answer, self._replies = b"", list(replies)
+
+        def write(self, data):
+            _Pipe.write(self, data)
+            if self._replies:
+                self._answer += self._replies.pop(0)
+
+    pipe = _Answers(b'{"ok": true, "freed": 1, "models": "Fan", "message": "Freed Fan."}\n',
+                    b'{"ok": true, "released": true, "message": "Session handed back."}\n')
+    one = BRIDGE.Bridge({"pid": 11, "pipeName": "heron-11", "token": "t"}, "x.json")
+    one._handle = pipe
+    one._connect = lambda timeout: pipe
+    saved = dict((name, getattr(BRIDGE, name)) for name in
+                 ("refuse_off_windows", "discover", "describe"))
+    kept_env = os.environ.get("HERON_CONVERSATION_ID")
+    kept_id = BRIDGE.CONVERSATION_ID
+    printed = io.StringIO()
+    try:
+        BRIDGE.refuse_off_windows = lambda: False
+        BRIDGE.discover = lambda *a, **k: ([one], False, None, [])
+        BRIDGE.describe = lambda bridge, index: "%d) Revit 2020 (session 11)" % index
+        os.environ["HERON_CONVERSATION_ID"] = "fan-arrow"
+        BRIDGE.CONVERSATION_ID = "fan-arrow"
+        stdout, sys.stdout = sys.stdout, printed
+        try:
+            code_ = BRIDGE.cmd_release()
+        finally:
+            sys.stdout = stdout
+    finally:
+        for name, value in saved.items():
+            setattr(BRIDGE, name, value)
+        BRIDGE.CONVERSATION_ID = kept_id
+        if kept_env is None:
+            os.environ.pop("HERON_CONVERSATION_ID", None)
+        else:
+            os.environ["HERON_CONVERSATION_ID"] = kept_env
+        getattr(BRIDGE, "_ASKED", {}).pop(11, None)
+    said = []
+    for line in pipe.written.decode("utf-8").splitlines():
+        try:
+            said.append(json.loads(line))
+        except ValueError:
+            pass
+    ops = [one_.get("op") for one_ in said]
+    check(code_ == 0, "it ends 0")
+    check("release_models" in ops,
+          "it sends release_models - the only thing that frees a model hold - found %r" % ops)
+    check(ops == ["release_models", "release"],
+          "the models first, then the lease - claiming after giving it up would take it back")
+    check(all(one_.get("conversation") == "fan-arrow" for one_ in said),
+          "both carry the series' own HERON_CONVERSATION_ID, so it frees that series' hold")
+    out = printed.getvalue()
+    check("Freed Fan." in out and "Session handed back." in out,
+          "and the person is told both answers - found %r" % out)
+
+
 def resumed():
     """Issue #1033, D-188: the same chat after an app restart is the same conversation."""
     print("\n2b. a chat the host resumes is the same conversation (issue #1033, D-188)")
@@ -544,6 +612,7 @@ def rule():
 
 def main():
     envelope()
+    release_by_hand()
     resumed()
     failure()
     registry()

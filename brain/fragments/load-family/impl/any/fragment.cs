@@ -1,7 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `familyLoadOptions`, `familyPath`, `reload`
 // and `overwriteValues` are in scope; leaves `created`, `refused`,
-// `typeNames`, `reloaded`, `typesAdded`, `typesKept`, `materialsAdded` and
-// `materialsChanged` behind.
+// `typeNames`, `reloaded`, `typesAdded`, `typesKept`, `materialsAdded`,
+// `materialsChanged` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one. `doc`
 // may be a project OR a family document - loading into a family is how a
@@ -48,6 +48,20 @@
 // window and not yet saved would load as whatever its file last held - an
 // empty template - and report success (row 5b-360). Open and saved is fine:
 // then the file and the window agree.
+//
+// VERSION 4, 2026-11-23 - MATERIALS ARE COMPARED BY ELEMENT ID, NEVER BY NAME.
+// Versions 1 to 3 keyed the before-reading on the material's name, believing
+// names unique in a document. They are not: a project upgraded and copied
+// into for years holds three materials named Default, three named Poche, two
+// each of Phase-Demo, Phase-Exist and Phase-Temp. The last of each name read
+// won the before-reading, so every other one was compared against a
+// DIFFERENT material, and a NEW load reported 8 "changes" that never happened
+// (row 5b-1995, Revit 2020, 2026-11-23 - an old Poche already blue at id 51455
+// listed as "0,0,0 -> 0,0,255"). Now each material is read by its own id before
+// the load and the SAME id after: an id not there before is in
+// `materialsAdded`, an id whose reading moved is in `materialsChanged`. A
+// name the document holds more than once is never paired by guess - its
+// lines carry the id, and `findings` says the name repeats.
 
 ElementId created = null;
 string refused = null;
@@ -57,6 +71,7 @@ var typesAdded = new List<string>();
 var typesKept = new List<string>();
 var materialsAdded = new List<string>();
 var materialsChanged = new List<string>();
+var findings = new List<string>();
 
 var path = (familyPath ?? "").Trim();
 
@@ -168,7 +183,8 @@ if (refused == null)
             }
         }
 
-        // One line per material, by name - names are unique in a document.
+        // One reading per material. Its NAME is not part of it and never the
+        // key: a document can hold several materials of one name (version 4).
         Func<Material, string> describe = delegate (Material m)
         {
             var colour = m.Color;
@@ -182,9 +198,11 @@ if (refused == null)
                 + ", appearance asset " + m.AppearanceAssetId;
         };
 
-        var materialsBefore = new Dictionary<string, string>(StringComparer.Ordinal);
+        // Keyed by ElementId, which is unique and survives the load. ElementId
+        // compares by value, so the after-reading finds the same material.
+        var materialsBefore = new Dictionary<ElementId, string>();
         foreach (Material material in new FilteredElementCollector(doc).OfClass(typeof(Material)))
-            materialsBefore[material.Name] = describe(material);
+            materialsBefore[material.Id] = describe(material);
 
         Family family;
         bool loaded;
@@ -242,14 +260,49 @@ if (refused == null)
                 else typesAdded.Add(symbol.Name);
             }
 
+            // Read once, then counted by name, so a name held more than once
+            // is labelled with each material's id rather than paired by guess.
+            var materialsAfter = new List<Material>();
             foreach (Material material in new FilteredElementCollector(doc).OfClass(typeof(Material)))
+                materialsAfter.Add(material);
+            var nameCount = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var material in materialsAfter)
             {
+                int seen;
+                nameCount.TryGetValue(material.Name, out seen);
+                nameCount[material.Name] = seen + 1;
+            }
+
+            foreach (var material in materialsAfter)
+            {
+                var repeated = nameCount[material.Name] > 1;
+                var label = repeated
+                    ? material.Name + " (id " + material.Id + ")"
+                    : material.Name;
                 string was;
                 var now = describe(material);
-                if (!materialsBefore.TryGetValue(material.Name, out was))
-                    materialsAdded.Add(material.Name);
+                if (!materialsBefore.TryGetValue(material.Id, out was))
+                    materialsAdded.Add(label);
                 else if (was != now)
-                    materialsChanged.Add(material.Name + ": " + was + " -> " + now);
+                    materialsChanged.Add(label + ": " + was + " -> " + now);
+            }
+
+            // ONE line naming every repeated name, so a modeller who knows
+            // the project has three Poche materials reads why each line
+            // carries an id - and why none was "changed" into another.
+            var repeatedNames = new List<string>();
+            foreach (var pair in nameCount)
+                if (pair.Value > 1) repeatedNames.Add(pair.Key + " (" + pair.Value + ")");
+            if (repeatedNames.Count > 0)
+            {
+                repeatedNames.Sort(StringComparer.OrdinalIgnoreCase);
+                findings.Add(string.Format(
+                    "{0} holds more than one material of these names: {1}. Each material "
+                    + "was compared with ITSELF by element id, before and after the load - "
+                    + "never with another of its name - and any added or changed line for "
+                    + "one of them carries its id",
+                    where.Substring(0, 1).ToUpperInvariant() + where.Substring(1),
+                    string.Join(", ", repeatedNames.ToArray())));
             }
 
             typeNames.Sort(StringComparer.OrdinalIgnoreCase);
@@ -257,6 +310,7 @@ if (refused == null)
             typesKept.Sort(StringComparer.OrdinalIgnoreCase);
             materialsAdded.Sort(StringComparer.OrdinalIgnoreCase);
             materialsChanged.Sort(StringComparer.OrdinalIgnoreCase);
+            findings.Sort(StringComparer.OrdinalIgnoreCase);
         }
     }
 }

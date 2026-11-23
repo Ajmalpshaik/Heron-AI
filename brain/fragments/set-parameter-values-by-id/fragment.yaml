@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -436,56 +436,57 @@ contract:
 # row that names neither a type nor an element reference still takes the road
 # this proof ran.
 proof:
-  date: '2026-11-16'
+  date: '2026-11-23'
   by: Ajmal PS
-  model: Heron OB Test (3,205 elements), Revit 2024, session 29520
+  model: place-scratch, Revit 2020, session 35764 - the count is NOT recorded because 43,001
+    elements was measured on 4355-BHVD-3D-60P00-BL003A, the document in front, and this ran
+    against another one (row 15)
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned applied false, backslash \, blankCellsSkipped
     0, cellsCleared 0, csvMode false, csvStale 0 item(s), esc Func`2, faceKeeper (null), findings
     0 item(s), groupLocked Func`3, isYesNo Func`2, keyed true, levelAsks Func`3, materialSpec
-    ForgeTypeId, materialSpecProperty RuntimePropertyInfo, namedAs Func`3, namedElements 704
-    item(s) [(material, , Default, 23), (material, , Default Wall, 24), (material, , Default
-    Roof, 25), ...], parametersCalled Func`3, plan 0 item(s), quote ", readBack 0 item(s),
-    readValue Func`2, referenceByName Func`3, refused 0 item(s), resultJson {"format": 2,
-    "applied": true, "written": 1, "key": "Mark", "types": false, "in": ["Columns"], "where":
-    [], "problem": null, "stale": [], "refused": [], "readBack": [{"key": "OB-POST", "id":
-    "352515", "name": "Top Level {FAMILY_TOP_LEVEL_PARAM}", "asked": "Heron OB Roof", "value":
-    "Heron OB Roof", "raw": "352514"}]}, rowFindings , rowsGiven true, rowsMatched 0, rowsUnmatched
-    0, same Func`2, stale 0 item(s), staleJson 0 item(s), storedValue Func`2, theOne Func`3,
+    (null), materialSpecProperty (null), namedAs Func`3, namedElements (null), parametersCalled
+    Func`3, plan 0 item(s), quote ", readBack 0 item(s), readValue Func`2, referenceByName
+    Func`3, refused 0 item(s), resultJson {"format": 2, "applied": true, "written": 1, "key":
+    "Type Name", "types": true, "in": ["Mechanical Equipment"], "where": [], "problem": null,
+    "stale": [], "refused": [], "readBack": [{"key": "33\" x 24\" x 24\"", "id": "204975",
+    "name": "Description", "asked": "Heron proof write", "value": "Heron proof write", "raw":
+    "Heron proof write"}]}, rowFindings , rowsGiven true, rowsMatched 0, rowsUnmatched 0,
+    same Func`2, stale 0 item(s), staleJson 0 item(s), storedValue Func`2, theOne Func`3,
     ticked 5 item(s) [yes, true, on, ...], unchanged Func`3, unticked 5 item(s) [no, false,
-    off, ...], valuesRejected 0, written 1, yesNoProperty RuntimePropertyInfo, yesNoSpec ForgeTypeId,
-    yesNoSpecs RuntimeType. inputs came rows as given; csvPath not given - "none", the card''s
-    own default (optional); blankCells not given - "none", the card''s own default (optional);
-    keepFace not given - "none", the card''s own default (optional); renameViews not given
-    - "none", the card''s own default (optional). on Heron OB Test'
-  negative_case: 'run with rows=key=Mark|in=Columns;OB-POST|Top Level=Heron OB Roof instead
-    - chosen because it should not contain what this fragment reports - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned applied false,
-    backslash \, blankCellsSkipped 0, cellsCleared 0, csvMode false, csvStale 0 item(s), esc
-    Func`2, faceKeeper (null), findings 1 item(s) [1 row(s) not written, 0 written - refused
-    says why, by key.], groupLocked Func`3, isYesNo Func`2, keyed true, levelAsks Func`3,
-    materialSpec ForgeTypeId, materialSpecProperty RuntimePropertyInfo, namedAs Func`3, namedElements
+    off, ...], valuesRejected 0, written 1, yesNoProperty (null), yesNoSpec (null), yesNoSpecs
+    (null). inputs came rows as given; csvPath as given; blankCells as given; keepFace as
+    given; renameViews as given. on place-scratch'
+  negative_case: 'run with rows=key=Type Name|in=Mechanical Equipment|types=yes;No Such Type
+    Name|Description=Heron proof write, csvPath=none, blankCells=none, keepFace=none, renameViews=none
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    applied false, backslash \, blankCellsSkipped 0, cellsCleared 0, csvMode false, csvStale
+    0 item(s), esc Func`2, faceKeeper (null), findings 1 item(s) [1 row(s) not written, 0
+    written - refused says why, by key.], groupLocked Func`3, isYesNo Func`2, keyed true,
+    levelAsks Func`3, materialSpec (null), materialSpecProperty (null), namedAs Func`3, namedElements
     (null), parametersCalled Func`3, plan 0 item(s), quote ", readBack 0 item(s), readValue
-    Func`2, referenceByName Func`3, refused 1 item(s) [OB-POST: two parameters on it are called
-    Top Level and more ...], resultJson {"format": 2, "applied": false, "written": 0, "key":
-    "Mark", "types": false, "in": ["Columns"], "where": [], "problem": null, "stale": [],
-    "refused": [{"key": "OB-POST", "why": "two parameters on it are called Top Level and more
-    than one can be written - name the one meant as ''Top Level {SCHEDULE_TOP_LEVEL_PARAM}''
-    or ''Top Level {FAMILY_TOP_LEVEL_PARAM}'' - not written (id 352515)"}], "readBack": []},
-    rowFindings OB-POST: two parameters on it are called Top Level and more than one can be
-    written - name the one meant as ''Top Level {SCHEDULE_TOP_LEVEL_PARAM}'' or ''Top Level
-    {FAMILY_TOP_LEVEL_PARAM}'' - not written (id 352515), rowsGiven true, rowsMatched 0, rowsUnmatched
-    0, same Func`2, stale 0 item(s), staleJson 0 item(s), storedValue Func`2, theOne Func`3,
-    ticked 5 item(s) [yes, true, on, ...], unchanged Func`3, unticked 5 item(s) [no, false,
-    off, ...], valuesRejected 0, written 0, yesNoProperty RuntimePropertyInfo, yesNoSpec ForgeTypeId,
-    yesNoSpecs RuntimeType. inputs came rows as given; csvPath not given - "none", the card''s
-    own default (optional); blankCells not given - "none", the card''s own default (optional);
-    keepFace not given - "none", the card''s own default (optional); renameViews not given
-    - "none", the card''s own default (optional). on Heron OB Test'
+    Func`2, referenceByName Func`3, refused 1 item(s) [No Such Type Name: no element in Mechanical
+    Equipment types ...], resultJson {"format": 2, "applied": false, "written": 0, "key":
+    "Type Name", "types": true, "in": ["Mechanical Equipment"], "where": [], "problem": null,
+    "stale": [], "refused": [{"key": "No Such Type Name", "why": "no element in Mechanical
+    Equipment types has Type Name ''No Such Type Name'' - not written"}], "readBack": []},
+    rowFindings No Such Type Name: no element in Mechanical Equipment types has Type Name
+    ''No Such Type Name'' - not written, rowsGiven true, rowsMatched 0, rowsUnmatched 0, same
+    Func`2, stale 0 item(s), staleJson 0 item(s), storedValue Func`2, theOne Func`3, ticked
+    5 item(s) [yes, true, on, ...], unchanged Func`3, unticked 5 item(s) [no, false, off,
+    ...], valuesRejected 0, written 0, yesNoProperty (null), yesNoSpec (null), yesNoSpecs
+    (null). inputs came rows as given; csvPath as given; blankCells as given; keepFace as
+    given; renameViews as given. on place-scratch'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 45d022c73894e037
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: 3545dba0dc8cd0c7
+  fingerprint: 2fa8baca68ef9171
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
