@@ -18,6 +18,13 @@ positive:
       a 300 x 300 x 100 box from Z 250 to 350 on top of the body, and when
       Height changes the neck rides up with the body's top
 
+  # VERSION 2 (row 5b-2000): the box's id.
+  - given: the first case's box
+    expect: >
+      formId a unique id, and `elements` holding that one box; that id named
+      as `forms` to SET_FAMILY_FORM_VISIBILITY (or LINK_FAMILY_PARAMETER)
+      reaches this box and no other - no REPORT_FAMILY_FORMS call between
+
 negative:
   - given: sidePlanes naming three left-right planes and one front-back
     expect: refused as not two of each, and no extrusion in the family
@@ -26,7 +33,9 @@ negative:
     expect: refused with both heights, nothing built
 
   - given: a side plane name that does not exist
-    expect: refused listing the family's named planes, nothing built
+    expect: >
+      refused listing the family's named planes, nothing built, and formId
+      empty and `elements` empty (version 2)
 
   - given: a project in front
     expect: notAFamily true and nothing built anywhere
