@@ -1746,6 +1746,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qa.md`](needs-checking/group-qa.md)
 
+## Group PY - a wrong divided-surface pattern is refused, not thrown, and a pipe segment's size list that will not read is never "no sizes" - DRAFT until proved (2026-11-23)
+
+**Its own file:** [`needs-checking/group-py.md`](needs-checking/group-py.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

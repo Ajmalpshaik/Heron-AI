@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,21 @@ semantic-identity: "which pipe segments this project has, of what material, and 
 kind: action
 domain: revit.mep
 capability: REPORT_PIPE_SEGMENTS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-11-23) - A SIZE LIST REVIT WOULD NOT GIVE IS NEVER "NO
+# SIZES", and back to DRAFT. FRAGMENT-ISSUES row 5b-1982, found by reading,
+# not run: version 1 caught a throw from GetSizes and said nothing, so the
+# segment was written "NO SIZES" and "carries NO size at all" - the words for
+# a segment read and found empty - which D-52 forbids: a failed read is never
+# a no. Now such a segment's row says "sizes NOT READ - Revit says: ...", it
+# is in the new `unreadable` and never in `noSizes`, and the first finding
+# counts it. Whether GetSizes ever throws on a real segment is not measured.
+# Version 1 was PROVEN (the proof block below, kept as the record of what it
+# proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group PY
+# is run (D-30).
 
 purpose: >
   Lists every pipe segment in the project - its name, its material, how many
@@ -31,6 +43,10 @@ purpose: >
   Reporting the OD range is what shows, at a glance, that a segment holds the
   wrong sizes for the job - which is a mistake that survives all the way to a
   material order.
+
+  **A SIZE LIST THAT WOULD NOT READ IS NOT "NO SIZES".** When Revit will not
+  give a segment's sizes, its row says "sizes NOT READ" with Revit's own words,
+  and it is counted apart from the segments that really carry none.
 
   **THE NAMES COME BACK AS ONE STRING, DELIBERATELY.** A list is abbreviated to
   its first three entries by the time it reaches a reader, and a project with
@@ -83,6 +99,11 @@ contract:
     - name: noSizes
       # Segments carrying no size at all. They exist, cannot be drawn with,
       # and look identical to a working one in a dropdown.
+      role: accounting
+      type: IList<string>
+    - name: unreadable
+      # Segments whose size list Revit would not give - GetSizes threw. Never
+      # in `noSizes`: what they hold is not known (version 2, row 5b-1982).
       role: accounting
       type: IList<string>
     - name: findings
