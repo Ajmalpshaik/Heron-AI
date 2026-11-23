@@ -29,9 +29,20 @@ negative:
 
   - given: a segment carrying no sizes
     expect: >
-      its name in `noSizes` and in the list marked NO SIZES. It exists and
+      its name in `noSizes` and in the list marked NO SIZES, and `unreadable`
+      empty - its sizes were read and there are none. It exists and
       nothing can be drawn with it, which otherwise looks like a fault
       somewhere else
+
+  - given: >
+      VERSION 2 (row 5b-1982). A segment whose size list Revit will not give -
+      GetSizes throws. Not known to happen on a real segment; if no model
+      shows one, this case is read in the C#, never claimed as run
+    expect: >
+      its row says "sizes NOT READ - Revit says: ..." with Revit's words, its
+      name is in `unreadable` and NOT in `noSizes`, no OD range is shown for
+      it, and the first finding counts it under "whose sizes could not be
+      read" - never "carries NO size at all"
 
   - given: a segment whose sizes are all usedInSizeLists = false
     expect: >
