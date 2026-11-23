@@ -148,6 +148,29 @@ negative:
   - given: a reference plane's id as the form
     expect: refused as neither a form nor a nested family, and nothing arrayed
 
+  - given: >
+      VERSION 6 (5b-1998) - a blade already ARRAYED (count "Blade_Count",
+      step "Z 45", kept), one of its COPIES' form id from `memberForms` named
+      again; count "Blade_Count", step "X 45"
+    expect: >
+      refused before any trial row - the blade is a copy in the array, by its
+      id, 5 in all, its count following "Blade_Count", inside that array's
+      group; the array's original named; change "Blade_Count" in each type,
+      or name a form in no array or group. NOT a thrown call: version 5
+      failed this one (fragment_threw) on Revit 2020, 2026-11-23
+
+  - given: >
+      VERSION 6 - the same row's ORIGINAL blade, by the id it was arrayed by;
+      count "3", step "Y 45"
+    expect: >
+      refused the same way - the original of the array, nothing tried
+
+  - given: >
+      VERSION 6 - an extrusion inside a plain MODEL GROUP (Create Group by
+      hand), no array; count "3", step "Z 45"
+    expect: >
+      refused naming the group - ungroup it first - and nothing arrayed
+
 second_route:
   - >
       The Ref. Level plan and the 3D view in the Family Editor: count the
