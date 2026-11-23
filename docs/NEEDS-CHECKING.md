@@ -1714,6 +1714,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pr.md`](needs-checking/group-pr.md)
 
+## Group PX - a box's id from EXTRUDE_BETWEEN_PLANES, and an Integer or Yes/No formula read back by SET_FAMILY_FORMULA - DRAFT until proved (2026-11-23)
+
+**Its own file:** [`needs-checking/group-px.md`](needs-checking/group-px.md)
+
 ## Group PV - a family just saved reads as unsaved: what in Revit marks it changed, and the refusal that now names the file's time - BUILT, NOT RUN IN REVIT (2026-11-23)
 
 **Its own file:** [`needs-checking/group-pv.md`](needs-checking/group-pv.md)

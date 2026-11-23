@@ -17,6 +17,15 @@
 // THE ONE WRITE IS THE FORMULA, and a refusal from Revit THROWS so the host
 // rolls the call back and quotes Revit. What the family holds afterwards - the
 // formula and the value it produced - is read back, never assumed.
+//
+// VERSION 2 (2026-11-23, row 5b-2001): THE VALUE IS READ BY ITS KIND.
+// Version 1 read every value with `FamilyType.AsValueString`, which gave
+// NOTHING for an Integer parameter - "Blade_Count" = rounddown(...) read back
+// as "it gives ." while a flex read 5, 7, 12 and 25 blades. A whole number is
+// now read as one, a Yes/No as Yes or No, a text as its text; a length, an
+// angle or any other measured value as Revit shows it, as before. The current
+// type holds an INSTANCE parameter's value too - its default for a new
+// placement - so the same read serves both.
 
 var findings = new List<string>();
 var formulaNow = "";
@@ -30,6 +39,59 @@ var wantedFormula = formula == null ? "" : formula.Trim();
 
 FamilyParameter target = null;
 var nothingToDo = false;
+
+// A TICK BOX IS FOUND BY WHAT IT IS - the version-safe check CREATE_SHEETS and
+// SET_PARAMETER_VALUES_BY_ID make: SpecTypeId.Boolean.YesNo from 2022; null on
+// 2020 and 2021, which answer through ParameterType instead.
+var yesNoSpecs = typeof(Document).Assembly.GetType(typeof(Document).Namespace + ".SpecTypeId+Boolean");
+var yesNoProperty = yesNoSpecs == null ? null : yesNoSpecs.GetProperty("YesNo",
+    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+var yesNoSpec = yesNoProperty == null ? null : yesNoProperty.GetValue(null, null);
+
+Func<FamilyParameter, bool> isYesNo = p =>
+{
+    if (p == null || p.StorageType != StorageType.Integer) return false;
+    try
+    {
+        var definition = p.Definition;
+        if (definition == null) return false;
+        var getDataType = definition.GetType().GetMethod("GetDataType", System.Type.EmptyTypes);
+        if (getDataType != null && yesNoSpec != null)
+        {
+            var spec = getDataType.Invoke(definition, null);
+            if (spec == null) return false;
+            // NameEquals: a spec id carries its version - "...bool-1.0.0".
+            var nameEquals = spec.GetType().GetMethod("NameEquals", new[] { yesNoSpec.GetType() });
+            return nameEquals != null
+                ? (bool)nameEquals.Invoke(spec, new[] { yesNoSpec })
+                : spec.Equals(yesNoSpec);
+        }
+        var parameterType = definition.GetType().GetProperty("ParameterType");
+        var kind = parameterType == null ? null : parameterType.GetValue(definition, null);
+        return kind != null && kind.ToString() == "YesNo";
+    }
+    catch (Exception)
+    {
+        // Not known to be a tick box: read as the whole number it is stored as.
+        return false;
+    }
+};
+
+// WHAT THE PARAMETER HOLDS IN A TYPE, read by its kind. Empty only when the
+// type holds no value for it at all.
+Func<FamilyType, FamilyParameter, string> valueIn = (type, p) =>
+{
+    if (type == null || p == null || !type.HasValue(p)) return "";
+    if (p.StorageType == StorageType.Integer)
+    {
+        var whole = type.AsInteger(p);
+        if (!whole.HasValue) return "";
+        if (isYesNo(p)) return whole.Value != 0 ? "Yes" : "No";
+        return whole.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+    if (p.StorageType == StorageType.String) return type.AsString(p) ?? "";
+    return type.AsValueString(p) ?? "";
+};
 
 if (!doc.IsFamilyDocument)
 {
@@ -112,7 +174,7 @@ if (refused == null && !nothingToDo && target != null)
     // READ BACK - the formula the family holds and what it produced.
     var readBack = fm.get_Parameter(wantedName);
     formulaNow = readBack == null || readBack.Formula == null ? "" : readBack.Formula;
-    valueNow = readBack == null || fm.CurrentType == null ? "" : (fm.CurrentType.AsValueString(readBack) ?? "");
+    valueNow = valueIn(fm.CurrentType, readBack);
     cleared = wantedFormula.Length == 0 && formulaNow.Length == 0;
 
     if (wantedFormula.Length == 0)
@@ -127,7 +189,8 @@ if (refused == null && !nothingToDo && target != null)
     else
     {
         findings.Add("\"" + wantedName + "\" = " + formulaNow + ", read back from the family. In the "
-            + "current type \"" + fm.CurrentType.Name + "\" it gives " + valueNow + "."
+            + "current type \"" + fm.CurrentType.Name + "\" it gives "
+            + (valueNow.Length > 0 ? valueNow : "no value Revit would show") + "."
             + (had.Length > 0 ? " It replaced the formula \"" + had + "\"." : ""));
 
         if (!string.Equals(formulaNow.Replace(" ", ""), wantedFormula.Replace(" ", ""),
@@ -144,7 +207,7 @@ if (refused != null && target != null)
 {
     formulaNow = target.Formula ?? "";
     var holding = doc.FamilyManager.CurrentType;
-    if (holding != null) valueNow = holding.AsValueString(target) ?? "";
+    if (holding != null) valueNow = valueIn(holding, target);
 }
 
 if (refused != null) findings.Add(refused);
