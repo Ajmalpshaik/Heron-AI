@@ -1322,6 +1322,9 @@ namespace Heron.Revit.Addin
                 var answered = Json.ReadString(response, "modellerAnswer");
                 if (answered == "discard" || answered == "closed") return "Discarded - nothing was kept";
                 if (answered == "keep") return "Kept - one undo step";
+                // D-197: kept with no box, because Ask to Delete is off.
+                if (Json.ReadString(response, "askSkipped") == RevitFragment.AskSkippedBySwitch)
+                    return "Kept without asking - Ask to Delete off";
 
                 // D-138: the job's grant, said on the banner while it is in use.
                 if (answered == "keep_rest") return "Kept - the rest of this job: no asking";

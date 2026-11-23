@@ -337,6 +337,39 @@ def ask_to_keep_line(asks):
     return ASK_TO_KEEP_NOT_READ
 
 
+# THE OWNER'S ASK TO DELETE SWITCH (D-197), as one Revit said it - one line
+# under each connected Revit, beside Ask to Keep's. ON at every Revit start.
+# Off, Revit shows neither its Delete box (D-142) nor a DRAFT's Keep or Discard
+# (D-119), and the chat's yes in words, asked BEFORE the call, is the only one.
+ASK_TO_DELETE_ON = (
+    "Ask to Delete is ON in this Revit right now: a change that deletes is asked in "
+    "Revit's own Delete box, and an unproven tool's one run in its Keep or Discard box.")
+ASK_TO_DELETE_OFF = (
+    "Ask to Delete is OFF in this Revit right now: Revit shows NO Delete box and no box "
+    "for an unproven tool's one run. Ask the modeller in words, and wait for a yes, "
+    "BEFORE any change that deletes (Constitution Article 7); say before trying an "
+    "unproven tool that it will be kept with no box.")
+ASK_TO_DELETE_OLDER = (
+    "This Revit's Heron add-in is older than Ask to Delete, so it always shows its "
+    "Delete box.")
+ASK_TO_DELETE_NOT_READ = "Could not read whether this Revit shows its Delete box."
+
+
+def ask_to_delete_line(asks):
+    """
+    The line for what one Revit said of Ask to Delete - what
+    heron_bridge_client.ask_to_delete_state returned. `is`, not `==`, as
+    ask_to_keep_line has it.
+    """
+    if asks is True:
+        return ASK_TO_DELETE_ON
+    if asks is False:
+        return ASK_TO_DELETE_OFF
+    if isinstance(asks, str) and asks == ASK_TO_KEEP_NOT_SENT:
+        return ASK_TO_DELETE_OLDER
+    return ASK_TO_DELETE_NOT_READ
+
+
 # WHICH SETTINGS FILE A REVIT READS, AND WHETHER THIS CHAT'S COPY IS THE SAME -
 # Q-70, decided 2026-11-15 on the owner's delegation, narrowed by D-166.
 #

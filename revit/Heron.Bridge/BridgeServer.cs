@@ -848,7 +848,7 @@ namespace Heron.Bridge
                     // the moment it keeps. It is the switch alone - not
                     // whether the modeller has kept "the rest of this job"
                     // (D-138), which lives in the add-in, and not the delete
-                    // box, which is asked whatever this says (D-142). An
+                    // box, which Ask to Delete decides (D-142, D-197). An
                     // optional field, like activeModel: a client that does not
                     // know it ignores it, so the protocol version stands.
                     //
@@ -858,6 +858,13 @@ namespace Heron.Bridge
                     // it, as a field that could be SENT to skip the question.
                     // This one is only ever answered.
                     Json.Bool("askToKeep", HeronPermissions.AsksBeforeKeeping()),
+                    // AND WHETHER REVIT SHOWS ITS DELETE BOX AND A DRAFT'S
+                    // KEEP OR DISCARD - the Ask to Delete switch (D-197), held
+                    // in this Revit's memory, on at every start. Said so a chat
+                    // knows before a delete that Revit will NOT ask, and asks
+                    // the modeller in words first (Article 7). Said, never
+                    // set, never decided by - as askToKeep above. Optional.
+                    Json.Bool("askToDelete", HeronPermissions.AsksInRevit()),
                     // Q-70: the file this Revit reads its settings from, and
                     // whether it was there - the settings D-166 left in it.
                     Json.Str("settingsFile", settingsFile),

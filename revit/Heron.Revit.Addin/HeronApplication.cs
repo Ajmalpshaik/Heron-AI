@@ -562,7 +562,7 @@ namespace Heron.Revit.Addin
                 "Settings",
                 assemblyPath,
                 typeof(SettingsCommand).FullName);
-            settings.ToolTip = "Turn Heron's switches on or off: Changes, Admin, Publish, Ask to Keep, Companion.";
+            settings.ToolTip = "Turn Heron's switches on or off: Changes, Admin, Publish, Ask to Keep, Ask to Delete, Companion.";
 
             var settingsButton = panel.AddItem(settings) as PushButton;
             if (settingsButton != null)
