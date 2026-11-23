@@ -1738,6 +1738,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pu.md`](needs-checking/group-pu.md)
 
+## Group QA - what an arrangement step made inside a write that stopped part way is never bound by the next request - BUILT, NOT RUN IN REVIT (2026-11-23)
+
+**Its own file:** [`needs-checking/group-qa.md`](needs-checking/group-qa.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

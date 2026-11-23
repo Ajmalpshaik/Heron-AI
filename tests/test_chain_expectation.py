@@ -234,6 +234,7 @@ def main():
           "run that consumed the chain is not")
 
     taken_back(fragment, server)
+    stopped_part_way(fragment)
     by_identity(fragment)
 
     if FAILURES:
@@ -348,6 +349,48 @@ def taken_back(fragment, server):
           < change.find("if failure is not None:"),
           "and revit_change notes how each run ended, from the add-in's answer, before "
           "any branch returns")
+
+
+def stopped_part_way(fragment):
+    """
+    FRAGMENT-ISSUES ROW 5b-1743, 2026-11-23: what an ARRANGEMENT STEP left
+    inside a write's own group is marked as left inside an open group; the
+    run's own Remember clears the mark at its end; and a request that finds
+    the mark still set - the run before it stopped part way, its group rolled
+    back - turns it into TakenBack before anything binds, so Q-89's refusals
+    hand none of it on. What StoppedPartWay answers is proved by
+    Heron.BindingNote.TestHost (tests/test_binding_note.py); that
+    RevitFragment.cs asks it, where it must, only the text shows. Not run in
+    Revit (NEEDS-CHECKING, row 5b-1743's group).
+    """
+    print("\n  what a run that stopped inside its group left is not handed on (5b-1743)")
+    check("public bool OpenGroup;" in fragment,
+          "the chain records that what it holds was left inside an open group")
+
+    remember = body_of(fragment, "private static void Remember(")
+    check("bool insideOpenGroup = false" in remember
+          and "chain.OpenGroup = insideOpenGroup;" in remember,
+          "Remember writes the mark down - and a run's own Remember, which passes none, "
+          "clears it at the run's end")
+
+    setup = body_of(fragment, "private static string RunSetupSteps(")
+    check("ranWith, null, true);" in setup,
+          "an arrangement step's Remember marks what it made as left inside the open group")
+
+    marker = body_of(fragment, "private static void MarkStoppedPartWay(")
+    check("chain.OpenGroup" in marker
+          and "HeronBindingNote.StoppedPartWay(true, chain.TakenBack)" in marker
+          and "chain.OpenGroup = false;" in marker,
+          "a mark still set when a request arrives becomes TakenBack, in the binding "
+          "note's words, and is spent")
+
+    run = body_of(fragment, "public static string Run(")
+    asked = run.find("MarkStoppedPartWay(client);")
+    reset = run.find("Forget(client);")
+    first_bind = run.find("BindNeeds(")
+    check(0 < reset < asked and (first_bind < 0 or asked < first_bind),
+          "and it is asked once per request, after a reset and before anything binds - "
+          "never inside a run, where the fragment after a step binds what it made")
 
 
 if __name__ == "__main__":
