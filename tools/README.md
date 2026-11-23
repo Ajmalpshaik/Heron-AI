@@ -1173,7 +1173,14 @@ python tools/batch-prove.py my-jobs.yaml                        # run it against
 python tools/batch-prove.py my-jobs.yaml --only set-mep-size
 python tools/batch-prove.py my-jobs.yaml --release 2025 --session <pid>   # PROVEN ones, on one more release
 python tools/batch-prove.py my-jobs.yaml --unattended --session <pid> --report night.json   # overnight
+python tools/batch-prove.py my-jobs.yaml --replace              # go on over a record or unsigned draft already there
 ```
+
+**It names what a run would replace and stops** (row 5b-1978): one run record and one proof draft are kept
+per card, so a second leg, a second job file or a draft from a kept run is replaced by the next run. A
+real run lists them by name, sends nothing and exits 1 until `--replace` says go on; `--dry-run` lists
+them and carries on. **A retired setup step** (row 5b-1980) **and a need no setup step fills** (row 5b-1976)
+are `REFUSED` before Revit is touched, as a retired card under test already was.
 
 Proving fragments one at a time costs a round trip each. On 2026-09-09 a throwaway script proved
 fourteen in one pass, then lived in a temp folder and was retyped twice. This is that script, with the

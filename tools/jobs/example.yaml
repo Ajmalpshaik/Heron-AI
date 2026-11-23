@@ -22,10 +22,11 @@ model: Snowdon Towers Sample HVAC, Revit 2024
 defaults:
   # A rolled-back write clears the Revit selection, so the arrangement is re-made
   # before EACH phase. Only the first step resets the chain: step two consumes
-  # what step one left - select-by-category-name leaves `elements`, set-selection
-  # needs them.
+  # what step one left - filter-elements-by-category leaves `elements`, set-selection
+  # needs them. (select-by-category-name was merged into it on 2026-11-01 and is
+  # DEPRECATED: batch-prove refuses a job that names it as a step.)
   setup:
-    - select-by-category-name
+    - filter-elements-by-category
     - set-selection
 
   set:

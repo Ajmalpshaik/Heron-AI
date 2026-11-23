@@ -797,6 +797,134 @@ def test_a_retired_card_is_refused_naming_its_successor():
           "and a live DRAFT card is not")
 
 
+def test_a_retired_setup_step_is_refused_naming_its_successor():
+    print("A DEPRECATED or ARCHIVED setup step is refused as a retired card under test is")
+    # Row 5b-1980: the card under test was checked for its status (row 5b-1934)
+    # and a setup step only for being a fragment and for its risk, so a job
+    # whose setup named the DEPRECATED select-by-category-name read WOULD RUN.
+    step = FakeFragment("old-step", [{"name": "elements"}], status="DEPRECATED")
+    step.data = {"deprecated": {"date": "2026-11-01",
+                                "superseded-by": "FILTER_ELEMENTS_BY_CATEGORY"}}
+    older = FakeFragment("older-step", [{"name": "elements"}], status="ARCHIVED")
+    library = {"old-step": step, "older-step": older,
+               "live-step": FakeFragment("live-step", [{"name": "elements"}]),
+               "sample": FakeFragment("sample", [{"name": "found"}])}
+    base = {"fragment": "sample", "setup": ["live-step", "old-step"], "set": {},
+            "negative-set": {"categoryName": "Sheets"}, "write": False,
+            "cross": None, "in": None, "negative-in": None, "expect": None,
+            "timeout": 60}
+    verdict, why = BP.job_refusal(base, library)
+    check(verdict == BP.REFUSED and "'old-step'" in (why or "")
+          and "DEPRECATED since 2026-11-01" in why
+          and "FILTER_ELEMENTS_BY_CATEGORY" in why,
+          "a DEPRECATED setup step is refused, by name, with its date and successor (%s)"
+          % why)
+    verdict, why = BP.job_refusal(dict(base, setup=["older-step"]), library)
+    check(verdict == BP.REFUSED and "ARCHIVED" in (why or "") and "instead" not in why,
+          "an ARCHIVED one too, and with no successor named, none is invented (%s)" % why)
+    check(BP.job_refusal(dict(base, setup=["live-step"]), library)[0] is None,
+          "and a live step is not")
+
+    # THE FILE A NEW JOB IS COPIED FROM must not teach a retired step.
+    jobs, problems = BP.read_jobs(os.path.join(ROOT, "tools", "jobs", "example.yaml"))
+    found, _ = HF.load_all()
+    real = dict((frag.slug, frag) for frag in found.values())
+    named = set(step_name for job in jobs for step_name in job["setup"])
+    retired = sorted(n for n in named if n in real and real[n].status in BP.RETIRED)
+    check(not problems and named and not retired,
+          "tools/jobs/example.yaml names no retired setup step (%s)"
+          % (", ".join(retired) or ", ".join(sorted(named))))
+
+
+class NeedyFragment(FakeFragment):
+    """A fake with a contract: the needs it declares and the provides it makes."""
+
+    def __init__(self, slug, needs, provides):
+        FakeFragment.__init__(self, slug, provides)
+        self._needs = needs
+
+    def needs(self):
+        return self._needs
+
+
+def test_a_need_only_another_fragment_can_fill_must_be_filled_by_the_setup():
+    print("A dry run says NOT RUNNABLE when no setup step provides what only a fragment can")
+    # Row 5b-1976: the dry run asked that each setup step EXISTS and never that
+    # what the card needs from another fragment is handed on by one of them.
+    # show-analysis-heatmap needs `values`, a table only another card makes,
+    # and read WOULD RUN on filter-elements-by-category + set-selection.
+    table = "IDictionary<ElementId, double>"
+    library = {
+        "pick": NeedyFragment("pick", [{"name": "doc", "type": "Document"}],
+                              [{"name": "elements", "type": "IList<Element>"}]),
+        "measure": NeedyFragment(
+            "measure", [{"name": "elements", "type": "IList<Element>"}],
+            [{"name": "values", "type": table}]),
+        "paint": NeedyFragment(
+            "paint", [{"name": "elements", "type": "IList<Element>"},
+                      {"name": "values", "type": table}], [{"name": "painted"}]),
+        "renamed": NeedyFragment(
+            "renamed", [{"name": "amounts", "type": table, "binds": "values"}],
+            [{"name": "found"}]),
+        "maybe": NeedyFragment(
+            "maybe", [{"name": "boundary", "type": "IList<Curve>",
+                       "optional": "true"}], [{"name": "found"}]),
+        "needs-boundary": NeedyFragment(
+            "needs-boundary", [{"name": "boundary", "type": "IList<Curve>"}],
+            [{"name": "found"}]),
+        "plain": FakeFragment("plain", [{"name": "found"}]),
+    }
+    base = {"fragment": "paint", "setup": ["pick"], "set": {},
+            "negative-set": {"categoryName": "Sheets"}, "write": False,
+            "cross": None, "in": None, "negative-in": None, "expect": None,
+            "timeout": 60}
+
+    verdict, why = BP.job_refusal(base, library)
+    check(verdict == BP.REFUSED and "NOT RUNNABLE" in (why or "")
+          and "`values`" in why and "the fragment" in why,
+          "a chain that leaves no `values` is NOT RUNNABLE, naming the need (%s)" % why)
+    check(BP.job_refusal(dict(base, setup=["pick", "measure"]), library)[0] is None,
+          "the same card after a step that provides it: runnable")
+    plain = dict(base, fragment="plain")
+    check(BP.job_refusal(dict(plain, setup=["paint", "measure"]), library)[0]
+          == BP.REFUSED
+          and BP.job_refusal(dict(plain, setup=["measure", "paint"]), library)[0] is None,
+          "a step is read against the steps BEFORE it: the order is the run's")
+    verdict, why = BP.job_refusal(dict(base, setup=["pick", "paint"],
+                                       fragment="plain"), library)
+    check(verdict == BP.REFUSED and "setup step 'paint'" in why,
+          "a setup step with the same gap is named as a step (%s)" % why)
+    check(BP.job_refusal(dict(base, fragment="renamed", setup=["measure"]),
+                         library)[0] is None,
+          "a need that `binds:` another name is filled by that name's provide")
+    verdict, why = BP.job_refusal(dict(base, fragment="renamed", setup=["pick"]),
+                                  library)
+    check(verdict == BP.REFUSED and "as `values`" in (why or ""),
+          "and refused naming the bound name when it is missing (%s)" % why)
+    check(BP.job_refusal(dict(base, fragment="paint", setup=[]), library)[0] is not None
+          and "values" in BP.job_refusal(dict(base, setup=[]), library)[1],
+          "an element list is the selection's to fill, so only `values` is named")
+    check(BP.job_refusal(dict(base, fragment="maybe", setup=[]), library)[0] is None,
+          "an optional curve list the add-in binds empty is not a gap")
+    check(BP.job_refusal(dict(base, fragment="needs-boundary", setup=[]),
+                         library)[0] == BP.REFUSED,
+          "the same list, not optional, is")
+    check(BP.job_refusal(dict(base, fragment="plain", setup=[]), library)[0] is None,
+          "a card that needs nothing from another fragment is not asked")
+
+    # AND THE JOB THAT SAID WOULD RUN, against the real library.
+    found, _ = HF.load_all()
+    real = dict((frag.slug, frag) for frag in found.values())
+    jobs, problems = BP.read_jobs(os.path.join(
+        ROOT, "tools", "jobs", "p1102-round16-revit2024-hvac-2026-11-02.yaml"))
+    heatmap = [j for j in jobs if j["fragment"] == "show-analysis-heatmap"]
+    verdict, why = BP.job_refusal(heatmap[0], real) if heatmap else (None, None)
+    check(not problems and verdict == BP.REFUSED and "NOT RUNNABLE" in (why or "")
+          and "`values`" in why,
+          "show-analysis-heatmap in p1102-round16 is NOT RUNNABLE, naming `values` (%s)"
+          % (why or "")[:110])
+
+
 def test_the_job_file_is_checked_against_the_contract():
     print("A mistyped name in the job file is caught before Revit is touched")
 
@@ -1005,7 +1133,7 @@ def test_the_command_line_is_one_the_client_actually_parses():
         check(views == ["FloorPlan: M1"],
               "a view name with a space arrives in one piece: %r" % views)
         check([s for s in (last.get("setup") or [])] ==
-              ["select-by-category-name", "set-selection"],
+              ["filter-elements-by-category", "set-selection"],
               "the setup chain arrives in order")
         check(last.get("out") == "out.json", "--out is seen at all")
         check(last.get("negative_values"),
@@ -1423,6 +1551,107 @@ def test_an_unattended_batch_logs_reports_and_hands_back_each_fragment():
         shutil.rmtree(workspace)
 
 
+def test_a_run_that_would_replace_a_record_or_an_unsigned_draft_says_so_first():
+    print("A real run names the run record and unsigned draft it would replace, and stops")
+    # Row 5b-1978: one run record and one proof draft are kept per card, so a
+    # second leg, a second job file or a draft from a KEPT run was replaced by
+    # the next run and nothing said so.
+    library = {"leg-card": FakeFragment("leg-card", [{"name": "found", "role": "result"}]),
+               "fresh-card": FakeFragment("fresh-card", [{"name": "found", "role": "result"}]),
+               "twice-card": FakeFragment("twice-card", [{"name": "found", "role": "result"}]),
+               "done-card": FakeFragment("done-card", [], status="PROVEN")}
+    workspace = tempfile.mkdtemp(prefix="heron-batch-replace-")
+    real = (BP.prove, BP.HF.load_all, BP.free_models, BP.RUNS, BP.HV.DRAFTS_DIR)
+    sent = []
+    try:
+        runs = os.path.join(workspace, "runs")
+        os.makedirs(runs)
+        BP.RUNS, BP.HV.DRAFTS_DIR = runs, workspace
+        for name in ("leg-card.json", "done-card.json"):
+            io.open(os.path.join(runs, name), "w").write(u"{}")
+        io.open(os.path.join(workspace, "leg-card.yaml"), "w").write(u"draft: 1\n")
+
+        job_file = os.path.join(workspace, "legs.yaml")
+        with io.open(job_file, "w", encoding="utf-8") as fh:
+            fh.write(u"defaults:\n  set: {a: 1}\n  negative-set: {a: 2}\n"
+                     u"jobs:\n  - fragment: leg-card\n  - fragment: fresh-card\n"
+                     u"  - fragment: done-card\n  - fragment: twice-card\n"
+                     u"  - fragment: twice-card\n")
+
+        def fake(job, lib, env, args, transcript=None):
+            sent.append(job["fragment"])
+            return BP.PASS, "positive: found 3"
+
+        BP.prove = fake
+        BP.HF.load_all = lambda *a, **k: (dict(library), [])
+        BP.free_models = lambda conversation, session=None: None
+
+        found = BP.would_replace(BP.read_jobs(job_file)[0], library)
+        names = dict((n, " ".join(w)) for n, w in found)
+        check(sorted(names) == ["leg-card", "twice-card"],
+              "only a runnable card with something there, or named twice, is listed: %s"
+              % sorted(names))
+        check("runs" in names["leg-card"] and "leg-card.json" in names["leg-card"]
+              and "proof draft" in names["leg-card"] and "unsigned" in names["leg-card"],
+              "a record and an unsigned draft are each named (%s)" % names["leg-card"])
+        check("job 4" in names["twice-card"],
+              "a card named twice in one file names the earlier job, by its place (%s)"
+              % names["twice-card"])
+        check("done-card" not in names,
+              "a finished card is never sent, so it replaces nothing")
+        real_refusal, BP.job_refusal = BP.job_refusal, lambda *a, **k: (None, None)
+        try:
+            # --release's names are <card>@<year>: the proof's own record is not in the way.
+            released = BP.would_replace(BP.read_jobs(job_file)[0], library, "2025")
+        finally:
+            BP.job_refusal = real_refusal
+        check([n for n, _ in released] == ["twice-card"],
+              "with --release the names are <card>@<year>, and a record of the "
+              "proof's own is not in the way: %s" % [n for n, _ in released])
+
+        out = io.StringIO()
+        import contextlib
+        with contextlib.redirect_stdout(out):
+            code = BP.main([job_file])
+        said = out.getvalue()
+        check(code == 1 and not sent,
+              "a real run with something to replace stops and sends nothing "
+              "(exit %s, sent %s)" % (code, sent))
+        check("REPLACE" in said and "leg-card" in said and "twice-card" in said
+              and "--replace" in said and "Nothing was sent to Revit" in said,
+              "and says by name what, and how to go on")
+
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            BP.main([job_file, "--dry-run"])
+        check("REPLACE" in out.getvalue() and "unless `--replace` is given" in out.getvalue()
+              and not sent,
+              "a dry run says the same, goes on, and still sends nothing")
+
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = BP.main([job_file, "--replace"])
+        check(sent == ["leg-card", "fresh-card", "twice-card", "twice-card"]
+              and "going on" in out.getvalue(),
+              "--replace goes on, and runs the cards: %s" % sent)
+
+        del sent[:]
+        for leftover in os.listdir(runs):
+            os.remove(os.path.join(runs, leftover))
+        os.remove(os.path.join(workspace, "leg-card.yaml"))
+        single = os.path.join(workspace, "single.yaml")
+        with io.open(single, "w", encoding="utf-8") as fh:
+            fh.write(u"defaults:\n  set: {a: 1}\n  negative-set: {a: 2}\n"
+                     u"jobs:\n  - fragment: leg-card\n  - fragment: fresh-card\n")
+        with contextlib.redirect_stdout(io.StringIO()):
+            code = BP.main([single])
+        check(sent == ["leg-card", "fresh-card"] and code == 0,
+              "with nothing there a batch runs as it always did: %s" % sent)
+    finally:
+        BP.prove, BP.HF.load_all, BP.free_models, BP.RUNS, BP.HV.DRAFTS_DIR = real
+        shutil.rmtree(workspace)
+
+
 def test_every_marker_is_still_what_its_source_prints():
     print("Every marker --unattended reads is still in the file that prints it")
     sources = {
@@ -1704,6 +1933,8 @@ def main():
                  test_a_negative_that_would_hand_the_chain_the_wrong_values_is_refused,
                  test_a_leg_that_would_leave_a_value_unbound_is_refused,
                  test_a_retired_card_is_refused_naming_its_successor,
+                 test_a_retired_setup_step_is_refused_naming_its_successor,
+                 test_a_need_only_another_fragment_can_fill_must_be_filled_by_the_setup,
                  test_the_job_file_is_checked_against_the_contract,
                  test_an_admin_or_publish_fragment_is_never_sent_by_a_batch,
                  test_defaults_merge_key_by_key,
@@ -1715,6 +1946,7 @@ def main():
                  test_the_closer_closes_revits_memory_warning_and_nothing_else,
                  test_the_log_has_one_line_per_fragment,
                  test_an_unattended_batch_logs_reports_and_hands_back_each_fragment,
+                 test_a_run_that_would_replace_a_record_or_an_unsigned_draft_says_so_first,
                  test_every_marker_is_still_what_its_source_prints,
                  test_a_card_is_not_sent_to_a_release_it_leaves_out):
         test()
