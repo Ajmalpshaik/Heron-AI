@@ -46,3 +46,14 @@ through the proving client, a preview.
 **Signing, once PO1 to PO4 and PO6 to PO8 pass:** the card's proof is written by `tools/batch-prove.py` with the owner, and
 `heron-status` set to PROVEN in the same change - never by a session, and never on a working model. Then close issue
 #1029.
+
+### Results, 2026-11-23 - Revit 2020, session 35764, scratch family `fp-scratch`
+
+| Row | Result |
+|---|---|
+| PO2 (first call) | **PASS.** `facePlane=Ref. Level`, `system=Domestic Cold Water`, `sizeParameters=Port Dia`, `at=-5000, -5000, 0`: *"Nothing was made. No solid face centred at the point given in at= lies on "Ref. Level". What does lie on it: ..."*, each of the 74 downward faces listed with its form id and centre; rolled back |
+| PO4 (second call, the at= half) | **PASS on another arrangement.** 74 faces lie on *Ref. Level*; `at=-800, -300, 0` (a 400 x 400 box's underside): *"pipe connector, Domestic Cold Water, round 100 mm, at X -800, Y -300, Z 0, pointing down"*, `sizedBy` *connector diameter <- Port Dia*, *"73 other face(s) ... left out"*; rolled back. An electrical connector first tried as the positive was refused at `accept` as POSITIVE EMPTY (`sizedBy` 0) - a sized port is the evidence |
+| PO1, PO3, PO5-PO8 | NOT RUN - still owed |
+
+**Signed on the owner's word, 2026-11-23, before PO1, PO3 and PO5-PO8 ran** - so a family build could go ahead;
+the proof is D-30's two legs above. Issue #1029 stays open for the rows still owed.

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -189,65 +189,199 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-23'
   by: Ajmal PS
-  model: P1102 Family, Revit 2020, session 59096 - the count is NOT recorded because 21,446
-    elements was measured on P1102 MEP, the document in front, and this ran against another
-    one (row 15)
-  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned along Func`3, axisLetters 3 item(s)
-    [X, Y, Z], axisOf Func`2, built 1 solid extrusion on "Ref. Level" (horizontal, Z 0 mm),
-    1 loop(s) from 0 to 500 mm: X -150 to 150, Y -150 to 150, Z 0 to 500 mm, 35.341 L, material
-    <By Category>, datums 4 item(s) [(Autodesk.Revit.DB.ReferencePlane, 1, -2.76559916460861E-14,...,
-    (Autodesk.Revit.DB.ReferencePlane, 0, 2.05505642884851E-14, ..., (Autodesk.Revit.DB.ReferencePlane,
-    0, 14.7637795275591, Righ..., ...], dbNamespace Autodesk.Revit.DB, everyKind kind=extrusion,
-    kind=revolve, kind=blend, kind=sweep or kind=swept blend, facing 3 item(s) [facing left
-    or right, facing front or back, horizontal], fieldNames 17 item(s) [kind, workPlane, profile,
-    ...], findings 3 item(s) [Built 1 form(s) in this one call - 1 extrusion(s), 1 solid a...,
-    1 were given a material and 0 their visibility, each read ba..., Each sketch is hosted
-    on the plane named and moves with it. ...], flags BindingFlags, formCount 1, formId 737ca333-bfcb-43c7-9f51-311ee69e34ea-00002872,
-    formIds 737ca333-bfcb-43c7-9f51-311ee69e34ea-00002872, halfMillimetre 0.00164041994750656,
-    ignoreCase RegexOptions, inPlane 3 item(s) [System.Int32[], System.Int32[], System.Int32[]],
-    invariant CultureInfo, isMaterial Func`2, kindFields 5 entry(ies), kindOwned 11 item(s)
-    [profile, startMm, endMm, ...], kindWords Func`2, loopOf Func`3, mm Func`2, mostRows 200,
-    notAFamily false, number Func`2, ownName Func`2, pair Func`2, pathOf Func`3, plain Func`2,
-    problems 0 item(s), refused (null), revitAssembly RuntimeAssembly, rowAxis 1 item(s) [(null)],
-    rowByCategory 1 item(s) [True], rowCount 1, rowFrom 1 item(s) [0], rowKind 1 item(s) [extrusion],
-    rowLoops 1 item(s) [System.Collections.Generic.List`1[System.Collections.Generic...],
-    rowMaterial 1 item(s) [(null)], rowParameter 1 item(s) [(null)], rowPath 1 item(s) [(null)],
-    rowPlane 1 item(s) [(Autodesk.Revit.DB.Level, 2, -6.12802901943647E-15, Ref. Lev...],
-    rowShows 1 item(s) [(null)], rowSnapped 1 item(s) [0], rowSolid 1 item(s) [True], rowTo
-    1 item(s) [500], rowTopLoop 1 item(s) [(null)], sameKind Func`3, shortened Func`2, shortest
-    0.7803686370625, squash Func`2, volumeWords Func`2. inputs came forms as given. on P1102
-    Family'
-  negative_case: 'run with forms=kind=extrusion workPlane=ZZZ No Such Plane profile=circle
-    0,0 150 startMm=0 endMm=500 solid=true material=by category instead - chosen because it
-    should not contain what this fragment reports - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned along Func`3, axisLetters 3 item(s)
-    [X, Y, Z], axisOf Func`2, built , datums 4 item(s) [(Autodesk.Revit.DB.ReferencePlane,
-    1, -2.76559916460861E-14,..., (Autodesk.Revit.DB.ReferencePlane, 0, 2.05505642884851E-14,
-    ..., (Autodesk.Revit.DB.ReferencePlane, 0, 14.7637795275591, Righ..., ...], dbNamespace
-    Autodesk.Revit.DB, everyKind kind=extrusion, kind=revolve, kind=blend, kind=sweep or kind=swept
-    blend, facing 3 item(s) [facing left or right, facing front or back, horizontal], fieldNames
-    17 item(s) [kind, workPlane, profile, ...], findings 1 item(s) [Nothing was built - none
-    of the 1 row(s). Row 1: no referenc...], flags BindingFlags, formCount 0, formId , formIds
-    , halfMillimetre 0.00164041994750656, ignoreCase RegexOptions, inPlane 3 item(s) [System.Int32[],
+  model: fp-scratch (2,025 elements), Revit 2020, session 35764
+  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-11-23; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned along Func`3, arcOf Func`2, axisLetters 3 item(s) [X, Y, Z],
+    axisOf Func`2, built 1 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s)
+    from 0 to 100 mm: X 0 to 600, Y 0 to 500, Z 0 to 100 mm, 18 L || 2 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 100 mm: X -100 to 700, Y 1000 to
+    1200, Z 0 to 100 mm, 15.141 L || 3 solid extrusion on "Ref. Level" (horizontal, Z 0 mm),
+    2 loop(s) (1 outline, 1 hole inside it) from 0 to 150 mm: X 2000 to 2600, Y 0 to 600,
+    Z 0 to 150 mm, 30 L || 4 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s)
+    from 0 to 300 mm: X -1000 to -600, Y -500 to -100, Z 0 to 300 mm, 48 L || 5 solid extrusion
+    on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 3000 to 3040, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 6 solid extrusion on "Ref. Level" (horizontal, Z 0
+    mm), 1 loop(s) from 0 to 40 mm: X 3060 to 3100, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³
+    || 7 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm:
+    X 3120 to 3160, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 8 solid extrusion on "Ref.
+    Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 3180 to 3220, Y -1000 to -960,
+    Z 0 to 40 mm, 64000 mm³ || 9 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s)
+    from 0 to 40 mm: X 3240 to 3280, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 10 solid
+    extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 3300 to 3340,
+    Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 11 solid extrusion on "Ref. Level" (horizontal,
+    Z 0 mm), 1 loop(s) from 0 to 40 mm: X 3360 to 3400, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 12 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 3420 to 3460, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 13 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 3480 to 3520, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 14 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 3540 to 3580, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 15 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 3600 to 3640, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 16 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 3660 to 3700, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 17 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 3720 to 3760, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 18 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 3780 to 3820, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 19 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 3840 to 3880, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 20 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 3900 to 3940, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 21 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 3960 to 4000, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 22 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 4020 to 4060, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 23 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 4080 to 4120, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 24 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 4140 to 4180, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 25 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 4200 to 4240, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 26 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 4260 to 4300, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 27 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 4320 to 4360, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 28 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 4380 to 4420, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 29 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 4440 to 4480, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 30 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 4500 to 4540, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 31 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 4560 to 4600, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 32 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 4620 to 4660, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 33 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 4680 to 4720, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 34 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 4740 to 4780, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 35 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 4800 to 4840, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 36 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 4860 to 4900, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 37 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 4920 to 4960, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 38 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 4980 to 5020, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 39 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 5040 to 5080, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 40 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 5100 to 5140, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 41 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 5160 to 5200, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 42 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 5220 to 5260, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 43 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 5280 to 5320, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 44 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 5340 to 5380, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 45 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 5400 to 5440, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 46 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 5460 to 5500, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 47 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 5520 to 5560, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 48 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 5580 to 5620, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 49 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 5640 to 5680, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 50 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 5700 to 5740, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 51 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 5760 to 5800, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 52 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 5820 to 5860, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 53 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 5880 to 5920, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 54 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 5940 to 5980, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 55 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 6000 to 6040, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 56 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 6060 to 6100, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 57 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 6120 to 6160, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 58 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 6180 to 6220, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 59 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 6240 to 6280, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 60 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 6300 to 6340, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 61 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 6360 to 6400, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 62 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 6420 to 6460, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 63 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 6480 to 6520, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 64 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 6540 to 6580, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 65 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 6600 to 6640, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 66 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 6660 to 6700, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 67 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 6720 to 6760, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 68 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 6780 to 6820, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 69 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 6840 to 6880, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 70 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 6900 to 6940, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 71 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 6960 to 7000, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³ || 72 solid extrusion on "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40
+    mm: X 7020 to 7060, Y -1000 to -960, Z 0 to 40 mm, 64000 mm³ || 73 solid extrusion on
+    "Ref. Level" (horizontal, Z 0 mm), 1 loop(s) from 0 to 40 mm: X 7080 to 7120, Y -1000
+    to -960, Z 0 to 40 mm, 64000 mm³ || 74 solid extrusion on "Ref. Level" (horizontal, Z
+    0 mm), 1 loop(s) from 0 to 40 mm: X 7140 to 7180, Y -1000 to -960, Z 0 to 40 mm, 64000
+    mm³, datums 3 item(s) [(Autodesk.Revit.DB.ReferencePlane, 1, 0, Center (Front/Back)...,
+    (Autodesk.Revit.DB.ReferencePlane, 0, 0, Center (Left/Right)..., (Autodesk.Revit.DB.Level,
+    2, 0, Ref. Level)], dbNamespace Autodesk.Revit.DB, everyKind kind=extrusion, kind=revolve,
+    kind=blend, kind=sweep or kind=swept blend, facing 3 item(s) [facing left or right, facing
+    front or back, horizontal], fieldNames 17 item(s) [kind, workPlane, profile, ...], findings
+    2 item(s) [Built 74 form(s) in this one call - 74 extrusion(s), 74 soli..., Each sketch
+    is hosted on the plane named and moves with it. ...], flags BindingFlags, formCount 74,
+    formId 18abae73-ad5c-48d6-abd3-653b5eda36a7-000009f9, formIds 18abae73-ad5c-48d6-abd3-653b5eda36a7-000009f9,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a02,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a09,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a14,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a1b,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a22,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a29,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a30,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a37,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a3e,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a45,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a4c,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a53,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a5a,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a61,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a68,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a6f,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a76,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a7d,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a84,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a8b,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a92,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a99,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000aa0,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000aa7,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000aae,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ab5,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000abc,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ac3,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000aca,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ad1,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ad8,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000adf,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ae6,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000aed,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000af4,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000afb,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b02,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b09,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b10,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b17,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b1e,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b25,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b2c,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b33,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b3a,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b41,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b48,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b4f,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b56,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b5d,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b64,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b6b,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b72,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b79,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b80,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b87,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b8e,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b95,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b9c,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ba3,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000baa,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bb1,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bb8,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bbf,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bc6,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bcd,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bd4,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bdb,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000be2,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000be9,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bf0,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bf7,18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bfe,
+    fullTurn 6.28318530717959, halfMillimetre 0.00164041994750656, ignoreCase RegexOptions,
+    inPlane 3 item(s) [System.Int32[], System.Int32[], System.Int32[]], invariant CultureInfo,
+    isMaterial Func`2, kindFields 5 entry(ies), kindOwned 11 item(s) [profile, startMm, endMm,
+    ...], kindWords Func`2, loopOf Func`3, loopsInCall 75, mm Func`2, mostLoops 600, mostRows
+    200, notAFamily false, number Func`2, ownName Func`2, pair Func`2, pathOf Func`3, plain
+    Func`2, pointToSide Func`4, problems 0 item(s), refused (null), revitAssembly RuntimeAssembly,
+    rowAxis 74 item(s) [(null), (null), (null), ...], rowByCategory 74 item(s) [False, False,
+    False, ...], rowCount 74, rowFrom 74 item(s) [0, 0, 0, ...], rowKind 74 item(s) [extrusion,
+    extrusion, extrusion, ...], rowLoops 74 item(s) [System.Collections.Generic.List`1[System.Collections.Generic...,
+    System.Collections.Generic.List`1[System.Collections.Generic..., System.Collections.Generic.List`1[System.Collections.Generic...,
+    ...], rowMaterial 74 item(s) [(null), (null), (null), ...], rowParameter 74 item(s) [(null),
+    (null), (null), ...], rowPath 74 item(s) [(null), (null), (null), ...], rowPlane 74 item(s)
+    [(Autodesk.Revit.DB.Level, 2, 0, Ref. Level), (Autodesk.Revit.DB.Level, 2, 0, Ref. Level),
+    (Autodesk.Revit.DB.Level, 2, 0, Ref. Level), ...], rowShows 74 item(s) [(null), (null),
+    (null), ...], rowSnapped 74 item(s) [0, 0, 0, ...], rowSolid 74 item(s) [True, True, True,
+    ...], rowTo 74 item(s) [100, 100, 150, ...], rowTopLoop 74 item(s) [(null), (null), (null),
+    ...], sameKind Func`3, shortened Func`2, shortest 0.7803686370625, sidesApart Func`3,
+    squash Func`2, touchMm 0.01, turnOf Func`7, volumeWords Func`2, withinArc Func`4. inputs
+    came forms as given. on fp-scratch'
+  negative_case: 'run with forms=kind=extrusion workPlane=Ref. Level profile=0,3000; 400,3400;
+    400,3000; 0,3200 startMm=0 endMm=100 solid=true instead - chosen because it should not
+    contain what this fragment reports - run inside a transaction, and Revit reported the
+    transaction group ROLLED BACK afterwards. returned along Func`3, arcOf Func`2, axisLetters
+    3 item(s) [X, Y, Z], axisOf Func`2, built , datums 3 item(s) [(Autodesk.Revit.DB.ReferencePlane,
+    1, 0, Center (Front/Back)..., (Autodesk.Revit.DB.ReferencePlane, 0, 0, Center (Left/Right)...,
+    (Autodesk.Revit.DB.Level, 2, 0, Ref. Level)], dbNamespace Autodesk.Revit.DB, everyKind
+    kind=extrusion, kind=revolve, kind=blend, kind=sweep or kind=swept blend, facing 3 item(s)
+    [facing left or right, facing front or back, horizontal], fieldNames 17 item(s) [kind,
+    workPlane, profile, ...], findings 1 item(s) [Nothing was built - none of the 1 row(s).
+    Row 1: the profile...], flags BindingFlags, formCount 0, formId , formIds , fullTurn 6.28318530717959,
+    halfMillimetre 0.00164041994750656, ignoreCase RegexOptions, inPlane 3 item(s) [System.Int32[],
     System.Int32[], System.Int32[]], invariant CultureInfo, isMaterial Func`2, kindFields
     5 entry(ies), kindOwned 11 item(s) [profile, startMm, endMm, ...], kindWords Func`2, loopOf
-    Func`3, mm Func`2, mostRows 200, notAFamily false, number Func`2, ownName Func`2, pair
-    Func`2, pathOf Func`3, plain Func`2, problems 1 item(s) [Row 1: no reference plane or
-    level is called "ZZZ No Such Pl...], refused Nothing was built - none of the 1 row(s).
-    Row 1: no reference plane or level is called "ZZZ No Such Plane". This family has Center
-    (Front/Back), Left, Ref. Level, Right., revitAssembly RuntimeAssembly, rowAxis 0 item(s),
-    rowByCategory 0 item(s), rowCount 1, rowFrom 0 item(s), rowKind 0 item(s), rowLoops 0
-    item(s), rowMaterial 0 item(s), rowParameter 0 item(s), rowPath 0 item(s), rowPlane 0
-    item(s), rowShows 0 item(s), rowSnapped 0 item(s), rowSolid 0 item(s), rowTo 0 item(s),
-    rowTopLoop 0 item(s), sameKind Func`3, shortened Func`2, shortest 0.7803686370625, squash
-    Func`2, volumeWords Func`2. inputs came forms as given. on P1102 Family'
+    Func`3, loopsInCall 1, mm Func`2, mostLoops 600, mostRows 200, notAFamily false, number
+    Func`2, ownName Func`2, pair Func`2, pathOf Func`3, plain Func`2, pointToSide Func`4,
+    problems 1 item(s) [Row 1: the profile crosses or touches itself - its side 1 (f...],
+    refused Nothing was built - none of the 1 row(s). Row 1: the profile crosses or touches
+    itself - its side 1 (from 0,3000) and side 3 (from 400,3000) meet, though they are not
+    next to each other - and Revit cannot build that; it answers only "unexpected internal
+    error". Write the corners in order round the outline, an arc''s middle point on the side
+    it bulges to; a figure-of-eight is two forms., revitAssembly RuntimeAssembly, rowAxis
+    0 item(s), rowByCategory 0 item(s), rowCount 1, rowFrom 0 item(s), rowKind 0 item(s),
+    rowLoops 0 item(s), rowMaterial 0 item(s), rowParameter 0 item(s), rowPath 0 item(s),
+    rowPlane 0 item(s), rowShows 0 item(s), rowSnapped 0 item(s), rowSolid 0 item(s), rowTo
+    0 item(s), rowTopLoop 0 item(s), sameKind Func`3, shortened Func`2, shortest 0.7803686370625,
+    sidesApart Func`3, squash Func`2, touchMm 0.01, turnOf Func`7, volumeWords Func`2, withinArc
+    Func`4. inputs came forms as given. on fp-scratch'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 48968fa48e22890b
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: 3545dba0dc8cd0c7
+  fingerprint: 3b67d625d15f1453
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

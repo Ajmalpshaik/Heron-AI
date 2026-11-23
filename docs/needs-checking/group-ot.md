@@ -93,3 +93,14 @@ material is [Group NY](group-ny.md) NY5, then NY6 and NY7 (since 2026-11-21), th
 
 **Signing, once OT1 to OT26 pass:** each tool's proof is written by `tools/batch-prove.py` with the owner, and
 `heron-status` set to PROVEN in the same change - never by a session, and never on a working model.
+
+### Results, 2026-11-23 - Revit 2020, session 35764, scratch family `fp-scratch`
+
+| Row | Result |
+|---|---|
+| OT2 | **Ring half PASS** (in PB5's kept call): the ring `rect 2000,0 2600,600 \| rect 2100,100 2500,500` made as one form, *"2 loop(s) (1 outline, 1 hole inside it)"*, 30 L. The 700-loop refusal half NOT RUN |
+| OT3 | **PASS.** `REPORT_FAMILY_FORMS` v7, `which=solid`, 74 forms: first line the count and extents (*"74 form(s), 74 solid and 0 void, together reaching X -1000 to 7180, Y -1000 to 1200, Z 0 to 300 mm"*), 60 forms described once each, then *"and 14 more form(s), not described here ... - their ids: ..."*; `elements` 74 |
+| OT1, OT4 | NOT RUN - still owed |
+
+`CREATE_FAMILY_FORMS` and `REPORT_FAMILY_FORMS` were signed on the owner's word this day; their proofs are PB5/PB6
+and OT3/PB8 (Group PB's results).
