@@ -2,7 +2,7 @@
 # IMPORTED CAD - a link is not an import"), and the 2026-11-16 night's
 # morning list (Group OI: "no ... CAD with solids"). Written 2026-11-21 in a
 # cloud session with no Revit. NOT RUN. It REPLACES the card's job in
-# p1102-round7-arch-2026-11-02.yaml, which is left as it was: that job gave ONE
+# p1102-round7-arch-2026-11-02.yaml, which no longer holds it (removed 2026-11-23, row 5b-1977): that job gave ONE
 # `category` to both the setup's filter (the import's name) and the card's
 # own `category` (the category the new elements go in), so the card was asked
 # for category "Roofing Detail.dwg", which no built-in category is.

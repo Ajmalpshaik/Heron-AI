@@ -85,6 +85,7 @@ not parse is never handed to anybody.
 """
 
 import argparse
+import difflib
 import io
 import os
 import re
@@ -544,6 +545,23 @@ SETUP_CHAIN = ["filter-elements-by-category", "set-selection"]
 # (FIND_CLASHES does, and is PROVEN).
 SHARED_INPUTS = ["categories", "inViewOnly"]
 
+# CARDS WHOSE TWO NEEDS ARE THE ONE SET ON PURPOSE (row 5b-1975). A card that
+# binds two needs to the chain's one `elements` is refused as "the same set",
+# and for most of them that is right: FIND_NEAREST_ELEMENTS measures from a set
+# to itself and answers with nothing. Which is which is the CARD'S meaning and
+# no field of a contract says it, so the cards where a set against itself IS
+# the question are named here, each with the evidence that it ran:
+#
+#   check-minimum-clearance   "every pair closer than they are allowed to be"
+#                             - pairs within a set. Version 3's proof bound
+#                             `elements` and `targets` from one
+#                             filter-elements-by-category with `keep-chain`
+#                             (tools/jobs/p1102-round3-2026-11-02.yaml).
+#
+# test_generate_jobs.py reads each named card and fails when it no longer binds
+# two needs to one name, so an entry cannot outlive its reason.
+SAME_SET_ON_PURPOSE = ("check-minimum-clearance",)
+
 
 def chain_provides(library):
     """{name: type} the setup chain leaves behind, read from the chain itself."""
@@ -614,6 +632,14 @@ def blockers(frag, supply, threshold_ordinal, ladder):
             continue
         ok, why = receivable(need.get("type"), need.get("name"))
         if not ok:
+            # A NEED THE ADD-IN BINDS ABSENT IS LEFT OUT OF THE JOB, NOT A
+            # REASON TO REFUSE IT (row 5b-1975). `draw-mep-schematic`'s `start`
+            # is an `Element` marked `optional: true`: left out it binds null
+            # and the whole system is drawn, which is how its first proof ran
+            # ("start (null)"). The job file says it was left out
+            # (see `left_out`) rather than offering a blank nobody can fill.
+            if HF.need_may_be_absent(need):
+                continue
             found.append("`%s (%s)` cannot be typed in: %s"
                          % (need.get("name"), need.get("type"), why))
 
@@ -637,19 +663,22 @@ def blockers(frag, supply, threshold_ordinal, ladder):
     bound = [HF.need_binds(n) for n in frag.needs()
              if HF.need_source(n) == "fragment"]
     for name in sorted(set(b for b in bound if bound.count(b) > 1)):
+        if frag.slug in SAME_SET_ON_PURPOSE:
+            continue
         found.append("two needs are both filled by %r, and the setup chain "
                      "leaves one. Both would arrive as the same set" % name)
 
-    # (e) NOTHING TO VARY, SO NO SECOND LEG. D-30 needs an arrangement where the
-    #     answer must be nothing, and a fragment taking only `doc` has no such
-    #     arrangement: the two legs would be the same run twice. The skill calls
-    #     these out by name and sends them to TRACKING (D-53) with `validate`,
-    #     one at a time - which is not what `batch-prove` does.
-    if not [n for n in frag.needs() if HF.need_source(n) in ("request", "fragment")]:
-        found.append("it takes nothing but the model itself, so both legs would "
-                     "be the same run twice. D-30's second leg is met by "
-                     "TRACKING here (D-53) - prove it with `validate`, "
-                     "one at a time")
+    # (e) NOTHING TO VARY IS NOT NOTHING TO ARRANGE (row 5b-1975). A card
+    #     taking only `doc` has no value to change, so its second leg is not a
+    #     different value or selection - but it can be a different MODEL: a
+    #     second one that has none of what the card reads, or a family against
+    #     a project. `list-linked-models` was signed that way (Snowdon Towers
+    #     against Project1, "0 links ... Empty because there are none"), and
+    #     so were `report-family-template` and `report-family-type-catalog`. So
+    #     it is OFFERED as a job with `negative-in:`, and D-30's pair is met.
+    #     Only where NO second model can have none of it is D-53 TRACKING the
+    #     way, and the job's own comment says so - it is the person's call, not
+    #     this file's, and sending every such card to tracking was the defect.
 
     return found
 
@@ -670,6 +699,18 @@ def request_needs(frag):
 # this module's callers, and tests/test_generate_jobs.py, ask for
 # `GJ.how_to_type` and the function did not change.
 how_to_type = HF.how_to_type
+
+
+def left_out(frag):
+    """[(name, type)] of the optional needs a job file leaves out (row 5b-1975).
+
+    A `source: request` need that cannot be typed in (`receivable` says no) and
+    that the add-in binds absent when it is not given (`need_may_be_absent`):
+    the generator offers no blank for it, because a blank nobody can fill is
+    a job that cannot run, and the card runs without it."""
+    return [(n.get("name"), n.get("type")) for n in frag.needs()
+            if HF.need_source(n) == "request" and HF.need_may_be_absent(n)
+            and not receivable(n.get("type"), n.get("name"))[0]]
 
 
 def results_of(frag):
@@ -822,13 +863,41 @@ def job_block(frag, writes, supply):
     wanted = [n for n in frag.needs() if HF.need_source(n) == "fragment"]
     if not wanted:
         add("    setup: []          # it needs nothing another fragment provides")
+    elif frag.slug in SAME_SET_ON_PURPOSE:
+        # ONE SELECTION FEEDS BOTH NEEDS, ON PURPOSE (SAME_SET_ON_PURPOSE).
+        # Only the selector runs, and `keep-chain` keeps what it left for the
+        # second need as well - the arrangement version 3's proof ran.
+        add("    setup: [%s]   # one selection, handed to BOTH needs on purpose"
+            % SETUP_CHAIN[0])
+        add("    keep-chain: true")
+
+    # NOTHING BUT THE MODEL: THE SECOND LEG IS A SECOND MODEL (row 5b-1975).
+    if not [n for n in frag.needs() if HF.need_source(n) in ("request", "fragment")]:
+        add("    in: %s" % quote(FILL_IN))
+        for line in wrap(
+                "%s. The model that HAS what this card reads. It takes only the "
+                "model itself, so there is no value or selection to vary: D-30's "
+                "empty leg is a SECOND model that has none of it, or a family "
+                "against a project." % FILL_IN, 76, "    # "):
+            add(line)
+        add("    negative-in: %s" % quote(FILL_IN))
+        for line in wrap(
+                "%s. If no second model can have none of it, this card cannot "
+                "come back empty and D-53 TRACKING is the way: prove it with "
+                "`validate`, one at a time." % FILL_IN, 76, "    # "):
+            add(line)
 
     if writes:
         add("    write: true        # risk: %s. Without `apply` the run is wrapped"
             % frag.data.get("risk"))
         add("                       # in a TransactionGroup and rolled back (D-55)")
 
-    caller = request_needs(frag)
+    caller = [(name, kind) for name, kind in request_needs(frag)
+              if (name, kind) not in left_out(frag)]
+    for name, kind in left_out(frag):
+        add("    # %s (%s) is optional and cannot be typed here, so it is LEFT OUT:"
+            % (name, kind))
+        add("    # the add-in binds it absent, and the card runs without it.")
     if caller:
         # THE NAMES, SPELLED FROM THE CONTRACT, in a column so a reader can see
         # at a glance which are still blank. The width is computed rather than
@@ -911,6 +980,44 @@ def blocked_block(rows):
     return out
 
 
+def only_names(values, library):
+    """(names, refusals, notes) for the `--only` words, or (None, [], []) for none.
+
+    Row 5b-1983. `--only no-such-card` and `--only create-grids,copy-elements`
+    each printed "0 emitted, 0 marked" and exited 0, so a mistyped name read as
+    a card with nothing left to arrange - the silent zero this tool exists to
+    stop for input names. A comma is a list: it is split, so the second form
+    means what it looks like. A word that is not a card in the library is a
+    REFUSAL, named, with the nearest card where there is one. A word that is a
+    card but not a candidate - PROVEN, or already run - is a NOTE, because the
+    zero is true and the reason is what a person needs.
+    """
+    if not values:
+        return None, [], []
+    names, refusals, notes = [], [], []
+    for value in values:
+        for word in value.split(","):
+            word = word.strip()
+            if word and word not in names:
+                names.append(word)
+    if not names:
+        refusals.append("`--only` names no card - it is empty")
+    candidates_now = set(candidates(library))
+    for word in names:
+        if word not in library:
+            near = difflib.get_close_matches(word, sorted(library), n=1)
+            refusals.append("`--only %s` is not a card in the library%s"
+                            % (word, " - did you mean `%s`?" % near[0]
+                               if near else ""))
+        elif word not in candidates_now:
+            frag = library[word]
+            why = ("heron-status is %s, and only DRAFT is arranged" % frag.status
+                   if frag.status != "DRAFT"
+                   else "it already has a run record in brain/proof-drafts/runs/")
+            notes.append("`%s` is a card but not a candidate: %s" % (word, why))
+    return names, refusals, notes
+
+
 def build(library, threshold_ordinal, threshold_name, ladder, wanted_risk=None,
           limit=None, only=None):
     """The whole file as one string, plus the counts for the report."""
@@ -969,7 +1076,9 @@ def main(argv=None):
     parser.add_argument("--risk", help="only fragments at this risk, e.g. MODIFY")
     parser.add_argument("--limit", type=int, help="at most this many jobs")
     parser.add_argument("--only", action="append",
-                        help="just this fragment. Repeatable")
+                        help="just this fragment. Repeatable, or a comma-"
+                             "separated list. A name that is not a card is "
+                             "refused")
     args = parser.parse_args(argv)
 
     threshold_name, threshold_ordinal, ladder = write_threshold()
@@ -985,10 +1094,20 @@ def main(argv=None):
                          % (args.risk, ", ".join(sorted(ladder, key=ladder.get))))
         return 1
 
+    only, refusals, notes = only_names(args.only, library)
+    if refusals:
+        for refusal in refusals:
+            sys.stderr.write(refusal + "\n")
+        sys.stderr.write("Nothing was generated. A card is named as its folder "
+                         "in brain/fragments/ is.\n")
+        return 1
+    for note in notes:
+        sys.stderr.write(note + "\n")
+
     text, counts, jobs, blocked = build(
         library, threshold_ordinal, threshold_name, ladder,
         wanted_risk=args.risk.upper() if args.risk else None,
-        limit=args.limit, only=set(args.only) if args.only else None)
+        limit=args.limit, only=set(only) if only else None)
 
     # READ IT BACK BEFORE ANYBODY ELSE DOES. A generator that emits YAML it has
     # not parsed is one quoting mistake away from handing somebody a file that
