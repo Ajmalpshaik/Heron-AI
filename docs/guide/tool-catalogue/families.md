@@ -208,7 +208,7 @@ Once it is proved, you will ask: *"let each type choose which motor it uses"* ·
 
 ### Array family forms
 
-**PROOF OUT OF DATE - not yet usable in a chat - refused until proved (D-117).**
+**DRAFT - not yet usable in a chat - refused until proved (D-117).**
 
 **What it does:** repeat one form or one nested family in a row - a linear array - in the family being edited, its count driven by a parameter.
 
