@@ -272,6 +272,7 @@ namespace Heron.BindingNote.TestHost
             Foreign();
             MixedIds();
             Typed();
+            NamedList();
             Parts();
             TakenBack();
 
@@ -429,6 +430,105 @@ namespace Heron.BindingNote.TestHost
                   && write.IndexOf("expect_from", StringComparison.Ordinal) >= 0
                   && write.IndexOf("NOTHING WAS BOUND", StringComparison.Ordinal) >= 0,
                   "a write is sent to the read first, then expect_from - got \"" + write + "\"");
+        }
+
+        /// <summary>
+        /// FRAGMENT-ISSUES row 5b-1994: a `name=value; name=value` list - the
+        /// `values` of SET_FAMILY_TYPE_VALUES, and every other need typed as an
+        /// IDictionary - was split on EVERY semicolon, so a text value that held
+        /// one could not be written as the owner gave it. On 2026-11-23 (Revit
+        /// 2020) a filter's efficiency, "...ASHRAE 52/76; design 81 % / 91 %",
+        /// was refused with `"design 81 % / 91 %" is not an entry for 'values'`,
+        /// and the only way round was to rewrite it with commas.
+        ///
+        /// A VALUE IN DOUBLE QUOTES KEEPS ITS SEMICOLONS AND ITS SPACES, and
+        /// \" inside it is a quote. An unquoted list splits exactly as before.
+        ///
+        /// By reflection for Foreign's reason: on the code before the row the
+        /// rule does not exist, and these fail as checks, not as a build error.
+        /// </summary>
+        private static void NamedList()
+        {
+            const BindingFlags Rule = BindingFlags.NonPublic | BindingFlags.Static;
+            var rule = typeof(HeronBindingNote).GetMethod("NamedEntries", Rule);
+            Check(rule != null, "the binder has ONE rule for splitting a name=value; list (row 5b-1994)");
+            if (rule == null) return;
+
+            const string Shown = "\"view=*-Mech*; sheet=A-*\"";
+            Func<string, Tuple<List<KeyValuePair<string, string>>, string>> split = text =>
+            {
+                var args = new object[] { text, "values", Shown, null };
+                var entries = (List<KeyValuePair<string, string>>)rule.Invoke(null, args);
+                return Tuple.Create(entries, (string)args[3]);
+            };
+            Func<List<KeyValuePair<string, string>>, string> said = entries =>
+            {
+                if (entries == null) return "(null)";
+                var parts = new List<string>();
+                foreach (var e in entries) parts.Add("[" + e.Key + "]=[" + e.Value + "]");
+                return string.Join(" ", parts.ToArray());
+            };
+
+            // THE ROW'S OWN TEXT, quoted. It was refused; now it is two entries.
+            var row = split("Filter_Efficiency=\"92-94 % (EN 779 mod.), 70 % ASHRAE 52/76; "
+                            + "design 81 % / 91 %\"; Filter_Cell=Bag, G4");
+            Check(row.Item2 == null && row.Item1 != null && row.Item1.Count == 2
+                  && row.Item1[0].Key == "Filter_Efficiency"
+                  && row.Item1[0].Value == "92-94 % (EN 779 mod.), 70 % ASHRAE 52/76; design 81 % / 91 %"
+                  && row.Item1[1].Key == "Filter_Cell" && row.Item1[1].Value == "Bag, G4",
+                  "a quoted value keeps its semicolon, and the entry after it is its own - got "
+                  + said(row.Item1) + " / " + row.Item2);
+
+            // THE SAME TEXT UNQUOTED IS STILL REFUSED, in the words it was.
+            var bare = split("Filter_Efficiency=70 % ASHRAE 52/76; design 81 % / 91 %");
+            Check(bare.Item1 == null && bare.Item2 != null
+                  && bare.Item2.IndexOf("\"design 81 % / 91 %\" is not an entry for 'values'",
+                                        StringComparison.Ordinal) >= 0,
+                  "unquoted, the second half is still not an entry - got \"" + bare.Item2 + "\"");
+            Check(bare.Item2 != null && bare.Item2.IndexOf("double quotes", StringComparison.Ordinal) >= 0,
+                  "and the refusal says a value holding a semicolon goes in double quotes");
+
+            // UNQUOTED LISTS SPLIT EXACTLY AS BEFORE.
+            var plain = split("  Width = 600 ;Depth=600;; Name=a=b ; ");
+            Check(plain.Item2 == null && said(plain.Item1) == "[Width]=[600] [Depth]=[600] [Name]=[a=b]",
+                  "an unquoted list: trimmed, empty pieces skipped, the first = splits - got "
+                  + said(plain.Item1));
+            var inch = split("Size=12\" duct; Note=it's \"fine\"");
+            Check(inch.Item2 == null && said(inch.Item1) == "[Size]=[12\" duct] [Note]=[it's \"fine\"]",
+                  "a quote that does not OPEN the value is text, as before - got " + said(inch.Item1));
+            Check(split("").Item2 == null && split("").Item1 != null && split("").Item1.Count == 0
+                  && split(null).Item1 != null && split(" ; ").Item1.Count == 0,
+                  "an empty list is no entries, not a refusal");
+            var noKey = split("=5");
+            Check(noKey.Item1 == null && noKey.Item2 != null
+                  && noKey.Item2.IndexOf("\"=5\" is not an entry", StringComparison.Ordinal) >= 0,
+                  "a value with no name is refused as before - got \"" + noKey.Item2 + "\"");
+
+            // QUOTED: SPACES KEPT, A BLANK, AN ESCAPED QUOTE, A BACKSLASH.
+            var spaces = split("prefix=\" L1 - \"; blank=\"\"; size=\"12\\\" duct\"; path=\"C:\\temp\"");
+            Check(spaces.Item2 == null && spaces.Item1 != null && spaces.Item1.Count == 4
+                  && spaces.Item1[0].Value == " L1 - " && spaces.Item1[1].Value == ""
+                  && spaces.Item1[2].Value == "12\" duct" && spaces.Item1[3].Value == "C:\\temp",
+                  "quoted: spaces kept, \"\" is blank, \\\" is a quote, a lone backslash stays - got "
+                  + said(spaces.Item1));
+            var tail = split("a=\"x; y\"   ; b=1");
+            Check(tail.Item2 == null && said(tail.Item1) == "[a]=[x; y] [b]=[1]",
+                  "spaces between the closing quote and the semicolon are allowed - got " + said(tail.Item1));
+            var last = split("a=1; b=\"x;y\"");
+            Check(last.Item2 == null && said(last.Item1) == "[a]=[1] [b]=[x;y]",
+                  "a quoted value can be the last entry - got " + said(last.Item1));
+
+            // REFUSED, IN WORDS: A QUOTE NEVER CLOSED, OR TEXT AFTER IT.
+            var open = split("Filter_Efficiency=\"92 %; design 81 %; Filter_Cell=G4");
+            Check(open.Item1 == null && open.Item2 != null
+                  && open.Item2.IndexOf("'Filter_Efficiency'", StringComparison.Ordinal) >= 0
+                  && open.Item2.IndexOf("never closes", StringComparison.Ordinal) >= 0,
+                  "a quote opened and never closed is refused, naming the entry - got \"" + open.Item2 + "\"");
+            var after = split("Size=\"12\" duct; b=1");
+            Check(after.Item1 == null && after.Item2 != null
+                  && after.Item2.IndexOf("'Size'", StringComparison.Ordinal) >= 0
+                  && after.Item2.IndexOf("after its closing quote", StringComparison.Ordinal) >= 0,
+                  "text after a closing quote is refused, not guessed at - got \"" + after.Item2 + "\"");
         }
 
         /// <summary>
