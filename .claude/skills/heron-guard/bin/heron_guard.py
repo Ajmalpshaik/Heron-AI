@@ -103,11 +103,14 @@ the same hatch for the same reason.
 
 A SECOND RULE SINCE 2026-11-16: THE OWNER'S SWITCHES ARE NOT AN AI'S TO FLIP
 --------------------------------------------------------------------------
-D-166 layer 1, accepted by the owner from proposal F45. Changes, Admin and
-Publish are `write.enabled`, `admin.enabled` and `publish.enabled` in
-heron.config, in the modeller's own profile - a file every program running as
-the modeller can write, read fresh on every request, and named by Heron's own
-refusal. So this also refuses, as it is proposed:
+D-166 layer 1, accepted by the owner from proposal F45. It was written when
+Changes, Admin and Publish were `write.enabled`, `admin.enabled` and
+`publish.enabled` in heron.config, in the modeller's own profile - a file every
+program running as the modeller can write. Since D-166 layer 2 (2026-11-16) the
+three switches are held in Revit's memory (HeronPermissions), set only by the
+Settings window and off at every Revit start; a heron.config line naming one
+is ignored. The rule is kept as a tripwire for an older add-in and for the
+intent. So this also refuses, as it is proposed:
 
   - a write to a file named heron.config, ANYWHERE on disk, whose new text
     turns one of the three on - the key and one of the four words

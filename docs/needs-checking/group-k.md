@@ -12,7 +12,7 @@
 **Tracked as GitHub issue [#975](https://github.com/Ajmalpshaik/Heron-AI/issues/975) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
 **Added 2026-09-14** with the agents of the [seam-first build
-order](../work-notes/plans/agent-build-order-2026-09-13.md) — the agent contract, the kernel seams, the
+order](../28-agent-registry.md#the-order-the-agents-were-built-in---seams-first) — the agent contract, the kernel seams, the
 agent spine and the factory. **Every assertion in them passed on Linux, in a container, against a
 dictionary a test wrote itself.** *(This paragraph said "the fourteen agents" and "481 assertions"
 for the few hours between the agent spine and the factory. Both are derived now, because a number
