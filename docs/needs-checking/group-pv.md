@@ -7,7 +7,7 @@
 
 ## Group PV - a family just saved reads as unsaved: what in Revit marks it changed, and the refusal that now names the file's time - BUILT, NOT RUN IN REVIT (2026-11-23)
 
-**Tracked as GitHub issue [#ISSUE](https://github.com/Ajmalpshaik/Heron-AI/issues/ISSUE) since 2026-11-23** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+**Tracked as GitHub issue [#1291](https://github.com/Ajmalpshaik/Heron-AI/issues/1291) since 2026-11-23** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
 **Why:** [row 5b-1996](../fragment-issues/row-5b-1996.md). On 2026-11-23 a family saved with Ctrl+S was refused
 `ask_needs_saved_model` by `try-once`, and a second save let it run. The code was traced in a cloud container:
