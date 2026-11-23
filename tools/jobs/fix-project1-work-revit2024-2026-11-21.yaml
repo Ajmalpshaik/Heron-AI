@@ -3,7 +3,7 @@
 # Group V, and the 2026-11-16 night's morning list (Group OI: "A workshared
 # model ... none on the night's model"). Written 2026-11-21 in a cloud
 # session with no Revit. NOT RUN. It REPLACES the card's job in
-# sweep-project1.yaml, which is left as it was: its negative was namePrefix
+# sweep-project1.yaml, which no longer holds it (removed 2026-11-23, row 5b-1977): its negative was namePrefix
 # "" - a cleared value - and impl/any/fragment.cs only puts the prefix in
 # front of each workset's name, so both legs made the same two views.
 #

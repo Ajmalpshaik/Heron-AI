@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,18 @@ semantic-identity: "build a solid box between these family planes, locked to the
 kind: action
 domain: revit.families
 capability: EXTRUDE_BETWEEN_PLANES
-version: 1
+# VERSION 2 (2026-11-23) - THE BOX'S ID, and back to DRAFT. Version 1 was
+# PROVEN on 2026-10-03 (the proof block below, kept as the record of what it
+# proved); its C# changed, so it is DRAFT until NEEDS-CHECKING Group PX is run
+# (D-30). Found building a parametric louvre family in Revit 2020 on
+# 2026-11-23: the reply gave the box's size and its locks but no id, so every
+# later step that names a form - LINK_FAMILY_PARAMETER's `forms` for a
+# material or Visible, SET_FAMILY_FORM_VISIBILITY, ARRAY_FAMILY_FORMS - needed
+# REPORT_FAMILY_FORMS and a match by extents first, nine boxes in that build.
+# `formId` is now the box's unique id, as CREATE_FAMILY_FORMS and
+# CREATE_FAMILY_FREEFORM_SOLID give theirs, and the box is handed on as
+# `elements`. FRAGMENT-ISSUES row 5b-2000. Nothing else changed.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -48,6 +59,11 @@ purpose: >
   PROJECT, and in a family the calls exist on every release - whether the
   label drives the circle is NEEDS-CHECKING BM3 (row 5b-261).
 
+  **ITS ID COMES BACK (version 2)** as `formId`, the box's unique id - what
+  a later step names it by: LINK_FAMILY_PARAMETER's `forms` for a material
+  or Visible, SET_FAMILY_FORM_VISIBILITY, ARRAY_FAMILY_FORMS. The box is also
+  handed on as `elements`. No REPORT_FAMILY_FORMS call is needed to find it.
+
   **IT BUILDS GEOMETRY AND NOTHING ELSE.** Material, visibility and
   subcategory are set in Properties; the planes' positions are decided by
   CREATE_REFERENCE_PLANES and LABEL_FAMILY_DIMENSION before this runs.
@@ -73,6 +89,16 @@ contract:
       type: string
       source: request
   provides:
+    - name: formId
+      # VERSION 2: the new box's unique id - what a later step names it by.
+      # Empty when nothing was built.
+      role: result
+      type: string
+    - name: elements
+      # VERSION 2: the new box, handed on for SET_SELECTION or any tool that
+      # takes elements. Empty when nothing was built.
+      role: result
+      type: IList<Element>
     - name: size
       # The box as built, read back from its own bounding box: width, depth
       # and height in millimetres, and where it sits.

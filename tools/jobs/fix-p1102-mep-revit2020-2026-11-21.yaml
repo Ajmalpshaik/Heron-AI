@@ -1,8 +1,8 @@
 # DESCRIBE_BLANK_PARAMETERS (DRAFT) - NEEDS-CHECKING Groups V, W and X
 # (X: "what to vary: parameterName"), and the 2026-11-16 night's morning list
 # (Group OI). Written 2026-11-21 in a cloud session with no Revit. NOT RUN.
-# It REPLACES the card's job in p1102-round2-reads-2026-11-02.yaml, which is
-# left as it was: its negative changed parameterName to a name nothing
+# It REPLACES the card's job in p1102-round2-reads-2026-11-02.yaml, which no longer holds it
+# (removed 2026-11-23, row 5b-1977): its negative changed parameterName to a name nothing
 # carries, so read-element-parameters handed on `absent` for every duct and
 # the card wrote an "absent" finding - a finding in both legs (FRAGMENT-ISSUES
 # row 81 measured exactly that pair on Snowdon-scratch: blank 22 / absent 22).

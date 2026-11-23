@@ -297,7 +297,9 @@ Until IW1 passes, check in the morning that the log shows the warning closed whe
 | `NO NEGATIVE` | the second leg never ran | usually `needs_unbound` — the negative selection was empty. **Rule 3** |
 | `DID NOT RUN` | the positive never ran | read the message - it is `validate`'s refusal, never the note about an undeclared value printed above it (row 5b-1942). Often a caller value the contract asks for; *"in use by another chat"* is the lease - wait it out, or run `--unattended` |
 | `TIMEOUT` | Revit did not answer in time | **rule 1.** Retry on a smaller selection. It says nothing about the fragment |
-| `REFUSED` / `NO FRAGMENT` | the job file cannot be run as written - or, since row 5b-1403, the card's own `revit:` list leaves out the Revit that is connected | fix the file, or connect a release the card lists. No fragment was sent to Revit - for the release, Revit was pinged (above) |
+| `REFUSED` / `NO FRAGMENT` | the job file cannot be run as written - or, since row 5b-1403, the card's own `revit:` list leaves out the Revit that is connected. Also (rows 5b-1980, 5b-1976): a setup step that is DEPRECATED or ARCHIVED, and *NOT RUNNABLE* - a need only another fragment can fill that no setup step before it provides | fix the file (a retired step names its successor; a missing provider goes first in `setup:`), or connect a release the card lists. No fragment was sent to Revit - for the release, Revit was pinged (above) |
+
+**A run that would replace work stops first** (row 5b-1978): a real batch names, before sending anything, each run record or unsigned proof draft already there for a card - or a card named twice in the file - and exits 1 until `--replace` is given. `--dry-run` says it and carries on. The choice of which leg a card is signed on is the owner's ([Q-97](../../../docs/open-questions/tier-3.md)).
 
 A failure is the tool's **output**, not an error — it exits 0 with fourteen failures and non-zero only
 when the batch itself could not run: a `NO FRAGMENT`, a `REFUSED`, a `WRONG RELEASE`, or the library

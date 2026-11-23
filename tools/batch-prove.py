@@ -15,6 +15,7 @@ The Revit Test Agent's running half - many fragments proved in one pass.
     python tools/batch-prove.py jobs.yaml --only set-mep-size
     python tools/batch-prove.py jobs.yaml --release 2025   PROVEN ones, on one more release
     python tools/batch-prove.py jobs.yaml --unattended     a night with nobody at the keyboard
+    python tools/batch-prove.py jobs.yaml --replace        go on over a record or draft already there
 
 WHY THIS EXISTS
 ---------------
@@ -345,6 +346,30 @@ def read_jobs(path):
     return jobs, problems
 
 
+def retired_words(frag, step=False):
+    """Why a DEPRECATED or ARCHIVED card is not used, naming its successor, or None.
+
+    One rule for the card under test (row 5b-1934) and for a setup step (row
+    5b-1980): the same card and the same fact, worded for what the job asked
+    of it. `step` says it was asked as a setup step.
+    """
+    if getattr(frag, "status", None) not in RETIRED:
+        return None
+    retired = (getattr(frag, "data", None) or {}).get("deprecated") or {}
+    successor = retired.get("superseded-by")
+    since = " since %s" % retired["date"] if retired.get("date") else ""
+    if step:
+        return ("the setup step '%s' is retired - heron-status is %s%s - and "
+                "nothing offers a retired card, so a real run could not use "
+                "it.%s" % (frag.slug, frag.status, since,
+                           " Use %s's card instead" % successor
+                           if successor else ""))
+    return ("heron-status is %s%s - nothing offers a retired card, so "
+            "there is nothing to prove.%s"
+            % (frag.status, since,
+               " Prove %s's card instead" % successor if successor else ""))
+
+
 def job_refusal(job, library, release=None):
     """Why this job cannot be run as written, or None.
 
@@ -364,14 +389,9 @@ def job_refusal(job, library, release=None):
     # RUN for work no chat can ever reach, or refused it for a value its
     # successor now takes. It is refused for what it is, naming the card that
     # took its job.
-    if getattr(frag, "status", None) in RETIRED:
-        retired = (getattr(frag, "data", None) or {}).get("deprecated") or {}
-        successor = retired.get("superseded-by")
-        return REFUSED, ("heron-status is %s%s - nothing offers a retired card, so "
-                         "there is nothing to prove.%s"
-                         % (frag.status,
-                            " since %s" % retired["date"] if retired.get("date") else "",
-                            " Prove %s's card instead" % successor if successor else ""))
+    retired_why = retired_words(frag)
+    if retired_why:
+        return REFUSED, retired_why
 
     if release:
         verdict, why = release_refusal(frag, release)
@@ -389,6 +409,14 @@ def job_refusal(job, library, release=None):
     for step in job["setup"]:
         if step not in library:
             return REFUSED, "the setup names '%s', which is not a fragment" % step
+
+        # A RETIRED STEP IS REFUSED AS A RETIRED CARD UNDER TEST IS (row
+        # 5b-1980). This asked of a step only that it was a fragment and its
+        # risk, never its status, so a job whose setup named the DEPRECATED
+        # select-by-category-name read WOULD RUN.
+        retired_why = retired_words(library[step], step=True)
+        if retired_why:
+            return REFUSED, retired_why
 
         # A STEP ABOVE MODIFY IS NEVER SENT, WHATEVER THE FLAGS. `validate`
         # asks `risk_refusal` of every step with no switch at all: a step is an
@@ -508,6 +536,10 @@ def job_refusal(job, library, release=None):
     if unbound:
         return REFUSED, unbound
 
+    unfilled = chain_refusal(job, library)
+    if unfilled:
+        return REFUSED, unfilled
+
     if job["expect"]:
         names = set(p.get("name") for p in frag.provides() or []
                     if isinstance(p, dict))
@@ -595,6 +627,125 @@ def unbound_refusal(job, library):
                        else "the fragment", ", ".join(missing), name,
                        "it" if len(missing) == 1 else "them", given, how))
     return None
+
+
+def chain_refusal(job, library):
+    """Why the setup chain leaves a need only another fragment can fill unfilled,
+    or None (row 5b-1976).
+
+    THE QUESTION `generate-jobs.py` ASKS, rule (c), AND NOT ONLY THAT CHECK'S
+    ANSWER. The dry run checked that each setup step EXISTS and never that what
+    the card needs from another fragment is handed on by one of them, so
+    `show-analysis-heatmap` - which needs `values`, an IDictionary<ElementId,
+    double> only another card makes - read WOULD RUN on a chain of
+    filter-elements-by-category and set-selection, and a real run recorded DID
+    NOT RUN (section 3g-iii).
+
+    A NEED IS FILLED, IN THE ADD-IN'S OWN ORDER - the three ways
+    RevitFragment.BindNeeds meets a `source: fragment` need, so this refuses
+    exactly what Revit refuses and no more (row 96's lesson):
+      1. an EARLIER setup step provides the BOUND name (`binds:`, else the
+         need's own) at the need's type - `binds` renames, it never converts;
+      2. an element list - the add-in reads it off the Revit selection when no
+         step handed one on (IsElementList), so it is not a chain's to fill;
+      3. an optional need the add-in binds empty or null when nothing handed
+         one on (heron_fragment.need_may_be_empty).
+    Only a need that is none of those cannot be filled by anything.
+
+    The steps are read in the order they run and each against what the steps
+    BEFORE it left. A card with no contract to read (a test's stand-in) needs
+    nothing."""
+    def shape(text):
+        return str(text or "").replace(" ", "")
+
+    supply = {}
+    for name in list(job.get("setup") or []) + [job["fragment"]]:
+        card = library.get(name)
+        needs = getattr(card, "needs", None)
+        if card is None or not callable(needs):
+            continue
+        for need in needs() or []:
+            if not isinstance(need, dict) or HF.need_source(need) != "fragment":
+                continue
+            wanted = shape(need.get("type"))
+            bound = HF.need_binds(need)
+            if (shape(supply.get(bound)) == wanted
+                    or ("ElementId" not in wanted and "<Element>" in wanted)
+                    or HF.need_may_be_empty(need)):
+                continue
+            who = ("the fragment" if name == job["fragment"]
+                   else "setup step '%s'" % name)
+            return ("NOT RUNNABLE - %s needs `%s` (%s)%s from another fragment, "
+                    "and nothing in the setup before it leaves one. A setup "
+                    "step that provides it has to come first - `python "
+                    "tools/generate-jobs.py --only %s` names the cards that "
+                    "could (row 5b-1976)"
+                    % (who, need.get("name"), need.get("type"),
+                       "" if bound == need.get("name") else " as `%s`" % bound,
+                       name))
+        provides = getattr(card, "provides", None)
+        for entry in (provides() if callable(provides) else None) or []:
+            if isinstance(entry, dict) and entry.get("name"):
+                supply[entry["name"]] = entry.get("type")
+    return None
+
+
+def would_replace(jobs, library, release=None):
+    """[(fragment, [what is already there])] for every runnable job whose run
+    would replace something, in job order (row 5b-1978).
+
+    ONE RUN RECORD AND ONE PROOF DRAFT PER CARD. `record_name` and `draft`
+    write `runs/<card>.json` and `<card>.yaml` - `<card>@<year>` with
+    `--release` - so a second leg of one card, a card named in two job files,
+    or a card whose draft came from a KEPT run on the owner's PC loses what
+    was there to the next run: `run_one` deletes the old record before it
+    sends anything, and `draft` writes over the draft. Nothing said so.
+
+    Two things are named, because they are two things: a RUN RECORD, which is
+    evidence a draft is made from, and an UNSIGNED DRAFT, which is evidence
+    waiting for a person's name. A signed proof is not here - `accept` deletes
+    its draft, so what is on disk is unsigned by construction.
+
+    The same card twice in ONE job file is named as well - the second job's
+    record replaces the first's whether or not anything was on disk. Only jobs
+    `job_refusal` lets through are asked: a job that will not run replaces
+    nothing. That is the dry run's answer and leaves out the one refusal that
+    needs a Revit (the release the connected one is) - so it may name a job
+    that is then refused for its release, and never misses one that runs.
+    """
+    named, found = {}, []
+    for number, job in enumerate(jobs, 1):
+        name = job["fragment"]
+        if job_refusal(job, library, release)[0] is not None:
+            continue
+        key = HV.proof_key(name, release=release)
+        what = []
+        record = os.path.join(RUNS, "%s.json" % key)
+        draft_file = HV.draft_path(key)
+        if os.path.isfile(record):
+            what.append("the run record %s (what an earlier run came back "
+                        "with)" % os.path.relpath(record, ROOT))
+        if os.path.isfile(draft_file):
+            what.append("the proof draft %s (unsigned - nobody has accepted it)"
+                        % os.path.relpath(draft_file, ROOT))
+        if key in named:
+            what.append("the run of this job file's job %d, which names the "
+                        "same card" % named[key])
+        else:
+            named[key] = number
+        if what:
+            found.append((name, what))
+    return found
+
+
+def replacement_words(found):
+    """The sentences a run that would replace work says, one block."""
+    lines = ["Running this would REPLACE work that is already there - one run "
+             "record and one proof draft are kept per card:"]
+    for name, what in found:
+        lines.append("  %s" % name)
+        lines.extend("      replaces %s" % item for item in what)
+    return lines
 
 
 def release_refusal(frag, release):
@@ -1479,6 +1630,11 @@ def main(argv=None):
                         help="prove again, on this Revit release, fragments "
                              "already PROVEN on another (D-131), e.g. 2025. "
                              "Runs only those with no record for it")
+    parser.add_argument("--replace", action="store_true",
+                        help="go on although a run would REPLACE a run record "
+                             "or an unsigned proof draft already there for a "
+                             "card (row 5b-1978). Without it a real run names "
+                             "them and sends nothing")
     parser.add_argument("--unattended", action="store_true",
                         help="a night with nobody at the keyboard: ask again "
                              "while Revit is held by another chat or busy, "
@@ -1582,6 +1738,25 @@ def main(argv=None):
         except (IOError, OSError) as exc:
             print("        the log could not be written: %s" % exc)
 
+    # WHAT THIS WOULD REPLACE, SAID BEFORE ANYTHING IS SENT (row 5b-1978). A
+    # dry run says it and goes on; a real run stops unless told to go on, and
+    # sends nothing - the evidence it would replace is not made again by a
+    # second run.
+    replacing = would_replace(jobs, library, args.release)
+    if replacing:
+        for line in replacement_words(replacing):
+            print(line)
+        if args.dry_run:
+            print("A real run stops here unless `--replace` is given.")
+            print("")
+        elif not args.replace:
+            print("")
+            print("Nothing was sent to Revit. Draft or sign what is there, move "
+                  "it aside, or run again with `--replace`.")
+            return 1
+        else:
+            print("`--replace` was given: going on.")
+            print("")
     note("batch-prove %s: %d job(s)%s" % (
         args.jobs, len(jobs), ", unattended" if args.unattended else ""))
 
