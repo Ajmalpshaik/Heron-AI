@@ -85,6 +85,7 @@ not parse is never handed to anybody.
 """
 
 import argparse
+import difflib
 import io
 import os
 import re
@@ -911,6 +912,44 @@ def blocked_block(rows):
     return out
 
 
+def only_names(values, library):
+    """(names, refusals, notes) for the `--only` words, or (None, [], []) for none.
+
+    Row 5b-1983. `--only no-such-card` and `--only create-grids,copy-elements`
+    each printed "0 emitted, 0 marked" and exited 0, so a mistyped name read as
+    a card with nothing left to arrange - the silent zero this tool exists to
+    stop for input names. A comma is a list: it is split, so the second form
+    means what it looks like. A word that is not a card in the library is a
+    REFUSAL, named, with the nearest card where there is one. A word that is a
+    card but not a candidate - PROVEN, or already run - is a NOTE, because the
+    zero is true and the reason is what a person needs.
+    """
+    if not values:
+        return None, [], []
+    names, refusals, notes = [], [], []
+    for value in values:
+        for word in value.split(","):
+            word = word.strip()
+            if word and word not in names:
+                names.append(word)
+    if not names:
+        refusals.append("`--only` names no card - it is empty")
+    candidates_now = set(candidates(library))
+    for word in names:
+        if word not in library:
+            near = difflib.get_close_matches(word, sorted(library), n=1)
+            refusals.append("`--only %s` is not a card in the library%s"
+                            % (word, " - did you mean `%s`?" % near[0]
+                               if near else ""))
+        elif word not in candidates_now:
+            frag = library[word]
+            why = ("heron-status is %s, and only DRAFT is arranged" % frag.status
+                   if frag.status != "DRAFT"
+                   else "it already has a run record in brain/proof-drafts/runs/")
+            notes.append("`%s` is a card but not a candidate: %s" % (word, why))
+    return names, refusals, notes
+
+
 def build(library, threshold_ordinal, threshold_name, ladder, wanted_risk=None,
           limit=None, only=None):
     """The whole file as one string, plus the counts for the report."""
@@ -969,7 +1008,9 @@ def main(argv=None):
     parser.add_argument("--risk", help="only fragments at this risk, e.g. MODIFY")
     parser.add_argument("--limit", type=int, help="at most this many jobs")
     parser.add_argument("--only", action="append",
-                        help="just this fragment. Repeatable")
+                        help="just this fragment. Repeatable, or a comma-"
+                             "separated list. A name that is not a card is "
+                             "refused")
     args = parser.parse_args(argv)
 
     threshold_name, threshold_ordinal, ladder = write_threshold()
@@ -985,10 +1026,20 @@ def main(argv=None):
                          % (args.risk, ", ".join(sorted(ladder, key=ladder.get))))
         return 1
 
+    only, refusals, notes = only_names(args.only, library)
+    if refusals:
+        for refusal in refusals:
+            sys.stderr.write(refusal + "\n")
+        sys.stderr.write("Nothing was generated. A card is named as its folder "
+                         "in brain/fragments/ is.\n")
+        return 1
+    for note in notes:
+        sys.stderr.write(note + "\n")
+
     text, counts, jobs, blocked = build(
         library, threshold_ordinal, threshold_name, ladder,
         wanted_risk=args.risk.upper() if args.risk else None,
-        limit=args.limit, only=set(args.only) if args.only else None)
+        limit=args.limit, only=set(only) if only else None)
 
     # READ IT BACK BEFORE ANYBODY ELSE DOES. A generator that emits YAML it has
     # not parsed is one quoting mistake away from handing somebody a file that
