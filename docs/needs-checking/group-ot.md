@@ -110,3 +110,10 @@ arrangement - a freeform sweep pipe (CREATE_FAMILY_FREEFORM_SOLID, kept) with `l
 *"Form id 2711: Material <By Category> -> TRG_Pipe Copper"*, `changed 1`; negative `links=Material=No Such Material`:
 `changed 0`, *"Nothing was changed. "No Such Material" is neither a family parameter nor a material ..."*; both rolled
 back. OT13 and OT14 (the "runs along" note on an extrusion's start and end) are still owed.
+
+**Later the same day, the SKM packaged-unit family (`TRG_Mechanical Equipment_Packaged Unit_Air Cooled_SKM APMR-52028AM`,
+saved, Revit 2020):** `SET_FAMILY_SETTINGS` v5 proved and signed on its OmniClass setting, not on OT23's arrangement -
+positive run once through `try-once` and KEPT by the owner: *"OmniClass Number 23.75.00.00 -> 23.75.10.24.21.27.11
+Packaged Air Conditioners - Revit filled OmniClass Title"*, `changed 1`; negative (`validate --write --kept`)
+`OmniClass Number=99.99.99.99`: `changed 0`, *"Nothing was changed. "99.99.99.99" is not a code in the classification
+file ..."*; rolled back. OT23 and OT24 (Work Plane-Based / Always Vertical / Shared) are still owed.
