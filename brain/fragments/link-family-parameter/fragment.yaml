@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -21,7 +21,7 @@ capability: LINK_FAMILY_PARAMETER
 # yes to widening rather than a second card: "widen ... no duplicate tools,
 # same kind of work 2 tools no need". FRAGMENT-ISSUES row 5b-1497. Every other
 # path is version 3's, unchanged.
-version: 5
+version: 6
 source: OFFICIAL
 risk: MODIFY
 
@@ -44,6 +44,21 @@ risk: MODIFY
 # as the record of what it proved); its C# moved, so it is DRAFT again until
 # NEEDS-CHECKING Group OT is run (D-30) - on the owner's word that a
 # fragment found wrong may be changed even though it is proven.
+
+# VERSION 6 (2026-11-22) - A REFERENCE POINT TOO, still DRAFT. The folded
+# pattern-panel tip: PLACE_ADAPTIVE_POINTS version 2 pushes a reference point
+# off another point's plane ("on point 7 normal 300"), and that distance is
+# the point's Offset (BuiltInParameter.POINT_ELEMENT_OFFSET, "Offset" in
+# Properties), which the modeller links to a Length family parameter such as
+# "Tip Depth" with Associate Family Parameter on the point's Offset row.
+# Version 5 refused a reference point in `forms` by name; now its id (or
+# `selected`) is accepted, and every check is version 5's unchanged - the
+# same kind on both sides, CanElementParameterBeAssociated, read back before
+# and after, all or nothing. The answer names it "Reference Point id N", as
+# Properties does - in a by-category inventory too, where version 5 printed
+# its Revit category. No new input or output. Version 4's proof below is
+# kept as the record; this version is unproven until NEEDS-CHECKING Group PQ
+# (PQ5, PQ6) is run (D-30).
 
 purpose: >
   Links a parameter of elements ALREADY in the family open in the Family
@@ -110,6 +125,10 @@ purpose: >
   4: version 3's proof is kept as the record, and the tool is DRAFT until
   NEEDS-CHECKING Group NE proves it again.
 
+  **VERSION 6 (2026-11-22): A REFERENCE POINT TOO** - its Offset off the
+  plane it is hosted on, a folded pattern panel's tip, linked to a Length
+  family parameter such as "Tip Depth"; named "Reference Point id N".
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -157,6 +176,8 @@ contract:
     # DRAW_FAMILY_SYMBOLIC_LINES and DRAW_FAMILY_FILLED_REGION gave back;
     # anything else still refuses the call by name. The name and the binding
     # are version 3's, so a version 3 caller binds unchanged.
+    # VERSION 6: a reference point too, by the id PLACE_ADAPTIVE_POINTS gave
+    # back - for its Offset ("Offset=Tip Depth") off the plane it is hosted on.
     - name: forms
       type: string
       source: request
@@ -231,66 +252,56 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-23'
+  date: '2026-11-12'
   by: Ajmal PS
-  model: fp-scratch2 (1,531 elements), Revit 2020, session 35764
+  model: Heron Link Detail Test (1,503 elements), Revit 2020, session 33000
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned alreadyLinked 0, asked 1 item(s)
-    [(Material, TRG_Pipe Copper, False)], byCategory false, byForms true, byNested false,
-    changed 1, chosen 1 item(s) [Free Form Element], classificationOf Func`2, dbNamespace
+    [(Visible, Show Arrow, False)], byCategory false, byForms true, byNested false, changed
+    2, chosen 2 item(s) [Line, Detail Filled Region], classificationOf Func`2, dbNamespace
     Autodesk.Revit.DB, describe Func`2, ductFlow 1 item(s) [id -1013405], everyCategory false,
-    everySystem false, extrusionEndField 1 item(s) [id -1001801], extrusionStartField 1 item(s)
-    [id -1001800], findings 3 item(s) [Family ''fp-scratch2'': 1 link(s) or value(s) changed
-    and 0 al..., A Material SET holds that material in every type. Linked to ..., The links
-    are in the family only. Placed units in a project ...], flags BindingFlags, isExtrusionField
-    Func`2, isFlow Func`2, isMaterialField Func`2, isVoidForm Func`2, kindName Func`2, kindOf
-    Func`2, lacking 0 item(s), leftOut 0, linkReport Form id 2711: Material <By Category>
-    -> TRG_Pipe Copper, linked false, matched 1, materialField 1 item(s) [id -1002107], materialWords
-    Func`2, modelAxis Func`2, nameOf Func`2, notAFamily false, pipeFlow 1 item(s) [id -1140213],
-    planAlready 1 item(s) [False], planBefore 1 item(s) [<By Category>], plans 1 item(s) [(Autodesk.Revit.DB.FreeFormElement,
-    Autodesk.Revit.DB.Parame...], quoted Func`2, reads Func`2, refused (null), revitAssembly
-    RuntimeAssembly, saidCategory , saidFamily , saidForms 329aa798-948d-42be-b4e1-8686f4da7cde-00000a97,
+    everySystem false, findings 2 item(s) [Family ''Heron Link Detail Test'': 2 link(s) or
+    value(s) chang..., The links are in the family only. Placed units in a project ...], flags
+    BindingFlags, isFlow Func`2, isMaterialField Func`2, isVoidForm Func`2, kindName Func`2,
+    kindOf Func`2, lacking 0 item(s), leftOut 0, linkReport Detail Line id 2060: Visible not
+    linked -> Show Arrow (reads Yes)  ||  Filled Region id 2063: Visible not linked -> Show
+    Arrow (reads Yes), linked true, matched 2, materialField 1 item(s) [id -1002107], materialWords
+    Func`2, nameOf Func`2, notAFamily false, pipeFlow 1 item(s) [id -1140213], planAlready
+    2 item(s) [False, False], planBefore 2 item(s) [, ], plans 2 item(s) [(Autodesk.Revit.DB.DetailLine,
+    Autodesk.Revit.DB.Parameter, ..., (Autodesk.Revit.DB.FilledRegion, Autodesk.Revit.DB.Parameter...],
+    quoted Func`2, reads Func`2, refused (null), revitAssembly RuntimeAssembly, saidCategory
+    , saidFamily , saidForms 3c975bca-b042-4e80-baf8-2fdebc27245c-0000080c, 3c975bca-b042-4e80-baf8-2fdebc27245c-0000080f,
     saidSystem , saidType , sameKind Func`3, sameSystem Func`3, sameWord Func`3, spaced Func`2,
     squash Func`2, systemWords Func`2, unlessNone Func`2, ways 1, whatEachLacks Func`1. inputs
     came category not given - "none", the card''s own default (optional); system not given
     - "none", the card''s own default (optional); forms as given; family not given - "none",
     the card''s own default (optional); type not given - "none", the card''s own default (optional);
-    links as given (1). on fp-scratch2'
-  negative_case: run with forms=329aa798-948d-42be-b4e1-8686f4da7cde-00000a97, links=Material=No
-    Such Material instead - chosen because it should not contain what this fragment reports
+    links as given (1). on Heron Link Detail Test'
+  negative_case: 'run with forms=3c975bca-b042-4e80-baf8-2fdebc27245c-0000080c, links=Visible=ZZZ
+    No Such Parameter instead - chosen because it should not contain what this fragment reports
     - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned alreadyLinked 0, asked 1 item(s) [(Material, No Such Material, False)], byCategory
-    false, byForms true, byNested false, changed 0, chosen 1 item(s) [Free Form Element],
-    classificationOf Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2, ductFlow 1 item(s)
-    [id -1013405], everyCategory false, everySystem false, extrusionEndField 1 item(s) [id
-    -1001801], extrusionStartField 1 item(s) [id -1001800], findings 1 item(s) [Nothing was
-    changed. "No Such Material" is neither a family ...], flags BindingFlags, isExtrusionField
-    Func`2, isFlow Func`2, isMaterialField Func`2, isVoidForm Func`2, kindName Func`2, kindOf
-    Func`2, lacking 0 item(s), leftOut 0, linkReport , linked false, matched 1, materialField
-    1 item(s) [id -1002107], materialWords Func`2, modelAxis Func`2, nameOf Func`2, notAFamily
-    false, pipeFlow 1 item(s) [id -1140213], planAlready 0 item(s), planBefore 0 item(s),
-    plans 0 item(s), quoted Func`2, reads Func`2, refused Nothing was changed. "No Such Material"
-    is neither a family parameter nor a material in this family, for the Material of Form
-    id 2711. Its material parameters are none - ADD_FAMILY_PARAMETERS makes one; its materials
-    include Air Openings, Air Surfaces, Analytical Spaces, Ceilings, Default, Default Light
-    Source, Default Roof, Default Wall, Exterior Walls, Glass, Interior Floors, Interior Walls,
-    Operable Skylights, Operable Windows, Poche; or say "by category"., revitAssembly RuntimeAssembly,
-    saidCategory , saidFamily , saidForms 329aa798-948d-42be-b4e1-8686f4da7cde-00000a97, saidSystem
+    returned alreadyLinked 0, asked 1 item(s) [(Visible, ZZZ No Such Parameter, False)], byCategory
+    false, byForms true, byNested false, changed 0, chosen 1 item(s) [Line], classificationOf
+    Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2, ductFlow 1 item(s) [id -1013405],
+    everyCategory false, everySystem false, findings 1 item(s) [Nothing was changed. No family
+    parameter is called "ZZZ No S...], flags BindingFlags, isFlow Func`2, isMaterialField
+    Func`2, isVoidForm Func`2, kindName Func`2, kindOf Func`2, lacking 0 item(s), leftOut
+    0, linkReport , linked false, matched 1, materialField 1 item(s) [id -1002107], materialWords
+    Func`2, nameOf Func`2, notAFamily false, pipeFlow 1 item(s) [id -1140213], planAlready
+    0 item(s), planBefore 0 item(s), plans 0 item(s), quoted Func`2, reads Func`2, refused
+    Nothing was changed. No family parameter is called "ZZZ No Such Parameter". The ones that
+    could drive "Visible" (Yes/No) on Detail Line id 2060: Show Arrow., revitAssembly RuntimeAssembly,
+    saidCategory , saidFamily , saidForms 3c975bca-b042-4e80-baf8-2fdebc27245c-0000080c, saidSystem
     , saidType , sameKind Func`3, sameSystem Func`3, sameWord Func`3, spaced Func`2, squash
     Func`2, systemWords Func`2, unlessNone Func`2, ways 1, whatEachLacks Func`1. inputs came
-    category not given - "none", the card's own default (optional); system not given - "none",
-    the card's own default (optional); forms as given; family not given - "none", the card's
-    own default (optional); type not given - "none", the card's own default (optional); links
-    as given (1). on fp-scratch2
+    category not given - "none", the card''s own default (optional); system not given - "none",
+    the card''s own default (optional); forms as given; family not given - "none", the card''s
+    own default (optional); type not given - "none", the card''s own default (optional); links
+    as given (1). on Heron Link Detail Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  built_on:
-    revit_release: '2020'
-    revit_build: 20191106_1200(x64)
-    addin_version: 0.3.0.0
-    addin_hash: 3545dba0dc8cd0c7
-  fingerprint: 4b6c296216ff3e1d
+  fingerprint: dc19a14da945270c
   releases:
   - release: '2024'
     date: '2026-11-12'
@@ -298,53 +309,52 @@ proof:
     model: R24 Generic, Revit 2024, session 13164 - the count is NOT recorded because 3,209
       elements was measured on R24 Project, the document in front, and this ran against another
       one (row 15)
-    positive_case: 'run as it would normally be run - run inside a transaction, and Revit
-      reported the transaction group ROLLED BACK afterwards. returned alreadyLinked 0, asked
-      1 item(s) [(Visible, Show Arrow, False)], byCategory false, byForms true, byNested false,
-      changed 3, chosen 3 item(s) [Symbolic Lines, Masking Region, 50 mm], classificationOf
-      Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2, ductFlow 1 item(s) [id -1013405],
-      everyCategory false, everySystem false, findings 2 item(s) [Family ''R24 Generic'':
-      3 link(s) or value(s) changed and 0 al..., The links are in the family only. Placed
-      units in a project ...], flags BindingFlags, isFlow Func`2, isMaterialField Func`2,
-      isVoidForm Func`2, kindName Func`2, kindOf Func`2, lacking 0 item(s), leftOut 0, linkReport
-      Symbolic Line id 3319: Visible not linked -> Show Arrow (reads Yes)  ||  Masking Region
-      id 3359: Visible not linked -> Show Arrow (reads Yes)  ||  Model Text id 3326: Visible
-      not linked -> Show Arrow (reads Yes), linked true, matched 3, materialField 1 item(s)
-      [id -1002107], materialWords Func`2, nameOf Func`2, notAFamily false, pipeFlow 1 item(s)
-      [id -1140213], planAlready 3 item(s) [False, False, False], planBefore 3 item(s) [,
-      , ], plans 3 item(s) [(Autodesk.Revit.DB.SymbolicCurve, Autodesk.Revit.DB.Paramete...,
-      (Autodesk.Revit.DB.FilledRegion, Autodesk.Revit.DB.Parameter..., (Autodesk.Revit.DB.ModelText,
-      Autodesk.Revit.DB.Parameter, A...], quoted Func`2, reads Func`2, refused (null), revitAssembly
-      RuntimeAssembly, saidCategory , saidFamily , saidForms 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cf7,
-      237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d1f, 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cfe,
-      saidSystem , saidType , sameKind Func`3, sameSystem Func`3, sameWord Func`3, spaced
-      Func`2, squash Func`2, systemWords Func`2, unlessNone Func`2, ways 1, whatEachLacks
-      Func`1. inputs came category not given - "none", the card''s own default (optional);
-      system not given - "none", the card''s own default (optional); forms as given; family
-      not given - "none", the card''s own default (optional); type not given - "none", the
-      card''s own default (optional); links as given (1). on R24 Generic'
+    positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+      the transaction group ROLLED BACK afterwards. returned alreadyLinked 0, asked 1 item(s)
+      [(Visible, Show Arrow, False)], byCategory false, byForms true, byNested false, changed
+      3, chosen 3 item(s) [Symbolic Lines, Masking Region, 50 mm], classificationOf Func`2,
+      dbNamespace Autodesk.Revit.DB, describe Func`2, ductFlow 1 item(s) [id -1013405], everyCategory
+      false, everySystem false, findings 2 item(s) [Family ''R24 Generic'': 3 link(s) or value(s)
+      changed and 0 al..., The links are in the family only. Placed units in a project ...],
+      flags BindingFlags, isFlow Func`2, isMaterialField Func`2, isVoidForm Func`2, kindName
+      Func`2, kindOf Func`2, lacking 0 item(s), leftOut 0, linkReport Symbolic Line id 3319:
+      Visible not linked -> Show Arrow (reads Yes)  ||  Masking Region id 3359: Visible not
+      linked -> Show Arrow (reads Yes)  ||  Model Text id 3326: Visible not linked -> Show Arrow
+      (reads Yes), linked true, matched 3, materialField 1 item(s) [id -1002107], materialWords
+      Func`2, nameOf Func`2, notAFamily false, pipeFlow 1 item(s) [id -1140213], planAlready
+      3 item(s) [False, False, False], planBefore 3 item(s) [, , ], plans 3 item(s) [(Autodesk.Revit.DB.SymbolicCurve,
+      Autodesk.Revit.DB.Paramete..., (Autodesk.Revit.DB.FilledRegion, Autodesk.Revit.DB.Parameter...,
+      (Autodesk.Revit.DB.ModelText, Autodesk.Revit.DB.Parameter, A...], quoted Func`2, reads
+      Func`2, refused (null), revitAssembly RuntimeAssembly, saidCategory , saidFamily , saidForms
+      237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cf7, 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d1f,
+      237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cfe, saidSystem , saidType , sameKind Func`3,
+      sameSystem Func`3, sameWord Func`3, spaced Func`2, squash Func`2, systemWords Func`2,
+      unlessNone Func`2, ways 1, whatEachLacks Func`1. inputs came category not given - "none",
+      the card''s own default (optional); system not given - "none", the card''s own default
+      (optional); forms as given; family not given - "none", the card''s own default (optional);
+      type not given - "none", the card''s own default (optional); links as given (1). on R24
+      Generic'
     negative_case: 'run with forms=237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cf7, links=Visible=ZZZ
-      No Such Parameter instead - chosen because it should not contain what this fragment
-      reports - run inside a transaction, and Revit reported the transaction group ROLLED
-      BACK afterwards. returned alreadyLinked 0, asked 1 item(s) [(Visible, ZZZ No Such Parameter,
-      False)], byCategory false, byForms true, byNested false, changed 0, chosen 1 item(s)
-      [Symbolic Lines], classificationOf Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2,
-      ductFlow 1 item(s) [id -1013405], everyCategory false, everySystem false, findings 1
-      item(s) [Nothing was changed. No family parameter is called "ZZZ No S...], flags BindingFlags,
-      isFlow Func`2, isMaterialField Func`2, isVoidForm Func`2, kindName Func`2, kindOf Func`2,
-      lacking 0 item(s), leftOut 0, linkReport , linked false, matched 1, materialField 1
-      item(s) [id -1002107], materialWords Func`2, nameOf Func`2, notAFamily false, pipeFlow
-      1 item(s) [id -1140213], planAlready 0 item(s), planBefore 0 item(s), plans 0 item(s),
-      quoted Func`2, reads Func`2, refused Nothing was changed. No family parameter is called
-      "ZZZ No Such Parameter". The ones that could drive "Visible" (Yes/No) on Symbolic Line
-      id 3319: Show Arrow, Show Handle., revitAssembly RuntimeAssembly, saidCategory , saidFamily
-      , saidForms 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cf7, saidSystem , saidType , sameKind
-      Func`3, sameSystem Func`3, sameWord Func`3, spaced Func`2, squash Func`2, systemWords
-      Func`2, unlessNone Func`2, ways 1, whatEachLacks Func`1. inputs came category not given
-      - "none", the card''s own default (optional); system not given - "none", the card''s
-      own default (optional); forms as given; family not given - "none", the card''s own default
-      (optional); type not given - "none", the card''s own default (optional); links as given
-      (1). on R24 Generic'
+      No Such Parameter instead - chosen because it should not contain what this fragment reports
+      - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+      returned alreadyLinked 0, asked 1 item(s) [(Visible, ZZZ No Such Parameter, False)], byCategory
+      false, byForms true, byNested false, changed 0, chosen 1 item(s) [Symbolic Lines], classificationOf
+      Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2, ductFlow 1 item(s) [id -1013405],
+      everyCategory false, everySystem false, findings 1 item(s) [Nothing was changed. No family
+      parameter is called "ZZZ No S...], flags BindingFlags, isFlow Func`2, isMaterialField
+      Func`2, isVoidForm Func`2, kindName Func`2, kindOf Func`2, lacking 0 item(s), leftOut
+      0, linkReport , linked false, matched 1, materialField 1 item(s) [id -1002107], materialWords
+      Func`2, nameOf Func`2, notAFamily false, pipeFlow 1 item(s) [id -1140213], planAlready
+      0 item(s), planBefore 0 item(s), plans 0 item(s), quoted Func`2, reads Func`2, refused
+      Nothing was changed. No family parameter is called "ZZZ No Such Parameter". The ones that
+      could drive "Visible" (Yes/No) on Symbolic Line id 3319: Show Arrow, Show Handle., revitAssembly
+      RuntimeAssembly, saidCategory , saidFamily , saidForms 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cf7,
+      saidSystem , saidType , sameKind Func`3, sameSystem Func`3, sameWord Func`3, spaced Func`2,
+      squash Func`2, systemWords Func`2, unlessNone Func`2, ways 1, whatEachLacks Func`1. inputs
+      came category not given - "none", the card''s own default (optional); system not given
+      - "none", the card''s own default (optional); forms as given; family not given - "none",
+      the card''s own default (optional); type not given - "none", the card''s own default (optional);
+      links as given (1). on R24 Generic'
     fingerprint: dc19a14da945270c
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -376,7 +386,10 @@ compatibility-note: >
   `ReferencePlane.GetPlane()`, `Edge.Tessellate()` and the
   EXTRUSION_START_PARAM and EXTRUSION_END_PARAM ids - the same on 2020 and
   2027 (api-surface, read 2026-11-20), and built against all eight releases
-  the same day.
+  the same day. Version 6's `ReferencePoint` is in RevitAPI.xml for every
+  release 2020 to 2027, and `BuiltInParameter.POINT_ELEMENT_OFFSET` is
+  summarised "Offset" in each (the reference packages' RevitAPI.xml, read
+  2026-11-22; the api-surface tool was not run - no assemblies cache).
 
 # 2026-11-01 - LINK_FAMILY_FORM_PARAMETER, SET_FAMILY_FORM_MATERIAL AND
 # LINK_NESTED_TYPE_PARAMETER WERE MERGED INTO THIS CARD (version 3) on the
@@ -406,6 +419,11 @@ compatibility-note: >
 #                                                       symbolic line's,
 #                                                       region's or nested
 #                                                       arrow's id (version 4)
+#   "link the tip point's offset to Tip Depth"       -> here, forms= the
+#                                                       reference point's id
+#                                                       (version 6); placing
+#                                                       the point is
+#                                                       PLACE_ADAPTIVE_POINTS
 #   "link the elbow's end angle to Bend Angle"       -> here, forms= its id
 #   "link this nested beam's length to Beam Length"  -> here, forms= ONE copy's id
 #   "link the nested type's width to Motor Width"    -> here, family= and type=
@@ -449,6 +467,9 @@ utterances:
   - link only this copy's visible to Pipe 2 Visible
   # VERSION 4 (2026-11-11): a family's 2D - the owner's words for the job.
   - link the arrow's visible to Show Arrow
+  # VERSION 6 (2026-11-22): a pattern panel's tip point.
+  - link the tip point's offset to Tip Depth
+  - drive this reference point's offset from a family parameter
   # MOVED 2026-11-01 from SET_FAMILY_FORM_MATERIAL, merged into this card.
   - link the body material to Body Material
   - make this extrusion steel

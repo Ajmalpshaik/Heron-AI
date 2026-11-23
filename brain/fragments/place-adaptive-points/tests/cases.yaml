@@ -26,6 +26,36 @@ positive:
       -100 to 100 and Z 0 to 200 - read back; rotating point 1 turns them with
       it (BV19)
 
+  # VERSION 2 (2026-11-22) - NEEDS-CHECKING Group PQ, NOT RUN.
+  - given: >
+      a new family from Metric Curtain Panel Pattern Based (the default
+      Rectangle tile, four points); DRAW_FAMILY_POINT_CURVES draws reference
+      lines 1,3 and 2,4 (the diagonals); points "on <the 1,3 line's id> at
+      0.5", pointKind "reference" - the centre point C; then points "on point
+      <C's id> normal 300", pointKind "reference"
+    expect: >
+      the tip T 300 mm off C, square to the panel - its position minus C's is
+      300 mm long and along the normal of points 1 to 4; findings "Pushed
+      off: T is 300 mm off point C's <plane> plane, Offset 300 mm, on the side
+      from which placement points 1, 2, 3, 4 run anticlockwise (or
+      clockwise)"; Properties of T shows Offset 300. RECORD which plane (PQ1)
+      and which side (PQ2); dragging point 1 moves T with the cell (PQ3)
+
+  - given: >
+      the same family, the Triangle tile set BY HAND (the API cannot set a
+      tile pattern); edge line 2,3 by DRAW_FAMILY_POINT_CURVES, its mid-point
+      M "on <2,3 line> at 0.5", the median 1 to M by DRAW_FAMILY_POINT_CURVES,
+      the centroid "on <median> at 0.6667", then "on point <centroid id>
+      normal 300"
+    expect: >
+      the tip 300 mm over the triangle's centroid, as above (PQ4)
+
+  - given: >
+      a Generic Model Adaptive family with points 1 and 2 at 0,0,0 and
+      3000,0,0; points "on point 1 xy 0,0 offset 250", pointKind "reference"
+    expect: >
+      one point 250 mm off point 1's XY plane, Offset reads 250, read back
+
 negative:
   - given: a new family from the plain metric Generic Model template
     expect: >
@@ -46,7 +76,26 @@ negative:
   - given: a project in front
     expect: notAFamily true and nothing placed
 
+  # VERSION 2 (2026-11-22) - NEEDS-CHECKING Group PQ, NOT RUN.
+  - given: >
+      the pattern-based family above; points "on point <C's id> normal 0",
+      pointKind "reference"
+    expect: refused - not 0 - and nothing placed; pointIds empty
+
+  - given: >
+      a Generic Model Adaptive family with only points 1 and 2; points "on
+      point 1 normal 300", pointKind "reference"
+    expect: >
+      refused - two points do not span a panel, so it has no normal - and
+      nothing placed; pointIds empty
+
+  - given: points "on point <C's id> normal 300", pointKind "placement"
+    expect: refused - a hosted point is a reference point - nothing placed
+
 second_route:
   - >
       In the Family Editor, select each point: Properties shows it as an
       Adaptive Point with its Point number
+  - >
+      VERSION 2: select the pushed-off point; Properties shows its Offset and
+      its host as the other point's plane

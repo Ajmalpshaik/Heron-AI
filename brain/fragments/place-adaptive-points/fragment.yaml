@@ -9,7 +9,34 @@ semantic-identity: "place the adaptive points an adaptive component is clicked i
 kind: action
 domain: revit.families
 capability: PLACE_ADAPTIVE_POINTS
-version: 1
+# VERSION 2 (2026-11-22) - A POINT PUSHED OFF ANOTHER POINT'S PLANE, Revit's
+# Offset, and back to DRAFT. Asked for the folded pattern-based curtain panel
+# (Metric Curtain Panel Pattern Based, Triangle tile): a TIP point over the
+# cell's centroid, out along the panel's normal, so lines from the corners to
+# it and CREATE_CONCEPTUAL_FORM make a pyramid facet - and its distance
+# driven by a family length parameter (Tip Depth) through LINK_FAMILY_
+# PARAMETER version 6, so the tip follows every cell of a divided surface.
+# Version 1 hosted a point ON a point's plane only; nothing pushed one off it.
+# The centroid itself is built from what was there: a mid-point "on <edge> at
+# 0.5", a median by DRAW_FAMILY_POINT_CURVES, then "on <median> at 0.6667".
+# Two new forms, the old three unchanged:
+#   "on point <n or id> normal <mm>" - the host's plane that lies in the panel
+#     the placement points span is FOUND (a point on a line takes its planes
+#     from the line, so which one lies in the panel is Revit's to say); within
+#     half a degree, or refused naming each plane's angle. With fewer than
+#     three placement points the family's unhosted points give the panel
+#     (BV4 is open on whether a pattern-based template's points read as
+#     placement points). They must lie in one plane.
+#   "on point <n or id> xy|yz|xz U,V offset <mm>" - a plane named.
+# OFFSET READS WHAT WAS TYPED: Revit measures it along the plane's own normal,
+# which may face either way; where it reads the opposite it is set to the
+# number typed, so a parameter linked to it later holds the same number, and
+# the answer says which side that is - "the side from which placement points
+# 1, 2, 3 run anticlockwise". Refusals come back as `refused` with nothing
+# made; only Revit's own failures throw. Version 1 was PROVEN (the proof
+# block below, kept as the record of what it proved); its C# moved, so it is
+# DRAFT until NEEDS-CHECKING Group PQ is run (D-30).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -37,6 +64,15 @@ purpose: >
   A hosted point is a REFERENCE point that follows its host; placement and
   shape handle points are free ones, so the two are not mixed in one call.
 
+  **PUSHED OFF A POINT'S PLANE (version 2)** - Revit's Offset: "on point 7
+  normal 300" puts a point 300 mm off the plane of point 7 that lies in the
+  panel, along the panel's normal - a folded panel's TIP over a centre point,
+  so lines from the corners to it make a pyramid facet; "on point 1 xy 0,0
+  offset 300" pushes off a plane named. Offset reads the number typed, and
+  the answer says which side of the panel that is; a negative number is the
+  other side. Its Offset can then follow a family parameter such as Tip
+  Depth through LINK_FAMILY_PARAMETER.
+
   **ALL OR NOTHING**: every point's position, kind and number are read again;
   placement numbers must rise in the order given, and numbers that are not the
   next ones after the family's own are reported. A point where another
@@ -50,7 +86,8 @@ contract:
       type: Document
     # "X,Y,Z" in millimetres, semicolons between, in placement order -
     # "0,0,0; 1000,0,0; 1000,1000,0; 0,1000,0" - or hosted: "on <line id> at
-    # 0.5", "on point 1 yz 0,150".
+    # 0.5", "on point 1 yz 0,150"; or pushed off a point's plane (version 2):
+    # "on point 7 normal 300", "on point 1 xy 0,0 offset 300".
     - name: points
       type: string
       source: request
@@ -65,7 +102,8 @@ contract:
       type: string
     - name: placedPoints
       # Every point as read back - kind, placement number, id, position - on
-      # ONE line.
+      # ONE line. A point pushed off a plane has its Offset and side in
+      # `findings` too ("Pushed off: ...").
       role: result
       type: string
     - name: notAFamily
@@ -79,38 +117,40 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-11-23'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family3, Project1 - active was Family1,
-    Revit 2024, session 32340'
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned findings 2 item(s) [4 placement
-    point(s) placed and read back. The family now ha..., Lines through these points are DRAW_FAMILY_POINT_CURVES,
-    and...], halfMillimetre 0.00164041994750656, invariant CultureInfo, kind AdaptivePointType,
-    kindWords placement point, mm Func`2, notAFamily false, number Func`2, placedPoints placement
-    point 1 6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8a at 2000, 0, 0 mm  ||  placement
-    point 2 6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8b at 3000, 0, 0 mm  ||  placement
-    point 3 6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8c at 3000, 1000, 0 mm  ||  placement
-    point 4 6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8d at 2000, 1000, 0 mm, placementBefore
-    0, pointIds 6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8a,6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8b,6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8c,6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8d,
-    problems 0 item(s), refused (null), squash Func`2, wanted 4 item(s) [(2000,0,0, (6.561679790,
-    0.000000000, 0.000000000), ), (3000,0,0, (9.842519685, 0.000000000, 0.000000000), ), (3000,1000,0,
-    (9.842519685, 3.280839895, 0.000000000), ), ...]. inputs came points as given; pointKind
-    as given. on Family3
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned findings 1 item(s) [The document in front, "Project1",
-    is a project, not a famil...], halfMillimetre 0.00164041994750656, invariant CultureInfo,
-    kind (null), kindWords , mm Func`2, notAFamily true, number Func`2, placedPoints , placementBefore
-    -1, pointIds , problems 0 item(s), refused The document in front, "Project1", is a project,
-    not a family open in the Family Editor. Adaptive points are placed inside an adaptive
-    or pattern-based family - open it first., squash Func`2, wanted 0 item(s). inputs came
-    points as given; pointKind as given. on Project1
+  model: PQ Tip Panel (1,472 elements), Revit 2020, session 35712
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned findings 4 item(s) [1 reference
+    point(s) placed and read back. The family now ha..., A hosted point follows its host:
+    drag the line or the point ..., Pushed off: a187289b-b749-4470-9571-7391d16264bc-00000675
+    is..., ...], halfMillimetre 0.00164041994750656, invariant CultureInfo, kind AdaptivePointType,
+    kindWords reference point, mm Func`2, notAFamily false, number Func`2, offsetOf 1 entry(ies),
+    offsetRows 1 item(s) [a187289b-b749-4470-9571-7391d16264bc-00000675 is 300 mm off ...],
+    placedPoints reference point a187289b-b749-4470-9571-7391d16264bc-00000675 at 3048, 3048,
+    300 mm (on point 1 normal 300), placementBefore 4, pointIds a187289b-b749-4470-9571-7391d16264bc-00000675,
+    problems 0 item(s), refused (null), squash Func`2, wanted 1 item(s) [(on point 1 normal
+    300, (10.000000000, 10.000000000, 0.98425...]. inputs came points as given; pointKind
+    as given. on PQ Tip Panel'
+  negative_case: run with pointKind=reference, points=on point 1 normal 0 instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned findings 1 item(s)
+    [Nothing was placed. "on point 1 normal 0" does not end with ...], halfMillimetre 0.00164041994750656,
+    invariant CultureInfo, kind AdaptivePointType, kindWords reference point, mm Func`2, notAFamily
+    false, number Func`2, offsetOf 0 entry(ies), offsetRows 0 item(s), placedPoints , placementBefore
+    4, pointIds , problems 1 item(s) ["on point 1 normal 0" does not end with how far off
+    the plan...], refused Nothing was placed. "on point 1 normal 0" does not end with how
+    far off the plane, in millimetres and not 0 - "300", or "-300" for the other side., squash
+    Func`2, wanted 0 item(s). inputs came points as given; pointKind as given. on PQ Tip Panel
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: af86a61f0d74ad1e
-
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: 3545dba0dc8cd0c7
+  fingerprint: a300e205bb3d2b08
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -128,12 +168,29 @@ compatibility-note: >
   `Application.NewPointOnEdge` with a `PointLocationOnCurve`, or on
   `PointOnPlane.NewPointOnPlane` with `ReferencePoint.GetCoordinatePlaneReference
   XY/YZ/XZ` - all 2020 through 2027 (the RevitAPI XML, read 2026-10-02).
+  VERSION 2: `PointOnPlane.NewPointOnPlane(Document, Reference, XYZ, XYZ)` -
+  whose 2020 remark says a position off the plane sets the point's Offset -
+  `ReferencePoint.GetCoordinateSystem`, and `BuiltInParameter.
+  POINT_ELEMENT_OFFSET` ("Offset", measured along the plane's normal per
+  `PointOnPlane.Offset`'s remark) read the same 2020 through 2027 (the
+  nice3point RevitAPI XML, 2020.2.90 read 2026-11-22). Which way Offset runs
+  on each of a point's three planes, and which of a line-hosted point's
+  planes lies in the panel, are NEEDS-CHECKING PQ1, PQ2 and PQ9 - the call finds
+  both at run time rather than assuming either.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "add four adaptive points to this family"     -> here
 #   "draw lines between the adaptive points"      -> DRAW_FAMILY_POINT_CURVES
 #   "make a surface from these lines"             -> CREATE_CONCEPTUAL_FORM
+
+# ROUTING (2026-11-22, version 2 - the folded pattern panel)
+#
+#   "put a tip point out along the panel's normal" -> here, "on point <n> normal <mm>"
+#   "link the tip point's offset to Tip Depth"     -> LINK_FAMILY_PARAMETER
+#                                                    (version 6) - this MAKES the
+#                                                    point; that links its Offset
+#   "add a Tip Depth length parameter"             -> ADD_FAMILY_PARAMETERS
 
 
 # ROUTING (2026-10-13, the gap fill)
@@ -154,3 +211,6 @@ utterances:
   - place adaptive placement points
   - make these points adaptive
   - add a shape handle point to the adaptive component
+  # VERSION 2 (2026-11-22): the folded pattern panel's tip.
+  - put a tip point out along the panel's normal above the centre point
+  - push a reference point off the point's plane by 300 mm
