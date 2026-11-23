@@ -125,3 +125,10 @@ with `rotationDegrees=-90` - `placed` 2, *"2 x level-based, on 'Level 1', standi
 degrees clockwise; negative the same with `structuralType=sprinkler` - `placed` 0, *"'sprinkler' is not a structural
 type Revit knows ... Nothing was placed"*. (An empty point list is refused at binding, `bad_request_value`, so it
 cannot serve as the negative.) OT11 and OT12 are still owed.
+
+**Same day, `place-scratch`:** `SET_PARAMETER_VALUES_BY_ID` proved and signed - positive (`validate --write`, rolled
+back) the keyed form `key=Type Name|in=Mechanical Equipment|types=yes;33" x 24" x 24"|Description=Heron proof write`:
+`written 1`, its read back inside `resultJson` (type 204975, Description asked and read back the same - the top-level
+`readBack` list stays empty for the keyed form, a reporting gap worth a row); negative the same with a type name no
+element carries - `written 0`, refused for that row. Then used on the real model 4355-BHVD-3D-60P00-BL003A with a CSV
+(26 values x 3 new packaged units, Equipment Tag by GUID e133774c): `written 78`, read back 26 of 26 on each.
