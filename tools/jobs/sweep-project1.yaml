@@ -207,8 +207,7 @@ jobs:
     negative-set: {copyFromName: "ZZZNOTHINGHERE", newName: "HERON SYS B", abbreviation: "HSB"}
     expect: created
 
-  - fragment: create-workset-3d-views
-    setup: []
-    set:          {namePrefix: "HERON WS"}
-    negative-set: {namePrefix: ""}
-    expect: created
+  # REMOVED 2026-11-23 (row 5b-1977): the negative was `namePrefix: ""`, which
+  # only puts nothing before each workset's name and so makes the same views (a
+  # NEG NOT EMPTY, group-i.md; sweep-project1-pass2.yaml's header).
+  # fix-project1-work-revit2024-2026-11-21.yaml arranges it.

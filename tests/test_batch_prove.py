@@ -1652,6 +1652,42 @@ def test_a_run_that_would_replace_a_record_or_an_unsigned_draft_says_so_first():
         shutil.rmtree(workspace)
 
 
+def test_the_three_jobs_with_a_negative_that_is_not_a_different_case_are_gone():
+    print("The three old job files no longer arrange a negative that is the same case")
+    # Row 5b-1977: three older job files arranged a negative that made the same
+    # thing as the positive and still dry-ran WOULD RUN. They are removed from
+    # those files, and the replacement files name the same cards.
+    wrong = [("p1102-round7-arch-2026-11-02.yaml", "convert-cad-to-directshape",
+              "fix-p1102-arch-revit2020-2026-11-21.yaml"),
+             ("sweep-project1.yaml", "create-workset-3d-views",
+              "fix-project1-work-revit2024-2026-11-21.yaml"),
+             ("p1102-round2-reads-2026-11-02.yaml", "describe-blank-parameters",
+              "fix-p1102-mep-revit2020-2026-11-21.yaml")]
+    folder = os.path.join(ROOT, "tools", "jobs")
+    for old, card, fixed in wrong:
+        old_jobs, old_problems = BP.read_jobs(os.path.join(folder, old))
+        new_jobs, new_problems = BP.read_jobs(os.path.join(folder, fixed))
+        check(not old_problems and card not in [j["fragment"] for j in old_jobs],
+              "%s no longer holds %s" % (old, card))
+        check(not new_problems and card in [j["fragment"] for j in new_jobs],
+              "and %s does" % fixed)
+
+    # The shape of each wrong one, read off the replacement: no negative that
+    # clears a value, none that shares the positive's `category` with the
+    # selection's.
+    jobs, _ = BP.read_jobs(os.path.join(folder, "fix-project1-work-revit2024-2026-11-21.yaml"))
+    job = [j for j in jobs if j["fragment"] == "create-workset-3d-views"][0]
+    check(job["negative-in"] and job["negative-set"].get("namePrefix")
+          == job["set"].get("namePrefix") != "",
+          "create-workset-3d-views' negative is another model, never a cleared prefix")
+    jobs, _ = BP.read_jobs(os.path.join(folder, "fix-p1102-arch-revit2020-2026-11-21.yaml"))
+    job = [j for j in jobs if j["fragment"] == "convert-cad-to-directshape"][0]
+    check(job["set"].get("category") == "Generic Models"
+          and "category" not in (job["setup-set"] or {})
+          and (job["setup-set"] or {}).get("categoryName") == "Roofing Detail.dwg",
+          "convert-cad-to-directshape keeps the import's name and the shapes' category apart")
+
+
 def test_every_marker_is_still_what_its_source_prints():
     print("Every marker --unattended reads is still in the file that prints it")
     sources = {
@@ -1947,6 +1983,7 @@ def main():
                  test_the_log_has_one_line_per_fragment,
                  test_an_unattended_batch_logs_reports_and_hands_back_each_fragment,
                  test_a_run_that_would_replace_a_record_or_an_unsigned_draft_says_so_first,
+                 test_the_three_jobs_with_a_negative_that_is_not_a_different_case_are_gone,
                  test_every_marker_is_still_what_its_source_prints,
                  test_a_card_is_not_sent_to_a_release_it_leaves_out):
         test()
