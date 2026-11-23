@@ -148,6 +148,27 @@ positive:
       "runs along +Z ... goes up", each with its own "now runs X ..." and
       "now runs Z ..." - every form linked in the call
 
+  # VERSION 6 (2026-11-22): a reference point's Offset - the folded
+  # pattern-panel tip. NOT RUN; NEEDS-CHECKING Group PQ, PQ5. A scratch
+  # family from the metric Curtain Panel Pattern Based template, a Length
+  # family parameter "Tip Depth" made by ADD_FAMILY_PARAMETERS, and a
+  # reference point placed by PLACE_ADAPTIVE_POINTS version 2 "on point <id>
+  # normal 300" - pushed 300 mm off that point's plane, its Offset. FAILS on
+  # version 5, which refused a reference point by name.
+  - given: >
+      version 6, the Group PQ panel family with Tip Depth = 300 mm; forms =
+      the pushed reference point's id, links "Offset=Tip Depth"
+    expect: >
+      changed 1, matched 1; linkReport "Reference Point id N: Offset not
+      linked -> Tip Depth (reads 300)"; read back by
+      GetAssociatedFamilyParameter, and the point's Offset row in Properties
+      greyed with the Associate button showing Tip Depth. PQ5 LOOKS AT which
+      side the tip is on before and after: linking makes Offset take Tip
+      Depth's value at once, and Revit measures Offset along the host
+      plane's normal, so an Offset that read -300 would flip the tip to the
+      other side - the trap version 5 recorded for Extrusion End. FLEX_FAMILY
+      Tip Depth to another length moves the tip; Group PQ, PQ5
+
 negative:
   - given: >
       the same family, category "Duct Connector", system "Supply Air", links
@@ -292,6 +313,28 @@ negative:
       Extrusion End; nothing linked, and no direction or extent read - the
       checks run before anything, as in version 4
 
+  # VERSION 6 (2026-11-22). NOT RUN; NEEDS-CHECKING Group PQ.
+  - given: >
+      version 6, the Group PQ panel family with a Yes/No family parameter
+      "Show Tip"; forms = the pushed reference point's id, links
+      "Offset=Show Tip"
+    expect: >
+      refused naming both parameters and both kinds - "Show Tip" (Yes/No)
+      cannot drive "Offset" (Length) on Reference Point id N - with the
+      Length parameters that could (Tip Depth); nothing linked, the Offset
+      not linked as before; Group PQ, PQ6
+  - given: >
+      version 6, the same family; forms = a FREE placement point's id (an
+      adaptive point hosted on nothing, so it has no Offset), links
+      "Offset=Tip Depth"
+    expect: >
+      refused as Revit has it, naming "Reference Point id N" - either "No
+      parameter called "Offset" on Reference Point id N" with what can be
+      linked there, or "Revit does not let "Offset" be linked ..." - which
+      of the two is what PQ6 measures; nothing linked anywhere; Group PQ, PQ6
+  - given: version 6, a project in front, forms = any id, links "Offset=Tip Depth"
+    expect: notAFamily true, refused as a project, and nothing changed; Group PQ, PQ6
+
 second_route:
   - >
       Family Editor by hand: select the connector, press the button at the end
@@ -303,3 +346,8 @@ second_route:
       the button at the end of Visible's row in Properties (Associate Family
       Parameter shows "Show Arrow"), then FLEX_FAMILY Show Arrow off and on -
       the line or region leaves and returns in the plan
+  - >
+      Version 6 (NOT RUN, Group PQ): select the tip reference point, read the
+      button at the end of Offset's row in Properties (Associate Family
+      Parameter shows "Tip Depth"), then change Tip Depth in Family Types -
+      the tip moves off the panel by the new depth
