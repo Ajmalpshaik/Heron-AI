@@ -16,7 +16,7 @@
 > | **C09** — library documentation | **Done.** `brain/README.md` said *thirty-two fragments, every one DRAFT* and *the executor is not built*. Both were false. Corrected, with the recomputing command named beside the numbers so the next drift is visible |
 > | **N01–N09** — the nine new capabilities | **Done.** All nine exist, all `DRAFT`, all compiling on eight releases. Listed below |
 > | C01, C02, C05–C08 · S01–S05 | **Not started.** Each needs a live model or a contract decision. Unchanged below |
-> | *Read 2026-11-21* | C01, C02, C07 and C08 were built 2026-11-20 and 2026-11-21 (WN-1 to WN-4 of issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005), each item's own line below); C06 reads done in code; **C05 is open** (WN-79, #1005) and **S01-S05 wait for the owner** (WN-59, issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012)) |
+> | *Read 2026-11-21* | C01, C02, C07 and C08 were built 2026-11-20 and 2026-11-21 (WN-1 to WN-4 of issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005), each item's own line below); C06 reads done in code; C05 built 2026-11-23 (WN-79, #1005, Revit run Group PZ) and **S01-S05 wait for the owner** (WN-59, issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012)) |
 >
 > **The nine new capabilities, added 2026-09-08:**
 >
@@ -147,7 +147,7 @@ The terminal connector helper returns the first End connector, without a domain 
 
 **Acceptance:** Mixed input categories, a family with multiple connector domains, misleading connection flags, and a nearer incompatible duct beside a valid candidate. Rejected inputs must not be counted as connected.
 
-*(tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-21 (WN-79). Read that day in `connect-air-terminals` version 2: the terminal's connector is still the first End one with no domain check, `IsConnected` still decides both the skip and the result, and the nearest duct is still chosen before any compatibility filter - so C05 is open.)*
+*done 2026-11-23 (WN-79, issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005)): `CONNECT_AIR_TERMINALS` version 3 (PROVEN v2 -> DRAFT) taps Air Terminals only, by category, from their HVAC connector; reads joined off the physical partners in `AllRefs` - never `IsConnected` - for the skip, the result and a head's join; filters the ducts first (a straight duct, not on the opposite air system) and then takes the nearest within the limit, naming a nearer duct passed over; and counts a terminal only when it is joined to that duct. `report-connectors` needed no change: it already reads partners, not the flag. `tests/test_connect_air_terminals_evidence.py`, seen to fail first. Not run in Revit - NEEDS-CHECKING [Group PZ](../../needs-checking/group-pz.md), issue [#1312](https://github.com/Ajmalpshaik/Heron-AI/issues/1312).*
 
 ### C06 — Preserve ownership uncertainty (P2)
 
@@ -280,7 +280,7 @@ The discussion decisions below record agreement on direction, separately from au
 | C02 | Automatic validation, authorized bulk sizing, consolidated report | Revised direction agreed; implementation not requested |
 | C03 | Exact match unless wildcard supplied | **DONE 2026-09-08.** Implemented and compiled on all eight releases; regression cases recorded in the fragment |
 | C04 | Preserve multiline cells; automatic validation and bulk import | **Record reader DONE 2026-09-08**, with an unclosed quote now refused before any write. The wider bulk-import validation and the optional export-identity extension are still pending |
-| C05 | Nearest compatible duct within limit; verify physical connection | Direction agreed; implementation not requested |
+| C05 | Nearest compatible duct within limit; verify physical connection | Direction agreed; built 2026-11-23 as `CONNECT_AIR_TERMINALS` version 3 (WN-79), Revit run owed (Group PZ) |
 | C06–C08 | Ownership uncertainty, grouped holes, structured connectors | Directions agreed in principle; implementation not requested |
 | C09 | Refresh the library documentation | **DONE 2026-09-08.** `brain/README.md` corrected on all three stale claims — the count, the statuses, and the missing executor |
 | S01–S05 | Apply only with the related approved change and verified consumers | Discussion pending; S02 wording aligned with bulk-execution decision |

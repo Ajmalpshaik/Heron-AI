@@ -100,6 +100,52 @@ negative:
       skipped, not reconnected. A second tap would leave the first behind as an
       orphan fitting that nobody sees and every takeoff counts
 
+  # VERSION 3 (2026-11-23, WN-79).
+  - given: >
+      a supply diffuser whose only duct within maxDistanceMm is a RETURN duct
+    expect: >
+      NO CALL MADE - in `noDuctNear`, the finding naming the return duct as
+      passed over for its system; nothing tapped, nothing in `moved`
+
+  - given: >
+      a tap Revit accepts that leaves the diffuser joined to something other
+      than the duct chosen, or to nothing
+    expect: >
+      in `refused` with what it is joined to, NOT in `connected`. A true from
+      Revit and a set flag are not a connection to that duct
+
+  # VERSION 3 (2026-11-23, WN-79, C05's acceptance). Each FAILS on version 2.
+  - given: >
+      a supply diffuser with a RETURN duct 300 mm from its connector and a
+      SUPPLY duct 900 mm from it, maxDistanceMm 1500
+    expect: >
+      tapped into the SUPPLY duct, and the finding names the return duct as
+      passed over for its system. Version 2 took the nearer return duct, and
+      Revit 2024 has been seen joining exactly that pair (row 5b-187)
+
+  - given: >
+      a fan coil unit (Mechanical Equipment, with a duct spigot and two pipe
+      connectors) handed in with the diffusers
+    expect: >
+      the fan coil in `refused` as not an air terminal, untouched, not in
+      `connected`; the diffusers tapped as normal. Version 2 called
+      ConnectAirTerminalOnDuct on whatever had an End connector
+
+  - given: >
+      a diffuser family whose FIRST End connector is electrical (a lit
+      diffuser) and whose second is the duct one
+    expect: >
+      the duct connector used - nearest measured from it, and the tap made from
+      it. Version 2 measured from the electrical connector
+
+  - given: >
+      a diffuser whose duct connector reports IsConnected true with nothing
+      physically joined to it (REPORT_CONNECTORS lists it in flagDisagrees)
+    expect: >
+      NOT skipped - it is open by its partners, so it is tapped, and counted
+      only once its partners reach the duct. Version 2 put it in
+      alreadyConnected and the ceiling stayed unconnected
+
 second_route:
   - Revit's own Connect Into on one of the same terminals, and the two taps compared
   - >

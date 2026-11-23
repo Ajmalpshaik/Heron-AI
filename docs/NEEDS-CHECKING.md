@@ -1738,6 +1738,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pu.md`](needs-checking/group-pu.md)
 
+## Group PZ - CONNECT_AIR_TERMINALS version 3: the duct chosen from the ones that fit, and joined read off the partners - DRAFT until proved (2026-11-23)
+
+**Its own file:** [`needs-checking/group-pz.md`](needs-checking/group-pz.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
