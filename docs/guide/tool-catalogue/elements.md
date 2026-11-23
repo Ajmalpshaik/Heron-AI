@@ -2866,7 +2866,7 @@ Sets a curtain wall TYPE's grid - the Layout and the Spacing of its Vertical Gri
 |---|---|
 | **Kind** | Changes the model (`MODIFY`) |
 | **Reached by** | asking in a Claude chat |
-| **You say** | **curtain wall type** - text<br>**grid** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; optional, left out means *;*<br>**mullions** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; optional, left out means *;* |
+| **You say** | **curtain wall type** - text<br>**grid** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; a value holding a ";" goes in double quotes - Note="a; b"; optional, left out means *;*<br>**mullions** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; a value holding a ";" goes in double quotes - Note="a; b"; optional, left out means *;* |
 | **You get** | applied, differs, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | 2024 |

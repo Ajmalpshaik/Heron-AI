@@ -1714,6 +1714,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pr.md`](needs-checking/group-pr.md)
 
+## Group PT - a quoted value in a `name=value; name=value` list keeps its semicolon - BUILT, NOT RUN IN REVIT (2026-11-23)
+
+**Its own file:** [`needs-checking/group-pt.md`](needs-checking/group-pt.md)
+
 ## Group PS - a kept delete names what went: every deleted id's category and name, read before it went, and a form's own sketches counted together: `DELETE_ELEMENTS` version 3 - BUILT, NOT RUN IN REVIT (2026-11-23)
 
 **Its own file:** [`needs-checking/group-ps.md`](needs-checking/group-ps.md)
