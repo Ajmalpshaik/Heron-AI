@@ -102,17 +102,37 @@ namespace Heron.Revit.Addin
         ///   deleted                    roll back; ask, unless the rollback or
         ///                              any element's return cannot be confirmed
         ///                              (delete_not_shown)
+        ///   Ask to Delete off          carry on, and keep it as it ran - no
+        ///                              box, no second run; `unasked` is how
+        ///                              many Revit counted deleted (D-197)
         /// </summary>
         private static string DeleteGate(UIApplication app, Document target, string name,
-                                         string request, bool keeping, bool sendsOut,
-                                         RevitChangedSet changed,
+                                         string request, bool keeping, bool asksInRevit,
+                                         bool sendsOut, RevitChangedSet changed,
                                          HeronChangeReport.Described described,
                                          ReadFootprint before, TransactionGroup group,
                                          HeronRollbackWitness.Watch watch,
-                                         ref ConfirmedDelete confirmed, out bool again)
+                                         ref ConfirmedDelete confirmed, out bool again,
+                                         out int unasked)
         {
             again = false;
+            unasked = 0;
             if (!keeping) return null;
+
+            // D-197: THE OWNER'S ASK TO DELETE SWITCH IS OFF. Revit shows no
+            // Delete box, and the run is kept as it ran - the chat's yes in
+            // words, asked before the call (Article 7), is the only one. What
+            // Revit counted deleted is still counted, logged and said first on
+            // the reply (WithDeleteUnasked), so nothing goes unsaid.
+            if (!asksInRevit)
+            {
+                unasked = changed.DeletedIds.Count;
+                if (unasked > 0)
+                    HeronApplication.Log("Delete box: off (Ask to Delete) - '" + RevitDispatcher.Clean(name)
+                        + "' deletes " + unasked + " element(s) in '" + target.Title
+                        + "' with no box; the chat's word is the yes (D-197).");
+                return null;
+            }
 
             var now = changed.DeletedIds.Select(id => id.ToString()).ToList();
 
@@ -541,6 +561,28 @@ namespace Heron.Revit.Addin
         {
             try { return doc.GetElement(id) != null; }
             catch (Exception) { return false; }
+        }
+
+        /// <summary>
+        /// D-197: a kept change Revit counted deletions in, kept with no Delete
+        /// box because Ask to Delete is off. `deleteAsked` false, the count,
+        /// and the sentence the chat prints first - the same place D-142's
+        /// `deleteAsking` goes - so the modeller hears what went.
+        /// </summary>
+        private static string WithDeleteUnasked(string answer, int deleted)
+        {
+            if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
+                return answer;
+
+            var said = "Revit did not ask before deleting: Ask to Delete is off in Heron's Settings. "
+                     + deleted + " element" + (deleted == 1 ? " was" : "s were")
+                     + " deleted on the chat's word; Ctrl+Z brings back the whole change as one step.";
+
+            return answer.Substring(0, answer.Length - 1)
+                 + "," + Json.Bool("deleteAsked", false)
+                 + "," + Json.Num("deletedUnasked", deleted)
+                 + "," + Json.Str("deleteSkipped", AskSkippedBySwitch)
+                 + "," + Json.Str("deleteAsking", said) + "}";
         }
 
         /// <summary>

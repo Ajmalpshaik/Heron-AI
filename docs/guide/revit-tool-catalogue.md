@@ -6,7 +6,7 @@
 
 **Every tool Heron has for Revit, by job** - what each one does, how you reach it, what it needs, what you get, and on which Revit releases it is built and proved. It is written by a script from Heron's own tool cards, so no count or status on these pages is typed by a person.
 
-Heron holds **611 live tools**: **484 are usable in a chat**, 36 are not proved yet but run because they change nothing in the model, and 91 are refused until they are proved. 135 retired tools are left out - each one's card names the tool that replaced it.
+Heron holds **611 live tools**: **485 are usable in a chat**, 36 are not proved yet but run because they change nothing in the model, and 90 are refused until they are proved. 135 retired tools are left out - each one's card names the tool that replaced it.
 
 ## How you reach a tool
 
@@ -29,7 +29,7 @@ Read out of the add-in's own ribbon code, so it is what Revit shows:
 | › Free this model (in its drop-down) | Let another chat use the model in front now. |
 | › Commands (in its drop-down) | Show or hide your saved Heron commands. |
 | › Activity (in its drop-down) | Show or hide Heron's recent changes, with Select, Zoom and Undo. |
-| **Settings** | Turn Heron's switches on or off: Changes, Admin, Publish, Ask to Keep, Companion. |
+| **Settings** | Turn Heron's switches on or off: Changes, Admin, Publish, Ask to Keep, Ask to Delete, Companion. |
 | **Companion** | Open the Companion page in your browser. It only shows, never changes. |
 
 Not on a modeller's ribbon: the All tools product's **Heron** tab, **Tools** panel (`revit/Heron.Tools/HeronToolsApplication.cs`); the Heron Doc product's **Heron Doc** tab, **Proof** panel (`revit/Heron.Doc/HeronDocApplication.cs`). Each is a `PROVING` product in `platform/heron-products.json` - a shape proof with one button that does nothing - and the installer does not offer it.
@@ -68,7 +68,7 @@ Heron starts with every switch off, so it only reads until you turn **Changes** 
 | [Levels and grids](tool-catalogue/datums.md) | 8 | 6 | 1 | 1 |
 | [MEP - ducts, pipes, systems and equipment](tool-catalogue/mep.md) | 84 | 64 | 4 | 16 |
 | [Model checks](tool-catalogue/model-checks.md) | 31 | 25 | 6 | 0 |
-| [Model elements and types](tool-catalogue/elements.md) | 119 | 98 | 4 | 17 |
+| [Model elements and types](tool-catalogue/elements.md) | 119 | 99 | 4 | 16 |
 | [Parameters](tool-catalogue/parameters.md) | 17 | 11 | 1 | 5 |
 | [Phases](tool-catalogue/phases.md) | 3 | 3 | 0 | 0 |
 | [Reports](tool-catalogue/reports.md) | 11 | 10 | 1 | 0 |

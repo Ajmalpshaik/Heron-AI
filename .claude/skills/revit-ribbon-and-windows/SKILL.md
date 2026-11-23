@@ -196,7 +196,8 @@ ask the owner and add it to the table first.
   menu has Bridge Status, Free this model, Commands (the saved-commands pane,
   [D-151](../../../docs/decisions/D-151.md), Proposed) and Activity (Heron's recent changes,
   [D-163](../../../docs/decisions/D-163.md)) as text rows; Settings, the window that holds
-  Changes, Admin, Publish, Ask to Keep and - since D-150 was amended on 2026-11-08 - the Companion's
+  Changes, Admin, Publish, Ask to Keep, Ask to Delete ([D-197](../../../docs/decisions/D-197.md)) and - since
+  D-150 was amended on 2026-11-08 - the Companion's
   on/off, each state as its own button; and Companion, one push button. A new switch goes in Settings,
   not on the ribbon. Hover texts are one short sentence.
 - **Accent (orange) is the highlight, never the danger.** A padlock that is open - Heron may change the
@@ -224,6 +225,12 @@ The label on a button is the whole of the user's documentation. Say what it does
 happen and to how many elements — *"This will move 247 ducts up 200 mm. 12 are owned by another user
 and will be skipped."* That is a safety gate, not an information message, and it is one of the few
 dialogs that is always allowed.
+
+**One recorded exception, [D-197](../../../docs/decisions/D-197.md):** the owner's *Ask to Delete* switch in
+Settings, on at every Revit start. Turned off, Revit shows neither Heron's Delete box nor a DRAFT's Keep or
+Discard, and the chat's yes in words, asked before the call, is the confirmation. A switch that turns a
+safety box off is safe ON: it asks on the way off, never on the way on, and is held in Revit's memory, never
+in a file a program could write.
 
 **A read-only button never confirms and never announces success.** No "Done", no "Connected". If the
 user needs to see the result, show it in a status line, a list, or the log.

@@ -85,7 +85,8 @@ flowchart TD
                                   the Setup's Python tick runs it for you
 6  Open Claude Code; /mcp says heron connected - in any folder with the Setup's Claude tick,
                                   in the Heron folder without it
-7  Heron's Settings window        Changes, Admin, Publish, Ask to Keep - all start off
+7  Heron's Settings window        Changes, Admin, Publish, Ask to Keep start off;
+                                  Ask to Delete starts on
 
 Optional, after 3:  model2vec (reads meaning; heron-ready loads it once)
                     re-ranker  (a second read of the top picks)

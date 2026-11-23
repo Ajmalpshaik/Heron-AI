@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -307,49 +307,52 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-16'
+  date: '2026-11-23'
   by: Ajmal PS
-  model: Heron OB Test (3,205 elements), Revit 2024, session 29520
+  model: Heron PFI Proof 2020 (2,927 elements), Revit 2020, session 35712
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned askedKind , failed 0, familyWords
-    ''M_Rectangular Column: 457 x 475mm'', findings 3 item(s) [2 placed on ''Level 1'', 0
-    point(s) could not take one, Each one turned 90 degrees anticlockwise seen from above,
-    ab..., Top asked for: ''Heron OB Roof'' + -150 mm. Read back as asked...], instanceId
-    , isArchColumn true, isColumn false, isFoundation false, isFraming false, lineTool Ask
+    ''M_Desk: 1525 x 762mm'', findings 1 item(s) [2 placed on ''Level 1'', 0 point(s) could
+    not take one], instanceId , isArchColumn false, isColumn false, isFoundation false, isFraming
+    false, lineTool Ask PLACE_LINE_BASED_FAMILY instead, with `curves` as start;end pairs
+    in millimetres and a pipe between lines - "0,0,0; 5000,0,0 | 5000,0,0; 5000,3000,4000".
+    Nothing was placed, nestedHere false, noTurnIn Func`2, notAsked Func`2, offsetFeet 0,
+    offsetText , placed 2 item(s) [345434, 345435], planeName , readBack 2 x level-based,
+    on ''Level 1'', standing 0 mm above it - Level ''Level 1'', Elevation from Level 0 mm,
+    refused (null), rotationText , structural false, takesTop false, topLevel (null), topName
+    , tops 0 item(s), turnAsked false, turnDegrees 0, understood true, wanted StructuralType.
+    inputs came symbol as given; points as given (2); level as given; structuralType not given
+    - "none", the card''s own default (optional); topLevelName not given - "none", the card''s
+    own default (optional); topOffset not given - "none", the card''s own default (optional);
+    workPlane not given - "none", the card''s own default (optional); rotationDegrees not
+    given - "none", the card''s own default (optional). on Heron PFI Proof 2020'
+  negative_case: 'run with symbol=M_Desk : 1525 x 762mm, points=6000,0,0; 9000,0,0, level=Level
+    1, rotationDegrees=ninety instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned askedKind , failed 0, familyWords ''M_Desk: 1525 x 762mm'', findings
+    1 item(s) [''ninety'' is not a rotation. Give it in degrees - 90, or -45 ...], instanceId
+    , isArchColumn false, isColumn false, isFoundation false, isFraming false, lineTool Ask
     PLACE_LINE_BASED_FAMILY instead, with `curves` as start;end pairs in millimetres and a
     pipe between lines - "0,0,0; 5000,0,0 | 5000,0,0; 5000,3000,4000". Nothing was placed,
-    nestedHere false, noTurnIn Func`2, notAsked Func`2, offsetFeet -0.492125984251968, offsetText
-    -150, placed 2 item(s) [352519, 352520], planeName , readBack 2 x TwoLevelsBased, on ''Level
-    1'', standing 0 mm above it - Level ''Level 1'', Base Offset 0 mm, refused (null), rotationText
-    90, structural false, takesTop true, topLevel Level, topName Heron OB Roof, tops 2 item(s)
-    [point 1 (6000, 0) - top asked ''Heron OB Roof'' + -150 mm = 58..., point 2 (9000, 0)
-    - top asked ''Heron OB Roof'' + -150 mm = 58...], turnAsked true, turnDegrees 90, understood
-    true, wanted StructuralType. inputs came symbol as given; points as given (2); level as
-    given; structuralType not given - "none", the card''s own default (optional); topLevelName
-    as given; topOffset as given; workPlane not given - "none", the card''s own default (optional);
-    rotationDegrees as given. on Heron OB Test'
-  negative_case: 'run with level=Level 1, points=6000,0,0; 9000,0,0, rotationDegrees=ninety,
-    symbol=M_Rectangular Column: 457 x 475mm, topLevelName=Heron OB Roof, topOffset=-150 instead
-    - chosen because it should not contain what this fragment reports - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned askedKind ,
-    failed 0, familyWords ''M_Rectangular Column: 457 x 475mm'', findings 1 item(s) [''ninety''
-    is not a rotation. Give it in degrees - 90, or -45 ...], instanceId , isArchColumn true,
-    isColumn false, isFoundation false, isFraming false, lineTool Ask PLACE_LINE_BASED_FAMILY
-    instead, with `curves` as start;end pairs in millimetres and a pipe between lines - "0,0,0;
-    5000,0,0 | 5000,0,0; 5000,3000,4000". Nothing was placed, nestedHere false, noTurnIn Func`2,
-    notAsked Func`2, offsetFeet -0.492125984251968, offsetText -150, placed 0 item(s), planeName
-    , readBack , refused ''ninety'' is not a rotation. Give it in degrees - 90, or -45 to
-    turn clockwise seen from above - or leave it out for none. Nothing was placed, rotationText
-    ninety, structural false, takesTop true, topLevel Level, topName Heron OB Roof, tops 0
-    item(s), turnAsked false, turnDegrees 0, understood true, wanted StructuralType. inputs
-    came symbol as given; points as given (2); level as given; structuralType not given -
-    "none", the card''s own default (optional); topLevelName as given; topOffset as given;
+    nestedHere false, noTurnIn Func`2, notAsked Func`2, offsetFeet 0, offsetText , placed
+    0 item(s), planeName , readBack , refused ''ninety'' is not a rotation. Give it in degrees
+    - 90, or -45 to turn clockwise seen from above - or leave it out for none. Nothing was
+    placed, rotationText ninety, structural false, takesTop false, topLevel (null), topName
+    , tops 0 item(s), turnAsked false, turnDegrees 0, understood true, wanted StructuralType.
+    inputs came symbol as given; points as given (2); level as given; structuralType not given
+    - "none", the card''s own default (optional); topLevelName not given - "none", the card''s
+    own default (optional); topOffset not given - "none", the card''s own default (optional);
     workPlane not given - "none", the card''s own default (optional); rotationDegrees as given.
-    on Heron OB Test'
+    on Heron PFI Proof 2020'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: a815023f494d9dc5
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: 3545dba0dc8cd0c7
+  fingerprint: 423dd4006e66855b
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

@@ -1710,6 +1710,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pq.md`](needs-checking/group-pq.md)
 
+## Group PR - Ask to Delete: the switch off stops Revit's Delete box and a DRAFT's Keep or Discard - BUILT, NOT RUN IN REVIT (2026-11-23)
+
+**Its own file:** [`needs-checking/group-pr.md`](needs-checking/group-pr.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
