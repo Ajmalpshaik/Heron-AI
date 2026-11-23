@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -230,51 +230,136 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-24'
+  date: '2026-11-23'
   by: Ajmal PS
-  model: TRG_Duct Accessory_Volume Control Damper (2,004 elements), Revit 2020, session 94928
+  model: fp-scratch (2,026 elements), Revit 2020, session 35764
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned along Func`3, alsoJoined 0, axisOf
-    Func`2, chosen Tuple`3, connector duct connector, Supply Air, rectangular 600 x 400 mm,
-    at X 150, Y 0, Z 0, pointing right (+X), on the face lying on "Casing Right", centred
-    in the ring face''s opening and sized by it, dbNamespace Autodesk.Revit.DB, face PlanarFace,
-    faceIn (null), faceName Casing Right, findings 2 item(s) [Made a duct connector, Supply
-    Air, rectangular 600 x 400 mm,..., Flow direction, description and electrical load are
-    Revit''s ...], flags BindingFlags, halfMillimetre 0.00164041994750656, invariant CultureInfo,
-    isLength Func`2, kindOf Func`2, mm Func`2, notAFamily false, notOffered 2 item(s) [UndefinedSystemType,
-    Undefined], ownName Func`2, pointing Func`2, refused (null), revitAssembly RuntimeAssembly,
-    sameKind Func`3, shownAs 6 entry(ies), sideStep The way round it: a thin solid joined
-    or cut with nothing - 1 mm deep, sized to the flange or port, one face on the plane and
-    the rest inside the body - takes the connector, because a form''s own face is used before
-    a joined one. EXTRUDE_BETWEEN_PLANES makes one., sizedBy 2 item(s) [connector width <-
-    Width, connector height <- Height], sizes 2 item(s) [Autodesk.Revit.DB.FamilyParameter,
-    Autodesk.Revit.DB.FamilyParameter], spaced Func`2, squash Func`2, systems 31 item(s) [(duct,
-    SupplyAir, SupplyAir), (duct, ReturnAir, ReturnAir), (duct, ExhaustAir, ExhaustAir), ...].
-    inputs came facePlane as given; system as given; sizeParameters as given. on TRG_Duct
-    Accessory_Volume Control Damper'
-  negative_case: 'run with facePlane=Center (Front/Back), system=Supply Air, sizeParameters=Width,
-    Height instead - chosen because it should not contain what this fragment reports - run
-    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned along Func`3, alsoJoined 0, axisOf Func`2, chosen Tuple`3, connector , dbNamespace
-    Autodesk.Revit.DB, face (null), faceIn (null), faceName Center (Front/Back), findings
-    1 item(s) [Nothing was made. No solid face lies on "Center (Front/Back)...], flags BindingFlags,
-    halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength Func`2, kindOf Func`2,
-    mm Func`2, notAFamily false, notOffered 2 item(s) [UndefinedSystemType, Undefined], ownName
-    Func`2, pointing Func`2, refused Nothing was made. No solid face lies on "Center (Front/Back)".
-    Build the geometry to it first - EXTRUDE_BETWEEN_PLANES locks a box to named planes.,
-    revitAssembly RuntimeAssembly, sameKind Func`3, shownAs 6 entry(ies), sideStep The way
-    round it: a thin solid joined or cut with nothing - 1 mm deep, sized to the flange or
-    port, one face on the plane and the rest inside the body - takes the connector, because
-    a form''s own face is used before a joined one. EXTRUDE_BETWEEN_PLANES makes one., sizedBy
-    0 item(s), sizes 2 item(s) [Autodesk.Revit.DB.FamilyParameter, Autodesk.Revit.DB.FamilyParameter],
+    the transaction group ROLLED BACK afterwards. returned along Func`3, alsoJoined 0, atSaid
+    -800, -300, 0, axisOf Func`2, chosen Tuple`3, connector pipe connector, Domestic Cold
+    Water, round 100 mm, at X -800, Y -300, Z 0, pointing down, on the face lying on "Ref.
+    Level", dbNamespace Autodesk.Revit.DB, face PlanarFace, faceIn (null), faceName Ref. Level,
+    facesIntoBody 0, facesLeftOut 0, facesNotAt 73, facingSaid , findings 3 item(s) [Made
+    a pipe connector, Domestic Cold Water, round 100 mm, at..., 73 other face(s) lie on "Ref.
+    Level" with their centre more ..., Flow direction, description and electrical load are
+    Revit''s ...], flags BindingFlags, formSaid , halfMillimetre 0.00164041994750656, invariant
+    CultureInfo, isLength Func`2, kindOf Func`2, mm Func`2, notAFamily false, notOffered 2
+    item(s) [UndefinedSystemType, Undefined], oneMillimetre 0.00328083989501312, ownName Func`2,
+    pointing Func`2, refused (null), revitAssembly RuntimeAssembly, sameKind Func`3, shownAs
+    6 entry(ies), sideStep The way round it: a thin solid joined or cut with nothing - 1 mm
+    deep, sized to the flange or port, one face on the plane and the rest inside the body
+    - takes the connector, because a form''s own face is used before a joined one. EXTRUDE_BETWEEN_PLANES
+    makes one., sizedBy 1 item(s) [connector diameter <- Port Dia], sizes 1 item(s) [Autodesk.Revit.DB.FamilyParameter],
     spaced Func`2, squash Func`2, systems 31 item(s) [(duct, SupplyAir, SupplyAir), (duct,
-    ReturnAir, ReturnAir), (duct, ExhaustAir, ExhaustAir), ...]. inputs came facePlane as
-    given; system as given; sizeParameters as given. on TRG_Duct Accessory_Volume Control
-    Damper'
+    ReturnAir, ReturnAir), (duct, ExhaustAir, ExhaustAir), ...], unlessNone Func`2. inputs
+    came facePlane as given; system as given; sizeParameters as given; form not given - "none",
+    the card''s own default (optional); facing not given - "none", the card''s own default
+    (optional); at as given. on fp-scratch'
+  negative_case: 'run with facePlane=Ref. Level, system=Domestic Cold Water, sizeParameters=Port
+    Dia, at=-5000, -5000, 0 instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned along Func`3, alsoJoined 0, atSaid -5000, -5000, 0, axisOf Func`2,
+    chosen Tuple`3, connector , dbNamespace Autodesk.Revit.DB, face (null), faceIn (null),
+    faceName Ref. Level, facesIntoBody 0, facesLeftOut 0, facesNotAt 74, facingSaid , findings
+    1 item(s) [Nothing was made. No solid face centred at the point given i...], flags BindingFlags,
+    formSaid , halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength Func`2,
+    kindOf Func`2, mm Func`2, notAFamily false, notOffered 2 item(s) [UndefinedSystemType,
+    Undefined], oneMillimetre 0.00328083989501312, ownName Func`2, pointing Func`2, refused
+    Nothing was made. No solid face centred at the point given in at= lies on "Ref. Level".
+    What does lie on it: a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-000009f9,
+    facing down, centred at X 300, Y 250, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a02,
+    facing down, centred at X 300, Y 1100, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a09,
+    facing down, centred at X 2300, Y 300, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a14,
+    facing down, centred at X -800, Y -300, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a1b,
+    facing down, centred at X 3020, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a22,
+    facing down, centred at X 3080, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a29,
+    facing down, centred at X 3140, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a30,
+    facing down, centred at X 3200, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a37,
+    facing down, centred at X 3260, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a3e,
+    facing down, centred at X 3320, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a45,
+    facing down, centred at X 3380, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a4c,
+    facing down, centred at X 3440, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a53,
+    facing down, centred at X 3500, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a5a,
+    facing down, centred at X 3560, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a61,
+    facing down, centred at X 3620, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a68,
+    facing down, centred at X 3680, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a6f,
+    facing down, centred at X 3740, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a76,
+    facing down, centred at X 3800, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a7d,
+    facing down, centred at X 3860, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a84,
+    facing down, centred at X 3920, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a8b,
+    facing down, centred at X 3980, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a92,
+    facing down, centred at X 4040, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a99,
+    facing down, centred at X 4100, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000aa0,
+    facing down, centred at X 4160, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000aa7,
+    facing down, centred at X 4220, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000aae,
+    facing down, centred at X 4280, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ab5,
+    facing down, centred at X 4340, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000abc,
+    facing down, centred at X 4400, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ac3,
+    facing down, centred at X 4460, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000aca,
+    facing down, centred at X 4520, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ad1,
+    facing down, centred at X 4580, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ad8,
+    facing down, centred at X 4640, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000adf,
+    facing down, centred at X 4700, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ae6,
+    facing down, centred at X 4760, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000aed,
+    facing down, centred at X 4820, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000af4,
+    facing down, centred at X 4880, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000afb,
+    facing down, centred at X 4940, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b02,
+    facing down, centred at X 5000, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b09,
+    facing down, centred at X 5060, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b10,
+    facing down, centred at X 5120, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b17,
+    facing down, centred at X 5180, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b1e,
+    facing down, centred at X 5240, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b25,
+    facing down, centred at X 5300, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b2c,
+    facing down, centred at X 5360, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b33,
+    facing down, centred at X 5420, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b3a,
+    facing down, centred at X 5480, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b41,
+    facing down, centred at X 5540, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b48,
+    facing down, centred at X 5600, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b4f,
+    facing down, centred at X 5660, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b56,
+    facing down, centred at X 5720, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b5d,
+    facing down, centred at X 5780, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b64,
+    facing down, centred at X 5840, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b6b,
+    facing down, centred at X 5900, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b72,
+    facing down, centred at X 5960, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b79,
+    facing down, centred at X 6020, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b80,
+    facing down, centred at X 6080, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b87,
+    facing down, centred at X 6140, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b8e,
+    facing down, centred at X 6200, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b95,
+    facing down, centred at X 6260, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b9c,
+    facing down, centred at X 6320, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ba3,
+    facing down, centred at X 6380, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000baa,
+    facing down, centred at X 6440, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bb1,
+    facing down, centred at X 6500, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bb8,
+    facing down, centred at X 6560, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bbf,
+    facing down, centred at X 6620, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bc6,
+    facing down, centred at X 6680, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bcd,
+    facing down, centred at X 6740, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bd4,
+    facing down, centred at X 6800, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bdb,
+    facing down, centred at X 6860, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000be2,
+    facing down, centred at X 6920, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000be9,
+    facing down, centred at X 6980, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bf0,
+    facing down, centred at X 7040, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bf7,
+    facing down, centred at X 7100, Y -980, Z 0 mm; a face of an extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bfe,
+    facing down, centred at X 7160, Y -980, Z 0 mm. Give form= the id of the form whose face
+    takes the connector, or facing= the way that face points (up, down, left, right, front,
+    back) - or name a plane only one face lies on., revitAssembly RuntimeAssembly, sameKind
+    Func`3, shownAs 6 entry(ies), sideStep The way round it: a thin solid joined or cut with
+    nothing - 1 mm deep, sized to the flange or port, one face on the plane and the rest inside
+    the body - takes the connector, because a form''s own face is used before a joined one.
+    EXTRUDE_BETWEEN_PLANES makes one., sizedBy 0 item(s), sizes 1 item(s) [Autodesk.Revit.DB.FamilyParameter],
+    spaced Func`2, squash Func`2, systems 31 item(s) [(duct, SupplyAir, SupplyAir), (duct,
+    ReturnAir, ReturnAir), (duct, ExhaustAir, ExhaustAir), ...], unlessNone Func`2. inputs
+    came facePlane as given; system as given; sizeParameters as given; form not given - "none",
+    the card''s own default (optional); facing not given - "none", the card''s own default
+    (optional); at as given. on fp-scratch'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 43d83188366b7b85
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: 3545dba0dc8cd0c7
+  fingerprint: ec37ade768b5105d
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

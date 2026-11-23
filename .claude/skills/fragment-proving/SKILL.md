@@ -213,8 +213,11 @@ on the model holds it for three quiet minutes**, and a command line run from tha
 press **Free this model** on the ribbon (in the Heron button's menu since D-150). For a series of
 hand-run commands where one consumes what
 another left (`--expect-from`), set **`HERON_CONVERSATION_ID`** to one value of your own for all of them:
-the carried chain belongs to a conversation, and a series with it set is not handed back at each exit -
-`revit_release` or the button frees it.
+the carried chain belongs to a conversation, and a series with it set is not handed back at each exit.
+**Free it with `python mcp/client/heron_bridge_client.py release` run with the series' own
+`HERON_CONVERSATION_ID`**, or **Free this model** on the ribbon. The chat's `revit_release` cannot: it is
+another conversation, and a hold is freed only by the conversation that took it
+([row 5b-1993](../../../docs/fragment-issues/row-5b-1993.md) - before that fix `release` freed the lease alone).
 
 ## A night run, with nobody at the keyboard
 

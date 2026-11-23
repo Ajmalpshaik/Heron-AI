@@ -1718,6 +1718,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ps.md`](needs-checking/group-ps.md)
 
+## Group PU - LOAD_FAMILY version 4: each material compared with itself by id, never with another of its name - DRAFT until proved (2026-11-23)
+
+**Its own file:** [`needs-checking/group-pu.md`](needs-checking/group-pu.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
