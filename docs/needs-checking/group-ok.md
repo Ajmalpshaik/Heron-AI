@@ -43,3 +43,13 @@ by eye; one Ctrl+Z takes each call back in a single step.
 
 **Then:** the owner signs each card from its draft ([fragment-proving skill](../../.claude/skills/fragment-proving/SKILL.md)),
 and OK3's answer is written into `set-family-plane-reference`'s compatibility note.
+
+### Results, 2026-11-23 - Revit 2020, session 35764, scratch family `fp-scratch2` (Metric Generic Model, `%TEMP%\heron-work\fam-prove`)
+
+| Row | Result |
+|---|---|
+| OK1 | **PASS, signed.** `create-line-style` v3 run once through `try-once` and KEPT by the owner: *"Made subcategory "Secondary References" of Reference Planes"*, read back colour 128,128,128, weight 1, pattern Solid. Negative (`validate --write --kept`), `parentCategory=No Such Category`: *"This family has no category named "No Such Category", so NOTHING WAS CHANGED ..."*; rolled back |
+| OK4 | **PASS, signed.** Planes `Box Left` -300, `Box Right` 300, `Insert` 150 made by CREATE_REFERENCE_PLANES (kept). `planes=Box Left=Left; Box Right=Right`, `otherPlanesSubcategory=Secondary References`: `changed 4`, `onSubcategory 2` - *"Box Left": Is Reference Weak Reference -> Left; "Box Right" -> Right; "Insert": Subcategory Reference Planes -> Secondary References*, and an unnamed template plane (id 47) moved too. Negative `otherPlanesSubcategory=No Such Subcategory`: `changed 0`, *"Nothing was changed. Reference Planes has no subcategory named ..."*; both rolled back |
+| OK2, OK3, OK5, OK6 | Not run again this day (OK1-OK3 and OK5 were HELD on 2026-11-20, see above) |
+
+Signed on the owner's word, 2026-11-23, for a family build.

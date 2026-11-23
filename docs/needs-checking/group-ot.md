@@ -104,3 +104,9 @@ material is [Group NY](group-ny.md) NY5, then NY6 and NY7 (since 2026-11-21), th
 
 `CREATE_FAMILY_FORMS` and `REPORT_FAMILY_FORMS` were signed on the owner's word this day; their proofs are PB5/PB6
 and OT3/PB8 (Group PB's results).
+
+**Later the same day, `fp-scratch2`:** `LINK_FAMILY_PARAMETER` v5 proved and signed on a material link, not on OT13's
+arrangement - a freeform sweep pipe (CREATE_FAMILY_FREEFORM_SOLID, kept) with `links=Material=TRG_Pipe Copper`:
+*"Form id 2711: Material <By Category> -> TRG_Pipe Copper"*, `changed 1`; negative `links=Material=No Such Material`:
+`changed 0`, *"Nothing was changed. "No Such Material" is neither a family parameter nor a material ..."*; both rolled
+back. OT13 and OT14 (the "runs along" note on an extrusion's start and end) are still owed.
