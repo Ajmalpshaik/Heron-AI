@@ -1,6 +1,14 @@
 // NOT STANDALONE. Assumes `doc`, `sidePlanes`, `basePlane` and `topPlane` are
-// in scope; leaves `size`, `locked`, `notAFamily`, `refused` and `findings`
-// behind.
+// in scope; leaves `formId`, `elements`, `size`, `locked`, `notAFamily`,
+// `refused` and `findings` behind.
+//
+// VERSION 2 (2026-11-23, row 5b-2000): THE BOX'S ID IS GIVEN BACK, as
+// `formId` - its unique id, the way CREATE_FAMILY_FORMS and
+// CREATE_FAMILY_FREEFORM_SOLID give theirs - and the box is handed on as
+// `elements`. Version 1 said only its size, so every later step that names a
+// form by id (a material or Visible linked, its visibility, an array) needed a
+// REPORT_FAMILY_FORMS call and a match by extents first. Both stay EMPTY when
+// nothing was built.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -24,6 +32,8 @@
 // must match the planes, or nothing is kept.
 
 var findings = new List<string>();
+var formId = "";
+var elements = new List<Element>();
 var size = "";
 var locked = new List<string>();
 var notAFamily = false;
@@ -260,8 +270,14 @@ if (refused == null)
         + mm((bounds.Max.X + bounds.Min.X) / 2) + ", Y " + mm((bounds.Max.Y + bounds.Min.Y) / 2)
         + ", from Z " + mm(bounds.Min.Z) + " to " + mm(bounds.Max.Z);
 
+    // VERSION 2: the id a later step names the box by, and the box handed on.
+    formId = box.UniqueId;
+    elements.Add(box);
+
     findings.Add("Built a solid extrusion " + size + ", read back from the box. Locked: "
-        + string.Join("; ", locked) + ". Its base is sketched on \"" + bottom.Item5 + "\" and moves with it.");
+        + string.Join("; ", locked) + ". Its base is sketched on \"" + bottom.Item5 + "\" and moves with it. "
+        + "Its id is " + formId + " - name it so (formId) to the tools that link, colour, hide or array "
+        + "forms.");
 
     findings.Add("Locked to planes is not yet PROVED to follow them. FLEX_FAMILY changes the sizes, reads "
         + "the box back, and puts them back.");

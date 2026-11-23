@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,18 @@ semantic-identity: "drive this family parameter by a formula, or clear its formu
 kind: action
 domain: revit.families
 capability: SET_FAMILY_FORMULA
-version: 1
+# VERSION 2 (2026-11-23) - AN INTEGER OR YES/NO VALUE READ BACK, and back to
+# DRAFT. Version 1 was PROVEN on 2026-10-03 (the proof block below, kept as the
+# record of what it proved); its C# changed, so it is DRAFT until
+# NEEDS-CHECKING Group PX is run (D-30). Found building a parametric louvre
+# family in Revit 2020 on 2026-11-23: an Integer formula read back blank -
+# "Blade_Count" = rounddown((Test_Height - 36 mm) / 45 mm) "... it gives ." -
+# and the same for Blades_Up, both instance parameters, while a flex read 5,
+# 7, 12 and 25 blades. Version 1 read every value with AsValueString; a whole
+# number is now read as one, a Yes/No as Yes or No, a text as its text, and a
+# length or other measured value as before. FRAGMENT-ISSUES row 5b-2001.
+# Nothing else changed.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -42,7 +53,10 @@ purpose: >
 
   **REVIT'S WORDS COME BACK WHEN IT REFUSES**, and nothing is kept. The
   formula and the value it produces in the current type are read back from
-  the family afterwards.
+  the family afterwards - by the parameter's kind (version 2): a whole number
+  for an Integer (a blade count), Yes or No for a Yes/No, the text for a
+  text, and a length or other measured value as Revit shows it. An instance
+  parameter reads the same way: the current type holds its value too.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -64,7 +78,8 @@ contract:
       role: result
       type: string
     - name: valueNow
-      # What the formula gives in the family's current type, as Revit shows it.
+      # What the formula gives in the family's current type, as Revit shows it:
+      # a whole number for an Integer, Yes or No for a Yes/No (version 2).
       role: result
       type: string
     - name: cleared

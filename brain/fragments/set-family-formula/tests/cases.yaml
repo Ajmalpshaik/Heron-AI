@@ -11,6 +11,22 @@ positive:
       cleared true, the Formula column empty in Family Types, and Neck Top
       still reading 350 mm and editable again
 
+  # VERSION 2 (row 5b-2001): an Integer and a Yes/No read back.
+  - given: >
+      the same family with an INSTANCE Integer parameter Blade Count and
+      Height 250; parameterName "Blade Count", formula
+      "rounddown((Height - 36 mm) / 45 mm)"
+    expect: >
+      valueNow "4" - a whole number, never empty - and the finding saying
+      "it gives 4"; Family Types shows 4 for Blade Count
+
+  - given: >
+      an INSTANCE Yes/No parameter Show Blades; parameterName "Show Blades",
+      formula "Height > 200 mm"
+    expect: >
+      valueNow "Yes" (Height is 250); then the formula "Height > 300 mm" gives
+      "No" - Family Types showing the tick box ticked, then clear
+
 negative:
   - given: formula 'Height + "Neck Depth"' (the name in quotes)
     expect: >
@@ -28,6 +44,14 @@ negative:
 
   - given: a project in front
     expect: notAFamily true and no formula set anywhere
+
+  - given: >
+      after the Blade Count case, formula 'rounddown(("Height" - 36 mm) / 45
+      mm)' on Blade Count (a name in quotes)
+    expect: >
+      refused before Revit is asked, nothing changed, and on that refusal
+      formulaNow still the first formula and valueNow still "4" - Blade
+      Count's whole number read back, not empty (version 2)
 
 second_route:
   - >
