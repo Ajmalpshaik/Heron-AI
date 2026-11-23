@@ -433,7 +433,7 @@ namespace Heron.BindingNote.TestHost
         }
 
         /// <summary>
-        /// FRAGMENT-ISSUES row 5b-1993: a `name=value; name=value` list - the
+        /// FRAGMENT-ISSUES row 5b-1994: a `name=value; name=value` list - the
         /// `values` of SET_FAMILY_TYPE_VALUES, and every other need typed as an
         /// IDictionary - was split on EVERY semicolon, so a text value that held
         /// one could not be written as the owner gave it. On 2026-11-23 (Revit
@@ -451,7 +451,7 @@ namespace Heron.BindingNote.TestHost
         {
             const BindingFlags Rule = BindingFlags.NonPublic | BindingFlags.Static;
             var rule = typeof(HeronBindingNote).GetMethod("NamedEntries", Rule);
-            Check(rule != null, "the binder has ONE rule for splitting a name=value; list (row 5b-1993)");
+            Check(rule != null, "the binder has ONE rule for splitting a name=value; list (row 5b-1994)");
             if (rule == null) return;
 
             const string Shown = "\"view=*-Mech*; sheet=A-*\"";

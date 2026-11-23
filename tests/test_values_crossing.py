@@ -165,14 +165,14 @@ def main():
     check(len(twice) == 1 and twice[0].get("value") == '"Level 1"',
           "a value that must carry its own quotes is written in a second pair")
 
-    # ROW 5b-1993, 2026-11-23: a family type's `values` is itself a
+    # ROW 5b-1994, 2026-11-23: a family type's `values` is itself a
     # "name=value; name=value" list, and the add-in splits it on semicolons
     # OUTSIDE double quotes (HeronBindingNote.NamedEntries, proved in
     # tests/test_binding_note.py). That only works if this side hands the
     # inner quotes over untouched - it strips a pair only when it wraps the
     # WHOLE value, and a list starts with a name.
     print()
-    print("a quoted value INSIDE a list crosses with its quotes (row 5b-1993)")
+    print("a quoted value INSIDE a list crosses with its quotes (row 5b-1994)")
     listed = 'values=Filter_Efficiency="70 % ASHRAE 52/76; design 81 %"; Filter_Cell="G4"'
     crossed = pack(listed)
     check(len(crossed) == 1 and crossed[0].get("name") == "values"

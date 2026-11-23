@@ -130,7 +130,7 @@ contract:
     # "Type Name=New name" renames the type (version 3). Empty when deleting.
     # A text value that holds a semicolon goes in double quotes, kept exactly -
     # Note="70 % ASHRAE; design 81 %"; Width=600 - and \" inside is a quote
-    # (row 5b-1993, the binder's rule for every such list).
+    # (row 5b-1994, the binder's rule for every such list).
     - name: values
       type: IDictionary<string, string>
       source: request

@@ -282,7 +282,7 @@ def main():
           "the number-table hint carries NamedValues' own example")
     check(texts and texts in HF.how_to_type("IDictionary<string,string>"),
           "the text-table hint carries NamedValues' own example")
-    # Row 5b-1993: a text value holding a semicolon is written in double
+    # Row 5b-1994: a text value holding a semicolon is written in double
     # quotes, and the hint is where a host learns that before it is refused.
     check("double quotes" in HF.how_to_type("IDictionary<string,string>"),
           "the text-table hint says a value holding a ';' goes in double quotes")

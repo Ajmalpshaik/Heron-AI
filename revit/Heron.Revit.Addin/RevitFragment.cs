@@ -6488,7 +6488,7 @@ namespace Heron.Revit.Addin
         /// be asked for.
         ///
         /// A VALUE IN DOUBLE QUOTES KEEPS ITS SEMICOLONS - `Note="a; b"` - and
-        /// its spaces, and \" inside it is a quote (row 5b-1993). The split
+        /// its spaces, and \" inside it is a quote (row 5b-1994). The split
         /// itself is HeronBindingNote.NamedEntries, proved without Revit.
         ///
         /// A REPEATED KEY IS REFUSED rather than last-one-wins. Typing `Walls`
@@ -6505,7 +6505,7 @@ namespace Heron.Revit.Addin
             var shown = asNumbers ? "\"Walls=150; Structural Framing=50\""
                                   : "\"view=*-Mech*; sheet=A-*\"";
 
-            // THE SPLIT IS HeronBindingNote.NamedEntries - row 5b-1993. A value in
+            // THE SPLIT IS HeronBindingNote.NamedEntries - row 5b-1994. A value in
             // double quotes keeps its semicolons and spaces there; an unquoted
             // list splits exactly as it did here. Everything after the FIRST
             // equals sign is the value, so a pattern may contain one.

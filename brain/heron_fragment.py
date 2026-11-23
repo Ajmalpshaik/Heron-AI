@@ -658,7 +658,7 @@ def how_to_type(declared, need_name=None):
         return ('name=value, SEMICOLONS between - '
                 '"Walls=150; Structural Framing=50"')
     if re.search(r"^I?Dictionary<string,string>$", wanted, re.IGNORECASE):
-        # A VALUE HOLDING A SEMICOLON GOES IN DOUBLE QUOTES (row 5b-1993):
+        # A VALUE HOLDING A SEMICOLON GOES IN DOUBLE QUOTES (row 5b-1994):
         # HeronBindingNote.NamedEntries keeps it whole, and \" is a quote.
         return ('name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; '
                 'a value holding a ";" goes in double quotes - Note="a; b"')

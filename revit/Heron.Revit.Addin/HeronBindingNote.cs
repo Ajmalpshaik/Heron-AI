@@ -580,7 +580,7 @@ namespace Heron.Revit.Addin
         /// A `name=value; name=value` list split into its entries, in the
         /// order typed - or null, with the reason in PROBLEM.
         ///
-        /// FRAGMENT-ISSUES ROW 5b-1993. Every IDictionary need the binder
+        /// FRAGMENT-ISSUES ROW 5b-1994. Every IDictionary need the binder
         /// takes - SET_FAMILY_TYPE_VALUES' `values` above all - was split on
         /// EVERY semicolon, so a text value holding one could not be written as
         /// given. On 2026-11-23 (Revit 2020) a filter's efficiency, "... 70 %
