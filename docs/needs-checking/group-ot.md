@@ -132,3 +132,15 @@ back) the keyed form `key=Type Name|in=Mechanical Equipment|types=yes;33" x 24" 
 `readBack` list stays empty for the keyed form, a reporting gap worth a row); negative the same with a type name no
 element carries - `written 0`, refused for that row. Then used on the real model 4355-BHVD-3D-60P00-BL003A with a CSV
 (26 values x 3 new packaged units, Equipment Tag by GUID e133774c): `written 78`, read back 26 of 26 on each.
+
+### Results, later 2026-11-23 - Revit 2020, session 49564, scratch family `louvre-scratch` (Metric Generic Model, `%TEMP%\heron-work\louvre`)
+
+Proved and **signed Ajmal PS** on his word, for a parametric louvre whose blades follow its width and height:
+
+| Tool | Positive (once, through `try-once`, KEPT by the owner) | Negative (`validate --write --kept`, rolled back) |
+|---|---|---|
+| `ARRAY_FAMILY_FORMS` v5 | a 45-degree blade on Center (Left/Right), `count=Blade_Count` (formula `rounddown((Test_Height - 36 mm) / 45 mm)`), `step=Z 45`: *"Arrayed ... 5 in all, 45 mm apart along +Z, the count following Blade_Count"* | the same with `step=X 45` on a loose blade: *"Nothing was arrayed. A copy of this extrusion cannot leave the plane it is sketched on ... moved its copies 0 and 0 mm"*. A first negative on the arrayed blade itself THREW (it sits in the array's group) and was not used |
+| `FLEX_FAMILY` v3 | `trials=Test_Height=600 \| Test_Height=200`: 13 and 4 solids read back (12 and 3 arrayed blades + one loose blade), every labelled size read its parameter, put back | `trials=No_Such_Size=600`: *"Nothing was tried. "No_Such_Size" is not a parameter of this family."* |
+| `LINK_FAMILY_PARAMETER` v6 | a loose blade's `Extrusion Start=Blade_Start; Extrusion End=Blade_End` (formulas `-Test_Width / 2`, `Test_Width / 2`): `changed 2`, *"its sketch plane ... faces +X ... the form now runs X -200 to 200 mm"* | `Extrusion End=No_Such_Parameter`: *"Nothing was changed. No family parameter is called ..."*, `changed 0` |
+
+**Found on the way, not a tool defect:** an arrayed blade whose end faces were LOCKED to width planes (`LOCK_FORM_TO_PLANES`) holds those planes - a width flex was refused: *"the dimension labelled Test_Width reads 400 mm and the parameter holds 800 mm"*. Driving each blade's Extrusion Start/End by width parameters instead of locks is the route the louvre family uses.
