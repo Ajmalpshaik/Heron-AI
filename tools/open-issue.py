@@ -710,6 +710,23 @@ def gh_json(gh, root, args, payload=None):
         raise CouldNotReach("gh api %s answered something that is not JSON" % args[0])
 
 
+def tracks(body, finding):
+    """True when BODY tracks FINDING - its own checkbox line, or for a group its own heading.
+
+    A passing mention in another entry's words does not count (row 5b-1962, 5b-1965): issue
+    #1202 tracks Group PK and names Group PG inside check PK4, and that is not PG's issue.
+    """
+    ids = [finding.show] + [ident for ident, _words in finding.items]
+    for ident in ids:
+        box = r"^\s*- \[[ xX]\] \*{0,2}%s\*{0,2}(?![\w-])" % re.escape(ident)
+        if re.search(box, body, re.I | re.M):
+            return True
+    if finding.what == "group":
+        heading = r"^\s*#+ .*(?<![\w-])%s(?![\w-])" % re.escape(finding.show)
+        return bool(re.search(heading, body, re.I | re.M))
+    return False
+
+
 def already_named(gh, root, repo, finding, out):
     """Open issues that already name FINDING's id - [] when none, or when the search could not run."""
     query = 'repo:%s is:issue is:open "%s"' % (repo, finding.show)
@@ -721,7 +738,7 @@ def already_named(gh, root, repo, finding, out):
         return []
     word = re.compile(r"(?<![\w-])%s(?![\w-])" % re.escape(finding.show), re.I)
     return [item["number"] for item in found.get("items", [])
-            if word.search((item.get("title") or "") + "\n" + (item.get("body") or ""))]
+            if word.search(item.get("title") or "") or tracks(item.get("body") or "", finding)]
 
 
 def added_to(body, lines):
@@ -825,7 +842,7 @@ def main(argv=None, root=ROOT, gh=None, out=None):
                 raise Refused("issue #%d is %s - a finding goes into an open issue, or a new one"
                               % (args.into, issue.get("state")))
             body = issue.get("body") or ""
-            if re.search(r"(?<![\w-])%s(?![\w-])" % re.escape(finding.show), body, re.I):
+            if tracks(body, finding):
                 raise Refused("issue #%d already names %s - write the number back with --record %d"
                               % (args.into, finding.show, args.into))
             gh_json(gh, root, ["repos/%s/issues/%d" % (repo, args.into), "--method", "PATCH"],

@@ -116,6 +116,14 @@ def suites(tool):
         check(isinstance(mine, (int, float)) and mine > tool.SUITE_TIMEOUT and mine >= 562,
               "test_mcp_serves.py gets more than that, and more than the 562s measured "
               "for it under load (%s)" % mine)
+
+        print()
+        print("5b. The docs-guard suites have ceilings of their own (5b-1987)")
+        check(tool.timeout_of("test_docs_guard.py") >= 322 * 2,
+              "test_docs_guard.py gets well over the 322s it took on the owner's laptop")
+        check(tool.timeout_of("test_walled_own_words.py") > tool.SUITE_TIMEOUT,
+              "test_walled_own_words.py gets more than the ordinary ceiling")
+        check(tool.timeout_of("test_other.py") == tool.SUITE_TIMEOUT, "an ordinary suite is unchanged")
     finally:
         tool.ROOT = real_root
         tool.subprocess.run = real_run
