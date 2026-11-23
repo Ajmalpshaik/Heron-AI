@@ -22,7 +22,7 @@ than on a promise, and A can never be replaced.
 
 This module is the first of the 146 agents that need no Revit, and it is first
 because all 145 others declare themselves to it. The order is in
-docs/work-notes/plans/agent-build-order-2026-09-13.md.
+docs/28 section 10, "The order the agents were built in".
 
 WHAT A CONTRACT MUST NOT CARRY: TIER AND RISK
 ---------------------------------------------

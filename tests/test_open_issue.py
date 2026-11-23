@@ -353,6 +353,28 @@ def main():
         check(code == 1 and "#88" in said and "#89" not in said
               and not [c for c in gh.calls if "POST" in c], "refused, naming #88 only, no POST")
 
+        print("\n7b. A passing mention is not tracking (rows 5b-1962, 5b-1965)")
+        prose = "Check PK4 - after Group PG, and see row 5b-9005 and row 5b-9005's note"
+        gh = FakeGh(search=[{"number": 90, "title": "Fix: PK", "body": prose},
+                            {"number": 91, "title": "Fix: y", "body": "- [ ] **5b-9005** - y"}])
+        code, said, gh = run(root, ["5b-9005", "--create"], gh)
+        check(code == 1 and "#91" in said and "#90" not in said,
+              "a row named only in prose is not tracked; its checkbox line is")
+        gh = FakeGh(search=[{"number": 90, "title": "Fix: PK", "body": prose}])
+        code, said, gh = run(root, ["5b-9005", "--create"], gh)
+        check(code == 0 and [c for c in gh.calls if "POST" in c], "a passing mention does not block a new issue")
+        with io.open(os.path.join(root, "docs", "fragment-issues", "row-5b-9005.md"), "w",
+                     encoding="utf-8", newline="") as out:
+            out.write(ROWS["row-5b-9005.md"])      # the create above wrote its number back
+        code, said, gh = run(root, ["5b-9005", "--into", "9", "--create"],
+                             FakeGh(issue={"number": 9, "state": "open", "body": prose}))
+        check(code == 0 and [c for c in gh.calls if "PATCH" in c], "--into works when the issue only mentions it")
+        grp = TOOL.Finding("group", "Group PG", "docs/needs-checking/group-pg.md", 1, "t", "h", "e")
+        grp.items = [("PG1", "first"), ("PG2", "second")]
+        check(not TOOL.tracks(prose, grp), "a group named in prose is not tracked")
+        check(TOOL.tracks("- [ ] **PG2** - second", grp), "a group's own check line tracks it")
+        check(TOOL.tracks("## Group PG\n", grp), "a group's own heading tracks it")
+
         print("\n8. The other registers, in their own forms")
         code, said, gh = run(root, ["ZQ"])
         check(code == 0 and "**ZQ1**" in said and "**ZQ3**" in said and "**ZQ2**" not in said,

@@ -14,7 +14,7 @@ semantic-identity: "all elements of one category in the active document"
 kind: filter
 domain: revit.elements
 capability: FILTER_ELEMENTS_BY_CATEGORY
-# VERSION 7 (2026-11-16) - ONLY WHAT THIS SECTION CUTS, and back to DRAFT.
+# VERSION 7 (2026-11-16) - ONLY WHAT THIS SECTION CUTS; it went back to DRAFT and was proved again on 2026-11-16.
 # FRAGMENT-ISSUES row 5b-1736 (Sruthina, Revit 2024, model `villa 2`,
 # Ajmalpshaik/Heron-AI#854 item g): `inViewOnly` on a section hands on every
 # element the section SHOWS, beyond the cut as well as cut, so
