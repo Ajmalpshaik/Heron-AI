@@ -1714,6 +1714,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pr.md`](needs-checking/group-pr.md)
 
+## Group PW - ARRAY_FAMILY_FORMS version 6: a form already in an array, or in a group, is refused in a sentence, not thrown - DRAFT until proved (2026-11-23)
+
+**Its own file:** [`needs-checking/group-pw.md`](needs-checking/group-pw.md)
+
 ## Group PT - a quoted value in a `name=value; name=value` list keeps its semicolon - BUILT, NOT RUN IN REVIT (2026-11-23)
 
 **Its own file:** [`needs-checking/group-pt.md`](needs-checking/group-pt.md)
