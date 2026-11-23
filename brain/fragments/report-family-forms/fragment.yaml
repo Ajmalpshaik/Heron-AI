@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -240,78 +240,229 @@ contract:
 # IO proves version 3 (D-30). It ran `which` "all" and a project, both of
 # which version 3 answers as version 2 did.
 proof:
-  date: '2026-11-12'
+  date: '2026-11-23'
   by: Ajmal PS
-  model: Heron Link Detail Test (1,503 elements), Revit 2020, session 33000
-  positive_case: run as it would normally be run. returned combinationList , edgesOf 1 entry(ies),
-    edgesUnread 0, elements 2 item(s) [Line, Detail Filled Region], findings 4 item(s) [2
-    2D element(s) of 2 lines, regions and nested families matc..., 0 form(s) of 0 in the family;
-    0 join(s) or cut(s)., This family has no forms yet - nothing has been modelled in ...,
-    ...], formCount 0, formList , ids 0 item(s), invariant CultureInfo, isViewBased Func`2,
-    joins 0 item(s), kind2D Func`2, kindOf Func`2, known 9 item(s) [solid, void, extrusion,
-    ...], mm Func`2, named HashSet`1, named2D false, namedInOrder 0 item(s), notAFamily false,
-    notNamed false, parts 1 item(s) [2d], planeOf Func`2, problems 0 item(s), refused (null),
-    regionOfEdge 3 entry(ies), regions 1 item(s) [Detail Filled Region], rows 0 item(s), scanned
-    0, squash Func`2, twoDCount 2, twoDList detail line 3c975bca-b042-4e80-baf8-2fdebc27245c-0000080c
-    (in view Ref. Level), from 0,0,0 to 300,0,0 mm, 300 long, style Detail Items, Visible
-    yes, nothing holds it  ||  filled region 3c975bca-b042-4e80-baf8-2fdebc27245c-0000080f
-    (in view Ref. Level), type Solid Fill - Black, 1 loop(s), X 300 to 600, Y -80 to 80, Z
-    0 to 0 mm, 3 sketch edge(s), Visible yes, nothing holds it, twoDWords 16 entry(ies), wanted2D
-    HashSet`1, words 0 item(s), words2D 1 item(s) [2d]. inputs came which as given. on Heron
-    Link Detail Test
-  negative_case: run with which=nested instead - chosen because it should not contain what
-    this fragment reports. returned combinationList , edgesOf 1 entry(ies), edgesUnread 0,
-    elements 0 item(s), findings 4 item(s) [0 2D element(s) of 2 lines, regions and nested
-    families matc..., 0 form(s) of 0 in the family; 0 join(s) or cut(s)., This family has
-    no forms yet - nothing has been modelled in ..., ...], formCount 0, formList , ids 0 item(s),
-    invariant CultureInfo, isViewBased Func`2, joins 0 item(s), kind2D Func`2, kindOf Func`2,
-    known 9 item(s) [solid, void, extrusion, ...], mm Func`2, named HashSet`1, named2D false,
-    namedInOrder 0 item(s), notAFamily false, notNamed false, parts 1 item(s) [nested], planeOf
-    Func`2, problems 0 item(s), refused (null), regionOfEdge 3 entry(ies), regions 1 item(s)
-    [Detail Filled Region], rows 0 item(s), scanned 0, squash Func`2, twoDCount 0, twoDList
-    , twoDWords 16 entry(ies), wanted2D HashSet`1, words 0 item(s), words2D 1 item(s) [nested].
-    inputs came which as given. on Heron Link Detail Test
+  model: fp-scratch (2,025 elements), Revit 2020, session 35764
+  positive_case: 'run as it would normally be run. returned combinationList , elements 74
+    item(s) [Extrusion, Extrusion, Extrusion, ...], findings 2 item(s) [74 form(s) of 74 in
+    the family match "solid"; 0 join(s) or c..., 74 form(s) handed on as elements - SET_SELECTION
+    highlights ...], formCount 74, formList 74 form(s), 74 solid and 0 void, together reaching
+    X -1000 to 7180, Y -1000 to 1200, Z 0 to 300 mm  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-000009f9
+    (on Ref. Level): X 0 to 600, Y 0 to 500, Z 0 to 100 mm, 18 L, subcategory (the family''s
+    own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion
+    18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a02 (on Ref. Level): X -100 to 700, Y 1000 to
+    1200, Z 0 to 100 mm, 15.141 L, subcategory (the family''s own), shows in coarse, medium,
+    fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a09
+    (on Ref. Level): X 2000 to 2600, Y 0 to 600, Z 0 to 150 mm, 30 L, subcategory (the family''s
+    own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion
+    18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a14 (on Ref. Level): X -1000 to -600, Y -500
+    to -100, Z 0 to 300 mm, 48 L, subcategory (the family''s own), shows in coarse, medium,
+    fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a1b
+    (on Ref. Level): X 3000 to 3040, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a22 (on Ref. Level): X 3060 to 3100,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a29
+    (on Ref. Level): X 3120 to 3160, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a30 (on Ref. Level): X 3180 to 3220,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a37
+    (on Ref. Level): X 3240 to 3280, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a3e (on Ref. Level): X 3300 to 3340,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a45
+    (on Ref. Level): X 3360 to 3400, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a4c (on Ref. Level): X 3420 to 3460,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a53
+    (on Ref. Level): X 3480 to 3520, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a5a (on Ref. Level): X 3540 to 3580,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a61
+    (on Ref. Level): X 3600 to 3640, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a68 (on Ref. Level): X 3660 to 3700,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a6f
+    (on Ref. Level): X 3720 to 3760, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a76 (on Ref. Level): X 3780 to 3820,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a7d
+    (on Ref. Level): X 3840 to 3880, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a84 (on Ref. Level): X 3900 to 3940,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a8b
+    (on Ref. Level): X 3960 to 4000, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a92 (on Ref. Level): X 4020 to 4060,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000a99
+    (on Ref. Level): X 4080 to 4120, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000aa0 (on Ref. Level): X 4140 to 4180,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000aa7
+    (on Ref. Level): X 4200 to 4240, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000aae (on Ref. Level): X 4260 to 4300,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ab5
+    (on Ref. Level): X 4320 to 4360, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000abc (on Ref. Level): X 4380 to 4420,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ac3
+    (on Ref. Level): X 4440 to 4480, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000aca (on Ref. Level): X 4500 to 4540,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ad1
+    (on Ref. Level): X 4560 to 4600, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ad8 (on Ref. Level): X 4620 to 4660,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000adf
+    (on Ref. Level): X 4680 to 4720, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ae6 (on Ref. Level): X 4740 to 4780,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000aed
+    (on Ref. Level): X 4800 to 4840, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000af4 (on Ref. Level): X 4860 to 4900,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000afb
+    (on Ref. Level): X 4920 to 4960, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b02 (on Ref. Level): X 4980 to 5020,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b09
+    (on Ref. Level): X 5040 to 5080, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b10 (on Ref. Level): X 5100 to 5140,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b17
+    (on Ref. Level): X 5160 to 5200, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b1e (on Ref. Level): X 5220 to 5260,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b25
+    (on Ref. Level): X 5280 to 5320, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b2c (on Ref. Level): X 5340 to 5380,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b33
+    (on Ref. Level): X 5400 to 5440, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b3a (on Ref. Level): X 5460 to 5500,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b41
+    (on Ref. Level): X 5520 to 5560, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b48 (on Ref. Level): X 5580 to 5620,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b4f
+    (on Ref. Level): X 5640 to 5680, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b56 (on Ref. Level): X 5700 to 5740,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b5d
+    (on Ref. Level): X 5760 to 5800, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b64 (on Ref. Level): X 5820 to 5860,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b6b
+    (on Ref. Level): X 5880 to 5920, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b72 (on Ref. Level): X 5940 to 5980,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b79
+    (on Ref. Level): X 6000 to 6040, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b80 (on Ref. Level): X 6060 to 6100,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b87
+    (on Ref. Level): X 6120 to 6160, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b8e (on Ref. Level): X 6180 to 6220,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  solid extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b95
+    (on Ref. Level): X 6240 to 6280, Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000b9c (on Ref. Level): X 6300 to 6340,
+    Y -1000 to -960, Z 0 to 40 mm, 0.064 L, subcategory (the family''s own), shows in coarse,
+    medium, fine | plan, front/back, left/right  ||  and 14 more form(s), not described here
+    so that this answer stays short enough to be shown - their ids: 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000ba3,
+    18abae73-ad5c-48d6-abd3-653b5eda36a7-00000baa, 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bb1,
+    18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bb8, 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bbf,
+    18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bc6, 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bcd,
+    18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bd4, 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bdb,
+    18abae73-ad5c-48d6-abd3-653b5eda36a7-00000be2, 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000be9,
+    18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bf0, 18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bf7,
+    18abae73-ad5c-48d6-abd3-653b5eda36a7-00000bfe. Read them by naming those ids, up to 60
+    at a time, or by a kind or a side - "void", "revolve", "solid, extrusion" - to read fewer
+    at once. Every one of the 74 is still handed on, to select or delete., invariant CultureInfo,
+    kindOf Func`2, mm Func`2, notAFamily false, planeOf Func`2, refused (null), scanned 74,
+    squash Func`2, twoDCount 0, twoDList . inputs came which as given. on fp-scratch'
+  negative_case: run with which=123456 instead - chosen because it should not contain what
+    this fragment reports. returned combinationList , elements 0 item(s), findings 1 item(s)
+    [Nothing was read. "123456" is not an id in this family - tha...], formCount 0, formList
+    , invariant CultureInfo, kindOf Func`2, mm Func`2, notAFamily false, planeOf Func`2, refused
+    Nothing was read. "123456" is not an id in this family - that is an element number; give
+    the long id the form tools gave back., scanned 0, squash Func`2, twoDCount 0, twoDList
+    . inputs came which as given. on fp-scratch
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: e4a1c3bb31a47ced
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: 3545dba0dc8cd0c7
+  fingerprint: 3008e1c9cbeee0ea
   releases:
   - release: '2024'
     date: '2026-11-12'
     by: Ajmal PS
-    model: R24 Arrow, Revit 2024, session 13164 - the count is NOT recorded because 3,209 elements
-      was measured on R24 Project, the document in front, and this ran against another one (row
-      15)
+    model: R24 Arrow, Revit 2024, session 13164 - the count is NOT recorded because 3,209
+      elements was measured on R24 Project, the document in front, and this ran against another
+      one (row 15)
     positive_case: run as it would normally be run. returned combinationList , edgesOf 1 entry(ies),
       edgesUnread 0, elements 3 item(s) [Line, Line, Detail Filled Region], findings 4 item(s)
-      [3 2D element(s) of 3 lines, regions and nested families matc..., 0 form(s) of 0 in the
-      family; 0 join(s) or cut(s)., This family has no forms yet - nothing has been modelled
+      [3 2D element(s) of 3 lines, regions and nested families matc..., 0 form(s) of 0 in
+      the family; 0 join(s) or cut(s)., This family has no forms yet - nothing has been modelled
       in ..., ...], formCount 0, formList , ids 0 item(s), invariant CultureInfo, isViewBased
-      Func`2, joins 0 item(s), kind2D Func`2, kindOf Func`2, known 9 item(s) [solid, void, extrusion,
-      ...], mm Func`2, named HashSet`1, named2D false, namedInOrder 0 item(s), notAFamily false,
-      notNamed false, parts 1 item(s) [2d], planeOf Func`2, problems 0 item(s), refused (null),
-      regionOfEdge 3 entry(ies), regions 1 item(s) [Detail Filled Region], rows 0 item(s), scanned
-      0, squash Func`2, twoDCount 3, twoDList detail line bbdc94a4-bb02-427a-ad05-ea4d465a29c6-000008f4
+      Func`2, joins 0 item(s), kind2D Func`2, kindOf Func`2, known 9 item(s) [solid, void,
+      extrusion, ...], mm Func`2, named HashSet`1, named2D false, namedInOrder 0 item(s),
+      notAFamily false, notNamed false, parts 1 item(s) [2d], planeOf Func`2, problems 0 item(s),
+      refused (null), regionOfEdge 3 entry(ies), regions 1 item(s) [Detail Filled Region],
+      rows 0 item(s), scanned 0, squash Func`2, twoDCount 3, twoDList detail line bbdc94a4-bb02-427a-ad05-ea4d465a29c6-000008f4
       (in view Ref. Level), from 0,0,0 to 600,0,0 mm, 600 long, style Detail Items, Visible
-      yes, nothing holds it  ||  detail line bbdc94a4-bb02-427a-ad05-ea4d465a29c6-000008f5 (in
-      view Ref. Level), arc from 0,150,0 to 0,-150,0, centre 0,0,0, radius 150 mm, style Detail
-      Items, Visible yes, nothing holds it  ||  filled region bbdc94a4-bb02-427a-ad05-ea4d465a29c6-000008f8
-      (in view Ref. Level), type Solid Fill - Black, 1 loop(s), X 600 to 900, Y -80 to 80, Z
-      0 to 0 mm, 3 sketch edge(s), Visible yes, nothing holds it, twoDWords 16 entry(ies), wanted2D
-      HashSet`1, words 0 item(s), words2D 1 item(s) [2d]. inputs came which as given. on R24
-      Arrow
+      yes, nothing holds it  ||  detail line bbdc94a4-bb02-427a-ad05-ea4d465a29c6-000008f5
+      (in view Ref. Level), arc from 0,150,0 to 0,-150,0, centre 0,0,0, radius 150 mm, style
+      Detail Items, Visible yes, nothing holds it  ||  filled region bbdc94a4-bb02-427a-ad05-ea4d465a29c6-000008f8
+      (in view Ref. Level), type Solid Fill - Black, 1 loop(s), X 600 to 900, Y -80 to 80,
+      Z 0 to 0 mm, 3 sketch edge(s), Visible yes, nothing holds it, twoDWords 16 entry(ies),
+      wanted2D HashSet`1, words 0 item(s), words2D 1 item(s) [2d]. inputs came which as given.
+      on R24 Arrow
     negative_case: run with which=nested instead - chosen because it should not contain what
-      this fragment reports. returned combinationList , edgesOf 1 entry(ies), edgesUnread 0,
-      elements 0 item(s), findings 4 item(s) [0 2D element(s) of 3 lines, regions and nested
+      this fragment reports. returned combinationList , edgesOf 1 entry(ies), edgesUnread
+      0, elements 0 item(s), findings 4 item(s) [0 2D element(s) of 3 lines, regions and nested
       families matc..., 0 form(s) of 0 in the family; 0 join(s) or cut(s)., This family has
-      no forms yet - nothing has been modelled in ..., ...], formCount 0, formList , ids 0 item(s),
-      invariant CultureInfo, isViewBased Func`2, joins 0 item(s), kind2D Func`2, kindOf Func`2,
-      known 9 item(s) [solid, void, extrusion, ...], mm Func`2, named HashSet`1, named2D false,
-      namedInOrder 0 item(s), notAFamily false, notNamed false, parts 1 item(s) [nested], planeOf
-      Func`2, problems 0 item(s), refused (null), regionOfEdge 3 entry(ies), regions 1 item(s)
-      [Detail Filled Region], rows 0 item(s), scanned 0, squash Func`2, twoDCount 0, twoDList
-      , twoDWords 16 entry(ies), wanted2D HashSet`1, words 0 item(s), words2D 1 item(s) [nested].
-      inputs came which as given. on R24 Arrow
+      no forms yet - nothing has been modelled in ..., ...], formCount 0, formList , ids 0
+      item(s), invariant CultureInfo, isViewBased Func`2, joins 0 item(s), kind2D Func`2,
+      kindOf Func`2, known 9 item(s) [solid, void, extrusion, ...], mm Func`2, named HashSet`1,
+      named2D false, namedInOrder 0 item(s), notAFamily false, notNamed false, parts 1 item(s)
+      [nested], planeOf Func`2, problems 0 item(s), refused (null), regionOfEdge 3 entry(ies),
+      regions 1 item(s) [Detail Filled Region], rows 0 item(s), scanned 0, squash Func`2,
+      twoDCount 0, twoDList , twoDWords 16 entry(ies), wanted2D HashSet`1, words 0 item(s),
+      words2D 1 item(s) [nested]. inputs came which as given. on R24 Arrow
     fingerprint: e4a1c3bb31a47ced
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
