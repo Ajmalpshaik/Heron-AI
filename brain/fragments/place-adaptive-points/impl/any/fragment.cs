@@ -24,6 +24,19 @@
 // shape handle point is a free one, so hosted points and those kinds are not
 // mixed in one call.
 //
+// VERSION 2 (2026-11-22) - PUSHED OFF A POINT'S PLANE, Revit's Offset:
+//   "on point 7 normal 300"            off the plane of point 7 that lies in
+//                                      the panel the placement points span,
+//                                      300 mm along the panel's normal - the
+//                                      folded panel's TIP over a centroid
+//                                      point, so lines from the corners to it
+//                                      make a pyramid facet;
+//   "on point 1 xy 0,0 offset 300"     a plane named, then pushed off it.
+// The plane that faces the panel is FOUND, never assumed - within half a
+// degree, or refused naming each plane's angle. Offset is made to read the
+// number typed, so a family parameter linked to it (LINK_FAMILY_PARAMETER)
+// holds the same number; the answer says which side of the panel that is.
+//
 // ONLY IN A CONCEPTUAL FAMILY - an adaptive component, a pattern-based panel
 // or a mass. Revit makes reference points nowhere else, and says so; that is
 // read before anything is made, and refused by name.
@@ -56,6 +69,12 @@ var problems = new List<string>();
 // Each point asked for: the words as given, where it should land, and how it is
 // hosted - null for a free point.
 var wanted = new List<Tuple<string, XYZ, Func<PointElementReference>>>();
+// VERSION 2: a point pushed off its host's plane, by its place in `wanted` -
+// the distance in feet, the point on the plane it is pushed from, the
+// direction it was asked along, the plane's word, the host as named, and the
+// points the panel's normal came from ("" for a plane named).
+var offsetOf = new Dictionary<int, Tuple<double, XYZ, XYZ, string, string, string>>();
+var offsetRows = new List<string>();
 AdaptivePointType? kind = null;
 var kindWords = "";
 var placementBefore = -1;
@@ -137,6 +156,161 @@ else
             .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries).ToList();
         if (words.Count > 0 && words[0].ToLowerInvariant() == "on")
         {
+            // VERSION 2 - PUSHED OFF A POINT'S PLANE (Revit's Offset):
+            //   on point <number or id> normal <mm>
+            //   on point <number or id> <xy|yz|xz> <u>,<v> offset <mm>
+            if ((words.Count == 5 && words[1].ToLowerInvariant() == "point" && words[3].ToLowerInvariant() == "normal")
+                || (words.Count == 7 && words[1].ToLowerInvariant() == "point" && words[5].ToLowerInvariant() == "offset"))
+            {
+                var byNormal = words.Count == 5;
+                var host = pointNamed(words[2]);
+                var depth = number(words[byNormal ? 4 : 6]);
+                var plane = byNormal ? "" : words[3].ToLowerInvariant();
+                double? u = 0, v = 0;
+                if (!byNormal)
+                {
+                    var uv = words[4].Split(',');
+                    u = uv.Length == 2 ? number(uv[0]) : null;
+                    v = uv.Length == 2 ? number(uv[1]) : null;
+                }
+                if (host == null)
+                    problems.Add("\"" + item + "\": no point " + words[2] + " - a placement number or a point's id.");
+                else if (!depth.HasValue || depth.Value == 0)
+                    problems.Add("\"" + item + "\" does not end with how far off the plane, in millimetres and not 0 - "
+                        + "\"300\", or \"-300\" for the other side.");
+                else if (!byNormal && plane != "xy" && plane != "yz" && plane != "xz")
+                    problems.Add("\"" + item + "\": \"" + words[3] + "\" is not one of a point's planes - xy, yz or xz.");
+                else if (!u.HasValue || !v.HasValue)
+                    problems.Add("\"" + item + "\" does not say where on the plane, \"U,V\" in millimetres, before offset.");
+                else
+                {
+                    var frame = host.GetCoordinateSystem();
+                    var toward = "";
+                    if (byNormal)
+                    {
+                        // THE PANEL'S NORMAL, from the placement points in their
+                        // number order - or, with fewer than three, from the
+                        // family's points that are not hosted on anything (a
+                        // pattern-based template's grid points, NEEDS-CHECKING
+                        // BV4). They must lie in one plane.
+                        var loop = existing
+                            .Select(p =>
+                            {
+                                var n = -1;
+                                try
+                                {
+                                    if (AdaptiveComponentFamilyUtils.IsAdaptivePlacementPoint(doc, p.Id))
+                                        n = AdaptiveComponentFamilyUtils.GetPlacementNumber(doc, p.Id);
+                                }
+                                catch (Exception) { }
+                                return Tuple.Create(p, n);
+                            })
+                            .Where(t => t.Item2 > 0).OrderBy(t => t.Item2).ToList();
+                        var loopWords = "placement points " + string.Join(", ", loop.Select(t => t.Item2));
+                        if (loop.Count < 3)
+                        {
+                            loop = existing.Where(p =>
+                                {
+                                    try { return p.GetPointElementReference() == null; }
+                                    catch (Exception) { return false; }
+                                })
+                                .Select(p => Tuple.Create(p, -1)).ToList();
+                            loopWords = "the family's " + loop.Count + " point(s) that are not hosted on anything";
+                        }
+                        var corners = loop.Where(t => t.Item1.Position != null).Select(t => t.Item1.Position).ToList();
+                        XYZ normal = null;
+                        if (corners.Count >= 3)
+                        {
+                            // Three corners as far apart as they go, so a near
+                            // straight run of points is not mistaken for a plane.
+                            var a = corners[0];
+                            var b = corners.OrderByDescending(c => c.DistanceTo(a)).First();
+                            var c3 = corners.OrderByDescending(c => (b - a).CrossProduct(c - a).GetLength()).First();
+                            var cross = (b - a).CrossProduct(c3 - a);
+                            if (cross.GetLength() > 1e-9)
+                            {
+                                normal = cross.Normalize();
+                                // Signed by the points' own order (Newell), so
+                                // "anticlockwise" means what it says.
+                                var newell = XYZ.Zero;
+                                for (var i = 0; i < corners.Count; i++)
+                                    newell = newell + corners[i].CrossProduct(corners[(i + 1) % corners.Count]);
+                                if (newell.DotProduct(normal) < 0) normal = normal.Negate();
+                            }
+                        }
+                        if (normal == null)
+                            problems.Add("\"" + item + "\": " + loopWords + " do not span a panel - at least three points not "
+                                + "in one straight line are needed to say which way its normal goes.");
+                        else if (corners.Any(c => Math.Abs((c - corners[0]).DotProduct(normal)) > 2 * halfMillimetre))
+                            problems.Add("\"" + item + "\": " + loopWords + " are not in one plane, so the panel has no one "
+                                + "normal - push the point off a plane named instead, \"on point " + words[2]
+                                + " xy 0,0 offset " + words[4] + "\".");
+                        else
+                        {
+                            // THE HOST'S PLANE THAT FACES THE PANEL - never
+                            // assumed: a point on a line takes its planes from
+                            // the line, and which of them lies in the panel is
+                            // Revit's to say. Within half a degree, or refused.
+                            var axes = new[]
+                            {
+                                Tuple.Create("xy", frame.BasisZ),
+                                Tuple.Create("yz", frame.BasisX),
+                                Tuple.Create("xz", frame.BasisY)
+                            };
+                            var best = axes.OrderByDescending(t => Math.Abs(t.Item2.DotProduct(normal))).First();
+                            if (Math.Abs(best.Item2.DotProduct(normal)) < Math.Cos(0.5 * Math.PI / 180))
+                                problems.Add("\"" + item + "\": none of point " + words[2] + "'s planes lies in the panel " + loopWords
+                                    + " span - their normals are " + string.Join(", ", axes.Select(t => t.Item1 + " "
+                                        + Math.Round(Math.Acos(Math.Min(1, Math.Abs(t.Item2.DotProduct(normal)))) * 180 / Math.PI, 1)
+                                            .ToString(invariant) + " degrees")) + " off the panel's normal. Nothing was placed.");
+                            else
+                            {
+                                plane = best.Item1;
+                                // The side is named only from placement points
+                                // in their number order; the fallback points
+                                // come in no order, so no side is claimed.
+                                toward = loop.Count > 0 && loop[0].Item2 > 0 ? loopWords : "";
+                                // Pushed along the PLANE's own normal - the
+                                // way Revit measures Offset, so a flip below
+                                // lands exactly where the read-back expects -
+                                // signed toward the panel's normal.
+                                var along = best.Item2.DotProduct(normal) >= 0 ? best.Item2 : best.Item2.Negate();
+                                var at = frame.Origin + along.Multiply(depth.Value / 304.8);
+                                var hostPoint = host;
+                                var planeWord = plane;
+                                var d = depth.Value / 304.8;
+                                offsetOf[wanted.Count] = Tuple.Create(d, frame.Origin, along, planeWord, words[2], toward);
+                                wanted.Add(Tuple.Create(item, at, (Func<PointElementReference>)(() =>
+                                {
+                                    var reference = planeWord == "xy" ? hostPoint.GetCoordinatePlaneReferenceXY()
+                                        : planeWord == "yz" ? hostPoint.GetCoordinatePlaneReferenceYZ()
+                                        : hostPoint.GetCoordinatePlaneReferenceXZ();
+                                    return PointOnPlane.NewPointOnPlane(doc, reference, at, XYZ.BasisX);
+                                })));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        var first = plane == "yz" ? frame.BasisY : frame.BasisX;
+                        var second = plane == "xy" ? frame.BasisY : frame.BasisZ;
+                        var across = first.CrossProduct(second).Normalize();
+                        var onPlane = frame.Origin + first.Multiply(u.Value / 304.8) + second.Multiply(v.Value / 304.8);
+                        var at = onPlane + across.Multiply(depth.Value / 304.8);
+                        var hostPoint = host;
+                        var planeWord = plane;
+                        offsetOf[wanted.Count] = Tuple.Create(depth.Value / 304.8, onPlane, across, planeWord, words[2], "");
+                        wanted.Add(Tuple.Create(item, at, (Func<PointElementReference>)(() =>
+                        {
+                            var reference = planeWord == "xy" ? hostPoint.GetCoordinatePlaneReferenceXY()
+                                : planeWord == "yz" ? hostPoint.GetCoordinatePlaneReferenceYZ()
+                                : hostPoint.GetCoordinatePlaneReferenceXZ();
+                            return PointOnPlane.NewPointOnPlane(doc, reference, at, XYZ.BasisX);
+                        })));
+                    }
+                }
+                continue;
+            }
             // HOSTED ON A POINT'S PLANE: on point <number or id> <xy|yz|xz> <u>,<v>
             if (words.Count == 5 && words[1].ToLowerInvariant() == "point")
             {
@@ -194,7 +368,8 @@ else
                 }
                 continue;
             }
-            problems.Add("\"" + item + "\" is not a hosted point - \"on <line id> at 0.5\" or \"on point 1 yz 0,150\".");
+            problems.Add("\"" + item + "\" is not a hosted point - \"on <line id> at 0.5\", \"on point 1 yz 0,150\", \"on point "
+                + "7 normal 300\" or \"on point 1 xy 0,0 offset 300\".");
             continue;
         }
 
@@ -267,6 +442,64 @@ if (refused == null)
 
     doc.Regenerate();
 
+    // VERSION 2 - OFFSET READS WHAT WAS TYPED. Revit measures a point's Offset
+    // along its host PLANE's normal, which may face either way along the
+    // direction asked; where it reads the opposite of what was typed it is set
+    // to what was typed, so a family parameter linked to Offset later holds the
+    // same number. The point then sits on the other side, and the answer says
+    // which side. Anything else it reads fails the call.
+    if (offsetOf.Count > 0)
+    {
+        var flipped = new HashSet<int>();
+        foreach (var entry in offsetOf)
+        {
+            var point = made[entry.Key].Item1;
+            var asked = entry.Value.Item1;
+            var field = point.get_Parameter(BuiltInParameter.POINT_ELEMENT_OFFSET);
+            if (field == null || field.StorageType != StorageType.Double)
+                throw new InvalidOperationException("The point \"" + made[entry.Key].Item3 + "\" has no Offset Revit lets "
+                    + "be read. The call failed, and Heron rolls the whole call back.");
+            var reads = field.AsDouble();
+            if (Math.Abs(reads - asked) <= halfMillimetre) continue;
+            if (Math.Abs(reads + asked) > halfMillimetre || field.IsReadOnly)
+                throw new InvalidOperationException("The point \"" + made[entry.Key].Item3 + "\" reads Offset " + mm(reads)
+                    + " mm, not the " + mm(asked) + " mm asked. The call failed, and Heron rolls the whole call back.");
+            try { field.Set(asked); }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Revit would not set the Offset of the point \"" + made[entry.Key].Item3
+                    + "\" to " + mm(asked) + " mm: " + ex.Message + " The call failed, and Heron rolls the whole call back.");
+            }
+            flipped.Add(entry.Key);
+        }
+        if (flipped.Count > 0) doc.Regenerate();
+        foreach (var entry in offsetOf)
+        {
+            var m = made[entry.Key];
+            var spec = entry.Value;
+            var side = flipped.Contains(entry.Key) ? -1.0 : 1.0;
+            var expected = spec.Item2 + spec.Item3.Multiply(side * spec.Item1);
+            made[entry.Key] = Tuple.Create(m.Item1, expected, m.Item3);
+            var field = m.Item1.get_Parameter(BuiltInParameter.POINT_ELEMENT_OFFSET);
+            var reads = field == null ? double.NaN : field.AsDouble();
+            if (double.IsNaN(reads) || Math.Abs(reads - spec.Item1) > halfMillimetre)
+                throw new InvalidOperationException("The point \"" + m.Item3 + "\" reads Offset "
+                    + (double.IsNaN(reads) ? "nothing" : mm(reads) + " mm") + " after it was set to " + mm(spec.Item1)
+                    + " mm. The call failed, and Heron rolls the whole call back.");
+            // Which side, in the modeller's words: for the panel's normal, the
+            // side from which the points run anticlockwise.
+            var away = side * spec.Item1 > 0;
+            offsetRows.Add(m.Item1.UniqueId + " is " + mm(Math.Abs(spec.Item1)) + " mm off point " + spec.Item5 + "'s "
+                + spec.Item4 + " plane, Offset " + mm(spec.Item1) + " mm"
+                + (spec.Item6.Length > 0
+                    ? ", on the side from which " + spec.Item6 + " run " + (away ? "anticlockwise" : "clockwise")
+                        + (flipped.Contains(entry.Key) ? " (Revit's Offset on this plane runs that way for a positive "
+                            + "number - a negative one puts the point on the other side)" : "")
+                    : (flipped.Contains(entry.Key) ? " - Revit's Offset on this plane runs the other way from the one "
+                        + "asked, so the point sits on that side" : "")));
+        }
+    }
+
     var ids = new List<string>();
     var rows = new List<string>();
     var numbers = new List<int>();
@@ -315,6 +548,13 @@ if (refused == null)
     if (made.Any(m => m.Item3.StartsWith("on ", StringComparison.OrdinalIgnoreCase)))
         findings.Add("A hosted point follows its host: drag the line or the point it is on in the Family Editor and it "
             + "moves with it (NEEDS-CHECKING BV19).");
+    // VERSION 2: each point pushed off a plane, its Offset and its side.
+    foreach (var row in offsetRows) findings.Add("Pushed off: " + row + ".");
+    if (offsetRows.Count > 0)
+        findings.Add("Lines from the panel's corners to a point pushed off it are DRAW_FAMILY_POINT_CURVES, and a "
+            + "folded facet on those lines CREATE_CONCEPTUAL_FORM. To drive the distance from a family length "
+            + "parameter such as Tip Depth, link this point's Offset to it with LINK_FAMILY_PARAMETER. Whether the "
+            + "point keeps its side on every cell of a divided surface is NEEDS-CHECKING Group PQ.");
     if (kind.Value == AdaptivePointType.PlacementPoint)
         findings.Add("Lines through these points are DRAW_FAMILY_POINT_CURVES, and a surface or solid on those lines "
             + "CREATE_CONCEPTUAL_FORM - geometry built on the points follows them when the family is placed.");

@@ -63,7 +63,7 @@ purpose: >
      was merged into it that day. Name the
      plan with its view type - "FloorPlan: Level 1" - whenever a ceiling plan
      has the same name: "Level 1" alone could be either.
-  6. LOAD_FAMILY (PROVEN) the door tag family, only when no door tag is loaded
+  6. LOAD_FAMILY (DRAFT again, version 4) the door tag family, only when no door tag is loaded
      - from the path the modeller gives, in the library of the release in use.
   7. DOOR TAGS, one level at a time. FILTER_ELEMENTS_BY_CATEGORY with
      category=Doors and that levelId, then TAG_ELEMENTS_IN_VIEW in that

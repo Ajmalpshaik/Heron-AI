@@ -56,3 +56,16 @@ proving client - a preview, or the try-once with the owner's Keep. `REPORT_DIVID
 **Signing, once PB1 to PB8 pass** (and OT1 to OT4 for the two form tools): each tool's proof is written by
 `tools/batch-prove.py` with the owner, and `heron-status` set to PROVEN in the same change - never by a session,
 and never on a working model.
+
+### Results, 2026-11-23 - Revit 2020, session 35764, scratch family `fp-scratch` (Metric Mechanical Equipment, `%TEMP%\heron-work\fam-prove`)
+
+| Row | Result |
+|---|---|
+| PB5 | **PASS.** Run once through `try-once` and KEPT by the owner (D-119/D-120), in one call of 74 rows: the L outline read back X 0 to 600, Y 0 to 500, Z 0 to 100 mm, 18 L; the slot X -100 to 700, Y 1000 to 1200, 15.141 L - neither refused as crossing itself. The same call made OT2's ring (one form, 1 outline and 1 hole) and OT3's 70 boxes |
+| PB6 | **PASS.** `validate --write --kept`, the figure-of-eight `0,3000; 400,3400; 400,3000; 0,3200`: `formCount` 0, refused *"Row 1: the profile crosses or touches itself - its side 1 (from 0,3000) and side 3 (from 400,3000) meet ..."*; rolled back |
+| PB7 | NOT RUN - the proof's positive was OT3 (`which=solid`, below); PB7's 20-id call and its 70 detail lines are still owed |
+| PB8 | **PASS.** `which=123456`: `formCount` 0, `elements` 0, refused *"Nothing was read. "123456" is not an id in this family - that is an element number ..."* |
+
+**Signed on the owner's word, 2026-11-23, before PB1-PB4 and PB7 ran** - Ajmal PS chose to prove and sign
+`CREATE_FAMILY_FORMS` and `REPORT_FAMILY_FORMS` now so a family build could go ahead; each proof is D-30's two legs
+above. PB1-PB4 are other tools and still owed; PB7 is still owed against `REPORT_FAMILY_FORMS` v7.

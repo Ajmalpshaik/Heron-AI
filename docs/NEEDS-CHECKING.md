@@ -1706,6 +1706,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pp.md`](needs-checking/group-pp.md)
 
+## Group PQ - the folded pattern-based panel: a tip point pushed off a point's plane, its Offset linked to Tip Depth, and the two divided-surface tools on Revit 2020 - DRAFT until proved (2026-11-22)
+
+**Its own file:** [`needs-checking/group-pq.md`](needs-checking/group-pq.md)
+
 ## Group PR - Ask to Delete: the switch off stops Revit's Delete box and a DRAFT's Keep or Discard - BUILT, NOT RUN IN REVIT (2026-11-23)
 
 **Its own file:** [`needs-checking/group-pr.md`](needs-checking/group-pr.md)
@@ -1713,6 +1717,14 @@ Step 6 is finished, and not before. At that point:
 ## Group PT - a quoted value in a `name=value; name=value` list keeps its semicolon - BUILT, NOT RUN IN REVIT (2026-11-23)
 
 **Its own file:** [`needs-checking/group-pt.md`](needs-checking/group-pt.md)
+
+## Group PS - a kept delete names what went: every deleted id's category and name, read before it went, and a form's own sketches counted together: `DELETE_ELEMENTS` version 3 - BUILT, NOT RUN IN REVIT (2026-11-23)
+
+**Its own file:** [`needs-checking/group-ps.md`](needs-checking/group-ps.md)
+
+## Group PU - LOAD_FAMILY version 4: each material compared with itself by id, never with another of its name - DRAFT until proved (2026-11-23)
+
+**Its own file:** [`needs-checking/group-pu.md`](needs-checking/group-pu.md)
 
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 

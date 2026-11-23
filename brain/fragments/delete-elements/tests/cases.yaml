@@ -7,6 +7,40 @@ positive:
       `deleted` still reports the full blast radius and the model is unchanged -
       which is how a deletion preview is built, and what Golden Rule 17 needs
 
+  # VERSION 3 - WHAT WENT IS NAMED, READ BEFORE IT WENT (row 5b-1996). Every
+  # case below FAILS on version 2, which had no `deletedWhat` or
+  # `deletedByCategory` and gave the extra elements as bare ids only.
+  # NEEDS-CHECKING Group PS.
+
+  - given: >
+      VERSION 3. A family document; 21 extrusions (forms) selected and deleted
+    expect: >
+      deleted holds every id Revit removed (241 on the owner's family of
+      2026-11-23), deletedWhat has one entry for EACH of them, and
+      deletedByCategory reads "241 deleted = 21 form(s) + their sketches",
+      with the forms' own sketches counted as sketch(es), sketch plane(s) and
+      sketch line(s) - their total equal to alsoWent. Each sketch entry in
+      deletedWhat names the form it went with. The run record's reply holds
+      every deletedWhat entry. On version 2: alsoWent 220 and nothing more
+
+  - given: >
+      VERSION 3. A host family; one unused nested family type selected and
+      deleted, and Revit takes one more element with it
+    expect: >
+      deletedWhat names BOTH ids - the type "asked for", and the other "went
+      with" the type's id, each with the category and name Revit gave it
+      before the delete - and deletedByCategory says "Asked for 1: ... Also
+      went 1: <that category> 1". Read in Revit, the category matches what
+      Revit's own Delete box listed for it
+
+  - given: >
+      VERSION 3. A floor with no wall attached, in a project; deleted
+    expect: >
+      the floor and its own sketch are named, but the sketch is NOT counted as
+      "their sketches" - that grouping is for a FORM only - so
+      deletedByCategory lists the sketch's parts by category under "Also went",
+      and never says "form(s)"
+
 negative:
   - given: 1 wall carrying 3 doors and 2 windows
     expect: >
@@ -56,6 +90,31 @@ negative:
     expect: >
       only the walls under the deleted roof are in detachedWalls; the walls
       under the other roof are not in attachedBefore at all, and stay attached
+
+  # VERSION 3 negatives (row 5b-1996).
+  - given: >
+      VERSION 3. 4 standalone ducts, nothing depending on them
+    expect: >
+      deletedWhat has exactly those 4 ids, each "Ducts | <type name> | asked
+      for"; deletedByCategory says "4 deleted. Asked for 4: Ducts 4. Nothing
+      else went." - no "form(s)", no sketch, nothing NOT READ. The tracking
+      case: a different delete, a different answer
+
+  - given: >
+      VERSION 3. The trial cannot read an id - Revit gave no element for it
+      before the delete
+    expect: >
+      that id is in deletedWhat as "NOT READ - ...", counted as NOT READ in
+      deletedByCategory, and given NO category. A category it could not read is
+      never claimed
+
+  - given: >
+      VERSION 3. The same delete, whole call rolled back afterwards (the
+      preview the delete box is built from)
+    expect: >
+      after the rollback every element is back, and the trial deletes inside
+      the call left nothing behind: Revit's own Delete box lists exactly the
+      count `deleted` reports, not double, and no extra warning appears
 
 second_route:
   - Revit's own undo stack: one Ctrl+Z must put back exactly what `deleted` listed
