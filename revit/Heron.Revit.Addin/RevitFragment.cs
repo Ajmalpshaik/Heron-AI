@@ -1923,7 +1923,7 @@ namespace Heron.Revit.Addin
             // first is what makes that cost a reopen instead of lost work. A
             // model never saved has no file to reopen, whatever IsModified says.
             //
-            // REVIT'S FLAG, READ HERE AND NOWHERE ELSE - row 5b-1996. Nothing
+            // REVIT'S FLAG, READ HERE AND NOWHERE ELSE - row 5b-1999. Nothing
             // above this line in Run opens a transaction, and a read run before
             // it is measured for exactly this (ReadFootprint.Modified). So when
             // a model just saved reads as changed, Revit marked it changed

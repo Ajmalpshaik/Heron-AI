@@ -319,7 +319,7 @@ namespace Heron.Revit.Addin
         /// `ask_needs_saved_model`, which RevitFragment.AskRefusal returns
         /// before anything runs.
         ///
-        /// IT NAMES WHEN THE FILE WAS WRITTEN - FRAGMENT-ISSUES row 5b-1996.
+        /// IT NAMES WHEN THE FILE WAS WRITTEN - FRAGMENT-ISSUES row 5b-1999.
         /// On 2026-11-23 the owner pressed Ctrl+S, the file read "written
         /// 15:52", and this refusal still said "changes that are not saved";
         /// a second save let the run through. The refusal reads Revit's own

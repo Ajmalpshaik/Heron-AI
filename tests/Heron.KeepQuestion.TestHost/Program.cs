@@ -530,7 +530,7 @@ namespace Heron.KeepQuestion.TestHost
         }
 
         /// <summary>
-        /// FRAGMENT-ISSUES 5b-1996: a family saved with Ctrl+S, its file
+        /// FRAGMENT-ISSUES 5b-1999: a family saved with Ctrl+S, its file
         /// written 15:52, still refused as "not saved" because Revit marked it
         /// changed after the save. The refusal now says so, with the file's
         /// time, and that saving once more is the fix. Asked by REFLECTION, so
@@ -540,7 +540,7 @@ namespace Heron.KeepQuestion.TestHost
         private static void UnsavedRefusalNamesTheFile()
         {
             Console.WriteLine();
-            Console.WriteLine("17. a model refused as unsaved says when its file was written (5b-1996)");
+            Console.WriteLine("17. a model refused as unsaved says when its file was written (5b-1999)");
             var refusal = typeof(HeronKeepQuestion).GetMethod("UnsavedRefusal",
                 System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
             Check(refusal != null, "HeronKeepQuestion.UnsavedRefusal is there");
