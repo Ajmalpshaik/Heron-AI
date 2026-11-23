@@ -1,0 +1,102 @@
+# NEEDS-CHECKING Group PQ (PQ8) - DIVIDE_FAMILY_SURFACE version 2 (DRAFT,
+# Group OT rows OT17) and SET_DIVIDED_SURFACE_LAYOUT version 2 (DRAFT, Group
+# PB rows PB3 and PB4) on REVIT 2020, on a scratch conceptual mass. Written
+# 2026-11-22 with no Revit. NOT RUN.
+#
+# The same arrangements as tools/jobs/ot-p1102-box-revit2024-2026-11-21.yaml
+# and tools/jobs/pb-pk-p1102-box-revit2024-2026-11-21.yaml, which target a
+# Revit 2024 model; this file is for the one Revit 2020 on the owner's PC.
+#
+# BEFORE RUNNING - the scratch mass, made once:
+#   1. Copy C:\ProgramData\Autodesk\RVT 2020\Libraries\US Metric\Mass\M_Box.rfa
+#      to %TEMP%\heron-work\pq\PQ Box 2020.rfa and open THAT copy in Revit
+#      2020 (never the library file itself). Its title is "PQ Box 2020".
+#   2. Read its one form's id: REPORT_FAMILY_FORMS in the chat. The id below,
+#      bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e, is the id that form read
+#      in P1102 Box - a copy of this same library file, upgraded to Revit
+#      2024. A unique id travels with the file, so it is EXPECTED to read the
+#      same here, but nobody has read it in Revit 2020: if it differs, put the
+#      id REPORT_FAMILY_FORMS gives in every `form:` below (four places).
+#   3. Nothing divided on it. Save it (Ctrl+S) so Revit's "not saved
+#      recently" box stays away.
+#
+#     python tools/batch-prove.py tools/jobs/pq-divided-surface-scratch-box-revit2020-2026-11-22.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/pq-divided-surface-scratch-box-revit2020-2026-11-22.yaml --session <2020 pid>
+#
+# Run from the checkout that holds these cards' code - the pull request's
+# branch until it is merged (the cards are unchanged by it, so main serves
+# too). Every run is ROLLED BACK: afterwards the family must hold no divided
+# surface - look.
+#
+# THE ARRANGEMENT.
+#   divide-family-surface (OT17): the top face, uGrid "20", vGrid "4", pattern
+#     "" (Revit's default). Negative: the same with uGrid "0" - REFUSED before
+#     anything is made ("not a whole number of U divisions"), surfaceId empty.
+#     Not "Not A Pattern", the negative the Revit 2024 file uses: the card
+#     checks a pattern only on the surface it has just made, so that name
+#     THROWS and the run is rolled back - and a thrown negative is not a proof
+#     (row 5b-1989).
+#   set-divided-surface-layout (PB3, PB4): the SETUP step divide-family-surface
+#     (MODIFY, itself DRAFT - proved by the job above, rule 5) divides the top
+#     face 20 by 4 inside the rolled-back run; then "u number=8; v number=6".
+#     Negative: dividedSurface = the BOX FORM's id - the form the surface is
+#     on, which must not be touched. A step that changes the model takes the
+#     run's own values, so the setup's values are in set: and again in
+#     negative-set: (a negative-set replaces the set).
+
+model: "PQ Box 2020 (a copy of Revit 2020 US Metric Mass\\M_Box.rfa in %TEMP%\\heron-work\\pq), one solid form, nothing divided, Revit 2020"
+
+defaults:
+  in: "PQ Box 2020"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: divide-family-surface
+    expect: divided
+    set:
+      form: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e"
+      face: "top"
+      uGrid: "20"
+      vGrid: "4"
+      pattern: ""
+    negative-set:
+      form: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e"
+      face: "top"
+      uGrid: "0"
+      vGrid: "4"
+      pattern: ""
+    note: >
+      OT17 on Revit 2020. Negative (uGrid "0"): refused "Nothing was divided.
+      "0" is not a U grid ..."; surfaceId and divided empty. Positive: divided reads "U
+      rule: Number 20; V rule: Number 4; Revit counts N U-gridlines and M
+      V-gridlines" - no count beside a rule - and a finding naming
+      NEEDS-CHECKING BV21. Write N and M down: Revit 2024 counted 7 and 23 on
+      its box; the 2020 box is the same file, so a different pair is a finding.
+
+  - fragment: set-divided-surface-layout
+    expect: applied
+    setup: [divide-family-surface]
+    set:
+      form: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e"
+      face: "top"
+      uGrid: "20"
+      vGrid: "4"
+      pattern: ""
+      dividedSurface: "only"
+      surfaceLayout: "u number=8; v number=6"
+    negative-set:
+      form: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e"
+      face: "top"
+      uGrid: "20"
+      vGrid: "4"
+      pattern: ""
+      dividedSurface: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e"
+      surfaceLayout: "u number=8; v number=6"
+    note: >
+      PB4 negative: refused naming the form as the one the surface is on, "not
+      the divided surface itself"; applied 0, readBack empty. PB3 positive:
+      applied 2; readBack's "U grid: ..." and "V grid: ..." rows carry no
+      gridline count; a row of its own "Revit counts: U-gridlines A before, B
+      now; V-gridlines C before, D now" - write A to D down; a finding names
+      BV21.

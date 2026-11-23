@@ -1706,6 +1706,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pp.md`](needs-checking/group-pp.md)
 
+## Group PQ - the folded pattern-based panel: a tip point pushed off a point's plane, its Offset linked to Tip Depth, and the two divided-surface tools on Revit 2020 - DRAFT until proved (2026-11-22)
+
+**Its own file:** [`needs-checking/group-pq.md`](needs-checking/group-pq.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

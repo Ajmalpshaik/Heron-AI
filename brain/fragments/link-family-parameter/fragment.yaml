@@ -21,7 +21,7 @@ capability: LINK_FAMILY_PARAMETER
 # yes to widening rather than a second card: "widen ... no duplicate tools,
 # same kind of work 2 tools no need". FRAGMENT-ISSUES row 5b-1497. Every other
 # path is version 3's, unchanged.
-version: 5
+version: 6
 source: OFFICIAL
 risk: MODIFY
 
@@ -44,6 +44,21 @@ risk: MODIFY
 # as the record of what it proved); its C# moved, so it is DRAFT again until
 # NEEDS-CHECKING Group OT is run (D-30) - on the owner's word that a
 # fragment found wrong may be changed even though it is proven.
+
+# VERSION 6 (2026-11-22) - A REFERENCE POINT TOO, still DRAFT. The folded
+# pattern-panel tip: PLACE_ADAPTIVE_POINTS version 2 pushes a reference point
+# off another point's plane ("on point 7 normal 300"), and that distance is
+# the point's Offset (BuiltInParameter.POINT_ELEMENT_OFFSET, "Offset" in
+# Properties), which the modeller links to a Length family parameter such as
+# "Tip Depth" with Associate Family Parameter on the point's Offset row.
+# Version 5 refused a reference point in `forms` by name; now its id (or
+# `selected`) is accepted, and every check is version 5's unchanged - the
+# same kind on both sides, CanElementParameterBeAssociated, read back before
+# and after, all or nothing. The answer names it "Reference Point id N", as
+# Properties does - in a by-category inventory too, where version 5 printed
+# its Revit category. No new input or output. Version 4's proof below is
+# kept as the record; this version is unproven until NEEDS-CHECKING Group PQ
+# (PQ5, PQ6) is run (D-30).
 
 purpose: >
   Links a parameter of elements ALREADY in the family open in the Family
@@ -110,6 +125,10 @@ purpose: >
   4: version 3's proof is kept as the record, and the tool is DRAFT until
   NEEDS-CHECKING Group NE proves it again.
 
+  **VERSION 6 (2026-11-22): A REFERENCE POINT TOO** - its Offset off the
+  plane it is hosted on, a folded pattern panel's tip, linked to a Length
+  family parameter such as "Tip Depth"; named "Reference Point id N".
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -157,6 +176,8 @@ contract:
     # DRAW_FAMILY_SYMBOLIC_LINES and DRAW_FAMILY_FILLED_REGION gave back;
     # anything else still refuses the call by name. The name and the binding
     # are version 3's, so a version 3 caller binds unchanged.
+    # VERSION 6: a reference point too, by the id PLACE_ADAPTIVE_POINTS gave
+    # back - for its Offset ("Offset=Tip Depth") off the plane it is hosted on.
     - name: forms
       type: string
       source: request
@@ -365,7 +386,10 @@ compatibility-note: >
   `ReferencePlane.GetPlane()`, `Edge.Tessellate()` and the
   EXTRUSION_START_PARAM and EXTRUSION_END_PARAM ids - the same on 2020 and
   2027 (api-surface, read 2026-11-20), and built against all eight releases
-  the same day.
+  the same day. Version 6's `ReferencePoint` is in RevitAPI.xml for every
+  release 2020 to 2027, and `BuiltInParameter.POINT_ELEMENT_OFFSET` is
+  summarised "Offset" in each (the reference packages' RevitAPI.xml, read
+  2026-11-22; the api-surface tool was not run - no assemblies cache).
 
 # 2026-11-01 - LINK_FAMILY_FORM_PARAMETER, SET_FAMILY_FORM_MATERIAL AND
 # LINK_NESTED_TYPE_PARAMETER WERE MERGED INTO THIS CARD (version 3) on the
@@ -395,6 +419,11 @@ compatibility-note: >
 #                                                       symbolic line's,
 #                                                       region's or nested
 #                                                       arrow's id (version 4)
+#   "link the tip point's offset to Tip Depth"       -> here, forms= the
+#                                                       reference point's id
+#                                                       (version 6); placing
+#                                                       the point is
+#                                                       PLACE_ADAPTIVE_POINTS
 #   "link the elbow's end angle to Bend Angle"       -> here, forms= its id
 #   "link this nested beam's length to Beam Length"  -> here, forms= ONE copy's id
 #   "link the nested type's width to Motor Width"    -> here, family= and type=
@@ -438,6 +467,9 @@ utterances:
   - link only this copy's visible to Pipe 2 Visible
   # VERSION 4 (2026-11-11): a family's 2D - the owner's words for the job.
   - link the arrow's visible to Show Arrow
+  # VERSION 6 (2026-11-22): a pattern panel's tip point.
+  - link the tip point's offset to Tip Depth
+  - drive this reference point's offset from a family parameter
   # MOVED 2026-11-01 from SET_FAMILY_FORM_MATERIAL, merged into this card.
   - link the body material to Body Material
   - make this extrusion steel

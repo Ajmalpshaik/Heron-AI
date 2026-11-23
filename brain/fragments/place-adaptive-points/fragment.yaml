@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,34 @@ semantic-identity: "place the adaptive points an adaptive component is clicked i
 kind: action
 domain: revit.families
 capability: PLACE_ADAPTIVE_POINTS
-version: 1
+# VERSION 2 (2026-11-22) - A POINT PUSHED OFF ANOTHER POINT'S PLANE, Revit's
+# Offset, and back to DRAFT. Asked for the folded pattern-based curtain panel
+# (Metric Curtain Panel Pattern Based, Triangle tile): a TIP point over the
+# cell's centroid, out along the panel's normal, so lines from the corners to
+# it and CREATE_CONCEPTUAL_FORM make a pyramid facet - and its distance
+# driven by a family length parameter (Tip Depth) through LINK_FAMILY_
+# PARAMETER version 6, so the tip follows every cell of a divided surface.
+# Version 1 hosted a point ON a point's plane only; nothing pushed one off it.
+# The centroid itself is built from what was there: a mid-point "on <edge> at
+# 0.5", a median by DRAW_FAMILY_POINT_CURVES, then "on <median> at 0.6667".
+# Two new forms, the old three unchanged:
+#   "on point <n or id> normal <mm>" - the host's plane that lies in the panel
+#     the placement points span is FOUND (a point on a line takes its planes
+#     from the line, so which one lies in the panel is Revit's to say); within
+#     half a degree, or refused naming each plane's angle. With fewer than
+#     three placement points the family's unhosted points give the panel
+#     (BV4 is open on whether a pattern-based template's points read as
+#     placement points). They must lie in one plane.
+#   "on point <n or id> xy|yz|xz U,V offset <mm>" - a plane named.
+# OFFSET READS WHAT WAS TYPED: Revit measures it along the plane's own normal,
+# which may face either way; where it reads the opposite it is set to the
+# number typed, so a parameter linked to it later holds the same number, and
+# the answer says which side that is - "the side from which placement points
+# 1, 2, 3 run anticlockwise". Refusals come back as `refused` with nothing
+# made; only Revit's own failures throw. Version 1 was PROVEN (the proof
+# block below, kept as the record of what it proved); its C# moved, so it is
+# DRAFT until NEEDS-CHECKING Group PQ is run (D-30).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -37,6 +64,15 @@ purpose: >
   A hosted point is a REFERENCE point that follows its host; placement and
   shape handle points are free ones, so the two are not mixed in one call.
 
+  **PUSHED OFF A POINT'S PLANE (version 2)** - Revit's Offset: "on point 7
+  normal 300" puts a point 300 mm off the plane of point 7 that lies in the
+  panel, along the panel's normal - a folded panel's TIP over a centre point,
+  so lines from the corners to it make a pyramid facet; "on point 1 xy 0,0
+  offset 300" pushes off a plane named. Offset reads the number typed, and
+  the answer says which side of the panel that is; a negative number is the
+  other side. Its Offset can then follow a family parameter such as Tip
+  Depth through LINK_FAMILY_PARAMETER.
+
   **ALL OR NOTHING**: every point's position, kind and number are read again;
   placement numbers must rise in the order given, and numbers that are not the
   next ones after the family's own are reported. A point where another
@@ -50,7 +86,8 @@ contract:
       type: Document
     # "X,Y,Z" in millimetres, semicolons between, in placement order -
     # "0,0,0; 1000,0,0; 1000,1000,0; 0,1000,0" - or hosted: "on <line id> at
-    # 0.5", "on point 1 yz 0,150".
+    # 0.5", "on point 1 yz 0,150"; or pushed off a point's plane (version 2):
+    # "on point 7 normal 300", "on point 1 xy 0,0 offset 300".
     - name: points
       type: string
       source: request
@@ -65,7 +102,8 @@ contract:
       type: string
     - name: placedPoints
       # Every point as read back - kind, placement number, id, position - on
-      # ONE line.
+      # ONE line. A point pushed off a plane has its Offset and side in
+      # `findings` too ("Pushed off: ...").
       role: result
       type: string
     - name: notAFamily
@@ -128,12 +166,29 @@ compatibility-note: >
   `Application.NewPointOnEdge` with a `PointLocationOnCurve`, or on
   `PointOnPlane.NewPointOnPlane` with `ReferencePoint.GetCoordinatePlaneReference
   XY/YZ/XZ` - all 2020 through 2027 (the RevitAPI XML, read 2026-10-02).
+  VERSION 2: `PointOnPlane.NewPointOnPlane(Document, Reference, XYZ, XYZ)` -
+  whose 2020 remark says a position off the plane sets the point's Offset -
+  `ReferencePoint.GetCoordinateSystem`, and `BuiltInParameter.
+  POINT_ELEMENT_OFFSET` ("Offset", measured along the plane's normal per
+  `PointOnPlane.Offset`'s remark) read the same 2020 through 2027 (the
+  nice3point RevitAPI XML, 2020.2.90 read 2026-11-22). Which way Offset runs
+  on each of a point's three planes, and which of a line-hosted point's
+  planes lies in the panel, are NEEDS-CHECKING PQ1, PQ2 and PQ9 - the call finds
+  both at run time rather than assuming either.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "add four adaptive points to this family"     -> here
 #   "draw lines between the adaptive points"      -> DRAW_FAMILY_POINT_CURVES
 #   "make a surface from these lines"             -> CREATE_CONCEPTUAL_FORM
+
+# ROUTING (2026-11-22, version 2 - the folded pattern panel)
+#
+#   "put a tip point out along the panel's normal" -> here, "on point <n> normal <mm>"
+#   "link the tip point's offset to Tip Depth"     -> LINK_FAMILY_PARAMETER
+#                                                    (version 6) - this MAKES the
+#                                                    point; that links its Offset
+#   "add a Tip Depth length parameter"             -> ADD_FAMILY_PARAMETERS
 
 
 # ROUTING (2026-10-13, the gap fill)
@@ -154,3 +209,6 @@ utterances:
   - place adaptive placement points
   - make these points adaptive
   - add a shape handle point to the adaptive component
+  # VERSION 2 (2026-11-22): the folded pattern panel's tip.
+  - put a tip point out along the panel's normal above the centre point
+  - push a reference point off the point's plane by 300 mm
