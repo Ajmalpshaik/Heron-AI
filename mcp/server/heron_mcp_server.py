@@ -2133,6 +2133,12 @@ def revit_change(capability: str = "", values: str = "",
     #     minutes. The reply's verdict says "Kept WITHOUT ASKING ... under the
     #     grant they gave in Revit at HH:MM" each time; nothing sent from here
     #     can give or extend it.
+    #   - A ";" inside one value of a "name=value; name=value" list - a family
+    #     type's `values` above all: that value goes in double quotes,
+    #     values=Note="x; y"; Width=600 (row 5b-1994). Said by _contract_lines,
+    #     in the IDictionary hint (heron_fragment.how_to_type) and the card's
+    #     note, and by the binder's refusal of an unquoted one. Not here: the
+    #     six always-loaded descriptions stood at 4,498 of 4,500.
     #   - Article 11's refusal (D-117) in full: a capability whose own file says
     #     DRAFT, or whose proof was taken before its code last changed, is
     #     refused before anything is sent, and the reply names it and its

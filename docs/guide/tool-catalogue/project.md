@@ -1021,7 +1021,7 @@ Changes Manage > Location and does Manage > Position > Rotate True North: moves 
 |---|---|
 | **Kind** | Changes project-wide settings (`ADMIN`) |
 | **Reached by** | asking in a Claude chat |
-| **You say** | **settings** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*" |
+| **You say** | **settings** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; a value holding a ";" goes in double quotes - Note="a; b" |
 | **You get** | changed, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | 2024 |
@@ -1050,7 +1050,7 @@ Changes Manage > Project Units: switches any unit type - length, area, volume, c
 |---|---|
 | **Kind** | Changes project-wide settings (`ADMIN`) |
 | **Reached by** | asking in a Claude chat |
-| **You say** | **settings** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*" |
+| **You say** | **settings** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; a value holding a ";" goes in double quotes - Note="a; b" |
 | **You get** | changed, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | 2024 |

@@ -658,7 +658,10 @@ def how_to_type(declared, need_name=None):
         return ('name=value, SEMICOLONS between - '
                 '"Walls=150; Structural Framing=50"')
     if re.search(r"^I?Dictionary<string,string>$", wanted, re.IGNORECASE):
-        return 'name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"'
+        # A VALUE HOLDING A SEMICOLON GOES IN DOUBLE QUOTES (row 5b-1994):
+        # HeronBindingNote.NamedEntries keeps it whole, and \" is a quote.
+        return ('name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; '
+                'a value holding a ";" goes in double quotes - Note="a; b"')
 
     if "IList<IList<XYZ>>" in wanted or "List<List<XYZ>>" in wanted             or "IList<List<XYZ>>" in wanted or "List<IList<XYZ>>" in wanted:
         # PAIRS, AND THE PIPE IS THE HALF THAT IS EASY TO MISS. Falling through

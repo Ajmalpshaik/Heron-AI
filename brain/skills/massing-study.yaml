@@ -51,7 +51,7 @@ purpose: >
      at the roof, a parapet or a plant deck are levels too; whether each
      counts in the gross floor area is step 5's question.
   3. THE MASSES - one loaded mass family per block, built by the
-     MASS-FAMILY-CREATION method, then LOAD_FAMILY (PROVEN) into the project
+     MASS-FAMILY-CREATION method, then LOAD_FAMILY (DRAFT again, version 4) into the project
      and PLACE_FAMILY_INSTANCES (merged 2026-11-01) at each block's insertion
      point on the ground level. Masses already in the model - in-place or loaded
      - are used as they are.

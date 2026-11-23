@@ -26,7 +26,28 @@ positive:
       a target like a project, and a shared nested family takes the file's
       version (FamilySource.Family)
 
+  - given: >
+      a project holding several materials of ONE name - say three named Poche,
+      one of them already blue - and a NEW family load
+    expect: >
+      every project material is compared with itself by element id, so
+      `materialsChanged` lists only a material whose own colour, transparency,
+      shininess, smoothness or appearance asset moved. A repeated name's line
+      reads "Poche (id N): ...", and `findings` says how many materials share
+      the name. A material the load brought in is in `materialsAdded`, never
+      in `materialsChanged` (version 4, row 5b-1995)
+
 negative:
+  - given: >
+      a project holding TWO materials of the same name, at different colours,
+      loaded with a NEW family that carries a material of that name
+    expect: >
+      `materialsChanged` 0 item(s) when neither project material's own reading
+      moved - two same-named materials are never compared with each other.
+      Versions 1 to 3 paired them by name and reported the colour of one as a
+      change to the other: 8 false changes on a Revit 2020 project on
+      2026-11-23 (row 5b-1995)
+
   - given: a family of the same name already in the target, with reload left off
     expect: >
       REFUSED by name, saying reload=true would overwrite it. Reloading is
