@@ -29,7 +29,9 @@ python mcp/client/heron_bridge_client.py try-once <fragment> [--view "Level 1"] 
 ```
 
 It runs the fragment once, for real, on the saved model in front; Revit redraws the view and asks the
-modeller **Keep or Discard**, and nothing stays unless they press Keep. It refuses anything but a DRAFT at
+modeller **Keep or Discard**, and nothing stays unless they press Keep - **unless the owner's *Ask to Delete*
+switch is off in that Revit** ([D-197](../../docs/decisions/D-197.md); `revit_health` says so): then it is kept
+with no box, so say so before you run it and ask them to look at it after. It refuses anything but a DRAFT at
 risk MODIFY, a version already kept, a model that is not in front and a model with unsaved changes
 ([D-121](../../docs/DECISIONS.md)) - say the refusal back in Revit words and stop; never work around one.
 One refusal has a remedy that is the chat's, not yours: *"Model 'X' is in use by another chat"* is
