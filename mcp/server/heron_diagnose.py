@@ -106,11 +106,12 @@ def _live_picture(components, notes):
         notes.append("the session list could not be read: %s" % exc)
 
     settings = configuration.load()
-    held, asks = {}, {}
+    held, asks, deletes = {}, {}, {}
     for b in live:
         try:
             held[b.pid] = bridge.switches_state(b)
             asks[b.pid] = bridge.ask_to_keep_state(b)
+            deletes[b.pid] = bridge.ask_to_delete_state(b)
         finally:
             closing = getattr(b, "close", None)
             if callable(closing):
@@ -128,8 +129,10 @@ def _live_picture(components, notes):
         writing_said_by=said_by)
     components.extend(rollup.components)
     switches = [("Revit %s, session %s" % (b.revit_version, b.pid),
-                 [HEALTH.ask_to_keep_line(asks[b.pid]),
-                  HEALTH.switches_line(held[b.pid])])
+                 [HEALTH.ask_to_keep_line(asks[b.pid])]
+                 # D-197: Ask to Delete, as revit_health says it - only when OFF.
+                 + ([HEALTH.ask_to_delete_line(False)] if deletes[b.pid] is False else [])
+                 + [HEALTH.switches_line(held[b.pid])])
                 for b in live]
     return {"rollup": rollup, "switches": switches}
 
