@@ -829,6 +829,106 @@ namespace Heron.Revit.Addin
     }
 
     /// <summary>
+    /// Turns Ask to Delete on or off - D-197, the owner's switch of 2026-11-23.
+    /// On, Revit shows its own two boxes: D-142's "Delete N elements?" before a
+    /// kept change that deletes, and D-119's Keep or Discard before a DRAFT
+    /// fragment's one run is kept. Off, it shows neither, and the chat asks the
+    /// modeller in words before any delete (Constitution Article 7).
+    ///
+    /// SAFE ON, LIKE ASK TO KEEP: it asks on the way OFF, once, and never on
+    /// the way on. HELD IN REVIT'S MEMORY, like D-166's three - ON whenever
+    /// Revit starts - so no file can turn the Delete box off. NO TRANSACTION
+    /// and no element.
+    /// </summary>
+    [Transaction(TransactionMode.Manual)]
+    [Regeneration(RegenerationOption.Manual)]
+    public sealed class AskToDeleteToggleCommand : IExternalCommand
+    {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            try
+            {
+                var asks = HeronPermissions.AsksInRevit();
+
+                if (asks)
+                {
+                    var asked = Question();
+                    var answer = HeronSwitchWindow.Ask(asked, HeronApplication.Log);
+
+                    // NULL IS NOT NO - WriteToggleCommand says why.
+                    if (!answer.HasValue) answer = AskPlainly(asked);
+
+                    if (answer != true)
+                    {
+                        HeronApplication.Log("Ask to Delete toggle: offered, declined. Still on.");
+                        return Result.Cancelled;
+                    }
+                }
+
+                var now = HeronPermissions.SetAsksInRevit(!asks);
+                HeronApplication.Log("Ask to Delete switch set to " + now + " from Heron's Settings.");
+                return Result.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("Ask to Delete toggle failed: " + ex);
+                message = "Could not change whether Revit asks before a delete, so it is as it was. " +
+                          "Revit said: " + ex.Message;
+                return Result.Failed;
+            }
+        }
+
+        /// <summary>
+        /// What turning the boxes off is asked as. Every line is true in the
+        /// code: a change is still one named undo step, and Ask to Keep is a
+        /// switch of its own that this does not touch.
+        /// </summary>
+        private static HeronSwitchQuestion Question()
+        {
+            return new HeronSwitchQuestion
+            {
+                Name = "Ask to Delete",
+                Icon = HeronApplication.KeepNotAskingIcon,
+                Headline = "Stop Revit's Delete box?",
+                What = "Revit stops asking before a delete, and before an unproven tool's first try is kept.",
+                Promises = new[]
+                {
+                    "The chat asks you in words before any delete.",
+                    "Ctrl+Z still undoes each change.",
+                },
+                Caution = "An unproven tool's first try is kept without you looking at it first.",
+                Note = "On again whenever Revit starts.",
+                TurnOn = "Stop asking",
+                Decline = "Keep asking",
+            };
+        }
+
+        /// <summary>
+        /// The same question with no window around it. TRUE to stop asking.
+        /// ENTER LANDS ON "KEEP ASKING" - the safe answer.
+        /// </summary>
+        private static bool AskPlainly(HeronSwitchQuestion asked)
+        {
+            var ask = new TaskDialog("Heron - " + asked.Name)
+            {
+                MainInstruction = asked.Headline,
+                MainContent = asked.What + "\n\n" + asked.Caution + "\n\n" +
+                              "The chat asks you in words before any delete, and Ctrl+Z still " +
+                              "takes each change back as one step. This is on again whenever " +
+                              "Revit starts.",
+                CommonButtons = TaskDialogCommonButtons.None,
+                AllowCancellation = true
+            };
+            ask.AddCommandLink(TaskDialogCommandLinkId.CommandLink1,
+                asked.TurnOn, "No Delete box, and no box for an unproven tool's first try.");
+            ask.AddCommandLink(TaskDialogCommandLinkId.CommandLink2,
+                asked.Decline, "Revit goes on asking. Nothing changes.");
+            ask.DefaultButton = TaskDialogResult.CommandLink2;
+            return ask.Show() == TaskDialogResult.CommandLink1;
+        }
+    }
+
+    /// <summary>
     /// Heron's Settings - D-150. Opens the window that holds the four switches
     /// the ribbon used to carry: Changes, Admin, Publish and Ask to Keep - and,
     /// since D-150's amendment of 2026-11-08, the Companion's.
@@ -859,8 +959,9 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// The five switches: the four in the order the ribbon carried them,
-        /// then the Companion's (D-150 and its amendment of 2026-11-08).
+        /// The six switches: the four in the order the ribbon carried them,
+        /// then Ask to Delete (D-197) and the Companion's (D-150 and its
+        /// amendment of 2026-11-08).
         /// </summary>
         internal static HeronSetting[] Settings()
         {
@@ -913,6 +1014,21 @@ namespace Heron.Revit.Addin
                     Icon = () => HeronPermissions.AsksBeforeKeeping() && !KeepHeldForJob()
                         ? HeronApplication.KeepAskingIcon : HeronApplication.KeepNotAskingIcon,
                     Toggle = () => Run(new AskToKeepToggleCommand()),
+                },
+                // THE SIXTH ROW - D-197: Ask to Delete, beside Ask to Keep. Held
+                // in this Revit's memory and ON at every start; safe ON, so its
+                // colour is Ask to Keep's.
+                new HeronSetting
+                {
+                    Name = "Ask to Delete",
+                    Line = () => HeronPermissions.AsksInRevit()
+                        ? "Revit asks before a delete, and before an unproven tool's first try is kept."
+                        : "Off: no Delete box. The chat asks you in words first.",
+                    IsOn = HeronPermissions.AsksInRevit,
+                    OnIsRisky = false,
+                    Icon = () => HeronPermissions.AsksInRevit()
+                        ? HeronApplication.KeepAskingIcon : HeronApplication.KeepNotAskingIcon,
+                    Toggle = () => Run(new AskToDeleteToggleCommand()),
                 },
                 // THE FIFTH ROW - D-150's amendment of 2026-11-08: the
                 // Companion's switch left the arrow under its ribbon button and
@@ -969,6 +1085,7 @@ namespace Heron.Revit.Addin
             TaskDialog.Show("Heron - Settings",
                 "The Settings window could not open.\n\n" + lines + "\n" +
                 "Changes, Admin and Publish are held in this Revit only, and are off " +
+                "again whenever Revit starts; Ask to Delete is held the same way, and is on " +
                 "again whenever Revit starts. Ask to Keep and the Companion are also in " +
                 HeronConfig.FilePath + ".");
         }

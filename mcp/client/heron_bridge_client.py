@@ -1143,6 +1143,24 @@ def ask_to_keep_state(bridge):
     return said if isinstance(said, bool) else None
 
 
+def ask_to_delete_state(bridge):
+    """
+    The owner's Ask to Delete switch (D-197) as this Revit holds it now: True
+    (Revit shows its Delete box, and a DRAFT's Keep or Discard), False (it
+    shows neither - the chat's yes in words is the only one), ASK_TO_KEEP_NOT_SENT
+    for an add-in older than the switch (which always asks), or None for no
+    usable answer. From `info`, lease-exempt. Read off a reply, NEVER put in a
+    request: no request sets it, and the add-in reads no such field.
+    """
+    reply = bridge.request("info")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return None
+    said = reply.get("askToDelete", _FIELD_MISSING)
+    if said is _FIELD_MISSING:
+        return ASK_TO_KEEP_NOT_SENT
+    return said if isinstance(said, bool) else None
+
+
 # The three switches, as `info` names them since D-166, and what
 # switches_state answers for an add-in from before that, which names none.
 SWITCH_FIELDS = ("changes", "admin", "publish")
@@ -2646,7 +2664,8 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
                 state = "NOT ROLLED BACK"
             # D-142: the delete box was asked first, and what the modeller chose.
             if reply.get("deleteAsking"):
-                print("    ASKED  %s" % reply.get("deleteAsking"))
+                print("    %s  %s" % ("ASKED" if reply.get("deleteAsked") is not False
+                                      else "NOT ASKED", reply.get("deleteAsking")))
             print("    %s  %s" % (state, verdict))
             outward = outward_not_taken_back(name, operation, reply)
             if outward:
@@ -2893,8 +2912,9 @@ def cmd_try_once(name, values=None, session=None, in_document=None):
 
     print("Running %s once on the model in front of Revit %s (session %s)."
           % (name, bridge.revit_version, bridge.pid))
-    print("When it is done Revit shows the result and asks Keep or Discard.")
-    print("Nothing stays unless the modeller presses Keep.")
+    print("When it is done Revit shows the result and asks Keep or Discard, and")
+    print("nothing stays unless the modeller presses Keep - unless the owner's Ask to")
+    print("Delete switch is off in that Revit, when it is kept with no box (D-197).")
 
     # NEVER SENT TWICE: if the modeller pressed Keep, a resend would keep it
     # again. And the wait covers the person as well as the work.
@@ -2917,10 +2937,16 @@ def cmd_try_once(name, values=None, session=None, in_document=None):
         print("    %s" % reply.get("message"))
         return 1
 
+    # D-197: ASK TO DELETE IS OFF IN THAT REVIT - the run was kept with no box,
+    # and nobody looked at it. Said, and recorded as exactly that: the record's
+    # positive phase says the modeller was NOT asked, so it is never read as a
+    # person's Keep (D-119). Whether it counts towards a proof is the signer's.
+    unasked = reply.get("asked") is not True and reply.get("askSkipped") == "askToDeleteOff"
+
     # AN ADD-IN OLDER THAN THE BOX reads "ask" as "not true" - so it ran the
     # change and ROLLED IT BACK, the D-55 preview, and asked nobody. That is
     # safe, and it is not a try-once run, so it is said and not recorded.
-    if reply.get("asked") is not True:
+    if reply.get("asked") is not True and not unasked:
         print("This Revit's Heron add-in is older than the Keep or Discard box. It ran")
         print("the change as a preview and rolled it back - %s"
               % (reply.get("verdict") or "no verdict was sent"))
@@ -2932,7 +2958,12 @@ def cmd_try_once(name, values=None, session=None, in_document=None):
     kept = reply.get("kept") is True and reply.get("applied") is True
     today = time.strftime("%Y-%m-%d")
 
-    if kept:
+    if unasked:
+        told = ("run ONCE on the live model on %s with NO Keep or Discard box - the owner's "
+                "Ask to Delete switch was off in Revit (D-197) - so NOBODY LOOKED at the "
+                "result in Revit; %s" % (today, "Revit kept it as one undo step" if kept
+                                         else "nothing was kept"))
+    elif kept:
         told = ("run ONCE on the live model through the Keep or Discard box in Revit "
                 "(D-119) on %s; the modeller saw the result in Revit and pressed Keep, "
                 "and Revit kept it as one undo step" % today)
@@ -2960,6 +2991,9 @@ def cmd_try_once(name, values=None, session=None, in_document=None):
         "source_hash": version,
         "kept": kept,
         "answer": answer,
+        # D-197: false when Ask to Delete was off and no box came up - the run
+        # was kept without anybody seeing it, and the record says so.
+        "asked": not unasked,
         "rolled_back": reply.get("rolledBack"),
         "view_refreshed": reply.get("viewRefreshed"),
         "verdict": reply.get("verdict"),
@@ -2990,7 +3024,14 @@ def cmd_try_once(name, values=None, session=None, in_document=None):
         print_items(key, reply)
     print("")
     print("Recorded %s" % record_path)
-    if kept:
+    if kept and unasked:
+        print("NOBODY WAS ASKED: Ask to Delete is off in that Revit, so the run was kept")
+        print("without the Keep or Discard box. Look at it in Revit now - Ctrl+Z takes it")
+        print("back as one step. It is still DRAFT; whether this run counts as its proof's")
+        print("positive case is the signer's call. The negative case is its own run:")
+        print("  python mcp/client/heron_bridge_client.py validate %s --write --kept ..."
+              % name)
+    elif kept:
         print("It is still DRAFT. The kept run is the positive case of its proof")
         print("(D-120); the negative case is its own run, rolled back:")
         print("  python mcp/client/heron_bridge_client.py validate %s --write --kept ..."
@@ -3705,6 +3746,15 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
             return 2
         kept_phase = dict(once.get("phase") or {})
         kept_phase["phase"] = "positive"
+        # D-197: A RUN KEPT WITH NO BOX - Ask to Delete was off - is used, and
+        # said: nobody looked at it in Revit, so the signer must know before
+        # signing that this positive case is the run, not a person's Keep.
+        if once.get("asked") is False:
+            kept_phase["asked"] = False
+            print("NOTE: the kept run of %s was kept with NO Keep or Discard box (Ask to"
+                  % name)
+            print("Delete was off, D-197) - nobody looked at it in Revit. The proof drafted")
+            print("from this says so; the signer decides whether it stands as the positive.")
 
     # BOTH LEGS, because row 71's case was a value typed into the NEGATIVE that
     # the fragment never declared - `--set maxSteps=200` against

@@ -446,6 +446,11 @@ def revit_health() -> str:
             # which on some PCs is not the one Revit reads (Q-70).
             asks = bridge.ask_to_keep_state(b)
             lines.append("      " + health.ask_to_keep_line(asks))
+            # AND ASK TO DELETE (D-197), said only when it is OFF - the one state
+            # in which Revit will NOT ask before a delete, so the chat must ask in
+            # words first. On, older or unread, Revit asks as it always has.
+            if bridge.ask_to_delete_state(b) is False:
+                lines.append("      " + health.ask_to_delete_line(False))
             # AND CHANGES, ADMIN AND PUBLISH, as this Revit holds them (D-166) -
             # in its memory, set only in its Settings window, so its own word
             # is the only one there is. From `info` again; claims nothing.

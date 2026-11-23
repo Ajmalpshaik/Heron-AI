@@ -751,6 +751,16 @@ namespace Heron.Revit.Addin
             // answer.
             var askToKeep = apply && HeronPermissions.AsksBeforeKeeping();
 
+            // D-197: ASK TO DELETE, read ONCE for the whole request - so D-142's
+            // second run is never decided by a different answer than its first.
+            // Off, Revit shows neither of its own two boxes: D-142's Delete box
+            // and D-119's Keep or Discard before a DRAFT's one run is kept. The
+            // chat's yes in words, asked before the call, is then the only one.
+            // Read from the switch alone, never from the request (Golden Rule 19).
+            var asksInRevit = HeronPermissions.AsksInRevit();
+            var deletedUnasked = 0;
+            var keptUnasked = false;
+
             // Said in the question, not decided by it: what a publish sent out
             // of the model - an export, a save - is done, and Discard cannot
             // take it back. The gate already chose by this same name.
@@ -1273,8 +1283,9 @@ namespace Heron.Revit.Addin
                     // deletes the same set. See DeleteGate.
                     bool deleteAgain;
                     var deleteRefused = DeleteGate(app, target, name, request, apply || asking,
-                                                   sendsOut, changed, described, footprint,
-                                                   group, watch, ref confirmed, out deleteAgain);
+                                                   asksInRevit, sendsOut, changed, described,
+                                                   footprint, group, watch, ref confirmed,
+                                                   out deleteAgain, out deletedUnasked);
                     if (deleteRefused != null) return deleteRefused;
                     if (deleteAgain)
                     {
@@ -1305,7 +1316,20 @@ namespace Heron.Revit.Addin
                     // AFTER the dialog check above: a job a Revit dialog
                     // stopped is rolled back, and nobody is asked to keep it.
                     Func<bool> putBack = null;
-                    if (asking || askToKeep)
+
+                    // D-197: ASK TO DELETE OFF - A DRAFT'S ONE RUN IS KEPT WITH NO
+                    // BOX, as the owner chose on 2026-11-23. Only the DRAFT's own
+                    // box: a chat's keep while Ask to Keep is on is still asked
+                    // below, because that is a switch of its own (askToKeep is
+                    // never true on a DRAFT's run - its `apply` is "ask"). The
+                    // reply says nobody was asked (WithUnasked), so its run
+                    // record is never read as a modeller's Keep.
+                    if (asking && !asksInRevit)
+                    {
+                        apply = true;
+                        keptUnasked = true;
+                    }
+                    else if (asking || askToKeep)
                     {
                         // ROW 5b-1824: WHAT WAITS FOR KEEP - the save the run asked
                         // for, made after the group and only after a Keep - so the
@@ -1464,9 +1488,42 @@ namespace Heron.Revit.Addin
             verdict = SaveAfterTheGroup(verdict, globals.__heron, app, target, name, risk,
                                         sendsOut, apply, groupKept,
                                         rolledBack != null && rolledBack.Held, answered);
+            // D-197: WHAT ASK TO DELETE OFF LET THROUGH, said on the reply - a
+            // delete Revit did not ask about, and a DRAFT's run nobody looked at.
+            if (deletedUnasked > 0 && apply) verdict = WithDeleteUnasked(verdict, deletedUnasked);
+            if (keptUnasked) verdict = WithUnasked(verdict, apply && groupKept);
             if (keptUnderGrant != null) return WithGrant(verdict, keptUnderGrant);
             return answered != null ? WithAnswer(verdict, answered, refreshed) : verdict;
         }
+
+        /// <summary>
+        /// D-197: a DRAFT's one run kept with no Keep or Discard box, because
+        /// the owner's Ask to Delete switch is off. `asked` is false and
+        /// `askSkipped` names the switch, so the run record and the try-once
+        /// client never read it as the modeller's Keep (D-119's positive case
+        /// was a person who had seen the result; here nobody had).
+        /// </summary>
+        private static string WithUnasked(string answer, bool kept)
+        {
+            if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
+                return answer;
+
+            var said = kept
+                ? "Revit did not ask: Ask to Delete is off in Heron's Settings, so this unproven "
+                  + "tool's one run was KEPT without the Keep or Discard box. Nobody has looked at "
+                  + "it in Revit yet - check it there; Ctrl+Z takes it back as one step."
+                : "Revit did not ask: Ask to Delete is off in Heron's Settings. Nothing was kept.";
+
+            return answer.Substring(0, answer.Length - 1)
+                 + "," + Json.Bool("asked", false)
+                 + "," + Json.Str("askSkipped", AskSkippedBySwitch)
+                 + "," + Json.Bool("kept", kept)
+                 + "," + Json.Str("asking", said) + "}";
+        }
+
+        /// <summary>D-197: the value of `askSkipped` - the switch that skipped Revit's box.</summary>
+        internal const string AskSkippedBySwitch = "askToDeleteOff";
+
 
         /// <summary>
         /// What the last write changed, element by element, as the run

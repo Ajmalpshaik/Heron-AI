@@ -525,6 +525,43 @@ namespace Heron.Core
             return HeronConfig.Load().GetBool(AskBeforeKeepingKey, false);
         }
 
+        // ASK TO DELETE - D-197. True when Revit starts, because the field is
+        // set so here, and that IS the rule: the owner's answer of 2026-11-23,
+        // "one switch, boxes on". Held in memory like D-166's three and for
+        // the same reason, the other way round: its risky side is OFF, so no
+        // file may hold it, or a program writing heron.config could turn
+        // Revit's Delete box off. HeronConfig declares no key for it.
+        private static bool _asksInRevit = true;
+
+        /// <summary>
+        /// Whether Revit shows its own two boxes - D-197, the Ask to Delete
+        /// switch in Heron's Settings: D-142's "Delete N elements?" before a
+        /// kept change that deletes, and D-119's Keep or Discard before a DRAFT
+        /// fragment's one run is kept. ON whenever Revit starts.
+        ///
+        /// OFF, NEITHER BOX IS SHOWN: a kept change that deletes is kept as it
+        /// ran, and a DRAFT's one run is kept with nobody asked. The chat's
+        /// yes in words, asked before the call (Constitution Article 7), is
+        /// then the only yes. Ask to Keep is a switch of its own and is not
+        /// read here.
+        /// </summary>
+        public static bool AsksInRevit()
+        {
+            lock (SwitchLock) return _asksInRevit;
+        }
+
+        /// <summary>
+        /// Turns Ask to Delete on or off, and says what it now is - D-197.
+        /// Only the Settings window's own command calls it, after a person
+        /// pressed it and, on the way off, answered the question. Nothing on
+        /// the wire may (Golden Rule 19), and no file is written.
+        /// </summary>
+        public static bool SetAsksInRevit(bool asks)
+        {
+            lock (SwitchLock) _asksInRevit = asks;
+            return asks;
+        }
+
         /// <summary>
         /// Turns writing on or off, and says what it now is.
         ///

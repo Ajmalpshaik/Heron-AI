@@ -259,14 +259,14 @@ ASK_TO_KEEP_ON = (
     "Ask to Keep is ON in this Revit right now: a change made through revit_change "
     "is shown in Revit's Keep or Discard box and kept only on Keep. Different for: "
     "a job the modeller chose in that box to keep the rest of, and a change Revit "
-    "counted nothing in (both kept unasked); a delete (asked in its own Delete box "
+    "counted nothing in (both kept unasked); a delete while Ask to Delete is on (asked in its own Delete box "
     "instead); an export, save or sync (already done when the box opens - Discard "
     "cannot take it back); a dry run (rolled back, so never kept and never asked "
     "about); and revit_apply_move (keeps the preview it showed, with no box).")
 ASK_TO_KEEP_OFF = (
     "Ask to Keep is off in this Revit right now: a change made through revit_change "
     "is kept at once, with no Keep or Discard box, as one entry in Revit's Undo "
-    "list. Different for: a delete (still asked first, in its own Delete box); an "
+    "list. Different for: a delete while Ask to Delete is on (still asked first, in its own Delete box); an "
     "export, save or sync (Undo cannot take back what has left the model); and a "
     "dry run (rolled back, so never kept and never asked about).")
 ASK_TO_KEEP_OLDER = (
@@ -335,6 +335,39 @@ def ask_to_keep_line(asks):
     if isinstance(asks, str) and asks == ASK_TO_KEEP_NOT_SENT:
         return ASK_TO_KEEP_OLDER
     return ASK_TO_KEEP_NOT_READ
+
+
+# THE OWNER'S ASK TO DELETE SWITCH (D-197), as one Revit said it - one line
+# under each connected Revit, beside Ask to Keep's. ON at every Revit start.
+# Off, Revit shows neither its Delete box (D-142) nor a DRAFT's Keep or Discard
+# (D-119), and the chat's yes in words, asked BEFORE the call, is the only one.
+ASK_TO_DELETE_ON = (
+    "Ask to Delete is ON in this Revit right now: a change that deletes is asked in "
+    "Revit's own Delete box, and an unproven tool's one run in its Keep or Discard box.")
+ASK_TO_DELETE_OFF = (
+    "Ask to Delete is OFF in this Revit right now: Revit shows NO Delete box and no box "
+    "for an unproven tool's one run. Ask the modeller in words, and wait for a yes, "
+    "BEFORE any change that deletes (Constitution Article 7); say before trying an "
+    "unproven tool that it will be kept with no box.")
+ASK_TO_DELETE_OLDER = (
+    "This Revit's Heron add-in is older than Ask to Delete, so it always shows its "
+    "Delete box.")
+ASK_TO_DELETE_NOT_READ = "Could not read whether this Revit shows its Delete box."
+
+
+def ask_to_delete_line(asks):
+    """
+    The line for what one Revit said of Ask to Delete - what
+    heron_bridge_client.ask_to_delete_state returned. `is`, not `==`, as
+    ask_to_keep_line has it.
+    """
+    if asks is True:
+        return ASK_TO_DELETE_ON
+    if asks is False:
+        return ASK_TO_DELETE_OFF
+    if isinstance(asks, str) and asks == ASK_TO_KEEP_NOT_SENT:
+        return ASK_TO_DELETE_OLDER
+    return ASK_TO_DELETE_NOT_READ
 
 
 # WHICH SETTINGS FILE A REVIT READS, AND WHETHER THIS CHAT'S COPY IS THE SAME -

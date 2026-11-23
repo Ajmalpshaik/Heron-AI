@@ -29,7 +29,7 @@ Read out of the add-in's own ribbon code, so it is what Revit shows:
 | › Free this model (in its drop-down) | Let another chat use the model in front now. |
 | › Commands (in its drop-down) | Show or hide your saved Heron commands. |
 | › Activity (in its drop-down) | Show or hide Heron's recent changes, with Select, Zoom and Undo. |
-| **Settings** | Turn Heron's switches on or off: Changes, Admin, Publish, Ask to Keep, Companion. |
+| **Settings** | Turn Heron's switches on or off: Changes, Admin, Publish, Ask to Keep, Ask to Delete, Companion. |
 | **Companion** | Open the Companion page in your browser. It only shows, never changes. |
 
 Not on a modeller's ribbon: the All tools product's **Heron** tab, **Tools** panel (`revit/Heron.Tools/HeronToolsApplication.cs`); the Heron Doc product's **Heron Doc** tab, **Proof** panel (`revit/Heron.Doc/HeronDocApplication.cs`). Each is a `PROVING` product in `platform/heron-products.json` - a shape proof with one button that does nothing - and the installer does not offer it.
