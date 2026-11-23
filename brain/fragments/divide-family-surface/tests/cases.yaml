@@ -42,8 +42,17 @@ negative:
   - given: face "front" again on the same form
     expect: refused - that face is already divided, naming its surface - nothing changed
 
-  - given: pattern "Not A Pattern"
-    expect: refused naming the patterns and panels Revit offers - nothing kept
+  - given: >
+      VERSION 3 (row 5b-1989). The same mass, a face not yet divided, uGrid
+      "4", vGrid "4", pattern "Not A Pattern"
+    expect: >
+      refused, not failed: `refused` reads "Nothing was divided. No pattern or
+      panel called "Not A Pattern" is offered for this surface - Revit offers
+      ..." naming the patterns and panels Revit offers, `surfaceId` and
+      `divided` empty, and NO divided surface left on that face - the call
+      itself succeeds. LOOKED AT in the Family Editor: the face is not divided,
+      and dividing it next with a real pattern is not refused as "already
+      divided"
 
   - given: a plain Generic Model family with an extrusion's id
     expect: refused - not a mass, adaptive or pattern-based family - nothing made

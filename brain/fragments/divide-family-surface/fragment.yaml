@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,24 @@ semantic-identity: "divide a face of a form in a mass or conceptual family into 
 kind: action
 domain: revit.families
 capability: DIVIDE_FAMILY_SURFACE
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 3 (2026-11-23) - A PATTERN REVIT DOES NOT OFFER IS REFUSED, NOT
+# THROWN, and back to DRAFT. FRAGMENT-ISSUES row 5b-1989, found by reading,
+# not run: the pattern can be checked only against the surface's own
+# GetValidTypes, so version 2 looked it up after DividedSurface.Create and an
+# unknown name THREW - the whole call failed and was rolled back, which is a
+# failure, not D-30's refusal, so Group OT's Revit 2024 negative (pattern "Not
+# A Pattern", expected refused) could not pass as written. Now the division is
+# made inside a SubTransaction, the pattern is looked up the moment the surface
+# exists, and a name Revit does not offer - or one naming two types - rolls the
+# SubTransaction back and comes back as `refused`: "Nothing was divided. No
+# pattern or panel called ... - Revit offers ...". Everything else is version
+# 2's, in the same order. Version 2 was PROVEN on Revit 2020 (the proof block
+# below, kept as the record of what it proved); its C# moved, so it is DRAFT
+# again until NEEDS-CHECKING Group PY is run (D-30).
 
 # VERSION 2 (2026-11-20) - EACH RULE AS ASKED, REVIT'S GRIDLINE COUNTS UNDER
 # ITS OWN NAMES, and back to DRAFT. FRAGMENT-ISSUES row 5b-303: on a Revit
@@ -52,7 +67,9 @@ purpose: >
 
   **THE PATTERN OR PANEL, OPTIONAL**: a tile pattern by name - Rectangle,
   Hexagon - or a loaded pattern-based panel family's type, "Panel : Glass",
-  chosen only from the types Revit lists as valid for this surface.
+  chosen only from the types Revit lists as valid for this surface. A name
+  Revit does not offer is refused, naming what it does offer, and nothing is
+  kept (version 3).
 
   **READ BACK, ALL OR NOTHING**: the surface's host, each grid's layout and
   value, its gridline counts and its type are read again; one that does not
@@ -99,7 +116,9 @@ contract:
       role: accounting
       type: bool
     - name: refused
-      # Why nothing was divided, in plain words. Empty when the call ran.
+      # Why nothing was divided, in plain words - a pattern Revit does not
+      # offer among them, naming what it offers (version 3). Empty when the
+      # call ran.
       role: accounting
       type: string
     - name: findings
