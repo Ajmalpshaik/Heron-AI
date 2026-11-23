@@ -303,14 +303,12 @@ utterances:
   - what is the insulation thickness of this duct
   - get the size parameter
   - which ones have no value
-  # ADDED 2026-09-20. Measured: this sentence reached REPOINT_VIEW_REFERENCE, a
-  # MODIFY. The READ it beat was FIND_UNTAGGED_ELEMENTS, and that is the WRONG
-  # owner - a tag is an annotation, a Mark is an instance parameter, and an
-  # element can have one without the other. No capability in the library reads
-  # Mark by name; this one declares 'what is the Mark on these' and 'which ones
-  # have no value', which together ARE this question. Mark is an identifier and
-  # is never bulk-written, so a READ owning the sentence is the safe end of it.
-  - what is missing its mark
+  # MOVED BACK UP 2026-11-23 (row 5b-1985, issue #1260): sitting fourteenth, past
+  # the re-ranker's eight, "please read the mark values for me" reached
+  # SELECT_BY_PARAMETER_VALUE on both re-ranked backends. "what is missing its
+  # mark" is the line it pushed to ninth; it is declared, so its own words still
+  # reach this card by identity.
+  - read the mark values
   # ADDED 2026-09-20, ON THE OWNER'S EXPLICIT CALL, AND ALL FIVE ARE THE SAME
   # JUDGEMENT: this fragment owns the questions that ask for ONE VALUE OFF AN
   # ELEMENT. Each was measured answering a fragment that CHANGES THE MODEL -
@@ -335,12 +333,19 @@ utterances:
   # acted.
   - what size is this duct
   - what is the diameter of this pipe
+  # ADDED 2026-09-20. Measured: this sentence reached REPOINT_VIEW_REFERENCE, a
+  # MODIFY. The READ it beat was FIND_UNTAGGED_ELEMENTS, and that is the WRONG
+  # owner - a tag is an annotation, a Mark is an instance parameter, and an
+  # element can have one without the other. No capability in the library reads
+  # Mark by name; this one declares 'what is the Mark on these' and 'which ones
+  # have no value', which together ARE this question. Mark is an identifier and
+  # is never bulk-written, so a READ owning the sentence is the safe end of it.
+  - what is missing its mark
   - what workset is this on
   - what is the airflow in this duct
   - what is the flow rate in this pipe
   - what level are they on
   - which level is each duct on
-  - read the mark values
   # REMOVED 2026-11-01 - "what parameters does this duct have". This card's
   # own routing table sends it to REPORT_PARAMETER_INVENTORY, which declares
   # it too, so the two declarations tied in the identity table and the

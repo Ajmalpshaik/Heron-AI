@@ -350,6 +350,10 @@ utterances:
   - find all elements whose type name contains
   - filter by parameter value
   - show me everything with fire rating 2hr
+  # MOVED UP 2026-11-23 (row 5b-1951, issue #1176) from the end, into the eight
+  # the re-ranker reads (D-134): at the end it moved no select-by-name request
+  # on any backend. "select all the curtain walls of one type" is ninth now.
+  - select a grid or a level by its name
   - select every wall of one type
   - select all the curtain walls of one type
   - select all the pipes of one type by its name
@@ -388,4 +392,8 @@ utterances:
   # so the eight the re-ranker reads (D-134) are unchanged; the row's own
   # sentence is not declared.
   - select the level with this name
-  - select a grid or a level by its name
+  # ADDED 2026-11-23 (row 5b-1951, issue #1176) - the owner's own sentence from
+  # his PC, declared: with the line above in the eight it still reached
+  # FILTER_ELEMENTS_BY_CATEGORY, READ_ELEMENT_LEVEL, SET_VIEW_WORK_PLANE and
+  # CREATE_TRUSS on the four backends.
+  - select the level named Level 2

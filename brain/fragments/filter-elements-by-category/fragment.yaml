@@ -536,6 +536,11 @@ utterances:
   - how many ducts are there
   - list every duct in the model
   - find all elements of a category
+  # ADDED 2026-11-23 (row 5b-1924, issue #1127): "pick all the air terminals"
+  # reached SET_AIR_TERMINAL_FLOW and "select all the duct fittings" FIT_MEP_JOINTS
+  # - writes named after the category. Inside the re-ranker's eight (D-134);
+  # OST_DuctCurves, ninth now, is declared and still reached by identity.
+  - select all the air terminals and duct fittings
   - OST_DuctCurves
   - all the pipes on level 2
   - which walls are on this level

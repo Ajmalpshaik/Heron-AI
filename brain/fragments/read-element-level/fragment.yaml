@@ -139,6 +139,9 @@ utterances:
   - what is the offset from the level
   - are these on the right level
   - what is the elevation of this
+  # ADDED 2026-11-23 (row 5b-1944, issue #1169): a run's offset asked by its
+  # Revit name reached CREATE_ROOM_ELEVATIONS, a write. Inside the eight.
+  - what is the middle elevation of these pipes
   - how high is this above the floor
 
 # THE LAST TWO WERE ADDED 2026-09-01 RATHER THAN BUILDING A FRAGMENT.
@@ -188,3 +191,6 @@ utterances:
   - which level are these floors on
   - is this floor on level 3
   - what level do these floors belong to
+  # ADDED 2026-11-23 (row 5b-1944, issue #1169) - the row's own question; it
+  # reached OFFSET_ELEMENTS, a write that moves runs sideways, on three backends.
+  - what is the offset of this duct
