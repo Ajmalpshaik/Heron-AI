@@ -450,7 +450,7 @@ What a `.rvt` file actually is - which Revit saved it, whether it is a central o
 2. In a Claude chat, ask in your own words, for example *"what version is this Revit file"*. Say the values under **You say** in the same sentence.
 3. Heron answers in the chat. Nothing in the model changes.
 
-Other ways to ask: *"is this a central or a local"* · *"did their changes reach the central"*
+Other ways to ask: *"what version is the rvt file at this path"* · *"is this a central or a local"*
 
 <a id="reload-images"></a>
 

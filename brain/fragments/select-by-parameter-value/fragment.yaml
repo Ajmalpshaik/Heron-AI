@@ -389,3 +389,10 @@ utterances:
   # sentence is not declared.
   - select the level with this name
   - select a grid or a level by its name
+  # ADDED 2026-11-23 (row 5b-1951, issue #1176) - the owner's own sentence from
+  # his PC, declared: it still reached FILTER_ELEMENTS_BY_CATEGORY,
+  # READ_ELEMENT_LEVEL, SET_VIEW_WORK_PLANE and CREATE_TRUSS on the four
+  # backends. Moving the line above into the eight was measured and taken back:
+  # it sent three curtain-wall selections and "what is the fire rating of these
+  # doors" to writes on both re-ranked backends.
+  - select the level named Level 2
