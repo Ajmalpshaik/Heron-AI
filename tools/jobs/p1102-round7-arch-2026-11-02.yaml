@@ -55,9 +55,8 @@ jobs:
     set: {level: "01 - Entry Level", wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", points: "0,-60000,0; 6000,-60000,0; 6000,-56000,0; 0,-56000,0; 0,-60000,0", height: 3000, structural: false, levelId: "01 - Entry Level", placeKind: "rooms", planViewId: "FloorPlan: 01 - Entry Level"}
     negative-set: {level: "01 - Entry Level", wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", points: "0,-60000,0; 6000,-60000,0; 6000,-56000,0; 0,-56000,0; 0,-60000,0", height: 3000, structural: false, levelId: "Parapet", placeKind: "rooms", planViewId: "FloorPlan: 01 - Entry Level"}
 
-  - fragment: convert-cad-to-directshape
-    write: true
-    setup: [filter-elements-by-category, set-selection]
-    expect: created
-    set: {category: "Roofing Detail.dwg", inViewOnly: "Roofing Termination Detail"}
-    negative-set: {category: "Walls", levelId: "01 - Entry Level"}
+  # REMOVED 2026-11-23 (row 5b-1977): this job gave ONE `category` to both the
+  # selection (an import's name, "Roofing Detail.dwg") and the DirectShapes'
+  # category, and its negative swapped to `levelId` rather than `inViewOnly` - so
+  # it ran no case a model could judge. fix-p1102-arch-revit2020-2026-11-21.yaml
+  # keeps the two apart.

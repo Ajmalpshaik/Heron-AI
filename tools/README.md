@@ -1173,7 +1173,14 @@ python tools/batch-prove.py my-jobs.yaml                        # run it against
 python tools/batch-prove.py my-jobs.yaml --only set-mep-size
 python tools/batch-prove.py my-jobs.yaml --release 2025 --session <pid>   # PROVEN ones, on one more release
 python tools/batch-prove.py my-jobs.yaml --unattended --session <pid> --report night.json   # overnight
+python tools/batch-prove.py my-jobs.yaml --replace              # go on over a record or unsigned draft already there
 ```
+
+**It names what a run would replace and stops** (row 5b-1978): one run record and one proof draft are kept
+per card, so a second leg, a second job file or a draft from a kept run is replaced by the next run. A
+real run lists them by name, sends nothing and exits 1 until `--replace` says go on; `--dry-run` lists
+them and carries on. **A retired setup step** (row 5b-1980) **and a need no setup step fills** (row 5b-1976)
+are `REFUSED` before Revit is touched, as a retired card under test already was.
 
 Proving fragments one at a time costs a round trip each. On 2026-09-09 a throwaway script proved
 fourteen in one pass, then lived in a temp folder and was retyped twice. This is that script, with the
@@ -1343,9 +1350,13 @@ than the hand-written file.
 
 **Nothing is dropped silently.** Its last line says how many jobs it emitted and how many fragments
 it marked as unarrangeable — waiting on a risk Heron does not reach yet, on a shape
-[D-54](../docs/DECISIONS.md) has no rule for, on a value the setup chain does not leave behind, or
-having nothing to vary between the two legs at all, which makes them
-[D-53](../docs/DECISIONS.md) tracking work rather than batch work. Those numbers move as fragments are
+[D-54](../docs/DECISIONS.md) has no rule for, or on a value the setup chain does not leave behind.
+A card that takes only the model is **offered a two-model pair** (`in:` and `negative-in:`, both blank) rather than
+marked - the second leg is a second model with none of what it reads, or a family against a project
+([row 5b-1975](../docs/fragment-issues/row-5b-1975.md)); [D-53](../docs/DECISIONS.md) tracking is what the job's own
+comment names when no such model can be had. An optional need that cannot be typed is left out and said, and a
+card whose `elements` and `targets` are one set on purpose (`SAME_SET_ON_PURPOSE`) gets `keep-chain`. `--only`
+takes a comma-separated list and refuses a name no card has ([row 5b-1983](../docs/fragment-issues/row-5b-1983.md)). Those numbers move as fragments are
 proved, which is why **there is no generated job file committed here**: a snapshot of a moving library
 is stale by the afternoon, and this repository has already been bitten twice by a number typed into a
 file that then stopped being true. Regenerate it; it costs a second.
