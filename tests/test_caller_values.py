@@ -262,6 +262,38 @@ def run():
     check("the mistyped twin is named and the real one is not - the shape "
           "that cost six names on 2026-09-09", odd, ["widthMm"])
 
+    # ---- values_for_chain_needs: a declared need is never read from a typed
+    # value, and that is said (row 5b-2004). PE2 typed three ids into
+    # report-connectors' `elements`, which a chain or the selection fills.
+    check("a typed value for a need filled from a chain is named",
+          client.values_for_chain_needs(
+              [{"name": "elements", "value": "1,2,3"}], declares), ["elements"])
+    check("a request need is read, so it is not named",
+          client.values_for_chain_needs(
+              [{"name": "tolerance", "value": "25"}], declares), [])
+    check("a name the card does not declare is the other check's, not this one's",
+          client.values_for_chain_needs(
+              [{"name": "maxSteps", "value": "200"}], declares), [])
+    check("no values, no needs: nothing",
+          client.values_for_chain_needs(None, None), [])
+
+    import contextlib
+    import io as _io
+    said = _io.StringIO()
+    with contextlib.redirect_stdout(said):
+        client.report_undeclared("report-connectors",
+                                 [{"name": "elements", "value": "1,2,3"}], declares)
+    check("report_undeclared says the typed value is never read",
+          "IGNORED 'elements'" in said.getvalue()
+          and "never from a typed value" in said.getvalue(), True)
+    said = _io.StringIO()
+    with contextlib.redirect_stdout(said):
+        client.report_undeclared("report-connectors",
+                                 [{"name": "elements", "value": "1,2,3"}], declares,
+                                 taken_by={"elements": "filter-elements-by-id"})
+    check("and is silent when a writing setup step takes that name",
+          "IGNORED" not in said.getvalue(), True)
+
     # IT NAMES, IT DOES NOT REFUSE. Row 71 allows either; refusing would change
     # what a caller relying on today's behaviour gets, and naming is enough.
     check("report_undeclared returns nothing - it cannot refuse a run",

@@ -20,7 +20,7 @@ jobs:
     set: {nameContains: "", compareWithDocument: "true"}
     negative-set: {nameContains: "ZZZ_Not_In_The_File", compareWithDocument: "true"}
 
-  - fragment: measure-distance
-    expect: straightMm
-    set: {first: "404243", second: "411658"}
-    negative-set: {first: "404243", second: "404243"}
+  # REMOVED 2026-11-23 (row 5b-1970): `first` and `second` are single-element needs
+  # that the add-in binds only from the word `selected` (one element, bound to both) and
+  # refuses typed ids, so this job - ids 404243 and 411658 - dry-ran WOULD RUN and was
+  # refused in Revit. Two different elements cannot be handed to measure-distance yet.

@@ -1247,3 +1247,27 @@ read from the repository, nothing run in Revit:
 read and signed or set aside before the next run of the same tool.
 
 ---
+
+### 🔵 Q-98 — How should two tools that can never come back empty be proved - Refresh view and Report level elevations? *(asked 2026-11-23, row 5b-1969)*
+
+**Tracked as GitHub issue [#1305](https://github.com/Ajmalpshaik/Heron-AI/issues/1305) since 2026-11-23** - the owner answers there.
+
+**Where it comes from.** D-30 asks every proof for a second leg that comes back empty. Two tools have none
+that can be arranged, and nothing to vary either, so D-53 tracking cannot follow them
+([row 5b-1969](../fragment-issues/row-5b-1969.md), read from the files, nothing run in Revit):
+
+1. **Refresh view** (`REFRESH_VIEW`). It takes no input, and its one prescribed negative, *a run with no
+   screen*, cannot be arranged - the add-in always gives a card a screen.
+2. **Report level elevations** (`REPORT_LEVEL_ELEVATIONS`). It always writes a line, even *"this model has no
+   levels"*, and its only input is the *includeLinks* switch, so there is nothing for tracking to follow.
+
+**The question, in a modeller's words: for these two, is a by-hand reading beside the proof enough to sign
+on - you watch the tag change on screen for Refresh view, and read the storeys line against Manage > Levels
+for Report level elevations - or do you want them left unproved until a check can be built?**
+
+- **Recommended:** a by-hand reading is enough for both, written down on the proof with the Revit release and
+  the model, because the effect of each is something you can see and no run record could show more.
+
+**Nothing is changed until this is answered.** Until then neither is put in a batch job.
+
+---

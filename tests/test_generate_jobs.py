@@ -962,6 +962,25 @@ def test_an_optional_need_that_cannot_be_typed_is_left_out_not_a_refusal():
           "the job says it was left out and offers no blank for it")
 
 
+def test_two_single_element_needs_are_not_advised_the_selected_word():
+    print("A card with two single-element needs is marked, and not told to pass `selected`")
+    # Row 5b-1970: `selected` binds the one chosen element to BOTH needs, so the
+    # advice measured an element against itself (0 mm) - an answer, not a refusal.
+    supply = {"elements": "IList<Element>"}
+    _, ordinal, ladder = GJ.write_threshold()
+    pair = FakeFragment("measures-two", needs=[
+        {"name": "first", "type": "Element", "source": "request"},
+        {"name": "second", "type": "Element", "source": "request"}])
+    reasons = GJ.blockers(pair, supply, ordinal, ladder)
+    check(len(reasons) == 2 and all("TWO single-element needs" in r for r in reasons)
+          and not any("pass `selected`" in r for r in reasons),
+          "both are named, and neither is advised `selected`: %s" % reasons)
+    one = FakeFragment("measures-one", needs=[
+        {"name": "first", "type": "Element", "source": "request"}])
+    check(any("pass `selected`" in r for r in GJ.blockers(one, supply, ordinal, ladder)),
+          "a card with ONE such need is still told `selected`, which is right")
+
+
 def test_two_needs_filled_from_one_value_are_marked():
     print("Two needs bound to one chain value are marked")
 
@@ -1262,6 +1281,7 @@ def main():
                  test_a_fragment_with_nothing_to_vary_is_offered_a_second_model,
                  test_a_need_bound_to_another_on_purpose_is_not_the_same_set_refused,
                  test_an_optional_need_that_cannot_be_typed_is_left_out_not_a_refusal,
+                 test_two_single_element_needs_are_not_advised_the_selected_word,
                  test_two_needs_filled_from_one_value_are_marked,
                  test_a_need_the_chain_cannot_fill_is_marked,
                  test_a_risk_out_of_reach_is_marked,

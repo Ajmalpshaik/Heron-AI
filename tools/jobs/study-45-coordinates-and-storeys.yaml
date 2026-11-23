@@ -67,20 +67,7 @@ jobs:
       with sharedCoordinates false: the internal numbers must be identical to
       this run's, and the reply must say internal and project north.
 
-  # POSITIVE: Snowdon with one level unticked - that level named with its count
-  # of model elements, ducts included. NEGATIVE: Project1, every level ticked -
-  # "Every level is marked Building Story" with the levels NAMED, never a bare 0.
-  - fragment: report-level-elevations
-    in: "Snowdon-scratch_ajmal.al"
-    negative-in: "Project1"
-    setup: []
-    expect: storeys
-    set:
-      includeLinks: false
-    negative-set:
-      includeLinks: false
-    note: >
-      Check the unticked level's count against SELECT_BY_LEVEL on that level,
-      restricted to model categories. The survey-offset half of this tool is
-      unchanged from version 2 and its answer must still read 780.5 mm on
-      Snowdon and 0 on Project1.
+  # REMOVED 2026-11-23 (row 5b-1969, Q-98): report-level-elevations always writes its
+  # `storeys` line ("Every level is marked Building Story" included) and has nothing to
+  # vary, so this negative would read NEG NOT EMPTY. It is proved by a by-hand reading,
+  # as the owner decides in Q-98.
