@@ -29,11 +29,11 @@ positive:
   # these inputs or outputs.
   - given: >
       parameterName Family, matchText "M_Desk", matchMode contains, exactMatch
-      true, categories empty, in a model with two M_Desk and one M_Desk-Corner
+      true, categories Furniture, in a model with two M_Desk and one
+      M_Desk-Corner
     expect: >
       the two M_Desk only, found 2, matchedFamilies {M_Desk: 2},
-      scannedWholeModel true and a finding saying the whole model was scanned.
-      Without exactMatch the corner desk is found too and matchedFamilies
+      scannedWholeModel false. Without exactMatch the corner desk is found too and matchedFamilies
       names both families
 
   - given: parameterName Family, matchText "Basic Wall", categories Walls
@@ -157,6 +157,14 @@ negative:
 
   - given: matchMode gt, compareValue 1, matchText "2"
     expect: REFUSED - two different numbers
+
+  # ROW 5b-1997. This case said "categories empty" and expected a whole-model
+  # sweep until 2026-11-23 - a case the binder makes unreachable, which is
+  # row 121's lesson. An empty list is refused before this code runs.
+  - given: parameterName Family, matchText "M_Desk", categories empty
+    expect: >
+      refused before anything is scanned - "No categories were named.
+      Separate them with commas" - and nothing selected
 
 second_route: >
   A schedule of the same category with that parameter as a field and a Contains

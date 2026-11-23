@@ -35,8 +35,17 @@ purpose: >
 
   0. FIND THE OLD ONES. SELECT_BY_PARAMETER_VALUE (SELECT_BY_FAMILY was
      merged into it at version 4, 2026-11-01) with parameterName=Family,
-     matchMode=contains, includeTypeParameters=false, categories empty for
-     the whole model, and matchText= the old family. In-place: the part of
+     matchMode=contains, includeTypeParameters=false, categories= the old
+     family's CATEGORY, and matchText= the old family. AT LEAST ONE CATEGORY
+     IS NAMED: an empty list is refused before anything runs - "No
+     categories were named" - because guessing a category is how a job runs
+     against the wrong thing (row 5b-1997, as row 112). The category is the
+     one the family sits under in the Project Browser's Families list, or
+     the one Properties shows with one of them selected - an in-place family
+     keeps the category it was made in (2026-11-23, Revit 2020: Mechanical
+     Equipment). Not known: ask the modeller, never guess; old
+     ones in more than one category are named together, "Mechanical
+     Equipment, Generic Models". In-place: the part of
      the names they share - every in-place element is a family of its own, so
      "TCM_ACU_T002" catches ..Unit1, ..Unit2 and ..Unit3. Loadable: the
      family's name with exactMatch=true, one call per old family (2026-10-15:
@@ -75,7 +84,7 @@ purpose: >
   2. READ THE NEW TYPE, AND AGREE THE MAP WITH THE MODELLER - before anything
      is placed. Where an instance of the new type is already placed
      (SELECT_BY_PARAMETER_VALUE parameterName=Family, matchText= the new
-     family, exactMatch=true), read one
+     family, exactMatch=true, categories= the new family's category), read one
      the same way as step 1; where none is, place ONE as step 6 says and read
      that - nothing more is placed until the table below has its yes.
      Its record says how the new family is hosted - level, work plane, face,
@@ -114,7 +123,8 @@ purpose: >
 
   4. LOAD THE LOADABLE FAMILY. First look whether it is already loaded and
      whether any of it is already placed - SELECT_BY_PARAMETER_VALUE with
-     parameterName=Family, matchText= the new family and exactMatch=true; one placed is the
+     parameterName=Family, matchText= the new family, exactMatch=true and
+     categories= its category, as step 0; one placed is the
      source step 6's copy route needs. LOAD_FAMILY with familyPath= the .rfa
      REFUSES a family that is already loaded; a reload (reload=true) needs
      the modeller's yes for that one reload (Article 7), and a reload can
@@ -263,7 +273,7 @@ purpose: >
      dependent by kind and view - which tags step 9 copied, and every tag and
      dimension that will simply go. DELETE_ELEMENTS with
      expect_from="select-by-parameter-value where matchText=<old family>" from a
-     fresh SELECT_BY_PARAMETER_VALUE of the OLD name: never without the expect_from,
+     fresh SELECT_BY_PARAMETER_VALUE of the OLD name, in step 0's categories: never without the expect_from,
      which deletes whatever is selected in the window. Then set `deleted`
      against the list named: anything gone that the question did not name is
      said at once - Revit's Undo still brings it back. For in-place
