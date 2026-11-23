@@ -1742,6 +1742,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-pz.md`](needs-checking/group-pz.md)
 
+## Group QA - what an arrangement step made inside a write that stopped part way is never bound by the next request - BUILT, NOT RUN IN REVIT (2026-11-23)
+
+**Its own file:** [`needs-checking/group-qa.md`](needs-checking/group-qa.md)
+
 ## Group PY - a wrong divided-surface pattern is refused, not thrown, and a pipe segment's size list that will not read is never "no sizes" - DRAFT until proved (2026-11-23)
 
 **Its own file:** [`needs-checking/group-py.md`](needs-checking/group-py.md)
