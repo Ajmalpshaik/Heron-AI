@@ -175,7 +175,8 @@ purpose: >
      REPORT_ELEMENT_DEPENDENCIES (PROVEN) on exactly what will go, then name
      to the modeller every tag and dimension that goes with it and the count,
      and wait for their yes for that one delete (Article 7). Then
-     DELETE_ELEMENTS (PROVEN) with expect_from naming the select that found
+     DELETE_ELEMENTS (DRAFT since its version 3 of 2026-11-23, which names every
+     element a delete takes by category and name) with expect_from naming the select that found
      them - never without it, which deletes whatever is selected in the
      window.
 

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,10 +9,26 @@ semantic-identity: "delete these elements from the model"
 kind: action
 domain: revit.elements
 capability: DELETE_ELEMENTS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 3 (2026-11-23) - WHAT WENT IS NAMED, READ BEFORE IT WENT, and back
+# to DRAFT. FRAGMENT-ISSUES row 5b-1996 (issue in the row), Revit 2020, family
+# documents: one unused family type asked for and `deleted 2 item(s) [5931,
+# 9021]`; 21 forms asked for and `alsoWent 220`; the run record held only
+# `{"change": "deleted", "id": "9021"}`, so nobody could say what went. Version
+# 3 tries each delete first in a SubTransaction it rolls back - Revit's own
+# answer to "what goes" - reads every id it returns while it still exists, then
+# deletes for real. `deletedWhat` names every deleted id (category | name | why
+# it went) and travels whole into the reply and the run record;
+# `deletedByCategory` counts what was asked for and what also went, a form's
+# own sketch, sketch plane and sketch lines counted as "their sketches". An id
+# it could not read is NOT READ, never given a category. The delete itself is
+# unchanged. Version 2 was PROVEN on 2026-11-16 (the proof block below, kept as
+# the record of what it proved); its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group PS is run (D-30).
+#
 # VERSION 2 (2026-11-16) - THE WALLS A DELETE DETACHES ARE NAMED, and back to
 # DRAFT. FRAGMENT-ISSUES row 5b-1674 (issue #852, Villa 2, Revit 2024): each
 # roof rebuild left the walls at their plate - Revit said only "Walls 19
@@ -51,6 +67,15 @@ purpose: >
   `detachedWalls` lists those whose attachment went, and `wallsNote` says what
   that means - on Revit 2020 to 2024 Heron cannot attach a wall again, so it
   is Attach Top/Base by hand.
+
+  **WHAT WENT IS NAMED, BY CATEGORY** (version 3). Each delete is first tried
+  inside a SubTransaction that is rolled back, and every id that trial returns
+  is read while it is still in the model. `deletedWhat` names every deleted id
+  - category, name, and why it went (asked for, went with an element, or a
+  form's own sketch) - and `deletedByCategory` says what was asked for and
+  what also went, counted by category. In a family, a form's own sketch,
+  sketch plane and sketch lines are counted together, so 241 reads as "21
+  form(s) + their sketches". An id it could not read is NOT READ.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -103,6 +128,23 @@ contract:
       # Empty when none.
       role: accounting
       type: string
+    - name: deletedWhat
+      # Version 3. EVERY deleted id -> "category | name | why it went": asked
+      # for, went with <asked id>, or sketch / sketch plane / sketch line of
+      # form <asked id>. Read BEFORE the delete, from a trial delete rolled
+      # back. An id the trial did not return or Revit gave no element for is
+      # "NOT READ - ..." - never a category guessed. A dictionary, so every
+      # entry reaches the reply and the run record whole. The finding version
+      # 3 exists to surface: what the extra elements WERE.
+      role: result
+      type: IDictionary<string, string>
+    - name: deletedByCategory
+      # Version 3. The sentence for `deletedWhat`: how many were deleted, what
+      # was asked for and what also went, counted by category, a form's own
+      # sketches counted as "their sketches", and how many were NOT READ
+      # (D-52). Empty when nothing was deleted.
+      role: accounting
+      type: string
 
 proof:
   date: '2026-11-16'
@@ -148,7 +190,11 @@ compatibility-note: >
   `Floor`, `Ceiling`, `Element.get_BoundingBox`, `Document.Regenerate`,
   `Element.IsValidObject` and `Application.VersionNumber` read the same on
   2020 to 2027; no wall attachment member (2025 on) is used, so one path
-  serves every release.
+  serves every release. Version 3's `SubTransaction` (Start, RollBack),
+  `Document.GetElement`, `Element.Category`, `Element.Name`, `Sketch`,
+  `Sketch.SketchPlane`, `SketchPlane`, `CurveElement.SketchPlane` and
+  `GenericForm` are on every release 2020 to 2027, and an id is only ever
+  printed with `ElementId.ToString()`.
 
 # ROUTING - repeated in HIDE_ELEMENTS, which is what is usually meant.
 #
