@@ -9,7 +9,7 @@
 
 **Tracked as GitHub issue [#982](https://github.com/Ajmalpshaik/Heron-AI/issues/982) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-**Built 2026-10-04 from the study in [docs/45](../45-five-more-downloaded-skill-files.md). Every one was
+**Built 2026-10-04 from the study in [31 research](../31-research.md). Every one was
 DRAFT before it was touched, is DRAFT now, and compiles on 2020 to 2027. Nothing below has run in
 Revit.** Three of them repair rows [5b-315 to 5b-317](../fragment-issues/section-5b-rows-301-325.md).
 The arrangements, inputs and expected answers are in four job files, each read back with

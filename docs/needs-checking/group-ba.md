@@ -176,8 +176,8 @@ date"* by nearness (first to fourth), so the purpose keeps version 2's opening a
 
 | # | Check | Expected |
 |---|---|---|
-| ~~**BA10**~~ | Revit 2020, the two legs (D-30) for version 3 - the count. — [full row](../needs-checking-archive/group-ba.md#row-ba10) | `PASS`. |
-| ~~**BA11**~~ | Revit 2020, version 3 - the order, and the issued-revision refusal. — [full row](../needs-checking-archive/group-ba.md#row-ba11) | `PASS`. |
+| ~~**BA10**~~ | Revit 2020, the two legs (D-30) for version 3 - the count. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `PASS`. |
+| ~~**BA11**~~ | Revit 2020, version 3 - the order, and the issued-revision refusal. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `PASS`. |
 | **BA12** | **By eye, in Revit, once - the one undo entry.** After a KEPT run of version 3 on the scratch project (three revisions, one call), open Revit's Undo list | ONE entry for the call, named after it, and one Undo puts all three back. Then signing: `accept` BA10's draft under the owner's own name - BA11's draft is the second leg of the same fragment and goes in its proof notes |
 
 **2026-10-17 - run on Revit 2020 (session 51568): `EDIT_REVISION` version 3 three times and `LIST_REVISIONS` once,

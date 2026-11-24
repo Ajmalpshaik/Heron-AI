@@ -81,22 +81,22 @@ row's "Look for" before the row is called a pass - version 1 was signed on numbe
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**IF0**~~ | Negatives FIRST, rolled back. The walls selected: shot `Spielberg`; side `upstairs`; lensMm `5`… — [full row](../needs-checking-archive/group-if.md#row-if0) | Each refused, naming what it takes - the shots, the sides, 12 to 300, "both say where the… |
-| ~~**IF1**~~ | Version 2 unchanged. On `Materials IA Test`, the same two columns version 2 was signed on selected… — [full row](../needs-checking-archive/group-if.md#row-if1) | readBack equal to version 2's signed record: eye 5572,-4072,5325 mm looking… |
-| ~~**IF2**~~ | eye-level, the walls, nothing else — [full row](../needs-checking-archive/group-if.md#row-if2) | readBack "level - verticals stay vertical", eye 1600 mm above the level most of the walls… |
-| ~~**IF3**~~ | The owner's words: low-angle, side left. The walls — [full row](../needs-checking-archive/group-if.md#row-if3) | eye 450 mm, looking up 6°, lens about 24 mm, composition thirds-left, stood off the left… |
-| ~~**IF4**~~ | high-angle — [full row](../needs-checking-archive/group-if.md#row-if4) | looking down 25°, lens about 35. |
-| ~~**IF5**~~ | aerial — [full row](../needs-checking-archive/group-if.md#row-if5) | looking down 40°, stood on the front-left corner. |
-| ~~**IF6**~~ | worm's-eye — [full row](../needs-checking-archive/group-if.md#row-if6) | eye 150 mm, looking up 25°, lens about 20, angle across about 84°. |
-| ~~**IF7**~~ | three-quarter — [full row](../needs-checking-archive/group-if.md#row-if7) | level, eye 1600, stood on the front-left corner, thirds-left. |
-| ~~**IF8**~~ | front, then front with lensMm 85 and composition low-horizon — [full row](../needs-checking-archive/group-if.md#row-if8) | Square to the front, level, lens about 50, then 85. |
-| ~~**IF9**~~ | interior, one room selected — [full row](../needs-checking-archive/group-if.md#row-if9) | eye inside the room, 600 mm in from its left end, 1400 mm up, level, lens about 24… |
-| ~~**IF10**~~ | close-up, one piece of furniture or equipment — [full row](../needs-checking-archive/group-if.md#row-if10) | looking down 20°, lens about 85, margin 15. |
-| ~~**IF11**~~ | No shot - the inputs alone. The walls: side north-west, eyeHeightMm 1600, lensMm 24, levelCamera… — [full row](../needs-checking-archive/group-if.md#row-if11) | Stood exactly north-west (no step round), level, eye 1600, lens about 24. |
-| ~~**IF12**~~ | Eye Elevation. IF2's view kept by `try-once` (D-119) - the walls selected, shot eye-level - the… — [full row](../needs-checking-archive/group-if.md#row-if12) | The view's Properties: Eye Elevation and Target Elevation beside readBack's eye height… |
+| ~~**IF0**~~ | Negatives FIRST, rolled back. The walls selected: shot `Spielberg`; side `upstairs`; lensMm `5`… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Each refused, naming what it takes - the shots, the sides, 12 to 300, "both say where the… |
+| ~~**IF1**~~ | Version 2 unchanged. On `Materials IA Test`, the same two columns version 2 was signed on selected… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | readBack equal to version 2's signed record: eye 5572,-4072,5325 mm looking… |
+| ~~**IF2**~~ | eye-level, the walls, nothing else — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | readBack "level - verticals stay vertical", eye 1600 mm above the level most of the walls… |
+| ~~**IF3**~~ | The owner's words: low-angle, side left. The walls — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | eye 450 mm, looking up 6°, lens about 24 mm, composition thirds-left, stood off the left… |
+| ~~**IF4**~~ | high-angle — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | looking down 25°, lens about 35. |
+| ~~**IF5**~~ | aerial — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | looking down 40°, stood on the front-left corner. |
+| ~~**IF6**~~ | worm's-eye — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | eye 150 mm, looking up 25°, lens about 20, angle across about 84°. |
+| ~~**IF7**~~ | three-quarter — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | level, eye 1600, stood on the front-left corner, thirds-left. |
+| ~~**IF8**~~ | front, then front with lensMm 85 and composition low-horizon — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Square to the front, level, lens about 50, then 85. |
+| ~~**IF9**~~ | interior, one room selected — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | eye inside the room, 600 mm in from its left end, 1400 mm up, level, lens about 24… |
+| ~~**IF10**~~ | close-up, one piece of furniture or equipment — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | looking down 20°, lens about 85, margin 15. |
+| ~~**IF11**~~ | No shot - the inputs alone. The walls: side north-west, eyeHeightMm 1600, lensMm 24, levelCamera… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Stood exactly north-west (no step round), level, eye 1600, lens about 24. |
+| ~~**IF12**~~ | Eye Elevation. IF2's view kept by `try-once` (D-119) - the walls selected, shot eye-level - the… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The view's Properties: Eye Elevation and Target Elevation beside readBack's eye height… |
 | **IF13** | *The owner's request through a chat, on his PC (model and re-ranker).* In a chat: *"cinematic camera on the left side of this building"*, then *"low angle hero shot"*, *"bird's eye view of the building"*, *"two point perspective at eye level"*, *"wide angle camera"*, *"camera height 1.6 m"* | `heron_lookup` names `FRAME_ELEMENTS_IN_CAMERA` for each; the chat passes the method's shot for each and the picture is looked at |
-| ~~**IF14**~~ | cinematic - the owner's own word (row 5b-1287) - side left, the walls — [full row](../needs-checking-archive/group-if.md#row-if14) | level, eye 1200 mm, lens about 28, composition thirds-left, readBack "picture 2.39:1". |
-| ~~**IF15**~~ | The picture's shape alone. The walls: aspect `16:9`, then `1:1`, then `wide-ish` — [full row](../needs-checking-archive/group-if.md#row-if15) | readBack "picture 1.78:1", then "1:1" - each with a 35 mm lens since no lens was given… |
+| ~~**IF14**~~ | cinematic - the owner's own word (row 5b-1287) - side left, the walls — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | level, eye 1200 mm, lens about 28, composition thirds-left, readBack "picture 2.39:1". |
+| ~~**IF15**~~ | The picture's shape alone. The walls: aspect `16:9`, then `1:1`, then `wide-ish` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | readBack "picture 1.78:1", then "1:1" - each with a 35 mm lens since no lens was given… |
 
 **Then sign** `frame-elements-in-camera` - after IF14's cinematic picture has been looked at too - on IF12's kept run (the positive) with IF0's first negative - after IF1
 to IF11 have passed, every picture looked at. A row that fails reopens the card; the shot's starting values

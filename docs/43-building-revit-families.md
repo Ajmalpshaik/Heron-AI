@@ -176,7 +176,7 @@ Every fact below carries one of three marks:
 | **SOURCED** | Stated by a named Autodesk page, Autodesk developer post or a published Revit API answer, read through an extract or a mirror |
 | **UNSURE** | Practice, inference, or two sources disagreeing - owed a run in Revit before anything is built on it |
 
-**Nothing was copied.** The mechanisms are re-authored, as [31](31-studying-the-existing-libraries.md)
+**Nothing was copied.** The mechanisms are re-authored, as [31 research](31-research.md)
 requires; no sentence, code or file name from any source is carried into Heron.
 
 ---

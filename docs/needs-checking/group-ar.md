@@ -11,7 +11,7 @@
 **Tracked as GitHub issue [#994](https://github.com/Ajmalpshaik/Heron-AI/issues/994) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
 **The owner's PC, Revit 2024 first, on a TEST COPY of `test projject` - never his own design.** Built
-on 2026-09-25 as the owner's first pick from what [39](../39-three-downloaded-skill-sets.md) §5 found
+on 2026-09-25 as the owner's first pick from what [31 research](../31-research.md) §5 found
 missing:
 
 - [`set-curtain-wall-grid`](../../brain/fragments/set-curtain-wall-grid/fragment.yaml) - `SET_CURTAIN_WALL_GRID`, FRG-ELE-072

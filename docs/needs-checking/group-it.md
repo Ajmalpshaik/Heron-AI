@@ -47,10 +47,10 @@ a plan that draws fewer of a category than the model holds, and an opening or tw
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**IT0**~~ | Negative FIRST. SELECT_BY_PARAMETER_VALUE with parameterName=Name matchText=Outlet Port… — [full row](../needs-checking-archive/group-it.md#row-it0) | Refused "matchMode 'exactly' is not a way of matching this knows, so NOTHING was scanned. |
-| ~~**IT1**~~ | The fault's own case. The same with `matchMode=exact` — [full row](../needs-checking-archive/group-it.md#row-it1) | `elements` 1 - Outlet Port alone - and the finding "1 of N scanned element(s) match Name… |
-| ~~**IT2**~~ | `matchMode=is`, then `matchMode=EXACT` — [full row](../needs-checking-archive/group-it.md#row-it2) | The same answer as IT1, both times Struck 2026-11-13: PASSED - the verdict is in this… |
-| ~~**IT3**~~ | `matchMode=contains` — [full row](../needs-checking-archive/group-it.md#row-it3) | 2 - both planes, asked for by name; the finding reads `contains` Struck 2026-11-13… |
+| ~~**IT0**~~ | Negative FIRST. SELECT_BY_PARAMETER_VALUE with parameterName=Name matchText=Outlet Port… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Refused "matchMode 'exactly' is not a way of matching this knows, so NOTHING was scanned. |
+| ~~**IT1**~~ | The fault's own case. The same with `matchMode=exact` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `elements` 1 - Outlet Port alone - and the finding "1 of N scanned element(s) match Name… |
+| ~~**IT2**~~ | `matchMode=is`, then `matchMode=EXACT` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The same answer as IT1, both times Struck 2026-11-13: PASSED - the verdict is in this… |
+| ~~**IT3**~~ | `matchMode=contains` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | 2 - both planes, asked for by name; the finding reads `contains` Struck 2026-11-13… |
 | **IT4** | *5b-1320's own case, add-in rebuilt.* `SELECT_BY_CATEGORIES` with `categories=Plumbing Fixtures includeLinks=false` and `inViewOnly` LEFT OUT, in the project | Runs. `found` is the whole model's count - compare a schedule of Plumbing Fixtures - and the binding note reads *"inViewOnly not given - null (optional)"* |
 | **IT5** | The same with `inViewOnly=` and nothing after it | The same count; the note reads *"inViewOnly given empty - null (optional)"* |
 | **IT6** | The same with `inViewOnly=FloorPlan: Level 1` - a plan that draws only some of them | Fewer than IT4: a view named still narrows, as version 2's proof measured |

@@ -30,16 +30,6 @@
 
 ---
 
-### Row 5b-1377
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **"WHAT ARE THE COORDINATES OF THIS POINT" - A QUESTION - REACHED `ADD_SPOT_COORDINATES`, A WRITE THAT DRAWS SPOT COORDINATES, THE MOMENT THAT CARD EXISTED.** Found 2026-11-01 while building `ADD_SPOT_COORDINATES` (FRG-VIEW-164, DRAFT, MODIFY - [Group KT](../needs-checking/group-kt.md)). Measured in a cloud container through `heron_retrieve.find`, `model` backend, re-ranker absent, behind the 2024 wall, with and without the host's question ceiling (D-128), on two fresh scratch `HERON_KNOWLEDGE` stores - the tree at `f7e36e4` without the card, and with it - over every declared utterance and routing-table sentence of every live card plus twelve coordinate sentences (5,151). Without the question flag the sentence reached `CHECK_LINK_COORDINATES` (a read about links, not its answer) before and the new write after - **caused by this change**, through the card's own words *coordinate* and *point*. With the flag it stayed on `CHECK_LINK_COORDINATES`. A first identity, *"... the north and east of the point"*, also moved *"put spot levels on these"* (claimed for `ADD_SPOT_ELEVATIONS` in `REPORT_SPOT_DIMENSIONS`' table) from that write to the read; the identity was reworded and it went back. **Left, undeclared and recorded:** *"read the spot coordinates in this view"* and *"what is the spot coordinate here"* reached `REPORT_SPOT_DIMENSIONS` before and the new write after without the flag, and that read with it; *"what are the coordinates of these grid intersections"* reached `CREATE_GRIDS` (a write) before and the new write after without the flag, and `REPORT_SPOT_DIMENSIONS` with it. Nobody declared those words, so none was declared to win it back. A DRAFT is refused by `revit_change` (D-117), and with no spot coordinate type named the card places nothing.
-
-**State.** **FIXED 2026-11-01** - *"what are the coordinates of this point"* DECLARED on `REPORT_LOCATION` (FRG-GEO-025), with a dated comment and a routing row, so the identity route answers it with that read both with and without the question flag. That card's other words are unchanged. Re-measured on a fresh store: no other sentence answered with the flag off moved except the new card's own words, the three left sentences above and *"space these round a point"* ([row 1378](../FRAGMENT-ISSUES.md#)). The only other moves were sentences asked with the question flag, read to read. `REPORT_LOCATION`, `ADD_SPOT_ELEVATIONS` and `REPORT_SPOT_DIMENSIONS` are PROVEN; the change to each is outside `impl/`, and each fingerprint still equals its proof's (b0cec95b3cc00b8b, f3d2425bbd877ecd, d8a788029e0b295e). `tools/check-routing.py`, keyword route alone, before and after: *claimed in a routing table and not reached* 71 both times. Two new keyword-route-only contests, *"read the spot coordinates in the model"* (`REPORT_SPOT_DIMENSIONS`) and *"put a column at each grid intersection"* (`PLACE_FAMILY_INSTANCES`), are answered by each claimant's declaration, and the winner is written in both cards.
-
----
-
 ### Row 5b-1378
 
 *Moved from the register on 2026-11-17.*
@@ -127,16 +117,6 @@
 **Defect.** ***"SELECT ALL THE DUCTS"* - `FILTER_ELEMENTS_BY_TYPE`'S ROUTING ROW SENDS IT TO `FILTER_ELEMENTS_BY_CATEGORY` - REACHES A WRITE WITHOUT THE HOST'S QUESTION FLAG.** Seen 2026-11-02 in the measurement of row 1394: on the tree at `c584a6e` it reached `REMOVE_MEP_INSULATION`, and with the fabrication cards `SET_DUCT_LINING` - both MODIFY - on Revit 2024 and with no Revit filter; with the flag, `FILTER_ELEMENTS_BY_CATEGORY` (FRG-ELE-001) both times. `tools/check-routing.py` does not list it, because no card declares it. Not caused by the fabrication cards: they only changed which write answers.
 
 **State.** **MOVED TO ISSUE [#954](https://github.com/Ajmalpshaik/Heron-AI/issues/954) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN - recorded, not fixed.** Declaring it on `FILTER_ELEMENTS_BY_CATEGORY` is the likely repair, as row 1394 did for three others; it is left for a change that measures that card's neighbours, not widened into Group LO's.
-
----
-
-### Row 5b-1397
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`SET_MEP_JUSTIFICATION` SET NOTHING ON REVIT 2020 - EVERY RECTANGULAR DUCT REFUSED BOTH OFFSETS.** Measured Revit 2020 session 59096 (33624 before a restart), on "P1102 MEP" - a scratch copy of Revit 2020's own `Samples\rme_advanced_sample_project.rvt` in `%TEMP%\heron-work\prove-1102` - 2026-11-02, `tools/jobs/p1102-round3-2026-11-02.yaml`: the callout's 10 rectangular ducts, `horizontalOffsetMm 50, verticalOffsetMm 50`, returned `set 0` and ten findings `Refused: id 404243: 2 of 2 offset(s) did not take the value`. Rolled back. The card's purpose already says it is UNPROVEN that the two offsets move a run as Revit's justification dropdown does; this is the first measurement, and it says the write is refused (or reads back different) on 2020. Not traced: whether the parameters are read-only on these ducts or the read-back compares the wrong units.
-
-**State.** **MOVED TO ISSUE [#942](https://github.com/Ajmalpshaik/Heron-AI/issues/942) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN 2026-11-02 - Recorded, not fixed; the card stays DRAFT.**
 
 ---
 

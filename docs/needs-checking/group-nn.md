@@ -27,9 +27,9 @@ Model, Revit 2020, session 33000 - never the owner's own families.
 | # | Run | Look for | Result 2026-11-12 |
 |---|---|---|---|
 | **NN1** | *Trial, rolled back* - axis angle, planes "Arrow Slope=30; Arrow Low=-15" | created 2, each at its angle through 0,0 mm | **held** - recorded 2026-11-12 08:44, before the review's fix `b7015b91` (09:04) changed the angle fold this passes through; no run on the signed code, so the ID stays open. |
-| ~~**NN2**~~ | The positive, KEPT - the same through `try-once` — [full row](../needs-checking-archive/group-nn.md#row-nn2) | the two planes stay; the owner presses Keep | |
+| ~~**NN2**~~ | The positive, KEPT - the same through `try-once` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | the two planes stay; the owner presses Keep | |
 | **NN3** | *The D-30 negative* - `validate --write --kept`, "Arrow Slope=45", axis angle | refused - already a plane at 30 degrees; nothing made, nothing turned | **held**: "already a reference plane in this family, at 30 degrees" - recorded 2026-11-12 08:44, before the review's fix `b7015b91` (09:04) changed the angle fold this passes through; no run on the signed code, so the ID stays open. |
-| ~~**NN4**~~ | Used - Group NE's NE5, NE5b and NE6 label angles between these planes — [full row](../needs-checking-archive/group-nn.md#row-nn4) | 30, 45 and 150 degrees read back | |
+| ~~**NN4**~~ | Used - Group NE's NE5, NE5b and NE6 label angles between these planes — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | 30, 45 and 150 degrees read back | |
 | **NN5** | *Version 1 unchanged* - axis left-right, "Box Far=900" | created 1 at X 900 | NOT RUN on version 2 - Box Left / Box Right were made by version 1 earlier the same session |
 | **NN6** | *Refusals* - throughMm "300,0" with axis left-right; throughMm "here" with axis angle | both refused, nothing made | NOT RUN |
 

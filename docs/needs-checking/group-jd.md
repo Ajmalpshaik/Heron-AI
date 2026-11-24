@@ -39,17 +39,17 @@ every run rolled back (`validate --write`, no `--apply`).
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**JD0**~~ | Negative FIRST. SELECT_BY_FAMILY familyName=VCD exactMatch=false categories=Duct Accessories… — [full row](../needs-checking-archive/group-jd.md#row-jd0) | `findings` "ZZZNOTHINGHERE": 0 of 38 carry a value, 0 blank, 38 absent. |
+| ~~**JD0**~~ | Negative FIRST. SELECT_BY_FAMILY familyName=VCD exactMatch=false categories=Duct Accessories… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `findings` "ZZZNOTHINGHERE": 0 of 38 carry a value, 0 blank, 38 absent. |
 | **JD1** | *The fault's own case.* The same 38, `parameterName=Equipment Tag` | `findings` names all 38, VCD001 to VCD038; the reply shows `values 38 entry(ies)` and 38 lines under it, and no "... and 26 more" anywhere |
-| ~~**JD2**~~ | `parameterName=Mark` on the same 38 — [full row](../needs-checking-archive/group-jd.md#row-jd2) | 37 values and `Blank: 7987914` (VCD005 carries no Mark) - every value printed Struck… |
+| ~~**JD2**~~ | `parameterName=Mark` on the same 38 — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | 37 values and `Blank: 7987914` (VCD005 carries no Mark) - every value printed Struck… |
 | **JD3** | *An older add-in.* On a Revit whose add-in was NOT rebuilt, JD1 again | `findings` still names all 38 (the fragment is live); the chat shows twelve entries and "... and 26 more" - the server says what it was not sent |
-| ~~**JD4**~~ | Negative FIRST for the copy. TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS… — [full row](../needs-checking-archive/group-jd.md#row-jd4) | `changed` 0, `created` 0, `refused` "No categories in '...' matching 'Generic… |
-| ~~**JD5**~~ | The fault's own case. The same with `subcategoryContains=Signature` — [full row](../needs-checking-archive/group-jd.md#row-jd5) | `changed` (or `created`) holds ONLY Generic Annotations : Signature, its colour moving to… |
+| ~~**JD4**~~ | Negative FIRST for the copy. TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `changed` 0, `created` 0, `refused` "No categories in '...' matching 'Generic… |
+| ~~**JD5**~~ | The fault's own case. The same with `subcategoryContains=Signature` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `changed` (or `created`) holds ONLY Generic Annotations : Signature, its colour moving to… |
 | **JD6** | JD5 kept - on the owner's word only, one model at a time | LIST_CATEGORIES `categories=Generic Annotations > Signature` reads 30,80,170, weight 1, Solid; one Ctrl+Z puts it back |
-| ~~**JD7**~~ | `subcategoryContains` LEFT OUT, `nameContains=Generic Annotations`, rolled back — [full row](../needs-checking-archive/group-jd.md#row-jd7) | version 1's answer: the category and every subcategory that differs in `changed`, the… |
+| ~~**JD7**~~ | `subcategoryContains` LEFT OUT, `nameContains=Generic Annotations`, rolled back — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | version 1's answer: the category and every subcategory that differs in `changed`, the… |
 | **JD8** | *Two sources.* `sourceDocumentTitle=4355-BHVD` with two of the job's models open besides the target | `refused` naming both and asking for the whole title; nothing changed |
-| ~~**JD9**~~ | `sourceDocumentTitle=4355-BHVD-3D-21S10-BL001A.rvt` — [full row](../needs-checking-archive/group-jd.md#row-jd9) | the same as JD5 - ".rvt" is read as the title Struck 2026-11-13: PASSED - the verdict is… |
-| ~~**JD10**~~ | A link is no source. `sourceDocumentTitle=` the exact title of one of the source's LINKED models… — [full row](../needs-checking-archive/group-jd.md#row-jd10) | `refused` "No open project matching ...", and its "open now" list names no linked model… |
+| ~~**JD9**~~ | `sourceDocumentTitle=4355-BHVD-3D-21S10-BL001A.rvt` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | the same as JD5 - ".rvt" is read as the title Struck 2026-11-13: PASSED - the verdict is… |
+| ~~**JD10**~~ | A link is no source. `sourceDocumentTitle=` the exact title of one of the source's LINKED models… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `refused` "No open project matching ...", and its "open now" list names no linked model… |
 
 **Then sign** `read-element-parameters` version 6 on JD1 with JD0's negative, after JD2 has passed, and
 `transfer-object-styles-between-documents` version 2 on JD5 with JD4's negative, after JD7 to JD9 have passed -

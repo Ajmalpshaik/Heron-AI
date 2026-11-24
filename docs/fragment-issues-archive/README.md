@@ -37,13 +37,9 @@ is opened:
 | 5 — found by proving | 126 to 150 | [`proving-defects-126-150.md`](proving-defects-126-150.md) |
 | 5 — found by proving | 151 to 175 | [`proving-defects-151-175.md`](proving-defects-151-175.md) |
 | 5 — found by proving | 176 to 200 | [`proving-defects-176-200.md`](proving-defects-176-200.md) |
-| 5b — found by reading | 1 to 25 | [`reading-defects-5b-001-025.md`](reading-defects-5b-001-025.md) |
-| 5b — found by reading | 26 to 50 | [`reading-defects-5b-026-050.md`](reading-defects-5b-026-050.md) |
-| 5b — found by reading | 51 to 75 | [`reading-defects-5b-051-075.md`](reading-defects-5b-051-075.md) |
 | 5b — found by reading | 76 to 100 | [`reading-defects-5b-076-100.md`](reading-defects-5b-076-100.md) |
 | 5b — found by reading | 1001 to 1025 | [`reading-defects-5b-1001-1025.md`](reading-defects-5b-1001-1025.md) |
 | 5b — found by reading | 101 to 125 | [`reading-defects-5b-101-125.md`](reading-defects-5b-101-125.md) |
-| 5b — found by reading | 1026 to 1050 | [`reading-defects-5b-1026-1050.md`](reading-defects-5b-1026-1050.md) |
 | 5b — found by reading | 1051 to 1075 | [`reading-defects-5b-1051-1075.md`](reading-defects-5b-1051-1075.md) |
 | 5b — found by reading | 1076 to 1100 | [`reading-defects-5b-1076-1100.md`](reading-defects-5b-1076-1100.md) |
 | 5b — found by reading | 1101 to 1125 | [`reading-defects-5b-1101-1125.md`](reading-defects-5b-1101-1125.md) |
@@ -68,16 +64,22 @@ is opened:
 | 5b — found by reading | 1526 to 1550 | [`reading-defects-5b-1526-1550.md`](reading-defects-5b-1526-1550.md) |
 | 5b — found by reading | 1551 to 1575 | [`reading-defects-5b-1551-1575.md`](reading-defects-5b-1551-1575.md) |
 | 5b — found by reading | 1576 to 1600 | [`reading-defects-5b-1576-1600.md`](reading-defects-5b-1576-1600.md) |
-| 5b — found by reading | 1601 to 1625 | [`reading-defects-5b-1601-1625.md`](reading-defects-5b-1601-1625.md) |
 | 5b — found by reading | 1626 to 1650 | [`reading-defects-5b-1626-1650.md`](reading-defects-5b-1626-1650.md) |
 | 5b — found by reading | 1651 to 1675 | [`reading-defects-5b-1651-1675.md`](reading-defects-5b-1651-1675.md) |
+| 5b — found by reading | 1676 to 1700 | [`reading-defects-5b-1676-1700.md`](reading-defects-5b-1676-1700.md) |
 | 5b — found by reading | 1701 to 1725 | [`reading-defects-5b-1701-1725.md`](reading-defects-5b-1701-1725.md) |
 | 5b — found by reading | 1726 to 1750 | [`reading-defects-5b-1726-1750.md`](reading-defects-5b-1726-1750.md) |
-| 5b — found by reading | 1751 to 1775 | [`reading-defects-5b-1751-1775.md`](reading-defects-5b-1751-1775.md) |
 | 5b — found by reading | 176 to 200 | [`reading-defects-5b-176-200.md`](reading-defects-5b-176-200.md) |
 | 5b — found by reading | 1776 to 1800 | [`reading-defects-5b-1776-1800.md`](reading-defects-5b-1776-1800.md) |
 | 5b — found by reading | 1801 to 1825 | [`reading-defects-5b-1801-1825.md`](reading-defects-5b-1801-1825.md) |
 | 5b — found by reading | 1826 to 1850 | [`reading-defects-5b-1826-1850.md`](reading-defects-5b-1826-1850.md) |
+| 5b — found by reading | 1851 to 1875 | [`reading-defects-5b-1851-1875.md`](reading-defects-5b-1851-1875.md) |
+| 5b — found by reading | 1876 to 1900 | [`reading-defects-5b-1876-1900.md`](reading-defects-5b-1876-1900.md) |
+| 5b — found by reading | 1901 to 1925 | [`reading-defects-5b-1901-1925.md`](reading-defects-5b-1901-1925.md) |
+| 5b — found by reading | 1926 to 1950 | [`reading-defects-5b-1926-1950.md`](reading-defects-5b-1926-1950.md) |
+| 5b — found by reading | 1951 to 1975 | [`reading-defects-5b-1951-1975.md`](reading-defects-5b-1951-1975.md) |
+| 5b — found by reading | 1976 to 2000 | [`reading-defects-5b-1976-2000.md`](reading-defects-5b-1976-2000.md) |
+| 5b — found by reading | 2001 to 2025 | [`reading-defects-5b-2001-2025.md`](reading-defects-5b-2001-2025.md) |
 | 5b — found by reading | 201 to 225 | [`reading-defects-5b-201-225.md`](reading-defects-5b-201-225.md) |
 | 5b — found by reading | 226 to 250 | [`reading-defects-5b-226-250.md`](reading-defects-5b-226-250.md) |
 | 5b — found by reading | 251 to 275 | [`reading-defects-5b-251-275.md`](reading-defects-5b-251-275.md) |
@@ -90,15 +92,20 @@ is opened:
 | 5b — found by reading | 426 to 450 | [`reading-defects-5b-426-450.md`](reading-defects-5b-426-450.md) |
 | 5b — found by reading | 451 to 475 | [`reading-defects-5b-451-475.md`](reading-defects-5b-451-475.md) |
 | 5b — found by reading | 476 to 500 | [`reading-defects-5b-476-500.md`](reading-defects-5b-476-500.md) |
-| 5b — found by reading | 501 to 525 | [`reading-defects-5b-501-525.md`](reading-defects-5b-501-525.md) |
 | 5b — found by reading | 626 to 650 | [`reading-defects-5b-626-650.md`](reading-defects-5b-626-650.md) |
 | 5b — found by reading | 651 to 675 | [`reading-defects-5b-651-675.md`](reading-defects-5b-651-675.md) |
 | 5b — found by reading | 851 to 875 | [`reading-defects-5b-851-875.md`](reading-defects-5b-851-875.md) |
-| 5b — found by reading | 876 to 900 | [`reading-defects-5b-876-900.md`](reading-defects-5b-876-900.md) |
 | 5b — found by reading | 926 to 950 | [`reading-defects-5b-926-950.md`](reading-defects-5b-926-950.md) |
 | 5b — found by reading | 976 to 1000 | [`reading-defects-5b-976-1000.md`](reading-defects-5b-976-1000.md) |
 
 A number with no entry in its file was never moved: it is still in the register, in full.
+
+**Finished rows are removed, not kept here (2026-11-24, the owner's request).** On that day every
+row here that was fixed, closed or withdrawn, or moved to a GitHub issue that is now closed, was
+deleted. Its one line stays in the register, linking to this page. Rows moved to a GitHub issue
+that is still open stay, because the issue reads them. A removed row's full text is in git history:
+`git log -S '### Row 5b-151' --oneline -- docs/fragment-issues-archive/`, then `git show` the
+commit before it.
 
 How many rows each file holds is derived, not typed:
 

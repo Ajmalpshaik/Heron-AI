@@ -11,7 +11,7 @@
 
 **2026-11-21 - THE CARD IS RETIRED INTO `CREATE_SHEETS` VERSION 4, AND THIS GROUP'S CHECKS NOW LIVE IN [GROUP OZ](group-oz.md).** On the owner's *"merge: yes"* (issue [#1080](https://github.com/Ajmalpshaik/Heron-AI/issues/1080), [D-193](../decisions/D-193.md)) `CREATE_SHEETS_FROM_TABLE` was merged into [`CREATE_SHEETS`](../../brain/fragments/create-sheets/fragment.yaml) as its version 4 and is DEPRECATED, never deleted; its code answers as `CREATE_SHEETS` now, with a `sheets` table beside typed numbers, which is DRAFT until Group OZ is run. Every row below is asked again of version 4 there - which OZ row carries each MY row is written at the top of that group - and nothing more is run from this file, which stays as the record. Its job file [`tools/jobs/create-sheets-from-table-my-2026-11-09.yaml`](../../tools/jobs/create-sheets-from-table-my-2026-11-09.yaml) is the record too; Group OZ's is [`tools/jobs/create-sheets-oz-2026-11-21.yaml`](../../tools/jobs/create-sheets-oz-2026-11-21.yaml).
 
-The owner's ask: [docs/48](../48-studying-bimlogiq.md) section 5 item 7, *"Sheets from Excel - read the sheet
+The owner's ask: [31 research](../31-research.md) section 5 item 7, *"Sheets from Excel - read the sheet
 list from a spreadsheet, preview, create"*, started 2026-11-09 (*"start item 7"*). What the modeller gets: *"make
 the sheets from this Excel: C:\\...\\sheet list.xlsx"* (or .csv) - a preview, then the sheets in one call and one
 undo. Made NEW, at DRAFT. It overlaps `CREATE_SHEETS` and `SET_PARAMETER_VALUES_BY_ID` (both PROVEN then; `SET_PARAMETER_VALUES_BY_ID` is DRAFT at version 10 since 2026-11-20, [row 5b-1526](../fragment-issues/section-5b-rows-1526-1550.md)) - neither

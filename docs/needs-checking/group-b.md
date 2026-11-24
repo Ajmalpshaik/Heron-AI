@@ -17,10 +17,10 @@ during `OnStartup` costs the whole add-in. If Heron disappears entirely, this is
 | ID | Do this | Pass looks like |
 |---|---|---|
 | **B1** | Start Revit 2020 | The **Heron AI** tab is there |
-| ~~**B2**~~ | Look at the panel — [full row](../needs-checking-archive/group-b.md#row-b2) | **DONE 2026-09-06, twice.** |
-| ~~**B2a**~~ | Click the arrow under Heron — [full row](../needs-checking-archive/group-b.md#row-b2a) | **DONE 2026-09-06.** |
-| ~~**B2b**~~ | Pick Bridge Status, then look at the top of the split button — [full row](../needs-checking-archive/group-b.md#row-b2b) | **DONE 2026-09-06.** |
-| ~~**B3**~~ | Press Heron — [full row](../needs-checking-archive/group-b.md#row-b3) | **DONE 2026-09-06.** |
+| ~~**B2**~~ | Look at the panel — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **DONE 2026-09-06, twice.** |
+| ~~**B2a**~~ | Click the arrow under Heron — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **DONE 2026-09-06.** |
+| ~~**B2b**~~ | Pick Bridge Status, then look at the top of the split button — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **DONE 2026-09-06.** |
+| ~~**B3**~~ | Press Heron — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **DONE 2026-09-06.** |
 | **B3a** | Press Heron again to disconnect, then re-open the arrow and pick Bridge Status | Says **Not connected** — the item inside the list still runs its own command, it did not become part of the toggle |
 | **B4** | `python mcp/client/heron_bridge_client.py ping` then `count` | Both answer, as they did before Step 6 |
 
@@ -57,16 +57,16 @@ a different container — **do not conclude "no compiler here" from a failed dow
 
 | ID | Do this | Pass looks like |
 |---|---|---|
-| ~~**B5**~~ | `python tools/check-compile.py` — [full row](../needs-checking-archive/group-b.md#row-b5) | **DONE 2026-09-07, on Linux, all eight releases.** |
-| ~~**B5b**~~ | Build on Windows and deploy into Revit — [full row](../needs-checking-archive/group-b.md#row-b5b) | **DONE 2026-09-07, on the owner's PC.** |
-| ~~**B6**~~ | Connect, then ask for a count — [full row](../needs-checking-archive/group-b.md#row-b6) | **PROVED 2026-09-07** |
-| ~~**B7**~~ | Watch the same card after the answer arrives — [full row](../needs-checking-archive/group-b.md#row-b7) | **PROVED 2026-09-07** |
-| ~~**B8**~~ | With `write.enabled = true`, ask to move ducts and approve — [full row](../needs-checking-archive/group-b.md#row-b8) | **PASSED 2026-09-07, after the token fix.** |
-| ~~**B9**~~ | Click a ribbon button through the card while it is up — [full row](../needs-checking-archive/group-b.md#row-b9) | **PROVED 2026-09-07 by reading the window itself** |
+| ~~**B5**~~ | `python tools/check-compile.py` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **DONE 2026-09-07, on Linux, all eight releases.** |
+| ~~**B5b**~~ | Build on Windows and deploy into Revit — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **DONE 2026-09-07, on the owner's PC.** |
+| ~~**B6**~~ | Connect, then ask for a count — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PROVED 2026-09-07** |
+| ~~**B7**~~ | Watch the same card after the answer arrives — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PROVED 2026-09-07** |
+| ~~**B8**~~ | With `write.enabled = true`, ask to move ducts and approve — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PASSED 2026-09-07, after the token fix.** |
+| ~~**B9**~~ | Click a ribbon button through the card while it is up — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PROVED 2026-09-07 by reading the window itself** |
 | ~~**B10**~~ | ~~Ask something with a dialog open in Revit, so it refuses with `revit_busy`~~ | **PROVED 2026-09-07**, owner's Visibility/Graphics dialog left open on purpose. The card goes **RED** - red dot, red **STOPPED** chip - reading **"Heron AI stopped"** over **"Revit was busy - nothing was sent"**. **This is the case that was invisible before**: the chat got a sentence and the screen showed nothing. Run twice; the client waited the full **10.3 s** busy timeout both times before the refusal rendered, which is `revit.busyTimeoutSeconds` = 10 doing its job, not a hang |
-| ~~**B11**~~ | Run a batch of fragments back to back — [full row](../needs-checking-archive/group-b.md#row-b11) | **PROVED 2026-09-07** |
+| ~~**B11**~~ | Run a batch of fragments back to back — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PROVED 2026-09-07** |
 | **B12** | On a 150% display, and with Revit on a second monitor | **HALF PROVED 2026-09-07.** **Second monitor: PASSES.** Revit was on DISPLAY1, the non-primary screen at **x=-1920** - negative coordinates, the exact case that sends a naive banner to the primary screen. Measured by pixel-diff against a clean frame, the card spans x=738..1196 of Revit's 1936-wide window: centre **967** against the window's **968**, so **1 px off**. It followed Revit, not the primary screen. **150% DPI: STILL UNPROVEN** - that monitor reports 96 DPI (100%). The DPI transform has not been exercised at all |
-| ~~**B13**~~ | Put `ui.activityBanner = false` in `%APPDATA%\Heron\config\heron.config`, restart Revit, ask for a… — [full row](../needs-checking-archive/group-b.md#row-b13) | **PASSED 2026-09-07.** |
+| ~~**B13**~~ | Put `ui.activityBanner = false` in `%APPDATA%\Heron\config\heron.config`, restart Revit, ask for a… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PASSED 2026-09-07.** |
 
 **A trap this session walked into, worth writing down.** `CLIENT_ID` in
 [`heron_bridge_client.py`](../../mcp/client/heron_bridge_client.py) is `HERON_CLIENT_ID` **or a fresh
@@ -118,8 +118,8 @@ looks good".
 | ID | Do this | Pass looks like |
 |---|---|---|
 | **B14** | Read from two different models, switching between them | **PASS 2026-09-17** for the model name; the no-model half is harness-only. Two models open in Revit 2024 session 64384. This chat was pinned to `test projject`; the owner switched Revit to `Snowdon-scratch_ajmal.al` and Heron **refused** rather than answering about a model it was not pointed at (Golden Rule 20 working). After `use this model`, the card named **`Snowdon-scratch_ajmal.al`** on every read - captured from Revit's own window, not judged by eye. So the name follows the model in front, not the one opened first. **THE SECOND HALF IS NOT PROVED IN REVIT**: `Heron.Banner.TestHost shots` renders `5-no-name-known.png` with the middle line **absent** - not blank, not stale - and the two remaining lines re-centred, so the BANNER handles it. Whether the ADD-IN reports no-model when every document is closed was not tested; it needs the owner to close all models |
-| ~~**B15**~~ | Run something slow enough to freeze Revit - a fragment that has to compile, or a large model — [full row](../needs-checking-archive/group-b.md#row-b15) | **PASS 2026-09-17, on the harness, corroborated in Revit.** |
-| ~~**B16**~~ | Five reads back to back — [full row](../needs-checking-archive/group-b.md#row-b16) | **PASS 2026-09-17** |
+| ~~**B15**~~ | Run something slow enough to freeze Revit - a fragment that has to compile, or a large model — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PASS 2026-09-17, on the harness, corroborated in Revit.** |
+| ~~**B16**~~ | Five reads back to back — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PASS 2026-09-17** |
 | **B17** | Revit on a **150%** display | Still the other half of `B12`. **HALF ANSWERED 2026-09-17, and the half that was answered is the harder one.** Revit was on a NON-PRIMARY monitor at negative coordinates - window 1936x1048 at **-1928,-8** - and the card centred at x=965 against a window centre of 968, **3 px out**, over Revit's own window and not the primary screen. That is the multi-monitor half. **THE SCALING HALF IS STILL UNRUN**: `GetDpiForMonitor` reports **96x96 (100%) on BOTH monitors**, so the code path still has not executed. Checked rather than assumed |
 
 **Pin `HERON_CLIENT_ID`** before any of these from a command line - see the trap above, it makes a
