@@ -1,6 +1,6 @@
 heron-agent: HERON-QA-BIM-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "which beam ends and column bases have nothing to bear on"
 kind: action
 domain: revit.qa
 capability: CHECK_STRUCTURAL_SUPPORTS
-version: 1
+# VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005) - a beam with no location line or a column with no base point is
+# counted in `skippedMembers`, never silently left unchecked, and a sentence
+# names it only when it is above 0. It was PROVEN at version 1; that proof
+# stays below as the record, and the card is DRAFT until its NEEDS-CHECKING
+# check runs and is signed (D-30).
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -55,6 +61,13 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+    - name: skippedMembers
+      # VERSION 2 (D-64). Beams and columns handed in with no location line or
+      # base point, so not checked. Never an element of another category.
+      # Always carried; a sentence in `findings` names it only when it is
+      # above 0.
+      role: accounting
+      type: int
 
 proof:
   date: '2026-11-02'

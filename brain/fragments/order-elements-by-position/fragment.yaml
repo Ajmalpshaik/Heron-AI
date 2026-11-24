@@ -61,6 +61,15 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+    - name: noPlace
+      # 2026-11-24 (D-64, row 5b-1909, WN-7 of issue #1005) - CARD ONLY.
+      # Elements handed in with no point, line or box to order by, so left out
+      # of `ordered` - each named in `findings`. Empty when every element had
+      # a position. Its C# already counted and named it; it is declared now,
+      # so a caller sees it. No line of impl/ changed, so the proof below
+      # still describes the code and the card stays PROVEN.
+      role: accounting
+      type: IList<ElementId>
 
 proof:
   date: '2026-10-18'

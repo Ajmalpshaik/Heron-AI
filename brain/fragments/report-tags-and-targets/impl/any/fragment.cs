@@ -1,5 +1,14 @@
 // NOT STANDALONE. Assumes `doc` and `view` are in scope, and leaves
-// `tagTargets`, `linkedTags`, `orphanTags`, `multiTags` and `tagCount` behind.
+// `tagTargets`, `linkedTags`, `orphanTags`, `multiTags`, `tagCount` and
+// `unresolvedTags` behind.
+//
+// VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A TAG THAT WILL NOT SAY WHAT IT TAGS IS COUNTED, NEVER CALLED AN
+// ORPHAN. Version 1 read a target read that threw as no target, so the tag was
+// listed in `orphanTags` - "pointing at nothing" - a failed read answered as a
+// no (D-52). `unresolvedTags` lists each such tag instead, in neither
+// `orphanTags` nor `tagTargets`. On a model where every read answers, every
+// output reads as version 1's.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -31,6 +40,8 @@ var tagTargets = new Dictionary<ElementId, IList<ElementId>>();
 var linkedTags = new Dictionary<ElementId, string>();
 var orphanTags = new List<ElementId>();
 var multiTags = new List<ElementId>();
+// VERSION 2 (D-64): tags whose targets Revit would not give.
+var unresolvedTags = new List<ElementId>();
 
 var tags = new FilteredElementCollector(doc, view.Id)
     .OfClass(typeof(IndependentTag))
@@ -61,7 +72,7 @@ foreach (var tag in tags)
     // One target, one property. The pair still has to be split, because a tag
     // into a link is exactly as common here as it is later.
     LinkElementId pair = null;
-    try { pair = tag.TaggedElementId; } catch { }
+    try { pair = tag.TaggedElementId; } catch { unresolvedTags.Add(tag.Id); continue; }
     if (pair != null)
     {
         ElementId linkId = pair.LinkInstanceId;
@@ -81,7 +92,7 @@ foreach (var tag in tags)
     // real annotation - taking the first would report the rest as untagged and
     // have somebody add a second tag over one that already reads correctly.
     ICollection<LinkElementId> pairs = null;
-    try { pairs = tag.GetTaggedElementIds(); } catch { }
+    try { pairs = tag.GetTaggedElementIds(); } catch { unresolvedTags.Add(tag.Id); continue; }
     if (pairs != null)
     {
         foreach (var pair in pairs)
