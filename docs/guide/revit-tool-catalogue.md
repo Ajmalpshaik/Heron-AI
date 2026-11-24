@@ -6,7 +6,7 @@
 
 **Every tool Heron has for Revit, by job** - what each one does, how you reach it, what it needs, what you get, and on which Revit releases it is built and proved. It is written by a script from Heron's own tool cards, so no count or status on these pages is typed by a person.
 
-Heron holds **615 live tools**: **490 are usable in a chat**, 37 are not proved yet but run because they change nothing in the model, and 88 are refused until they are proved. 135 retired tools are left out - each one's card names the tool that replaced it.
+Heron holds **615 live tools**: **489 are usable in a chat**, 37 are not proved yet but run because they change nothing in the model, and 89 are refused until they are proved. 135 retired tools are left out - each one's card names the tool that replaced it.
 
 ## How you reach a tool
 
