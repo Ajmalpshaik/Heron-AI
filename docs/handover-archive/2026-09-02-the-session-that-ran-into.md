@@ -49,7 +49,7 @@ cannot be created. Each is a routing row that says so and names the Revit route 
    owe a real compile. This is `A9`, and it is the largest thing that needs no Revit.
 3. **With Revit open: start proving.** Every one of the 202 is `DRAFT`. [D-30](../DECISIONS.md) means a
    proof needs a case that comes back EMPTY, not just one that works.
-4. **To carry the library build on instead:** [§9a](../HANDOVER.md#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start),
+4. **To carry the library build on instead:** [§9a](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start),
    and run the lookup sweep first — the un-mined source areas left are `actions/sheets-views/`,
    `actions/reporting/` and the rest of `filters/`.
 

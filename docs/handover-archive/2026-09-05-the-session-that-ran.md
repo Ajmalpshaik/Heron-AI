@@ -56,7 +56,7 @@ Neither guess exists on any release.
 2. **On any machine with the .NET SDK: `python tools/check-fragments-compile.py`.** **Eighty** fragments
    now owe a real compile — `A9`, still the largest thing needing no Revit.
 3. **With Revit open: start proving.** All 218 are `DRAFT`.
-4. **To carry the library build on:** [§9a](../HANDOVER.md#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start).
+4. **To carry the library build on:** [§9a](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start).
 
 **How much of the owner's earlier library is left, measured rather than guessed (2026-09-05).** Of its
 398 scripts, **68 are not fragments at all** — 44 `recipes/` become skills, 12 `context/` are the host's

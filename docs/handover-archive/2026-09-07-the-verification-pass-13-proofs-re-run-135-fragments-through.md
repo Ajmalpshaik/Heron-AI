@@ -822,7 +822,7 @@ exactly why it survived being printed twice. **A total nobody adds up is not a c
 > ### §9b was not followed and it cost something. Read this before working in the shared folder.
 >
 > This session ran in `D:\Ajmal\Aj Programs\Heron Ai` alongside another one, without worktrees.
-> [§9b](../HANDOVER.md#9b-three-sessions-at-once--the-protocol-that-stops-them-colliding) says not to. It went
+> [§9b](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#9b-three-sessions-at-once--the-protocol-that-stops-them-colliding) says not to. It went
 > wrong twice, in both directions:
 >
 > 1. **The branch moved out from under this session mid-work.** It started on

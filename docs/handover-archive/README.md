@@ -30,6 +30,7 @@ this folder exists to remove.
 
 | Date | Sitting |
 |---|---|
+| 2026-11-24 | [THE LONG HANDOVER, KEPT WHOLE WHEN HANDOVER.MD WAS CUT TO ONE PAGE](2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md) |
 | 2026-11-21 | [THE MERGES OF 2026-11-21: THE NEW WORK WAITS FOR REVIT, AND FIVE QUESTIONS WAIT FOR THE OWNER](2026-11-21-the-day-s-merges-the-new-work-waits-for-revit-and-five-questions-for-the-owner.md) |
 | 2026-11-14 | [A NIGHT ON REVIT 2024 ALONE: SCRATCH MODELS HERON MADE, TEN DRAFTS AND SEVEN DEFECTS](2026-11-14-a-night-on-revit-2024-alone-scratch-models-heron-made-and-seven-defects.md) |
 | 2026-11-13 | [THE OWNER'S PC PROVES WHAT #855 BUILT, AND THE PROVING FINDS NEW DEFECTS ON THE WAY](2026-11-13-the-owner-s-pc-proves-what-855-built-and-the-proving-finds-new.md) |

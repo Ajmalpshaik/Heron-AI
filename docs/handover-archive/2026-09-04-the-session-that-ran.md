@@ -69,7 +69,7 @@ the proxy answers `403` to the CONNECT for `builds.dotnet.microsoft.com` and nam
    fragments now owe a real compile. This is `A9` and it is still the largest thing needing no Revit.
 3. **With Revit open: start proving.** All 218 are `DRAFT`. [D-30](../DECISIONS.md) means a proof needs
    a case that comes back EMPTY, not just one that works.
-4. **To carry the library build on:** [§9a](../HANDOVER.md#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start).
+4. **To carry the library build on:** [§9a](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start).
    Run the lookup sweep first. Un-mined source areas left are the rest of `actions/reporting/`,
    `actions/color-graphics/`, `actions/visibility/` and most of `filters/`.
 

@@ -97,7 +97,7 @@ NOT BUILT            Not in the plan yet         marketplace, other platforms, m
 
 | Phase | Where it stands, 2026-10-18 | Evidence |
 |---|---|---|
-| 0 — Prove the bridge | **Proven** in Revit 2020 and 2024 | [HANDOVER §3](HANDOVER.md#3-what-has-been-witnessed-at-a-real-revit) · [00e](00e-field-notes-proven-bridge.md) |
+| 0 — Prove the bridge | **Proven** in Revit 2020 and 2024 | [HANDOVER §3](handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#3-what-has-been-witnessed-at-a-real-revit) · [00e](00e-field-notes-proven-bridge.md) |
 | 0.5 — The second runtime | **Measured.** Loads on 2020, 2024, 2026 and 2027; on 2026 no fragment could run, and the repair has not been run in Revit | [Group EQ](needs-checking/group-eq.md) · [row 5b-575](fragment-issues/section-5b-rows-551-575.md) · [Group GW](needs-checking/group-gw.md) |
 | 1 — Modify, safely | **Measured.** The move on Revit 2024 (`D1` to `D6`); the Keep or Discard box and the rails on 2024 and 2027, faults logged as rows 5b-1090 to 5b-1095; a failure forced mid-move (`G-12`) not run | [Group D](needs-checking/group-d.md) · [Group ET](needs-checking/group-et.md) · [27 — the Phase 1 gate](27-build-order.md) |
 | 2 — Fragments, capabilities, knowledge | **Built.** The fragment library mostly `PROVEN`, every skill `DRAFT` | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` and the same over `brain/skills/*.yaml` |

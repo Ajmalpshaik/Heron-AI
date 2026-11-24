@@ -182,8 +182,8 @@ All four would have corrupted a later one.
 > That does not mean stop. It means **be honest about which half you are in**, and mark every piece of
 > Revit-side work as untested until it has met a real Revit on the owner's own machine.
 >
-> **What still works away from Revit:** [§5](../HANDOVER.md#5-what-you-can-and-cannot-do-without-revit).
-> **What must be re-tested on return:** [§6](../HANDOVER.md#6-the-return-to-the-machine-checklist) — keep it up to date.
+> **What still works away from Revit:** [§5](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#5-what-you-can-and-cannot-do-without-revit).
+> **What must be re-tested on return:** [§6](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#6-the-return-to-the-machine-checklist) — keep it up to date.
 
 Then read [docs/README.md](README.md) for the map and
 [docs/27-build-order.md](../27-build-order.md) for what to build.

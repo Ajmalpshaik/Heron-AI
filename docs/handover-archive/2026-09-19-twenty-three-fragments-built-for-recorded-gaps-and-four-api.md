@@ -455,7 +455,7 @@ counts what is left; believe it over this file.
   and use `prove` rather than one `fragment` call at a time.
 - **`git checkout` in the shared folder moves the tree under every other session.** It happened three
   times in one day: files vanished mid-build, a commit landed on somebody else's branch, and a forced
-  reset destroyed another session's uncommitted edit. **[§9b](../HANDOVER.md#9b-three-sessions-at-once--the-protocol-that-stops-them-colliding)
+  reset destroyed another session's uncommitted edit. **[§9b](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#9b-three-sessions-at-once--the-protocol-that-stops-them-colliding)
   says use a worktree. Use one.** The collisions stopped the moment that was done.
 - **`git worktree remove --force` discards uncommitted work.** It ate five lines of a client change that
   had not been committed yet. Commit before tidying up, not after.
