@@ -14,7 +14,7 @@ source: OFFICIAL
 risk: MODIFY
 
 # VERSION 6 (2026-11-23) - A FORM ALREADY IN AN ARRAY, OR IN A GROUP, IS
-# REFUSED IN A SENTENCE, and back to DRAFT. FRAGMENT-ISSUES row 5b-1998:
+# REFUSED IN A SENTENCE, and PROVEN again. FRAGMENT-ISSUES row 5b-1998:
 # measured 2026-11-23 on Revit 2020 (louvre-scratch, session 49564), a blade
 # arrayed (count Blade_Count, step Z 45, kept) was named again by its own id
 # with step X 45, and the call FAILED (`fragment_threw`) - the trial row's
@@ -24,9 +24,10 @@ risk: MODIFY
 # refused, naming the array, its count and label, and its original, and saying
 # to change that array's count or name a form in no array or group; inside a
 # plain model group it is refused naming the group. Version 5 was PROVEN
-# 2026-11-23 on louvre-scratch, Revit 2020 (the proof block below, kept as the
-# record of what it proved); its C# moved, so it is DRAFT again until
-# NEEDS-CHECKING Group PW is run (D-30).
+# 2026-11-23 on louvre-scratch, Revit 2020; its C# moved, so it went back to
+# DRAFT. Version 6 was PROVEN 2026-11-24 on PX Box, Revit 2020, by
+# NEEDS-CHECKING Group PW (PW1 positive, PW2 an arrayed copy refused in
+# words) - the proof block below (D-30).
 #
 # VERSION 5 (2026-11-20) - A FORM ON A PLANE A PARAMETER MOVES IS SAID, and
 # THE FORM IN EACH COPY IS GIVEN BACK, and back to DRAFT. FRAGMENT-ISSUES row
