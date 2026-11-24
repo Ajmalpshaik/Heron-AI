@@ -1786,6 +1786,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qj.md`](needs-checking/group-qj.md)
 
+## Group QO - seven reading tools count what they pass over, WN-7 batch 2 (D-64) - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qo.md`](needs-checking/group-qo.md)
+
 ## Group QP - connector sized by Duct Size and Pipe Size and taken in a ring's bore, model text measured on its letters, a freeform answer naming the live material tool - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qp.md`](needs-checking/group-qp.md)

@@ -1,5 +1,14 @@
 // NOT STANDALONE. Assumes `elements` and `doc` are in scope, and leaves
-// `constrainedBy`, `lockedTo`, `unconstrained` and `constraintsScanned` behind.
+// `constrainedBy`, `lockedTo`, `unconstrained`, `constraintsScanned` and
+// `unresolvedConstraints` behind.
+//
+// VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A CONSTRAINT THAT WILL NOT SAY WHAT IT HOLDS IS COUNTED. Version 1
+// passed over a constraint whose references Revit would not give without a
+// word, so an element it held could be listed in `unconstrained` - a failed
+// read answered as a no (D-52). `unresolvedConstraints` carries the count:
+// above 0, an element in `unconstrained` may be held by one of them. Every
+// other output reads as version 1's.
 //
 // READ ONLY. Opens no transaction and unlocks nothing - see the last note.
 //
@@ -26,6 +35,8 @@ var constrainedBy = new Dictionary<ElementId, IList<ElementId>>();
 var lockedTo = new Dictionary<ElementId, IList<ElementId>>();
 var unconstrained = new List<ElementId>();
 int constraintsScanned = 0;
+// VERSION 2 (D-64): constraints whose references Revit would not give.
+var unresolvedConstraints = 0;
 
 var wanted = new HashSet<ElementId>();
 foreach (var element in elements)
@@ -51,7 +62,7 @@ foreach (var constraint in new FilteredElementCollector(doc)
 
     ReferenceArray references = null;
     try { references = dimension.References; } catch { }
-    if (references == null) continue;
+    if (references == null) { unresolvedConstraints++; continue; }
 
     var touched = new List<ElementId>();
     foreach (Reference reference in references)

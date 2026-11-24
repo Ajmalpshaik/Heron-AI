@@ -1,5 +1,13 @@
 // NOT STANDALONE. Assumes `doc`, `host` and `categories` are in scope; leaves
-// `elements` and `findings` behind.
+// `elements`, `unresolvedElements` and `findings` behind.
+//
+// VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - AN ELEMENT THAT WILL NOT SAY ITS HOST IS COUNTED. Version 1 read
+// an element whose host Revit would not give as not hosted here, without a
+// word, so "Nothing is HOSTED on it" could be said with one of them hosted
+// there - a failed read answered as a no (D-52). `unresolvedElements` carries
+// the count every time; the sentence naming it is added only when it is above
+// 0, so every other answer reads as version 1's.
 //
 // TWO HOST MECHANISMS, AND ONE OF THEM IS EASY TO MISS. Host-based families
 // record their parent on FamilyInstance.Host. Duct and pipe insulation and
@@ -17,6 +25,8 @@
 
 var elements = new List<Element>();
 var findings = new List<string>();
+// VERSION 2 (D-64): elements whose host Revit would not give.
+var unresolvedElements = 0;
 
 if (host == null)
 {
@@ -57,7 +67,9 @@ else
         }
         catch
         {
-            // An element that will not answer either question is not hosted here.
+            // An element that will not answer either question is passed over -
+            // counted (version 2, D-64), never read as not hosted here.
+            unresolvedElements++;
         }
     }
 
@@ -69,6 +81,11 @@ else
         categories == null || categories.Count == 0
             ? ""
             : string.Format(", within {0} category/categories", categories.Count)));
+
+    // VERSION 2 (D-64): said only when an element was passed over.
+    if (unresolvedElements > 0)
+        findings.Add(string.Format("{0} element(s) would not say what hosts them, so they were passed over - "
+            + "one of them may be hosted on it", unresolvedElements));
 
     if (elements.Count == 0)
         findings.Add("Nothing is HOSTED on it. If the question was about fittings or accessories in "

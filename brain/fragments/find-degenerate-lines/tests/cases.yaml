@@ -26,6 +26,13 @@ negative:
       every duct, pipe and wall measured too, AND the finding saying so. Correct,
       slow, and probably not what was meant
 
+  - given: >
+      VERSION 2, NEGATIVE. the categories and threshold version 1 was proved
+      on
+    expect: >
+      the same elements and counts as version 1's, skippedCurves written down
+      (0 expected) and NO "would not give their curve" sentence while it is 0
+
 second_route:
   - >
       a schedule of Lines with the Length field added, sorted ascending, and the

@@ -36,6 +36,14 @@ negative:
       treated as every category, and the unbounded caution reported. Not
       refused - the whole-model question is legitimate, it just needs saying
 
+  - given: >
+      VERSION 2, NEGATIVE. the categories version 1 was proved on, pinned then
+      not pinned
+    expect: >
+      the same counts as version 1's, unresolvedElements written down (0
+      expected) and NO "would not say whether they are pinned" sentence while
+      it is 0
+
 second_route: >
   Revit itself: select the returned set and try to move it. A pinned element
   refuses and raises the pin warning, which is the behaviour the pin flag is
