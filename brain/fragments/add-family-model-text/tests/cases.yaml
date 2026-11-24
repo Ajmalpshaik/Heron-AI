@@ -51,6 +51,28 @@ positive:
       sketched on the plane itself, its letters' right end at X 0 (their X
       extent ends at 0 within a millimetre), Y 0 to -2
 
+  - given: >
+      VERSION 3, row 5b-2033 - the case seen on Revit 2020 on 2026-11-24: a
+      scratch Generic Model family with a reference plane "Panel Face" facing
+      front at Y -489.5 and a box whose front face lies on it; texts
+      'text=AHU-01 workPlane=Panel Face at=0,300 heightMm=40 depthMm=0.5'
+      and then, in a second call, 'text=AHU-01 workPlane=Center (Front/Back)
+      at=0,300 heightMm=40 depthMm=0.5 offsetMm=-489.5'
+    expect: >
+      each placed, "measured on its solids", its letters reaching Y -489.5
+      to -490 (or -489 to -489.5 - which side is the measurement); no "are
+      ... mm thick" refusal. If a finding says "Revit's bounding box for the
+      text reaches ... mm through the plane ... so the box is not the
+      letters", COPY IT into the run record: it says version 2's 494.5 mm was
+      the box, not the letters. Then Revit's Measure tool in a plan view
+      across one letter, and the Front elevation, show the letters 0.5 mm
+      deep on the box face - the second route for this case
+  - given: >
+      the same family, a reference plane at Y -697.5; texts 'text=FAN
+      workPlane=<that plane> at=0,300 heightMm=40 depthMm=0.5'
+    expect: >
+      as above - letters Y -697.5 to -698, not to -1398 as version 2 said
+
 negative:
   - given: >
       the same family; texts 'text=PANEL workPlane=Center (Front Back)
@@ -70,6 +92,25 @@ negative:
 
   - given: a project in front
     expect: notAFamily true, the refusal naming CREATE_TEXT_NOTE, and nothing placed anywhere
+
+  - given: >
+      VERSION 3. If on Revit 2020 the letters' solids themselves are deeper
+      than asked on a plane away from the origin - the first case above
+      refused "Row 1's letters are ... mm thick through the plane, measured
+      on their own solids"
+    expect: >
+      textCount 0, NOTHING placed, the refusal naming the depth asked, the
+      Depth Revit reads and where the letters reached - never letters half a
+      metre deep kept with a warning. Then this card's depth is the defect
+      and row 5b-2033 is reopened for it
+  - given: >
+      VERSION 3, the negative that checks the measure itself: texts
+      'text=AHU-01 workPlane=Center (Front/Back) at=0,300 heightMm=40
+      depthMm=2' (a plane at the origin, where version 2's box and the
+      solids agree)
+    expect: >
+      placed, letters Y 0 to -2 measured on the solids, NO bounding-box
+      finding - a box finding here would mean the solids are measured wrong
 
 second_route:
   - >

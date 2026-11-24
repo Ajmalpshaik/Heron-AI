@@ -145,6 +145,47 @@ positive:
       each made exactly as its own case says - no "facing into" finding and
       no "covers its port" refusal
 
+  # VERSION 8 (2026-11-24, rows 5b-2031 and 5b-2032). NOT RUN. A scratch
+  # Mechanical Equipment family, Revit 2020 first: a 600 x 400 x 300 box; on
+  # its right face a flange ring sketched on the plane "Supply Face", opening
+  # 209 x 209, outside 249 x 249; a pipe stub whose end lies on "Drain End";
+  # shared parameters Supply_Air_Width and Supply_Air_Height (spec Duct Size,
+  # both 205), Condensate_Drain_Diameter (Pipe Size, 32) and Ring_Width and
+  # Ring_Height (Length, 209).
+  - given: >
+      facePlane "Supply Face", system "Supply Air", sizeParameters
+      "Ring_Width, Ring_Height" - Length parameters holding the opening's own
+      209 x 209
+    expect: >
+      a 209 x 209 Supply Air connector centred in the ring's opening, exactly
+      as version 7 made it - no clearance finding. This is the run that shows
+      the exact match was not changed
+  - given: >
+      facePlane "Supply Face", system "Supply Air", sizeParameters
+      "Supply_Air_Width, Supply_Air_Height" - Duct Size parameters holding
+      205 and 205, in the 209 x 209 opening
+    expect: >
+      a rectangular Supply Air connector 205 x 205 mm, centred in the opening,
+      its width and height associated to Supply_Air_Width and
+      Supply_Air_Height (Properties: the small = sign beside each), and a
+      finding "The port, 205 x 205 mm from its parameters, sits centred in the
+      ring face's opening of 209 x 209 mm - 2 and 2 mm clear each side".
+      Version 7 refused both: "not a length", and "would not fit". Then
+      Supply_Air_Width changed to 200 in Family Types and the connector read
+      200 wide
+  - given: >
+      facePlane "Drain End", system "Sanitary", sizeParameters
+      "Condensate_Drain_Diameter" - Pipe Size, 32
+    expect: >
+      a round pipe connector of 32 mm diameter, its Diameter associated to
+      Condensate_Drain_Diameter. Version 7 refused it "not a length"
+  - given: >
+      the same ring with sizeParameters holding 205 x 150 (a non-square port)
+      in the 209 x 209 opening
+    expect: >
+      made, 205 x 150, centred - the clearance finding says 2 and 29.5 mm;
+      the report says whether the parameters were turned
+
 negative:
   - given: system "Global" in a Generic Models family
     expect: refused - Global is a duct and a pipe system both; "Global pipe" or "Global duct" asked for
@@ -267,6 +308,32 @@ negative:
       flange and is left out; the flange top's port - the opening's edge -
       is covered by the raised ring, which is named. Never a connector
       inside the raised ring's bore
+
+  # VERSION 8 (2026-11-24). NOT RUN. The scratch family of the version 8
+  # positives.
+  - given: >
+      facePlane "Supply Face", sizeParameters "Supply_Air_Width,
+      Supply_Air_Height" set to 215 and 205 - wider than the 209 opening
+    expect: >
+      refused, "a port sized by them would not fit inside that opening either
+      way round", nothing made - a port larger than the bore never fits
+  - given: >
+      a 400 x 300 neck face (a whole face, one loop, no ring), sizeParameters
+      holding 390 and 290 - smaller than the face, as the ring case is
+    expect: >
+      refused, "On a whole face the port must be the face's own size",
+      nothing made - the ring's allowance does NOT reach a whole face, where a
+      port of another size means the wrong parameters were given
+  - given: >
+      facePlane "Drain End", system "Sanitary", sizeParameters
+      "Supply_Air_Width" - a Duct Size parameter on a pipe connector
+    expect: >
+      refused, "is a Duct Size parameter, which sizes a duct connector, not a
+      pipe one", nothing made
+  - given: >
+      facePlane "Supply Face", system "Supply Air", sizeParameters naming a
+      Number or Air Flow parameter
+    expect: refused, "is not a Length, Duct Size or Pipe Size parameter", nothing made
 
 second_route:
   - >
