@@ -1222,6 +1222,9 @@ namespace Heron.Revit.Addin
                 case "isolate_temporary":
                     return "Isolating in the active view, temporarily";
 
+                case "hide_temporary":
+                    return "Hiding in the active view, temporarily";
+
                 case "reset_temporary":
                     return "Resetting the temporary hide/isolate";
 

@@ -94,12 +94,12 @@ Claude Code is the *host*, the Kernel is Heron's *spine*.
 >   test above holds, though this half is C#, not the Python the paragraph assumed. It sits at the bottom
 >   of the stack and depends on nothing.
 > - **The Python half is separate modules,** each DRAFT: the event bus
->   [`heron_events.py`](../brain/heron_events.py), the workflow engine
+>   `heron_events.py`, the workflow engine
 >   [`heron_workflow.py`](../mcp/server/heron_workflow.py), the instruction registry
 >   [`heron_instructions.py`](../brain/heron_instructions.py), feature flags
 >   [`heron_flags.py`](../brain/heron_flags.py), the resource manager
->   [`heron_resources.py`](../brain/heron_resources.py) and the model router
->   [`heron_router.py`](../brain/heron_router.py).
+>   `heron_resources.py` and the model router
+>   `heron_router.py`.
 > - **The registries are derived from files, not held**
 >   ([D-40](DECISIONS.md#d-40--the-dependency-graph-is-sqlite-and-an-edge-is-derived-before-it-is-stored)).
 >   Capabilities come from [`heron_capability.py`](../brain/heron_capability.py), skills from
@@ -309,13 +309,13 @@ This also makes §25's local/cloud routing a configuration choice rather than an
 which matters directly for the confidentiality question ([Q-12](OPEN-QUESTIONS.md)): a project marked
 confidential selects a local provider adapter, and nothing above that layer needs to know.
 
-> **As built (2026-10-18):** [`heron_router.py`](../brain/heron_router.py) (DRAFT) declares the intent
+> **As built (2026-10-18):** `heron_router.py` (DRAFT) declares the intent
 > and chooses who chooses, never a model. Heron makes no model call of its own
 > ([D-58](DECISIONS.md#d-58--heron-measures-what-it-can-see-and-the-cost-meter-belongs-to-the-host)).
 > Its batch work, the embeddings, runs on the machine with no provider at all
 > ([D-24](DECISIONS.md#d-24--embeddings-are-computed-locally-by-default),
 > [D-26](DECISIONS.md#d-26--the-model-file-is-never-uploaded)). One provider adapter is built,
-> [`heron_provider.py`](../brain/heron_provider.py) (DRAFT): a local Ollama on `127.0.0.1` only. Nothing
+> `heron_provider.py` (DRAFT): a local Ollama on `127.0.0.1` only. Nothing
 > in `brain/` or `mcp/server/` imports it, and it has not met a provider
 > ([37](37-the-provider-adapter.md)).
 
@@ -362,7 +362,7 @@ Practical measures: time since last successful `ExternalEvent` execution, and wh
 open. Both are already needed by the health system ([03 §3](03-heron-revit.md)) and by the "Revit is
 busy" state ([04 §6](04-heron-mcp.md)). One signal, three consumers.
 
-> **As built (2026-10-18):** [`heron_resources.py`](../brain/heron_resources.py) (DRAFT) reads CPU, RAM
+> **As built (2026-10-18):** `heron_resources.py` (DRAFT) reads CPU, RAM
 > and disk where the platform offers them, and reports what it cannot see as unmeasured. *Revit is busy*
 > is answered in the add-in instead: the dispatcher tells a request Revit never picked up from one still
 > running ([03 §4](03-heron-revit.md#4-note--critical-the-revit-api-threading-constraint)).

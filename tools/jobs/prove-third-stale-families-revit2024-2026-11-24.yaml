@@ -1,0 +1,36 @@
+# Third round, the family cards, 2026-11-24, Revit 2024 (build 24.3.50.51).
+# RESULT: PASS on all three, both halves, rolled back; fingerprints match main.
+#
+#     python tools/batch-prove.py tools/jobs/prove-third-stale-families-revit2024-2026-11-24.yaml --dry-run
+#
+# THE MODELS: in Snowdon, OPEN_FAMILY_FOR_EDITING writes and opens Chair-Breuer
+# (5 forms; the two ids below are its seat and back extrusions, and 001b040e a
+# masking region - read them again on another PC) and Table-Dining Round w
+# Chairs (3 types). A blank project "Project2" is the negative's document.
+# report-family-type-catalog on Chair-Breuer read 0 types and named a file
+# that does not exist - not evidence; it is proved on the table instead.
+
+model: Chair-Breuer and Table-Dining Round w Chairs, opened from Snowdon Towers Sample Architectural;
+  Project2 as the project, Revit 2024
+defaults:
+  in: Chair-Breuer
+  setup: []
+jobs:
+- fragment: report-family-template
+  expect: templateReport
+  negative-in: Project2
+- fragment: combine-family-forms
+  write: true
+  expect: combinationId
+  set:
+    forms: 70a7f7c9-f2e8-467c-8846-12812aafb947-001b0311,70a7f7c9-f2e8-467c-8846-12812aafb947-001b031d
+  negative-set:
+    forms: 70a7f7c9-f2e8-467c-8846-12812aafb947-001b0311,70a7f7c9-f2e8-467c-8846-12812aafb947-001b040e
+- fragment: report-family-type-catalog
+  expect: typeCount
+  negative-in: Project2
+  note: 'Positive typeCount 3, the three diameters. Negative - a project, not a family: refused, typeCount
+    0.
+
+    '
+  in: Table-Dining Round w Chairs

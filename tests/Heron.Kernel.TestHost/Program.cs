@@ -1036,8 +1036,8 @@ namespace Heron.Kernel.TestHost
             Check(HeronPermissions.ReadOnlyCeiling == HeronRisk.Execute,
                   "the read-only ceiling is Execute - \"changes what is shown, never what exists\"");
 
-            var shows = new[] { "run_fragment_show", "isolate_temporary", "reset_temporary",
-                                "select_by_category" };
+            var shows = new[] { "run_fragment_show", "isolate_temporary", "hide_temporary",
+                                "reset_temporary", "select_by_category" };
             foreach (var op in shows)
             {
                 var declared = HeronOperationRegistry.IsDeclared(op);

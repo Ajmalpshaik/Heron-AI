@@ -258,8 +258,8 @@ P5 — Cleanup
 
 > **As built (2026-10-18):** Part 2 widened this ladder to seven levels, P0 to P6
 > ([21 §12](21-resilience-and-operations.md#12-background-workers-and-priority)). The queue and the
-> scheduler use that ladder ([`heron_queue.py`](../brain/heron_queue.py),
-> [`heron_scheduler.py`](../brain/heron_scheduler.py)). The scheduler fails closed: when it cannot tell
+> scheduler use that ladder (`heron_queue.py`,
+> `heron_scheduler.py`). The scheduler fails closed: when it cannot tell
 > whether a user task is running, background work waits. Both are DRAFT, and the MCP server calls
 > neither (`grep -rn 'heron_queue\|heron_scheduler' mcp/`). The background work the server does today
 > is its own start-up: it loads the search model and prepares the knowledge store before the first

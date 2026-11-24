@@ -161,7 +161,7 @@ modeller ── Claude Code ── heron_hvac (MCP, READ, no bridge operation)
 
 ## 2. Why a new agent, and the verdict that was set aside
 
-[`HERON-AHR-WFP-015`](../brain/heron_workforce.py), the agent that says *no* before anything is hired,
+`HERON-AHR-WFP-015`, the agent that says *no* before anything is hired,
 was asked first. Its verdict was **`ALREADY_A_CAPABILITY`: `SET_AIR_TERMINAL_FLOW`**, at 0.50 word
 overlap. That fragment's own purpose says *"It does not work out what the flow should be. Splitting a
 space's airflow across its terminals is the caller's arithmetic"* - so the overlap is the word *flow*,

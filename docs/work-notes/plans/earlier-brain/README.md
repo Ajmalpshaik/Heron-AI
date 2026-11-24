@@ -58,7 +58,7 @@ its working habits were taken in [08](../plugin-extension/08-lessons-from-the-br
 3. **Numbers carry the day they were measured and the command that derives them.** They move; the command
    does not.
 4. **The owner's data in [03](03-owner-data.md) is not product content.** Heron ships empty stores — the
-   Keyword Agent's own rule is that it *"ships NO LIST"* ([`brain/heron_keywords.py`](../../../../brain/heron_keywords.py),
+   Keyword Agent's own rule is that it *"ships NO LIST"* (`brain/heron_keywords.py`,
    [D-34](../../../DECISIONS.md)). His words and his standards go into **his** stores on **his** PC
    ([05](05-pc-proving.md)); this folder only carries them there.
 

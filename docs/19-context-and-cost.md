@@ -106,10 +106,10 @@ Tracked as [Q-30](OPEN-QUESTIONS.md).
 > **As built (2026-10-18): the tension is resolved.** Q-30 was closed by Part 4 §24's model abstraction
 > layer: Heron declares the intent, and the host resolves it
 > ([23 §8](23-heron-kernel.md#8-ai-model-abstraction-layer--resolves-an-open-tension)).
-> [`heron_router.py`](../brain/heron_router.py) chooses *who* chooses and never a model. Heron makes no
+> `heron_router.py` chooses *who* chooses and never a model. Heron makes no
 > model call of its own, so routing, fallback and cost belong to the host
 > ([D-58](DECISIONS.md#d-58--heron-measures-what-it-can-see-and-the-cost-meter-belongs-to-the-host)).
-> One provider adapter is built and unused: [`heron_provider.py`](../brain/heron_provider.py) (DRAFT)
+> One provider adapter is built and unused: `heron_provider.py` (DRAFT)
 > talks to a local Ollama on `127.0.0.1` only, nothing in `brain/` or `mcp/server/` imports it, and it
 > has not met a provider ([37](37-the-provider-adapter.md), NEEDS-CHECKING
 > [K3](needs-checking/group-k.md)).
@@ -286,7 +286,7 @@ of phrases recur constantly, so hit rates should be high.
 > A card's parse is kept until its bytes change
 > ([04 §8.5](04-heron-mcp.md#85-one-request-fewer-turns--built-2026-09-30)). The add-in's compile cache
 > is keyed by the fragment's source. The event bus exists as a module,
-> [`heron_events.py`](../brain/heron_events.py), and no cache listens to it.
+> `heron_events.py`, and no cache listens to it.
 
 ---
 

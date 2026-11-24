@@ -230,7 +230,7 @@ The **Capability Gap Agent** detects *"the system repeatedly needs capability X,
 > capability is asked for by name and nothing provides it
 > ([D-63](DECISIONS.md#d-63--a-want-is-recorded-when-a-capability-is-asked-for-by-name-and-nobody-provides-it)).
 > §4's first boundary is in code: the Agent Creator,
-> [`heron_creator.py`](../brain/heron_creator.py), may only ever assign `PROPOSED`. A new tool for the
+> `heron_creator.py`, may only ever assign `PROPOSED`. A new tool for the
 > modeller is written at DRAFT by the
 > [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md) subagent, and a person signs its
 > proof ([D-30](DECISIONS.md#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)).

@@ -67,12 +67,12 @@ Every module communicates **through the Kernel** instead of directly depending o
 > | Configuration | [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs): `Load` and `Save`, no `ApplyFromRequest`; the chat's side reads the same file through [`heron_config.py`](../mcp/client/heron_config.py) | every request |
 > | Identity | [`HeronIdentity.cs`](../platform/Heron.Core/HeronIdentity.cs): one id per install, one Workflow ID per request | every request |
 > | Permissions | [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs): seven levels and the owner's switches (§29) | every request |
-> | Event Bus | [`heron_events.py`](../brain/heron_events.py) | its own test only |
+> | Event Bus | `heron_events.py` | its own test only |
 > | Agent Registry | the rows of [28](28-agent-registry.md), assembled per agent by [`heron_agents.py`](../brain/heron_agents.py) | no tool the server serves |
 > | Skill Registry | [`heron_skill.py`](../brain/heron_skill.py), read from [`brain/skills/`](../brain/skills/) | `heron_method`, `heron_capabilities` |
 > | Fragment Registry | [`heron_fragment.py`](../brain/heron_fragment.py), read from each `fragment.yaml` | `heron_lookup`, `revit_read`, `revit_change` and the rest |
 > | Tool Registry | [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs) per operation, `heron_tools.TOOLS` per MCP tool | every request |
-> | Memory Manager | one store per scope, [`heron_scope.py`](../brain/heron_scope.py); what may be remembered, [`heron_memory.py`](../brain/heron_memory.py) | the stores: every search · the rules: their own test only |
+> | Memory Manager | one store per scope, [`heron_scope.py`](../brain/heron_scope.py); what may be remembered, `heron_memory.py` | the stores: every search · the rules: their own test only |
 > | Workflow Manager | [`heron_workflow.py`](../mcp/server/heron_workflow.py) (§3) | its own test only |
 > | State Manager | the same file's checkpoint store; the live state is the add-in's lease, stop and run records | the add-in's: every request |
 > | Logging | [`HeronAudit.cs`](../platform/Heron.Core/HeronAudit.cs), one line per request; the brain's [`heron_audit.py`](../brain/heron_audit.py) | every request |
@@ -194,7 +194,7 @@ AI confidence + Technical validation + Testing
 > ([23 §6](23-heron-kernel.md)), and `revit_change` keeps a change only from a fragment whose proof still
 > stands ([D-117](DECISIONS.md)). A standards or research answer with no source is treated as a bug, not
 > as a low-confidence answer ([`heron_research.py`](../brain/heron_research.py),
-> [`heron_iso.py`](../brain/heron_iso.py)). Of *confidence + validation + testing*, Heron supplies the
+> `heron_iso.py`). Of *confidence + validation + testing*, Heron supplies the
 > second and the third.
 
 ## 6. Evidence System
@@ -297,7 +297,7 @@ Generated -> Sandbox -> Test -> Review -> Approved -> Production
 > **As built (2026-10-18): nothing contains new code. It is watched, and it is kept only on a
 > person's word.** For a new agent, the first run is watched inside the supervising process, and the word
 > *sandbox* was taken out because it promised a containment the code does not give
-> ([D-84](DECISIONS.md), [`heron_sandbox.py`](../brain/heron_sandbox.py)). For a new fragment the path is
+> ([D-84](DECISIONS.md), `heron_sandbox.py`). For a new fragment the path is
 > drawn below. Its one run on a live model is the recorded exception to
 > [Article 11](../HERON_CONSTITUTION.md) and [Golden Rule 18](14-golden-rules.md): once, on the saved
 > model in front, behind Revit's Keep or Discard box ([D-119](DECISIONS.md); seen in Revit 2024 and 2027,
@@ -444,9 +444,9 @@ Heron should distinguish *"what the user normally likes"* from *"what the user a
 > ([D-111](DECISIONS.md)), filed under the model's own id ([D-113](DECISIONS.md), still Proposed). An
 > answer kept for one model is used for another only when the modeller says so
 > (`heron_earlier_answers`). `temporary` is one of six scopes, each its own store (`SCOPES` in
-> [`heron_scope.py`](../brain/heron_scope.py)). [`heron_memory.py`](../brain/heron_memory.py), which
+> [`heron_scope.py`](../brain/heron_scope.py)). `heron_memory.py`, which
 > refuses a temporary item that arrives without a time to live, and
-> [`heron_profile.py`](../brain/heron_profile.py), the User Profile Agent, are `DRAFT` and imported only by
+> `heron_profile.py`, the User Profile Agent, are `DRAFT` and imported only by
 > their own tests ([10 §3, §7](10-memory-and-knowledge.md)).
 
 ## 15. Memory Promotion System
@@ -474,7 +474,7 @@ If Company Standard A and Project Standard B disagree, Heron detects the conflic
 > [`heron_conflict.py`](../brain/heron_conflict.py) (`HERON-RAG-CNF-015`, reached through that tool) names
 > where they disagree, with no winner; `tests/test_conflict.py` holds that. The order between scopes is
 > named and not applied ([20 §2](20-knowledge-trust-and-conflict.md)). The agent written to say a
-> project's rule outranks the company's, [`heron_project.py`](../brain/heron_project.py), is `DRAFT` and no
+> project's rule outranks the company's, `heron_project.py`, is `DRAFT` and no
 > tool serves it.
 
 ## 17. Standards Agent
@@ -487,7 +487,7 @@ A dedicated standards subsystem for ISO · BIM standards · company standards ·
 > watches a model in the background. The standards rows are one agent with a subject
 > ([D-76](DECISIONS.md)); a project's governing standards are asked once and kept
 > ([D-111](DECISIONS.md)); a standards answer with no citation is a bug
-> ([`heron_iso.py`](../brain/heron_iso.py)). Checking a model against a standard is a fragment run through
+> (`heron_iso.py`). Checking a model against a standard is a fragment run through
 > `revit_read`, for example `CHECK_MODEL_STANDARDS` and `CHECK_FAMILY_STANDARDS`, each with its status in
 > its own card.
 
@@ -518,7 +518,7 @@ Eventually handles clash analysis · clearance · system coordination · linked 
 > [`clash-reroute`](../brain/skills/clash-reroute.yaml) skill (`DRAFT`). `EXPORT_MODEL_TO_NWC` writes a
 > Navisworks file, at `PUBLISH`. Each fragment's status is in its card. Reading across loaded links
 > happens only when the modeller asks ([D-59](DECISIONS.md)).
-> [`heron_coordination.py`](../brain/heron_coordination.py) (`HERON-QA-CLS-012`, `DRAFT`), the arithmetic
+> `heron_coordination.py` (`HERON-QA-CLS-012`, `DRAFT`), the arithmetic
 > half of a coordination report, is imported only by its own test.
 
 ## 20. Task Memory
@@ -558,8 +558,8 @@ Priority 5  Learning
 
 This prevents background agents from consuming resources needed by Revit.
 
-> **As built (2026-10-18):** [`heron_queue.py`](../brain/heron_queue.py) and
-> [`heron_scheduler.py`](../brain/heron_scheduler.py) (`HERON-OPS-QUE-002`, `HERON-OPS-SCH-001`, `DRAFT`)
+> **As built (2026-10-18):** `heron_queue.py` and
+> `heron_scheduler.py` (`HERON-OPS-QUE-002`, `HERON-OPS-SCH-001`, `DRAFT`)
 > hold Part 2's seven levels, `P0` to `P6`, not the five above, and never run `P2` to `P6` during a user
 > task ([21 §12](21-resilience-and-operations.md)). No tool the server serves reaches them. The background
 > work Heron does today is not queued: the server rebuilds an empty or stale knowledge store when it
@@ -581,7 +581,7 @@ Monitors CPU · RAM · disk · AI usage · vector DB load · Revit responsivenes
 
 **If Revit is busy, background jobs reduce or pause automatically.**
 
-> **As built (2026-10-18):** [`heron_resources.py`](../brain/heron_resources.py) (`HERON-OPS-RES-003`,
+> **As built (2026-10-18):** `heron_resources.py` (`HERON-OPS-RES-003`,
 > `DRAFT`) reads CPU, RAM and disk where the platform offers them, reports what it cannot see as
 > unmeasured, and pauses nothing; it is imported only by its own test. Whether Revit is busy is answered in
 > the add-in: a request Revit has not finished is answered `still_running`, not to be sent again
@@ -609,8 +609,8 @@ This allows different models later without rebuilding Heron.
 
 > **As built (2026-10-18): Heron makes no model call of its own** ([D-58](DECISIONS.md)); the host
 > chooses the model ([D-01](DECISIONS.md), [D-65](DECISIONS.md)).
-> [`heron_router.py`](../brain/heron_router.py) (`HERON-KRN-MDL-010`, `DRAFT`) declares what a task needs
-> and names who chooses, never a model. [`heron_provider.py`](../brain/heron_provider.py) (`DRAFT`) is one
+> `heron_router.py` (`HERON-KRN-MDL-010`, `DRAFT`) declares what a task needs
+> and names who chooses, never a model. `heron_provider.py` (`DRAFT`) is one
 > adapter, a local Ollama on `127.0.0.1`, and has not met a provider. They are imported by each other and
 > by `heron_availability.py`, and no tool the server serves reaches them
 > ([23 §8](23-heron-kernel.md), [37](37-the-provider-adapter.md)). Embeddings run on the PC with no
@@ -635,7 +635,7 @@ This allows different models later without rebuilding Heron.
 > **As built (2026-10-18): retired from Heron's specification by [D-65](DECISIONS.md).** Which model a
 > task gets, and where to go when a provider cannot be reached, are the host's. Heron keeps one clause: a
 > result produced after a fallback is marked degraded and never counts toward a promotion. That is
-> [`heron_availability.py`](../brain/heron_availability.py) (`HERON-KRN-MAV-017`, `DRAFT`), which no tool
+> `heron_availability.py` (`HERON-KRN-MAV-017`, `DRAFT`), which no tool
 > the server serves reaches.
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
@@ -675,7 +675,7 @@ The equivalent of an employee performance review.
 > [`brain/agent-proofs/`](../brain/agent-proofs/). Whether each fragment is still found by its own
 > declared sentences is CI's `tools/check-routing.py`; the owner's own questions are scored by
 > `tools/score-routing.py`, and a drop is reported, never a gate ([D-100](DECISIONS.md)).
-> [`heron_evaluator.py`](../brain/heron_evaluator.py), the Agent Evaluator (`HERON-AHR-EVL-007`, `DRAFT`),
+> `heron_evaluator.py`, the Agent Evaluator (`HERON-AHR-EVL-007`, `DRAFT`),
 > is imported by nothing but its test. The example's request is built as `revit_select_by_category`, and
 > it selects every duct in the model, whether the view shows it or not
 > ([`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs)).
@@ -887,7 +887,7 @@ Then guide the user once. After that, normal usage should be almost invisible.
 > **As built (2026-10-18):** the first run is [`tools/heron-ready.py`](../tools/heron-ready.py), which
 > the installer runs to check the PC. Run by hand it also builds the knowledge store and fetches the
 > search model once; it names each gap with the command that closes it, installs nothing itself, and reads
-> the add-in's switches without setting them. [`heron_onboarding.py`](../brain/heron_onboarding.py)
+> the add-in's switches without setting them. `heron_onboarding.py`
 > (`HERON-INS-ONB-010`, `DRAFT`), the once-only greeting, is imported only by its own test.
 > **2026-11-20:** of the add-in's switches it now reads only *Ask to Keep*: since [D-166](decisions/D-166.md)
 > Changes, Admin and Publish are held in Revit's memory, so it says each is off when Revit starts
@@ -912,7 +912,7 @@ A `Diagnose Heron` command checks Revit · MCP · Agents · Skills · Fragments 
 > ([`HeronStop.cs`](../platform/Heron.Core/HeronStop.cs), [D-129](DECISIONS.md), [D-130](DECISIONS.md);
 > no ribbon button, [D-46](DECISIONS.md)). It was seen in Revit 2024 and 2027
 > ([Group EZ](needs-checking/group-ez.md)). Safe Mode, a sweep of the flag table back to a moment a person
-> names, is [`heron_safemode.py`](../brain/heron_safemode.py) (`HERON-OPS-SAF-008`, `DRAFT`), imported only
+> names, is `heron_safemode.py` (`HERON-OPS-SAF-008`, `DRAFT`), imported only
 > by its own test. Heron's own data is backed up, verified and restored by
 > [`tools/heron-backup.py`](../tools/heron-backup.py), with a drill into a scratch folder.
 > **2026-11-20:** of that, the stop itself was seen on Revit 2024, and on 2020 with nothing running (EZ3);
@@ -991,8 +991,8 @@ Submitted -> Security Scan -> Duplicate Check -> Architecture Check
 ```
 
 > **As built (2026-10-18): not built as a path.** There is no community store and no submission flow
-> ([D-41](DECISIONS.md)); [`heron_contribution.py`](../brain/heron_contribution.py) and
-> [`heron_pullrequest.py`](../brain/heron_pullrequest.py) are `DRAFT`, and no tool reaches them. Nothing
+> ([D-41](DECISIONS.md)); `heron_contribution.py` and
+> `heron_pullrequest.py` are `DRAFT`, and no tool reaches them. Nothing
 > leaves the PC on its own ([Golden Rule 12](14-golden-rules.md), [Article 15](../HERON_CONSTITUTION.md)).
 
 ## 40. Documentation Agent
@@ -1333,7 +1333,7 @@ Revit QA              required beside Code QA and BIM QA (D-13; Part 2 §48)
 > still stands, [D-117](DECISIONS.md)) and in Revit (the gate, then Keep or Discard while *Ask to Keep*
 > is on); the result stays on the PC as a run record and an audit line, and nothing is sent anywhere as
 > telemetry ([D-58](DECISIONS.md), [D-70](DECISIONS.md)); learning and evolution are `DRAFT` modules no
-> tool reaches ([`heron_observe.py`](../brain/heron_observe.py), [`heron_evolve.py`](../brain/heron_evolve.py));
+> tool reaches (`heron_observe.py`, [`heron_evolve.py`](../brain/heron_evolve.py));
 > and the installer is a program of its own, not a branch of the Kernel
 > ([platform/README.md](../platform/README.md)).
 >
@@ -1432,31 +1432,31 @@ Heron Kernel · Capability Registry · Workflow Engine · Agent Registry · Agen
 > | 2 | Capability Registry | Derived from the fragment cards (§2) | [`heron_capability.py`](../brain/heron_capability.py) | served: `heron_capabilities`, `heron_lookup`, `heron_resolve` |
 > | 3 | Workflow Engine | Stages, timeouts, retries asked of the failure table, checkpoints; a job reaches the host as a method (§3) | [`heron_workflow.py`](../mcp/server/heron_workflow.py); `heron_method` | the engine: reached by no tool · the methods: served |
 > | 4 | Agent Registry | The register's rows, assembled into one record per agent | [28](28-agent-registry.md), [`heron_agents.py`](../brain/heron_agents.py), `python tools/agent-count.py` | reached by no tool |
-> | 5 | Agent Factory / HR | Job description, design, build, a creator that can only assign `PROPOSED`, training; a new row is scaffolded by `tools/new-agent.py` | [`heron_hr.py`](../brain/heron_hr.py), [`heron_creator.py`](../brain/heron_creator.py) | reached by no tool |
+> | 5 | Agent Factory / HR | Job description, design, build, a creator that can only assign `PROPOSED`, training; a new row is scaffolded by `tools/new-agent.py` | `heron_hr.py`, `heron_creator.py` | reached by no tool |
 > | 6 | RAG Librarian | Chooses the scopes before anything is searched | `librarian()` in [`heron_retrieve.py`](../brain/heron_retrieve.py) | served: `heron_standards`, `heron_research` |
 > | 7 | Fragment Registry + lifecycle | Cards on disk; `DRAFT` and `PROVEN` in use, and `DEPRECATED` for a card retired since; promoted by one signed proof | [`heron_fragment.py`](../brain/heron_fragment.py), [D-30](DECISIONS.md), `tools/check-signatures.py` | served |
 > | 8 | Skill Registry + lifecycle | Skills are the jobs `heron_method` hands over; every skill is `DRAFT` (`grep -h '^heron-status:' brain/skills/*.yaml \| sort \| uniq -c`) | [`heron_skill.py`](../brain/heron_skill.py), [`brain/skills/`](../brain/skills/) | served |
 > | 9 | Separated Memory | Six scopes, one SQLite file each, and a store may not attach another | `SCOPES` and `_no_second_file` in [`heron_scope.py`](../brain/heron_scope.py), [D-23](DECISIONS.md) | served |
 > | 10 | Vector DB management | The stores are rebuilt from the files when the server starts; word match built in, nearness and re-ranking optional and local | [`heron_brain.py`](../mcp/server/heron_brain.py), [`heron_embed.py`](../brain/heron_embed.py), [D-24](DECISIONS.md) | served |
 > | 11 | Revit Compatibility Layer | One build per release, compile symbols, `#if` branches; every release compiled in CI (§9) | [`Directory.Build.props`](../Directory.Build.props), `tools/check-compile.py`, [`heron_matrix.py`](../brain/heron_matrix.py) | built · the add-in has loaded in a real Revit on the releases [16 §6](16-version-support-strategy.md) names |
-> | 12 | Sandbox | No containment: a new agent's first run is watched ([D-84](DECISIONS.md)); a DRAFT's one run is held behind Keep or Discard ([D-119](DECISIONS.md)) (§10) | [`heron_sandbox.py`](../brain/heron_sandbox.py), `try-once` in [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) | a sandbox: not built · the one run: seen in Revit ([Group EM](needs-checking/group-em.md)) |
+> | 12 | Sandbox | No containment: a new agent's first run is watched ([D-84](DECISIONS.md)); a DRAFT's one run is held behind Keep or Discard ([D-119](DECISIONS.md)) (§10) | `heron_sandbox.py`, `try-once` in [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) | a sandbox: not built · the one run: seen in Revit ([Group EM](needs-checking/group-em.md)) |
 > | 13 | Automated Testing | The suites and the gates on every pull request; nothing runs inside Revit by itself | [`tests/`](../tests/README.md), [`gates.yml`](../.github/workflows/gates.yml), `python tools/check-gaps.py` | built |
 > | 14 | Golden Test Library | Cases audited without Revit; none is run (§28) | [`tests/golden/cases.py`](../tests/golden/cases.py) | built · a case is proven by a person in Revit |
 > | 15 | Version / Provenance system | git history, the card's `id` and `version`, the proof's fingerprint (§7) | `tools/check-metadata.py`, `tools/check-signatures.py`, [`heron_versioning.py`](../brain/heron_versioning.py) | built · `heron_versioning.py`: reached by no tool |
 > | 16 | Security + Permission Layer | Seven levels; Changes, Admin, Publish and Ask to Keep, in Heron's Settings window since [D-150](decisions/D-150.md); the gate in the add-in (§29) | [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs) | every request · seen in Revit 2024 ([Group ES](needs-checking/group-es.md)); Ask to Keep not run ([Group HG](needs-checking/group-hg.md)) · **2026-11-20:** the Ask to Keep switch turned on and off in Revit 2020 and read back ([Group NP](needs-checking/group-np.md)), what it does to a change still not run; Changes, Admin and Publish held in Revit's memory since [D-166](decisions/D-166.md) |
 > | 17 | Audit Trail | One line per request, keyed by Workflow ID, never pruned; the brain's own beside it | [`HeronAudit.cs`](../platform/Heron.Core/HeronAudit.cs), [`heron_audit.py`](../brain/heron_audit.py), [D-62](DECISIONS.md) | every request |
-> | 18 | Rollback / Recovery | A change rolled back whole; the stop; backups with a restore drill. Session rollback and Safe Mode written, not wired (§35) | [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`tools/heron-backup.py`](../tools/heron-backup.py), [`heron_rollback.py`](../brain/heron_rollback.py), [`heron_safemode.py`](../brain/heron_safemode.py) | the rollback and the stop: seen in Revit ([Group ET](needs-checking/group-et.md), [Group EZ](needs-checking/group-ez.md)) · session rollback, Safe Mode: reached by no tool · **2026-11-20:** the session rollback, `heron_rollback.py`, was retired on 2026-11-16 (`Heron-Status: DEPRECATED`, [row 5b-1747](fragment-issues/row-5b-1747.md)); a chat's own last change is taken back with Revit's Undo, `revit_undo_last` ([D-157](decisions/D-157.md), [D-175](decisions/D-175.md)) |
-> | 19 | Background Queue | `P0` to `P6`, and user work always wins (§22) | [`heron_queue.py`](../brain/heron_queue.py), [`heron_scheduler.py`](../brain/heron_scheduler.py) | reached by no tool |
+> | 18 | Rollback / Recovery | A change rolled back whole; the stop; backups with a restore drill. Session rollback and Safe Mode written, not wired (§35) | [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`tools/heron-backup.py`](../tools/heron-backup.py), `heron_rollback.py`, `heron_safemode.py` | the rollback and the stop: seen in Revit ([Group ET](needs-checking/group-et.md), [Group EZ](needs-checking/group-ez.md)) · session rollback, Safe Mode: reached by no tool · **2026-11-20:** the session rollback, `heron_rollback.py`, was retired on 2026-11-16 (`Heron-Status: DEPRECATED`, [row 5b-1747](fragment-issues/row-5b-1747.md)); a chat's own last change is taken back with Revit's Undo, `revit_undo_last` ([D-157](decisions/D-157.md), [D-175](decisions/D-175.md)) |
+> | 19 | Background Queue | `P0` to `P6`, and user work always wins (§22) | `heron_queue.py`, `heron_scheduler.py` | reached by no tool |
 > | 20 | Self-Diagnostics | One report, with a next step per finding (§34) | [`heron_diagnose.py`](../mcp/server/heron_diagnose.py) | served: `heron_diagnose` |
 > | 21 | Automatic Installer | A window and a command line; per user; files from a published release (§32) | [`platform/Heron.Installer`](../platform/README.md), [D-90](DECISIONS.md), [D-96](DECISIONS.md) | built · run on the owner's PCs, not every row ([Group EP](needs-checking/group-ep.md)) · **2026-11-20:** and the one Setup file a modeller downloads, since [D-167](decisions/D-167.md) (§32) |
 > | 22 | Automatic Update Manager | Says whether a newer release exists, and updates nothing; an install replaces ([D-94](DECISIONS.md)) | [`UpdateCheck.cs`](../platform/Heron.Installer/UpdateCheck.cs), [`heron_update.py`](../brain/heron_update.py) | not built as an updater |
-> | 23 | GitHub Agent | Push, pull requests and releases are a person's ([Golden Rule 12](14-golden-rules.md)) | [`heron_github.py`](../brain/heron_github.py) | reached by no tool |
-> | 24 | Standards Agent | On demand; one agent with a subject ([D-76](DECISIONS.md)) (§17) | `heron_standards`, [`heron_iso.py`](../brain/heron_iso.py) | served · **2026-11-20:** `heron_iso.py` is imported only by its own test; `heron_standards` answers through `librarian()` and `heron_conflict.py` (`standards` in [`heron_brain.py`](../mcp/server/heron_brain.py), `python tools/module-reach.py --list`) |
+> | 23 | GitHub Agent | Push, pull requests and releases are a person's ([Golden Rule 12](14-golden-rules.md)) | `heron_github.py` | reached by no tool |
+> | 24 | Standards Agent | On demand; one agent with a subject ([D-76](DECISIONS.md)) (§17) | `heron_standards`, `heron_iso.py` | served · **2026-11-20:** `heron_iso.py` is imported only by its own test; `heron_standards` answers through `librarian()` and `heron_conflict.py` (`standards` in [`heron_brain.py`](../mcp/server/heron_brain.py), `python tools/module-reach.py --list`) |
 > | 25 | BIM QA Agent | The `CHECK_` fragments; the one-report module written, not wired (§18) | [`heron_modelqa.py`](../brain/heron_modelqa.py) | the checks: served through `revit_read` · `heron_modelqa.py`: reached by no tool |
 > | 26 | Conversation / Persona Agent | Claude Code chooses the wording and the level | `HERON-ORC-PER-003` in [28](28-agent-registry.md), [D-80](DECISIONS.md) | host · **2026-11-20:** there is no level - one voice ([D-27](decisions/D-27.md)) - and `HERON-ORC-PER-003` was retired by it on 2026-11-15, still counted under HOST ([28](28-agent-registry.md)) |
-> | 27 | Model Router | Declares the need, never a model; the host chooses ([D-65](DECISIONS.md)) (§24, §25) | [`heron_router.py`](../brain/heron_router.py) | reached by no tool |
+> | 27 | Model Router | Declares the need, never a model; the host chooses ([D-65](DECISIONS.md)) (§24, §25) | `heron_router.py` | reached by no tool |
 > | 28 | Knowledge Trust System | `heron-status` and `source:` on each card; the status is a hard filter; two axes proposed (§38) | [`heron_fragment.py`](../brain/heron_fragment.py), [D-14](DECISIONS.md), still Proposed | in part, served |
-> | 29 | Agent Performance System | An evaluator, and per-release performance of fragments and skills, written and not wired; Heron's own latency measured by a tool ([D-58](DECISIONS.md)) | [`heron_evaluator.py`](../brain/heron_evaluator.py), [`heron_runs.py`](../brain/heron_runs.py), `tools/measure-brain.py` | reached by no tool |
+> | 29 | Agent Performance System | An evaluator, and per-release performance of fragments and skills, written and not wired; Heron's own latency measured by a tool ([D-58](DECISIONS.md)) | `heron_evaluator.py`, `heron_runs.py`, `tools/measure-brain.py` | reached by no tool |
 > | 30 | Heron Constitution | Binding, and amended only by decision (§46) | [`HERON_CONSTITUTION.md`](../HERON_CONSTITUTION.md), [D-43](DECISIONS.md) | binding · code holds it as its *Enforcement* table says |
 >
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
