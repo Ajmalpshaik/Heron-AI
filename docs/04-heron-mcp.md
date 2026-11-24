@@ -984,11 +984,14 @@ open a view, zoom"* and no confirmation. Only this side held it back: §8.1's do
   So do `revit_change`'s two refusals a screen-only job meets first - not proven, and Changes off - and
   `heron_method`'s list of a job's capabilities says `EXECUTE` runs through it.
 - **Revit's Temporary Hide/Isolate needs a transaction, so it is not a fragment.** `revit_isolate_temporary`
-  and `revit_reset_temporary` call two FIXED operations, `isolate_temporary` and `reset_temporary`
-  (`RevitTemporaryView.cs`): one transaction round `IsolateElementsTemporary`, `IsolateCategoriesTemporary`
-  or `DisableTemporaryViewMode`, in the active view, taking element ids or BIM category words. A
+  and `revit_reset_temporary` call FIXED operations, `isolate_temporary`, `hide_temporary` and
+  `reset_temporary` (`RevitTemporaryView.cs`): one transaction round `IsolateElementsTemporary`,
+  `IsolateCategoriesTemporary`, `HideElementsTemporary`, `HideCategoriesTemporary` or
+  `DisableTemporaryViewMode`, in the active view, taking element ids - Revit's number or a family form's
+  long id - or BIM category words. `mode=hide` is Revit's own HH, sent as its own operation so an older
+  add-in refuses it rather than isolating ([row 5b-2024](fragment-issues/row-5b-2024.md)). A
   transaction opened for fragment code with Changes off would be a write path with no switch in front of
-  it; these open one for three Revit calls and nothing a caller sends.
+  it; these open one for Revit's temporary-view calls and nothing a caller sends.
 - **A DRAFT runs here and says DRAFT, as a read does.** [D-117](DECISIONS.md) refuses a fragment that is
   not PROVEN only where a change is KEPT; its items 3 and 4 leave a run that keeps nothing, and a read,
   unasked. The show door opens no transaction, so it keeps nothing in the model.

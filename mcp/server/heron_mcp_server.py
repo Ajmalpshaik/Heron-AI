@@ -4154,30 +4154,47 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
 
 
 @server.tool()
-def revit_isolate_temporary(ids: str = "", category: str = "") -> str:
+def revit_isolate_temporary(ids: str = "", category: str = "", mode: str = "isolate") -> str:
     """
-    Isolate elements in the ACTIVE Revit view, temporarily - Revit's own
-    Temporary Hide/Isolate - so the user sees only those. Changes nothing in
-    the model and works with Changes OFF.
+    Isolate or hide elements in the ACTIVE Revit view, temporarily - Revit's
+    own Temporary Hide/Isolate. Changes nothing in the model and works with
+    Changes OFF.
 
     Use when the user asks to "isolate these", "show only the ducts in this
-    view", "hide everything else for a moment".
+    view", "hide everything else for a moment" (mode isolate), or "hide these
+    for now", "hide the outside panels so I can see inside" (mode hide).
 
     Give ONE of:
-      ids       element ids as Revit prints them, comma separated - the ids an
-                earlier Heron answer gave, e.g. 925629, 925630
+      ids       element ids as Heron's answers print them, comma separated -
+                Revit's number (925629, 925630) or the long id the family form
+                tools give back (cc308a19-...-00000c45), mixed as you have them
       category  BIM words, comma separated - "ducts", "pipes, pipe fittings"
     Both at once is refused: these elements, or everything of that kind, are
     two different requests.
 
-    An isolate already on in the view is replaced, and the answer says so.
+    mode  "isolate" (the default) shows only these - Revit's Isolate Element;
+          an isolate already on is replaced, and the answer says so.
+          "hide" hides these and leaves the rest - Revit's Hide Element (HH);
+          it adds to a temporary hide/isolate already on, as HH does.
+
     The view's saved visibility, its template and every element are untouched;
     revit_reset_temporary, or Revit's own Reset Temporary Hide/Isolate, ends
     it, and so does closing the model. A sheet, a schedule or a legend has no
-    temporary isolate and is refused.
+    temporary hide/isolate and is refused.
     """
     # NOT RUN until a reply says otherwise (row 5b-1563): no Revit to ask.
     _outcome(NOT_RUN)
+
+    # TWO WORDS, AND NOTHING ELSE GUESSED AT (row 5b-2024). A mode that is
+    # neither is refused before anything is sent: read as an isolate, "hide"
+    # misspelt would show ONLY what the modeller asked to put away.
+    how = (mode or "isolate").strip().lower()
+    if how not in ("isolate", "hide"):
+        return _ended("refused",
+                      "mode is \"isolate\" or \"hide\", and \"%s\" is neither. Nothing was "
+                      "sent to Revit." % mode)
+    hide = how == "hide"
+
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -4185,7 +4202,12 @@ def revit_isolate_temporary(ids: str = "", category: str = "") -> str:
 
     # THE PIN TRAVELS WITH THE REQUEST, for revit_select_by_category's reason:
     # the add-in checks it BEFORE the view changes.
-    reply = session.request("isolate_temporary",
+    #
+    # A HIDE IS ITS OWN OPERATION, hide_temporary, never a flag on the
+    # isolate: an add-in built before it would ignore a flag it did not know
+    # and isolate the very elements the modeller asked to hide. Under its own
+    # name an older add-in answers unknown_op, and nothing is done.
+    reply = session.request("hide_temporary" if hide else "isolate_temporary",
                             op_args={"ids": ids or "", "category": category or "",
                                      "expectProject": pinned.project_information_id or ""})
     session.close()
@@ -4195,6 +4217,10 @@ def revit_isolate_temporary(ids: str = "", category: str = "") -> str:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
 
     if not reply.get("ok"):
+        if hide and reply.get("error") == "unknown_op":
+            return ("The Heron add-in in this Revit is older than temporary hide, so nothing "
+                    "was hidden and the view is as it was. That Revit's add-in needs "
+                    "updating; until then, select the elements and press HH in Revit.")
         return reply.get("message") or reply.get("error") or "The request was refused."
 
     # AFTER THE ACT, as for a selection: between two models made from one
@@ -4203,13 +4229,13 @@ def revit_isolate_temporary(ids: str = "", category: str = "") -> str:
     wrong_model = pinned.check(reply)
     if wrong_model is not None and reply.get("isolated"):
         _ended("failed")
-        return ("Heron isolated elements in \"%s\" of %s before it could tell that %s is "
+        return ("Heron %s elements in \"%s\" of %s before it could tell that %s is "
                 "not the model this chat works on (%s). Only that view's temporary "
                 "display changed; nothing in either model was changed. Call "
                 "revit_reset_temporary, or use Revit's own Reset Temporary Hide/Isolate, "
                 "to end it - or say 'use this model' to move this chat onto %s."
-                % (reply.get("view"), reply.get("document"), reply.get("document"),
-                   pinned.title, reply.get("document")))
+                % ("hid" if hide else "isolated", reply.get("view"), reply.get("document"),
+                   reply.get("document"), pinned.title, reply.get("document")))
     if wrong_model is not None:
         return _ended("refused", wrong_model)
 
@@ -4221,18 +4247,23 @@ def revit_isolate_temporary(ids: str = "", category: str = "") -> str:
     else:
         what = "%s element(s)" % "{:,}".format(isolated)
 
-    lines = ["Isolated %s in \"%s\", in %s." % (what, reply.get("view"), where)]
+    lines = ["%s %s in \"%s\", in %s." % ("Hid" if hide else "Isolated", what,
+                                         reply.get("view"), where)]
     seen = reply.get("inView")
     if seen is not None and seen != isolated:
         lines.append("  Only %s of the %s are in this view at all - the rest are on "
                      "another level, outside its range or hidden by its own settings, "
-                     "and isolating cannot show them here."
-                     % ("{:,}".format(seen), "{:,}".format(isolated)))
+                     "and %s cannot %s them here."
+                     % ("{:,}".format(seen), "{:,}".format(isolated),
+                        "hiding" if hide else "isolating", "hide" if hide else "show"))
     # WHOSE IT WAS IS NOT KNOWN - the modeller's, or an earlier Heron call's,
     # a resend after a lost answer included - so it is not said.
     if reply.get("replacedEarlier"):
         lines.append("  A temporary isolate was already on in this view, and this "
                      "replaced it rather than adding to it.")
+    if reply.get("addedToEarlier"):
+        lines.append("  A temporary hide/isolate was already on in this view, and these "
+                     "were hidden on top of it, as Revit's own HH does.")
     lines.append("This is Revit's Temporary Hide/Isolate: nothing in the model and "
                  "nothing saved in the view changed. revit_reset_temporary ends it.")
     return "\n".join(lines)
