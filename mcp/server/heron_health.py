@@ -303,9 +303,13 @@ def switches_line(state):
         said = ", ".join("%s %s" % (name, "ON" if state[key] else "off")
                          for name, key in (("Changes", "changes"), ("Admin", "admin"),
                                            ("Publish", "publish")))
+        # WHERE IN THE WINDOW - row 5b-2019: told to turn Changes on, the
+        # modeller could not find it, and the chat had to read the add-in's C#.
         line = ("%s in this Revit right now. Only the modeller turns one on, in Heron's "
-                "Settings in Revit (Heron > AI Bridge > Settings), and all three are off "
-                "again whenever Revit starts." % said)
+                "Settings in Revit (Heron > AI Bridge > Settings) - one row each, Changes at "
+                "the top, then Admin, then Publish; the button beside it reads OFF, and "
+                "pressing it asks Turn on - and all three are off again whenever Revit "
+                "starts." % said)
         locked = [name for name, key in (("Changes", "changes"), ("Admin", "admin"),
                                          ("Publish", "publish"))
                   if key in (state.get("locked") or [])]

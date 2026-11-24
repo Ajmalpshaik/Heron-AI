@@ -102,7 +102,9 @@ namespace Heron.Revit.Addin
             {
                 window.Build();
                 window._log("Settings window opened.");
-                window._shell.Window.ShowDialog();
+                // ShowModal, so the question a switch asks is owned by this
+                // window and opens in front of it - row 5b-2019.
+                HeronWindowStyle.ShowModal(window._shell, window._log);
                 return true;
             }
             catch (Exception ex)
@@ -231,6 +233,13 @@ namespace Heron.Revit.Addin
             return row;
         }
 
+        /// <summary>The setting as it is now; null when it cannot be read.</summary>
+        private static bool? SafeIsOn(HeronSetting setting)
+        {
+            try { return setting.IsOn(); }
+            catch (Exception) { return null; }
+        }
+
         private static string SafeLine(HeronSetting setting)
         {
             try { return setting.Line(); }
@@ -239,6 +248,7 @@ namespace Heron.Revit.Addin
 
         private void Press(HeronSetting setting)
         {
+            var before = SafeIsOn(setting);
             string problem;
             try { problem = setting.Toggle(); }
             catch (Exception ex)
@@ -247,8 +257,26 @@ namespace Heron.Revit.Addin
                 problem = "Could not change " + setting.Name + ", so it is as it was. " + ex.Message;
             }
 
-            _problem.Text = problem ?? "";
-            _problem.Visibility = string.IsNullOrEmpty(problem) ? Visibility.Collapsed : Visibility.Visible;
+            // A PRESS THAT CHANGED NOTHING IS SAID - row 5b-2019. Its question
+            // was closed without the answer that changes it - Esc, the X,
+            // Leave off - or the switch is held off. Before this, the row
+            // simply drew OFF again, and on Revit 2024 a modeller who believed
+            // Changes was on found out only when two changes were refused.
+            // Warning, not Error: nothing went wrong, and nothing changed.
+            var notice = problem;
+            var colour = HeronWindowStyle.DangerColour;
+            if (string.IsNullOrEmpty(problem) && before.HasValue && SafeIsOn(setting) == before)
+            {
+                var state = before.Value ? "ON" : "OFF";
+                notice = setting.Name + " is still " + state + " - nothing changed. To change it, press "
+                       + state + " again and answer the question that opens in front of this window.";
+                colour = HeronWindowStyle.WarnColour;
+                _log("Settings: " + setting.Name + " pressed; still " + (before.Value ? "on" : "off") + ".");
+            }
+
+            _problem.Text = notice ?? "";
+            _problem.Foreground = new SolidColorBrush(colour);
+            _problem.Visibility = string.IsNullOrEmpty(notice) ? Visibility.Collapsed : Visibility.Visible;
 
             // Every row again, from the settings read back - one answer can
             // change another switch's line.
