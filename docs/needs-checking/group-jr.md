@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#994](https://github.com/Ajmalpshaik/Heron-AI/issues/994) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-Recorded as worth building in [doc 45 §6](../45-five-more-downloaded-skill-files.md) (*"Panel sizes on a
+Recorded as worth building in [doc 45 §6](../31-research.md) (*"Panel sizes on a
 curtain wall, grouped within the modeller's tolerance"*) and in the
 [facade plan](../work-notes/plans/facade-capability.md), where it waited for the owner's word because it
 widens a PROVEN tool. The owner gave it on 2026-10-29 (*"build the three widenings too"*), knowing the change
@@ -71,4 +71,4 @@ A row that fails stays open; nothing in a row changes to make it pass.
 **What this group does not settle.** A curtain **system**'s panels: the tool reads a curtain wall, and a curtain
 system handed in is *"not a wall"* - the [`facade`](../../brain/skills/facade.yaml) method's route B step 4 says
 to run it on the system, which version 1 does not do either (recorded, not changed here). The glass area by
-orientation is [doc 45 §6](../45-five-more-downloaded-skill-files.md)'s, not this.
+orientation is [doc 45 §6](../31-research.md)'s, not this.

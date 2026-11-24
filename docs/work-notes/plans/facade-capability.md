@@ -56,7 +56,7 @@ tools behind it.
 | 5 | `set-divided-surface-layout` - an existing divided surface's grids changed: rotation (a diamond pattern), offset, justification, border tiles, cut at levels | [JL](../../needs-checking/group-jl.md) | DRAFT |
 | 6 | `report-divided-surfaces` widened to version 2 - also reads the rotations, flip, mirror, indents and what cuts each surface, so those questions stop ranking the write in 5 first | [DR](../../needs-checking/group-dr.md) rows DR5a, DR5b | DRAFT |
 | 7 | the [`facade`](../../../brain/skills/facade.yaml) method - routes A to E | - | DRAFT |
-| 8 | `report-curtain-elements` widened to version 2 (2026-10-29, on the owner's word) - groups each wall's panels by **size**, width x height as Revit gives them, within a tolerance (5 mm unless the modeller gives one), per wall and across the walls handed in, as [doc 45 §6](../../45-five-more-downloaded-skill-files.md) recorded; a size Revit does not give is named, never guessed | [JR](../../needs-checking/group-jr.md) | DRAFT |
+| 8 | `report-curtain-elements` widened to version 2 (2026-10-29, on the owner's word) - groups each wall's panels by **size**, width x height as Revit gives them, within a tolerance (5 mm unless the modeller gives one), per wall and across the walls handed in, as [doc 45 §6](../../31-research.md) recorded; a size Revit does not give is named, never guessed | [JR](../../needs-checking/group-jr.md) | DRAFT |
 | 9 | `report-family-template` widened to version 4, on the owner's word (2026-10-29) - each adaptive point's **Orientation** on its `pointList` row, in the words `set-adaptive-point-orientation` prints, so what 4 writes is read back and *"what orientation are the adaptive points"* stops landing on that write. It was PROVEN; the change made its proof stale | [JQ](../../needs-checking/group-jq.md) | DRAFT |
 | 10 | `set-curtain-wall-grid` widened to version 3 and `set-curtain-wall-mullions` to version 2 - each also takes a **curtain system type**, by its Grid 1 and Grid 2, on the owner's word of 2026-10-29; a curtain wall type as before. Both proofs went stale with it, so route A's grid and mullion steps wait on the same group | [JP](../../needs-checking/group-jp.md) | DRAFT |
 
@@ -103,7 +103,7 @@ Said by the `facade` method when asked, never worked round:
 - the curtain type's *Automatically Embed* box - no tool reads or sets it yet ([row 5b-2008](../../fragment-issues/row-5b-2008.md));
 - the tile pattern of a divided surface - Revit's `CurtainPanelTilePattern` is read-only;
 - whether a fin or blade follows a later change to the curtain grid it was placed against - not measured;
-- glazing area by orientation and each facade's bearing from true north - [doc 45 §6](../../45-five-more-downloaded-skill-files.md).
+- glazing area by orientation and each facade's bearing from true north - [doc 45 §6](../../31-research.md).
 
 ## Retiring this note
 

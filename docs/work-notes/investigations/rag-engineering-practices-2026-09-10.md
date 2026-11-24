@@ -12,13 +12,13 @@
 > §3.1 as [`00-structure.md` §3.6a](../plans/rag/00-structure.md) with requirements **R-46 to R-55**;
 > §3.2, §3.3 and §3.4 as [`§3.7`](../plans/rag/00-structure.md) with **R-56 to R-65**. **The three ⏸
 > owner's calls are still open.** This note retires once the taken rows are built and recorded in
-> [`docs/34`](../../34-patterns-adapted.md).
+> [31 research](../../31-research.md).
 > **Asked for by:** Ajmal PS, 2026-09-10 — *"check this profile, is there anything we can use for our
 > project, not only RAG, for complete Heron AI."*
 > **The rule this obeys:** [**D-25**](../../DECISIONS.md) — **studied and re-authored, never imported.**
 > No code, no name, no library from any repository below is proposed for use here.
 > **Where the durable part goes:** an accepted pattern belongs in
-> [`docs/34`](../../34-patterns-adapted.md) beside the sixteen already there, and a rejected one belongs
+> [31 research](../../31-research.md) beside the sixteen already there, and a rejected one belongs
 > there too — that file records both. **This note is then deleted.**
 
 ---
@@ -66,7 +66,7 @@ repository put the human at the last step for the same reason.**
 
 ## 3. What transfers
 
-Marked the way [`docs/34`](../../34-patterns-adapted.md) marks things, so an accepted row can move there
+Marked the way [31 research](../../31-research.md) marks things, so an accepted row can move there
 unchanged.
 
 ### 3.1 ✅ **TAKEN 2026-09-10** — a fabrication check that uses no model at all
@@ -107,7 +107,7 @@ about a clause is compared against the clause text it cites, deterministically, 
 threshold. **R-21 stops being a rule nobody can test and becomes a number that can go in
 [`retrieval-history.md`](../../../brain/retrieval-history.md)** beside the retrieval figures.
 
-**And it is already this repository's house style.** [`34 §2.4`](../../34-patterns-adapted.md) —
+**And it is already this repository's house style.** [31 research](../../31-research.md) —
 *deterministic before the model, as an order*. This is that rule applied to the output rather than the
 input.
 
@@ -217,14 +217,14 @@ So: **not one dependency below is proposed.** Note also that the course reaches 
 API* (Jina), which [D-24](../../DECISIONS.md) already settled the other way — local by default, because a
 per-call cost makes re-indexing something to avoid, and an index nobody rebuilds stops matching the disk.
 
-**This is the normal outcome**, not a disappointment. [`34`](../../34-patterns-adapted.md) opens with it:
+**This is the normal outcome**, not a disappointment. [31 research](../../31-research.md) opens with it:
 *the pattern transfers; the shape almost never does.*
 
 ---
 
 ## 4. The correction this research forces on Heron's own RAG notes
 
-**Reading these repositories sent me back to [`34 §2.13`](../../34-patterns-adapted.md), and it
+**Reading these repositories sent me back to [31 research](../../31-research.md), and it
 contradicts something written in this repository earlier today.**
 
 [`00-structure.md` §3.2](../plans/rag/00-structure.md) proposes **a third retrieval route that follows
@@ -249,8 +249,8 @@ added as competitors.
 | ✅ **Survives regardless** | **The test to apply.** `34 §2.13` did not just reject a feature; it named what decides one. **Before any document edge route is built, measure the neighbour count.** If document edges are as dense as fragment edges, it loses the same way and for the same reason |
 
 **This is the second time in one day that a Heron document was corrected by a Heron document.** It is
-also the reason [`33`](../../33-external-repository-research.md) and
-[`34`](../../34-patterns-adapted.md) are worth their length: a finding somebody else's corpus reports as
+also the reason [31 research](../../31-research.md) and
+[31 research](../../31-research.md) are worth their length: a finding somebody else's corpus reports as
 *probably yes* was tested here and came back *no*, and nobody has to spend that week again.
 
 ---
@@ -282,13 +282,13 @@ that disagree. [`00-structure.md` §3.7](../plans/rag/00-structure.md) is that f
 overlap (§3.6), and per-stage timing (§3.7).
 
 If the owner takes any of them, the durable half moves into
-[`docs/34`](../../34-patterns-adapted.md) beside the sixteen already there — including the rejections,
+[31 research](../../31-research.md) beside the sixteen already there — including the rejections,
 because that file records those too — and this note is deleted.
 
 **§3.1 was the one to take first, and it was taken.** It turns *no source, no claim* from a rule
-nobody can check into a number measurable offline, with no model, using the standard library. *done 2026-11-19: recorded as BUILT in [docs/34 §2.22](../../34-patterns-adapted.md#222-built---a-fabrication-check-that-calls-no-model) - `brain/heron_ground.py`, `tests/test_ground.py` and the `heron_check` tool, R-46 to R-55, outside docs/34's §1 tally (WN-27).*
+nobody can check into a number measurable offline, with no model, using the standard library. *done 2026-11-19: recorded as BUILT in [31 research](../../31-research.md#71-a-fabrication-check-that-calls-no-model) - `brain/heron_ground.py`, `tests/test_ground.py` and the `heron_check` tool, R-46 to R-55, outside docs/34's §1 tally (WN-27).*
 
-**Note on [`docs/34`](../../34-patterns-adapted.md).** That file is titled for **the sixteen
+**Note on [31 research](../../31-research.md).** That file is titled for **the sixteen
 repositories** and its §1 tally describes that one closed programme. This pattern came from a
 separate reading on a different day, and its markers there are about reality — `BUILT`,
 `ALREADY HELD`, `REJECTED` — not about intent. ~~**So nothing was written into it yet.** The natural

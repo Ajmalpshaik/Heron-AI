@@ -225,7 +225,7 @@ something real:
 |---|---|---|
 | **10. named in its README** | eight files in `tools/` named nowhere on this page, three of them not Python - which is why the one-liner further down, `*.py` only, could never have seen them | a row each, in [the section below](#nine-tools-this-page-did-not-describe-until-2026-09-23), with a ninth for `balance-of-work.py`, which was named only in passing |
 | **11. text hygiene** | a backspace and a form feed in one archived defect row, where the row meant to write `\u0008` and `\u000C`; and a C1 control character in [docs/07](../docs/07-installation-and-update.md), where `Addins\2020` had once been read as an octal escape and lost two characters | each written back as the text it stood for |
-| **7. the MCP tool total** | [33](../docs/33-external-repository-research.md) saying *"Heron has 14 MCP tools"* twice and [34](../docs/34-patterns-adapted.md) once, while `heron_tools.TOOLS` held more than twice that. The row this list used to carry for the count could not fire - it counted `tools/*.py` against a phrase no sentence uses | the sentences type no number now, and point at the command that lists the tools |
+| **7. the MCP tool total** | [31 research](../docs/31-research.md) saying *"Heron has 14 MCP tools"* twice and [31 research](../docs/31-research.md) once, while `heron_tools.TOOLS` held more than twice that. The row this list used to carry for the count could not fire - it counted `tools/*.py` against a phrase no sentence uses | the sentences type no number now, and point at the command that lists the tools |
 
 **And it is faster for them, not slower.** The plan that asked for these checks measured this script at
 30-37 s on a busy PC and asked for it to be timed before and after. Five runs each, on a quiet Linux
@@ -1761,7 +1761,7 @@ says so. Not a gate; exits 0.
 
 ## `measure-graph.py` — does the graph help retrieval? It does not
 
-`Q-52`, run rather than argued. [33 §5.16](../docs/33-external-repository-research.md) records
+`Q-52`, run rather than argued. [31 research](../docs/31-research.md) records
 `gbrain` reporting **+31.4 points P@5** from a graph retrieval stream. Heron's graph is a different
 object — `composes_into` / `composes_from`, derived from the contracts — so the direction was evidence
 and the magnitude was nothing. **This is Heron's own number.**
@@ -2764,7 +2764,7 @@ superseded owes nothing at all; both are printed, so a pending note is seen. It 
 the `> **SUPERSEDED BY**` banner some full records carry is not asked for: the index is where a citation lands.
 Exits 1 on a finding and 2 when it could not look. [`tests/test_check_supersessions.py`](../tests/test_check_supersessions.py)
 builds its own logs, so it runs anywhere. It came from another project's documentation audit, re-authored
-([docs/33 §5.1](../docs/33-external-repository-research.md#51-affaan-mecc), third pass).
+([31 research](../docs/31-research.md#7-the-patterns-and-what-each-became), third pass).
 
 ---
 

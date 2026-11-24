@@ -441,7 +441,7 @@ its clean output is believed — the same standard `check-api-surface.py` was he
 the mechanism, then written here in Heron's shape, with Heron's reasoning, carrying **none** of their
 names, dependencies or branding. Each starts at `DRAFT` whatever status it held where it was read.
 
-**The method is [31 — Studying the existing libraries](31-studying-the-existing-libraries.md)**, written
+**The method is [31 — Studying the existing libraries](31-research.md)**, written
 2026-08-28 on the owner's instruction: *check and edit · add · split*, with what may travel and what may
 not. Read it before taking anything. Its arithmetic is the part that shapes this step: there are
 **398 fragments there and 221 carry a verification**, and every one of those arrives here **unproven** —
@@ -552,7 +552,7 @@ exists"*, and only this table tells them apart.
 step that exists — which is how three of them came to.
 
 **It has happened again, in source headers rather than fragments: `Heron-Step: 18`.** It first appeared
-on 2026-09-12 in `docs/34` - the upgrade plan, a work note from 2026-11-15 until it retired on 2026-11-21, its research rule moved to [31 §6](31-studying-the-existing-libraries.md#6-studying-an-outside-project---the-research-rule) - and since then heads
+on 2026-09-12 in `docs/34` - the upgrade plan, a work note from 2026-11-15 until it retired on 2026-11-21, its research rule moved to [31 research](31-research.md#6-studying-an-outside-project---the-research-rule) - and since then heads
 tools, tests and documents written after that day; no section of this file defines it. Count where it is
 used with:
 
@@ -588,7 +588,7 @@ first — before it, nothing accumulates; after it, everything does.
 
 **Steps 7 to 14 are above** — written out on 2026-08-28, when Phase 2 started. That is where Heron stops
 being a tool bridge and starts being a platform, and it is also where it starts doing things
-[the existing Revit MCP servers](26-prior-art-revit-mcp.md) do not.
+[the existing Revit MCP servers](31-research.md) do not.
 
 This section used to read *"Steps 7+ follow ROADMAP Phase 2"* and end with **"but none of it matters
 until Step 6 works."** The second half was overtaken by events rather than proved wrong: Step 6 did not

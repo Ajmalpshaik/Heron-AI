@@ -17,7 +17,7 @@ add-in for **2020 to 2027**, per-user with no admin, with an all-users option â€
 installer has.
 
 **The rule this note obeys.** [AGENTS.md](../../../../AGENTS.md) and
-[31](../../../31-studying-the-existing-libraries.md): *mechanisms and lessons are re-authored, never
+[31 research](../../../31-research.md): *mechanisms and lessons are re-authored, never
 imported*. **Nothing is copied here** â€” not a line of script, not a file layout, not a phrase. What
 follows is what its installer has already been taught by failing, written in Heron's own words, so
 Heron does not have to be taught the same things the same way.
@@ -162,7 +162,7 @@ simpler here rather than richer.
 window to choose between them ([R-1](01-requirements.md)), so the shape does not carry over even though
 every rule inside it does.
 
-**Any wording, any file name, any script.** [31](../../../31-studying-the-existing-libraries.md).
+**Any wording, any file name, any script.** [31 research](../../../31-research.md).
 
 ---
 

@@ -1511,7 +1511,7 @@ not 379.
   obeyed in intent and broken in fact — a level lookup was verbatim with one variable renamed, under a
   commit message that said *"written fresh"*. It surfaced only because the owner asked outright. The
   answer was yes, and both pieces were rewritten. **Do the side-by-side yourself before the commit**,
-  not when asked; the method is in [docs/31](../31-studying-the-existing-libraries.md).
+  not when asked; the method is in [31 research](../31-research.md).
 - **A scanner that scans itself finds itself.** `check-gaps.py` reported its own regex as two undeclared
   agents on its first run. Funny once; worth remembering as the general shape — a tool that reads the
   repository is part of the repository.

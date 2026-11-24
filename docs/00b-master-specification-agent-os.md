@@ -983,7 +983,7 @@ The user provides `C:\MyOldTools`. Heron understands it without manual organizat
 > it walked the folder and named the file types, then stopped at *identify code*: that step is T2, so the
 > evidence goes to the host with a question. It never changes the source folder. Existing tool libraries
 > are studied and re-authored, never imported ([D-25](DECISIONS.md),
-> [31](31-studying-the-existing-libraries.md)).
+> [31 research](31-research.md)).
 
 ## 35. Intelligent Migration
 

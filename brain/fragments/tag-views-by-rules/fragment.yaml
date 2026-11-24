@@ -8,7 +8,7 @@ id: FRG-VIEW-176
 semantic-identity: "put tags on every element of the named categories in several views at once, by a rule per category - tag type, leader, shortest run - setting each new tag apart from the others"
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
-# 2026-11-08: the owner's ask, docs/48-studying-bimlogiq.md section 5 item 2 -
+# 2026-11-08: the owner's ask, docs/31-research.md section 11 (former note 48, item 2) -
 # "Annotation template + Tag in one pass, no overlaps, batch over many views" -
 # and his word on how: "upgrade the tag tool or combine the tool or if you
 # need to make as new also you can do it". Measured that day with
@@ -402,6 +402,6 @@ compatibility-note: >
 #   "tag all the areas in this area plan"        -> TAG_AREAS
 #   "fix the leader shape on these tags"         -> FORCE_TAG_LEADER_LSHAPE
 utterances:
-  # The owner's own words, docs/48-studying-bimlogiq.md section 5 item 2.
+  # The owner's own words, docs/31-research.md section 11 (former note 48, item 2).
   - annotation template and tag in one pass, no overlaps
   - batch tag over many views
