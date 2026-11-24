@@ -28,7 +28,50 @@
 # WHICH of a face's two directions Revit calls U is not known, so each grid
 # is written as the pair of counts; the run records which is which.
 
+# VERSION 2 (2026-11-24, row 5b-2020, issue #1344) - NEEDS-CHECKING Group QK,
+# NOT RUN. Its rig adds ONE mass to Group JM's: "Heron QK Fold", an in-place
+# mass whose profile, drawn on a vertical work plane through y = 0 and
+# extruded 12000 mm along +Y, runs (60000, 0) (72000, 0) (72000, 6000)
+# (66000, 12000) (60000, 12000) in x and z, mm. Its seven faces, derived: the
+# two ends (y = 0 and y = 12000) and the faces at x = 60000 and x = 72000 are
+# upright - 4 vertical; the face at z = 12000 is the top; the base the
+# underside; and one face from (72000, 6000) to (66000, 12000) is tilted 45
+# degrees, looking east and up - 8485 x 12000 mm, 101.8 m2. Every case keeps
+# version 1's answers above, and adds a numbered face list to the findings.
+
 positive:
+  - given: >
+      QK1, THE JOB FILE'S FIRST V2 CASE. host "Heron QK Fold", type "Heron JM
+      1500", faces "sloped"
+    expect: >
+      created 1, facesAsked 1, facesTaken 1, alreadyNear 0, alreadyGlazed 0.
+      The findings list the Fold's 7 faces numbered, each with its kind, the
+      way it looks and its area - 4 vertical, 1 top, 1 underside, and one
+      "sloped or curved, looks east, 45 deg up from level, 101.8 m2 - ASKED".
+      RECORD the numbers Revit gave each face
+
+  - given: the same with faces "all but top and underside" (QK2)
+    expect: >
+      facesAsked 5, facesTaken 5 - the four upright faces and the sloped one;
+      the top and the underside carry nothing
+
+  - given: >
+      the same with faces naming QK1's numbers for the sloped face and the
+      face at x = 72000, "<n>, <m>" (QK3)
+    expect: >
+      facesAsked 2, facesTaken 2, and the list numbers every face as QK1 did -
+      an unchanged mass is numbered the same on every read
+
+  - given: >
+      QK6, after QK4 - a curtain system of "Heron JM 1500" laid BY HAND on
+      the Fold's four upright faces (Model by Face > Curtain System), saved:
+      faces "sloped" - the job file's second case
+    expect: >
+      created 1 on the one sloped face, alreadyNear 1, alreadyGlazed 0; the
+      list shows the four upright faces "carries curtain system <the hand-made one's id>"
+      and the sloped one ASKED - a bare face next to a glazed one is not
+      refused
+
   - given: >
       THE JOB FILE'S CASE (JM2). host "Heron JM Tower", curtainSystemType
       "Heron JM 1500", faces left out - so "vertical", the card's one default
@@ -108,10 +151,32 @@ negative:
       here
 
   - given: host "Heron JM Tower", the right type, faces "sloped" (JM10)
-    expect: refused naming vertical, top and all - nothing made
+    expect: >
+      version 1 refused the word. Version 2 knows it, and the tower has no
+      sloped face: refused "has no face that is sloped - its 6 face(s) are 4
+      vertical, 1 top, 1 underside", with the faces listed - nothing made
 
   - given: nothing selected, host left out (JM10)
     expect: refused "Nothing is selected and no host was named" - nothing made
+
+  - given: >
+      QK5, THE D-30 NEGATIVE OF VERSION 2 - THE TOWER 171 CASE, the job
+      file's second negative. The Fold carrying QK4's hand-made curtain system
+      on its four upright faces; faces "all but top and underside"
+    expect: >
+      created empty, alreadyGlazed 4, alreadyNear 1, readBack empty; refused
+      names the four upright faces by number as already carrying the
+      hand-made curtain system, names the sloped face's number as bare, and ends "NOTHING WAS
+      MADE". The model still holds ONE curtain system on the Fold - never a
+      second skin
+
+  - given: >
+      QK7 - faces "sideways"; faces "20" on the Fold; faces "1, 2" with the
+      tower and the Fold both selected and host left out
+    expect: >
+      each refused before anything is made: naming "sideways" and the words
+      it knows; "has 7 face(s), numbered 1 to 7 - face 20 is not one of them";
+      "Face numbers name the faces of ONE mass"
 
 second_route:
   - >
