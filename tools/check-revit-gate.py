@@ -283,7 +283,11 @@ DROP_WORDS = ("unresolved", "skipped", "refused", "dropped", "missing",
 # `unused`, `unassigned` and `unconstrained` are what those cards FOUND - so
 # only the three that say "could not" are listed.
 DROP_SHAPE = re.compile(r"^(no|not|without)[A-Z]|NotChecked")
-DROP_WORDS_ACCOUNTING = ("unreadable", "unmeasured", "unbounded",
+# "unread" since 2026-11-24 (row 5b-1909, WN-7): REPORT_WALL_ATTACHMENTS
+# declares the walls whose attachments would not read as `unread`, its
+# contract comment "never counted as not attached (D-52)". It covers
+# "unreadable", which was the word here before.
+DROP_WORDS_ACCOUNTING = ("unread", "unmeasured", "unbounded",
                          "outofscope", "heldback")
 
 

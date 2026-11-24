@@ -1,6 +1,14 @@
 // NOT STANDALONE. Assumes `doc`, `exemplar`, `inViewOnly` and `includeLinks`
-// are in scope; leaves `elements`, `found`, `linksSearched` and
-// `linkedMatches` behind.
+// are in scope; leaves `elements`, `found`, `linksSearched`, `linkedMatches`
+// and `unresolvedType` behind.
+//
+// VERSION 3 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - AN EXEMPLAR WITH NO TYPE IS SAID, NEVER READ AS "NONE OF THIS
+// TYPE". D-64 names this card: version 2 returned `found: 0` when the element
+// handed in had no type to match, and nothing set that apart from a type
+// nobody else uses. `unresolvedType` is 1 then and 0 otherwise, and a line in
+// `linkedMatches` says it only on that empty answer, so every answer with an
+// exemplar that has a type reads as version 2's.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -62,6 +70,10 @@ if (typeId != null && typeId != ElementId.InvalidElementId)
 }
 
 var found = elements.Count;
+
+// VERSION 3 (D-64): 1 when no exemplar was handed in, or it has no type - so
+// nothing was searched for and found 0 means nothing about the model.
+var unresolvedType = (typeId == null || typeId == ElementId.InvalidElementId) ? 1 : 0;
 
 // ---- D-59: which links, only when asked for --------------------------------
 
@@ -214,6 +226,12 @@ else
 if (includeLinks && nestedLinks > 0)
     linkedMatches.Add(string.Format("{0} link placement(s) nested inside those links were NOT "
         + "read", nestedLinks));
+
+// VERSION 3 (D-64): said only on the empty answer it explains.
+if (unresolvedType > 0)
+    linkedMatches.Add(exemplar == null
+        ? "No element was given, so there was no type to look for - found 0 is not \"none of this type\""
+        : "The element given has no type, so nothing was searched for - found 0 is not \"none of this type\"");
 
 if (linksSearched > 0)
     linkedMatches.Add("Linked elements are counted here, never selected - the next step would "

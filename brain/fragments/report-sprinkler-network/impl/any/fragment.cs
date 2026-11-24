@@ -1,5 +1,14 @@
 // NOT STANDALONE. Assumes `doc`, `uidoc` and `systemName` are in scope, and
-// leaves `networkJson`, `elementCount` and `findings` behind.
+// leaves `networkJson`, `elementCount`, `skippedConnectors` and `findings`
+// behind.
+//
+// VERSION 3 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A CONNECTOR THAT WILL NOT SAY ITS DOMAIN OR TYPE IS COUNTED.
+// Version 2 passed over it without a word, so the network could miss a join
+// and the brain would read two pieces where Revit has one. `skippedConnectors`
+// carries the count every time; the sentence naming it is added only when it
+// is above 0, so every other answer reads as version 2's. The JSON is
+// unchanged.
 //
 // READS ONLY. No transaction is opened and nothing is set.
 //
@@ -60,6 +69,8 @@
 
 var findings = new List<string>();
 var elementCount = 0;
+// VERSION 3 (D-64): connectors whose domain or type Revit would not give.
+var skippedConnectors = 0;
 var networkJson = "";
 
 var FeetToMetres = 0.3048;
@@ -368,7 +379,7 @@ foreach (var element in elements)
                 else if (c.ConnectorType == ConnectorType.Curve) type = "curve";
                 else continue;
             }
-            catch { continue; }
+            catch { skippedConnectors++; continue; }
             XYZ origin = null;
             double? radius = null;
             try { origin = c.Origin; } catch { }
@@ -458,6 +469,12 @@ if (angleShared.Count > 0)
         + "name, Revit picks one of them at random, so their angle was NOT read and is null: "
         + string.Join(", ", angleShared.GetRange(0, Math.Min(20, angleShared.Count)))
         + (angleShared.Count > 20 ? " and " + (angleShared.Count - 20) + " more" : "") + ".");
+
+// VERSION 3 (D-64): said only when a connector was passed over.
+if (skippedConnectors > 0)
+    findings.Add(skippedConnectors + " piping connector(s) would not say their domain or type, so they are "
+        + "NOT in the network below - a join through one of them is missing, and the network may read as "
+        + "two pieces where the model has one.");
 
 // ---- the whole network, format 1 -------------------------------------------
 

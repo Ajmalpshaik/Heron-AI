@@ -75,6 +75,15 @@ negative:
       "Links NOT read: no circuit kind or name was given to look for" - the
       host refusal, repeated for the links rather than every circuit counted
 
+  - given: >
+      VERSION 4, NEGATIVE. circuitKind none on the model version 3 was proved
+      on, then a circuitName that matches
+    expect: >
+      none: the same elements and counts as version 3's, unresolvedCircuits
+      written down (0 expected) and NO "would not give their loads" sentence
+      while it is 0. By name: version 3's answer, and the sentence never there
+      - it rides only on the on-no-circuit answer
+
 second_route: >
   Revit's own System Browser, Electrical view - it lists each circuit with its
   loads under its panel, which is the same structure this fragment reports as

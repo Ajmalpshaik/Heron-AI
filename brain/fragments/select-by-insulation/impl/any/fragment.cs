@@ -1,6 +1,15 @@
 // NOT STANDALONE. Assumes `doc`, `categories`, `wantInsulated`,
 // `countLiningAsInsulated` and `includeLinks` are in scope; leaves `elements`,
-// `scanned`, `findings`, `linksSearched` and `linkedMatches` behind.
+// `scanned`, `findings`, `linksSearched`, `linkedMatches` and
+// `unresolvedCoverings` behind.
+//
+// VERSION 3 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A WRAPPER THAT WILL NOT SAY WHAT IT WRAPS IS COUNTED. Version 2
+// passed over insulation or lining whose host Revit would not give without a
+// word, so the duct or pipe under it was counted BARE - a failed read answered
+// as a no (D-52). `unresolvedCoverings` carries the count every time; the
+// sentence naming it is added only when it is above 0, so every other answer
+// reads as version 2's.
 //
 // IT ASKS THE INSULATION, NOT THE DUCT. A duct carries no reliable "am I
 // insulated" parameter - the truth is a separate element recording which host
@@ -36,6 +45,8 @@ var scanned = 0;
 var findings = new List<string>();
 
 var covered = new List<ElementId>();
+// VERSION 3 (D-64): host-model wrappers whose host would not read.
+var unresolvedCoverings = 0;
 
 Action<FilteredElementCollector> collectHosts = source =>
 {
@@ -57,8 +68,10 @@ Action<FilteredElementCollector> collectHosts = source =>
         }
         catch
         {
-            // A wrapper that will not name its host tells us nothing about any
-            // duct, and must not be allowed to stop the pass.
+            // A wrapper that will not name its host must not be allowed to stop
+            // the pass - but whatever it wraps now reads bare, so it is counted
+            // (version 3, D-64).
+            unresolvedCoverings++;
         }
     }
 };
@@ -94,6 +107,12 @@ findings.Add(string.Format("{0} of {1} scanned element(s) are {2}. {3} host(s) i
     countLiningAsInsulated
         ? ", and internal LINING was counted as insulated"
         : ", and internal lining was NOT counted - only external insulation"));
+
+// VERSION 3 (D-64): said only when a wrapper was passed over.
+if (unresolvedCoverings > 0)
+    findings.Add(string.Format("{0} insulation or lining element(s) would not say what they wrap, so "
+        + "whatever they wrap is counted BARE here - the bare count may be too high and the insulated "
+        + "count too low", unresolvedCoverings));
 
 if (categories == null || categories.Count == 0)
     findings.Add("No category was given, so this swept every element in the model. Almost all of "
