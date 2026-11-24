@@ -2,6 +2,26 @@
 // `form`, `facing` and `at` are in scope; leaves `connector`, `sizedBy`,
 // `notAFamily`, `refused` and `findings` behind.
 //
+// VERSION 8 (2026-11-24, rows 5b-2031 and 5b-2032) - A DUCT SIZE OR PIPE SIZE
+// PARAMETER SIZES A CONNECTOR, AND A PORT MAY BE SMALLER THAN A RING'S OPENING.
+// Seen on Revit 2020 building an air handling unit family: (1) shared
+// parameters of spec Duct Size ("Supply_Air_Width") and Pipe Size
+// ("Condensate_Drain_Diameter") were refused as "not a length", though Revit's
+// own Associate Family Parameter takes them for a duct connector's width and
+// height and a pipe connector's diameter. A Duct Size parameter now sizes a
+// duct connector and a Pipe Size one a pipe connector, read by the spec on
+// every release - ParameterType on 2020 and 2021, SpecTypeId from 2022 (the
+// `#if` below); Length still sizes any of them, and a Duct Size on a pipe
+// connector is refused by name. (2) A 205 x 205 port on a flange ring whose
+// opening is 209 x 209 was refused as "would not fit". A ring's opening is a
+// bore, and a real flange is bored a little over its duct; the port must fit
+// INSIDE it, centred (already checked), not equal it. So on a ring a port up to
+// the opening's size is taken, either way round, and the clearance is said. A
+// whole face (one loop) is still matched exactly: there the face IS the port -
+// a neck's end - and a mismatch means the wrong parameters were given. A port
+// larger than the opening is still refused. The read-back now checks the port
+// against its parameters, not against the opening.
+//
 // VERSION 7 (2026-11-21, Ajmalpshaik/Heron-AI#1029) - ONLY A FACE THAT FACES
 // OUT, AND AT THE POINT GIVEN, COUNTS. Version 6 narrowed the count only when
 // form= or facing= was given; left out, it still counted every solid face on
@@ -191,6 +211,29 @@ Func<FamilyParameter, bool> isLength = p =>
     }
 };
 
+// VERSION 8 (row 5b-2031): THE CONNECTOR KIND A SIZE SPEC BELONGS TO - "duct"
+// for Duct Size (HVAC_DUCT_SIZE), "pipe" for Pipe Size, "" for anything else.
+// Revit's Associate Family Parameter offers these for a duct connector's width
+// and height and a pipe connector's diameter. ParameterType names them on 2020
+// and 2021; SpecTypeId from 2022, compared by name as `sameKind` does.
+Func<FamilyParameter, string> sizeSpecOf = p =>
+{
+    try
+    {
+#if REVIT2020 || REVIT2021
+        var type = p.Definition.ParameterType;
+        return type == ParameterType.HVACDuctSize ? "duct" : type == ParameterType.PipeSize ? "pipe" : "";
+#else
+        var spec = p.Definition.GetDataType();
+        return sameKind(spec, SpecTypeId.DuctSize) ? "duct" : sameKind(spec, SpecTypeId.PipeSize) ? "pipe" : "";
+#endif
+    }
+    catch (Exception)
+    {
+        return "";
+    }
+};
+
 // EVERY SYSTEM REVIT OFFERS A FAMILY CONNECTOR: (kind, name, value). Global and
 // Fitting are offered too - a valve body's two pipe connectors are Global so a
 // system passes through it (docs/43 §10). Both are a duct AND a pipe system, so
@@ -305,18 +348,31 @@ else
     {
         var p = fm.get_Parameter(name);
         if (p == null) problems.Add("\"" + name + "\" is not a parameter of this family - ADD_FAMILY_PARAMETERS makes one.");
-        else if (!isLength(p)) problems.Add("\"" + name + "\" is not a length, so it cannot size a connector.");
-        else sizes.Add(p);
+        else if (isLength(p)) sizes.Add(p);
+        else
+        {
+            // VERSION 8: a Duct Size or Pipe Size parameter sizes its own kind.
+            // With no system settled there is a problem already, so it is taken.
+            var sizeKind = sizeSpecOf(p);
+            if (sizeKind.Length > 0 && (chosen == null || chosen.Item1 == sizeKind)) sizes.Add(p);
+            else if (sizeKind.Length > 0)
+                problems.Add("\"" + name + "\" is a " + (sizeKind == "duct" ? "Duct Size" : "Pipe Size") + " parameter, "
+                    + "which sizes a " + sizeKind + " connector, not a " + chosen.Item1 + " one. A Length parameter "
+                    + "sizes any connector.");
+            else
+                problems.Add("\"" + name + "\" is not a Length, Duct Size or Pipe Size parameter, so it cannot size "
+                    + "a connector.");
+        }
     }
 
     if (chosen != null && problems.Count == 0)
     {
         if (chosen.Item1 == "duct" && sizes.Count != 1 && sizes.Count != 2)
-            problems.Add("A duct connector needs its size: two length parameters for a rectangular port "
+            problems.Add("A duct connector needs its size: two Length or Duct Size parameters for a rectangular port "
                 + "(width, then height) or one for a round one (the diameter). Without them it stays at "
                 + "Revit's one-foot placeholder, whatever face it is on.");
         if (chosen.Item1 == "pipe" && sizes.Count != 1)
-            problems.Add("A pipe connector needs ONE length parameter - its diameter. Without it it stays at "
+            problems.Add("A pipe connector needs ONE Length or Pipe Size parameter - its diameter. Without it it stays at "
                 + "Revit's one-foot placeholder.");
         if (chosen.Item1 == "cable tray" && sizes.Count != 2)
             problems.Add("A cable tray connector needs TWO length parameters - its width, then its height. "
@@ -882,6 +938,10 @@ if (refused == null)
     var swapped = false;
     var faceAlongX = 0.0;
     var faceAlongY = 0.0;
+    // VERSION 8: the port's own size along the same axes - the face's, or less
+    // in a ring's opening.
+    var portAlongX = 0.0;
+    var portAlongY = 0.0;
     var faceWord = "The face on \"" + faceName + "\" is ";
     var ringOpening = false;
     if ((chosen.Item1 == "duct" || chosen.Item1 == "cable tray") && !round)
@@ -924,21 +984,47 @@ if (refused == null)
 
         var first = fm.CurrentType.AsDouble(sizes[0]);
         var second = fm.CurrentType.AsDouble(sizes[1]);
-        var asGiven = first.HasValue && second.HasValue
+        var both = first.HasValue && second.HasValue;
+        var asGiven = both
             && Math.Abs(first.Value - faceAlongX) <= halfMillimetre
             && Math.Abs(second.Value - faceAlongY) <= halfMillimetre;
-        var turned = first.HasValue && second.HasValue
+        var turned = both
             && Math.Abs(first.Value - faceAlongY) <= halfMillimetre
             && Math.Abs(second.Value - faceAlongX) <= halfMillimetre;
+        // VERSION 8 (row 5b-2032): IN A RING'S OPENING, A PORT UP TO ITS SIZE.
+        // The opening is a bore - a flange is bored a little over its duct - so
+        // the port must fit inside it, not equal it. A whole face is still
+        // matched exactly: there the face is the port.
+        var fitsAsGiven = ringOpening && both
+            && first.Value <= faceAlongX + halfMillimetre && second.Value <= faceAlongY + halfMillimetre;
+        var fitsTurned = ringOpening && both
+            && first.Value <= faceAlongY + halfMillimetre && second.Value <= faceAlongX + halfMillimetre;
 
-        if (!asGiven && !turned)
+        if (!asGiven && !turned && !fitsAsGiven && !fitsTurned)
             throw new InvalidOperationException(faceWord + mm(faceAlongX) + " x "
                 + mm(faceAlongY) + " mm, and \"" + sizes[0].Definition.Name + "\" and \"" + sizes[1].Definition.Name
                 + "\" hold " + (first.HasValue ? mm(first.Value) : "nothing") + " and "
                 + (second.HasValue ? mm(second.Value) : "nothing") + " mm - a port sized by them would not fit "
-                + "the face it sits on. NOTHING from this call was kept." + joinedNote);
+                + (ringOpening ? "inside that opening either way round" : "the face it sits on") + ". "
+                + (ringOpening ? "" : "On a whole face the port must be the face's own size. ")
+                + "NOTHING from this call was kept." + joinedNote);
 
-        swapped = !asGiven;
+        if (asGiven) swapped = false;
+        else if (turned) swapped = true;
+        else if (fitsAsGiven && fitsTurned)
+            // Both ways fit: the way round whose shape is nearer the opening's,
+            // as given on a tie (a square port in a square opening).
+            swapped = Math.Abs(first.Value - faceAlongY) + Math.Abs(second.Value - faceAlongX)
+                < Math.Abs(first.Value - faceAlongX) + Math.Abs(second.Value - faceAlongY) - halfMillimetre;
+        else swapped = !fitsAsGiven;
+
+        portAlongX = swapped ? second.Value : first.Value;
+        portAlongY = swapped ? first.Value : second.Value;
+        if (ringOpening && !asGiven && !turned)
+            findings.Add("The port, " + mm(portAlongX) + " x " + mm(portAlongY) + " mm from its parameters, sits "
+                + "centred in the ring face's opening of " + mm(faceAlongX) + " x " + mm(faceAlongY) + " mm - "
+                + mm((faceAlongX - portAlongX) / 2) + " and " + mm((faceAlongY - portAlongY) / 2) + " mm clear each "
+                + "side. The opening is not the port's size; the parameters are.");
     }
 
     if (chosen.Item1 != "electrical")
@@ -976,11 +1062,14 @@ if (refused == null)
         var height = read(() => made.Height);
         shape = "rectangular " + (width.HasValue ? mm(width.Value) : "?") + " x "
             + (height.HasValue ? mm(height.Value) : "?") + " mm";
+        // VERSION 8: against the port its parameters size - the face's own size
+        // on a whole face, up to the opening's in a ring.
         if (!width.HasValue || !height.HasValue
-            || Math.Abs(width.Value - faceAlongX) > halfMillimetre || Math.Abs(height.Value - faceAlongY) > halfMillimetre)
-            throw new InvalidOperationException("The connector reads " + shape + " on a face "
-                + mm(faceAlongX) + " x " + mm(faceAlongY) + " mm along the same axes - it does not fit the face. "
-                + "NOTHING from this call was kept." + joinedNote);
+            || Math.Abs(width.Value - portAlongX) > halfMillimetre || Math.Abs(height.Value - portAlongY) > halfMillimetre)
+            throw new InvalidOperationException("The connector reads " + shape + " where its parameters size a port "
+                + mm(portAlongX) + " x " + mm(portAlongY) + " mm along the same axes, on a "
+                + (ringOpening ? "ring face whose opening is " : "face ") + mm(faceAlongX) + " x " + mm(faceAlongY)
+                + " mm - it does not fit. NOTHING from this call was kept." + joinedNote);
 
         if (swapped)
             findings.Add("Revit runs this connector's width along the face's other side, so \""
@@ -994,7 +1083,7 @@ if (refused == null)
     connector = chosen.Item1 + " connector, " + spaced(chosen.Item2) + ", " + shape + ", at X " + mm(origin.X)
         + ", Y " + mm(origin.Y) + ", Z " + mm(origin.Z) + ", pointing " + pointing(made.Direction)
         + ", on the face lying on \"" + faceName + "\""
-        + (ringOpening ? ", centred in the ring face's opening and sized by it" : "")
+        + (ringOpening ? ", centred in the ring face's opening and sized by its parameters" : "")
         + (faceIn != null ? ". " + joinedFace : "")
         + (alsoJoined > 0 ? ". It is a form's own face, which is used before a joined one; " + alsoJoined
             + " face(s) of joined or cut forms lie on the same plane too - check it is the face meant" : "");

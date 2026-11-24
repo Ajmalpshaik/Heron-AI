@@ -1798,6 +1798,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qn.md`](needs-checking/group-qn.md)
 
+## Group QP - connector sized by Duct Size and Pipe Size and taken in a ring's bore, model text measured on its letters, a freeform answer naming the live material tool - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qp.md`](needs-checking/group-qp.md)
+
 ## Group QQ - the rest of the night of 2026-11-24 on Revit 2024: nine MEP and view-filter cards on Night Ducts 1124, and two arrangements owed - NOT RUN (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qq.md`](needs-checking/group-qq.md)

@@ -233,7 +233,9 @@ purpose: >
          .rfa path the modeller names. Run from the project in front it is
          saved but not opened and gives openNext: ACTIVATE_DOCUMENT (DRAFT)
          with that path opens it.
-      b. CREATE_FAMILY_FREEFORM_SOLID (PROVEN), kind=sweep, solid=true, one
+      b. CREATE_FAMILY_FREEFORM_SOLID (DRAFT again at version 2 since
+         2026-11-24, its answer's material sentence changed - NEEDS-CHECKING
+         Group QP), kind=sweep, solid=true, one
          call per part: profiles= its section as one loop about 0,0, the
          path's start - rect X1,Y1 X2,Y2 for a flat ribbon - and
          path="spline X,Y,Z; X,Y,Z; ..." through the part's points IN
@@ -244,7 +246,7 @@ purpose: >
          again.
       c. LINK_FAMILY_PARAMETER, links Material=<it>, on the forms by the ids b gave
          (SET_FAMILY_FORM_MATERIAL, PROVEN, until it was merged in on 2026-11-01;
-         LINK_FAMILY_PARAMETER is DRAFT at its version 3)
+         LINK_FAMILY_PARAMETER is PROVEN at its version 7, signed 2026-11-24)
          back, to a material the family holds or a family material
          parameter - read from the family, never guessed.
       d. The modeller saves the family: a click inside Revit first, so the
