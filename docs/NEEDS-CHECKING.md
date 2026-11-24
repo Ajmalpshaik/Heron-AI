@@ -1802,6 +1802,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qp.md`](needs-checking/group-qp.md)
 
+## Group QK - CREATE_CURTAIN_SYSTEM version 2: a curtain system on chosen mass faces - sloped, by number, all but some - never over a face already glazed - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qk.md`](needs-checking/group-qk.md)
+
 ## Group QQ - the rest of the night of 2026-11-24 on Revit 2024: nine MEP and view-filter cards on Night Ducts 1124, and two arrangements owed - NOT RUN (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qq.md`](needs-checking/group-qq.md)
