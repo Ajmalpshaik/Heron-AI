@@ -1754,6 +1754,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qb.md`](needs-checking/group-qb.md)
 
+## Group QF - a sheet named by its number, one of two same-named parameters selected, a refused value never thrown - BUILT, NOT RUN IN REVIT (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qf.md`](needs-checking/group-qf.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
