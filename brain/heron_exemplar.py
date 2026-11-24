@@ -89,7 +89,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import heron_convention as NAM  # noqa: E402
-import heron_import as IMPORT  # noqa: E402
+import heron_fragment as FRAG  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -100,8 +100,10 @@ shape_of = NAM.shape_of
 KINDS = NAM.KINDS
 
 # docs/10 s5a: "a pattern from one project stays DISCOVERED". The rung is
-# HERON-IMP-APR-014's constant, not a string typed here.
-ENTERS_AT = IMPORT.ENTERS_AT
+# the first status of the fragment ladder, not a string typed here. It was
+# read off HERON-IMP-APR-014 (heron_import.py) until D-199 retired that
+# agent; heron_import defined it as this same FRAG.STATUSES[0].
+ENTERS_AT = FRAG.STATUSES[0]
 
 # What may appear in a profile. Anything else is the model, and the model
 # is discarded.

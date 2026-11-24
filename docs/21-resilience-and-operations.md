@@ -19,7 +19,7 @@
 > | §10 Migration | `heron_migration.py` | its own command line only | — |
 > | §12 Background workers | `heron_scheduler.py` | its own command line only | — |
 > | §13 Audit | [`heron_audit.py`](../brain/heron_audit.py) for the brain; the add-in's [`HeronAudit.cs`](../platform/Heron.Core/HeronAudit.cs) | `heron_brain.py`, `heron_ingest.py`; every add-in request | the add-in's audit file was read on the owner's laptop for the timings in [04 §8.7](04-heron-mcp.md) |
-> | §13 Workflow engine | [`heron_workflow.py`](../mcp/server/heron_workflow.py) | **nothing but `tests/test_workflow.py`**: the server does not import it | — |
+> | §13 Workflow engine | `heron_workflow.py` | **nothing but `tests/test_workflow.py`**: the server does not import it | — |
 
 ---
 
