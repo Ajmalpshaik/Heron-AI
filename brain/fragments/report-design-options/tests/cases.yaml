@@ -31,5 +31,14 @@ negative:
   - given: an element that throws when asked for its design option
     expect: skipped, with the rest of the count completing
 
+  - given: >
+      VERSION 2, NEGATIVE. the project with NO design options, then the
+      project with two option sets
+    expect: >
+      no design options: version 1's sentence and nothing more,
+      unresolvedElements 0. Two option sets: every line as version 1's,
+      unresolvedElements written down (0 expected) and NO "would not say which
+      design option they are in" sentence while it is 0
+
 second_route:
   - Manage tab, Design Options - and the status bar, which shows the active one

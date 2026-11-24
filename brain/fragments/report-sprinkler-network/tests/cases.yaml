@@ -89,6 +89,13 @@ negative:
       level its height would suggest and never null: the level is read from
       Revit, not guessed. Every other head is unchanged
 
+  - given: >
+      VERSION 3, NEGATIVE. the fire protection system version 2 was read on
+    expect: >
+      networkJson exactly as version 2's, skippedConnectors written down (0
+      expected) and no "would not say their domain or type" sentence while it
+      is 0
+
 second_route: >
   Revit's own System Browser for the system: the count of pipes, fittings,
   accessories and sprinklers it lists must equal the kinds in elements; and

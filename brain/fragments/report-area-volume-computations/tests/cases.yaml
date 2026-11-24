@@ -34,6 +34,14 @@ negative:
   - given: a project with no area schemes at all
     expect: areaSchemes empty and the finding saying so in words, never a blank list on its own
 
+  - given: >
+      VERSION 2, NEGATIVE. the project version 1 was proved on, then a family
+      file
+    expect: >
+      the project: every line as version 1's, unresolvedAreas written down (0
+      expected) and no "would not say which scheme they belong to" sentence
+      while it is 0. The family file: version 1's answer and unresolvedAreas 0
+
 second_route:
   - >
     The Area and Volume Computations dialog itself - the Computations tab's two

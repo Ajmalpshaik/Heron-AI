@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "the Area and Volume Computations settings - volumes on or of
 kind: action
 domain: revit.rooms
 capability: REPORT_AREA_VOLUME_COMPUTATIONS
-version: 1
+# VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005) - an area or area plan whose area scheme Revit will not give is
+# counted in `unresolvedAreas`, where version 1 left it out of its scheme's
+# counts without a word; a sentence names it only when it is above 0. It was
+# PROVEN at version 1; that proof stays below as the record, and the card is
+# DRAFT until its NEEDS-CHECKING check runs and is signed (D-30).
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -106,6 +112,12 @@ contract:
       type: bool
     - name: findings
       type: IList<string>
+    - name: unresolvedAreas
+      # VERSION 2 (D-64). Areas and area plans whose area scheme Revit would
+      # not give, so they are in no scheme's count. Always carried; a sentence
+      # in `findings` names it only when it is above 0.
+      role: accounting
+      type: int
 
 proof:
   date: '2026-10-18'

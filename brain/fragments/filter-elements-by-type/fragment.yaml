@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,14 @@ semantic-identity: "find everything of the same type as this one"
 kind: filter
 domain: revit.elements
 capability: FILTER_ELEMENTS_BY_TYPE
-version: 2
+# VERSION 3 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005) - an exemplar with no type, or none handed in, sets `unresolvedType`
+# to 1 and adds a line to `linkedMatches` saying nothing was searched for, so
+# its `found: 0` no longer reads the same as a type nobody else uses - the
+# case D-64 names. It was PROVEN at version 2; that proof stays below as the
+# record, and the card is DRAFT until its NEEDS-CHECKING check runs and is
+# signed (D-30).
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -79,6 +86,12 @@ contract:
       # up in THIS model (FRAGMENT-ISSUES row 75).
       role: accounting
       type: IList<string>
+    - name: unresolvedType
+      # VERSION 3 (D-64). 1 when no exemplar was handed in or it has no type,
+      # so nothing was searched for and `found` 0 says nothing about the
+      # model; 0 otherwise. A line in `linkedMatches` says it only then.
+      role: accounting
+      type: int
 
 proof:
   date: '2026-10-18'
