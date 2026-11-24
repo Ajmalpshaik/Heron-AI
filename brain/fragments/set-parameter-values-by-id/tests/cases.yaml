@@ -285,3 +285,25 @@ negative_blank_skipped_first:
       clear a blank still needs its parameter, a text one, to empty
   - given: NJ14 (iv) - the first small file with a value typed under Sill Height on the wall's row, blankCells=skip
     expect: NOTHING written - "has no parameter called Sill Height", the wall's row named; a cell with a value is never skipped
+
+# Version 11 (row 5b-2017, NEEDS-CHECKING Group QF): a value Revit turns down
+# is REFUSED - in stale, applied false - and never THROWN. Run on a saved copy
+# of a model with a shared Yes/No sheet parameter, Revit 2020 first.
+positive_yes_no:
+  - given: QF4 (i) - a CSV, id column then one shared Yes/No sheet parameter, every cell 1 or 0
+    expect: >
+      written equals the rows, each tick box as asked in Properties; outcome
+      KEPT, never fragment_threw
+negative_yes_no:
+  - given: QF4 (ii) - the same CSV with one cell -1
+    expect: >
+      NOTHING written; applied false; stale names that sheet's id and says
+      "is a Yes/No, which takes 1 or 0 (yes or no) - not '-1'"; the reply's
+      outcome is REFUSED or NOTHING CHANGED, never fragment_threw, and no
+      other sheet's box moved (read back)
+  - given: QF4 (iii) - by key, key=Sheet Number|in=Sheets, one row giving the Yes/No -1
+    expect: refused names that key with the same words; the other rows are written
+  - given: QF5 - an id row whose value passes the check and Revit still turns down (a number parameter given "abc")
+    expect: >
+      NOTHING written; stale names the id and "Revit would not take 'abc'";
+      the reply is not fragment_threw

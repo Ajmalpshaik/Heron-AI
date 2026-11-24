@@ -169,6 +169,18 @@ positive:
       other side - the trap version 5 recorded for Extrusion End. FLEX_FAMILY
       Tip Depth to another length moves the tip; Group PQ, PQ5
 
+  # VERSION 7 (2026-11-24, row 5b-2013). NOT RUN; NEEDS-CHECKING Group QE.
+  # FAILS on version 6, which refused a plain id as naming nothing.
+  - given: >
+      version 7, a family with a nested family's copy placed in it and an Air
+      Flow family parameter; forms = the copy's PLAIN element id, the number
+      REPORT_PARAMETER_INVENTORY prints after "ELEMENT id", links "<its Air
+      Flow parameter>=<the family's Air Flow parameter>"
+    expect: >
+      changed 1, matched 1, linkReport naming that copy by the same number;
+      the same link read back in Properties (Associate Family Parameter) on
+      that copy; Group QE, QE1
+
 negative:
   - given: >
       the same family, category "Duct Connector", system "Supply Air", links
@@ -334,6 +346,15 @@ negative:
       of the two is what PQ6 measures; nothing linked anywhere; Group PQ, PQ6
   - given: version 6, a project in front, forms = any id, links "Offset=Tip Depth"
     expect: notAFamily true, refused as a project, and nothing changed; Group PQ, PQ6
+
+  # VERSION 7 (2026-11-24, row 5b-2013). NOT RUN; NEEDS-CHECKING Group QE.
+  - given: >
+      version 7, the same family; forms = a number that names no element in
+      it (one higher than any id the read tools printed), the same links
+    expect: >
+      refused "No element in this family has the id ..." saying an element
+      is named by its element id or its unique id; nothing linked, the copy's
+      link as before; Group QE, QE2
 
 second_route:
   - >

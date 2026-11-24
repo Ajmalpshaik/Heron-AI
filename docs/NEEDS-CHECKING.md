@@ -1750,6 +1750,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-py.md`](needs-checking/group-py.md)
 
+## Group QE - LINK_FAMILY_PARAMETER version 7: a plain element id in `forms` names the element, as its unique id does - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qe.md`](needs-checking/group-qe.md)
+
 ## Group QC - CHANGE_ELEMENT_TYPE version 3: every refused element says why - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qc.md`](needs-checking/group-qc.md)
@@ -1761,6 +1765,10 @@ Step 6 is finished, and not before. At that point:
 ## Group QD - REPORT_WALL_ATTACHMENTS: which walls are attached to a roof, read and never changed - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qd.md`](needs-checking/group-qd.md)
+
+## Group QF - a sheet named by its number, one of two same-named parameters selected, a refused value never thrown - BUILT, NOT RUN IN REVIT (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qf.md`](needs-checking/group-qf.md)
 
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 

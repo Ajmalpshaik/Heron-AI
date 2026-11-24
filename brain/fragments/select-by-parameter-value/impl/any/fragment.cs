@@ -5,6 +5,19 @@
 // `linkedMatches`, `notNumeric`, `matchedFamilies`, `scannedWholeModel` and
 // `found` behind.
 //
+// VERSION 5 (2026-11-24, FRAGMENT-ISSUES 5b-2016) - ONE OF TWO PARAMETERS OF
+// ONE NAME, NAMED BY ITS SECOND NAME. Every sheet carries "Sheet Number" twice
+// (the sheet's own, built-in SHEET_NUMBER, and the read-only
+// VIEWER_SHEET_NUMBER a view carries), so the rule below refused all 15
+// sheets of 4355-BHVD-3D-60P00-BL003A on Revit 2020, rightly - and
+// "Sheet Number {SHEET_NUMBER}" answered "NOTHING carries it". Now
+// SET_PARAMETER_VALUES_BY_ID's version 9 form is read here too: "Name
+// {BUILT_IN_NAME}" is the ONE built-in Revit's API calls that, and "Name
+// {GUID}" the ONE shared parameter with that GUID - each only while it is
+// still called Name. A name found as it is spelt is found that way first, so
+// every name that worked before reaches exactly what it reached. The
+// refusal for a doubled name now names each one in the form that reaches it.
+//
 // VERSION 4 (2026-11-01) - SELECT_BY_FAMILY AND SELECT_BY_NUMERIC_PARAMETER
 // MERGED IN.
 //
@@ -82,6 +95,42 @@ bool scannedWholeModel = categories == null || categories.Count == 0;
 const double MillimetresPerFoot = 304.8;
 
 var wantName = string.IsNullOrEmpty(parameterName) ? "" : parameterName.Trim();
+
+// VERSION 5 - "Name {SHEET_NUMBER}" or "Name {GUID}": the part before the
+// braces is the name it must still carry, the part inside says which one.
+// A word in braces that is neither a GUID nor a name Revit gives a built-in
+// leaves the name as typed, to be looked for as it is spelt.
+var calledAs = wantName;
+var wantGuid = Guid.Empty;
+var wantBuiltIn = BuiltInParameter.INVALID;
+{
+    var open = wantName.LastIndexOf('{');
+    if (open >= 0 && wantName.EndsWith("}"))
+    {
+        var inBraces = wantName.Substring(open + 1, wantName.Length - open - 2).Trim();
+        Guid guid;
+        BuiltInParameter builtIn;
+        if (Guid.TryParse(inBraces, out guid))
+        {
+            wantGuid = guid;
+            calledAs = wantName.Substring(0, open).Trim();
+        }
+        // Letters first and no comma, so neither a number nor two names
+        // joined read as one built-in.
+        else if (inBraces.Length > 0 && char.IsLetter(inBraces[0]) && inBraces.IndexOf(',') < 0
+                 && Enum.TryParse(inBraces, false, out builtIn)
+                 && Enum.IsDefined(typeof(BuiltInParameter), builtIn)
+                 && builtIn != BuiltInParameter.INVALID)
+        {
+            wantBuiltIn = builtIn;
+            calledAs = wantName.Substring(0, open).Trim();
+        }
+    }
+}
+bool qualified = wantGuid != Guid.Empty || wantBuiltIn != BuiltInParameter.INVALID;
+// Version 5: how each doubled name is reached, gathered from the elements
+// refused for it - a few, for the refusal's words.
+var reachedAs = new List<string>();
 var needle = matchText == null ? "" : matchText;
 var mode = string.IsNullOrEmpty(matchMode) ? "contains" : matchMode.Trim().ToLowerInvariant();
 
@@ -244,6 +293,49 @@ else
         return null;
     };
 
+    // VERSION 5: every parameter by this name on one element or type. As it
+    // is spelt first; then, for "Name {...}", the one that braces name - and
+    // only while it is still called Name.
+    Func<Element, IList<Parameter>> calledOn = owner =>
+    {
+        var asSpelt = owner.GetParameters(wantName);
+        if (asSpelt.Count > 0 || !qualified) return asSpelt;
+        var one = wantGuid != Guid.Empty ? owner.get_Parameter(wantGuid) : owner.get_Parameter(wantBuiltIn);
+        var reached = new List<Parameter>();
+        if (one != null && one.Definition != null
+            && (calledAs.Length == 0 || one.Definition.Name == calledAs))
+            reached.Add(one);
+        return reached;
+    };
+
+    // Version 5: the lookup valueOf and parameterOf make. A name as typed is
+    // Revit's own LookupParameter, exactly as version 4.
+    Func<Element, Parameter> lookUp = owner =>
+    {
+        if (!qualified) return owner.LookupParameter(wantName);
+        var reached = calledOn(owner);
+        return reached.Count > 0 ? reached[0] : null;
+    };
+
+    // Version 5: each parameter of a doubled name, in the form that reaches
+    // it alone - a built-in by Revit's name for it, a shared one by its GUID.
+    Action<Element> noteReach = owner =>
+    {
+        if (reachedAs.Count >= 6) return;
+        foreach (var one in owner.GetParameters(wantName))
+        {
+            var definition = one.Definition as InternalDefinition;
+            string way;
+            if (definition != null && definition.BuiltInParameter != BuiltInParameter.INVALID)
+                way = "'" + wantName + " {" + definition.BuiltInParameter + "}'";
+            else if (one.IsShared)
+                way = "'" + wantName + " {" + one.GUID + "}'";
+            else
+                way = "(a project parameter, which has no other name)";
+            if (!reachedAs.Contains(way) && reachedAs.Count < 6) reachedAs.Add(way);
+        }
+    };
+
     // null means "this element does not carry that parameter at all", which is
     // a different answer from "it carries it and it is empty".
     Func<Element, string> valueOf = element =>
@@ -265,11 +357,11 @@ else
             return type == null ? null : type.Name;
         }
 
-        var p = element.LookupParameter(wantName);
+        var p = lookUp(element);
         if (p == null && includeTypeParameters)
         {
             var type = typeOf(element);
-            if (type != null) p = type.LookupParameter(wantName);
+            if (type != null) p = lookUp(type);
         }
         if (p == null) return null;
 
@@ -285,22 +377,24 @@ else
     Func<Element, bool> nameIsShared = element =>
     {
         if (!byName) return false;
-        var onElement = element.GetParameters(wantName).Count;
-        if (onElement > 1) return true;
+        var onElement = calledOn(element).Count;
+        if (onElement > 1) { noteReach(element); return true; }
         if (onElement > 0 || !includeTypeParameters) return false;
         var type = typeOf(element);
-        return type != null && type.GetParameters(wantName).Count > 1;
+        if (type == null || calledOn(type).Count <= 1) return false;
+        noteReach(type);
+        return true;
     };
 
     // VERSION 4 - SELECT_BY_NUMERIC_PARAMETER's parameter: the same lookup as
     // valueOf, kept as the Parameter so its stored number can be read.
     Func<Element, Parameter> parameterOf = element =>
     {
-        var p = element.LookupParameter(wantName);
+        var p = lookUp(element);
         if (p == null && includeTypeParameters)
         {
             var type = typeOf(element);
-            if (type != null) p = type.LookupParameter(wantName);
+            if (type != null) p = lookUp(type);
         }
         return p;
     };
@@ -425,13 +519,22 @@ else
     if (ambiguous > 0)
         findings.Add(string.Format("{0} element(s) carry TWO OR MORE parameters named '{1}' and were "
             + "NOT tested - asked by name, Revit picks one of them at random, so a match or a miss "
-            + "there would be a guess. Select one and look in Properties to see both",
-            ambiguous, wantName));
+            + "there would be a guess. {2}",
+            ambiguous, wantName,
+            reachedAs.Count > 0
+                ? "Name the one meant as " + string.Join(" or ", reachedAs.ToArray())
+                  + " - each reaches that one alone"
+                : "Select one and look in Properties to see both"));
 
     if (withoutParameter == scanned && scanned > 0)
         findings.Add(string.Format("NOTHING carries '{0}'. That is a parameter name that does not "
             + "exist on these elements, not a model with no matches - check the spelling, and whether "
-            + "it is a type parameter", wantName));
+            + "it is a type parameter{1}", wantName,
+            qualified
+                ? string.Format(". The braces name {0}, and it must still be called '{1}' on these "
+                    + "elements", wantGuid != Guid.Empty ? "the shared parameter with that GUID"
+                                                         : "Revit's built-in " + wantBuiltIn, calledAs)
+                : ""));
 
     if (mode == "notcontains" || mode == "notequals")
         findings.Add("This is a NEGATIVE match, so elements that do not carry the parameter are "
