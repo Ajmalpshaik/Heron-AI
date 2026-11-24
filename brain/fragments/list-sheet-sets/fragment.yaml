@@ -100,6 +100,15 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+    - name: unread
+      # 2026-11-24 (D-64, row 5b-1909, WN-7 of issue #1005) - CARD ONLY. Sheet
+      # sets whose sheets and views Revit would not hand back - each named in
+      # `findings` and its row, never counted empty. Empty when every set was
+      # read. Its C# already counted and named it; it is declared now, so a
+      # caller sees it. No line of impl/ changed, so the proof below still
+      # describes the code and the card stays PROVEN.
+      role: accounting
+      type: IList<string>
 
 proof:
   date: '2026-10-18'

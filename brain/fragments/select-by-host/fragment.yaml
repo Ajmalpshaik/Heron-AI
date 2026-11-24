@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "the doors, windows and other things really hosted in this wa
 kind: filter
 domain: revit.selection
 capability: SELECT_BY_HOST
-version: 1
+# VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005) - an element whose host Revit will not give is counted in
+# `unresolvedElements`, never silently passed over, and a sentence names it
+# only when it is above 0. It was PROVEN at version 1; that proof stays below
+# as the record, and the card is DRAFT until its NEEDS-CHECKING check runs and
+# is signed (D-30).
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -88,6 +94,12 @@ contract:
       type: IList<Element>
     - name: findings
       type: IList<string>
+    - name: unresolvedElements
+      # VERSION 2 (D-64). Elements of the categories searched whose host Revit
+      # would not give, so they were passed over. Always carried; a sentence
+      # in `findings` names it only when it is above 0.
+      role: accounting
+      type: int
 
 proof:
   date: '2026-10-18'

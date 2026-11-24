@@ -57,6 +57,17 @@ CARRIED = {
     "report-sprinkler-network": "skippedConnectors",
     "report-level-elevations": "unreadable",
     "report-wall-attachments": "unread",
+    # Batch 2, 2026-11-24 (NEEDS-CHECKING Group QO). ORDER_ELEMENTS_BY_POSITION
+    # and LIST_SHEET_SETS only declared what their C# already counted.
+    "report-constraints": "unresolvedConstraints",
+    "find-degenerate-lines": "skippedCurves",
+    "check-structural-supports": "skippedMembers",
+    "select-by-host": "unresolvedElements",
+    "select-by-pin-state": "unresolvedElements",
+    "report-tags-and-targets": "unresolvedTags",
+    "report-browser-organization": "unresolvedItems",
+    "order-elements-by-position": "noPlace",
+    "list-sheet-sets": "unread",
 }
 
 

@@ -1,5 +1,14 @@
 // NOT STANDALONE. Assumes `doc` is in scope; leaves `organization`,
-// `hiddenByFilter` and `findings` behind.
+// `hiddenByFilter`, `unresolvedItems` and `findings` behind.
+//
+// VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A VIEW OR SHEET WHOSE PLACE IN THE BROWSER WILL NOT READ IS
+// COUNTED. Version 1 read a filter test that threw as "shown", and passed over
+// one whose folders would not read without a word, so "Every view and sheet
+// shows in the Project Browser" could be said of views it never read.
+// `unresolvedItems` carries the count every time, in neither the hidden nor
+// the shown count; the sentence naming it is added only when it is above 0, so
+// every other answer reads as version 1's.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -20,6 +29,8 @@
 var lines = new List<string>();
 var findings = new List<string>();
 var hiddenByFilter = 0;
+// VERSION 2 (D-64): views and sheets whose filter test or folders would not read.
+var unresolvedItems = 0;
 
 Func<Element, ElementId, string> parameterName = (item, id) =>
 {
@@ -45,11 +56,11 @@ Action<BrowserOrganization, IEnumerable<Element>, string> describe = (organizati
     foreach (var item in items)
     {
         bool shown = true;
-        try { shown = organization.AreFiltersSatisfied(item.Id); } catch { }
+        try { shown = organization.AreFiltersSatisfied(item.Id); } catch { unresolvedItems++; continue; }
         if (!shown) { hidden++; continue; }
         IList<FolderItemInfo> path = null;
         try { path = organization.GetFolderItems(item.Id); } catch { }
-        if (path == null) continue;
+        if (path == null) { unresolvedItems++; continue; }
         read++;
         for (var i = 0; i < path.Count; i++)
         {
@@ -95,6 +106,13 @@ describe(forViews, views, "Views");
 describe(forSheets, sheets, "Sheets");
 
 var organization = string.Join("\n", lines);
-findings.Add(hiddenByFilter == 0
+// VERSION 2 (D-64): "every view and sheet shows" only when every one was read.
+findings.Add(hiddenByFilter == 0 && unresolvedItems == 0
     ? "Every view and sheet shows in the Project Browser."
+    : hiddenByFilter == 0
+    ? "No view or sheet that was read is hidden from the Project Browser by its organisation's filter."
     : hiddenByFilter + " view(s) or sheet(s) are hidden from the Project Browser by its organisation's filter.");
+// VERSION 2 (D-64): said only when a view or sheet was passed over.
+if (unresolvedItems > 0)
+    findings.Add(unresolvedItems + " view(s) or sheet(s) would not say whether the organisation's filter hides "
+        + "them, or which folder they sit in, so they are in neither the hidden nor the shown count.");

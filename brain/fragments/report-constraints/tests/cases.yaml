@@ -40,6 +40,13 @@ negative:
       it completes. The model is walked ONCE and indexed - a walk per element is
       quadratic and unusable on anything real
 
+  - given: >
+      VERSION 2, NEGATIVE. the elements version 1 was proved on
+    expect: >
+      constrainedBy, lockedTo and unconstrained exactly as version 1's,
+      unresolvedConstraints written down (0 expected) - above 0, an element in
+      unconstrained may be held by one of them
+
 second_route:
   - >
     select the element in Revit and try to move it - what follows, or what Revit

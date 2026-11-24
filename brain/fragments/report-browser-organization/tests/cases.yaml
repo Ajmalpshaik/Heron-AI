@@ -13,5 +13,12 @@ negative:
       hiddenByFilter 0 and findings saying every view and sheet shows - not a
       hidden count invented
 
+  - given: >
+      VERSION 2, NEGATIVE. the project version 1 was proved on
+    expect: >
+      the same organisation lines and first finding as version 1's,
+      unresolvedItems written down (0 expected) and no "would not say whether
+      the organisation's filter hides them" sentence while it is 0
+
 second_route:
   - View > User Interface > Browser Organization, the organisation's Edit dialog read beside it
