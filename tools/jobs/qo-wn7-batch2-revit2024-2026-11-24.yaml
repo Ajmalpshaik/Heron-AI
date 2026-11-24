@@ -1,10 +1,10 @@
-# NEEDS-CHECKING Group QI - WN-7 batch 2 (D-64, row 5b-1909, issue #1005):
+# NEEDS-CHECKING Group QO - WN-7 batch 2 (D-64, row 5b-1909, issue #1005):
 # the reading cards of batch 2 that last ran on Revit 2024. Written 2026-11-24
 # in a cloud session with no Revit. NOT RUN. SELECT_BY_HOST, last run on Revit
-# 2020, is in qi-wn7-batch2-revit2020-2026-11-24.yaml.
+# 2020, is in qo-wn7-batch2-revit2020-2026-11-24.yaml.
 #
-#     python tools/batch-prove.py tools/jobs/qi-wn7-batch2-revit2024-2026-11-24.yaml --dry-run
-#     python tools/batch-prove.py tools/jobs/qi-wn7-batch2-revit2024-2026-11-24.yaml --session <pid>
+#     python tools/batch-prove.py tools/jobs/qo-wn7-batch2-revit2024-2026-11-24.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/qo-wn7-batch2-revit2024-2026-11-24.yaml --session <pid>
 #
 # WHAT CHANGED, and so what every job looks for: each card now carries a count
 # of what its loop passed over because Revit would not give a read, and a
@@ -42,7 +42,7 @@ jobs:
     set: {}
     negative-set: {}
     note: >
-      QI1. Both legs: constrainedBy, lockedTo and unconstrained as
+      QO1. Both legs: constrainedBy, lockedTo and unconstrained as
       version 1 gives them on the same elements, unresolvedConstraints
       written down (0 expected) - above 0, an element in unconstrained may be
       held by one of them. If the Parking plan has no wall or duct, use any
@@ -53,7 +53,7 @@ jobs:
     set: {wantPinned: false, categories: "Ducts"}
     negative-set: {wantPinned: true, categories: "Ducts"}
     note: >
-      QI2. Negative - THE FIRST CASE TO RUN: version 1's "0 of N scanned
+      QO2. Negative - THE FIRST CASE TO RUN: version 1's "0 of N scanned
       element(s) are pinned", unresolvedElements written down (0 expected)
       and NO "would not say whether they are pinned" sentence while it is 0.
       Positive: version 1's 1053 of 1053 NOT pinned (or this copy's count),
@@ -64,7 +64,7 @@ jobs:
     set: {view: "FloorPlan: M1"}
     negative-set: {view: "FloorPlan: Parking"}
     note: >
-      QI3. Version 1's proof read the view in front (88 tags), not named;
+      QO3. Version 1's proof read the view in front (88 tags), not named;
       M1 is the copy's mechanical plan the other Snowdon jobs use - if it
       holds no tag, name the plan that does and write which. Negative: tagCount 0 on the Parking
       plan, unresolvedTags empty. Positive: tagTargets, orphanTags and
@@ -76,7 +76,7 @@ jobs:
     set: {categories: "Ducts", shorterThanMm: 100000}
     negative-set: {categories: "Ducts", shorterThanMm: 0.001}
     note: >
-      QI4, version 1's own job (project1-2026-09-19-round2.yaml). Both
+      QO4, version 1's own job (project1-2026-09-19-round2.yaml). Both
       legs as version 1's, skippedCurves written down (0 expected) and NO
       "would not give their curve or its length" sentence while it is 0.
 
@@ -84,7 +84,7 @@ jobs:
     expect: organization
     negative-in: "Project1"
     note: >
-      QI5. NEG NOT EMPTY expected (D-53). Both models: the organisation
+      QO5. NEG NOT EMPTY expected (D-53). Both models: the organisation
       lines and the first finding as version 1 reads them, unresolvedItems
       written down (0 expected) and no "would not say whether the
       organisation's filter hides them" sentence while it is 0.
@@ -99,7 +99,7 @@ jobs:
     set: {toleranceMm: 0}
     negative-set: {toleranceMm: 0}
     note: >
-      QI6, gap-fill-batch-7-2026-10-12.yaml's arrangement: the negative
+      QO6, gap-fill-batch-7-2026-10-12.yaml's arrangement: the negative
       hands in the two columns on Level 1 with a floor or foundation under
       them, so nothing is reported. Both legs as version 1's,
       skippedMembers written down (0 expected) and no "had no location line
