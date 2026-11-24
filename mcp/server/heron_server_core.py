@@ -39,8 +39,12 @@ time, under its other name - a second server object, a second lock, a second
 pin, and every tool registered twice. So what is shared is defined here, the
 entry file and every tool file import it, and this file imports neither.
 
-    heron_mcp_server (entry)   imports   heron_server_core, heron_inventory
+    heron_mcp_server (entry)   imports   heron_server_core, heron_inventory,
+                                         and the three helper files below
     heron_inventory            imports   heron_server_core
+    heron_pinned_model,        import    heron_server_core (since 2026-11-24;
+    heron_why_facts                      helpers moved out of the entry file)
+    heron_fragment_values      imports   no file of the server
     heron_server_core          imports   no file of the server
 
 A NAME REBOUND ON THE ENTRY MODULE DOES NOT REACH HERE. `_old_code` reads this
