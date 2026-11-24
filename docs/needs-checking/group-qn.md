@@ -7,6 +7,8 @@
 
 ## Group QN - the Changes question opens in front of Settings, and a press that changed nothing is said - BUILT, NOT RUN IN REVIT (2026-11-24)
 
+**Tracked as GitHub issue [#1370](https://github.com/Ajmalpshaik/Heron-AI/issues/1370) since 2026-11-24** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **LOCAL work - it needs Revit on the owner's PC.** A cloud session cannot run any of it.
 
 **Why:** [row 5b-2019](../fragment-issues/row-5b-2019.md), issue [#1343](https://github.com/Ajmalpshaik/Heron-AI/issues/1343).
