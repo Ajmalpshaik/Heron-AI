@@ -1192,7 +1192,7 @@ repeated name stay in the register.
 - **The one published release, v0.1.0**, was published by the owner on 2026-10-08, knowing it was
   unsigned: *"Publish v0.1.0 now"*. [NEEDS-CHECKING Group AC](../needs-checking/group-ac.md) records it as
   *"the owner's exception, made knowingly"*, and that two written rules still say signed:
-  [07 §1a](../07-installation-and-update.md), and [`heron_tag.py`](../../brain/heron_tag.py), which refuses an
+  [07 §1a](../07-installation-and-update.md), and `heron_tag.py`, which refuses an
   unsigned release. `release.yml` does not run `heron_tag.py`, so that refusal has never met a real release.
 - **What is checked instead:** the installer verifies every download against the release's `checksums.txt`
   before anything reaches Revit's Addins folder

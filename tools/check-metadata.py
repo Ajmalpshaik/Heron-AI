@@ -81,8 +81,7 @@ HOST_PROVIDED = {
     "HERON-DEV-REQ-001":  "the host turns a request into a specification",
     "HERON-DEV-PLN-002":  "the host sequences the work - the same sentence "
                           "ORC-MAIN-001 is already delegated for",
-    "HERON-DEV-ARC-003":  "the host decides structure; heron_belongs.py "
-                          "(IMP-ARC-011) does the mechanical half",
+    "HERON-DEV-ARC-003":  "the host decides structure",
     "HERON-DEV-GEN-004":  "the host writes the code, as it wrote every line "
                           "in this repository",
     "HERON-DEV-RAP-007":  "the host holds the Revit API knowledge; "
