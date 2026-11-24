@@ -135,7 +135,7 @@ wrong standard, having never been told a choice was made.
 > scope's answer under its own label, and [`heron_conflict.py`](../brain/heron_conflict.py) has no
 > winner and no resolve, which `tests/test_conflict.py` holds. The agent written to say *"this
 > project's rule outranks the company default"* out loud is
-> [`heron_project.py`](../brain/heron_project.py). It is DRAFT, and no tool serves it.
+> `heron_project.py`. It is DRAFT, and no tool serves it.
 
 ---
 
@@ -317,7 +317,7 @@ procedure is actually structured. Two guards:
 
 > **As built (2026-10-18):** no skill in [`brain/skills/`](../brain/skills/) names another skill yet.
 > Each one's `needs` lists capabilities only, so composition in the library is one level deep. Both
-> guards are written for when one does: [`heron_composition.py`](../brain/heron_composition.py) (DRAFT)
+> guards are written for when one does: `heron_composition.py` (DRAFT)
 > names a cycle, and refuses a declared risk lower than what the skill composes. The gate in the add-in
 > reads the risk of each operation it is sent, never a skill's.
 
@@ -361,7 +361,7 @@ or for an annual submission — is not dead. Suggested rule: a fragment is a GC 
 
 > **As built (2026-10-18):** the library is files in git ([23 §7](23-heron-kernel.md#7-immutable-provenance)),
 > so nothing is lost when a card is retired. The Cleanup agent,
-> [`heron_cleanup.py`](../brain/heron_cleanup.py) (DRAFT), archives and never deletes. It calls
+> `heron_cleanup.py` (DRAFT), archives and never deletes. It calls
 > nothing *unused* without evidence, and its suite asserts that the module holds no delete call.
 
 ---

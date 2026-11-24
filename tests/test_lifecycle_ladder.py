@@ -34,7 +34,7 @@ WHY THIS SUITE EXISTS
 ----------------------
 On 2026-09-21 the declarations were split across the two. Two modules have
 adopted an unconfirmed proposal and four have not: tools/check-metadata.py
-accepts `Heron-Status: SHADOW` and brain/heron_deployment.py promotes
+accepts `Heron-Status: SHADOW` and brain/heron_deployment.py (removed by D-198) promoted
 through it with its own gate, while heron_fragment.can_promote answers
 "'SHADOW' is not a lifecycle state" and STATUSES.index raises ValueError
 for a fragment already there, and heron_capability.TRUST.get(status, 0)
@@ -72,7 +72,6 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_fragment as FRAG                                 # noqa: E402
 import heron_capability as CAP                                # noqa: E402
-import heron_deployment as DEP                                # noqa: E402
 import heron_retrieve as RET                                  # noqa: E402
 
 SPEC = os.path.join(ROOT, "docs", "00-master-specification.md")
@@ -92,13 +91,11 @@ EXCLUDES = {
         RETIRED_TWO,
         "they exist so a record is never destroyed (Golden Rule 4), not so "
         "they can be handed back as answers"),
-    ("brain/heron_deployment.py", "LADDER"): (
-        RETIRED_TWO,
-        "retirement is not promotion - heron_deployment.RETIRED holds those"),
 }
 
-# The one declaration that is the COMPLEMENT rather than a subset.
-COMPLEMENT = ("brain/heron_deployment.py", "RETIRED")
+# brain/heron_deployment.py held the one declaration that was a COMPLEMENT
+# rather than a subset (its LADDER and RETIRED). It was removed with the
+# agent it implemented by D-198 on 2026-11-24, so neither row is read now.
 
 FAILURES = []
 
@@ -166,26 +163,18 @@ def main():
         ("brain/heron_capability.py", "TRUST", tuple(CAP.TRUST)),
         ("brain/heron_retrieve.py", "OFFERABLE", tuple(RET.OFFERABLE)),
         ("brain/heron_retrieve.py", "QUALITY", tuple(RET.QUALITY)),
-        ("brain/heron_deployment.py", "LADDER", tuple(DEP.LADDER)),
-        (COMPLEMENT[0], COMPLEMENT[1], tuple(DEP.RETIRED)),
         ("tools/check-metadata.py", "STATUSES", from_check_metadata()),
     )
 
     following = {"CONFIRMED": [], "PROPOSED": [], "BOTH": [], "NEITHER": []}
     for rel, name, got in rows:
         held = set(got)
-        if (rel, name) == COMPLEMENT:
-            # The two stages reached deliberately rather than by climbing.
-            # They are the same on either ladder, so this one cannot take a
-            # side and says so.
-            side = "BOTH" if held == set(RETIRED_TWO) else "NEITHER"
-        else:
-            out, _ = EXCLUDES.get((rel, name), (frozenset(), None))
-            sides = [label for label, ladder in
-                     (("CONFIRMED", confirmed), ("PROPOSED", proposed))
-                     if held == set(ladder) - set(out)]
-            side = sides[0] if len(sides) == 1 else (
-                "BOTH" if sides else "NEITHER")
+        out, _ = EXCLUDES.get((rel, name), (frozenset(), None))
+        sides = [label for label, ladder in
+                 (("CONFIRMED", confirmed), ("PROPOSED", proposed))
+                 if held == set(ladder) - set(out)]
+        side = sides[0] if len(sides) == 1 else (
+            "BOTH" if sides else "NEITHER")
         following[side].append("%s %s" % (rel, name))
         check(side != "NEITHER",
               "%-42s %-10s %s"

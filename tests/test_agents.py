@@ -64,17 +64,17 @@ def main():
     deals = REG.contracts()
 
     print("1. A record matches every source it came from")
-    found = REG.record("HERON-KRN-EVT-004", agents, claims, host, deals)
-    check(found["name"] == agents["HERON-KRN-EVT-004"]["name"]
-          and found["tier"] == agents["HERON-KRN-EVT-004"]["tier"],
+    found = REG.record("HERON-DEV-SEC-009", agents, claims, host, deals)
+    check(found["name"] == agents["HERON-DEV-SEC-009"]["name"]
+          and found["tier"] == agents["HERON-DEV-SEC-009"]["tier"],
           "identity and tier come from docs/28-agent-registry.md")
-    check("brain/heron_events.py" in found["files"],
+    check("brain/heron_security.py" in found["files"],
           "the implementing file comes from the Heron-Agent headers")
-    check(found["state"] == REG.header_of("brain/heron_events.py")["status"],
+    check(found["state"] == REG.header_of("brain/heron_security.py")["status"],
           "the state is the implementing file's own Heron-Status")
-    check(found["contract"] == "brain/agents/HERON-KRN-EVT-004.yaml"
-          and found["timeout_seconds"] == 30
-          and "HANDLER_FAILED" in found["failures"],
+    check(found["contract"] == "brain/agents/HERON-DEV-SEC-009.yaml"
+          and found["timeout_seconds"] == 60
+          and "NOT_REVIEWED" in found["failures"],
           "the interface comes from the contract, not from the source")
 
     unbuilt = [a for a in agents
@@ -90,8 +90,8 @@ def main():
     print()
     print("1b. The header comes from an implementation, never from a test")
     sorted_test_first = {
-        "HERON-KRN-EVT-004": ["tests/test_events.py", "brain/heron_events.py"]}
-    from_impl = REG.record("HERON-KRN-EVT-004", agents, sorted_test_first,
+        "HERON-DEV-SEC-009": ["tests/test_security.py", "brain/heron_security.py"]}
+    from_impl = REG.record("HERON-DEV-SEC-009", agents, sorted_test_first,
                            host, deals)
     check(from_impl["layer"] == "brain",
           "with a test sorting first, the layer is still the module's")
@@ -104,8 +104,8 @@ def main():
 
     print()
     print("1c. A test-only claim is not an implementation")
-    test_only = {"HERON-KRN-EVT-004": ["tests/test_events.py"]}
-    check(REG.record("HERON-KRN-EVT-004", agents, test_only, host,
+    test_only = {"HERON-DEV-SEC-009": ["tests/test_security.py"]}
+    check(REG.record("HERON-DEV-SEC-009", agents, test_only, host,
                      deals)["state"] == "NOT BUILT",
           "an agent claimed only by a test reads NOT BUILT")
     for agent_id in ("HERON-RAG-RIX-011", "HERON-RAG-DUP-012"):
@@ -119,7 +119,7 @@ def main():
     everything = REG.records(agents, claims, host, deals)
     check(len(everything) == len(agents),
           "every agent in the register has a record")
-    check(everything["HERON-KRN-EVT-004"]["name"] == "Event Bus",
+    check(everything["HERON-DEV-SEC-009"]["name"] == 'Security Review Agent',
           "and each one is the record, not a tally")
 
     print()
@@ -130,7 +130,7 @@ def main():
         check(forbidden not in source,
               "the module contains no %s - it derives, it does not keep"
               % forbidden)
-    twice = REG.record("HERON-KRN-EVT-004", agents, claims, host, deals)
+    twice = REG.record("HERON-DEV-SEC-009", agents, claims, host, deals)
     check(twice == found, "deriving the same record twice gives the same thing")
 
     print()

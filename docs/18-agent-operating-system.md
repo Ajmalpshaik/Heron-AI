@@ -9,10 +9,10 @@
 > **As built (2026-10-18):** most sections below have a module in `brain/`, each `DRAFT` and tested
 > without Revit, none proven: §2 [`heron_capability.py`](../brain/heron_capability.py)
 > (`HERON-KRN-CAP-008`), §3 [`heron_agents.py`](../brain/heron_agents.py) (`HERON-AHR-REG-008`), §4's
-> shadow runs [`heron_shadow.py`](../brain/heron_shadow.py), §5's scoring
-> [`heron_evaluator.py`](../brain/heron_evaluator.py), §6 [`heron_hr.py`](../brain/heron_hr.py), §7
-> [`heron_gaps.py`](../brain/heron_gaps.py), §8 [`heron_retirement.py`](../brain/heron_retirement.py) and
-> §10 [`heron_events.py`](../brain/heron_events.py). Each file's header names its agent id. How many of the
+> shadow runs `heron_shadow.py`, §5's scoring
+> `heron_evaluator.py`, §6 `heron_hr.py`, §7
+> [`heron_gaps.py`](../brain/heron_gaps.py), §8 `heron_retirement.py` and
+> §10 `heron_events.py`. Each file's header names its agent id. How many of the
 > registry's agents are built is `python tools/agent-count.py`, never a number typed here; a signed run of
 > an add-in agent is kept in [`brain/agent-proofs/`](../brain/agent-proofs/README.md), apart from its
 > status.
@@ -145,7 +145,7 @@ Tracked as [Q-29](OPEN-QUESTIONS.md).
 > answering Q-29.** The table above stands. *"After N shadow runs"* does not: leaving shadow takes an
 > analysed **disagreement** — what differed, which was right, and why — plus a person's signature, never
 > a count of runs, and an agent that never disagrees is a finding, not a pass.
-> **As built (2026-10-18):** [`heron_shadow.py`](../brain/heron_shadow.py) keeps that disagreement log and
+> **As built (2026-10-18):** `heron_shadow.py` keeps that disagreement log and
 > computes no agreement rate. It starts no process and runs neither side, and it refuses to authorise a
 > shadow run whose constraints nothing enforces: there is no sandbox to run one in
 > ([D-84](DECISIONS.md#d-84--the-sandbox-is-renamed-not-rebuilt)).
@@ -179,7 +179,7 @@ operational rather than decorative.
 > **As built (2026-10-18): there is no trust percentage.** [D-39](DECISIONS.md#d-39--shadow-mode-is-approved-on-an-analysed-disagreement-not-a-count-of-agreements)
 > refused one — *"a percentage score would invite a threshold"* — and a fragment is promoted on one
 > recorded proof, not on a count of runs ([D-30](DECISIONS.md#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)).
-> The Agent Evaluator, [`heron_evaluator.py`](../brain/heron_evaluator.py) (DRAFT), scores runs against the
+> The Agent Evaluator, `heron_evaluator.py` (DRAFT), scores runs against the
 > agent's own contract in `brain/agents/<id>.yaml`, and never counts a correct refusal as a failure.
 
 ---
@@ -279,7 +279,7 @@ Two constraints:
    a `MODIFY` or `PUBLISH` action directly. Otherwise the permission model has a side door.
 2. **Event handlers must be idempotent.** `FragmentUpdated` will fire twice at some point.
 
-> **As built (2026-10-18):** [`heron_events.py`](../brain/heron_events.py) (DRAFT) holds rule 1 more
+> **As built (2026-10-18):** `heron_events.py` (DRAFT) holds rule 1 more
 > tightly than it is written: a handler declares its risk, and one above `ANALYZE` is refused when it
 > subscribes, so `SUGGEST` and `EXECUTE` are kept out as well as `MODIFY` and `PUBLISH`. Handlers run in
 > subscription order, a failing one does not stop the rest, and an event that comes back round to itself
