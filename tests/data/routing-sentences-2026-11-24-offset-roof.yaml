@@ -1,0 +1,106 @@
+# ROUTING SENTENCES FROZEN 2026-11-24, BEFORE ANY CARD WAS EDITED - for GitHub
+# issues #1169 (row 5b-1944: a duct's or pipe's offset, set and asked) and #1187
+# (row 5b-1953: a roof pitch request, roof slope questions, and whether one roof
+# reaches another).
+#
+# Measured beside them, never committed: the owner's 79, the plain questions,
+# tests/test_routing_phrases.py's sentences, routing-sentences-2026-11-23.yaml,
+# routing-sentences-2026-11-21-b.yaml and every declared sentence of the cards
+# in play, as each stood on main.
+#
+# Read by tools/score-routing.py --sentences. Where a row quotes a sentence, it
+# is that row's. Every other sentence is this session's own, written before the
+# change and declared on no card. Never reworded to buy back a rank: a sentence
+# here is the instrument.
+#
+# REPORT_ROOF_REACH does not exist on main when this was frozen, and
+# score-routing does not score a sentence wanting a capability the library has
+# not got. So the roof-reach questions say `not-a-write` - on main they reached
+# a write - and the branch is asked separately whether each reaches
+# REPORT_ROOF_REACH, the read built to answer them.
+groups:
+- group: '5b-1944 (#1169): set a run''s offset from its level - the row''s own'
+  expect: want WRITE_ELEMENT_PARAMETERS
+  sentences:
+  - change the duct offset to 2700
+  - raise these ducts to an offset of 3200
+  - change the middle elevation of the selected pipes to 2900
+  - set the offset of these ducts
+  - set the middle elevation of this pipe
+  - set the mep offset
+  - put these pipes at 3000 from the level
+- group: '5b-1944 (#1169): set a run''s offset - held out'
+  expect: want WRITE_ELEMENT_PARAMETERS
+  sentences:
+  - make the offset of this cable tray 2600
+  - set the conduit offset to 2400
+  - change the middle elevation of these ducts to 3100 mm
+  - set these pipes to an offset of 2750
+  - lower the duct offset to 2500
+  - change the offset of the selected cable trays to 3300
+- group: '5b-1944 (#1169): offset questions'
+  expect: want READ_ELEMENT_LEVEL
+  sentences:
+  - what is the offset of this duct
+  - what is the middle elevation of this duct
+  - how high above the level is this pipe
+  - what offset are these pipes at
+  - what is the middle elevation of this cable tray
+  - tell me the offset of the selected conduits
+  - what height is this duct at from its level
+- group: '5b-1944 (#1169): guards - the moves beside it'
+  sentences:
+  - say: move these ducts up 200
+    expect: want MOVE_ELEMENTS
+  - say: offset these ducts 300 to the side
+    expect: want OFFSET_ELEMENTS
+  - say: move these ducts onto level 2 without moving them
+    expect: want SET_ELEMENT_LEVEL
+  - say: line up the bottoms of these ducts
+    expect: want ALIGN_ELEMENTS
+  - say: what level is this duct on
+    expect: want READ_ELEMENT_LEVEL
+- group: '5b-1953 (#1187): a roof pitch request'
+  expect: want SLOPE_ROOF_EDGES
+  sentences:
+  - give this roof a 25 degree pitch
+  - set the pitch of this roof to 30 degrees
+  - pitch this roof at 20 degrees
+  - make this roof pitch 35 degrees
+  - change the roof pitch to 22.5 degrees
+- group: '5b-1953 (#1187): roof slope questions'
+  expect: want REPORT_ROOF_SLOPES
+  sentences:
+  - what slope is the main roof at
+  - tell me the pitch of the selected roof
+  - what is the pitch of the wing roof
+  - how steep is the garage roof
+  - what angle is this roof sloped at
+- group: '5b-1953 (#1187): does one roof reach another'
+  expect: not-a-write
+  sentences:
+  - does this roof reach the other roof
+  - does the extrusion roof meet the main roof
+  - what is the gap from the wing roof to the main roof
+  - how far is the wing roof from the main roof
+  - does the porch roof touch the house roof
+  - is there a gap between these two roofs
+  - how much short of the main roof does this roof stop
+- group: '5b-1953 (#1187): extend one roof to another'
+  expect: want EXTEND_ROOF_TO_ROOF
+  sentences:
+  - make the wing roof run into the main roof
+  - extend this roof until it reaches the main roof
+  - lengthen the extrusion roof to reach the other roof
+- group: '5b-1953 (#1187): guards - distance, walls and joins'
+  sentences:
+  - say: how far apart are these two
+    expect: want MEASURE_DISTANCE
+  - say: how far is this duct from that beam
+    expect: want MEASURE_DISTANCE
+  - say: which walls are attached to the roof
+    expect: want REPORT_WALL_ATTACHMENTS
+  - say: attach these walls to the roof
+    expect: want ATTACH_WALLS
+  - say: join the main roof to the wing roof
+    expect: neutral

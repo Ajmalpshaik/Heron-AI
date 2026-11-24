@@ -227,7 +227,7 @@ Tracked as [Q-16](OPEN-QUESTIONS.md) — which existing repositories are in scop
 > **As built (2026-10-18):** the pipeline is
 > `heron_pipeline.py`. It reads its step order from the specification,
 > never modifies the source folder, and maps each step to an agent.
-> [`heron_import.py`](../brain/heron_import.py) prepares the manifest for a person's review, and
+> `heron_import.py` prepares the manifest for a person's review, and
 > everything enters at `DISCOVERED`. Both are DRAFT, and no MCP tool serves either. The study of the
 > existing libraries is [31 research](31-research.md): mechanisms are re-authored, never
 > imported ([D-25](DECISIONS.md#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported)).

@@ -103,6 +103,11 @@ compatibility-note: >
 #                                       READ_ELEMENT_MATERIAL on main, and
 #                                       SHOW_ANALYSIS_HEATMAP, a change, once
 #                                       a card elsewhere changed status
+#   "does this roof reach the other roof" -> REPORT_ROOF_REACH (2026-11-24,
+#                                       row 5b-1953). Two roofs' bounding
+#                                       boxes overlap when the roofs do not
+#                                       meet, so this would say 0; that card
+#                                       measures with rays
 
 utterances:
   # MOVED 2026-11-01 from MEASURE_ELEMENT_LENGTHS (merged into MEASURE_RUN_QUANTITIES,

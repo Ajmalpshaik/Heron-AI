@@ -229,3 +229,10 @@ utterances:
   - put it at 12400, 8600
   # ...and its semantic identity, which nothing else declares:
   - put this element at exactly this coordinate
+  # ADDED 2026-11-24 (rows 5b-1944 and 5b-1953, session S14). The owner's "Move
+  # all the FCUs from 2400 to 2700." reached this card on lexical+rerank with
+  # it twentieth on the shortlist the re-ranker reads, the last place; when
+  # WRITE_ELEMENT_PARAMETERS declared "change the duct offset to 2700" for row
+  # 5b-1944 it took that place and the re-ranker chose ADD_CURTAIN_GRID_LINES.
+  # A move from one height to another is this card's, by a distance.
+  - move all these units from one height up to another

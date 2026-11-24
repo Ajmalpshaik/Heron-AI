@@ -213,7 +213,7 @@ the remaining registries · secret store.
 
 **Of the update system, two halves exist and neither updates anything:**
 [`UpdateCheck.cs`](Heron.Installer/UpdateCheck.cs) says whether a newer published release exists, and
-[`brain/heron_update.py`](../brain/heron_update.py) holds docs/07's update rules as refusals.
+`brain/heron_update.py` holds docs/07's update rules as refusals.
 `heron-install --help` says it *"never updates anything by itself"*.
 
 ## Rules for this folder

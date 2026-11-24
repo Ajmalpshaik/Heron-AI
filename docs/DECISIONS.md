@@ -267,6 +267,7 @@ an edit.
 | [D-196](#d-196--a-writes-read-back-also-names-what-the-job-was-handed-and-revit-counted-no-change-to-asked-did-not-change) | A write's read-back also names what the job was handed and Revit counted no change to: asked, did not change | ✅ Accepted · 2026-11-21 |
 | [D-197](#d-197--ask-to-delete-one-switch-in-settings-on-at-every-revit-start-that-stops-revits-delete-box-and-a-drafts-keep-or-discard-and-the-chat-asks-in-words-first) | Ask to Delete: one switch in Settings, on at every Revit start, that stops Revit's Delete box and a DRAFT's Keep or Discard, and the chat asks in words first | ✅ Accepted · 2026-11-23, built, not yet run in Revit |
 | [D-198](#d-198--agents-that-were-built-but-that-nothing-in-heron-called-are-retired-and-their-code-and-tests-removed) | Agents that were built but that nothing in Heron called are retired, and their code and tests removed | ✅ Accepted · 2026-11-24 |
+| [D-199](#d-199--thirteen-more-idle-modules-are-retired-update-trust-release-tagging-versioning-the-import-pipeline-and-the-workflow-engine) | Thirteen more idle modules are retired: update, trust, release, tagging, versioning, the import pipeline and the workflow engine | ✅ Accepted · 2026-11-24 |
 
 ## Format
 
@@ -1309,7 +1310,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Accepted · **Date:** 2026-10-18 · **Accepted:** Ajmal PS, 2026-10-18, in conversation, asked *"When Heron's new secret scanner finds a password or API key in a change, what should happen?"* and choosing *"Block it"* over *"Warn only"*
 **Keeps:** [D-07](#d-07--free-open-source-on-public-github) - the repository stays public, which is the reason for this · [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) - the idea was studied in another project and re-authored here, nothing imported
-**Affects:** [`check-secrets.py`](../tools/check-secrets.py), [`test_check_secrets.py`](../tests/test_check_secrets.py), [`heron_secrets.py`](../brain/heron_secrets.py) (`PATTERNS` gains `private key`, and `FAKE_PRIVATE_KEY`), [`test_secrets.py`](../tests/test_secrets.py), `test_configuration.py`, [`gates.yml`](../.github/workflows/gates.yml), [`test_tag.py`](../tests/test_tag.py), [`AGENTS.md`](../AGENTS.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md), [`heron-ship`](../.claude/skills/heron-ship/SKILL.md), [`tools/README.md`](../tools/README.md), [`check-gaps.py`](../tools/check-gaps.py), [12 §5a](12-security-and-permissions.md), [17](17-open-source-and-distribution.md)
+**Affects:** [`check-secrets.py`](../tools/check-secrets.py), [`test_check_secrets.py`](../tests/test_check_secrets.py), [`heron_secrets.py`](../brain/heron_secrets.py) (`PATTERNS` gains `private key`, and `FAKE_PRIVATE_KEY`), [`test_secrets.py`](../tests/test_secrets.py), `test_configuration.py`, [`gates.yml`](../.github/workflows/gates.yml), `test_tag.py`, [`AGENTS.md`](../AGENTS.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md), [`heron-ship`](../.claude/skills/heron-ship/SKILL.md), [`tools/README.md`](../tools/README.md), [`check-gaps.py`](../tools/check-gaps.py), [12 §5a](12-security-and-permissions.md), [17](17-open-source-and-distribution.md)
 
 **Full record:** [`decisions/D-143.md`](decisions/D-143.md)
 
@@ -1569,7 +1570,7 @@ What this makes easy. What this makes hard. What it locks in.
 **Numbering:** written from the same answers as [D-172](decisions/D-172.md) (first numbered D-167), whose Numbering line says how the numbers were taken. Renumbered from D-168 to D-173 on 2026-11-16 with `tools/renumber.py`, because claude/outcome-words-2026-11-16 holds D-168 too.
 **Supersedes in part:** [D-91](decisions/D-91.md) - *"Files come from a signed GitHub release"*: until signing is built a release is versioned and checksummed and says it is unsigned, and signed stays the bar, due before Heron is given to anyone outside
 **Keeps:** the rest of D-91 - named by version, never a branch, a raw file URL or whatever is newest on main, a download verified before it is used, nothing downloaded executed to decide what to install · [D-93](decisions/D-93.md) · [D-96](decisions/D-96.md) · [Article 15](../HERON_CONSTITUTION.md) - only the owner publishes a release · [Article 17](../HERON_CONSTITUTION.md) - when signing is built, its key lives in the credential store
-**Affects:** D-91's index entry and record · [07 §1a and §3](07-installation-and-update.md) · nothing in [`release.yml`](../.github/workflows/release.yml), which already writes *"Not signed."* into every release's notes, or in [`heron_tag.py`](../brain/heron_tag.py), whose refusal of an unsigned release stays as the bar signing must meet
+**Affects:** D-91's index entry and record · [07 §1a and §3](07-installation-and-update.md) · nothing in [`release.yml`](../.github/workflows/release.yml), which already writes *"Not signed."* into every release's notes, or in `heron_tag.py`, whose refusal of an unsigned release stays as the bar signing must meet
 
 **Full record:** [`decisions/D-173.md`](decisions/D-173.md)
 
@@ -1801,3 +1802,14 @@ What this makes easy. What this makes hard. What it locks in.
 are removed and their registry rows kept, marked RETIRED.
 
 **Full record:** [`decisions/D-198.md`](decisions/D-198.md)
+
+## D-199 — Thirteen more idle modules are retired: update, trust, release, tagging, versioning, the import pipeline and the workflow engine
+
+**Status:** Accepted · **Date:** 2026-11-24 · **Accepted:** Ajmal PS, 2026-11-24, in conversation.
+**Numbering:** D-199 is the id `tools/next-id.py` printed free on 2026-11-24, after D-198 on the same branch.
+**Affects:** [28](28-agent-registry.md) (14 rows RETIRED) · `brain/` · `mcp/server/heron_workflow.py` · `brain/agents/` · `tests/`
+
+Of the agents D-198's strict count found idle, company standards and the agent registry stay; update, trust, report
+release, tagging, versioning, the import pipeline, commit and the workflow engine are retired and their code removed.
+
+**Full record:** [`decisions/D-199.md`](decisions/D-199.md)
