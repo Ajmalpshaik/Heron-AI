@@ -36,6 +36,8 @@ IT REFUSES MORE THAN IT WRITES, and that is the point:
 
     an id that is not in docs/28-agent-registry.md .... it does not exist
     an agent something already claims ................. it is already built
+    a row RETIRED or DEFERRED by a decision ........... it comes back only
+                                                        with a decision
     a file that is already there ...................... nothing is overwritten
     a name that is a PREFIX of an existing module ..... it would shadow it
 
@@ -338,6 +340,31 @@ def main(argv):
         return 1
 
     row = agents[agent]
+    # THE FIFTH REFUSAL: A ROW A DECISION HAS RETIRED OR DEFERRED. Both kinds
+    # are rows "nothing claims", which is all the check above looks at, so a
+    # retired agent looked exactly like an unbuilt one. D-198, D-199 and
+    # D-200 retired many of them on 2026-11-24 and this tool would have
+    # scaffolded any of them back. The two words come from agent-count.py's
+    # own parser (register() above), never from a second reading of the
+    # register here.
+    for word, key, why in (
+            ("RETIRED", "retired",
+             "It was built and then removed on purpose, and D-198 says a "
+             "retired agent comes back only as a real capability a modeller "
+             "can reach, with a decision of its own."),
+            ("DEFERRED", "deferred",
+             "A named decision says it cannot be built yet, so a stub for it "
+             "would be work nobody has agreed to.")):
+        decision = row.get(key)
+        if decision:
+            print("  refused   '%s' is %s by %s (docs/28-agent-registry.md)"
+                  % (agent, word, decision))
+            print()
+            print("  %s" % why)
+            print("  Nothing was written. Change the row with a decision "
+                  "first, then run this again.")
+            return 1
+
     name = row["name"]
     # TWO AGENTS CAN DERIVE ONE MODULE NAME, and the rule that strips
     # "_agent" is what makes it likely: "Performance Agent" in
