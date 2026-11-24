@@ -73,6 +73,16 @@
 // Properties palette does, "Reference Point id N" - and so does a by-category
 // inventory, where version 5 printed its Revit category. Nothing else changed.
 //
+// VERSION 7 (2026-11-24, FRAGMENT-ISSUES row 5b-2013): A PLAIN ELEMENT ID
+// IN `forms`. Version 6 read every id with Document.GetElement(string), which
+// knows unique ids only, so the number every read tool prints for an element
+// - "ELEMENT id 9659268" from REPORT_PARAMETER_INVENTORY, measured in Revit
+// 2020 on a nested fan copy - was refused as naming nothing, and only its
+// unique id linked it. Now an id of digits alone is read as that element id,
+// built as a 64-bit ElementId from Revit 2024 on and 32-bit before; anything
+// else is a unique id, as before. An id that names nothing is still refused,
+// and the refusal says both kinds are taken. Nothing else changed.
+//
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
 // THE "ASSOCIATE FAMILY PARAMETER" BUTTON, FOR ELEMENTS ALREADY IN THE FAMILY.
@@ -633,9 +643,36 @@ else
         else
             foreach (var part in saidForms.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0))
             {
+                // VERSION 7: a PLAIN element id - the number every read tool
+                // and Revit's own Select by ID print, "9659268" - is accepted
+                // as well as a unique id. All digits is never a unique id
+                // (those carry hyphens), so the two cannot be confused. The
+                // id is built the release-safe way: 64-bit from 2024 on.
                 Element element = null;
-                try { element = doc.GetElement(part); } catch (Exception) { element = null; }
-                if (element == null) problems.Add("No element in this family has the id \"" + part + "\".");
+                var plain = part.All(char.IsDigit);
+                try
+                {
+                    if (plain)
+                    {
+#if REVIT2024_OR_GREATER
+                        long number;
+                        if (long.TryParse(part, System.Globalization.NumberStyles.None,
+                                System.Globalization.CultureInfo.InvariantCulture, out number))
+                            element = doc.GetElement(new ElementId(number));
+#else
+                        int number;
+                        if (int.TryParse(part, System.Globalization.NumberStyles.None,
+                                System.Globalization.CultureInfo.InvariantCulture, out number))
+                            element = doc.GetElement(new ElementId(number));
+#endif
+                    }
+                    else element = doc.GetElement(part);
+                }
+                catch (Exception) { element = null; }
+                if (element == null)
+                    problems.Add("No element in this family has the id \"" + part + "\". Name an element by the "
+                        + "id Revit prints for it (a number such as 9659268) or by its unique id - the read tools "
+                        + "and the tools that made it give both.");
                 else named.Add(element);
             }
 
