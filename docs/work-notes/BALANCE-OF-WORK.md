@@ -7,7 +7,7 @@
 
 # The balance of work
 
-> **GENERATED 2026-11-21 20:20 by `python tools/balance-of-work.py --write`.**
+> **GENERATED 2026-11-24 11:39 by `python tools/balance-of-work.py --write`.**
 > **If that stamp is not today, this page is history and not a work list.** Every figure
 > below was read back out of the tool that owns it, and each row names the command that
 > derives it. Nothing here is typed by hand, so where this page and a register disagree,
@@ -23,20 +23,20 @@ business here. When every row does, delete the file and the tool with it.
 
 | # | What is left | Count | Derive it with |
 |---|---|---|---|
-| 1 | **Fragments that have never met a model** — the largest single body of work left | **129** of **746** | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` |
+| 1 | **Fragments that have never met a model** — the largest single body of work left | **129** of **751** | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` |
 | 1a | — of those, never run **in this checkout** — see the warning below | **129** | `python tools/generate-jobs.py` |
-| 1b | — of those, **ready to prove right now**, needing only a Revit session | **104** | `python tools/generate-jobs.py` |
-| 1c | — of those, **structurally blocked**, each with a reason printed | **25** | `python tools/generate-jobs.py` |
+| 1b | — of those, **ready to prove right now**, needing only a Revit session | **116** | `python tools/generate-jobs.py` |
+| 1c | — of those, **structurally blocked**, each with a reason printed | **13** | `python tools/generate-jobs.py` |
 | 2 | **Skills never proved** | **50** of **50** | `grep -h '^heron-status:' brain/skills/*.yaml \| sort \| uniq -c` |
 | 3 | **Agents left to build** | **0** of **252** | `python tools/agent-count.py` |
 | 3b | — and **deferred by a decision**, which is neither left nor done | **2** | `python tools/agent-count.py` |
 | 4 | **Agent proofs drafted but unsigned** | **0** | `ls brain/agent-proof-drafts/*.yaml` |
-| 5 | **Proving-register rows still open** | **2836** of **3370** | `python tools/owner-queue.py` |
-| 6 | **Heron's own defects still open** | **13** of **1404** | `python tools/open-defects.py` |
-| 7 | **Questions unanswered** | **2** | `python tools/check-docs.py` |
+| 5 | **Proving-register rows still open** | **2941** of **3475** | `python tools/owner-queue.py` |
+| 6 | **Heron's own defects still open** | **1** of **1457** | `python tools/open-defects.py` |
+| 7 | **Questions unanswered** | **4** | `python tools/check-docs.py` |
 | 8 | **Proposals awaiting the owner** | **11** of **37** | `python tools/owner-queue.py` |
-| 9 | **Signatures gone stale — proved, then the code moved under them** | **68** | `python tools/check-signatures.py` |
-| 10 | **Everything waiting on the owner personally**, across three registers | **2849** | `python tools/owner-queue.py` |
+| 9 | **Signatures gone stale — proved, then the code moved under them** | **62** | `python tools/check-signatures.py` |
+| 10 | **Everything waiting on the owner personally**, across three registers | **2956** | `python tools/owner-queue.py` |
 
 > **ROWS 1a TO 1c ARE ABOUT THIS CHECKOUT, NOT ABOUT THE PROJECT.** They count what has never
 > been run *here*, and `brain/proof-drafts/runs/` is gitignored, so every worktree starts almost
@@ -53,9 +53,9 @@ leave the other untouched.
 
 Every drift this repository has caught was visible in a list and invisible in a total.
 
-**Questions still open:** Q-95, Q-96
+**Questions still open:** Q-95, Q-96, Q-97, Q-98
 
-**Defects still open** (`docs/FRAGMENT-ISSUES.md` section 5): 5b-1161, 5b-1643, 5b-1743, 5b-1833, 5b-1834, 5b-1836, 5b-1837, 5b-1838, 5b-1839, 5b-1840, 5b-1870, 5b-1883, 5b-1906
+**Defects still open** (`docs/FRAGMENT-ISSUES.md` section 5): 5b-1999
 
 > A row can still say OPEN after a later row has closed it — four did on 2026-09-16, and no
 > pattern finds them. Reading beats grepping here.
@@ -75,7 +75,6 @@ and the reason is the second column — read it before deleting one.
 | `plans/rag/01-requirements.md` | Active, partly built |
 | `plans/rag/02-implementation.md` | Active, and some stages are built |
 | `investigations/rag-engineering-practices-2026-09-10.md` | All four take-rows taken; three owner's calls open |
-| `plans/agent-build-order-2026-09-13.md` | Every block built - retiring it is the owner's call |
 | `investigations/2026-09-17-risk-crossings-not-deterministic.md` | Active, and pinned open by a register |
 | `investigations/2026-11-01-export-setups.md` | Looked finished on 2026-11-11, and one card has gone back to DRAFT since; retiring it is the owner's call |
 | `investigations/2026-11-01-schedule-settings.md` | Nearly finished - all but one of its cards say PROVEN (read 2026-11-11) |
