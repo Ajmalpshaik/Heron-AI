@@ -166,6 +166,23 @@ negative:
       refused before anything is scanned - "No categories were named.
       Separate them with commas" - and nothing selected
 
+  # VERSION 5 (row 5b-2016, NEEDS-CHECKING Group QF): one of two parameters
+  # that share a name, named by its built-in or its GUID.
+  - given: QF2 (ii) - parameterName "Sheet Number", matchMode equals, matchText one sheet's number, categories Sheets
+    expect: >
+      0 selected; ambiguous equals the number of sheets; the finding names
+      'Sheet Number {SHEET_NUMBER}' or 'Sheet Number {VIEWER_SHEET_NUMBER}'
+  - given: QF2 (iii) - parameterName "Sheet Number {NO_SUCH_PARAMETER}", the same match
+    expect: 0 selected; "NOTHING carries" - the braces are read as part of the name, never a guess
+  - given: QF3 - parameterName "Sheet Number {VIEWER_SHEET_NUMBER}" equals that number
+    expect: >
+      ambiguous 0 - that parameter alone is read, whatever it holds on a sheet
+      (not known before the run; recorded as found)
+
+positive_braced_name:
+  - given: QF2 (i) - parameterName "Sheet Number {SHEET_NUMBER}", matchMode equals, matchText one sheet's number, categories Sheets
+    expect: exactly that one sheet selected; ambiguous 0
+
 second_route: >
   A schedule of the same category with that parameter as a field and a Contains
   filter set to the same text, counted - Revit answering the same question in

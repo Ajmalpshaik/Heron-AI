@@ -105,7 +105,8 @@ purpose: >
      a new or an empty one, or the modeller has said the files in it may go
      - asked before the call, never found out after it.
   10. THE ISSUED TICK, only when the modeller says the issue has gone out.
-      SELECT_BY_PARAMETER_VALUE (PROVEN) on the Revisions category, by
+      SELECT_BY_PARAMETER_VALUE (DRAFT since its version 5 of 2026-11-24, a
+      read, so it runs and says so) on the Revisions category, by
       Revision Sequence, finds the ONE revision; then EDIT_REVISION (PROVEN,
       version 3) with issueState=issue and every other field left empty,
       expect_from naming that find. It locks the revision; unissue takes the

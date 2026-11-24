@@ -268,6 +268,21 @@ Func<Parameter, string, Tuple<ElementId, string>> referenceByName = (p, text) =>
 var ticked = new[] { "yes", "true", "on", "1", "ticked" };
 var unticked = new[] { "no", "false", "off", "0", "unticked" };
 
+// VERSION 11 (2026-11-24, FRAGMENT-ISSUES 5b-2017): A TICK BOX TAKES 1 OR 0,
+// AND ANY OTHER VALUE IS TURNED DOWN WHILE THE ROWS ARE CHECKED - before any
+// row is written, in the same words for an id row, a CSV cell and a keyed row.
+// Until then '-1' reached the write, Revit would not take it, and the run
+// THREW: on Revit 2020, 2026-11-24, six shared Yes/No sheet parameters in a
+// CSV on 4355-BHVD-3D-60P00-BL003A ended `fragment_threw` - the right words,
+// nothing kept, but the shape of a crash.
+Func<Parameter, string, string, string> yesNoAsks = (p, name, value) =>
+{
+    if (p == null || !isYesNo(p)) return null;
+    var said = same(value).ToLowerInvariant();
+    if (Array.IndexOf(ticked, said) >= 0 || Array.IndexOf(unticked, said) >= 0) return null;
+    return name + " is a Yes/No, which takes 1 or 0 (yes or no) - not '" + (value ?? "") + "'";
+};
+
 // ONE NAME, SEVERAL PARAMETERS - AND WHEN ONLY ONE OF THEM CAN BE WRITTEN, THAT
 // ONE IS MEANT. A sheet carries its own Sheet Number and, being a view, a second
 // read-only "Sheet Number" saying which sheet it sits on; version 1 refused
@@ -1375,6 +1390,8 @@ foreach (var raw in (keyed ? "" : (rows ?? "")).Split(';'))
         else if (target.StorageType == StorageType.ElementId
                  && referenceByName(target, want).Item1 == null)
             why = name + ": " + referenceByName(target, want).Item2;
+        else if (yesNoAsks(target, name, want) != null)
+            why = yesNoAsks(target, name, want);
         else if (groupLocked(element, target))
             why = "it is in a model group, and " + name + " would change in every copy of the group";
         else if (levelAsks(element, target) != null)
@@ -1429,53 +1446,87 @@ else if (plan.Count == 0)
 }
 else
 {
-    var refusedHere = new List<string>();
     // Version 4: the id each element reference was set to, by plan row.
     var askedIds = new List<ElementId>();
-    foreach (var step in plan)
+    // VERSION 11 (row 5b-2017): A VALUE REVIT TURNS DOWN AFTER THE CHECK PASSED
+    // IS A STALE ROW, NOT AN EXCEPTION. Every row is written in ONE
+    // sub-transaction; one turned down - or one Revit throws on - rolls that
+    // sub-transaction back, so NOTHING is kept, and each is said in `stale`
+    // and `resultJson` the way a row that failed the check is. All or nothing
+    // holds as before; only the shape of the answer moved. Until version 11
+    // this threw, and the reply read `fragment_threw`.
+    var turnedDown = new List<Tuple<Element, string, string>>();
+    using (var attempt = new SubTransaction(doc))
     {
-        var p = theOne(step.Item1, step.Item2);
-        var want = step.Item3;
-        var ok = false;
-        ElementId askedId = null;
+        attempt.Start();
+        foreach (var step in plan)
+        {
+            var want = step.Item3;
+            var ok = false;
+            ElementId askedId = null;
+            string revitSaid = null;
+            try
+            {
+                var p = theOne(step.Item1, step.Item2);
+                if (isYesNo(p))
+                {
+                    var said = same(want).ToLowerInvariant();
+                    if (Array.IndexOf(ticked, said) >= 0) ok = p.Set(1);
+                    else if (Array.IndexOf(unticked, said) >= 0) ok = p.Set(0);
+                }
+                else if (p.StorageType == StorageType.String)
+                {
+                    ok = p.Set(want ?? "");
+                }
+                else if (p.StorageType == StorageType.ElementId)
+                {
+                    askedId = referenceByName(p, want).Item1;
+                    ok = askedId != null && p.Set(askedId);
+                }
+                else
+                {
+                    ok = p.SetValueString(want ?? "");
+                }
+            }
+            catch (Exception failure)
+            {
+                // REVIT'S OWN WORDS FIRST - a reply cuts a line at 60 characters.
+                ok = false;
+                revitSaid = failure.Message;
+            }
+            askedIds.Add(askedId);
 
-        if (isYesNo(p))
-        {
-            var said = same(want).ToLowerInvariant();
-            if (Array.IndexOf(ticked, said) >= 0) ok = p.Set(1);
-            else if (Array.IndexOf(unticked, said) >= 0) ok = p.Set(0);
+            if (!ok)
+                turnedDown.Add(Tuple.Create(step.Item1, step.Item2,
+                    revitSaid != null
+                        ? revitSaid + " (Revit, writing '" + want + "' for " + step.Item2 + ")"
+                        : "Revit would not take '" + want + "' for " + step.Item2));
         }
-        else if (p.StorageType == StorageType.String)
-        {
-            ok = p.Set(want ?? "");
-        }
-        else if (p.StorageType == StorageType.ElementId)
-        {
-            askedId = referenceByName(p, want).Item1;
-            ok = askedId != null && p.Set(askedId);
-        }
-        else
-        {
-            ok = p.SetValueString(want ?? "");
-        }
-        askedIds.Add(askedId);
-
-        if (!ok) refusedHere.Add(step.Item1.Id + ": Revit would not take '" + want + "' for " + step.Item2);
+        if (turnedDown.Count == 0) attempt.Commit();
+        else attempt.RollBack();
     }
 
-    if (refusedHere.Count > 0)
+    if (turnedDown.Count > 0)
     {
-        // A value Revit turned down after the check passed. Thrown, so the
-        // operation's TransactionGroup rolls EVERY row back: all or nothing
-        // holds on this side of the check as well.
-        throw new InvalidOperationException("Nothing was kept. " + string.Join("; ", refusedHere.ToArray()));
+        applied = false;
+        foreach (var down in turnedDown)
+        {
+            var downId = down.Item1.Id.ToString();
+            stale.Add(downId + ": " + down.Item3);
+            staleJson.Add("{" + esc("id") + ": " + esc(downId) + ", " + esc("name") + ": " + esc(down.Item2)
+                          + ", " + esc("why") + ": " + esc(down.Item3) + "}");
+        }
+        findings.Add(string.Format("Nothing was written: Revit turned down {0} of the {1} value(s), so every "
+            + "row was taken back - stale says which and why. Correct those and apply again.",
+            turnedDown.Count, plan.Count));
+        plan.Clear();
     }
 
-    doc.Regenerate();
+    if (plan.Count > 0) doc.Regenerate();
 
     // Version 3: each face put back where it was, in this same transaction.
     // One that will not go back takes every row back with it.
-    if (faceKeeper != null)
+    if (faceKeeper != null && plan.Count > 0)
     {
         var notKept = faceKeeper.Keep(plan.Select(step => step.Item1));
         if (notKept != null) throw new InvalidOperationException("Nothing was kept. " + notKept);
@@ -1735,6 +1786,9 @@ if (keyed)
             return name + " holds a reference to another element, which cannot be typed as text";
         if (groupLocked(element, target))
             return "it is in a model group, and " + name + " would change in every copy of the group";
+        // Version 11 (row 5b-2017): a tick box takes 1 or 0.
+        var tick = yesNoAsks(target, name, value);
+        if (tick != null) return tick;
         // Version 4: an element reference takes a name that names one element.
         if (target.StorageType == StorageType.ElementId)
         {

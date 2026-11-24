@@ -913,9 +913,20 @@ def test_tables():
           "the write takes its elements from the rows, never from the selection")
     code = io.open(os.path.join(folder, "set-parameter-values-by-id", "impl", "any",
                                 "fragment.cs"), encoding="utf-8").read()
+    # ROW 5b-2017 (version 11): a value Revit turns down rolls every id row back
+    # through ONE sub-transaction and comes back as a stale row - it was thrown
+    # until 2026-11-24, and the reply read fragment_threw, the shape of a crash.
+    by_id = code[code.index("if (stale.Count > 0)"):code.index("if (keyed)")]
     check(code.index("if (stale.Count > 0)") < code.index("p.SetValueString(")
-          and "throw new InvalidOperationException" in code,
-          "it checks every row before writing any, and a value Revit refuses rolls all back")
+          and "if (turnedDown.Count == 0) attempt.Commit();" in by_id
+          and "else attempt.RollBack();" in by_id
+          and "stale.Add(downId" in by_id
+          and "throw new InvalidOperationException(\"Nothing was kept. \" + string.Join" not in by_id,
+          "it checks every row before writing any, and a value Revit refuses rolls all back - "
+          "said in stale, never thrown (row 5b-2017)")
+    check("yesNoAsks(target, name, want)" in code and "takes 1 or 0" in code,
+          "a tick box given anything but 1 or 0 is turned down before any row is written "
+          "(row 5b-2017)")
     reader = io.open(os.path.join(folder, "read-element-table", "impl", "any", "fragment.cs"),
                      encoding="utf-8").read()
     check("a type parameter - changing it changes every element of this type" in reader
