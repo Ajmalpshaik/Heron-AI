@@ -1,0 +1,136 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-181
+semantic-identity: "is there a gap between two roofs: how far the end of one roof stops short of the other roof's upper face, measured with rays - a read"
+
+# WHY IT EXISTS - comments, not `purpose`, because `purpose` is searched.
+#
+# FRAGMENT-ISSUES row 5b-1953, issue #1187 (2026-11-24, session S14, on the
+# owner's word of that day: "research these two and design the answer
+# yourselves"). "does this roof reach the other roof" and "does the extrusion
+# roof meet the main roof" reached EXTEND_ROOF_TO_ROOF - a write - on every
+# backend, and no read answered them.
+#
+# NOT MEASURE_DISTANCE, READ IN FULL FIRST. It measures between the two
+# elements' BOUNDING BOXES (its purpose and its C#). A main roof's box takes in
+# the whole space under its slopes, so a wing roof that stops short of the main
+# roof's face still sits inside that box and MEASURE_DISTANCE says 0 mm,
+# touching - the plausible zero (D-52). Its job, "how far apart are these two"
+# for any two elements, is left as it is; widening it with a roof-only ray
+# measure would put a second method under one answer.
+#
+# NOT EXTEND_ROOF_TO_ROOF. It measures the same way before it moves an end, and
+# without maxExtendMm changes nothing - but it is MODIFY, runs with no
+# transaction open and opens its own, and a question answered by a write is
+# what D-86 forbids. The measure is re-authored here as a read: the same rays,
+# the same upper-face rule, the same ends, nothing written. LOOK-ALIKES, kept
+# separate (heron-duplicate-checker's rule: a read and a write of one value are
+# two jobs): REPORT_ROOF_SLOPES reads how steep a roof is; FIND_CLASHES says
+# which elements intersect, from solids, and measures no gap; REPORT_JOINED_
+# ELEMENTS reads geometry joins, and Join/Unjoin Roof is not one.
+#
+# WHAT IT CALLS - RevitAPI.xml 2020.2.90 to 2027.4.0 as EXTEND_ROOF_TO_ROOF's
+# header read them, the same members on every release: ReferenceIntersector
+# (ElementId, FindReferenceTarget, View3D) and Find, ReferenceWithContext,
+# Element.GetGeometryObjectFromReference, Face.Project and ComputeNormal,
+# ExtrusionRoof.GetProfile, FootPrintRoof.GetProfiles and get_DefinesSlope,
+# BooleanOperationsUtils.ExecuteBooleanOperation. Compiled 2020 to 2027 by
+# tools/check-fragments-compile.py; NOT RUN IN REVIT - NEEDS-CHECKING Group QH.
+#
+# ROUTING - repeated in EXTEND_ROOF_TO_ROOF and MEASURE_DISTANCE.
+#
+#   "does this roof reach the other roof"   -> here. A question, answered by
+#   "what is the gap from the wing roof       measuring with rays
+#    to the main roof"                      -> here
+#   "make the wing roof run into the main   -> EXTEND_ROOF_TO_ROOF. A change,
+#    roof"                                     offered and asked first
+#   "how far apart are these two"           -> MEASURE_DISTANCE - any two
+#                                              elements, box to box
+
+kind: action
+domain: revit.elements
+capability: REPORT_ROOF_REACH
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Says whether one roof reaches another, as a read only. Two roofs are
+  selected; rays are cast from each end of each roof - a roof by extrusion's
+  two ends, a roof by footprint's gable ends - toward the other roof alone, in
+  the 3D view given, and only a hit on the other roof's upper face counts. The
+  answer is yes when an end meets that face or the two roofs overlap, and no
+  with the gap in millimetres - the nearest and farthest point of the end -
+  when it stops short. No end facing the other roof is said as that, never as
+  the roofs being apart. The other roof must show in the 3D view.
+
+contract:
+  needs:
+    # The 3D view the rays are cast in. It must show both roofs - not hidden,
+    # not cut away by a section box - or every ray misses.
+    - name: view3d
+      type: View3D
+      source: request
+    # The two roofs, FROM THE SELECTION. Anything that is not a roof by
+    # extrusion or by footprint is named and left out.
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: meets
+      # 1 when an end of one roof meets the other's upper face (its farthest
+      # point within 1 mm) or the two roofs overlap; else 0 - which is NOT
+      # "they are apart" when no end faces the other roof (gapMm NaN).
+      role: result
+      type: int
+    - name: gapMm
+      # MILLIMETRES - the farthest point of the end nearest the other roof,
+      # from that roof's upper face; 0 when they overlap; NaN when no end
+      # faces it, so nothing was measured.
+      role: result
+      type: double
+    - name: report
+      # ONE STRING: each end that faces the other roof - how many of its
+      # points do, and the nearest and farthest distance - and an overlap,
+      # when there is one.
+      role: accounting
+      type: string
+    - name: findings
+      # The answer first - YES, NO with the gap, or NOT MEASURED and why -
+      # then each pair of solids Revit would not intersect, counted, and
+      # whatever was left out.
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. ReferenceIntersector, Face.Project
+  and ComputeNormal, ExtrusionRoof.GetProfile, FootPrintRoof.GetProfiles and
+  get_DefinesSlope and BooleanOperationsUtils.ExecuteBooleanOperation are
+  present 2020 through 2027, and EXTEND_ROOF_TO_ROOF compiles the same calls
+  on every release. Nothing is edited, so the sketch editing that comes in
+  2022 is not needed: a roof by footprint's gable end is measured on 2020 and
+  2021 as well. Millimetres are feet times 304.8, as plain arithmetic.
+
+utterances:
+  # The row's first (5b-1953), then this session's - each a question about
+  # whether, or how far short, one roof meets another. No "main roof" or
+  # "wing roof": with them, "join the main roof to the wing roof" and "make
+  # the wing roof run into the main roof" - requests - came here on every
+  # backend (measured 2026-11-24).
+  - does this roof reach the other roof
+  - does this extrusion roof meet that roof
+  - what is the gap between this roof and the other one
+  - how far short of the other roof does this roof end
+  - is this roof touching the other roof
+  - measure the gap between these two roofs
+  - how far is this roof from that one
+  - does the end of this roof meet the face of that roof
+  # The row's own, ninth so the re-ranker's eight are unchanged (D-134): on
+  # lexical it reached EXTEND_ROOF_TO_ROOF, a write, with eight lines alone.
+  - does the extrusion roof meet the main roof

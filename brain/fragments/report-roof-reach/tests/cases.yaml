@@ -1,0 +1,80 @@
+# D-30: the negative case is what catches "succeeded and said the wrong
+# thing" - for this read, a roof that stops short called touching (the bounding
+# box answer this card exists to avoid), two roofs whose ends face nothing
+# called apart, or an overlap read as a gap.
+#
+# THE ARRANGEMENT (NEEDS-CHECKING Group QH). The scratch project "roofjoin-oy"
+# of Group OY, never a working model, as EXTEND_ROOF_TO_ROOF's cases set it
+# out: the MAIN ROOF (a roof by footprint, gable, 0,0 to 12000,8000 mm on
+# Level 2, its long sides at 30 degrees), the WING ROOF (a roof by extrusion
+# running north from y = -6000 and stopping about 3000 mm short of the main
+# roof's south eave), the FAR ROOF (a roof by extrusion beside the main roof,
+# neither end facing it), and the 3D view {3D} with nothing hidden and no
+# section box. Write down the wing's Extrusion Start and End before the first
+# run. It is a read: every case leaves the undo list as it was.
+
+positive:
+  - given: >
+      the wing roof and the main roof selected, view3d {3D} - "does this roof
+      reach the other roof" - THE CASE THAT MATTERS, RUN FIRST
+    expect: >
+      meets 0; gapMm more than 3000 and less than 7000 - the farthest point of
+      the wing's north end from the main roof's south slope, the same number
+      EXTEND_ROOF_TO_ROOF's needMm says for this pair without maxExtendMm;
+      the first finding "NO - the end of roof by extrusion <wing id> ... stops
+      short of roof by footprint <main id>: its nearest point is ... mm and
+      its farthest ... mm ...". NOT 0, NOT "touching": MEASURE_DISTANCE on
+      the same pair says 0, because the wing sits inside the main roof's
+      bounding box - run it too and write both numbers down
+
+  - given: >
+      the same pair after EXTEND_ROOF_TO_ROOF has been run on it with
+      maxExtendMm 10000 and KEPT (do this in a copy of the project, saved as
+      roofjoin-qh-met)
+    expect: >
+      meets 1, gapMm 0; the first finding "YES - ... already overlap, so one
+      reaches the other and goes into it" - the extended end passes through
+      the main roof's slope, so the Boolean finds a shared volume and the
+      report says "OVERLAP - ... m3"
+
+  - given: >
+      a wall and the two roofs of the first case selected
+    expect: >
+      the first case's answer, and a finding "Walls <id> is not a roof by
+      extrusion or by footprint ... and was left out"
+
+negative:
+  - given: >
+      the far roof and the main roof selected, view3d {3D} - neither end of
+      the far roof faces the main roof, and the main roof's two gable ends
+      face east and west, away from it
+    expect: >
+      meets 0, gapMm NaN; the first finding "NOT MEASURED - no end of either
+      roof faces the upper face of the other ... That is not the same as the
+      roofs being apart ..." - NOT a gap in millimetres made up from the
+      nearest points, and NOT "no"
+
+  - given: >
+      the wing roof alone selected
+    expect: >
+      meets 0, gapMm NaN, report empty; the first finding "Nothing was
+      measured: this asks whether one roof reaches ANOTHER, so it takes
+      exactly TWO roofs, and 1 were selected - roof by extrusion <wing id>
+      ..."
+
+  - given: >
+      the first case's pair, with the main roof hidden in {3D} (Hide in View
+      > Elements) - put it back after
+    expect: >
+      meets 0, gapMm NaN, "NOT MEASURED ... Is the other roof showing in that
+      view" - the rays see only what the view shows; never "NO" with a gap
+
+second_route:
+  - given: >
+      the first case's pair, by hand
+    expect: >
+      a section through x = 6000 (the wing's ridge), the Measure tool from
+      the wing's north end at its ridge to the main roof's south slope along
+      the wing's ridge: within 1 mm of the farthest distance the report gives
+      for the wing's north end (the ridge point is the end's farthest from
+      the slope)

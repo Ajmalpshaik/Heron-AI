@@ -289,6 +289,10 @@ compatibility-note: >
 #                                     roof by extrusion, asked first
 #   "extend this roof until it meets the other roof"
 #                                  -> here
+#   "does this roof reach the other roof"
+#                                  -> REPORT_ROOF_REACH (2026-11-24, row
+#                                     5b-1953): the same rays, as a read -
+#                                     a question never reaches this write
 #   "attach these walls to the roof above"
 #                                  -> ATTACH_WALLS (2025 on)
 #   "make the tops of these walls follow the roof above"
@@ -299,3 +303,13 @@ utterances:
   - push the end of this extrusion roof out to the other roof's face
   - lengthen the extruded roof so its end reaches the sloped roof
   - carry the end of the roof by extrusion on to the face it should meet
+  # ADDED 2026-11-24 (row 5b-1953, issue #1187) - a request in the owner's
+  # roof words. REPORT_ROOF_REACH, the read that answers "does this roof reach
+  # the other roof", declares that question; without this line, on lexical,
+  # "extend this roof until it reaches the main roof" went to that read, and
+  # the row's "make the wing roof run into the main roof" did on lexical and
+  # the model. No "main roof" or "wing roof" here: with them, the questions
+  # "what is the gap from the wing roof to the main roof" and "what slope is
+  # the main roof at" came to this write (measured 2026-11-24).
+  - extend this roof until it runs into the other roof
+  - make this roof run into that roof

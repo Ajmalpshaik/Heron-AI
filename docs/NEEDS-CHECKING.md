@@ -1758,6 +1758,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qd.md`](needs-checking/group-qd.md)
 
+## Group QH - REPORT_ROOF_REACH: does one roof reach another, measured with rays and changed nothing; and a duct's and a pipe's offset written by WRITE_ELEMENT_PARAMETERS - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qh.md`](needs-checking/group-qh.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
