@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -21,7 +21,7 @@ capability: LINK_FAMILY_PARAMETER
 # yes to widening rather than a second card: "widen ... no duplicate tools,
 # same kind of work 2 tools no need". FRAGMENT-ISSUES row 5b-1497. Every other
 # path is version 3's, unchanged.
-version: 6
+version: 7
 source: OFFICIAL
 risk: MODIFY
 
@@ -59,6 +59,22 @@ risk: MODIFY
 # its Revit category. No new input or output. Version 4's proof below is
 # kept as the record; this version is unproven until NEEDS-CHECKING Group PQ
 # (PQ5, PQ6) is run (D-30).
+
+# VERSION 7 (2026-11-24) - A PLAIN ELEMENT ID IN `forms`, and back to DRAFT.
+# FRAGMENT-ISSUES row 5b-2013. Measured 2026-11-24, Revit 2020 session 29500,
+# add-in 0.3.0, a mechanical equipment family open in the Family Editor:
+# REPORT_PARAMETER_INVENTORY printed a nested fan copy as "ELEMENT id 9659268
+# ... unique id 79c6e3cb-...-00936384"; forms=9659268 was refused "No element
+# in this family has the id", forms=<the unique id> linked it. Version 6 read
+# every id with Document.GetElement(string), which knows unique ids only. Now
+# an id of digits alone is read as the element id Revit prints - built as a
+# 64-bit ElementId from Revit 2024 on, 32-bit before (REVIT2024_OR_GREATER) -
+# and anything else as a unique id, as before; an id naming nothing is still
+# refused, and the refusal now says both kinds of id are taken. No new input
+# or output; every other path is version 6's. Version 6 was PROVEN on
+# 2026-11-23 (the proof block below, kept as the record of what it proved);
+# its C# moved, so it is DRAFT again until NEEDS-CHECKING Group QE is run
+# (D-30).
 
 purpose: >
   Links a parameter of elements ALREADY in the family open in the Family
@@ -129,6 +145,13 @@ purpose: >
   plane it is hosted on, a folded pattern panel's tip, linked to a Length
   family parameter such as "Tip Depth"; named "Reference Point id N".
 
+  **VERSION 7 (2026-11-24, FRAGMENT-ISSUES 5b-2013): A PLAIN ID TOO.** The
+  ids in `forms` may be the element id Revit and every read tool print - a
+  number such as 9659268 - as well as a unique id; version 6 took the unique
+  id only and refused the number as naming nothing. An id that names nothing
+  is still refused, and the refusal says both kinds are taken. DRAFT until
+  NEEDS-CHECKING Group QE proves it again.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -178,6 +201,9 @@ contract:
     # are version 3's, so a version 3 caller binds unchanged.
     # VERSION 6: a reference point too, by the id PLACE_ADAPTIVE_POINTS gave
     # back - for its Offset ("Offset=Tip Depth") off the plane it is hosted on.
+    # VERSION 7: each id may be the element id Revit prints, a number such as
+    # 9659268 (what REPORT_PARAMETER_INVENTORY and Select by ID show), or the
+    # unique id; digits alone are read as the element id.
     - name: forms
       type: string
       source: request
