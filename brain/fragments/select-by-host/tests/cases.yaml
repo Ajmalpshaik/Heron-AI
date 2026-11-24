@@ -34,6 +34,14 @@ negative:
   - given: no host element given
     expect: refused, with the reason
 
+  - given: >
+      VERSION 2, NEGATIVE. the host version 1 was proved on, then a host with
+      nothing on it
+    expect: >
+      the same elements as version 1's, unresolvedElements written down (0
+      expected) and NO "would not say what hosts them" sentence while it is 0;
+      the empty host: version 1's "Nothing is HOSTED on it"
+
 second_route: >
   Revit's own behaviour, which is the real definition: select the host, move or
   delete it, and see what follows or is destroyed. The Tab-cycle highlight on a
