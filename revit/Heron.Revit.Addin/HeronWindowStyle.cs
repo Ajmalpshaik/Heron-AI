@@ -215,6 +215,66 @@ namespace Heron.Revit.Addin
             return new Shell(window, strip);
         }
 
+        // THE HERON WINDOW NOW IN FRONT, shown by ShowModal on this thread -
+        // Revit's one UI thread, since every Heron window is opened from a
+        // command. Null when none is open.
+        [ThreadStatic] private static Window _front;
+
+        /// <summary>
+        /// Shows a Heron window modally, and in front of the Heron window that
+        /// opened it - row 5b-2019. What ShowDialog returns.
+        ///
+        /// WHY. Build makes every Heron window Revit's own. So the question
+        /// that turning Changes on asks was the SETTINGS WINDOW'S SIBLING, not
+        /// its child: both owned by Revit, both centred on Revit, and nothing
+        /// kept the question above the window it came from. On Revit 2024
+        /// (Tower 171) Changes did not stay on twice - suspected, the question
+        /// opened behind Settings, the modeller saw a window that would not
+        /// answer, pressed Esc, and Esc answered the hidden question "leave it
+        /// off". Owned by the window that opened it, the question cannot sit
+        /// behind it: Windows keeps an owned window above its owner.
+        ///
+        /// Brought to the front once it has drawn, too - Activate, never
+        /// Topmost, which would sit over every other program as well.
+        /// </summary>
+        internal static bool? ShowModal(Shell shell, Action<string> log)
+        {
+            var window = shell.Window;
+            var below = _front;
+            if (below != null && !ReferenceEquals(below, window) && below.IsVisible)
+            {
+                try
+                {
+                    // The same mechanism Build uses for Revit, so the last one
+                    // set is the owner: this window, not Revit.
+                    new WindowInteropHelper(window).Owner = new WindowInteropHelper(below).Handle;
+                    window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                }
+                catch (Exception ex)
+                {
+                    // Still shown, owned by Revit as before - worth a line.
+                    if (log != null)
+                        log("A Heron window could not take the window that opened it as its owner: " + ex.Message);
+                }
+            }
+
+            window.ContentRendered += delegate
+            {
+                try { window.Activate(); }
+                catch (Exception) { /* shown is what matters; in front is the extra */ }
+            };
+
+            _front = window;
+            try
+            {
+                return window.ShowDialog();
+            }
+            finally
+            {
+                _front = below;
+            }
+        }
+
         private static UIElement TitleBar(Window window, string subtitle, Action onClose)
         {
             var mark = new Border
