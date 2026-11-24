@@ -275,6 +275,7 @@ namespace Heron.BindingNote.TestHost
             NamedList();
             Parts();
             TakenBack();
+            StoppedPartWay();
 
             Console.WriteLine();
             if (Failures.Count > 0)
@@ -851,6 +852,55 @@ namespace Heron.BindingNote.TestHost
                   && refuse("rename-views", null, "")
                       .IndexOf("taken back", StringComparison.Ordinal) >= 0,
                   "a run with no name, or no words, is still refused, and says so");
+        }
+
+        /// <summary>
+        /// FRAGMENT-ISSUES ROW 5b-1743, 2026-11-23: what an arrangement step
+        /// left inside a write's own group, when that run stopped before its
+        /// end, reads as taken back to the next request - so Q-89's refusal
+        /// hands none of it on. By reflection, as TakenBack: on the code
+        /// before the row was built the rule is missing, and these fail as
+        /// checks rather than as a build error.
+        /// </summary>
+        private static void StoppedPartWay()
+        {
+            Console.WriteLine();
+            Console.WriteLine("What a run that stopped inside its group left is never handed on (5b-1743)");
+
+            const BindingFlags Rule = BindingFlags.NonPublic | BindingFlags.Static;
+            var rule = typeof(HeronBindingNote).GetMethod("StoppedPartWay", Rule);
+            Check(rule != null,
+                  "the chain has a rule for what a run that stopped inside its group left");
+            Func<bool, string, string> after = (open, takenBack) =>
+                rule == null ? "(no rule)"
+                    : (string)rule.Invoke(null, new object[] { open, takenBack });
+
+            var stopped = after(true, null);
+            Check(!string.IsNullOrEmpty(stopped) && rule != null,
+                  "left inside an open group by a run that never reached its end: TAKEN BACK");
+            Check((stopped ?? "").IndexOf("stopped before its end", StringComparison.Ordinal) >= 0
+                  && (stopped ?? "").IndexOf("arrangement steps", StringComparison.Ordinal) >= 0,
+                  "and the words say the run stopped and its arrangement steps went with the "
+                  + "group - got \"" + stopped + "\"");
+            Check(after(true, "a change the modeller did not keep in Revit (Discard)")
+                      == "a change the modeller did not keep in Revit (Discard)",
+                  "a run's own account of how it was taken back is kept - it is the more exact");
+            Check(after(false, null) == null,
+                  "not left inside an open group: nothing is said - what a kept run left stands");
+            Check(after(false, "x") == "x",
+                  "and a mark already there is left as it was");
+
+            // And the binder's refusal reads it as any run taken back.
+            var refuseRule = typeof(HeronBindingNote).GetMethod("CarriedFromTakenBack", Rule);
+            var refused = refuseRule == null || rule == null ? ""
+                : (string)refuseRule.Invoke(null, new object[]
+                  {
+                      "find-overlapping-lines", "create-line", stopped, "Project1",
+                  }) ?? "";
+            Check(refused.IndexOf(stopped ?? "(none)", StringComparison.Ordinal) >= 0
+                  && refused.IndexOf("NOTHING WAS BOUND", StringComparison.Ordinal) >= 0,
+                  "the next request expecting the step's values is refused in those words, "
+                  + "and binds nothing - got \"" + refused + "\"");
         }
     }
 }

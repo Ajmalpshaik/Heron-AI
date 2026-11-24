@@ -115,8 +115,9 @@ positive:
       an L-shaped outline and a slot with two arcs in one row:
       kind=extrusion workPlane=Ref. Level profile=0,0; 600,0; 600,200;
       200,200; 200,500; 0,500 startMm=0 endMm=100 solid=true, and a second
-      row profile=0,1000; 600,1000; arc 700,1100 600,1200; 0,1200; arc
-      -100,1100 0,1000
+      row kind=extrusion workPlane=Ref. Level profile=0,1000; 600,1000;
+      arc 700,1100 600,1200; 0,1200; arc -100,1100 0,1000 startMm=0
+      endMm=100 solid=true
     expect: >
       formCount 2, each built and read back as version 4 would - neither
       refused as crossing itself

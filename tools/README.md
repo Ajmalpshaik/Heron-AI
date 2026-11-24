@@ -2841,7 +2841,7 @@ Writes three files and nothing else: the contract in `brain/agents/<ID>.yaml`, t
 five-field metadata header already correct, and the test - **which fails until it is written.**
 
 When it was written, 146 agents could be built on a machine with no Revit
-([`agent-build-order-2026-09-13`](../docs/work-notes/plans/agent-build-order-2026-09-13.md)) - by hand,
+([docs/28 §10](../docs/28-agent-registry.md#the-order-the-agents-were-built-in---seams-first)) - by hand,
 146 chances to mistype a layer or invent a field. How many are left now is
 `python tools/agent-count.py`'s LEFT column.
 

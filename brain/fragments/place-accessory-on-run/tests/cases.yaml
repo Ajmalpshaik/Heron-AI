@@ -19,8 +19,8 @@ positive:
       not connected leaves the system severed while looking finished
 
   - given: >
-      version 2, Revit 2020 - ONE LONE rectangular duct drawn by CREATE_DUCT
-      along Y (not the family's own X), nothing joined at either end, and
+      version 2, Revit 2020 - ONE LONE rectangular duct drawn by CREATE_MEP_RUNS
+      (CREATE_DUCT and CREATE_PIPE were retired 2026-11-01, row 5b-1973) along Y (not the family's own X), nothing joined at either end, and
       M_Balancing Damper - Rectangular, positionAlong 0.5 (row 5b-1119)
     expect: >
       placed 1, leftSevered 0, notTurned 0, and NO "opposite direction" error:

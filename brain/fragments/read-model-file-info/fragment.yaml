@@ -118,6 +118,11 @@ compatibility-note: >
 
 utterances:
   - what version is this Revit file
+  # ADDED 2026-11-23 (row 5b-1952, issue #1177): a file named by its path -
+  # "what version is C:\...\MEP.rvt" - reached ACTIVATE_DOCUMENT on three
+  # backends. Second, inside the eight; "what Revit year is this file from" is
+  # ninth now, and still reached by identity.
+  - what version is the rvt file at this path
   - is this a central or a local
   - did their changes reach the central
   - why will this model not open
@@ -125,10 +130,11 @@ utterances:
   - what did they actually send me
   # ADDED 2026-11-21, row 5b-1952 (issue #1177). Which Revit release saved a
   # file, asked of the file and not of the open model. The card has fewer than
-  # eight, so the re-ranker reads these two as well (D-134).
+  # eight, so the re-ranker read these two as well (D-134) - the first only,
+  # since 2026-11-23 put a line second.
   - which release of Revit saved this rvt file
   - what Revit year is this file from
-  # Ninth, read by words and nearness only (D-134): "saved in" reached
+  # Tenth, read by words and nearness only (D-134): "saved in" reached
   # SAVE_DOCUMENT, a publish, on main. A nearby wording; the row's own
   # sentences are not declared.
   - which version of Revit was it last saved in

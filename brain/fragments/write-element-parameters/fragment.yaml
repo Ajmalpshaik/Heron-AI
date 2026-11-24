@@ -362,6 +362,13 @@ utterances:
   - update the mark on all of them
   - put 500 in the flow parameter
   - set the room number
+  # ADDED 2026-11-23 (row 5b-1944, issue #1169): a duct's or pipe's offset from
+  # its level is its Middle Elevation parameter (Offset before Revit 2022), one
+  # named value on many runs, which is this card's job. Every request to set it
+  # reached a write that does something else - framing justification, room
+  # elevations, capping pipe ends. Inside the re-ranker's eight (D-134).
+  - set the offset of these ducts and pipes from their level
+  - change the duct offset to a new middle elevation
   - fill in the mark
   - make the new type 300 wide
   # A Yes/No parameter - a tick box in Properties. Version 4 (5b-247).
@@ -394,3 +401,10 @@ utterances:
   # re-ranker reads (D-134) are unchanged.
   - move this level up to a new elevation
   - set the parameter Elevation on this level
+  # ADDED 2026-11-23 (row 5b-1944, issue #1169) - the row's own requests, after
+  # the eight so the re-ranker's passage is unchanged: each reached a write that
+  # does something else on every backend. "set the mep offset" left
+  # SET_MEP_JUSTIFICATION for row 5b-1918 and reached no card that sets it.
+  - set the offset of these ducts
+  - set the middle elevation of this pipe
+  - set the mep offset

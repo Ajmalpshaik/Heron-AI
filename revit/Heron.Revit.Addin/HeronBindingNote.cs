@@ -478,6 +478,27 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// FRAGMENT-ISSUES ROW 5b-1743: how the chain reads once a new request
+        /// finds it still marked as left inside a write's open group - the
+        /// words TakenBack keeps for a run that stopped before its end, so
+        /// Q-89's refusals hand none of it on. TAKENBACK already set is kept:
+        /// it says how that run ended, and it is the more exact account. Not
+        /// left inside an open group: TAKENBACK unchanged, null or not.
+        ///
+        /// An arrangement step commits inside the fragment's own group so the
+        /// fragment after it can bind what it made. A run that throws, trips
+        /// its clock, meets a dialog or a refusal later on returns with the
+        /// group rolled back and never reaches the Remember that would say
+        /// so - which is the case this names.
+        /// </summary>
+        internal static string StoppedPartWay(bool leftInsideOpenGroup, string takenBack)
+        {
+            if (!leftInsideOpenGroup || !string.IsNullOrEmpty(takenBack)) return takenBack;
+            return "a run that stopped before its end, whose group Revit rolled back with "
+                 + "everything its arrangement steps made";
+        }
+
+        /// <summary>
         /// The refusal for an expectation met by what a run that was taken
         /// back left (Q-89): what was taken back, and what to run instead.
         ///

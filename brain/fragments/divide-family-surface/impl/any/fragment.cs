@@ -20,7 +20,9 @@
 //
 // THE PATTERN OR PANEL, optional: a tile pattern by name ("Rectangle",
 // "Hexagon") or a loaded pattern-based panel family's type ("Panel : Glass"),
-// chosen from the types Revit lists as valid for this surface.
+// chosen from the types Revit lists as valid for this surface. A name Revit
+// does not offer is REFUSED, naming what it does offer, and nothing is kept
+// (version 3).
 //
 // READ BACK, ALL OR NOTHING: the surface's host, each direction's layout,
 // number or distance, and its type are read again; one that does not read as
@@ -36,6 +38,16 @@
 // back the same way. Which rule makes which gridlines, and whether Number
 // counts divisions or lines, is NEEDS-CHECKING BV21's to settle by eye; a
 // finding says so, and no count is paired with a rule until it is.
+//
+// VERSION 3 (2026-11-23, row 5b-1989): A PATTERN REVIT DOES NOT OFFER IS
+// REFUSED, NOT THROWN. The division is made inside a SubTransaction; the
+// pattern is looked up the moment the surface exists, and a name Revit does
+// not offer - or one naming two types - rolls that SubTransaction back and
+// comes back as `refused`, "Nothing was divided. No pattern or panel called
+// ... - Revit offers ...". Version 2 threw there, so a wrong name failed the
+// whole call instead of being refused. Whether GetValidTypes reads the same
+// inside the SubTransaction, and the rollback leaves the form's face as it
+// was, is NEEDS-CHECKING Group PY's to see in Revit.
 
 var findings = new List<string>();
 var surfaceId = "";
@@ -178,102 +190,138 @@ else
 // DIVIDE, SET EACH GRID AND THE PATTERN, THEN READ IT ALL BACK
 // ---------------------------------------------------------------------------
 
+// THE WHOLE DIVISION IS MADE INSIDE A SUBTRANSACTION (version 3, row 5b-1989).
+// The pattern can only be checked against the types Revit offers once a
+// divided surface exists - GetValidTypes is the surface's own - so a name it
+// does not offer used to THROW after the surface was made, and the call failed
+// and was rolled back: a failure, not a refusal. Now the surface is made, the
+// pattern is looked up FIRST, and a miss rolls the SubTransaction back and is
+// REFUSED in a sentence naming what Revit offers, with nothing kept. Anything
+// that throws still throws, and the SubTransaction is rolled back on the way
+// out so the host's own rollback finds it closed.
 if (refused == null)
 {
-    DividedSurface surface;
-    try { surface = DividedSurface.Create(doc, chosenFace); }
-    catch (Exception ex)
+    var trial = new SubTransaction(doc);
+    try
     {
-        throw new InvalidOperationException("Revit would not divide " + faceWords + ": " + ex.Message + " The call "
-            + "failed, and Heron rolls the whole call back.");
-    }
-    if (surface == null)
-        throw new InvalidOperationException("Revit made no divided surface. The call failed, and Heron rolls the whole "
-            + "call back.");
-
-    Action<SpacingRule, Tuple<bool, int, double>, string> lay = (rule, asked, letter) =>
-    {
-        if (asked == null) return;
-        try
-        {
-            if (asked.Item1) rule.SetLayoutFixedNumber(asked.Item2, SpacingRuleJustification.Center, 0, 0);
-            else rule.SetLayoutFixedDistance(asked.Item3, SpacingRuleJustification.Center, 0, 0);
-        }
+        trial.Start();
+        DividedSurface surface;
+        try { surface = DividedSurface.Create(doc, chosenFace); }
         catch (Exception ex)
         {
-            throw new InvalidOperationException("Revit would not lay the " + letter + " grid out as asked: " + ex.Message
-                + " The call failed, and Heron rolls the whole call back.");
+            throw new InvalidOperationException("Revit would not divide " + faceWords + ": " + ex.Message + " The call "
+                + "failed, and Heron rolls the whole call back.");
         }
-    };
-    lay(surface.USpacingRule, uAsked, "U");
-    lay(surface.VSpacingRule, vAsked, "V");
+        if (surface == null)
+            throw new InvalidOperationException("Revit made no divided surface. The call failed, and Heron rolls the whole "
+                + "call back.");
 
-    // THE PATTERN OR PANEL, from the types Revit lists as valid for it.
-    if (patternWord.Length > 0)
-    {
-        var valid = surface.GetValidTypes().Select(id => doc.GetElement(id)).Where(e => e != null).ToList();
+        // THE PATTERN OR PANEL, from the types Revit lists as valid for it - looked
+        // up before anything else is set, so a name Revit does not offer is refused.
         Func<Element, string> typeName = e =>
         {
             var symbol = e as FamilySymbol;
             return symbol != null && symbol.Family != null ? symbol.Family.Name + " : " + symbol.Name : e.Name;
         };
-        var wanted = valid.Where(e => squash(typeName(e)) == squash(patternWord)).ToList();
-        if (wanted.Count == 0) wanted = valid.Where(e => squash(e.Name) == squash(patternWord)).ToList();
-        if (wanted.Count != 1)
-            throw new InvalidOperationException((wanted.Count == 0 ? "No pattern or panel called \"" + patternWord + "\""
-                : "\"" + patternWord + "\" names " + wanted.Count + " types") + " is offered for this surface - Revit "
-                + "offers " + string.Join(", ", valid.Select(typeName).Take(20)) + ". A panel family is loaded into this "
-                + "family first (LOAD_FAMILY). The call failed, and Heron rolls the whole call back.");
-        try { surface.ChangeTypeId(wanted[0].Id); }
-        catch (Exception ex)
+        Element wantedType = null;
+        if (patternWord.Length > 0)
         {
-            throw new InvalidOperationException("Revit would not give the surface " + typeName(wanted[0]) + ": "
-                + ex.Message + " The call failed, and Heron rolls the whole call back.");
+            var valid = surface.GetValidTypes().Select(id => doc.GetElement(id)).Where(e => e != null).ToList();
+            var wanted = valid.Where(e => squash(typeName(e)) == squash(patternWord)).ToList();
+            if (wanted.Count == 0) wanted = valid.Where(e => squash(e.Name) == squash(patternWord)).ToList();
+            if (wanted.Count == 1) wantedType = wanted[0];
+            else
+                refused = "Nothing was divided. " + (wanted.Count == 0
+                    ? "No pattern or panel called \"" + patternWord + "\" is offered for this surface"
+                    : "\"" + patternWord + "\" names " + wanted.Count + " types, so which one is meant is not known")
+                    + " - Revit offers " + (valid.Count == 0 ? "none"
+                        : string.Join(", ", valid.Select(typeName).Take(20)) + (valid.Count > 20 ? ", and "
+                            + (valid.Count - 20) + " more" : ""))
+                    + ". A panel family is loaded into this family first (LOAD_FAMILY).";
+        }
+
+        if (refused != null)
+        {
+            trial.RollBack();
+        }
+        else
+        {
+            Action<SpacingRule, Tuple<bool, int, double>, string> lay = (rule, asked, letter) =>
+            {
+                if (asked == null) return;
+                try
+                {
+                    if (asked.Item1) rule.SetLayoutFixedNumber(asked.Item2, SpacingRuleJustification.Center, 0, 0);
+                    else rule.SetLayoutFixedDistance(asked.Item3, SpacingRuleJustification.Center, 0, 0);
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException("Revit would not lay the " + letter + " grid out as asked: " + ex.Message
+                        + " The call failed, and Heron rolls the whole call back.");
+                }
+            };
+            lay(surface.USpacingRule, uAsked, "U");
+            lay(surface.VSpacingRule, vAsked, "V");
+
+            if (wantedType != null)
+            {
+                try { surface.ChangeTypeId(wantedType.Id); }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException("Revit would not give the surface " + typeName(wantedType) + ": "
+                        + ex.Message + " The call failed, and Heron rolls the whole call back.");
+                }
+            }
+
+            doc.Regenerate();
+
+            // READ BACK.
+            if (surface.Host == null || surface.Host.Id != host.Id)
+                throw new InvalidOperationException("The divided surface does not read as hosted by the form named. The call "
+                    + "failed, and Heron rolls the whole call back.");
+            // EACH RULE IN ITS OWN WORDS, WITH NO GRIDLINE COUNT BESIDE IT (version 2):
+            // which rule makes which of Revit's U- and V-gridlines is BV21's to settle.
+            Func<SpacingRule, Tuple<bool, int, double>, string, string> readBack = (rule, asked, letter) =>
+            {
+                var reads = rule.Layout == SpacingRuleLayout.FixedNumber ? "Number " + rule.Number
+                    : rule.Layout == SpacingRuleLayout.FixedDistance ? mm(rule.Distance) + " mm apart"
+                    : rule.Layout.ToString();
+                if (asked != null)
+                {
+                    var right = asked.Item1
+                        ? rule.Layout == SpacingRuleLayout.FixedNumber && rule.Number == asked.Item2
+                        : rule.Layout == SpacingRuleLayout.FixedDistance && Math.Abs(rule.Distance - asked.Item3) < 0.5 / 304.8;
+                    if (!right)
+                        throw new InvalidOperationException("The " + letter + " rule reads " + reads + ", not "
+                            + (asked.Item1 ? "Number " + asked.Item2 : mm(asked.Item3) + " mm apart") + " as asked. The call "
+                            + "failed, and Heron rolls the whole call back.");
+                }
+                return letter + " rule: " + reads;
+            };
+            var uRow = readBack(surface.USpacingRule, uAsked, "U");
+            var vRow = readBack(surface.VSpacingRule, vAsked, "V");
+            var countsRow = "Revit counts " + surface.NumberOfUGridlines + " U-gridlines and " + surface.NumberOfVGridlines
+                + " V-gridlines";
+            var typeNow = doc.GetElement(surface.GetTypeId());
+
+            surfaceId = surface.UniqueId;
+            divided = "Divided " + faceWords + " of form " + host.UniqueId + ": " + uRow + "; " + vRow + "; " + countsRow
+                + (typeNow == null ? "" : "; pattern " + (typeNow is FamilySymbol && ((FamilySymbol)typeNow).Family != null
+                    ? ((FamilySymbol)typeNow).Family.Name + " : " + typeNow.Name : typeNow.Name)) + " - surface " + surface.UniqueId
+                + ", read back.";
+            findings.Add(divided);
+            findings.Add("Which rule makes which gridlines is not settled, so Revit's two counts are given under its own names "
+                + "and not beside a rule: on a test mass the U-gridline count moved with the V rule and the V-gridline count "
+                + "with the U rule. NEEDS-CHECKING BV21 settles it by eye in the Family Editor, and whether Number counts the "
+                + "divisions or the lines between them. A pattern-based panel family of the same tile pattern fills the "
+                + "cells: PATTERN-BASED-FAMILY-CREATION builds one.");
+            trial.Commit();
         }
     }
-
-    doc.Regenerate();
-
-    // READ BACK.
-    if (surface.Host == null || surface.Host.Id != host.Id)
-        throw new InvalidOperationException("The divided surface does not read as hosted by the form named. The call "
-            + "failed, and Heron rolls the whole call back.");
-    // EACH RULE IN ITS OWN WORDS, WITH NO GRIDLINE COUNT BESIDE IT (version 2):
-    // which rule makes which of Revit's U- and V-gridlines is BV21's to settle.
-    Func<SpacingRule, Tuple<bool, int, double>, string, string> readBack = (rule, asked, letter) =>
+    finally
     {
-        var reads = rule.Layout == SpacingRuleLayout.FixedNumber ? "Number " + rule.Number
-            : rule.Layout == SpacingRuleLayout.FixedDistance ? mm(rule.Distance) + " mm apart"
-            : rule.Layout.ToString();
-        if (asked != null)
-        {
-            var right = asked.Item1
-                ? rule.Layout == SpacingRuleLayout.FixedNumber && rule.Number == asked.Item2
-                : rule.Layout == SpacingRuleLayout.FixedDistance && Math.Abs(rule.Distance - asked.Item3) < 0.5 / 304.8;
-            if (!right)
-                throw new InvalidOperationException("The " + letter + " rule reads " + reads + ", not "
-                    + (asked.Item1 ? "Number " + asked.Item2 : mm(asked.Item3) + " mm apart") + " as asked. The call "
-                    + "failed, and Heron rolls the whole call back.");
-        }
-        return letter + " rule: " + reads;
-    };
-    var uRow = readBack(surface.USpacingRule, uAsked, "U");
-    var vRow = readBack(surface.VSpacingRule, vAsked, "V");
-    var countsRow = "Revit counts " + surface.NumberOfUGridlines + " U-gridlines and " + surface.NumberOfVGridlines
-        + " V-gridlines";
-    var typeNow = doc.GetElement(surface.GetTypeId());
-
-    surfaceId = surface.UniqueId;
-    divided = "Divided " + faceWords + " of form " + host.UniqueId + ": " + uRow + "; " + vRow + "; " + countsRow
-        + (typeNow == null ? "" : "; pattern " + (typeNow is FamilySymbol && ((FamilySymbol)typeNow).Family != null
-            ? ((FamilySymbol)typeNow).Family.Name + " : " + typeNow.Name : typeNow.Name)) + " - surface " + surface.UniqueId
-        + ", read back.";
-    findings.Add(divided);
-    findings.Add("Which rule makes which gridlines is not settled, so Revit's two counts are given under its own names "
-        + "and not beside a rule: on a test mass the U-gridline count moved with the V rule and the V-gridline count "
-        + "with the U rule. NEEDS-CHECKING BV21 settles it by eye in the Family Editor, and whether Number counts the "
-        + "divisions or the lines between them. A pattern-based panel family of the same tile pattern fills the "
-        + "cells: PATTERN-BASED-FAMILY-CREATION builds one.");
+        if (trial.HasStarted() && !trial.HasEnded()) trial.RollBack();
+    }
 }
 
 if (refused != null) findings.Add(refused);

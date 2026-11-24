@@ -95,8 +95,18 @@ SUITE_TIMEOUT = 300
 # SUITE_TIMEOUT for every suite would let a suite that really hangs wait as
 # long before it is named, so only this one is given more: 900 s, about one
 # and a half times the slowest run measured. A suite added here says why.
+#
+# test_docs_guard.py (row 5b-1987) runs tools/check-docs.py over a tree many
+# times, so its time grows with the docs: 322 s on the owner's Windows laptop
+# on 2026-11-22 (305 s on a cloud container, 2026-11-23), passing, HUNG here
+# at 300 s. 900 s is about two and a half
+# times that. test_walled_own_words.py took 109 s alone on a cloud container
+# (2026-11-23) and was listed HUNG at 300 s in a busy run on that laptop while
+# passing alone: 600 s, about five times its time alone.
 SUITE_TIMEOUTS = {
     "test_mcp_serves.py": 900,
+    "test_docs_guard.py": 900,
+    "test_walled_own_words.py": 600,
 }
 
 

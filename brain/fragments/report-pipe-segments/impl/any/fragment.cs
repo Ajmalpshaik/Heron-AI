@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc` and `nameContains` are in scope; leaves
-// `elements`, `segmentCount`, `segmentList`, `sizeTable`, `scanned`, `noSizes`
-// and `findings` behind.
+// `elements`, `segmentCount`, `segmentList`, `sizeTable`, `scanned`, `noSizes`,
+// `unreadable` and `findings` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -19,11 +19,22 @@
 // dropdown, and nothing can be drawn with it - which looks like a fault
 // somewhere else entirely.
 //
+// A SIZE LIST REVIT WOULD NOT GIVE IS NEVER "NO SIZES" (version 2, row
+// 5b-1982, D-52's "a failed read is never a no"). Version 1 caught a throw
+// from GetSizes and said nothing, so the segment was written NO SIZES and
+// "carries NO size at all" - the same words as one read and found empty - and
+// a read that threw part-way left a short list that read as the whole. Now a
+// throw marks the segment "sizes NOT READ - Revit says: ...", puts it in
+// `unreadable` and never in `noSizes`, and counts it in the first finding.
+// No partial size range is shown for it.
+//
 // SIZES ARE INTERNAL FEET, MULTIPLIED BY 304.8. Plain arithmetic at the edge,
 // never a units API - that is the call that breaks at Revit 2021.
 
 var findings = new List<string>();
 var noSizes = new List<string>();
+// Segments whose size list Revit would not give - see the note at the top.
+var unreadable = new List<string>();
 // THE SEGMENTS THEMSELVES, SO THE ANSWER CAN BE ACTED ON. A report that
 // finds a thing and cannot hand it to the next step is half a tool: a pipe
 // segment is a settings object, not geometry, so it can never be clicked in
@@ -115,6 +126,8 @@ foreach (var segment in segments)
     var largestOdMm = double.MinValue;
     var inSizeLists = 0;
     var eachSize = new List<string>();
+    // Revit's own words when GetSizes, or reading a size it gave, threw.
+    string notRead = null;
 
     try
     {
@@ -148,7 +161,18 @@ foreach (var segment in segments)
                 nomMm, odMm, (odMm - idMm) / 2.0, size.UsedInSizeLists ? "" : "(hidden)"));
         }
     }
-    catch (Exception) { }
+    catch (Exception ex) { notRead = string.IsNullOrWhiteSpace(ex.Message) ? ex.GetType().Name : ex.Message.Trim(); }
+
+    if (notRead != null)
+    {
+        unreadable.Add(name);
+        tables.Add(string.Format("{0}: sizes NOT READ - Revit says: {1}", name, notRead));
+        rows.Add(string.Format("{0} [{1}] sizes NOT READ - Revit says: {2}", name, materialName, notRead));
+        findings.Add(string.Format("'{0}' ({1}): its sizes could NOT BE READ - Revit says: {2}. This is not "
+            + "\"no sizes\": what it holds is not known{3}", name, materialName, notRead,
+            sizeCount > 0 ? " (" + sizeCount + " read before it stopped, so no range is given)" : ""));
+        continue;
+    }
 
     tables.Add(string.Format("{0}: {1}", name, string.Join(", ", eachSize.ToArray())));
 
@@ -180,8 +204,8 @@ segmentList = string.Join("  ||  ", rows.ToArray());
 // needle narrowed to exactly one segment.
 if (segmentCount == 1 && tables.Count == 1) sizeTable = tables[0];
 
-findings.Insert(0, string.Format("{0} pipe segment(s) reported of {1} scanned; {2} carry no sizes",
-    segmentCount, scanned, noSizes.Count));
+findings.Insert(0, string.Format("{0} pipe segment(s) reported of {1} scanned; {2} carry no sizes; "
+    + "{3} whose sizes could not be read", segmentCount, scanned, noSizes.Count, unreadable.Count));
 
 if (segmentCount == 0 && scanned > 0)
 {

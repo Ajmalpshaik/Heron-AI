@@ -2408,6 +2408,29 @@ def undeclared_values(values, needs):
     return undeclared, takeable
 
 
+def values_for_chain_needs(values, needs):
+    """The typed names this fragment DECLARES as needs it fills from a chain or
+    the Revit selection - never from a typed value (row 5b-2004).
+
+    `undeclared_values` names only a value the card declares no need for, so
+    PE2's `--set elements=<three ids>` on `report-connectors` - `elements` is
+    declared, filled by an earlier step or by what is selected - was dropped
+    with no word and the card reported whatever was selected. A need that is
+    not `source: request` reads no typed value, whatever its name.
+
+    A NAME ONLY, AND ONLY HERE: `report_undeclared` says it beside the setup
+    step that may take it (values_taken_by_setup), because a writing step
+    takes a value of its own that the card does not declare - this is for the
+    value that IS declared and is still never read."""
+    chain = {}
+    for need in needs or []:
+        name = (need or {}).get("name")
+        if name and (need or {}).get("source") != "request":
+            chain[name] = need
+    return [entry.get("name") for entry in (values or [])
+            if entry and entry.get("name") in chain]
+
+
 def values_taken_by_setup(root, setup, writing):
     """{value name: setup step} for the values a WRITING setup step takes.
 
@@ -2437,9 +2460,16 @@ def report_undeclared(fragment, values, needs, taken_by=None):
     TAKEN_BY is values_taken_by_setup(): a value a writing setup step takes is
     named with that step rather than called dropped."""
     undeclared, takeable = undeclared_values(values, needs)
+    taken_by = taken_by or {}
+    # A VALUE FOR A NEED THE CARD FILLS FROM A CHAIN OR THE SELECTION IS NEVER
+    # READ, and is said so - unless a writing setup step takes it (row 5b-2004).
+    for name in [n for n in values_for_chain_needs(values, needs)
+                 if n not in taken_by]:
+        print("%-30s IGNORED '%s' - this fragment fills it from an earlier "
+              "step or from what is selected in Revit, never from a typed "
+              "value (row 5b-2004)" % (fragment, name))
     if not undeclared:
         return
-    taken_by = taken_by or {}
     for name in [n for n in undeclared if n in taken_by]:
         print("%-30s '%s' is not this fragment's - setup step %s takes it"
               % (fragment, name, taken_by[name]))

@@ -644,6 +644,12 @@ namespace Heron.Revit.Addin
                 Forget(client);
             }
 
+            // ROW 5b-1743: WHAT A RUN THAT STOPPED INSIDE ITS GROUP LEFT. Asked
+            // here, once, before anything this request does can bind - never
+            // inside a run, where the fragment after a setup step must bind
+            // what the step made.
+            MarkStoppedPartWay(client);
+
             var bound = new HashSet<string>(StringComparer.Ordinal)
             {
                 "doc", "uidoc", "app"
@@ -2358,8 +2364,12 @@ namespace Heron.Revit.Addin
                     // WHAT IT LEFT, for the step after it and for the fragment
                     // under test. Without this the chain ends at the first
                     // setup step and the arrangement cannot be built up.
+                    //
+                    // ROW 5b-1743: MARKED AS LEFT INSIDE THIS RUN'S OPEN GROUP,
+                    // so a run that stops before its own Remember cannot leave
+                    // it to be bound by the next request (Chain.OpenGroup).
                     Remember(stepName, stepState, target, stepBound, client, globals.__heron,
-                             ranWith);
+                             ranWith, null, true);
                 }
             }
 
@@ -4505,6 +4515,17 @@ namespace Heron.Revit.Addin
             // here is bound, by name or by expectation.
             public string TakenBack;
 
+            // ROW 5b-1743: SET WHILE WHAT IS HERE WAS LEFT BY AN ARRANGEMENT
+            // STEP INSIDE A WRITE'S OWN GROUP, and the run that opened it has
+            // not reached its end. The fragment after the step binds it, inside
+            // the same request; the run's own Remember clears it at its end,
+            // with how it was taken back when it was (Q-89). A run that stops
+            // before that end - it threw, its clock tripped, a dialog or a
+            // later step stopped it - leaves it set, its group rolled back, and
+            // the next request turns it into TakenBack (StoppedPartWay) before
+            // anything binds, so nothing it made is handed on.
+            public bool OpenGroup;
+
             public DateTime TouchedUtc;
         }
 
@@ -4933,6 +4954,24 @@ namespace Heron.Revit.Addin
         {
             if (string.IsNullOrEmpty(client)) return;
             Chains.Remove(client);
+        }
+
+        /// <summary>
+        /// FRAGMENT-ISSUES ROW 5b-1743. A chain still marked OpenGroup when a
+        /// new request arrives was left by an arrangement step of a write
+        /// that stopped before its end - the fragment threw, the run clock
+        /// tripped, a Revit dialog or a later step stopped it - so its group
+        /// was rolled back with everything the steps made. It is marked taken
+        /// back (HeronBindingNote.StoppedPartWay), and Q-89's refusals do the
+        /// rest: nothing it holds is bound, by name or by expectation, and the
+        /// next run that leaves values starts the chain afresh.
+        /// </summary>
+        private static void MarkStoppedPartWay(string client)
+        {
+            var chain = ChainFor(client, false);
+            if (chain == null || !chain.OpenGroup) return;
+            chain.TakenBack = HeronBindingNote.StoppedPartWay(true, chain.TakenBack);
+            chain.OpenGroup = false;
         }
 
         /// <summary>
@@ -5573,7 +5612,8 @@ namespace Heron.Revit.Addin
                                      string client,
                                      IDictionary<string, object> handedIn,
                                      string ranWith,
-                                     string takenBack = null)
+                                     string takenBack = null,
+                                     bool insideOpenGroup = false)
         {
             // A caller that did not say who it is gets no chain - see ChainFor.
             var chain = ChainFor(client, true);
@@ -5589,6 +5629,7 @@ namespace Heron.Revit.Addin
             chain.By = name;
             chain.Inputs = ranWith;
             chain.TakenBack = takenBack;
+            chain.OpenGroup = insideOpenGroup;   // row 5b-1743 - see Chain.OpenGroup
 
             foreach (var variable in state)
             {
