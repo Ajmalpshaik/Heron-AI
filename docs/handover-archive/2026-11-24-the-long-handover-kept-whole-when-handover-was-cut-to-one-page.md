@@ -59,14 +59,14 @@ negative backwards. **16 to 52 in one night, then 52 to 142 the next; the method
 hours.** Have Revit open with a rich model — `Snowdon Towers Sample HVAC` is the one it was worked out
 on — and read [`docs/FRAGMENT-ISSUES.md`](../FRAGMENT-ISSUES.md) before starting, because it is the queue.
 **Those entries are no longer in this file** — they moved to the archive on 2026-09-12:
-[day two](2026-09-09-the-proving-track-day-two-52-142-and-heron-can-now-change-a.md),
-[day three](2026-09-09-the-proving-track-day-three-142-159-and-four-sessions-in-one.md)
-and [day four](2026-09-10-the-proving-track-day-four-0-proved-5-defects-found-and-the.md).
+day two,
+day three
+and day four.
 The method itself now lives in the [`fragment-proving`](../../.claude/skills/fragment-proving/SKILL.md) skill.
 
 **To do the work that has been WAITING FOR YOUR PC since 2026-09-09, say:** *"Read the
 open-questions entry in HANDOVER.md and do the link contracts."* That entry is archived now, at
-[the open-questions track](2026-09-09-the-open-questions-track-44-52-answered-and-the-rest-needs-t.md).
+the open-questions track.
 Five items were queued there in order on 2026-09-09,
 the biggest being **62 reading fragments that must be able to look inside linked models when you ask
 them to** — which in Qatar MEP work is most of the time, because the architecture is a link, the
@@ -75,13 +75,13 @@ a gate; none of the edits was guessed, because this container has no Revit and n
 62 collector rewrites nobody could compile would have been worse than leaving a list. *(Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-7 and WN-8). Since 2026-11-20 WN-7's worklist has a row of its own, [row 5b-1909](../fragment-issues/row-5b-1909.md), and is still open.)*
 
 **To carry the ROLES work on, say:** *"Read the ROLES track entry in HANDOVER.md."* It is archived at
-[the ROLES track](2026-09-09-the-roles-track-989-provides-declared-and-nothing-reads-a-na.md). That track is
+the ROLES track. That track is
 CLOSED — all 1,202 provides declare a role and nothing guesses one from a name — so read it only to
 understand why a `provides` entry must say `result` or `accounting`, and what happens if a new fragment
 forgets (validation refuses it).
 
 **To carry the REFUSAL-PROOFS work on, say:** *"Read the REFUSAL-PROOFS track entry in HANDOVER.md."*
-It is archived at [the REFUSAL-PROOFS track](2026-09-09-the-refusal-proofs-track-silence-made-illegal-and-eight-of-i.md).
+It is archived at the REFUSAL-PROOFS track.
 As of 2026-09-09, twelve fragments REFUSE what they cannot use instead of reporting `0`, and eight are proved with
 both legs — but **the drafts are unsigned and every `heron-status` still says DRAFT**, because the
 machine never signs. That entry names the three still unproved and why, and carries the three rules for
@@ -168,7 +168,7 @@ python tools/check-signatures.py     # PROVEN, then the code moved under it - no
 ```
 
 The 2026-10-27 text was read from the root README's [Status](../../README.md#status), the
-[sitting of 2026-10-18](2026-10-18-the-safety-rails-met-revit-and-heron-s-data-left-the-store.md) —
+sitting of 2026-10-18 —
 the newest there was that day; three have been written since, 2026-10-29, 2026-11-11 and 2026-11-12, in
 [Latest sittings](#latest-sittings) — and `git log --oneline -90 origin/main`. Between 2026-10-19 and
 2026-10-25 a week of pull requests merged — [#674](https://github.com/Ajmalpshaik/Heron-AI/pull/674) to
@@ -436,7 +436,7 @@ waiting for.
 `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c` rather than trusting the
 line above.**
 **On 2026-09-07 every recorded proof was re-run and all thirteen held, and the executor was put in
-front of all 135 DRAFT READ fragments** — see [the verification pass](2026-09-07-the-verification-pass-13-proofs-re-run-135-fragments-through.md).
+front of all 135 DRAFT READ fragments** — see the verification pass.
 
 | | |
 |---|---|
@@ -469,13 +469,13 @@ not here — [`tools/archive-handover.py`](../../tools/archive-handover.py) move
 | 2026-11-13 | [THE OWNER'S PC PROVES WHAT #855 BUILT, AND THE PROVING FINDS NEW DEFECTS ON THE WAY](2026-11-13-the-owner-s-pc-proves-what-855-built-and-the-proving-finds-new.md) |
 | 2026-11-12 | [EVERY REPLY SAYS HOW IT ENDED IN ONE WORD, PROVEN TOOLS THAT ANSWERED WRONGLY ARE REPAIRED AND DRAFT AGAIN, AND A DEFECT ROW GETS A FILE OF ITS OWN](2026-11-12-every-reply-says-how-it-ended-in-one-word-proven-tools-that.md) |
 | 2026-11-11 | [A CLICK IN REVIT ANSWERS THE CHAT, FIVE EVERYDAY JOBS GET A METHOD, AND A CLOUD CHAT NOBODY SET UP GETS A LIBRARY](2026-11-11-a-click-in-revit-answers-the-chat-five-everyday-jobs-get-a.md) |
-| 2026-10-29 | [THE ROUTING GUARDS PASS ON THE OWNER'S BACKEND, BY CARD WORDS ALONE](2026-10-29-the-routing-guards-pass-on-the-owner-s-backend-by-card-words.md) |
-| 2026-10-18 | [THE SAFETY RAILS MET REVIT, AND HERON'S DATA LEFT THE STORE APP'S COPY](2026-10-18-the-safety-rails-met-revit-and-heron-s-data-left-the-store.md) |
-| 2026-10-14 | [SIXTY PLAIN QUESTIONS, AND WHAT ANSWERED THEM](2026-10-14-sixty-plain-questions-and-what-answered-them.md) |
-| 2026-10-14 | [THE GAP PASS: NEW TOOLS FOR WHAT THE LIBRARY COULD NOT DO](2026-10-14-the-gap-pass-new-tools-for-what-the-library-could-not-do.md) |
-| 2026-10-06 | [SPRINKLERS LAID OUT IN ANY ROOM, PREVIEWED, THEN PLACED](2026-10-06-sprinklers-laid-out-in-any-room-previewed-then-placed.md) |
-| 2026-10-05 | [THE FIRE WATER AND THE SPACING, ON THE SPRINKLER PANEL](2026-10-05-the-fire-water-and-the-spacing-on-the-sprinkler-panel.md) |
-| 2026-10-04 | [A SPRINKLER SYSTEM'S HYDRAULICS NOW COME FROM THE MODEL](2026-10-04-a-sprinkler-system-s-hydraulics-now-come-from-the-model.md) |
+| 2026-10-29 | THE ROUTING GUARDS PASS ON THE OWNER'S BACKEND, BY CARD WORDS ALONE |
+| 2026-10-18 | THE SAFETY RAILS MET REVIT, AND HERON'S DATA LEFT THE STORE APP'S COPY |
+| 2026-10-14 | SIXTY PLAIN QUESTIONS, AND WHAT ANSWERED THEM |
+| 2026-10-14 | THE GAP PASS: NEW TOOLS FOR WHAT THE LIBRARY COULD NOT DO |
+| 2026-10-06 | SPRINKLERS LAID OUT IN ANY ROOM, PREVIEWED, THEN PLACED |
+| 2026-10-05 | THE FIRE WATER AND THE SPACING, ON THE SPRINKLER PANEL |
+| 2026-10-04 | A SPRINKLER SYSTEM'S HYDRAULICS NOW COME FROM THE MODEL |
 
 ## The session archive — what happened before today
 

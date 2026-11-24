@@ -144,7 +144,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 | [`generate-decision-summary.py`](generate-decision-summary.py) | the status table at the top of DECISIONS.md | after writing a decision - `check-docs.py` §8 fails on a stale table |
 | [`archive-fragment-issues.py`](archive-fragment-issues.py) | finished defect rows moved out of the live register | whenever rows close |
 | [`archive-needs-checking.py`](archive-needs-checking.py) | struck checks moved out of NEEDS-CHECKING | whenever checks are struck |
-| [`archive-handover.py`](archive-handover.py) | session notes moved out of HANDOVER.md, one file per sitting. **Retired 2026-11-24:** HANDOVER.md is one page now and has no sittings or numbered manual to move, so the tool reports COULD NOT RUN on it; kept because the archived notes link to it | not needed now |
+| [`archive-handover.py`](archive-handover.py) | session notes moved out of HANDOVER.md, one file per sitting. **Not run on HANDOVER.md since 2026-11-24:** that file is one page now, with nothing to move. Kept because `split-decisions.py`, `split-register.py`, `split-needs-checking.py` and `archive-fragment-issues.py` load its link handling | never on its own now |
 | [`agent-count.py`](agent-count.py) | each department built, host-provided, deferred and left; fails when the registry does not reconcile | before choosing an agent to build; CI's *reports* job prints it |
 | [`new-agent.py`](new-agent.py) | the contract, module and failing test of the next agent, from its registry row | when building an agent |
 
