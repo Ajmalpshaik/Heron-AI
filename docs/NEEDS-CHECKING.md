@@ -1770,6 +1770,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qf.md`](needs-checking/group-qf.md)
 
+## Group QG - Automatically Embed: REPORT_CURTAIN_WALL_TYPE version 2 reads it, SET_CURTAIN_WALL_EMBED ticks it - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qg.md`](needs-checking/group-qg.md)
+
 ## Group QI - temporary HIDE in the active view, and a form's long id taken by the hide and the isolate - BUILT, NOT RUN IN REVIT (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qi.md`](needs-checking/group-qi.md)
