@@ -1754,9 +1754,17 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qe.md`](needs-checking/group-qe.md)
 
+## Group QC - CHANGE_ELEMENT_TYPE version 3: every refused element says why - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qc.md`](needs-checking/group-qc.md)
+
 ## Group QB - four facade tools: a curtain grid line or segment removed, a grid line or mullion moved, a mullion's join, a panel's flatness - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qb.md`](needs-checking/group-qb.md)
+
+## Group QD - REPORT_WALL_ATTACHMENTS: which walls are attached to a roof, read and never changed - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qd.md`](needs-checking/group-qd.md)
 
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 

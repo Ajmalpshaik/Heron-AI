@@ -50,5 +50,21 @@ negative:
       changed 3 - the cross-category swap by id still goes to Revit, as it did
       on 2026-10-13
 
+  # VERSION 3 (2026-11-24, row 5b-2011) - every refusal says why. Each FAILS on
+  # version 2, which refused with no word. NOT RUN - NEEDS-CHECKING Group QC.
+  - given: >
+      one work-plane-based air terminal and newTypeId a type of a LEVEL-BASED
+      air terminal family (Revit 2020, 2026-11-24: refused 1, no reason)
+    expect: >
+      refused 1 and a findings line naming the element - Revit does not offer
+      the type as valid for it, each family named with how it is placed, and
+      the way on (replace-in-place-family, step 6). Nothing changed
+  - given: the same instance with a level-based one, both handed in
+    expect: >
+      changed 1 and refused 1 with the same line - one refusal never stops
+      the rest of the batch
+  - given: a refusal where ChangeTypeId throws
+    expect: Revit's own message quoted in that element's line, never dropped
+
 second_route:
   - Select one element in Revit and read the type in the Properties palette
