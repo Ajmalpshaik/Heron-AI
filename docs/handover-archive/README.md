@@ -45,6 +45,7 @@ still owed in them has a register row.
 
 | Date | Sitting |
 |---|---|
+| 2026-11-24 | [THE CLEAN-UP OF 2026-11-24: DOCS CUT, IDLE AGENTS RETIRED](2026-11-24-the-clean-up-docs-cut-and-idle-agents-retired.md) |
 | 2026-11-24 | [THE LONG HANDOVER, KEPT WHOLE WHEN HANDOVER.MD WAS CUT TO ONE PAGE](2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md) |
 | 2026-11-21 | [THE MERGES OF 2026-11-21: THE NEW WORK WAITS FOR REVIT, AND FIVE QUESTIONS WAIT FOR THE OWNER](2026-11-21-the-day-s-merges-the-new-work-waits-for-revit-and-five-questions-for-the-owner.md) |
 | 2026-11-14 | [A NIGHT ON REVIT 2024 ALONE: SCRATCH MODELS HERON MADE, TEN DRAFTS AND SEVEN DEFECTS](2026-11-14-a-night-on-revit-2024-alone-scratch-models-heron-made-and-seven-defects.md) |
