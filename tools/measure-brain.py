@@ -82,10 +82,11 @@ WHAT IT DELIBERATELY DOES NOT CLAIM
 It used to argue that against HERON-OPS-OBS-011, whose row then read "latency,
 token usage, model calls per request, cost per request" - three of which Heron
 cannot see. THAT ARGUMENT IS SPENT: D-58 corrected the row on 2026-09-09 to
-the two things Heron can see, HERON-OPS-OBS-011 is built in
-brain/heron_observability.py, and the corrected row NAMES THIS FILE as what
+the two things Heron can see, and the corrected row NAMES THIS FILE as what
 measures the latency half for the brain. So this is a tool that row relies on,
-not a candidate for its id.
+not a candidate for its id. (HERON-OPS-OBS-011 was built in
+brain/heron_observability.py, which nothing called; D-200 retired the agent
+and removed that file on 2026-11-24.)
 
 The open one is HERON-DEV-PRF-015, "execution time and resource cost", which is
 word for word what this file now measures - and claiming it would still be a
