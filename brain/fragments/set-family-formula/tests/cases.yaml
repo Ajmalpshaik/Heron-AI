@@ -38,9 +38,12 @@ negative:
       refused naming SET_FAMILY_TYPE_VALUES. Not Revit's bare "no valid family
       type", and nothing else in the family disturbed
 
-  - given: formula "Neck Top + 10" on Neck Top itself
+  - given: formula "Neck Top + 10 mm" on Neck Top itself
     expect: >
-      the call refused with Revit's own words about the loop, and nothing kept
+      refused with Revit's own words about the loop - "Revit refused the
+      formula ... a formula cannot use the parameter it sets" - as the card's
+      `refused` output, NEVER fragment_threw (version 3); nothing kept, and
+      formulaNow and valueNow what Neck Top held before the call
 
   - given: a project in front
     expect: notAFamily true and no formula set anywhere
