@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,10 +9,26 @@ semantic-identity: "swap these elements to a different type"
 kind: action
 domain: revit.elements
 capability: CHANGE_ELEMENT_TYPE
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 3 (2026-11-24) - EVERY REFUSED ELEMENT SAYS WHY. FRAGMENT-ISSUES
+# row 5b-2011: on a real job model (Revit 2020) one work-plane-based exhaust
+# louvre asked to take a type of a LEVEL-BASED louvre family answered
+# "changed 0 ... 1 were refused" and nothing else, so the modeller was left
+# guessing. Each refused element now has its own line in `findings`, built
+# from what Revit answers: whether Revit lists the type as valid for it
+# (IsValidType, GetValidTypes), the two categories, how each family is placed
+# (FamilyPlacementType), and Revit's own message when ChangeTypeId throws. A
+# placement difference is named as the difference Heron found and the likely
+# reason, never as Revit's stated one, with the way on - place the new family
+# and carry the values (replace-in-place-family, step 6). What is changed and
+# what is refused is exactly as version 2: the checks run only after a
+# refusal, to explain it. The C# moved, so the card is DRAFT again; version
+# 2's proof below no longer describes the code and is kept as the record
+# until version 3 is proved on a real model (D-30, NEEDS-CHECKING QC).
+#
 # VERSION 2 (2026-11-01) - MATCH_ELEMENT_TYPE WAS MERGED INTO THIS CARD on the
 # owner's instruction ("make sure there is no duplicate tools"), and is
 # DEPRECATED. The same job - elements moved onto a type, read back - and the
@@ -99,7 +115,9 @@ contract:
       type: IList<ElementId>
     - name: findings
       # Version 2: what was changed and to what, each refusal by id and
-      # category, and the sentence that only the type changed.
+      # category, and the sentence that only the type changed. Version 3:
+      # one line per element Revit refused, with its reason (the first 20,
+      # the rest counted).
       type: IList<string>
 
 proof:
