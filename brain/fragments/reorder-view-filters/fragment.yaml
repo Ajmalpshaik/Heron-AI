@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -153,6 +153,57 @@ contract:
     - name: refused
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-11-20'
+  by: Ajmal PS
+  model: Ducts 1040 (3,421 elements), Revit 2024, session 49656
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned asked 3 item(s) [560779, 468403,
+    468404], askedRow 1, before 3 item(s) [468403, 468404, 560779], besideAbove false, besideId
+    (null), findings 1 item(s) ['Vent' moved to row 1 of 3 on '1 - Mech' (FloorPlan); 2 filt...],
+    fromRevit true, getEnabled RuntimeMethodInfo, getOrdered RuntimeMethodInfo, keptEnabled
+    2 item(s) [True, True], keptLooks 2 item(s) [Autodesk.Revit.DB.OverrideGraphicSettings,
+    Autodesk.Revit.DB.OverrideGraphicSettings], keptVisible 2 item(s) [False, False], listedById
+    3 item(s) [468403, 468404, 560779], looksDiffer Func`3, looksProperties 21 item(s) [Autodesk.Revit.DB.ElementId
+    CutBackgroundPatternId, Autodesk.Revit.DB.ElementId CutForegroundPatternId, Autodesk.Revit.DB.ElementId
+    SurfaceBackgroundPatternId, ...], moved true, nameOf 3 entry(ies), numbered Func`2, onView
+    3 item(s) [468403, 468404, 560779], onViewNamed Func`2, orderAfter 3 item(s) [Vent, Domestic,
+    Sanitary], orderBefore 3 item(s) [Domestic, Sanitary, Vent], orderFree false, orderVerified
+    read back from Revit, pastEndNote (null), putBack 2 item(s) [468403, 468404], reAdded
+    2, refusal (null), refused 0 item(s), release 2024, revitSaid Func`2, sameValue Func`3,
+    setEnabled RuntimeMethodInfo, target 1 item(s) [id 560779], targetName Vent, toBottom
+    false, typed 0 item(s), typedIds (null), viewLabel '1 - Mech' (FloorPlan), whatIsOnTheView
+    Func`1. inputs came view as given; filterName as given; position as given; currentOrder
+    not given - "none", the card's own default (optional). on Ducts 1040
+  negative_case: 'run with filterName=ZZZ NOT ON THIS VIEW, position=top, view=FloorPlan:
+    1 - Mech instead - chosen because it should not contain what this fragment reports - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned asked (null), askedRow 0, before (null), besideAbove false, besideId (null),
+    findings 0 item(s), fromRevit false, getEnabled RuntimeMethodInfo, getOrdered RuntimeMethodInfo,
+    keptEnabled 0 item(s), keptLooks 0 item(s), keptVisible 0 item(s), listedById 3 item(s)
+    [468403, 468404, 560779], looksDiffer Func`3, looksProperties 21 item(s) [Autodesk.Revit.DB.ElementId
+    CutBackgroundPatternId, Autodesk.Revit.DB.ElementId CutForegroundPatternId, Autodesk.Revit.DB.ElementId
+    SurfaceBackgroundPatternId, ...], moved false, nameOf 3 entry(ies), numbered Func`2, onView
+    3 item(s) [468403, 468404, 560779], onViewNamed Func`2, orderAfter 0 item(s), orderBefore
+    0 item(s), orderFree false, orderVerified , pastEndNote (null), putBack 0 item(s), reAdded
+    0, refusal No filter called ''ZZZ NOT ON THIS VIEW'' in this project. Nothing was changed.
+    ''1 - Mech'' (FloorPlan) carries, top to bottom: 1. Domestic, 2. Sanitary, 3. Vent., refused
+    1 item(s) [No filter called ''ZZZ NOT ON THIS VIEW'' in this project. Not...], release
+    2024, revitSaid Func`2, sameValue Func`3, setEnabled RuntimeMethodInfo, target (null),
+    targetName , toBottom false, typed 0 item(s), typedIds (null), viewLabel ''1 - Mech''
+    (FloorPlan), whatIsOnTheView Func`1. inputs came view as given; filterName as given; position
+    as given; currentOrder not given - "none", the card''s own default (optional). on Ducts
+    1040'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 692548233445f708
+  fingerprint: 287f908bd55ce2a7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
