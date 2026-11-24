@@ -1,0 +1,36 @@
+# Night of 2026-11-24, Revit 2024 (build 24.3.60.12, add-in 0.3.0.0), batch 5.
+# Night Rig 1124 alone (M_Desk saved and closed). Every run is rolled back.
+# Room 1 is the rig's one room; walls 352516 and 352517 are two of its six
+# Generic - 200mm walls.
+#
+# Two cards are proved by TRACKING (D-53), by hand:
+#   validate --session 26904 --in "Night Rig 1124" --out brain/proof-drafts/runs/list-categories.json
+#     --set everySubcategory=false --vary "categories=Walls|Doors|Furniture" --vary-field styleRows list-categories
+#   validate --session 26904 --in "Night Rig 1124" --out brain/proof-drafts/runs/report-browser-organization.json
+#     --write --setup create-sheets --set titleBlockName=none
+#     --vary "numbers=HZ-T1|HZ-T1,HZ-T2|HZ-T1,HZ-T2,HZ-T3" --vary-field organization report-browser-organization
+
+model: "Night Rig 1124 (scratch, 48 placed elements), Revit 2024, session 26904"
+
+defaults:
+  in: "Night Rig 1124"
+  setup: []
+
+jobs:
+  - fragment: report-category-overrides
+    setup: [set-category-graphics]
+    write: true
+    expect: overriddenCategories
+    set: {view: "FloorPlan: Level 1", categories: "Walls", overrides: "halftone=true", allCategories: "false"}
+    negative-set: {view: "FloorPlan: Level 1", categories: "Walls", overrides: "halftone=false", allCategories: "false"}
+
+  - fragment: filter-elements-in-room
+    setup: [filter-elements-by-category, set-selection]
+    expect: elements
+    set: {categories: "Generic Models", inViewOnly: "", room: "Room 1"}
+    negative-set: {categories: "Structural Framing", inViewOnly: "", room: "Room 1"}
+
+  - fragment: measure-distance
+    expect: straightMm
+    set: {first: "352516", second: "352517"}
+    negative-set: {first: "352516", second: "352516"}

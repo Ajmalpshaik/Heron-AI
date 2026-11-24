@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -86,24 +86,31 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-13'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: test projject (3,453 elements), Revit 2024, session 40932
+  model: Night Rig 1124 (3,349 elements), Revit 2024, session 26904
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-in-region, set-selection with this phase's own values. returned asRoom Room, asSpace
-    (null), elements 1 item(s) [Radius Elbows / Taps], inside 1 item(s) [Radius Elbows / Taps],
-    noPoint 0 item(s), outside 0 item(s). inputs came room as given; elements from the selection
-    (1). on test projject
-  negative_case: run with minMm=44500,5000,1000, maxMm=47500,7000,2000, exact=false, categories=Ducts,
-    room=Room 4 instead - chosen because it should not contain what this fragment reports
-    - the arrangement was re-made first by running select-in-region, set-selection with this
-    phase's own values. returned asRoom Room, asSpace (null), elements 0 item(s), inside 0
-    item(s), noPoint 0 item(s), outside 1 item(s) [926004]. inputs came room as given; elements
-    from the selection (1). on test projject
+    filter-elements-by-category, set-selection with this phase's own values. returned asRoom
+    Room, asSpace (null), doorsAndWindows 0 item(s), doorsCategory 1 item(s) [id -2000023],
+    elements 1 item(s) [HN Cut Void], inside 1 item(s) [HN Cut Void], noPoint 0 item(s), outside
+    0 item(s), roomPhase Phase, windowsCategory 1 item(s) [id -2000014]. inputs came room
+    as given; elements from the selection (1). on Night Rig 1124
+  negative_case: run with categories=Structural Framing, inViewOnly=, room=Room 1 instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running filter-elements-by-category, set-selection with this phase's
+    own values. returned asRoom Room, asSpace (null), doorsAndWindows 0 item(s), doorsCategory
+    1 item(s) [id -2000023], elements 0 item(s), inside 0 item(s), noPoint 0 item(s), outside
+    2 item(s) [352589, 352591], roomPhase Phase, windowsCategory 1 item(s) [id -2000014].
+    inputs came room as given; elements from the selection (2). on Night Rig 1124
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 51398e8e77745b6d
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.3.0.0
+    addin_hash: b5c1b9426090689f
+  fingerprint: 43af4f154aa40e9f
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
