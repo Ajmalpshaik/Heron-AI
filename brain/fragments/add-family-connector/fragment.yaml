@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,10 +9,30 @@ semantic-identity: "put a duct, pipe or electrical connector on this face of the
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_CONNECTOR
-version: 7
+version: 8
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 8 (2026-11-24) - DUCT SIZE AND PIPE SIZE PARAMETERS SIZE A
+# CONNECTOR, AND A PORT MAY BE SMALLER THAN A RING'S OPENING. Rows 5b-2031 and
+# 5b-2032, seen on Revit 2020 building an air handling unit family: shared
+# parameters of spec Duct Size ("Supply_Air_Width") and Pipe Size
+# ("Condensate_Drain_Diameter") were refused as "not a length", though Revit's
+# Associate Family Parameter takes them for a duct connector's width and
+# height and a pipe connector's diameter; and a 205 x 205 port on a flange ring
+# whose opening is 209 x 209 was refused as "would not fit". Now a Duct Size
+# parameter sizes a duct connector and a Pipe Size one a pipe connector (Length
+# still sizes any; a Duct Size on a pipe connector is refused by name), and on
+# a ring face a port up to the opening's size is taken, either way round, with
+# the clearance said. WHY A RING AND NOT A WHOLE FACE: a ring's opening is a
+# bore, and a real flange is bored a little over its duct - the port must fit
+# inside it, centred, not equal it. On a whole face the face IS the port - a
+# neck's end - so a port of another size there means the wrong parameters were
+# given, and it is still refused. A port larger than the opening is refused as
+# before. Version 7 was PROVEN (the proof block below, kept as the record of
+# what it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING
+# Group QP is run (D-30).
+#
 # VERSION 7 (2026-11-21) - ONLY A FACE THAT FACES OUT, AND AT THE POINT
 # GIVEN, COUNTS. Issue Ajmalpshaik/Heron-AI#1029 again: version 6 narrowed the
 # count only when form= or facing= was given, so with both left out the
@@ -129,6 +149,20 @@ purpose: >
   says when they were turned. Parameters that fit the face neither way round
   are refused: that port would not fit the face it sits on.
 
+  **DUCT SIZE AND PIPE SIZE PARAMETERS SIZE IT TOO (version 8, row
+  5b-2031).** A shared parameter of spec Duct Size sizes a duct connector's
+  width and height, and one of spec Pipe Size a pipe connector's diameter, as
+  Revit's own Associate Family Parameter allows; a Length parameter sizes any
+  connector. A Duct Size parameter given for a pipe connector, or the other
+  way, is refused by name.
+
+  **IN A RING'S OPENING, A PORT UP TO ITS SIZE (version 8, row 5b-2032).** A
+  flange is bored a little over its duct - a 205 x 205 duct in a 209 x 209
+  opening - so on a ring face the port must fit INSIDE the opening, centred,
+  either way round, and the answer says the clearance each side. On a whole
+  face the face is the port, and it is still matched exactly. A port larger
+  than the opening is refused.
+
   **THE SIZE IS READ BACK, AND A MISMATCH IS NOT KEPT.** After the ties the
   connector's width and height are read against the face, or its diameter
   against its parameter; one that differs fails the call. Flow direction,
@@ -172,9 +206,11 @@ contract:
     - name: system
       type: string
       source: request
-    # The length parameters that size it, comma separated: two for a
-    # rectangular duct port (width first, then height), one for a round duct
-    # or a pipe (the diameter), none for an electrical connector.
+    # The parameters that size it, comma separated: two for a rectangular
+    # duct port (width first, then height), one for a round duct or a pipe
+    # (the diameter), none for an electrical connector. Each is a Length, or
+    # (version 8) a Duct Size for a duct connector or a Pipe Size for a pipe
+    # connector.
     - name: sizeParameters
       type: string
       source: request
@@ -387,7 +423,12 @@ compatibility-note: >
   adds `Solid.IntersectWithCurve` with `SolidCurveIntersectionOptions`
   (`CurveSegmentsInside`), `Face.Triangulate`, `Line.CreateBound` and
   `Element.get_BoundingBox(null)`, built against all eight releases on
-  2026-11-21 (`tools/check-fragments-compile.py`).
+  2026-11-21 (`tools/check-fragments-compile.py`). Version 8 reads a
+  parameter's spec behind `#if REVIT2020 || REVIT2021` -
+  `Definition.ParameterType` against `ParameterType.HVACDuctSize` and
+  `.PipeSize` - and from 2022 `Definition.GetDataType()` against
+  `SpecTypeId.DuctSize` and `.PipeSize` (RevitAPI.xml 2020, 2021, 2022 and
+  2027, read 2026-11-24); built against all eight releases the same day.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #

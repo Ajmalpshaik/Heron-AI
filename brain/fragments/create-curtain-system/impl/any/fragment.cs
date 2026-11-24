@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `host`, `curtainSystemType` and
 // `faces` are in scope; leaves `created`, `facesTaken`, `facesAsked`,
-// `readBack`, `alreadyNear`, `refused` and `findings` behind.
+// `readBack`, `alreadyNear`, `alreadyGlazed`, `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one. One call
 // is one undo entry.
@@ -16,12 +16,17 @@
 //                      Revit prints it, its unique id, its family name, its
 //                      "Family : Type" or its Mark
 //   curtainSystemType  a curtain system type by name - never chosen here
-//   faces              vertical (the default), top or all
+//   faces              vertical (the default), top, underside, sloped, all,
+//                      face numbers as every reply lists them ("3, 5 and 9"),
+//                      joined ("vertical and sloped") or taken away ("all but
+//                      top and underside")
 //
 // EVERY REFUSAL IS MADE BEFORE THE FIRST WRITE: no host, a host that is not a
 // mass or a generic model, a type the model does not have, a face word this
-// does not know, a host with no face Revit can reference, or no face of the
-// kind asked. One host refused refuses the call - nothing is half made.
+// does not know, a face number the host has not got, a host with no face Revit
+// can reference, no face of the kind asked, or A FACE ASKED THAT ALREADY
+// CARRIES A CURTAIN SYSTEM - never a second skin laid over the first. One host
+// refused refuses the call - nothing is half made.
 //
 // THE FACES' REFERENCES COME FROM THE FAMILY'S OWN GEOMETRY.
 // GetSymbolGeometry() with no transform is what the API reference calls
@@ -46,6 +51,7 @@ var facesTaken = 0;
 var facesAsked = 0;
 var readBack = "";
 var alreadyNear = 0;
+var alreadyGlazed = 0;
 string refused = null;
 var findings = new List<string>();
 
@@ -60,17 +66,75 @@ Func<string, string, bool> sameText = (a, b) =>
 // ---------------------------------------------------------------------------
 // WHICH FACES - vertical when nothing is said, the card's one default
 // ---------------------------------------------------------------------------
+//
+// A face is named by its KIND - vertical, top, underside, sloped - or by its
+// NUMBER, as every reply lists a host's faces. Several join with "and" or a
+// comma ("vertical and sloped", "3, 5 and 9", "4 to 7"); "all but ..." or
+// "all except ..." takes every face less the ones named ("all but top and
+// underside"). Numbers name one host's faces, so they need ONE host.
 
-var facesSaid = squash(faces);
-if (facesSaid.EndsWith("faces")) facesSaid = facesSaid.Substring(0, facesSaid.Length - 5);
-else if (facesSaid.EndsWith("face")) facesSaid = facesSaid.Substring(0, facesSaid.Length - 4);
-string facesKind = null;
-if (facesSaid == "" || facesSaid == "vertical" || facesSaid == "side" || facesSaid == "sides") facesKind = "vertical";
-else if (facesSaid == "top") facesKind = "top";
-else if (facesSaid == "all" || facesSaid == "every") facesKind = "all";
-else
-    problems.Add("\"" + (faces ?? "").Trim() + "\" is not a kind of face this knows - say vertical (the upright side "
-        + "faces, the default), top, or all (every face, the underside included).");
+var facesText = (faces ?? "").Trim();
+var kindWords = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+{
+    { "vertical", "vertical" }, { "upright", "vertical" }, { "side", "vertical" }, { "sides", "vertical" },
+    { "top", "top" }, { "tops", "top" }, { "roof", "top" },
+    { "underside", "underside" }, { "undersides", "underside" }, { "bottom", "underside" },
+    { "soffit", "underside" }, { "soffits", "underside" },
+    { "sloped", "sloped or curved" }, { "sloping", "sloped or curved" }, { "tilted", "sloped or curved" },
+    { "inclined", "sloped or curved" }, { "slanted", "sloped or curved" }, { "curved", "sloped or curved" },
+};
+var allWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "all", "every", "everything" };
+var butWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "but", "except", "excluding", "without", "minus" };
+var fillerWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    { "the", "a", "face", "faces", "of", "and", "or", "on", "its", "only", "just", "number", "numbers", "no", "nos",
+      "mass", "this", "that", "these", "those", "host" };
+var wantAll = false;
+var excluding = false;
+var kindsIn = new HashSet<string>();
+var kindsOut = new HashSet<string>();
+var numbersIn = new SortedSet<int>();
+var numbersOut = new SortedSet<int>();
+var unknownWords = new List<string>();
+foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(
+    facesText.ToLowerInvariant(), @"\d+\s*(?:-|to)\s*\d+|\d+|[a-z]+"))
+{
+    var word = m.Value;
+    var range = System.Text.RegularExpressions.Regex.Match(word, @"^(\d+)\s*(?:-|to)\s*(\d+)$");
+    if (range.Success || char.IsDigit(word[0]))
+    {
+        int from, to;
+        if (!int.TryParse(range.Success ? range.Groups[1].Value : word, out from)) from = 0;
+        if (!int.TryParse(range.Success ? range.Groups[2].Value : word, out to)) to = 0;
+        if (from < 1 || to < from || to - from > 999)
+            problems.Add("\"" + word + "\" is not a face number or a range of them - faces are numbered from 1, as the "
+                + "reply lists them.");
+        else
+            for (var n = from; n <= to; n++) (excluding ? numbersOut : numbersIn).Add(n);
+    }
+    else if (butWords.Contains(word)) excluding = true;
+    else if (allWords.Contains(word)) wantAll = true;
+    else if (kindWords.ContainsKey(word)) (excluding ? kindsOut : kindsIn).Add(kindWords[word]);
+    else if (!fillerWords.Contains(word)) unknownWords.Add(word);
+}
+if (excluding && kindsIn.Count == 0 && numbersIn.Count == 0) wantAll = true;   // "except the top": every other face
+if (!wantAll && kindsIn.Count == 0 && numbersIn.Count == 0 && unknownWords.Count == 0) kindsIn.Add("vertical");
+if (unknownWords.Count > 0)
+    problems.Add("\"" + facesText + "\" says " + string.Join(", ", unknownWords.Distinct().Select(w => "\"" + w + "\"")
+        .ToArray()) + ", which this does not know for a face. Say vertical (the upright side faces, the default), top, "
+        + "underside, sloped (tilted or curved), all, face numbers as the reply lists them (\"3, 5 and 9\"), or join "
+        + "them (\"vertical and sloped\", \"all but top and underside\").");
+var usesNumbers = numbersIn.Count > 0 || numbersOut.Count > 0;
+Func<IEnumerable<int>, string> numberList = list => string.Join(", ", list.Select(n => n.ToString(invariant)).ToArray());
+// The faces asked for, in words - what the reply says was meant.
+var facesKind = (wantAll ? "all" : "")
+    + (wantAll ? "" : string.Join(" and ", kindsIn.Select(k => k == "sloped or curved" ? "sloped" : k)
+        .Concat(numbersIn.Count > 0 ? new[] { "face(s) " + numberList(numbersIn) } : new string[0]).ToArray()))
+    + (kindsOut.Count + numbersOut.Count > 0 ? " but " + string.Join(" and ", kindsOut
+        .Select(k => k == "sloped or curved" ? "sloped" : k)
+        .Concat(numbersOut.Count > 0 ? new[] { "face(s) " + numberList(numbersOut) } : new string[0]).ToArray()) : "");
+Func<int, string, bool> isAsked = (number, kind) =>
+    (wantAll || kindsIn.Contains(kind) || numbersIn.Contains(number))
+    && !kindsOut.Contains(kind) && !numbersOut.Contains(number);
 
 // ---------------------------------------------------------------------------
 // THE CURTAIN SYSTEM TYPE, BY NAME - never chosen here
@@ -206,9 +270,40 @@ else
 }
 
 // ---------------------------------------------------------------------------
-// EACH HOST'S FACES, judged by the way each one faces in the model
+// EACH HOST'S FACES, numbered and judged by the way each one faces in the model
 // ---------------------------------------------------------------------------
 
+// The way a face looks, at its middle: a compass point in the model's own
+// directions (project north is +Y) and how far it tilts from level.
+Func<XYZ, string> facing = n =>
+{
+    if (n == null) return "direction not read";
+    var up = Math.Asin(Math.Max(-1.0, Math.Min(1.0, n.Z))) * 180.0 / Math.PI;
+    if (up >= 89.0) return "looks up";
+    if (up <= -89.0) return "looks down";
+    var bearing = Math.Atan2(n.X, n.Y) * 180.0 / Math.PI;
+    if (bearing < 0) bearing += 360.0;
+    var points = new[] { "north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west" };
+    var side = "looks " + points[(int)Math.Round(bearing / 45.0) % 8];
+    return Math.Abs(up) < 1.0 ? side
+        : side + ", " + Math.Round(Math.Abs(up)).ToString(invariant) + " deg " + (up > 0 ? "up" : "down") + " from level";
+};
+Func<Face, Transform, XYZ> middleNormal = (face, placed) =>
+{
+    XYZ n = null;
+    var planar = face as PlanarFace;
+    try
+    {
+        if (planar != null) n = planar.FaceNormal;
+        else
+        {
+            var box = face.GetBoundingBox();
+            n = face.ComputeNormal(new UV((box.Min.U + box.Max.U) / 2.0, (box.Min.V + box.Max.V) / 2.0));
+        }
+    }
+    catch (Exception) { n = null; }
+    return n == null || n.GetLength() < 1e-9 ? null : placed.OfVector(n).Normalize();
+};
 Func<Face, Transform, string> kindOf = (face, placed) =>
 {
     var normals = new List<XYZ>();
@@ -237,27 +332,44 @@ Func<Face, Transform, string> kindOf = (face, placed) =>
     return "sloped or curved";
 };
 var kinds = new[] { "vertical", "top", "underside", "sloped or curved", "unread" };
-Func<List<Tuple<Face, string>>, string> tally = list => string.Join(", ", kinds
-    .Select(k => new { k, n = list.Count(f => f.Item2 == k) }).Where(x => x.n > 0).Select(x => x.n + " " + x.k).ToArray());
+Func<IEnumerable<string>, string> tally = list => string.Join(", ", kinds
+    .Select(k => new { k, n = list.Count(f => f == k) }).Where(x => x.n > 0).Select(x => x.n + " " + x.k).ToArray());
 
 var standing = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtaSystem)
-    .WhereElementIsNotElementType().Where(e => e is CurtainSystem).ToList();
+    .WhereElementIsNotElementType().Where(e => e is CurtainSystem).Cast<CurtainSystem>().ToList();
 Func<BoundingBoxXYZ, BoundingBoxXYZ, bool> overlaps = (a, b) => a != null && b != null
     && a.Min.X <= b.Max.X + OneMillimetre && b.Min.X <= a.Max.X + OneMillimetre
     && a.Min.Y <= b.Max.Y + OneMillimetre && b.Min.Y <= a.Max.Y + OneMillimetre
     && a.Min.Z <= b.Max.Z + OneMillimetre && b.Min.Z <= a.Max.Z + OneMillimetre;
+// A point of the model lies on a face of the host when the face, in the
+// family's own coordinates, holds it to within 5 mm.
+var onFaceWithin = 5.0 * OneMillimetre;
+Func<Face, Transform, XYZ, bool> liesOn = (face, placed, point) =>
+{
+    try
+    {
+        var hit = face.Project(placed.Inverse.OfPoint(point));
+        return hit != null && hit.Distance <= onFaceWithin;
+    }
+    catch (Exception) { return false; }
+};
 
 // Each host's plan: the host, its chosen faces' references, how many, their
-// area in square metres, and what its faces are.
-var plans = new List<Tuple<Element, ReferenceArray, int, double, string>>();
-if (facesKind != null)
+// area in square metres, what its faces are, and the numbers of those chosen.
+var plans = new List<Tuple<Element, ReferenceArray, int, double, string, string>>();
+var oneHostForNumbers = !usesNumbers || hosts.Count <= 1;
+if (!oneHostForNumbers)
+    problems.Add("Face numbers name the faces of ONE mass, and " + hosts.Count + " are selected - name the one meant, "
+        + "or ask by kind (vertical, top, underside, sloped).");
+if (unknownWords.Count == 0 && oneHostForNumbers)
 {
     var reading = new Options { ComputeReferences = true };
     foreach (var each in hosts)
     {
         GeometryElement shape = null;
         try { shape = each.get_Geometry(reading); } catch (Exception) { shape = null; }
-        var found = new List<Tuple<Face, string>>();
+        // Each face: the face, how it is placed in the model, and its kind.
+        var found = new List<Tuple<Face, Transform, string>>();
         var nestedLeftOut = 0;
         Action<GeometryElement, Transform, bool> walk = null;
         walk = (geometry, placed, inside) =>
@@ -276,7 +388,7 @@ if (facesKind != null)
                 var solid = item as Solid;
                 if (solid == null || solid.Faces.Size == 0) continue;
                 foreach (Face face in solid.Faces)
-                    if (face.Reference != null) found.Add(Tuple.Create(face, kindOf(face, placed)));
+                    if (face.Reference != null) found.Add(Tuple.Create(face, placed, kindOf(face, placed)));
             }
         };
         try { walk(shape, Transform.Identity, false); }
@@ -284,34 +396,113 @@ if (facesKind != null)
         if (nestedLeftOut > 0)
             findings.Add(describe(each) + ": " + nestedLeftOut + " family(ies) nested in it were left out - only its own "
                 + "faces are offered.");
-
-        var chosen = found.Where(f => facesKind == "all" || f.Item2 == facesKind).ToList();
         if (found.Count == 0)
         {
             problems.Add(describe(each) + " has no face Revit can reference - nothing to put a curtain system on.");
             continue;
         }
-        if (chosen.Count == 0)
-        {
-            problems.Add(describe(each) + " has no " + (facesKind == "top" ? "top face looking straight up"
-                : "upright face standing straight") + " - its " + found.Count + " face(s) are " + tally(found)
-                + ". Say top or all instead.");
-            continue;
-        }
 
-        var references = new ReferenceArray();
-        foreach (var f in chosen) references.Append(f.Item1.Reference);
-        plans.Add(Tuple.Create(each, references, chosen.Count, chosen.Sum(f => f.Item1.Area) * SquareFeetToSquareMetres,
-            tally(found)));
-
+        // WHICH OF ITS FACES ALREADY CARRY A CURTAIN SYSTEM. Revit gives a
+        // curtain system no host face to read back, so it is found from the
+        // system itself: each of its curtain grids (one per face) is read cell
+        // by cell, and the face that holds the middle of EVERY edge of a cell
+        // is the face that grid sits on. A cell's outer edges also touch the
+        // next face, but never all of them at once.
+        var glazedBy = new Dictionary<int, List<string>>();
         var near = standing.Where(s => overlaps(each.get_BoundingBox(null), s.get_BoundingBox(null))).ToList();
+        var unreadNear = new List<string>();
+        foreach (var system in near)
+        {
+            var cellsRead = 0;
+            CurtainGridSet grids = null;
+            try { grids = system.CurtainGrids; } catch (Exception) { grids = null; }
+            if (grids != null)
+                foreach (CurtainGrid grid in grids)
+                {
+                    ICollection<CurtainCell> cells = null;
+                    try { cells = grid.GetCurtainCells(); } catch (Exception) { cells = null; }
+                    if (cells == null) continue;
+                    var tried = 0;
+                    foreach (var cell in cells)
+                    {
+                        if (tried >= 5) break;   // a grid is one face: a few cells settle which
+                        var middles = new List<XYZ>();
+                        try
+                        {
+                            foreach (CurveArray loop in cell.CurveLoops)
+                                foreach (Curve edge in loop) middles.Add(edge.Evaluate(0.5, true));
+                        }
+                        catch (Exception) { middles.Clear(); }
+                        if (middles.Count == 0) continue;
+                        tried++;
+                        cellsRead++;
+                        var at = found.FindIndex(f => middles.All(p => liesOn(f.Item1, f.Item2, p)));
+                        if (at < 0) continue;
+                        if (!glazedBy.ContainsKey(at)) glazedBy[at] = new List<string>();
+                        if (!glazedBy[at].Contains(system.Id.ToString())) glazedBy[at].Add(system.Id.ToString());
+                        break;
+                    }
+                }
+            if (cellsRead == 0) unreadNear.Add(system.Id.ToString());
+        }
         if (near.Count > 0)
         {
             alreadyNear += near.Count;
             findings.Add(near.Count + " curtain system(s) already stand within the outline of " + describe(each) + " - "
-                + string.Join(", ", near.Take(10).Select(s => s.Id.ToString()).ToArray()) + ". Whether they sit on the "
-                + "same faces is not read; Revit may lay this one over them.");
+                + string.Join(", ", near.Take(10).Select(s => s.Id.ToString()).ToArray()) + "."
+                + (unreadNear.Count > 0 ? " Which faces " + string.Join(", ", unreadNear.ToArray()) + " sit on could "
+                    + "not be read from their curtain grids - Revit may lay this one over them." : ""));
         }
+
+        if (usesNumbers)
+        {
+            var beyond = numbersIn.Concat(numbersOut).Where(n => n > found.Count).Distinct().ToList();
+            if (beyond.Count > 0)
+                problems.Add(describe(each) + " has " + found.Count + " face(s), numbered 1 to " + found.Count
+                    + " - face " + numberList(beyond) + " is not one of them.");
+        }
+
+        // The numbered list every reply carries, so faces can be named by number.
+        var chosenAt = Enumerable.Range(0, found.Count).Where(i => isAsked(i + 1, found[i].Item3)).ToList();
+        var listed = new List<string>();
+        for (var i = 0; i < found.Count && i < 60; i++)
+            listed.Add("face " + (i + 1) + ": " + found[i].Item3 + ", " + facing(middleNormal(found[i].Item1, found[i].Item2))
+                + ", " + Math.Round(found[i].Item1.Area * SquareFeetToSquareMetres, 1).ToString(invariant) + " m2"
+                + (glazedBy.ContainsKey(i) ? ", carries curtain system " + string.Join(", ", glazedBy[i].ToArray()) : "")
+                + (chosenAt.Contains(i) ? " - ASKED" : ""));
+        findings.Add(describe(each) + " - its faces, numbered as Revit reads them now (read them again after the mass "
+            + "is edited; directions in the model's own, project north up): " + string.Join("; ", listed.ToArray())
+            + (found.Count > 60 ? "; and " + (found.Count - 60) + " more" : "") + ".");
+
+        if (chosenAt.Count == 0)
+        {
+            problems.Add(describe(each) + " has no face that is " + facesKind + " - its " + found.Count + " face(s) are "
+                + tally(found.Select(f => f.Item3)) + ". Ask for another kind, or name faces by number from the list.");
+            continue;
+        }
+
+        // NEVER A SECOND SKIN: a face asked that already carries a curtain
+        // system refuses the call - Revit would lay a second one over it
+        // (NEEDS-CHECKING JM8: on Revit 2020 it did).
+        var doubled = chosenAt.Where(i => glazedBy.ContainsKey(i)).ToList();
+        alreadyGlazed += doubled.Count;
+        if (doubled.Count > 0)
+        {
+            var bare = chosenAt.Where(i => !glazedBy.ContainsKey(i)).Select(i => i + 1).ToList();
+            problems.Add(describe(each) + ": face(s) " + numberList(doubled.Select(i => i + 1)) + " already carry a "
+                + "curtain system (" + string.Join(", ", doubled.SelectMany(i => glazedBy[i]).Distinct().ToArray())
+                + "), and a second one would be laid over it. "
+                + (bare.Count > 0 ? "Of the faces asked, " + numberList(bare) + " are bare - ask for those by number. "
+                    : "Every face asked already carries one. ")
+                + "To replace a curtain system, delete it first.");
+            continue;
+        }
+
+        var references = new ReferenceArray();
+        foreach (var i in chosenAt) references.Append(found[i].Item1.Reference);
+        plans.Add(Tuple.Create(each, references, chosenAt.Count,
+            chosenAt.Sum(i => found[i].Item1.Area) * SquareFeetToSquareMetres, tally(found.Select(f => f.Item3)),
+            numberList(chosenAt.Select(i => i + 1))));
     }
 }
 
@@ -323,7 +514,7 @@ if (problems.Count > 0) refused = string.Join(" ", problems.Distinct().ToArray()
 
 if (refused == null)
 {
-    var made = new List<Tuple<Tuple<Element, ReferenceArray, int, double, string>, List<ElementId>>>();
+    var made = new List<Tuple<Tuple<Element, ReferenceArray, int, double, string, string>, List<ElementId>>>();
     foreach (var plan in plans)
     {
         ICollection<ElementId> ids;
@@ -385,13 +576,13 @@ if (refused == null)
             findings.Add("On " + describe(plan.Item1) + " Revit holds " + takenHere + " curtain grid(s) for the "
                 + plan.Item3 + " face(s) handed to it - one grid per face, its reference says - so "
                 + (takenHere < plan.Item3 ? "some faces carry none." : "it reads more grids than faces."));
-        lines.Add(describe(plan.Item1) + ", " + plan.Item3 + " face(s) asked, "
+        lines.Add(describe(plan.Item1) + ", " + plan.Item3 + " face(s) asked - face(s) " + plan.Item6 + " - "
             + Math.Round(plan.Item4, 2).ToString(invariant) + " m2 (its faces: " + plan.Item5 + "): "
             + string.Join("; ", systemsHere));
     }
     readBack = string.Join(" | ", lines);
     findings.Insert(0, "Made " + created.Count + " curtain system(s) of \"" + fullName(chosenType) + "\" on "
-        + facesTaken + " of " + facesAsked + " face(s) asked - " + facesKind + " faces - of " + plans.Count
+        + facesTaken + " of " + facesAsked + " face(s) asked - " + facesKind + " - of " + plans.Count
         + " mass(es) or generic model(s), each read back.");
     findings.Add(readBack);
 }

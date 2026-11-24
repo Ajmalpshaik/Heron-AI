@@ -58,6 +58,16 @@ negative:
   - given: a project in front
     expect: notAFamily true and nothing built anywhere
 
+  - given: >
+      VERSION 2, row 5b-2034: any positive above that makes a SOLID; then
+      the answer's own material route followed - LINK_FAMILY_PARAMETER with
+      the form id it gave and "Material=<a family material parameter>"
+    expect: >
+      the solid's answer names LINK_FAMILY_PARAMETER, never
+      SET_FAMILY_FORM_MATERIAL, and following it links the form's Material -
+      the deprecated card's refusal never reached. A void's answer names
+      COMBINE_FAMILY_FORMS and no material tool, as before
+
 second_route:
   - >
       The same spring by CREATE_FAMILY_FORMS kind=swept blend rows
