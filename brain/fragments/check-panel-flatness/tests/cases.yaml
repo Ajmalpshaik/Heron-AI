@@ -1,0 +1,70 @@
+# THE PROOF PLAN, written 2026-11-24 in a cloud session with no Revit, and NOT
+# RUN. Not tested in Revit (D-30). The owner runs it - NEEDS-CHECKING Group
+# QB, rows QB12 and QB13. A read: nothing is rolled back because nothing is
+# written.
+#
+# THE ARRANGEMENT, in a saved scratch project: a 4-point adaptive panel family
+# (the adaptive-family-creation method, points 1 to 4 in order round the
+# panel, a surface between them), loaded, and two of it placed with
+# PLACE_ADAPTIVE_COMPONENTS on typed points:
+#   FLAT:    0,76000,0; 1500,76000,0; 1500,76000,3000; 0,76000,3000
+#   TWISTED: 3000,76000,0; 4500,76000,0; 4500,76100,3000; 3000,76000,3000 -
+#            the third corner pushed 100 mm off the wall's line
+#
+# THE NUMBER IS DERIVED, NOT REMEMBERED. Newell's normal for the twisted
+# quad, through the centre of its four corners, leaves each corner 24.98 mm
+# off the plane - about a quarter of the 100 mm push, two corners in front and
+# two behind (worked out 2026-11-24 with numpy on these twelve numbers). A
+# rectangle is 0.
+
+positive:
+  - given: >
+      the two panels selected, toleranceMm "10", Revit 2020 or 2024
+    expect: >
+      measured 2; flatness worst first - the TWISTED one "4 corners, 24.98 mm
+      out of plane - OVER 10 mm", then the FLAT one "0 mm out of plane - within 10
+      mm"; worstMm 24.98 (within 0.05); overTolerance holds the twisted panel's
+      id alone
+
+  - given: the same two, toleranceMm left out
+    expect: >
+      measured 2, overTolerance empty, and the finding "No limit was given, so
+      none is called flat enough or not"
+
+  - given: >
+      a pattern-based curtain panel placed by a divided surface
+      (DIVIDE_FAMILY_SURFACE with a panel) in a mass family, the panels
+      selected
+    expect: >
+      RECORD which: either each is measured - its corners are adaptive points
+      the API gives - or each is in notMeasured "is not an adaptive component".
+      Both are results; the ASSUMPTION on the card is settled either way
+
+  - given: the first case on the other release of the two
+    expect: the same answer
+
+negative:
+  - given: >
+      the FLAT panel alone, toleranceMm "10" - a panel that must NOT be
+      flagged
+    expect: >
+      measured 1, worstMm 0 (under 0.01), overTolerance empty, flatness "0 mm
+      out of plane - within 10 mm"
+
+  - given: >
+      a curtain wall and its panels selected (not adaptive), toleranceMm "10"
+    expect: >
+      measured 0; notMeasured names each "is not an adaptive component ... not
+      measured"; no number given for any
+
+  - given: toleranceMm "five"
+    expect: >
+      the finding "'five' is not a limit in millimetres"; every panel still
+      measured and listed with no verdict
+
+second_route:
+  - >
+      By hand: in the panel's family, or with a reference plane through three
+      of the twisted panel's corners in the project, an aligned dimension from
+      the fourth corner to that plane - 100 mm for the arrangement, which is
+      about four times this tool's 24.98 mm best-fit value

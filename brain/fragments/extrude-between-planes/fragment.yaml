@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -119,39 +119,50 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family1,
-    Revit 2024, session 32340'
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, bottom
-    Tuple`5, datums 10 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+  model: PX Box (1,542 elements), Revit 2020, session 29500
+  positive_case: run ONCE on the live model on 2026-11-24 with NO Keep or Discard box - the
+    owner's Ask to Delete switch was off in Revit (D-197) - so NOBODY LOOKED at the result
+    in Revit; Revit kept it as one undo step. returned along Func`3, axisOf Func`2, bottom
+    Tuple`5, datums 9 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
     (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
-    Autodesk.Revit.DB.Referen..., ...], elevation ViewSection, findings 2 item(s) [Built a
-    solid extrusion 600 x 400 x 200 mm (width x depth x ..., Locked to planes is not yet PROVED
-    to follow them. FLEX_FAMI...], halfMillimetre 0.00164041994750656, invariant CultureInfo,
-    locked 5 item(s) [left face to "Box Left", right face to "Box Right", front face to "Box
-    Front", ...], mm Func`2, notAFamily false, one Func`3, ownName Func`2, plan ViewPlan,
-    problems 0 item(s), refused (null), sides 4 item(s) [(Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., ...], elements 1 item(s) [Extrusion], elevation ViewSection,
+    findings 2 item(s) [Built a solid extrusion 600 x 600 x 250 mm (width x depth x ..., Locked
+    to planes is not yet PROVED to follow them. FLEX_FAMI...], formId cc2f6b60-5c54-42b8-8b97-5da3cc6607e6-00000a99,
+    halfMillimetre 0.00164041994750656, invariant CultureInfo, locked 5 item(s) [left face
+    to "Box Left", right face to "Box Right", front face to "Box Front", ...], mm Func`2,
+    notAFamily false, one Func`3, ownName Func`2, plan ViewPlan, problems 0 item(s), refused
+    (null), sides 4 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., ...], size 600 x 600 x 250 mm (width x depth x height),
+    centred at X 0, Y 0, from Z 0 to 250, top Tuple`5. inputs came sidePlanes as given (4);
+    basePlane as given; topPlane as given. on PX Box
+  negative_case: run with sidePlanes=Box Left, Box Right, Box Front, No Such Plane, basePlane=Ref.
+    Level, topPlane=Box Top instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned along Func`3, axisOf Func`2, bottom Tuple`5, datums 9 item(s) [(Autodesk.Revit.DB.ReferencePlane,
     Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
-    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., ...], size 600 x 400
-    x 200 mm (width x depth x height), centred at X 0, Y 0, from Z 500 to 700, top Tuple`5.
-    inputs came sidePlanes as given (4); basePlane as given; topPlane as given. on Family1
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, bottom (null), datums 0
-    item(s), elevation (null), findings 1 item(s) [The document in front is a project, not
-    a family open in the...], halfMillimetre 0.00164041994750656, invariant CultureInfo, locked
-    0 item(s), mm Func`2, notAFamily true, one Func`3, ownName Func`2, plan (null), problems
-    0 item(s), refused The document in front is a project, not a family open in the Family
-    Editor. A family's geometry is built inside the family - open it first., sides 0 item(s),
-    size , top (null). inputs came sidePlanes as given (4); basePlane as given; topPlane as
-    given. on Project1
+    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., ...], elements 0 item(s),
+    elevation ViewSection, findings 1 item(s) [Nothing was built. No reference plane or level
+    is called "No...], formId , halfMillimetre 0.00164041994750656, invariant CultureInfo,
+    locked 0 item(s), mm Func`2, notAFamily false, one Func`3, ownName Func`2, plan ViewPlan,
+    problems 1 item(s) [No reference plane or level is called "No Such Plane" (the s...],
+    refused Nothing was built. No reference plane or level is called "No Such Plane" (the
+    side plane). This family has Box Back, Box Front, Box Left, Box Right, Box Top, Center
+    (Front/Back), Center (Left/Right), Ref. Level., sides 3 item(s) [(Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...], size , top Tuple`5.
+    inputs came sidePlanes as given (4); basePlane as given; topPlane as given. on PX Box
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 6d63ff78002b1da0
-
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: dc82efa01aa2e93e
+  fingerprint: a2c089f28cbb3b99
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

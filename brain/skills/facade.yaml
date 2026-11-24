@@ -49,6 +49,11 @@ purpose: >
        One panel picked on screen, or a door in one panel: SELECT_IN_REGION
        on that panel, then CHANGE_ELEMENT_TYPE (the building-shell method's
        curtain-wall door).
+     - a grid line taken away, or segments of it taken out or put back:
+       EDIT_CURTAIN_GRID_SEGMENTS. A line moved, or the one a mullion sits
+       on: MOVE_CURTAIN_GRID_LINE. Make Continuous or Break at Join on the
+       mullions picked: SET_MULLION_JOIN. A line the type laid out arrives
+       pinned, and the first two refuse it by name.
      REPORT_CURTAIN_ELEMENTS at the end - lines each way, mullions and
      panels by type, measured off the wall. The calls not failing is not the
      proof; the wall is.
@@ -91,9 +96,12 @@ purpose: >
         makes the grid centred and unrotated and refuses a face already
         divided.
      4. REPORT_DIVIDED_SURFACES for the grids and their counts, the
-        rotations, the flip and what cuts the surface, read back off it. Whether each cell is FLAT enough for one sheet of glass
-        is not measured by any Heron tool yet: on a twisted surface say so,
-        and leave the judgement to the architect - never smooth it over.
+        rotations, the flip and what cuts the surface, read back off it.
+        Whether each panel is FLAT enough for one sheet of glass is
+        CHECK_PANEL_FLATNESS, on adaptive panels: how far each one's corners
+        sit off one plane, in mm, against the limit the modeller gives - the
+        limit is the glazier's and the architect's, never Heron's. A panel
+        whose corners are not adaptive points is named, never measured.
      5. In the project: the mass is placed, and CREATE_MASS_FLOORS where it
         gives floors.
 
@@ -134,12 +142,14 @@ purpose: >
   curtain wall or curtain system type (the grid step refuses it - where Revit
   keeps the count is measured, not set); reading a curtain SYSTEM type's grid
   and mullions back (REPORT_CURTAIN_WALL_TYPE reads a wall type only);
-  a grid line REMOVED or a segment cut on one wall (Revit's own Add/Remove
-  Segments tool); a mullion moved or its join changed; a stacked wall built
-  from scratch; a curtain wall embedded in a basic wall told to cut it (Revit
-  does it when the curtain type has Automatically Embed ticked in Type
-  Properties - no Heron tool reads or sets that box yet); the tile pattern of
-  a divided surface.
+  a stacked wall built from scratch; a curtain wall embedded in a basic wall
+  told to cut it (Revit does it when the curtain type has Automatically Embed
+  ticked in Type Properties - no Heron tool reads or sets that box yet, row
+  5b-2008); the tile pattern of a divided surface (Revit's
+  CurtainPanelTilePattern is read-only). Since 2026-11-24 a grid line removed
+  or a segment cut is EDIT_CURTAIN_GRID_SEGMENTS, a mullion moved is
+  MOVE_CURTAIN_GRID_LINE, its join SET_MULLION_JOIN and a panel's flatness
+  CHECK_PANEL_FLATNESS - all DRAFT, not yet run in Revit.
 
 # The words the modeller says when the facade is the whole job. A single step
 # - "set the curtain grid", "place adaptive fins" - reaches its own tool.
@@ -164,6 +174,9 @@ needs:
   - SET_CURTAIN_WALL_GRID
   - ADD_CURTAIN_GRID_LINES
   - SET_CURTAIN_PANEL_TYPE
+  - EDIT_CURTAIN_GRID_SEGMENTS
+  - MOVE_CURTAIN_GRID_LINE
+  - SET_MULLION_JOIN
   - SELECT_IN_REGION
   - REPORT_CURTAIN_ELEMENTS
   # Route B
@@ -175,6 +188,7 @@ needs:
   - DIVIDE_FAMILY_SURFACE
   - SET_DIVIDED_SURFACE_LAYOUT
   - REPORT_DIVIDED_SURFACES
+  - CHECK_PANEL_FLATNESS
   # Route D
   - SET_ADAPTIVE_POINT_ORIENTATION
   - PLACE_ADAPTIVE_COMPONENTS

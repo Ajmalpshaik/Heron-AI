@@ -1,0 +1,67 @@
+# EDIT_CURTAIN_GRID_SEGMENTS (FRG-ELE-173) - the proof plan as a batch-prove job.
+# NOT RUN. Written 2026-11-24 in a cloud session with no Revit - NEEDS-CHECKING
+# Group QB; the cases are in brain/fragments/edit-curtain-grid-segments/tests/cases.yaml.
+#
+#     python tools/batch-prove.py tools/jobs/edit-curtain-grid-segments.yaml --dry-run --session <pid>
+#     python tools/batch-prove.py tools/jobs/edit-curtain-grid-segments.yaml --session <pid>
+#
+# ON "Heron QB Facade", A SAVED SCRATCH PROJECT - never a working one (Group
+# QB, row QB0: Group JJ's rig copied will do). "Level 1", "Curtain Wall:
+# Curtain Wall" with both grid layouts None, and "Basic Wall: Generic -
+# 200mm" must be in it.
+#
+# NOTHING MAY BE SELECTED IN REVIT WHEN THE RUN STARTS - press Esc.
+#
+#   create-wall                 one curtain wall, 9000 x 3000, 64 m north of the origin
+#   add-curtain-grid-lines      "vertical", "equal 6" - lines at 1500 to 7500, not pinned
+#   edit-curtain-grid-segments  "vertical", lineAt "3000", the whole line, remove
+#
+# ONE SET OF VALUES FEEDS ALL THREE. `direction` means the same in the two
+# grid steps; `positions` is add-curtain-grid-lines' alone and `lineAt`
+# this fragment's alone.
+#
+# READ THE BINDING NOTE FIRST: `elements` must be the wall create-wall made.
+# If it bound anything else, the run proves nothing - stop and record it.
+#
+# risk: MODIFY. `validate` never sends `apply`, so every step runs inside one
+# TransactionGroup and is rolled back (D-55). Nothing is kept.
+
+model: Heron QB Facade (docs/needs-checking/group-qb.md, row QB0), Revit 2020 or 2024 - a SAVED SCRATCH project
+
+defaults:
+  in: "Heron QB Facade"
+  write: true
+  setup:
+    - create-wall
+    - add-curtain-grid-lines
+  set:
+    level: "Level 1"
+    wallType: "Curtain Wall: Curtain Wall"
+    points: "0,64000,0; 9000,64000,0"
+    height: "3000"
+    structural: "false"
+    direction: "vertical"
+    positions: "equal 6"
+    lineAt: "3000"
+  negative-set:
+    # THE SAME REQUEST ON A WALL IT MUST NOT TOUCH - a basic wall on the same
+    # line. add-curtain-grid-lines refuses it, so the arrangement stops there;
+    # if the client will not go on past that refusal, run the fragment by hand
+    # with the basic wall selected (the case file's negative).
+    level: "Level 1"
+    wallType: "Basic Wall: Generic - 200mm"
+    points: "0,64000,0; 9000,64000,0"
+    height: "3000"
+    structural: "false"
+    direction: "vertical"
+    positions: "equal 6"
+    lineAt: "3000"
+
+jobs:
+  - fragment: edit-curtain-grid-segments
+    expect: changed
+    note: >
+      Positive: changed 1, notFound empty; readBack "vertical lines 5 before, 4
+      now", "the vertical line at 3000 mm taken away", panels 6 before and 5
+      after. Negative: changed 0, readBack empty, notCurtain "is a wall with
+      no curtain grid", refused "Nothing given is a curtain wall".
