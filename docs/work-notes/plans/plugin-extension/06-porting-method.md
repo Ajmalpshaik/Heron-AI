@@ -218,7 +218,7 @@ Two agents exist for exactly the decision step 6 makes, and **both propose; neit
 | | Agent | Answers |
 |---|---|---|
 | **Widen it** | [`heron_evolve.py`](../../../../brain/heron_evolve.py), `HERON-FRG-EVO-005` | KEEP · UPDATE · EXTEND · SPLIT · MERGE · BRANCH · DEPRECATE · ARCHIVE |
-| **Break it in two** | [`heron_split.py`](../../../../brain/heron_split.py), `HERON-FRG-SPL-003` | Only when the extracted part has **at least two real consumers** |
+| **Break it in two** | `heron_split.py`, `HERON-FRG-SPL-003` | Only when the extracted part has **at least two real consumers** |
 
 **The colour example is a widen, not a split.** Projection line, surface pattern and cut line are one
 job the user thinks of as one action — splitting them would give three fragments and nine layers of

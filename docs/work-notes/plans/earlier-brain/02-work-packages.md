@@ -195,7 +195,7 @@ a named model, with a negative case ([05](05-pc-proving.md)).
 
 1. **His site words.** [D-34](../../../DECISIONS.md) says it in its own consequences: a site word that maps
    to a Revit word *"is knowledge — it belongs in Heron's own knowledge store where it can be looked up and
-   corrected"*. The Keyword Agent ([`brain/heron_keywords.py`](../../../../brain/heron_keywords.py)) is built
+   corrected"*. The Keyword Agent (`brain/heron_keywords.py`) is built
    for exactly that — every entry names a person and a date, an inference is never a record, an unknown
    word is a question — **and it has no store, and nothing calls it** (reported). Read
    [PROPOSALS F16](../../../PROPOSALS.md) first. Build: the store, in the owner's scope; an import that

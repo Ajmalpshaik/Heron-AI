@@ -1,0 +1,44 @@
+# Fifth round of STALE cards, 2026-11-24, Revit 2024 (build 24.3.50.51, add-in
+# 0.2.0.0). RESULT: PASS on all five jobs below, both halves, rolled back;
+# fingerprints match origin/main. NOT signed.
+#
+#     python tools/batch-prove.py tools/jobs/prove-fifth-stale-snowdon-revit2024-2026-11-24.yaml --dry-run
+#
+# THE MODEL: Revit's own Snowdon Towers Sample Architectural, never saved.
+# Its links all read Room Bounding: no; its user worksets are Workset1 and
+# Shared Levels and Grids; the revision sequence Alphanumeric is A to Z.
+# report-model-dashboard's negative is Chair-Breuer, opened from it with
+# OPEN_FAMILY_FOR_EDITING (elementTotal 0 there).
+
+model: "Snowdon Towers Sample Architectural (Revit's own sample, never saved; every run rolled back), with Chair-Breuer opened from it, Revit 2024, session 11112"
+defaults:
+  in: "Snowdon Towers Sample Architectural"
+  setup: []
+jobs:
+  - fragment: set-link-room-bounding
+    write: true
+    expect: changed
+    set: {linkName: "Snowdon Towers Sample Structural.rvt", roomBounding: true}
+    negative-set: {linkName: "No Such Link.rvt", roomBounding: true}
+    note: >
+      The Structural link reads Room Bounding: no (list-linked-models).
+      Positive changed 1. Negative - no such link: refused, changed 0.
+  - fragment: report-model-dashboard
+    expect: elementTotal
+    negative-in: "Chair-Breuer"
+  - fragment: check-minimum-clearance
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: tooClose
+    set: {categories: "Furniture", inViewOnly: "FloorPlan: L2", defaultClearance: 5000, rules: "", includeInsulation: false}
+    negative-set: {categories: "Sheets", defaultClearance: 5000, rules: "", includeInsulation: false}
+  - fragment: edit-revision-numbering-sequence
+    write: true
+    expect: changed
+    set: {name: Alphanumeric, newName: "", minimumDigits: "", startingNumber: "", prefix: "", suffix: "", customSequence: "AA, BB, CC, DD, EE"}
+    negative-set: {name: Alphanumeric, newName: "", minimumDigits: "", startingNumber: "", prefix: "", suffix: "", customSequence: "AA, AA, BB"}
+  - fragment: rename-workset
+    write: true
+    expect: renamed
+    set: {worksetName: "Workset1", newName: "Heron Prove Workset", deleteInstead: false}
+    negative-set: {worksetName: "Heron No Such Workset 1124", newName: "Heron Prove Workset", deleteInstead: false}

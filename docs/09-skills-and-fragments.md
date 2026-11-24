@@ -328,7 +328,7 @@ Side doors
 **[NOTE]** Split has a real failure mode: over-decomposition. Ten fragments each three lines long, with nine layers of indirection, is worse than one clear fragment. Suggested guard: a fragment should only be split when the extracted part has **at least two distinct consumers, actual or clearly imminent**. Reuse justifies a split; tidiness does not.
 
 > **As built (2026-10-18):** all three propose and none applies.
-> [`heron_split.py`](../brain/heron_split.py) proposes a split only where two real consumers exist,
+> `heron_split.py` proposes a split only where two real consumers exist,
 > [`heron_merge.py`](../brain/heron_merge.py) proposes merge, replace, keep separate or deprecate, and
 > [`heron_evolve.py`](../brain/heron_evolve.py) routes each verdict to the agent that owns it. Each
 > returns a proposal and writes nothing. All are `DRAFT`, and no MCP tool reaches them.

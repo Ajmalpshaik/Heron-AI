@@ -122,7 +122,7 @@ The number of agents should **not be fixed**. The architecture must allow 10 →
 > a decision, or left. A large count stays cheap because Heron's agents make no model call: a T2 or T3
 > tier says where the judgement happens, and the host makes it ([D-58](DECISIONS.md),
 > [D-80](DECISIONS.md)). A new agent needs a register row that a person adds, and Workforce Planning
-> ([`heron_workforce.py`](../brain/heron_workforce.py)) refuses one that a capability or an existing
+> (`heron_workforce.py`) refuses one that a capability or an existing
 > agent already covers.
 
 ## 3. Heron AI as an Organization
@@ -191,8 +191,8 @@ Agents should not independently manage these responsibilities.
 > | health · performance | Reported as UNMEASURED: they need real runs | [`heron_agents.py`](../brain/heron_agents.py) |
 > | versions | Each contract's `version`, each file's `Heron-Since` | [`brain/agents/`](../brain/agents/) |
 > | dependencies | Derived from the files, never stored twice | [`heron_graph.py`](../brain/heron_graph.py), [D-40](DECISIONS.md) |
-> | lifecycle | The deployment ladder returns a record of an allowed move; a person edits the status | [`heron_deployment.py`](../brain/heron_deployment.py), [D-30](DECISIONS.md) |
-> | retirement · replacement | Archive, never delete; refused while another file still names the agent | [`heron_retirement.py`](../brain/heron_retirement.py) |
+> | lifecycle | The deployment ladder returns a record of an allowed move; a person edits the status | `heron_deployment.py`, [D-30](DECISIONS.md) |
+> | retirement · replacement | Archive, never delete; refused while another file still names the agent | `heron_retirement.py` |
 
 ## 5. Agent Registry
 
@@ -237,7 +237,7 @@ Status:          PRODUCTION
 > since it was signed. All of them were run again on Revit 2020 and signed on 2026-10-25; that command,
 > not this note, says which still stand.
 >
-> **2026-11-20:** not every file that claims an agent is `DRAFT` now - [`brain/heron_rollback.py`](../brain/heron_rollback.py)
+> **2026-11-20:** not every file that claims an agent is `DRAFT` now - `brain/heron_rollback.py`
 > (`HERON-REVIT-RBK-036`) is `DEPRECATED`, retired on 2026-11-16 under [D-157](decisions/D-157.md) on the
 > owner's word ([row 5b-1747](fragment-issues/row-5b-1747.md)), and none is `PRODUCTION`, which
 > `grep -rh -A2 --include=*.py --include=*.cs -E '^(#|//) Heron-Agent: +HERON-' . | grep -h 'Heron-Status:' | sort | uniq -c`
@@ -382,9 +382,9 @@ Only if no fragment can do the job:
 </details>
 
 > `heron_gaps` is served as an MCP tool. The hiring chain -
-> [`heron_workforce.py`](../brain/heron_workforce.py), [`heron_hr.py`](../brain/heron_hr.py),
+> `heron_workforce.py`, `heron_hr.py`,
 > [`heron_architect.py`](../brain/heron_architect.py), run by
-> [`heron_creator.py`](../brain/heron_creator.py) - is DRAFT, and no MCP tool reaches it. *Check external
+> `heron_creator.py` - is DRAFT, and no MCP tool reaches it. *Check external
 > knowledge* is `heron_research`, which says what Heron's own knowledge missed; the host has the network.
 > The fragment author is
 > [`.claude/agents/heron-fragment-author.md`](../.claude/agents/heron-fragment-author.md).
@@ -416,14 +416,14 @@ This creates a controlled self-expanding organization.
 > | Role | As built | Where |
 > |---|---|---|
 > | Executive Orchestrator | The host | [D-01](DECISIONS.md) |
-> | *(added)* Workforce Planning | Says no first: does a capability or an existing agent already cover this, and is it a fragment rather than an agent | [`heron_workforce.py`](../brain/heron_workforce.py) |
-> | Agent HR | Writes the job description, and only after asking Workforce Planning itself whether the proposal is cleared | [`heron_hr.py`](../brain/heron_hr.py) |
+> | *(added)* Workforce Planning | Says no first: does a capability or an existing agent already cover this, and is it a fragment rather than an agent | `heron_workforce.py` |
+> | Agent HR | Writes the job description, and only after asking Workforce Planning itself whether the proposal is cleared | `heron_hr.py` |
 > | Agent Architect | Turns the job into a contract, adds nothing the job did not ask for, and designs only for an id already in the register | [`heron_architect.py`](../brain/heron_architect.py) |
-> | Agent Builder | Derives the implementation from the contract, writes no test, runs nothing | [`heron_builder.py`](../brain/heron_builder.py) |
-> | Training Agent | Assembles the Constitution's rules for the agent's risk level, never copies them | [`heron_trainer.py`](../brain/heron_trainer.py), [`heron_instructions.py`](../brain/heron_instructions.py) |
-> | QA Agent | Agent Validation - never the agent that built it | [`heron_validation.py`](../brain/heron_validation.py) |
+> | Agent Builder | Derives the implementation from the contract, writes no test, runs nothing | `heron_builder.py` |
+> | Training Agent | Assembles the Constitution's rules for the agent's risk level, never copies them | `heron_trainer.py`, [`heron_instructions.py`](../brain/heron_instructions.py) |
+> | QA Agent | Agent Validation - never the agent that built it | `heron_validation.py` |
 > | Registry Agent | Stores nothing. The register row a person adds is the hiring decision | [`heron_agents.py`](../brain/heron_agents.py) |
-> | Deployment Agent | Returns a record of an allowed move; a person changes the status | [`heron_deployment.py`](../brain/heron_deployment.py) |
+> | Deployment Agent | Returns a record of an allowed move; a person changes the status | `heron_deployment.py` |
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): the Deployment Agent activates an agent only once a person has approved it - [Golden Rule 13](14-golden-rules.md) (new agents reach PROPOSED on their own and go no further without a human), [Article 20](../HERON_CONSTITUTION.md) (a human grants production), [Golden Rule 7](14-golden-rules.md) (the tester is not the deployer).
 
@@ -449,10 +449,10 @@ PROPOSED -> DESIGNED -> IMPLEMENTED -> TRAINING -> TESTING
 
 > **As built (2026-10-18):** the ladder that is enforced is the trust model's ([24](24-trust-model.md)):
 > `DISCOVERED` → `DRAFT` → `TESTING` → `VALIDATED` → `SHADOW` → `PROVEN` → `PRODUCTION`, each with a gate
-> to enter, in [`heron_deployment.py`](../brain/heron_deployment.py). It refuses a skipped stage, a
+> to enter, in `heron_deployment.py`. It refuses a skipped stage, a
 > machine signing, and a move with no evidence. The Agent Creator may assign `PROPOSED` and nothing else
-> ([`heron_creator.py`](../brain/heron_creator.py)). Shadow Mode is
-> [`heron_shadow.py`](../brain/heron_shadow.py) (`HERON-OPS-SHD-012`): its product is a log of
+> (`heron_creator.py`). Shadow Mode is
+> `heron_shadow.py` (`HERON-OPS-SHD-012`): its product is a log of
 > disagreements, and leaving shadow needs one explained disagreement and a person's signature, never a
 > count of agreements ([D-39](DECISIONS.md)). No agent has been through the ladder: every file that
 > claims an agent is `DRAFT`. One status vocabulary for agents, fragments and knowledge is
@@ -460,7 +460,7 @@ PROPOSED -> DESIGNED -> IMPLEMENTED -> TRAINING -> TESTING
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): `APPROVED` now names its approver, a person - [Golden Rule 13](14-golden-rules.md), [Golden Rule 7](14-golden-rules.md) (no agent approves itself), [Article 20](../HERON_CONSTITUTION.md), and for leaving shadow [D-39](DECISIONS.md) (a person's signature). **Left as written:** the stage names. This ladder and the trust model's differ, and `heron_creator.py` assigns `PROPOSED`, which the enforced ladder lacks; code does not pick between them, and the choice is open ([D-14](DECISIONS.md) is Proposed) and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-34](open-questions/from-master-specification-part-2.md).
 >
-> **2026-11-20:** *every file that claims an agent is `DRAFT`* no longer holds whole: [`brain/heron_rollback.py`](../brain/heron_rollback.py) (`HERON-REVIT-RBK-036`) is `DEPRECATED`, retired on 2026-11-16 under [D-157](decisions/D-157.md) on the owner's word, by its header and register row rather than through this ladder ([row 5b-1747](fragment-issues/row-5b-1747.md)); §5's note names the command that shows every other such file is `DRAFT`.
+> **2026-11-20:** *every file that claims an agent is `DRAFT`* no longer holds whole: `brain/heron_rollback.py` (`HERON-REVIT-RBK-036`) is `DEPRECATED`, retired on 2026-11-16 under [D-157](decisions/D-157.md) on the owner's word, by its header and register row rather than through this ladder ([row 5b-1747](fragment-issues/row-5b-1747.md)); §5's note names the command that shows every other such file is `DRAFT`.
 
 ## 11. Agent Trust Score
 
@@ -486,7 +486,7 @@ Trust Score: Unproven ->  newly created agent
 > ([D-30](DECISIONS.md)), and a percentage would invite a threshold ([D-39](DECISIONS.md)). Until a score
 > exists the lifecycle is the trust: the Capability Registry prefers a `PROVEN` provider to a `DRAFT` one
 > ([`heron_capability.py`](../brain/heron_capability.py), `TRUST`). The Evaluator,
-> [`heron_evaluator.py`](../brain/heron_evaluator.py) (`HERON-AHR-EVL-007`, DRAFT), scores an agent only
+> `heron_evaluator.py` (`HERON-AHR-EVL-007`, DRAFT), scores an agent only
 > after activation, against its own contract, and does not count a warranted refusal as a failure.
 > `python brain/heron_agents.py` reports health and performance as UNMEASURED.
 > [`heron_trust.py`](../brain/heron_trust.py) is a different thing: content trust under Golden Rule 19.
@@ -504,13 +504,13 @@ This feeds the Agent Optimizer.
 >
 > | Measure | As built | Where |
 > |---|---|---|
-> | Success · failure · user corrections | Read from recorded runs, failures first; a success somebody had to correct is a failure signal | [`heron_observe.py`](../brain/heron_observe.py) |
+> | Success · failure · user corrections | Read from recorded runs, failures first; a success somebody had to correct is a failure signal | `heron_observe.py` |
 > | Execution time | Latency, Heron's own and measured | [`heron_observability.py`](../brain/heron_observability.py), [`tools/measure-brain.py`](../tools/measure-brain.py) |
 > | Token usage | The host's. Heron makes no model call and cannot see tokens | [D-58](DECISIONS.md) |
 > | Rollbacks · error types | The add-in's audit trail and run records; a failure's kind is read from a table, never asked of a model | [`HeronRuns.cs`](../platform/Heron.Core/HeronRuns.cs), [`heron_failure.py`](../mcp/server/heron_failure.py), [D-21](DECISIONS.md) |
 > | Compatibility failures | Per Revit release, never blended | [`heron_performance.py`](../brain/heron_performance.py), [`heron_matrix.py`](../brain/heron_matrix.py) |
 >
-> The Agent Optimizer is [`heron_optimizer.py`](../brain/heron_optimizer.py) (risk SUGGEST): it proposes
+> The Agent Optimizer is `heron_optimizer.py` (risk SUGGEST): it proposes
 > and changes nothing, and it refuses to offer a looser standard - a longer timeout, a newly declared
 > failure - as an improvement.
 >
@@ -524,7 +524,7 @@ Active -> Under Review -> Replacement Found -> Migration -> Deprecated -> Archiv
 
 The old agent remains recoverable. **Never permanently delete important historical knowledge automatically.**
 
-> **As built (2026-10-18):** [`heron_retirement.py`](../brain/heron_retirement.py) (`HERON-AHR-RET-010`,
+> **As built (2026-10-18):** `heron_retirement.py` (`HERON-AHR-RET-010`,
 > DRAFT) archives and holds no delete call, which its test checks against the source. It refuses a
 > retirement whose record could not bring the agent back, and one while another file still names the
 > agent unless a successor is named. Nothing has been retired through it. Register rows the owner folded
@@ -614,10 +614,10 @@ This creates an AI model hierarchy.
 > **As built (2026-10-18):** Heron makes no model call ([D-58](DECISIONS.md)), so the host chooses every
 > model. Task to model class, and routing round a failed provider, were handed to the host
 > ([D-65](DECISIONS.md)), closing the conflict [D-11](DECISIONS.md) recorded.
-> [`heron_router.py`](../brain/heron_router.py) (`HERON-KRN-MDL-010`, DRAFT) declares an intent -
+> `heron_router.py` (`HERON-KRN-MDL-010`, DRAFT) declares an intent -
 > CLASSIFY, EXTRACT, SCORE, SUMMARISE, REASON - and chooses who resolves it, never a model; a
 > confidential project narrows it to an adapter on the machine. Nothing the MCP server runs reaches it,
-> nor the one adapter built, [`heron_provider.py`](../brain/heron_provider.py), a local Ollama that has
+> nor the one adapter built, `heron_provider.py`, a local Ollama that has
 > not met a provider ([37](37-the-provider-adapter.md)).
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): the model router is the host's, not Heron's - [D-58](DECISIONS.md) (Heron makes no model call), [D-65](DECISIONS.md) (task to model class is the host's, retired from Heron's specification). The table is left as written: it is now a statement of what the host weighs.
@@ -641,7 +641,7 @@ The system should never silently produce an inferior result without awareness.
 
 > **As built (2026-10-18):** routing to a fallback is the host's ([D-65](DECISIONS.md)). Heron keeps the
 > last clause: a result produced after a provider failed is marked degraded and never counts as evidence
-> toward promotion - [`heron_availability.py`](../brain/heron_availability.py) (`HERON-KRN-MAV-017`,
+> toward promotion - `heron_availability.py` (`HERON-KRN-MAV-017`,
 > DRAFT) - and the Evaluator does not score a degraded run. In Heron's own search the same rule shows:
 > with no trained encoder, nearness falls back to spelling-only n-grams and the answer says so on its own
 > line ([D-49](DECISIONS.md)).
@@ -859,8 +859,8 @@ The main mechanism for keeping the knowledge base clean.
 
 > **As built (2026-10-18):** [`heron_evolve.py`](../brain/heron_evolve.py) (`HERON-FRG-EVO-005`, risk
 > SUGGEST, DRAFT) decides none of the eight. It says which are open for a fragment, who owns each - split
-> ([`heron_split.py`](../brain/heron_split.py)), merge ([`heron_merge.py`](../brain/heron_merge.py)),
-> branch ([`heron_branch.py`](../brain/heron_branch.py)) - and in what order Golden Rule 4 prefers them;
+> (`heron_split.py`), merge ([`heron_merge.py`](../brain/heron_merge.py)),
+> branch (`heron_branch.py`) - and in what order Golden Rule 4 prefers them;
 > every verdict is a proposal, and no MCP tool reaches it. In practice the library is kept clean by the
 > fragment author's rule - one job, one fragment, widened rather than duplicated
 > ([`heron-fragment-author`](../.claude/agents/heron-fragment-author.md)) - and by a person.
@@ -902,7 +902,7 @@ MODEL QA SKILL
 
 > **As built (2026-10-18):** no skill names another skill yet; each `needs` capabilities only, so
 > composition is one level deep ([20 §8](20-knowledge-trust-and-conflict.md)).
-> [`heron_composition.py`](../brain/heron_composition.py) (`HERON-SKL-CMP-005`, DRAFT) is written for
+> `heron_composition.py` (`HERON-SKL-CMP-005`, DRAFT) is written for
 > when one does: it names a cycle, and refuses a declared risk lower than what the skill composes. There
 > is no *Model QA* skill. Model checks are fragments - `CHECK_MODEL_STANDARDS` among them - and the
 > host's background subagent `heron-model-auditor`, run once and not proven
@@ -923,9 +923,9 @@ USER: Ajmal
 This should not automatically become company knowledge.
 
 > **As built (2026-10-18):** the `user` scope is one store on the PC, shared with nobody
-> ([10](10-memory-and-knowledge.md)). [`heron_memory.py`](../brain/heron_memory.py) decides what may be
+> ([10](10-memory-and-knowledge.md)). `heron_memory.py` decides what may be
 > remembered and writes nothing - a candidate carrying a credential is refused whole;
-> [`heron_profile.py`](../brain/heron_profile.py) holds declared facts, never inferred ones;
+> `heron_profile.py` holds declared facts, never inferred ones;
 > [`heron_userskills.py`](../brain/heron_userskills.py) plans raising a personal skill one step at a
 > time - user, company, global - and moves nothing. All three are DRAFT and no MCP tool reaches them, so
 > nothing personal becomes company knowledge.
@@ -971,14 +971,14 @@ Community -> Import -> Security Scan -> Compatibility Check
 > ([D-41](DECISIONS.md), [10](10-memory-and-knowledge.md)). The rules for what comes in are decided: a
 > shared fragment may carry code, and one without an approval record is refused ([D-35](DECISIONS.md)); a
 > re-authored fragment starts unproven whatever it was elsewhere ([D-44](DECISIONS.md)).
-> [`heron_contribution.py`](../brain/heron_contribution.py) and
-> [`heron_pullrequest.py`](../brain/heron_pullrequest.py) are DRAFT, and no MCP tool reaches them.
+> `heron_contribution.py` and
+> `heron_pullrequest.py` are DRAFT, and no MCP tool reaches them.
 
 ## 34. External Folder Intelligence
 
 The user provides `C:\MyOldTools`. Heron understands it without manual organization, inspecting: code, documentation, configuration, fragments, skills, images, metadata, dependencies, project files, manifests.
 
-> **As built (2026-10-18):** the import pipeline is [`heron_pipeline.py`](../brain/heron_pipeline.py)
+> **As built (2026-10-18):** the import pipeline is `heron_pipeline.py`
 > (`HERON-IMP-MAIN-001`, DRAFT), run from its own command line; no MCP tool serves it. Run on 2026-10-18,
 > it walked the folder and named the file types, then stopped at *identify code*: that step is T2, so the
 > evidence goes to the host with a question. It never changes the source folder. Existing tool libraries
@@ -1012,11 +1012,11 @@ The Naming Agent understands: What is this? What does it do? Which domain? Which
 
 **Filename alone should never be the primary knowledge identity.**
 
-> **As built (2026-10-18):** [`heron_naming.py`](../brain/heron_naming.py) (`HERON-NAM-GEN-001`,
+> **As built (2026-10-18):** `heron_naming.py` (`HERON-NAM-GEN-001`,
 > `HERON-NAM-VAL-002`, DRAFT) generates and checks names, reading every rule from the file that owns it.
 > A generated name is six parts, lower case, hyphenated, with the version last ([D-79](DECISIONS.md)).
 > Identity is never the filename: a fragment's is its `id:`, and a project's store is named by the
-> model's own id. Renaming waits until identity exists ([`heron_rename.py`](../brain/heron_rename.py)).
+> model's own id. Renaming waits until identity exists (`heron_rename.py`).
 
 ## 37. Folder Architecture Intelligence
 
@@ -1030,9 +1030,9 @@ Depending on permissions, Heron may automatically correct misplaced files.
 
 > **As built (2026-10-18):** the Folder Validator is
 > [`tools/check-structure.py`](../tools/check-structure.py) (`HERON-WSP-VAL-003`), which fails the build
-> when a file sits where its layer may not. Repair is [`heron_repair.py`](../brain/heron_repair.py)
+> when a file sits where its layer may not. Repair is `heron_repair.py`
 > (`HERON-WSP-REP-004`, DRAFT): a dry run by default, with no setting that flips it, and never a move
-> across the product, data and derived line. [`heron_workspace.py`](../brain/heron_workspace.py) sees the
+> across the product, data and derived line. `heron_workspace.py` sees the
 > department's plans together. Nothing moves a file automatically.
 
 ## 38. GitHub Intelligence
@@ -1045,21 +1045,21 @@ Requirement -> Branch -> Implementation -> Testing -> Commit -> Review
 Heron should never blindly push experimental code into production.
 
 > **As built (2026-10-18):** Heron's own GitHub agents post nothing: every contract in the department
-> declares `allowed-tools: []`, and [`heron_github.py`](../brain/heron_github.py) reads them and says so.
+> declares `allowed-tools: []`, and `heron_github.py` reads them and says so.
 > The host does the git work ([D-01](DECISIONS.md)). A pull request is decided by CI
 > ([`gates.yml`](../.github/workflows/gates.yml)): the gates, the C# compiled against every release, and
 > every suite, NOT RUN kept apart from FAILED. [`release.yml`](../.github/workflows/release.yml) builds a
 > draft release with checksums, and nothing in it is signed yet. Opening a pull request needs a
 > confirmation naming the head it opens, every time
-> ([`heron_pullrequest.py`](../brain/heron_pullrequest.py)).
+> (`heron_pullrequest.py`).
 
 ## 39. Repository Intelligence
 
 The GitHub Agent understands repository structure, branches, tags, releases, issues, pull requests, commits, project files, dependencies and version history — and detects changes that may affect fragments and skills.
 
-> **As built (2026-10-18):** [`heron_repository.py`](../brain/heron_repository.py) (`HERON-GIT-REP-002`)
+> **As built (2026-10-18):** `heron_repository.py` (`HERON-GIT-REP-002`)
 > answers which remotes are declared; structure is `tools/check-structure.py`'s.
-> [`heron_upstream.py`](../brain/heron_upstream.py) (`HERON-GIT-CHG-009`) takes the paths a change
+> `heron_upstream.py` (`HERON-GIT-CHG-009`) takes the paths a change
 > touched and names the fragments it reached, and the skills reached through their capabilities. Both are
 > DRAFT, run from their own command lines; the host has the network.
 
@@ -1167,7 +1167,7 @@ Determines target framework, API availability, package compatibility, compiler r
 
 Determines correct API, namespace, method, version changes, deprecated APIs, alternative API, transaction requirements. **It should not independently rewrite architecture.**
 
-> **As built (2026-10-18):** [`heron_revit_api.py`](../brain/heron_revit_api.py) (`HERON-REVIT-API-020`,
+> **As built (2026-10-18):** `heron_revit_api.py` (`HERON-REVIT-API-020`,
 > DRAFT) knows no Revit API of its own. It frames the question for the host - which releases, what each
 > stopped shipping, what transaction the operation needs - and refuses an answer that names a member a
 > requested release removed. The record of API changes is
@@ -1203,8 +1203,8 @@ Update Check · Indexing · Re-indexing · Knowledge Cleanup · Duplicate Detect
 These run independently from interactive BIM tasks.
 
 > **As built (2026-10-18):** nothing in Heron runs in the background on a schedule. The queue and the
-> scheduler exist ([`heron_queue.py`](../brain/heron_queue.py),
-> [`heron_scheduler.py`](../brain/heron_scheduler.py), DRAFT) and nothing feeds them. The server's own
+> scheduler exist (`heron_queue.py`,
+> `heron_scheduler.py`, DRAFT) and nothing feeds them. The server's own
 > background work is warming the meaning encoder, so that no request waits for it ([D-49](DECISIONS.md)).
 > The one background worker a modeller can start is the host's `heron-model-auditor` subagent, which
 > audits the open model through read-only tools; it has run once and is not proven
@@ -1226,9 +1226,9 @@ P6 - Cleanup
 If the user starts a heavy Revit operation, background indexing should reduce or pause its workload.
 
 > **As built (2026-10-18):** the queue holds exactly this ladder
-> ([`heron_queue.py`](../brain/heron_queue.py)). The scheduler lets nothing from P2 to P6 leave while a
+> (`heron_queue.py`). The scheduler lets nothing from P2 to P6 leave while a
 > user task may be running, and when nothing can say, it assumes one is
-> ([`heron_scheduler.py`](../brain/heron_scheduler.py)). Neither runs, so the rule has nothing to hold
+> (`heron_scheduler.py`). Neither runs, so the rule has nothing to hold
 > back yet. *Revit is busy* is answered in the add-in: one ExternalEvent, one queue, and the dispatcher
 > tells a request Revit never picked up from one still running ([D-09](DECISIONS.md),
 > [03 §4](03-heron-revit.md)).
@@ -1243,7 +1243,7 @@ Internal events: `FragmentCreated` · `FragmentUpdated` · `FragmentApproved` ·
 
 Events allow systems to react without tight coupling.
 
-> **As built (2026-10-18):** the bus is [`heron_events.py`](../brain/heron_events.py)
+> **As built (2026-10-18):** the bus is `heron_events.py`
 > (`HERON-KRN-EVT-004`, DRAFT). A handler declares its risk, and one above ANALYZE is refused when it
 > subscribes: events notify, they never modify. There is no catalogue of event names, and nothing in
 > Heron publishes or subscribes - `grep -rn 'heron_events' brain mcp tools --include=*.py` finds the
@@ -1283,7 +1283,7 @@ Each reports: `HEALTHY` · `WARNING` · `DEGRADED` · `FAILED`
 > | Vector index corrupted | The store is derived: `python brain/heron_scope.py --rebuild` re-indexes every scope from the cards, and a lookup reports a store that has drifted | [`heron_scope.py`](../brain/heron_scope.py) |
 > | Dependency missing | Found and named, never installed unasked | `python tools/heron-ready.py`, [`heron_dependencies.py`](../brain/heron_dependencies.py) (`HERON-INS-DEP-005`) |
 >
-> Self-healing as such is [`heron_healing.py`](../brain/heron_healing.py) (`HERON-OPS-HEA-006`, DRAFT):
+> Self-healing as such is `heron_healing.py` (`HERON-OPS-HEA-006`, DRAFT):
 > it rebuilds derived state when a named generator exists and proposes everything else. It runs only from
 > its own command line.
 
@@ -1329,7 +1329,7 @@ Never require approval for:
 > | Changing, administering or publishing at all | The owner, by turning Changes, Admin or Publish on - in Heron's Settings window since [D-150](decisions/D-150.md) | [D-19](DECISIONS.md), [D-106](DECISIONS.md) |
 > | A fragment becoming PROVEN, or proved on another release | A person signs the proof; no tool writes the status | [D-30](DECISIONS.md), [D-131](DECISIONS.md) |
 > | Changing a PROVEN fragment's code | The owner says yes first, because the change makes its proof stale | [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md) |
-> | An agent past PROPOSED | A person, at the register row and at every stage after it | [`heron_deployment.py`](../brain/heron_deployment.py), [Golden Rule 13](14-golden-rules.md) |
+> | An agent past PROPOSED | A person, at the register row and at every stage after it | `heron_deployment.py`, [Golden Rule 13](14-golden-rules.md) |
 >
 > Searching never asks.
 >
@@ -1440,7 +1440,7 @@ A Knowledge Cleanup Agent identifies them. It should **not blindly delete**.
 Unused -> Candidate for Archive -> Review -> Archive
 ```
 
-> **As built (2026-10-18):** [`heron_cleanup.py`](../brain/heron_cleanup.py) (`HERON-WSP-CLN-009`, DRAFT)
+> **As built (2026-10-18):** `heron_cleanup.py` (`HERON-WSP-CLN-009`, DRAFT)
 > archives and never deletes, and calls nothing unused without a usage record over a stated window: an
 > artefact nobody watched is *unobserved*, and it is left alone. The library is files in git, so a
 > retired card is never lost ([20 §10](20-knowledge-trust-and-conflict.md)). Temporary data has a scope
@@ -1476,8 +1476,8 @@ Learning is separated into: `Observed` → `Candidate` → `Validated` → `Appr
 
 This prevents accidental learning from becoming production truth.
 
-> **As built (2026-10-18):** nothing learns by itself. [`heron_observe.py`](../brain/heron_observe.py)
-> reads completed runs, failures first; [`heron_analysis.py`](../brain/heron_analysis.py) decides whether
+> **As built (2026-10-18):** nothing learns by itself. `heron_observe.py`
+> reads completed runs, failures first; `heron_analysis.py` decides whether
 > an observation is a pattern; [`heron_promotion.py`](../brain/heron_promotion.py) walks a candidate up
 > the fragment lifecycle and returns a verdict, never a promotion - one success is not proof, and a
 > thousand is not either ([D-30](DECISIONS.md)). All are DRAFT, and no MCP tool reaches them. The
@@ -1667,7 +1667,7 @@ The system should reconstruct indexes from authoritative knowledge storage.
 > **As built (2026-10-18):** the steps exist as commands, not as a sequence that runs itself:
 > `python tools/heron-backup.py restore <name> --confirm` brings the data back,
 > `python brain/heron_scope.py --rebuild` rebuilds the index from the cards, and `revit_health` and
-> `heron_diagnose` check the result. Safe Mode ([`heron_safemode.py`](../brain/heron_safemode.py), DRAFT)
+> `heron_diagnose` check the result. Safe Mode (`heron_safemode.py`, DRAFT)
 > sweeps the flags back to a moment a person names; nothing chooses that moment for them.
 
 ## 77. Source of Truth Principle
@@ -1700,11 +1700,11 @@ Configuration changes should be auditable.
 > Publish, Ask to Keep - are set in Heron's Settings window ([D-150](decisions/D-150.md); on the ribbon until 2026-11-07) or in that file and read inside the add-in, never from a
 > request. Enabled agents and skills, the AI provider and model routing are not configuration here: the
 > library is what is on disk, and the host chooses the model.
-> [`heron_configuration.py`](../brain/heron_configuration.py) splits machine settings from portable ones,
+> `heron_configuration.py` splits machine settings from portable ones,
 > of which only the portable half may be shared, and [`heron_flags.py`](../brain/heron_flags.py) records
 > who moved a flag; both are DRAFT.
 >
-> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): model routing is struck from Heron's configuration - [D-65](DECISIONS.md) (task to model class is the host's, retired from Heron's specification). *AI provider* stands: [D-80](DECISIONS.md) names [`heron_provider.py`](../brain/heron_provider.py) as the layer that would serve Heron without a host.
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): model routing is struck from Heron's configuration - [D-65](DECISIONS.md) (task to model class is the host's, retired from Heron's specification). *AI provider* stands: [D-80](DECISIONS.md) names `heron_provider.py` as the layer that would serve Heron without a host.
 >
 > **2026-11-20:** *or in that file* no longer holds for Changes, Admin and Publish: since [D-166](decisions/D-166.md) (Accepted 2026-11-16; built, not yet run in Revit) each is held in Revit's memory, turned on only by a click in the Settings window and off every time Revit starts, and a line naming one in `heron.config` is ignored ([`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs)); Ask to Keep stays in `heron.config`.
 
@@ -1721,7 +1721,7 @@ Old data should not simply be discarded.
 > ([D-94](DECISIONS.md)). Data is carried, not dropped: when Heron's Python data moved to
 > `%USERPROFILE%\.heron`, the old places were copied forward and nothing in them was deleted
 > ([D-135](DECISIONS.md), `python brain/heron_paths.py --carry`).
-> [`heron_migration.py`](../brain/heron_migration.py) refuses a workspace that does not record its schema
+> `heron_migration.py` refuses a workspace that does not record its schema
 > version, and [`heron_update.py`](../brain/heron_update.py) refuses a migration with no backup; both are
 > DRAFT.
 
@@ -1840,7 +1840,7 @@ The modeller asks
 > |---|---|---|
 > | 1-3 Intent · BIM Persona · Project Context | The host; no persona. The project is the bound model | [D-01](DECISIONS.md), [D-27](DECISIONS.md), [25](25-multi-session-and-binding.md) |
 > | 4-8 Capability discovery · RAG · fragment, skill and standard search | `heron_lookup`, `heron_method`, `heron_standards`; a project's standards are asked once and kept | [D-111](DECISIONS.md) |
-> | 9-11 Revit version · API · .NET | The bound session's release; the API and .NET questions only when new code is needed | [`heron_revit_api.py`](../brain/heron_revit_api.py), [`heron_dotnet.py`](../brain/heron_dotnet.py) |
+> | 9-11 Revit version · API · .NET | The bound session's release; the API and .NET questions only when new code is needed | `heron_revit_api.py`, [`heron_dotnet.py`](../brain/heron_dotnet.py) |
 > | 12-14 Architecture · code generation · code review | Only for a step with no fragment: the host writes a DRAFT fragment | [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md) |
 > | 15-16, 19-22 Build · unit test · regression · QA · package · deploy | None per request. CI compiles every fragment against every release it claims; the add-in is installed once and replaced by the next install | [`gates.yml`](../.github/workflows/gates.yml), [D-94](DECISIONS.md) |
 > | 17-18 Revit integration test · standards validation | A proof on a named real model, signed by a person - not inside the request | [D-30](DECISIONS.md) |
@@ -1908,12 +1908,12 @@ OBSERVE -> UNDERSTAND -> PLAN -> RETRIEVE -> EXECUTE
 > | Revit Add-in | The gate and the executor, one ExternalEvent | [D-09](DECISIONS.md), [03](03-heron-revit.md) |
 > | GitHub | The repository and CI; Heron's GitHub agents post nothing | [`gates.yml`](../.github/workflows/gates.yml) |
 > | QA agents | CI for code; a signed proof on a real model for Revit | [D-30](DECISIONS.md) |
-> | Agent Creator | May assign PROPOSED and nothing else | [`heron_creator.py`](../brain/heron_creator.py) |
-> | Training Agent | Assembles the rules for an agent's risk level | [`heron_trainer.py`](../brain/heron_trainer.py) |
+> | Agent Creator | May assign PROPOSED and nothing else | `heron_creator.py` |
+> | Training Agent | Assembles the rules for an agent's risk level | `heron_trainer.py` |
 > | Evolution Engine | Proposes; decides nothing | [`heron_evolve.py`](../brain/heron_evolve.py) |
 > | Background Worker System | A queue and a scheduler nothing feeds; one host subagent that runs in the background | [Group AG](needs-checking/group-ag.md) |
 >
-> **2026-11-20:** *every file that claims one is DRAFT* no longer holds whole: [`brain/heron_rollback.py`](../brain/heron_rollback.py) (`HERON-REVIT-RBK-036`) is `DEPRECATED`, retired on 2026-11-16 under [D-157](decisions/D-157.md) ([row 5b-1747](fragment-issues/row-5b-1747.md)), and `python tools/agent-count.py` still counts its row built, because the count has no retired state ([row 5b-1840](fragment-issues/row-5b-1840.md)).
+> **2026-11-20:** *every file that claims one is DRAFT* no longer holds whole: `brain/heron_rollback.py` (`HERON-REVIT-RBK-036`) is `DEPRECATED`, retired on 2026-11-16 under [D-157](decisions/D-157.md) ([row 5b-1747](fragment-issues/row-5b-1747.md)), and `python tools/agent-count.py` still counts its row built, because the count has no retired state ([row 5b-1840](fragment-issues/row-5b-1840.md)).
 
 ## 83. Most Important Architectural Rule
 

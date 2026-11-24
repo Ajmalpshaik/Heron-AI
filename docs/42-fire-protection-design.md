@@ -171,7 +171,7 @@ modeller ── Claude Code ── heron_fire (MCP, READ, no bridge operation)
 
 ## 2. Why a new agent, and the two verdicts that were set aside
 
-[`HERON-AHR-WFP-015`](../brain/heron_workforce.py), the agent that says *no* before anything is hired,
+`HERON-AHR-WFP-015`, the agent that says *no* before anything is hired,
 was asked twice. With the row first written in the HVAC row's own sentence frame - *"Calculates what a
 sprinkler system needs before it is modelled ..."* - it answered **`ALREADY_AN_AGENT`:
 `HERON-MEP-HVD-001`, at 0.47**, against the 0.45 that decides it. Reworded, it answered

@@ -1,0 +1,155 @@
+# The next ten STALE cards, run 2026-11-24 on Revit 2024 (build 24.3.50.51,
+# add-in 0.2.0.0, session 11112). RESULT: PASS on all nine jobs below, both
+# halves, every run rolled back. Drafts are on that PC and NOT signed. Each
+# draft's fingerprint was checked against origin/main of 2026-11-24: all match.
+#
+#     python tools/batch-prove.py tools/jobs/prove-next-ten-stale-snowdon-revit2024-2026-11-24.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/prove-next-ten-stale-snowdon-revit2024-2026-11-24.yaml --session <pid>
+#
+# THE MODELS: Revit's own Snowdon Towers Sample Architectural (never saved),
+# with a new blank project "Project2" open as the empty model for
+# list-linked-models. Snowdon's plan views share names across plan kinds, so
+# a view is named "FloorPlan: L2", never "L2". FloorPlan L2/L3 follow the
+# template "Architectural Plan", which controls their filters - so the filter
+# cards' NEGATIVE is that refusal and their positive is a filter on no view /
+# on the template itself. The doors on L2 and L5 are in groups (Revit refuses
+# the flip); those on FloorPlan: Parking are not. Level id 593179 is L5.
+#
+# The tenth, report-level-elevations, is NOT here: every project and every
+# family has a level, so its negative can never be empty (NEG NOT EMPTY on
+# Project2 and on a family). It wants D-53 tracking with validate --vary.
+
+model: Snowdon Towers Sample Architectural (Revit's own sample, Program Files, never saved; every run
+  rolled back), with Project2 (a new blank project) as the empty model, Revit 2024, session 11112
+defaults:
+  in: Snowdon Towers Sample Architectural
+  setup: []
+jobs:
+- fragment: list-linked-models
+  expect: summary
+  set: {}
+  negative-in: Project2
+  negative-set: {}
+- fragment: report-view-filters
+  expect: filterSettings
+  set:
+    viewName: L2
+  negative-in: Chair-Breuer
+  negative-set:
+    viewName: '*'
+- fragment: report-bounding-box
+  setup:
+  - filter-elements-by-category
+  - set-selection
+  expect: measured
+  set:
+    categories: Furniture
+    inViewOnly: 'FloorPlan: L2'
+    maxRows: 5
+  negative-set:
+    categories: Room Tags
+    inViewOnly: 'FloorPlan: L2'
+    maxRows: 5
+- fragment: flip-elements
+  setup:
+  - filter-elements-by-category
+  - set-selection
+  write: true
+  expect: flipped
+  set:
+    categories: Doors
+    inViewOnly: 'FloorPlan: Parking'
+    flipFacing: true
+    flipHand: false
+    fromToRoomOnly: false
+  negative-set:
+    categories: Doors
+    inViewOnly: 'FloorPlan: Parking'
+    flipFacing: false
+    flipHand: false
+    fromToRoomOnly: false
+- fragment: edit-text-values
+  setup:
+  - filter-elements-by-id
+  keep-chain: true
+  setup-set:
+    elementIds: '593179'
+  negative-setup-set:
+    elementIds: '593179'
+  write: true
+  expect: changed
+  set:
+    field: Name
+    mode: replace
+    text: L5
+    replacement: Heron L5
+    renameViews: 'no'
+  negative-set:
+    field: Name
+    mode: replace
+    text: ZZZ Not In The Name
+    replacement: Heron L5
+    renameViews: 'no'
+- fragment: create-grids
+  write: true
+  expect: created
+  set:
+    gridLines: 4000,-6000,0; 8000,-6000,0
+    gridNames: Heron Prove Grid
+  negative-set:
+    gridLines: 0,0,0; 30000,0,500
+- fragment: create-view-filter
+  write: true
+  expect: created
+  set:
+    view: ''
+    filterName: Heron Prove Walls
+    categoryIds: Walls
+    parameterName: Comments
+    matchValue: Heron
+    colour: ''
+  negative-set:
+    view: 'FloorPlan: L2'
+    filterName: Heron Prove Walls
+    categoryIds: Walls
+    parameterName: Comments
+    matchValue: Heron
+    colour: 255,0,0
+  note: 'Positive - a filter on no view: created. Negative - FloorPlan L2 follows the template Architectural
+    Plan, which controls its filters: refused, nothing made.
+
+    '
+- fragment: apply-view-filter
+  write: true
+  expect: applied
+  set:
+    view: Architectural Plan
+    filter: Walls - Living Wall
+    overrides: projection-line-colour=255,0,0
+    visible: 'true'
+    enabled: ''
+    keepOtherSettings: ''
+    solidFill: ''
+  negative-set:
+    view: 'FloorPlan: L3'
+    filter: Walls - Living Wall
+    overrides: projection-line-colour=255,0,0
+    visible: 'true'
+    enabled: ''
+    keepOtherSettings: ''
+    solidFill: ''
+  note: 'Positive - put on the template itself: applied. Negative - FloorPlan L3, whose filters the template
+    controls: refused, applied false.
+
+    '
+- fragment: set-view-template-control
+  write: true
+  expect: nowFree
+  set:
+    template: Architectural Plan
+    parameterNames: View Scale
+    include: false
+  negative-set:
+    template: 'FloorPlan: L2'
+    parameterNames: View Scale
+    include: false

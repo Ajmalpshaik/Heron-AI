@@ -266,6 +266,7 @@ an edit.
 | [D-195](#d-195--the-loads-panels-finalize-goes-to-revit-as-one-change---the-space-values-and-the-diffusers-flows-as-steps-of-one-request-in-one-undo-entry---with-every-step-gated-as-if-sent-alone) | The Loads panel's Finalize goes to Revit as one change - the Space values and the diffusers' flows as steps of one request, in one undo entry - with every step gated as if sent alone | ⏳ Proposed · 2026-11-21 |
 | [D-196](#d-196--a-writes-read-back-also-names-what-the-job-was-handed-and-revit-counted-no-change-to-asked-did-not-change) | A write's read-back also names what the job was handed and Revit counted no change to: asked, did not change | ✅ Accepted · 2026-11-21 |
 | [D-197](#d-197--ask-to-delete-one-switch-in-settings-on-at-every-revit-start-that-stops-revits-delete-box-and-a-drafts-keep-or-discard-and-the-chat-asks-in-words-first) | Ask to Delete: one switch in Settings, on at every Revit start, that stops Revit's Delete box and a DRAFT's Keep or Discard, and the chat asks in words first | ✅ Accepted · 2026-11-23, built, not yet run in Revit |
+| [D-198](#d-198--agents-that-were-built-but-that-nothing-in-heron-called-are-retired-and-their-code-and-tests-removed) | Agents that were built but that nothing in Heron called are retired, and their code and tests removed | ✅ Accepted · 2026-11-24 |
 
 ## Format
 
@@ -1235,7 +1236,7 @@ What this makes easy. What this makes hard. What it locks in.
 **Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"write a new decision noting D-131's gap is closed"*, after asking for the change (#601) to be merged · **Source:** the last of [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed)'s Consequences
 **Updates:** [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed)'s last Consequence - *"`brain/heron_runs.py` still reads the proof's release alone through `heron_matrix.proof_release`, so a run that contradicts an entry is not yet reported there"* - which stopped being true when #601 merged on 2026-10-17. D-131 itself is unchanged
 **Keeps:** [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) - a proof is a person's evidence and a failure is a machine's, and nothing here picks between them · D-131 §2 - a stale entry is recorded and not counted · D-131 §6 - an entry's release is a field, read by HERON-FRG-MTX-009, never parsed again
-**Affects:** [`heron_runs.py`](../brain/heron_runs.py) (`measure`), [`HERON-FRG-PRF-002.yaml`](../brain/agents/HERON-FRG-PRF-002.yaml) (1.0.0 to 1.1.0), [`tests/test_runs.py`](../tests/test_runs.py) §8
+**Affects:** `heron_runs.py` (`measure`), `HERON-FRG-PRF-002.yaml` (1.0.0 to 1.1.0), `tests/test_runs.py` §8
 
 **Full record:** [`decisions/D-133.md`](decisions/D-133.md)
 
@@ -1308,7 +1309,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Accepted · **Date:** 2026-10-18 · **Accepted:** Ajmal PS, 2026-10-18, in conversation, asked *"When Heron's new secret scanner finds a password or API key in a change, what should happen?"* and choosing *"Block it"* over *"Warn only"*
 **Keeps:** [D-07](#d-07--free-open-source-on-public-github) - the repository stays public, which is the reason for this · [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) - the idea was studied in another project and re-authored here, nothing imported
-**Affects:** [`check-secrets.py`](../tools/check-secrets.py), [`test_check_secrets.py`](../tests/test_check_secrets.py), [`heron_secrets.py`](../brain/heron_secrets.py) (`PATTERNS` gains `private key`, and `FAKE_PRIVATE_KEY`), [`test_secrets.py`](../tests/test_secrets.py), [`test_configuration.py`](../tests/test_configuration.py), [`gates.yml`](../.github/workflows/gates.yml), [`test_tag.py`](../tests/test_tag.py), [`AGENTS.md`](../AGENTS.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md), [`heron-ship`](../.claude/skills/heron-ship/SKILL.md), [`tools/README.md`](../tools/README.md), [`check-gaps.py`](../tools/check-gaps.py), [12 §5a](12-security-and-permissions.md), [17](17-open-source-and-distribution.md)
+**Affects:** [`check-secrets.py`](../tools/check-secrets.py), [`test_check_secrets.py`](../tests/test_check_secrets.py), [`heron_secrets.py`](../brain/heron_secrets.py) (`PATTERNS` gains `private key`, and `FAKE_PRIVATE_KEY`), [`test_secrets.py`](../tests/test_secrets.py), `test_configuration.py`, [`gates.yml`](../.github/workflows/gates.yml), [`test_tag.py`](../tests/test_tag.py), [`AGENTS.md`](../AGENTS.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md), [`heron-ship`](../.claude/skills/heron-ship/SKILL.md), [`tools/README.md`](../tools/README.md), [`check-gaps.py`](../tools/check-gaps.py), [12 §5a](12-security-and-permissions.md), [17](17-open-source-and-distribution.md)
 
 **Full record:** [`decisions/D-143.md`](decisions/D-143.md)
 
@@ -1399,7 +1400,7 @@ What this makes easy. What this makes hard. What it locks in.
 **Status:** Accepted · **Date:** 2026-11-11 · **Asked:** Ajmal PS, 2026-11-11, in his own words: *"if an agent is not needed, retire that agent"* · **Accepted:** Ajmal PS, 2026-11-15, in conversation: *"Yes, accept it"*, when it was read back to him in plain words - and still **nothing is retired under it until he signs that agent's retirement by name** (point 2) · **Source:** [row 5b-1546](fragment-issues/section-5b-rows-1526-1550.md) · **Answers the question of:** [row 5b-83](fragment-issues/section-5b-rows-076-100.md), OPEN since 2026-09-21
 **Numbering:** D-154 was the id `tools/next-id.py` printed free on 2026-11-11, with `origin/main` at `d77439ad` ending at D-152 and D-153 added by `claude/stoic-planck-folhnp` (#855).
 **Keeps:** [Article 1](../HERON_CONSTITUTION.md) - deprecated, never deleted · [Golden Rule 7](14-golden-rules.md) - a machine never signs · [D-01](decisions/D-01.md) and [D-80](decisions/D-80.md) - the host's rows stay the host's · [D-76](decisions/D-76.md), [D-77](decisions/D-77.md) and [D-78](decisions/D-78.md) - a fold is still a fold, and is not a retirement
-**Affects:** [`28-agent-registry.md`](28-agent-registry.md) · [`heron_retirement.py`](../brain/heron_retirement.py) · [`tools/agent-count.py`](../tools/agent-count.py), which would need a fifth state before the first retirement · every agent the table below names
+**Affects:** [`28-agent-registry.md`](28-agent-registry.md) · `heron_retirement.py` · [`tools/agent-count.py`](../tools/agent-count.py), which would need a fifth state before the first retirement · every agent the table below names
 
 **Full record:** [`decisions/D-154.md`](decisions/D-154.md)
 
@@ -1789,3 +1790,14 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** `HeronPermissions.cs`, `RevitFragment.cs`, `RevitFragmentDelete.cs`, `Commands.cs`, `HeronApplication.cs`, `RevitDispatcher.cs`, `BridgeServer.cs`, `heron_bridge_client.py`, `heron_health.py`, `heron_mcp_server.py`, `heron_diagnose.py`, `tests/test_ask_to_delete.py` · [Group PR](needs-checking/group-pr.md)
 
 **Full record:** [`decisions/D-197.md`](decisions/D-197.md)
+
+## D-198 — Agents that were built but that nothing in Heron called are retired, and their code and tests removed
+
+**Status:** Accepted · **Date:** 2026-11-24 · **Accepted:** Ajmal PS, 2026-11-24, in conversation.
+**Numbering:** D-198 is the id `tools/next-id.py` printed free on 2026-11-24, with `origin/main` ending at D-197.
+**Affects:** [28](28-agent-registry.md) (78 rows RETIRED) · `tools/agent-count.py` · `brain/` · `brain/agents/` · `tests/`
+
+78 built agents that nothing in Heron called - only their own tests - are retired; their code, tests and contracts
+are removed and their registry rows kept, marked RETIRED.
+
+**Full record:** [`decisions/D-198.md`](decisions/D-198.md)

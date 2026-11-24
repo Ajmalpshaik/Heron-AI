@@ -1,0 +1,155 @@
+# NEEDS-CHECKING Group QH - WN-7 batch 1 (D-64, row 5b-1909, issue #1005):
+# nine reading cards count what they pass over. Written 2026-11-24 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/qh-wn7-batch1-revit2020-2026-11-24.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/qh-wn7-batch1-revit2020-2026-11-24.yaml --session <pid>
+#
+# WHAT CHANGED, and so what every job looks for: each card now carries a count
+# of what its loop passed over because Revit would not give a read, and a
+# sentence naming it ONLY when the count is above 0. Nobody knows how to make
+# Revit refuse these reads on purpose, so on an ordinary model every count is
+# expected to be 0 and every answer to read exactly as the version before.
+# WRITE EACH COUNT DOWN EVEN WHEN IT IS 0 - that number is what this group is
+# for. The runner cannot read a sentence; docs/needs-checking/group-qh.md says
+# what to look at by eye in each answer.
+#
+# THE MODELS, Revit 2020, each the one the card's last proof or arrangement
+# used (the job files named beside each job): "Project1" and "Project2", the
+# scratch projects the 2026-10-18 rounds made (never a working project), and
+# "Family1" - re-made by those rounds' own arrangements when they are not
+# open; "P1102 MEP", the scratch copy of Revit 2020's own
+# Samples\rme_advanced_sample_project.rvt in %TEMP%\heron-work\prove-1102.
+# REPORT_DESIGN_OPTIONS needs a project with a design option (Manage > Design
+# Options, one set, one option, saved): make one in "Project2" before the run.
+#
+# Every job is a read: nothing changes and the undo list gains no entry. The
+# one arrangement, FILTER_ELEMENTS_BY_TYPE's, only selects. REPORT_LEVEL_ELEVATIONS has no job
+# here: version 6 changed its contract only, no line of its C#, and its
+# version 5 check is owed elsewhere. REPORT_WALL_ATTACHMENTS has none either -
+# nothing of it changed; the gate learned its word.
+
+model: "Project1, Project2 and Family1 (scratch, the 2026-10-18 rounds) and P1102 MEP (scratch copy of rme_advanced_sample_project.rvt), Revit 2020"
+
+defaults:
+  in: "Project1"
+  setup: []
+
+jobs:
+  - fragment: report-design-options
+    in: "Project2"
+    expect: optionCount
+    set: {}
+    negative-in: "P1102 MEP"
+    negative-set: {}
+    note: >
+      QH1. Negative - THE FIRST CASE TO RUN, on a project with NO design
+      option (if P1102 MEP has one, use any scratch project with none):
+      optionCount 0, version 1's "this project has NO design options"
+      sentence and nothing more, unresolvedElements 0. Positive, on Project2
+      with the one option made for this run: the option named under its set,
+      marked primary, as version 1's proof read it; unresolvedElements written
+      down (0 expected) and NO "would not say which design option they are
+      in" sentence while it is 0.
+
+  - fragment: filter-elements-by-type
+    expect: elements
+    setup: [select-in-region, set-selection]
+    setup-set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Walls"}
+    negative-setup-set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Walls"}
+    set: {exemplar: "selected", inViewOnly: "FloorPlan: Level 1"}
+    negative-set: {exemplar: "selected", inViewOnly: "Heron Drafting"}
+    note: >
+      QH2, round 8's arrangement (revit2020-scratch-round8-2026-10-18.yaml).
+      Negative: found 0 in the drafting view, unresolvedType 0 - the wall HAS
+      a type - and no "has no type" line. Positive: the same walls as version
+      2's proof, unresolvedType 0. BY HAND after the run: one room selected
+      and handed in as the exemplar - found 0, unresolvedType 1, and the last
+      line of linkedMatches "The element given has no type, so nothing was
+      searched for".
+
+  - fragment: report-masses
+    in: "P1102 MEP"
+    expect: massCount
+    set: {masses: "", siteArea: "4500", withOutlines: true}
+    negative-set: {masses: "NoSuchFamily", siteArea: "4500", withOutlines: true}
+    note: >
+      QH3, round 2's arrangement (p1102-round2-reads-2026-11-02.yaml).
+      Negative: massCount 0, version 1's "No mass matched" finding,
+      skippedMasses written down and the "passed over" sentence there exactly
+      when it is above 0. Positive: the same six masses and lines as version
+      1's proof, skippedMasses written down (0 expected) and no such sentence -
+      it rides only on the empty answer.
+
+  - fragment: select-by-insulation
+    in: "Project2"
+    expect: elements
+    set: {categories: "Ducts", wantInsulated: false, countLiningAsInsulated: false}
+    negative-set: {categories: "Ducts", wantInsulated: true, countLiningAsInsulated: false}
+    note: >
+      QH4, round 1's arrangement (revit2020-scratch-round1-2026-10-18.yaml).
+      Both legs read as version 2's proof; unresolvedCoverings written down
+      (0 expected) and NO "would not say what they wrap" sentence while it is
+      0.
+
+  - fragment: select-by-electrical-circuit
+    expect: elements
+    set: {circuitKind: "none", circuitName: "", includeLinks: false}
+    negative-set: {circuitKind: "power", circuitName: "ZZZNOTHINGHERE", includeLinks: false}
+    note: >
+      QH5, round 13's arrangement (revit2020-scratch-round13-2026-10-18.yaml).
+      Negative: version 3's "0 element(s) across 0 circuit(s)" and NO "would
+      not give their loads" sentence - it rides only on the on-no-circuit
+      answer. Positive: the same element on no circuit as version 3's proof,
+      unresolvedCircuits written down (0 expected) and no such sentence while
+      it is 0.
+
+  - fragment: report-mep-pressure-drop
+    expect: uncalculated
+    set: {systemNameContains: ""}
+    negative-set: {systemNameContains: "ZZZ NO SUCH SYSTEM"}
+    note: >
+      QH6, round 8's arrangement (revit2020-scratch-round8-2026-10-18.yaml).
+      Both legs as version 2's; skippedSections written down (0 expected) and
+      no "could not be read and are in neither the rows" line under any
+      system while it is 0.
+
+  - fragment: report-panel-circuits
+    in: "P1102 MEP"
+    expect: schedule
+    set: {panelName: ""}
+    negative-set: {panelName: "NO-SUCH-PANEL"}
+    note: >
+      QH7. Version 1 was proved on "MEP Night Test", whose own panels and
+      circuits filled it with no arrangement; P1102 MEP is Revit's own MEP
+      sample, which has panels and circuits of its own - no arrangement here
+      either. Negative: version 1's "No circuit is fed from a panel named
+      "NO-SUCH-PANEL"" and unresolvedCircuits 0. Positive: panels and
+      circuits as Revit's panel schedules show them, unresolvedCircuits
+      written down (0 expected) and no "would not say which panel feeds them"
+      sentence while it is 0.
+
+  - fragment: report-area-volume-computations
+    in: "Project2"
+    set: {}
+    negative-in: "Family1"
+    negative-set: {}
+    note: >
+      QH8, round 3's arrangement (revit2020-scratch-round3-2026-10-18.yaml).
+      Family1: version 1's answer and unresolvedAreas 0. Project2: every line
+      as version 1's, unresolvedAreas written down (0 expected) and no "would
+      not say which scheme they belong to" sentence while it is 0.
+
+  - fragment: report-sprinkler-network
+    in: "P1102 MEP"
+    expect: elementCount
+    set:
+      systemName: "Fire Protection Wet 1"
+    negative-set:
+      systemName: "ZZZ No Such System"
+    note: >
+      QH9, after Group PA (pa-pk-ox-p1102-mep-revit2020-2026-11-21.yaml):
+      run PA first. Negative: as PA2 (b), skippedConnectors 0. Positive:
+      networkJson exactly as PA1's run gives it, skippedConnectors written
+      down (0 expected) and no "would not say their domain or type" sentence
+      while it is 0.

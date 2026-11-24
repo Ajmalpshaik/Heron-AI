@@ -1778,6 +1778,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qi.md`](needs-checking/group-qi.md)
 
+## Group QH - nine reading tools count what they pass over, WN-7 batch 1 (D-64) - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qh.md`](needs-checking/group-qh.md)
+
 ## Group QK - CREATE_CURTAIN_SYSTEM version 2: a curtain system on chosen mass faces - sloped, by number, all but some - never over a face already glazed - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qk.md`](needs-checking/group-qk.md)

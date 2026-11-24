@@ -105,9 +105,9 @@ This is **Golden Rule 5**. A polluted brain is unsearchable and untrustworthy, a
 | Embedding, Vector Search | [`heron_embed.py`](../brain/heron_embed.py) |
 | Index Manager | `heron_search.py` |
 | Re-index, Duplicate Detection | No module's header names them; [`tests/test_maintenance.py`](../tests/test_maintenance.py) does. The re-ingest of a changed document and the report of a byte-identical clause are in `heron_ingest.py` (`refresh`, `duplicate_clauses`) |
-| Knowledge Validation | [`heron_knowledge.py`](../brain/heron_knowledge.py) |
+| Knowledge Validation | `heron_knowledge.py` |
 | Citation / Source | [`heron_ground.py`](../brain/heron_ground.py) |
-| Knowledge Evolution | [`heron_evolution.py`](../brain/heron_evolution.py) |
+| Knowledge Evolution | `heron_evolution.py` |
 
 [28](28-agent-registry.md) adds two the table above does not list: Knowledge Conflict,
 [`heron_conflict.py`](../brain/heron_conflict.py), and Research,
