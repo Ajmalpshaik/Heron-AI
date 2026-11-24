@@ -34,3 +34,4 @@ Run on any model - nothing in the model changes; restart Revit first so all thre
 | **QN3** | Press OFF beside Changes again, choose **Turn on**. | The row reads ON (red); no amber line. `revit_health` says *Changes ON, Admin off, Publish off*. |
 | **QN4** | Press OFF beside Admin, choose **Leave off**. | Amber line *"Admin is still OFF - nothing changed. ..."*; `revit_health` still says *Admin off*. |
 | **QN5** | Ask a chat to change something with Changes off. | The refusal says *"Changes at the top, then Admin, then Publish ... reads OFF: press it"*. |
+| **QN6** | *Admin and Publish stay off* - row 5b-2019's finding. Restart Revit; in Settings press OFF beside Changes, then press **Esc** at the question. Then `revit_health`. | Changes, Admin and Publish all read OFF in Settings and in `revit_health`. The code turns Admin or Publish on only from its own row's question; ON here would be a defect - record it as a new row. |
