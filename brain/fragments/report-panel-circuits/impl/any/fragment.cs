@@ -1,5 +1,15 @@
 // NOT STANDALONE. Assumes `doc` and `panelName` are in scope; leaves
-// `schedule`, `panelCount`, `circuitCount`, `unassigned` and `findings` behind.
+// `schedule`, `panelCount`, `circuitCount`, `unassigned`, `unresolvedCircuits`
+// and `findings` behind.
+//
+// VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A CIRCUIT THAT WILL NOT SAY ITS PANEL IS COUNTED, NEVER CALLED "ON
+// NO PANEL". Version 1 read a BaseEquipment that threw as no panel, so the
+// circuit was listed ON NO PANEL - a failed read answered as a no (D-52) - and
+// a Panel Name that threw as "", so a circuit of the panel asked for was left
+// out without a word. `unresolvedCircuits` carries the count every time; the
+// sentence naming it is added only when it is above 0, so every other answer
+// reads as version 1's.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -39,6 +49,9 @@ Func<Element, BuiltInParameter, string> shown = (e, which) =>
 var byPanel = new Dictionary<ElementId, List<ElectricalSystem>>();
 var panelOrder = new List<ElementId>();
 var circuitCount = 0;
+// VERSION 2 (D-64): circuits whose panel, or (when one panel is asked for)
+// whose Panel Name, Revit would not give.
+var unresolvedCircuits = 0;
 
 foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(ElectricalSystem)))
 {
@@ -46,7 +59,7 @@ foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(Electri
     if (circuit == null) continue;
 
     FamilyInstance panel = null;
-    try { panel = circuit.BaseEquipment; } catch { }
+    try { panel = circuit.BaseEquipment; } catch { unresolvedCircuits++; continue; }
 
     if (panel == null)
     {
@@ -55,7 +68,8 @@ foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(Electri
     }
 
     var name = "";
-    try { name = circuit.PanelName ?? ""; } catch { }
+    try { name = circuit.PanelName ?? ""; }
+    catch { if (wanted != "") { unresolvedCircuits++; continue; } }
     if (wanted != "" && !string.Equals(name, wanted, StringComparison.OrdinalIgnoreCase)) continue;
 
     List<ElectricalSystem> list;
@@ -130,3 +144,8 @@ if (wanted != "" && panelCount == 0)
 else
     findings.Add(panelCount + " panel(s), " + circuitCount + " circuit(s) on them"
         + (wanted == "" ? ", " + unassigned.Count + " circuit(s) on no panel." : "."));
+
+// VERSION 2 (D-64): said only when a circuit was passed over.
+if (unresolvedCircuits > 0)
+    findings.Add(unresolvedCircuits + " circuit(s) would not say which panel feeds them, so they are in "
+        + "none of the counts here - neither on a panel nor on no panel.");

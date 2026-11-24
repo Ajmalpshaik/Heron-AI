@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "how much floor area is in the massing - each mass, each mass
 kind: action
 domain: revit.elements
 capability: REPORT_MASSES
-version: 1
+# VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005) - an element of the Mass category that is not a mass family instance
+# this reads (a DirectShape given the Mass category, say) is counted in
+# `skippedMasses`, and the empty answer says how many were passed over. It was
+# PROVEN at version 1; that proof stays below as the record, and the card is
+# DRAFT until its NEEDS-CHECKING check runs and is signed (D-30).
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -90,6 +96,13 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+    - name: skippedMasses
+      # VERSION 2 (D-64). Elements of the Mass category passed over - not a
+      # family instance, or one whose type Revit would not give - counted
+      # whatever `masses` asks for. Always carried; a sentence in `findings`
+      # names it only on the empty answer.
+      role: accounting
+      type: int
 
 proof:
   date: '2026-11-02'

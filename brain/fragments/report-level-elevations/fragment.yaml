@@ -9,7 +9,12 @@ semantic-identity: "whether this model's level heights can be trusted in a calcu
 kind: action
 domain: revit.datums
 capability: REPORT_LEVEL_ELEVATIONS
-version: 5
+# VERSION 6 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005) - CONTRACT ONLY, no line of impl/ changed: `unreadable`, the levels
+# whose Building Story setting would not read, was already counted and named in
+# `storeys`; it is now declared, so a caller sees how many were passed over.
+# Still DRAFT, as version 5 was (D-30).
+version: 6
 source: OFFICIAL
 risk: READ
 
@@ -190,6 +195,12 @@ contract:
       # it. Every level marked is said in words with the levels named - never
       # a bare zero. Text, because it is read by a person, not chained.
       role: result
+      type: IList<string>
+    - name: unreadable
+      # VERSION 6 (D-64). Levels whose Building Story setting Revit would not
+      # give - passed over by the storey count, never counted as unmarked,
+      # and named in `storeys` when there are any. Empty on an ordinary model.
+      role: accounting
       type: IList<string>
 
 proof:

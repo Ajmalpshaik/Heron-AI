@@ -1,6 +1,15 @@
 // NOT STANDALONE. Assumes `doc`, `systemNameContains` and `includeLinks` are in
 // scope; leaves `findings`, `systemsCalculated`, `uncalculated`,
-// `criticalPathTotals`, `linksSearched` and `linkedMatches` behind.
+// `criticalPathTotals`, `linksSearched`, `linkedMatches` and `skippedSections`
+// behind.
+//
+// VERSION 3 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A SECTION THAT WILL NOT READ IS COUNTED. Version 2 passed over a
+// section Revit would not give by its index without a word, so a system's
+// rows and its critical-path total could be short with nothing saying so.
+// `skippedSections` carries the count every time; a line under the system it
+// came from is added only when that system passed one over, so every other
+// answer reads as version 2's.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -37,6 +46,9 @@ var findings = new List<string>();
 var systemsCalculated = 0;
 var uncalculated = new List<string>();
 var criticalPathTotals = new List<string>();
+// VERSION 3 (D-64): host-model sections passed over because Revit would not
+// give them.
+var skippedSections = 0;
 
 // ---- D-59: which links, only when asked for --------------------------------
 
@@ -142,6 +154,7 @@ foreach (var system in systems)
     var criticalLoss = 0.0;
     var criticalSeen = 0;
     var rows = new List<string>();
+    var unreadHere = 0;
 
     // BY INDEX. See the header.
     for (var i = 0; i < sectionCount; i++)
@@ -153,7 +166,7 @@ foreach (var system in systems)
         }
         catch (Exception) { section = null; }
 
-        if (section == null) continue;
+        if (section == null) { unreadHere++; continue; }
 
         var number = 0;
         var flow = 0.0;
@@ -183,6 +196,14 @@ foreach (var system in systems)
     findings.Add(string.Format("    CRITICAL PATH: {0} section(s), total pressure loss {1:0.####} "
         + "(Revit internal units, NOT converted). This is what the fan or pump has to overcome",
         criticalSeen, criticalLoss));
+
+    // VERSION 3 (D-64): said only under a system that passed a section over.
+    if (unreadHere > 0)
+    {
+        skippedSections += unreadHere;
+        findings.Add(string.Format("    {0} of its {1} section(s) could not be read and are in neither the "
+            + "rows below nor the critical-path total above - that total may be short", unreadHere, sectionCount));
+    }
 
     if (criticalSeen == 0)
     {

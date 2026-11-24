@@ -429,7 +429,9 @@ def main():
                 ("FRG-T-036", "outofscope", "outOfScope", "int"),
                 ("FRG-T-037", "heldback", "heldBack", "IList<string>"),
                 ("FRG-T-038", "sectionsnotchecked", "sectionsNotChecked",
-                 "int")):
+                 "int"),
+                # row 5b-1909, WN-7: REPORT_WALL_ATTACHMENTS' `unread`
+                ("FRG-T-043", "unreadwalls", "unread", "IList<ElementId>")):
             make(work, slug, declares(fid, name, "accounting", kind), silent)
             got = verdicts_for(tool, work, slug)[13]
             check(got[0] == tool.ANSWERED and name in got[1],

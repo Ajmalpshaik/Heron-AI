@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,14 @@ semantic-identity: "what circuits are on each panel, with their loads and the pa
 kind: action
 domain: revit.mep
 capability: REPORT_PANEL_CIRCUITS
-version: 1
+# VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005) - a circuit whose panel Revit will not give is counted in
+# `unresolvedCircuits`, where version 1 listed it ON NO PANEL, and one whose
+# Panel Name will not read is counted rather than left out of the panel asked
+# for; a sentence names them only when there are any. It was PROVEN at version
+# 1; that proof stays below as the record, and the card is DRAFT until its
+# NEEDS-CHECKING check runs and is signed (D-30).
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -56,6 +63,13 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+    - name: unresolvedCircuits
+      # VERSION 2 (D-64). Circuits whose panel - or, when one panel is asked
+      # for, whose Panel Name - Revit would not give, so they are in no count
+      # here, neither on a panel nor on no panel. Always carried; a sentence
+      # in `findings` names it only when it is above 0.
+      role: accounting
+      type: int
 
 proof:
   date: '2026-10-21'
