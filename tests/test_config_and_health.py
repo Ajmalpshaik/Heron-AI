@@ -758,6 +758,8 @@ def main():
           and "heron.config" not in line,
           "and the line says them, says only the modeller turns one on in Settings, and "
           "names no file: %s" % line)
+    check("Changes at the top" in line and "reads OFF" in line,
+          "and where each switch is inside Settings - row 5b-2019: %s" % line)
     held = client.switches_state(Said({"ok": True, "changes": False, "admin": False,
                                        "publish": False, "changesLocked": True,
                                        "adminLocked": False, "publishLocked": 1}))

@@ -386,8 +386,8 @@ namespace Heron.Core
                 return name + " is on, but Changes is off, and " + name + " only works " +
                        "while Changes is on as well - so nothing was sent to Revit. To " +
                        "allow it, the modeller turns on Changes in Heron's Settings in Revit " +
-                       "(Heron > AI Bridge > Settings). " + OnlyThere + " It takes effect " +
-                       "straight away.";
+                       "(Heron > AI Bridge > Settings). " + WhereInSettings + " " + OnlyThere +
+                       " It takes effect straight away.";
             }
 
             // ITS OWN SWITCH IS OFF. Say whether Changes is off too, so one
@@ -403,7 +403,8 @@ namespace Heron.Core
             return "That would " + what + ". Heron's " + name + " switch is off, so " +
                    "nothing was sent to Revit. " + name + " is off whenever Revit starts and " +
                    "stays off until the modeller turns it on - it is their decision, not " +
-                   "Heron's. To allow it, " + way + " " + OnlyThere + " It takes effect " +
+                   "Heron's. To allow it, " + way + " " + WhereInSettings + " " + OnlyThere +
+                   " It takes effect " +
                    "straight away, and turning " + name + " off again stops it just as quickly.";
         }
 
@@ -426,6 +427,18 @@ namespace Heron.Core
         /// </summary>
         private const string OnlyThere =
             "Only the modeller can, there: no file, setting or request turns it on.";
+
+        /// <summary>
+        /// WHERE IN THE WINDOW - row 5b-2019. On Revit 2024 the modeller,
+        /// told to turn Changes on, answered "cant see in settings", and the
+        /// chat had to read the add-in's C# to say where it is. The refusal is
+        /// what the chat reads, so the refusal says it. The rows are in the
+        /// order SettingsCommand.Settings() draws them.
+        /// </summary>
+        private const string WhereInSettings =
+            "In that window each switch is one row - Changes at the top, then Admin, then Publish - " +
+            "with a button beside it that reads OFF: press it, and choose Turn on in the question that " +
+            "opens in front of the window.";
 
         /// <summary>
         /// The refusal for a MODIFY operation with Changes off - the words
@@ -462,7 +475,8 @@ namespace Heron.Core
                    // "or set write.enabled = true in" heron.config's path - which the
                    // AI reading this refusal could do without the modeller.
                    "the modeller turns on Changes in Heron's Settings in Revit (Heron > AI " +
-                   "Bridge > Settings). " + OnlyThere + " It takes effect straight away, and " +
+                   "Bridge > Settings). " + WhereInSettings + " " + OnlyThere +
+                   " It takes effect straight away, and " +
                    "it is off again whenever Revit starts. Turning it off stops Heron " +
                    "changing anything again, just as immediately.";
         }
