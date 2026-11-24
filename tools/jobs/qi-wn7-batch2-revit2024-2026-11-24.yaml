@@ -1,0 +1,106 @@
+# NEEDS-CHECKING Group QI - WN-7 batch 2 (D-64, row 5b-1909, issue #1005):
+# the reading cards of batch 2 that last ran on Revit 2024. Written 2026-11-24
+# in a cloud session with no Revit. NOT RUN. SELECT_BY_HOST, last run on Revit
+# 2020, is in qi-wn7-batch2-revit2020-2026-11-24.yaml.
+#
+#     python tools/batch-prove.py tools/jobs/qi-wn7-batch2-revit2024-2026-11-24.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/qi-wn7-batch2-revit2024-2026-11-24.yaml --session <pid>
+#
+# WHAT CHANGED, and so what every job looks for: each card now carries a count
+# of what its loop passed over because Revit would not give a read, and a
+# sentence naming it ONLY when the count is above 0. Nobody knows how to make
+# Revit refuse these reads on purpose, so every count is expected to be 0 and
+# every answer to read exactly as the version before. WRITE EACH COUNT DOWN
+# EVEN WHEN IT IS 0. The runner cannot read a sentence; the group's file says
+# what to look at by eye.
+#
+# THE MODELS, Revit 2024, each the one the card's last proof used:
+# "Snowdon-scratch_ajmal.al" (the saved scratch copy of Snowdon Towers Sample
+# HVAC), "Project1 work_ajmal.al" (FIND_DEGENERATE_LINES' proof), "Heron Gap
+# Fill Batch 7 Test" (a scratch project from the Structural template, made by
+# gap-fill-batch-7-2026-10-12.yaml) and "Project1", a new project for the
+# second model of REPORT_BROWSER_ORGANIZATION. Never a working project.
+#
+# REPORT_CONSTRAINTS and REPORT_BROWSER_ORGANIZATION CANNOT COME BACK EMPTY -
+# their version 1 proofs were by D-53 tracking - so a batch reads their
+# negative NEG NOT EMPTY; that is the card, not a failure. Every job is a read:
+# nothing changes and the undo list gains no entry, except
+# CHECK_STRUCTURAL_SUPPORTS' arrangement, which only selects.
+
+model: "Snowdon-scratch_ajmal.al, Project1 work_ajmal.al, Heron Gap Fill Batch 7 Test and Project1 (scratch), Revit 2024"
+
+defaults:
+  in: "Snowdon-scratch_ajmal.al"
+  setup: []
+
+jobs:
+  - fragment: report-constraints
+    setup: [filter-elements-by-category, set-selection]
+    setup-set: {category: "Walls", inViewOnly: "FloorPlan: Parking", includeLinks: false}
+    negative-setup-set: {category: "Ducts", inViewOnly: "FloorPlan: Parking", includeLinks: false}
+    expect: constrainedBy
+    set: {}
+    negative-set: {}
+    note: >
+      QI1. Both legs: constrainedBy, lockedTo and unconstrained as
+      version 1 gives them on the same elements, unresolvedConstraints
+      written down (0 expected) - above 0, an element in unconstrained may be
+      held by one of them. If the Parking plan has no wall or duct, use any
+      plan of the copy that has, and write which.
+
+  - fragment: select-by-pin-state
+    expect: elements
+    set: {wantPinned: false, categories: "Ducts"}
+    negative-set: {wantPinned: true, categories: "Ducts"}
+    note: >
+      QI2. Negative - THE FIRST CASE TO RUN: version 1's "0 of N scanned
+      element(s) are pinned", unresolvedElements written down (0 expected)
+      and NO "would not say whether they are pinned" sentence while it is 0.
+      Positive: version 1's 1053 of 1053 NOT pinned (or this copy's count),
+      the same rule for the sentence.
+
+  - fragment: report-tags-and-targets
+    expect: tagTargets
+    set: {view: "FloorPlan: M1"}
+    negative-set: {view: "FloorPlan: Parking"}
+    note: >
+      QI3. Version 1's proof read the view in front (88 tags), not named;
+      M1 is the copy's mechanical plan the other Snowdon jobs use - if it
+      holds no tag, name the plan that does and write which. Negative: tagCount 0 on the Parking
+      plan, unresolvedTags empty. Positive: tagTargets, orphanTags and
+      multiTags as version 1's, unresolvedTags written down (empty expected).
+
+  - fragment: find-degenerate-lines
+    in: "Project1 work_ajmal.al"
+    expect: elements
+    set: {categories: "Ducts", shorterThanMm: 100000}
+    negative-set: {categories: "Ducts", shorterThanMm: 0.001}
+    note: >
+      QI4, version 1's own job (project1-2026-09-19-round2.yaml). Both
+      legs as version 1's, skippedCurves written down (0 expected) and NO
+      "would not give their curve or its length" sentence while it is 0.
+
+  - fragment: report-browser-organization
+    expect: organization
+    negative-in: "Project1"
+    note: >
+      QI5. NEG NOT EMPTY expected (D-53). Both models: the organisation
+      lines and the first finding as version 1 reads them, unresolvedItems
+      written down (0 expected) and no "would not say whether the
+      organisation's filter hides them" sentence while it is 0.
+
+  - fragment: check-structural-supports
+    in: "Heron Gap Fill Batch 7 Test"
+    expect: unsupported
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: "Structural Framing", levelId: "Level 2", inViewOnly: "", includeLinks: false}
+    negative-setup-set: {category: "Structural Columns", levelId: "Level 1", inViewOnly: "", includeLinks: false}
+    set: {toleranceMm: 0}
+    negative-set: {toleranceMm: 0}
+    note: >
+      QI6, gap-fill-batch-7-2026-10-12.yaml's arrangement: the negative
+      hands in the two columns on Level 1 with a floor or foundation under
+      them, so nothing is reported. Both legs as version 1's,
+      skippedMembers written down (0 expected) and no "had no location line
+      or base point" sentence while it is 0.
