@@ -1366,7 +1366,7 @@ Gives one parameter of the family open in the Family Editor a FORMULA - "Neck To
 | **Kind** | Changes the model (`MODIFY`) |
 | **Reached by** | asking in a Claude chat |
 | **You say** | **parameter name** - text<br>**formula** - text |
-| **You get** | formula now, value now, cleared, findings |
+| **You get** | formula now, value now, formula set, cleared, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | none |
 | **Capability** | `SET_FAMILY_FORMULA` |

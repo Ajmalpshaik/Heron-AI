@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `parameterName` and `formula` are in scope;
-// leaves `formulaNow`, `valueNow`, `cleared`, `notAFamily`, `refused` and
-// `findings` behind.
+// leaves `formulaNow`, `valueNow`, `formulaSet`, `cleared`, `notAFamily`,
+// `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -34,11 +34,20 @@
 // how a crash looks. SetFormula and the regenerate now run in a SubTransaction
 // that is rolled back on Revit's refusal, and the same words come back through
 // `refused` and `findings`, nothing kept.
+//
+// VERSION 4 (2026-11-24, row 5b-2009): `formulaSet` COUNTS THE SET PATH.
+// Setting a formula - the card's main job - could not be signed: its only
+// count was `cleared`, false whenever a formula is set, and beside a count
+// `accept` does not count the sentences `formulaNow` and `valueNow` (D-51).
+// `formulaSet` is 1 when a formula was asked for, Revit took it, and the
+// family READ BACK afterwards holds a formula on that parameter; 0 on a clear,
+// a refusal or nothing to do. Nothing else changed.
 
 var findings = new List<string>();
 var formulaNow = "";
 var valueNow = "";
 var cleared = false;
+var formulaSet = 0;
 var notAFamily = false;
 string refused = null;
 
@@ -197,6 +206,9 @@ if (refused == null && !nothingToDo && target != null)
     formulaNow = readBack == null || readBack.Formula == null ? "" : readBack.Formula;
     valueNow = valueIn(fm.CurrentType, readBack);
     cleared = wantedFormula.Length == 0 && formulaNow.Length == 0;
+    // FROM THE READ-BACK: a formula was asked for, and the family holds one
+    // afterwards. The request alone never makes it 1.
+    formulaSet = wantedFormula.Length > 0 && formulaNow.Length > 0 ? 1 : 0;
 
     if (wantedFormula.Length == 0)
     {
