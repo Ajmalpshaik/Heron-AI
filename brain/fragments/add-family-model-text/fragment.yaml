@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,6 +9,25 @@ semantic-identity: "place 3D model text - a raised or engraved label, a nameplat
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_MODEL_TEXT
+# Version 3 (2026-11-24, row 5b-2033) changed impl/: THE LETTERS ARE MEASURED
+# BY THEIR OWN SOLIDS. Seen on Revit 2020 building an air handling unit
+# family: depthMm=0.5 on a front-back plane at Y -489.5 - a reference plane
+# there, or Center (Front/Back) with offsetMm=-489.5 - answered "the letters
+# measure 494.5 mm through the plane where 0.5 mm deep was asked", reaching Y
+# -984 to -489.5; at Y -697.5 they reached -1398. The far side grew with the
+# plane's distance from the origin, to about twice it - where Revit 2020 first
+# puts letters on an offset plane - while the text's Depth read back 0.5.
+# Version 2 read that thickness, and where the letters land, off the element's
+# bounding box, so whether the letters or only the box were that deep could
+# not be told from the answer. Version 3 measures both on the letters' own
+# solids (the box only where Revit gives none, and then says so): solids not
+# the depth asked are refused with both numbers - the depth Revit built is
+# wrong, not the measure - and a box that disagrees with right solids is said
+# to be the box. Which of the two it was on Revit 2020 is settled by
+# NEEDS-CHECKING Group QP; this was written with no Revit. Version 2 was
+# PROVEN (the proof block below, kept as the record of what it proved); its
+# C# moved, so it is DRAFT again (D-30).
+#
 # Version 2 (2026-10-22, row 5b-1315) changed impl/: where the letters land is
 # MEASURED, not trusted. Seen on Revit 2020 (session 40628): a text on
 # Center (Front/Back) with offsetMm=-2560 came out at Y -5123 to -5120 - the
@@ -19,7 +38,7 @@ capability: ADD_FAMILY_MODEL_TEXT
 # places one that missed again moved by the miss, and refuses the whole call
 # when it still misses. Version 1's proof below no longer described the code:
 # DRAFT at the time, until NEEDS-CHECKING Group IQ proves version 2 (D-30).
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -69,6 +88,15 @@ purpose: >
   millimetre is placed again moved by the miss, and the answer says so; one
   that still misses refuses the whole call, naming where it was asked and
   where it reached.
+
+  **MEASURED ON THE LETTERS THEMSELVES (version 3, row 5b-2033).** Where the
+  letters land, how far they reach and how deep they are come from the
+  letters' own solids, not Revit's bounding box for the text - on Revit 2020
+  the box of a text on a plane away from the origin reached about twice the
+  plane's distance while the text's Depth read as asked. Letters whose
+  solids are not the depth asked keep nothing of the list; where only the
+  box disagrees, the answer says the box is not the letters. With no solid
+  to measure the box is used and the answer says so.
 
   **ALL OR NOTHING, READ BACK.** Every row is checked before anything is
   placed. Each text is read back - its words, type and size, depth,
@@ -212,7 +240,12 @@ compatibility-note: >
   point. Which reading Revit makes is not known, and version 2 does not
   assume one; it places again by the measured miss. `Document.Delete`,
   `Element.IsValidObject`, `XYZ.CrossProduct` and `DotProduct` are the same
-  2020 to 2027. NEEDS-CHECKING Group IQ.
+  2020 to 2027. NEEDS-CHECKING Group IQ. Version 3 adds
+  `Element.get_Geometry(Options)` with `Options.DetailLevel`, `Solid.Volume`,
+  `Solid.Edges`, `Edge.Tessellate` and `GeometryInstance.GetInstanceGeometry`,
+  calls ADD_FAMILY_CONNECTOR already makes on every release; built against
+  all eight releases on 2026-11-24 (`tools/check-fragments-compile.py`).
+  NEEDS-CHECKING Group QP.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #

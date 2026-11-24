@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,16 @@ semantic-identity: "loft through sections or sweep along a 3D path as one smooth
 kind: action
 domain: revit.families
 capability: CREATE_FAMILY_FREEFORM_SOLID
-version: 1
+# VERSION 2 (2026-11-24, row 5b-2034) changed impl/ in ONE SENTENCE: a solid's
+# answer said "Its material is SET_FAMILY_FORM_MATERIAL with this id", a card
+# merged into LINK_FAMILY_PARAMETER on 2026-11-01 and DEPRECATED since, so a
+# modeller following the answer was refused (seen on Revit 2020 building an
+# air handling unit family). It now names LINK_FAMILY_PARAMETER, as this
+# card's purpose already did. Nothing else in the C# moved. Version 1 was
+# PROVEN (the proof block below, kept as the record of what it proved); its
+# implementation's fingerprint moved, so it is DRAFT until NEEDS-CHECKING
+# Group QP is run (D-30).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 

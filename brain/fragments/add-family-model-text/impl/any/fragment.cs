@@ -60,6 +60,23 @@
 // millimetre is placed again moved by the miss, which lands it whichever way
 // Revit read the point. One that still misses by a millimetre refuses the whole
 // call, naming where it was asked and where it reached.
+//
+// THE LETTERS ARE MEASURED BY THEIR OWN SOLIDS (version 3, 2026-11-24, row
+// 5b-2033). On Revit 2020 a 0.5 mm deep text on a front-back plane at Y -489.5
+// - a reference plane there, or Center (Front/Back) with offsetMm -489.5 -
+// was said to "measure 494.5 mm through the plane", reaching Y -984 to -489.5;
+// at Y -697.5 it reached -1398. The far side grew with the plane's distance
+// from the origin, to about twice it - where Revit 2020 first puts letters on
+// an offset plane - while the text's own Depth read back 0.5 mm. Both the
+// landing and that thickness were read off the element's bounding box, so
+// whether the letters or only the box were that deep could not be told from
+// the answer. Now every measurement - where the letters land, how far they
+// reach, how thick they are - is taken from the letters' solids, the edges'
+// end points and curves; the bounding box is used only where Revit gives no
+// solid, and the answer then says so. Letters whose solids are not the depth
+// asked are not kept: the call is refused with both numbers, because the
+// depth Revit built is then wrong, not the measure. Where the box alone
+// disagrees with the solids, the answer says the box is not the letters.
 
 var findings = new List<string>();
 var textIds = "";
@@ -89,6 +106,47 @@ var axisLetters = new[] { "X", "Y", "Z" };
 var facing = new[] { "facing left or right", "facing front or back", "horizontal" };
 // The two model coordinates `at` is written in, per axis the plane faces.
 var inPlane = new[] { new[] { 1, 2 }, new[] { 0, 2 }, new[] { 0, 1 } };
+
+// VERSION 3 (row 5b-2033): WHERE THE LETTERS ARE, from their own solids - the
+// lowest and highest corner over every point on every edge of every solid of
+// some volume, nested instances included. Null when Revit gives no solid.
+Func<Element, XYZ[]> solidsBox = element =>
+{
+    var points = new List<XYZ>();
+    try
+    {
+        var options = new Options();
+        options.DetailLevel = ViewDetailLevel.Fine;
+        var shape = element.get_Geometry(options);
+        var pending = new List<GeometryElement>();
+        if (shape != null) pending.Add(shape);
+        for (var next = 0; next < pending.Count; next++)
+            foreach (GeometryObject item in pending[next])
+            {
+                var solid = item as Solid;
+                var nested = item as GeometryInstance;
+                if (solid != null && solid.Volume > 0)
+                    foreach (Edge edge in solid.Edges) points.AddRange(edge.Tessellate());
+                else if (nested != null && nested.GetInstanceGeometry() != null) pending.Add(nested.GetInstanceGeometry());
+            }
+    }
+    catch (Exception) { return null; }
+    if (points.Count == 0) return null;
+    return new[]
+    {
+        new XYZ(points.Min(q => q.X), points.Min(q => q.Y), points.Min(q => q.Z)),
+        new XYZ(points.Max(q => q.X), points.Max(q => q.Y), points.Max(q => q.Z)),
+    };
+};
+// The letters' extent: from their solids where Revit gives any (Item2 true),
+// else from the element's bounding box (Item2 false); null with neither.
+Func<Element, Tuple<XYZ[], bool>> extentOf = element =>
+{
+    var fromSolids = solidsBox(element);
+    if (fromSolids != null) return Tuple.Create(fromSolids, true);
+    var box = element.get_BoundingBox(null);
+    return box == null ? null : Tuple.Create(new[] { box.Min, box.Max }, false);
+};
 
 // THE SIDE A TEXT IS READ FROM, per axis the plane faces, and the sketch
 // plane axes - along the text, then up it - that read correctly from there.
@@ -666,13 +724,16 @@ if (refused == null)
         // and the box is the letters', not the line's.
         Func<ModelText, double[]> landing = text =>
         {
-            var box = text.get_BoundingBox(null);
-            if (box == null) return null;
+            // VERSION 3: the letters' own solids, the box only without them.
+            var extent = extentOf(text);
+            if (extent == null) return null;
+            var lowest = extent.Item1[0];
+            var highest = extent.Item1[1];
             var low = new[] { double.MaxValue, double.MaxValue, double.MaxValue };
             var high = new[] { double.MinValue, double.MinValue, double.MinValue };
-            foreach (var cx in new[] { box.Min.X, box.Max.X })
-                foreach (var cy in new[] { box.Min.Y, box.Max.Y })
-                    foreach (var cz in new[] { box.Min.Z, box.Max.Z })
+            foreach (var cx in new[] { lowest.X, highest.X })
+                foreach (var cy in new[] { lowest.Y, highest.Y })
+                    foreach (var cz in new[] { lowest.Z, highest.Z })
                     {
                         var gap = new XYZ(cx, cy, cz) - position;
                         var k = new[] { gap.DotProduct(runs), gap.DotProduct(rises), gap.DotProduct(outward) };
@@ -696,9 +757,10 @@ if (refused == null)
             + mm(off[2]) + " mm off the plane";
         Func<ModelText, string> reachOf = text =>
         {
-            var box = text.get_BoundingBox(null);
-            return box == null ? "nowhere - no extent" : string.Join(", ", new[] { 0, 1, 2 }.Select(i =>
-                axisLetters[i] + " " + mm(along(box.Min, i)) + " to " + mm(along(box.Max, i)))) + " mm";
+            var extent = extentOf(text);
+            return extent == null ? "nowhere - no extent" : string.Join(", ", new[] { 0, 1, 2 }.Select(i =>
+                axisLetters[i] + " " + mm(along(extent.Item1[0], i)) + " to " + mm(along(extent.Item1[1], i)))) + " mm"
+                + (extent.Item2 ? "" : " (Revit's bounding box - it gave no solid to measure)");
         };
 
         var made = placeAt(position);
@@ -830,15 +892,31 @@ if (refused == null)
         if (made.HorizontalAlignment != rowAlign[r])
             throw new InvalidOperationException(where + "'s alignment reads " + made.HorizontalAlignment + ", not "
                 + rowAlign[r] + "." + keptNothing);
-        var bounds = made.get_BoundingBox(null);
-        if (bounds == null)
+        var extentNow = extentOf(made);
+        if (extentNow == null)
             throw new InvalidOperationException(where + "'s text has no extent in the model - Revit made it with no "
                 + "geometry." + keptNothing);
+        var bounds = extentNow.Item1;
 
-        var thickness = along(bounds.Max, axis) - along(bounds.Min, axis);
+        // VERSION 3 (row 5b-2033): THE DEPTH, measured through the plane. From
+        // the letters' solids a wrong depth is wrong letters, and is not kept;
+        // from the box alone it is said, as the box's, to be looked at.
+        var thickness = along(bounds[1], axis) - along(bounds[0], axis);
+        var box = made.get_BoundingBox(null);
+        if (Math.Abs(thickness - depthFeet) > halfMillimetre && extentNow.Item2)
+            throw new InvalidOperationException(where + "'s letters are " + mm(thickness) + " mm thick through the plane, "
+                + "measured on their own solids, where " + plain(rowDepth[r]) + " mm deep was asked and the text's Depth "
+                + "reads " + mm(made.Depth) + " mm - they reach " + reachOf(made) + "." + keptNothing);
         if (Math.Abs(thickness - depthFeet) > halfMillimetre)
-            findings.Add(where + ": the letters measure " + mm(thickness) + " mm through the plane where " + plain(rowDepth[r])
-                + " mm deep was asked - look at it in the Family Editor.");
+            findings.Add(where + ": Revit gave no solid to measure, and its bounding box reaches " + mm(thickness)
+                + " mm through the plane where " + plain(rowDepth[r]) + " mm deep was asked and the Depth reads "
+                + mm(made.Depth) + " mm - look at the letters in the Family Editor.");
+        else if (extentNow.Item2 && box != null
+            && Math.Abs(along(box.Max, axis) - along(box.Min, axis) - thickness) > halfMillimetre)
+            findings.Add(where + ": the letters' solids are " + mm(thickness) + " mm thick, as asked; Revit's bounding "
+                + "box for the text reaches " + mm(along(box.Max, axis) - along(box.Min, axis)) + " mm through the plane "
+                + "(" + axisLetters[axis] + " " + mm(along(box.Min, axis)) + " to " + mm(along(box.Max, axis))
+                + " mm), so the box is not the letters.");
 
         ids.Add(made.UniqueId);
         lines.Add("\"" + shortened(rowText[r]) + "\" (id " + made.Id.ToString() + ") on \"" + plane.Item4 + "\" ("
@@ -851,8 +929,9 @@ if (refused == null)
             + (sketch.Item2 ? ", sketched on the plane itself" : ", on a work plane of its own that does NOT move with \""
                 + plane.Item4 + "\"")
             + materialWords + showsWords + ". Its letters reach " + string.Join(", ", new[] { 0, 1, 2 }.Select(i =>
-                axisLetters[i] + " " + mm(along(bounds.Min, i)) + " to " + mm(along(bounds.Max, i)))) + " mm - its "
-            + alignWord + " where asked, measured" + (placedAgain == null ? "" : ", placed a second time after Revit's "
+                axisLetters[i] + " " + mm(along(bounds[0], i)) + " to " + mm(along(bounds[1], i)))) + " mm - its "
+            + alignWord + " where asked, measured" + (extentNow.Item2 ? " on its solids" : " by Revit's bounding box, "
+                + "as it gave no solid") + (placedAgain == null ? "" : ", placed a second time after Revit's "
                 + "first placing missed"));
     }
 

@@ -345,7 +345,11 @@ purpose: >
       instance on a height plane at Z -80. That rebuild held: FLEX_FAMILY at
       4 sizes, the row reading 9, then 15, then 17 elements.
   11. ADD_FAMILY_CONNECTOR on the face its service leaves by, sized by the
-      parameters so the port follows the neck - for MEP families. Exactly one
+      parameters so the port follows the neck - for MEP families. Its sizes
+      may be Length parameters, or (version 8, DRAFT until NEEDS-CHECKING Group
+      QP) Duct Size ones for a duct port and Pipe Size ones for a pipe port -
+      no extra Length parameters made for it; on a flange ring the port may be
+      smaller than the opening it sits in, on a whole face never. Exactly one
       SOLID face may lie on the plane it is named by, so each connector face
       gets a plane of its own, never one it shares with another flange. Since
       version 3 (row 5b-410) it also looks for the face in a combination, but
