@@ -60,12 +60,20 @@ purpose: >
   - SET_CURTAIN_PANEL_TYPE for panels by row, column or floor line -
     spandrels in the bottom row, a louvre panel in column 2. One panel picked
     on screen is CHANGE_ELEMENT_TYPE's.
+  - EDIT_CURTAIN_GRID_SEGMENTS to take a grid line away, or take one or more
+    of its segments out - or put them back - Revit's Add/Remove Segments.
+  - MOVE_CURTAIN_GRID_LINE to move a grid line, or the one a mullion sits
+    on, along the wall or up it.
+  - SET_MULLION_JOIN for Make Continuous or Break at Join on the mullions
+    picked.
+  - SET_CURTAIN_WALL_EMBED when the curtain wall is drawn inside a basic wall
+    and must cut it - Automatically Embed on its type, every wall of the type.
+  A line a type laid out arrives pinned; the first two refuse it by name.
   REPORT_CURTAIN_ELEMENTS (step 6) is run after these too.
 
   NOT YET: Fixed Number on the TYPE - the count lives on each wall, so the
   grid step refuses it (ADD_CURTAIN_GRID_LINES "equal N" divides one wall
-  instead); one grid line moved or removed, or one segment cut; the TYPE's
-  own panel, glazed or solid; an arched or shaped head.
+  instead); the TYPE's own panel, glazed or solid; an arched or shaped head.
 
 # The words the modeller says when he wants a curtain wall.
 utterances:
@@ -87,6 +95,10 @@ needs:
   # This wall only: extra lines or equal panels, and panels by position.
   - ADD_CURTAIN_GRID_LINES
   - SET_CURTAIN_PANEL_TYPE
+  - EDIT_CURTAIN_GRID_SEGMENTS
+  - MOVE_CURTAIN_GRID_LINE
+  - SET_MULLION_JOIN
+  - SET_CURTAIN_WALL_EMBED
   # The proof, on the wall itself. Never skipped.
   - REPORT_CURTAIN_ELEMENTS
 

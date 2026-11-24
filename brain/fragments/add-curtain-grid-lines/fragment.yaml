@@ -310,11 +310,18 @@ compatibility-note: >
 #   "what is the grid spacing on this curtain
 #    wall"                                    -> REPORT_CURTAIN_WALL_TYPE
 #   "remove a grid line from this curtain
-#    wall", "add a grid line to one panel
-#    only"                                    -> NOT HERE, and nothing does yet.
+#    wall", "cut this grid line out of one
+#    panel"                                   -> EDIT_CURTAIN_GRID_SEGMENTS
+#                                                (since 2026-11-24) - a line
+#                                                taken away, or segments taken
+#                                                out or put back
+#   "move this mullion", "move the grid line
+#    at 1500"                                 -> MOVE_CURTAIN_GRID_LINE
+#   "add a grid line to one panel only"       -> NOT HERE, and nothing does yet.
 #                                                Every line this adds runs the
-#                                                whole wall; Revit's Add/Remove
-#                                                Segments does the rest by hand
+#                                                whole wall; add it whole, then
+#                                                EDIT_CURTAIN_GRID_SEGMENTS
+#                                                takes the other segments out
 
 utterances:
   - divide this curtain wall into six panels
