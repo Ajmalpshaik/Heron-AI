@@ -20,7 +20,16 @@ capability: SET_FAMILY_FORMULA
 # number is now read as one, a Yes/No as Yes or No, a text as its text, and a
 # length or other measured value as before. FRAGMENT-ISSUES row 5b-2001.
 # Nothing else changed.
-version: 2
+#
+# VERSION 3 (2026-11-24) - REVIT'S REFUSAL COMES BACK AS `refused`, still
+# DRAFT. Proving version 2 on Revit 2020 (session 29500, scratch family PX
+# Box), "Neck Top + 10 mm" on Neck Top itself ended `fragment_threw` - the
+# right words, leaving as an exception, which is how a crash looks - so the
+# loop negative of NEEDS-CHECKING Group PX row PX5 failed. The formula and the
+# regenerate now run in a SubTransaction rolled back on Revit's refusal, and
+# the same words come back through `refused` and `findings`, nothing kept.
+# FRAGMENT-ISSUES row 5b-2010. Nothing else changed.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -51,7 +60,8 @@ purpose: >
   so a manufacturer's product cannot be dragged to a size it is not made in,
   and it still labels its dimension. That is a deliberate use, not an error.
 
-  **REVIT'S WORDS COME BACK WHEN IT REFUSES**, and nothing is kept. The
+  **REVIT'S WORDS COME BACK WHEN IT REFUSES**, through `refused` - never as
+  a thrown error (version 3) - and nothing is kept. The
   formula and the value it produces in the current type are read back from
   the family afterwards - by the parameter's kind (version 2): a whole number
   for an Integer (a blade count), Yes or No for a Yes/No, the text for a
