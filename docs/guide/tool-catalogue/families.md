@@ -54,7 +54,7 @@
 | [Set family connector roles](#set-family-connector-roles) | usable | MODIFY |
 | [Set family form subcategory](#set-family-form-subcategory) | usable | MODIFY |
 | [Set family form visibility](#set-family-form-visibility) | usable | MODIFY |
-| [Set family formula](#set-family-formula) | usable | MODIFY |
+| [Set family formula](#set-family-formula) | refused until proved | MODIFY |
 | [Set family label layout](#set-family-label-layout) | usable | MODIFY |
 | [Set family light source](#set-family-light-source) | usable | MODIFY |
 | [Set family plane reference](#set-family-plane-reference) | usable | MODIFY |
@@ -1355,11 +1355,11 @@ Other ways to ask: *"hide the body in plan views in the family"* · *"set the fa
 
 ### Set family formula
 
-**Usable in a chat.** Proved on a real model on 2026-11-24 (Revit 2020).
+**DRAFT - not yet usable in a chat - refused until proved (D-117).**
 
 **What it does:** drive this family parameter by a formula, or clear its formula.
 
-Gives one parameter of the family open in the Family Editor a FORMULA - "Neck Top = Height + Neck Depth", "Neck Width = Width - 100 mm" - or clears the one it has, which is the Formula column of the Family Types dialog. **A FORMULA NEEDS A TYPE TO HOLD ITS RESULT.** A new family has no type, and Revit refuses a formula there with "There is no valid family type" - reported from an earlier family build, where that refusal also took down the parameters added in the same step. So this refuses until a type exists and names SET_FAMILY_TYPE_VALUES, which makes the first one. **NAMES ARE WRITTEN BARE, SPACES AND ALL.** `Height + Neck Depth` works; `Height + "Neck Depth"` is rejected by Revit as an invalid formula with no word about why - reported from the same build, found only by trying each name alone. A formula that puts one of the family's own parameter names in quotes is refused here with that reason, before Revit is asked. A unit may follow a number - `Height + 60 mm` - and text formulas keep their quoted strings, which are not parameter names. **AN EMPTY FORMULA CLEARS IT**, and the parameter keeps the value the formula last gave it and becomes editable again - the way to type a value into a parameter a formula drove. **A FORMULA OF A PLAIN VALUE LOCKS A SIZE.** `600 mm` greys the parameter out, so a manufacturer's product cannot be dragged to a size it is not made in, and it still labels its dimension. That is a deliberate use, not an error. **REVIT'S WORDS COME BACK WHEN IT REFUSES**, and nothing is kept. The formula and the value it produces in the current type are read back from the family afterwards - by the parameter's kind (version 2): a whole number for an Integer (a blade count), Yes or No for a Yes/No, the text for a text, and a length or other measured value as Revit shows it. An instance parameter reads the same way: the current type holds its value too. ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+Gives one parameter of the family open in the Family Editor a FORMULA - "Neck Top = Height + Neck Depth", "Neck Width = Width - 100 mm" - or clears the one it has, which is the Formula column of the Family Types dialog. **A FORMULA NEEDS A TYPE TO HOLD ITS RESULT.** A new family has no type, and Revit refuses a formula there with "There is no valid family type" - reported from an earlier family build, where that refusal also took down the parameters added in the same step. So this refuses until a type exists and names SET_FAMILY_TYPE_VALUES, which makes the first one. **NAMES ARE WRITTEN BARE, SPACES AND ALL.** `Height + Neck Depth` works; `Height + "Neck Depth"` is rejected by Revit as an invalid formula with no word about why - reported from the same build, found only by trying each name alone. A formula that puts one of the family's own parameter names in quotes is refused here with that reason, before Revit is asked. A unit may follow a number - `Height + 60 mm` - and text formulas keep their quoted strings, which are not parameter names. **AN EMPTY FORMULA CLEARS IT**, and the parameter keeps the value the formula last gave it and becomes editable again - the way to type a value into a parameter a formula drove. **A FORMULA OF A PLAIN VALUE LOCKS A SIZE.** `600 mm` greys the parameter out, so a manufacturer's product cannot be dragged to a size it is not made in, and it still labels its dimension. That is a deliberate use, not an error. **REVIT'S WORDS COME BACK WHEN IT REFUSES**, through `refused` - never as a thrown error (version 3) - and nothing is kept. The formula and the value it produces in the current type are read back from the family afterwards - by the parameter's kind (version 2): a whole number for an Integer (a blade count), Yes or No for a Yes/No, the text for a text, and a length or other measured value as Revit shows it. An instance parameter reads the same way: the current type holds its value too. ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 | | |
 |---|---|
@@ -1368,17 +1368,10 @@ Gives one parameter of the family open in the Family Editor a FORMULA - "Neck To
 | **You say** | **parameter name** - text<br>**formula** - text |
 | **You get** | formula now, value now, cleared, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
-| **Proved on Revit** | 2020 |
+| **Proved on Revit** | none |
 | **Capability** | `SET_FAMILY_FORMULA` |
 
-**How to use it**
-
-1. Open the model in Revit and connect Heron: press **Heron** on the Heron tab, so its heron turns orange.
-2. Turn **Changes** on in Heron's **Settings** (Heron tab).
-3. In a Claude chat, ask in your own words, for example *"set the formula for Neck Top to Height plus Neck Depth"*. Say the values under **You say** in the same sentence.
-4. Heron makes the change as **one entry in Revit's Undo list**. With **Ask to Keep** on, Revit asks **Keep or Discard** first; Ctrl+Z takes it back.
-
-Other ways to ask: *"give this family parameter a formula"* · *"make Neck Width equal Width minus 100"*
+Once it is proved, you will ask: *"set the formula for Neck Top to Height plus Neck Depth"* · *"give this family parameter a formula"* · *"make Neck Width equal Width minus 100"*
 
 <a id="set-family-label-layout"></a>
 
