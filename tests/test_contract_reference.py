@@ -198,27 +198,21 @@ def one():
           "every contract still SHOWS its suite - which file proves an "
           "agent is worth a column: %d of %d"
           % (len(with_suite), len(rows)))
-    classify = [row for row in rows
-                if row["agent"] == "HERON-IMP-CLS-003"]
-    check(classify and "NOT_A_FOLDER" not in classify[0]["undeclared"],
-          "HERON-IMP-CLS-003 does not produce NOT_A_FOLDER - that name is "
-          "in its suite's FIXTURES, and counting it was a real finding "
-          "that was not real")
 
     print("\n4. the two directions use different evidence")
     caller = written('''
-import heron_walk
+import heron_security
 
 
-def one(where):
-    return heron_walk.walk(where)
+def one(change):
+    return heron_security.review(change)
 ''')
     try:
         wide = GEN.mentions(caller)
         narrow = GEN.refusals_in(caller)
-        check("NOT_A_FOLDER" in wide,
-              "mentions() follows the import and sees heron_walk's "
-              "NOT_A_FOLDER - a pass-through is composition, so it EXCUSES "
+        check("NOT_REVIEWED" in wide,
+              "mentions() follows the import and sees heron_security's "
+              "NOT_REVIEWED - a pass-through is composition, so it EXCUSES "
               "the declaration")
         check(narrow == set(),
               "refusals_in() does not - so it never ACCUSES this file of "

@@ -24,8 +24,8 @@ WHAT IT PROVES
   5. EVERY OPERATION'S ROW IS THE AGENT'S OWN RULE, and that agent really
      behaves that way.
 
-  6. HERON-OPS-UPD-010 ASKS THIS AGENT rather than carrying a fifth copy -
-     which is the only way to tell whether one place is enough.
+  6. (Retired with HERON-OPS-UPD-010 by D-199: it asked this agent rather
+     than carrying a fifth copy. With it gone there is no copy to compare.)
 
   7. EVERY FAILURE THE CONTRACT DECLARES IS NAMED BY THE CODE AND REACHED.
 """
@@ -40,7 +40,6 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_paths as PATHS                                    # noqa: E402
-import heron_update as UPD                                     # noqa: E402
 import heron_contract as CON                                   # noqa: E402
 
 FAILURES = []
@@ -194,22 +193,8 @@ def main():
           and PATHS.OPERATIONS["repair"][PATHS.DATA] is False,
           "repair covers derived and not data")
 
-    print()
-    print("6. HERON-OPS-UPD-010 asks this agent")
-    for name in ("Brain agents", "Core", "Cache", "Fragments", "MCP",
-                 "Documentation", "Revit add-in"):
-        check(UPD._classify(name) == PATHS.classify(name)["class"],
-              "'%s' - same answer from both" % name)
-    check(UPD.DATA is folders[PATHS.DATA]
-          or UPD.DATA == folders[PATHS.DATA],
-          "and its lists are this one's, re-exported rather than restated")
-    update = open(os.path.join(ROOT, "brain", "heron_update.py"),
-                  encoding="utf-8").read()
-    check("PATHS.classify" in update, "it calls classify()")
-    check('DATA = ("brain"' not in update,
-          "and no longer carries its own copy of docs/06 s2")
-    check("four places for it to drift" in update,
-          "with the reason recorded where the copy used to be")
+    # 6. was HERON-OPS-UPD-010 asking this agent. That agent, heron_update.py,
+    # was retired by D-199, so there is no second copy left to compare.
 
     print()
     print("7. Every failure the contract declares is named and reached")

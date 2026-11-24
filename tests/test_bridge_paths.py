@@ -316,9 +316,7 @@ def special_folder_rule():
     for part in (("brain",), ("mcp", "client"), ("mcp", "server")):
         if os.path.join(ROOT, *part) not in sys.path:
             sys.path.insert(0, os.path.join(ROOT, *part))
-    import heron_bridge_client as BRIDGE
     import heron_gaps as GAPS
-    import heron_workflow as WORKFLOW
     held = dict((name, os.environ.get(name)) for name in ("HERON_AUDIT", "HERON_CHECKPOINTS", "APPDATA"))
     try:
         for name in ("HERON_AUDIT", "HERON_CHECKPOINTS"):
@@ -328,9 +326,8 @@ def special_folder_rule():
               "the audit trail is still %%APPDATA%%\\Heron\\audit: %s" % GAPS.audit_dir())
         os.environ.pop("APPDATA")
         check(GAPS.audit_dir() is None, "and nowhere with no %APPDATA%, as before")
-        check(WORKFLOW.checkpoint_root() == os.path.join(BRIDGE.local_app_data(), "Heron", "checkpoints"),
-              "the workflow's checkpoints are under the folder the client names for "
-              "HeronPaths.Derived, never $TMPDIR: %s" % WORKFLOW.checkpoint_root())
+        # The workflow's checkpoint folder was checked here until D-199
+        # retired mcp/server/heron_workflow.py, which nothing imported.
     finally:
         for name, value in held.items():
             if value is None:
