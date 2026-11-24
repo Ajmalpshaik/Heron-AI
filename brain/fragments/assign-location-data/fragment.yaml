@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -168,32 +168,62 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: Project2 (3,035 elements), Revit 2020, session 13520
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned ambiguousLevelParameter
-    0, ambiguousRoomParameter 0, label ROOM, missingLevelParameter 0, missingRoomParameter
-    0, noRoomFound 0 item(s), refused 1 item(s) [2 element(s) written, using ROOMS. Architecture
-    puts people ...], spatial 2 item(s) [Room 1, Room 2], useSpaces false, wantedCategory
-    BuiltInCategory, written 2. inputs came elements from the selection (2); roomParameter
-    as given; levelParameter as given; useSpaces as given. on Project2
-  negative_case: 'run with categoryName=Furniture, inViewOnly=FloorPlan: Level 1, levelParameter=ZZZNOTHINGHERE,
+  model: Night Rig 1124, Revit 2024, session 26904 - the count is NOT recorded because 2,021
+    elements was measured on M_Desk, the document in front, and this ran against another one
+    (row 15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    ambiguousLevelParameter 0, ambiguousNumberParameter 0, ambiguousRoomParameter 0, containerWithoutValue
+    0, fill Func`4, hostLevels 2 item(s) [Level 1, Level 2], hostOverLink 0, includeLinks
+    false, label ROOM, landedInHost 1, landedInLink 0, landedPerLink 0 entry(ies), levelTarget
+    Mark, levelWritten 1, linkedMatches 1 item(s) [Host model only - links not read], linkedSkipped
+    0, linksSearched 0, missingLevelParameter 0, missingNumberParameter 0, missingRoomParameter
+    0, nameTarget Comments, nameWritten 1, named Func`2, nestedLinks 0, noLevelFound 0, noRoomFound
+    0 item(s), notKept 0, notOnItsStorey 0 item(s), notOnItsStoreyCount 0, numberTarget ,
+    numberWritten 0, overlapping 0 item(s), pick Func`4, refused 1 item(s) [1 element(s) written,
+    using ROOMS - name 1, number 0, level ...], samples 1 item(s) [353594: name "Room" | number
+    "(not written)"], settledByStorey 0, skippedContainers 0, spatial 1 item(s) [Room 1],
+    spatialBox 1 item(s) [Autodesk.Revit.DB.BoundingBoxXYZ], spatialFrom 1 item(s) [], spatialStorey
+    1 item(s) [(13.1233595800525, Level 2)], spatialTo 1 item(s) [(null)], storeyLevelsIn
+    Func`2, storeyOf Func`3, testFailed 0, tolerance 0.00328083989501312, useSpaces false,
+    wantedCategory BuiltInCategory, written 1. inputs came elements from the selection (1);
+    roomParameter as given; numberParameter not given - "none", the card''s own default (optional);
+    levelParameter as given; useSpaces as given; includeLinks not given - false (optional).
+    on Night Rig 1124'
+  negative_case: 'run with categories=Generic Models, inViewOnly=FloorPlan: Level 1, levelParameter=ZZZNOTHINGHERE,
     roomParameter=ZZZNOTHINGHERE, useSpaces=False instead - chosen because it should not contain
-    what this fragment reports - the arrangement was re-made first by running select-by-category-name,
+    what this fragment reports - the arrangement was re-made first by running filter-elements-by-category,
     set-selection with this phase''s own values - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned ambiguousLevelParameter 0, ambiguousRoomParameter
-    0, label ROOM, missingLevelParameter 2, missingRoomParameter 2, noRoomFound 0 item(s),
-    refused 3 item(s) [2 element(s) have no writable ''ZZZNOTHINGHERE'' parameter. Th...,
-    2 element(s) have no writable ''ZZZNOTHINGHERE'' parameter, 0 element(s) written, using
-    ROOMS. Architecture puts people ...], spatial 2 item(s) [Room 1, Room 2], useSpaces false,
-    wantedCategory BuiltInCategory, written 0. inputs came elements from the selection (2);
-    roomParameter as given; levelParameter as given; useSpaces as given. on Project2'
+    the transaction group ROLLED BACK afterwards. returned ambiguousLevelParameter 0, ambiguousNumberParameter
+    0, ambiguousRoomParameter 0, containerWithoutValue 0, fill Func`4, hostLevels 2 item(s)
+    [Level 1, Level 2], hostOverLink 0, includeLinks false, label ROOM, landedInHost 1, landedInLink
+    0, landedPerLink 0 entry(ies), levelTarget ZZZNOTHINGHERE, levelWritten 0, linkedMatches
+    1 item(s) [Host model only - links not read], linkedSkipped 0, linksSearched 0, missingLevelParameter
+    1, missingNumberParameter 0, missingRoomParameter 1, nameTarget ZZZNOTHINGHERE, nameWritten
+    0, named Func`2, nestedLinks 0, noLevelFound 0, noRoomFound 0 item(s), notKept 0, notOnItsStorey
+    0 item(s), notOnItsStoreyCount 0, numberTarget , numberWritten 0, overlapping 0 item(s),
+    pick Func`4, refused 3 item(s) [1 element(s) have no writable text parameter ''ZZZNOTHINGHERE...,
+    1 element(s) have no writable text parameter ''ZZZNOTHINGHERE..., 0 element(s) written,
+    using ROOMS - name 0, number 0, level ...], samples 0 item(s), settledByStorey 0, skippedContainers
+    0, spatial 1 item(s) [Room 1], spatialBox 1 item(s) [Autodesk.Revit.DB.BoundingBoxXYZ],
+    spatialFrom 1 item(s) [], spatialStorey 1 item(s) [(13.1233595800525, Level 2)], spatialTo
+    1 item(s) [(null)], storeyLevelsIn Func`2, storeyOf Func`3, testFailed 0, tolerance 0.00328083989501312,
+    useSpaces false, wantedCategory BuiltInCategory, written 0. inputs came elements from
+    the selection (1); roomParameter as given; numberParameter not given - "none", the card''s
+    own default (optional); levelParameter as given; useSpaces as given; includeLinks not
+    given - false (optional). on Night Rig 1124'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 30172bc82096044d
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.3.0.0
+    addin_hash: b5c1b9426090689f
+  fingerprint: 556b8e9d5afa7d42
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

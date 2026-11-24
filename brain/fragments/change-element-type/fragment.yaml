@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -121,31 +121,41 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  model: Night Rig 1124, Revit 2024, session 26904 - the count is NOT recorded because 2,021
+    elements was measured on M_Desk, the document in front, and this ran against another one
+    (row 15)
   positive_case: run as it would normally be run - the arrangement was re-made first by running
     filter-elements-by-category, set-selection with this phase's own values - run inside a
     transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    alreadyThatType 0, changed 10, findings 2 item(s) [10 element(s) changed to 'Mitered Elbows
-    / Tees'. 0 already ..., Only the TYPE changed. Mark, comments, offsets and every oth...],
-    fromSource false, fromWord none, named true, refused 0 item(s), source (null), stop (null),
-    wantedTypeId 1 item(s) [id 142426]. inputs came elements from the selection (10); newTypeId
-    as given; typeFrom not given - "none", the card's own default (optional). on P1102 MEP
-  negative_case: 'run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP, newTypeId=Floor:
-    STB 20.0 instead - chosen because it should not contain what this fragment reports - the
-    arrangement was re-made first by running filter-elements-by-category, set-selection with
-    this phase''s own values - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned alreadyThatType 0, changed 0, findings 1 item(s)
-    [0 element(s) changed to ''STB 20.0''. 0 already had it, and 10...], fromSource false,
-    fromWord none, named true, refused 10 item(s) [404243, 411658, 411660, ...], source (null),
-    stop (null), wantedTypeId 1 item(s) [id 563400]. inputs came elements from the selection
-    (10); newTypeId as given; typeFrom not given - "none", the card''s own default (optional).
-    on P1102 MEP'
+    alreadyThatType 0, changed 6, familyName Func`2, findings 2 item(s) [6 element(s) changed
+    to 'Generic - 225mm Masonry'. 0 already..., Only the TYPE changed. Mark, comments, offsets
+    and every oth...], fromSource false, fromWord none, named true, placedHow Func`2, refused
+    0 item(s), source (null), stop (null), wantedTypeId 1 item(s) [id 399], whyRefused Func`3.
+    inputs came elements from the selection (6); newTypeId as given; typeFrom not given -
+    "none", the card's own default (optional). on Night Rig 1124
+  negative_case: 'run with categories=Walls, inViewOnly=FloorPlan: Level 1, newTypeId=Floor:
+    Generic 150mm instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running filter-elements-by-category, set-selection
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyThatType 0, changed 0, familyName Func`2,
+    findings 7 item(s) [0 element(s) changed to ''Generic 150mm''. 0 already had it, a...,
+    352516 was refused: Revit does not offer ''Generic 150mm'' as ..., 352517 was refused:
+    Revit does not offer ''Generic 150mm'' as ..., ...], fromSource false, fromWord none,
+    named true, placedHow Func`2, refused 6 item(s) [352516, 352517, 352518, ...], source
+    (null), stop (null), wantedTypeId 1 item(s) [id 339], whyRefused Func`3. inputs came elements
+    from the selection (6); newTypeId as given; typeFrom not given - "none", the card''s own
+    default (optional). on Night Rig 1124'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 78e00f70870b3a97
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.3.0.0
+    addin_hash: b5c1b9426090689f
+  fingerprint: 984516bc37594280
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

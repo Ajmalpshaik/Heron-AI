@@ -1,0 +1,47 @@
+# Night of 2026-11-24, Revit 2024 (build 24.3.60.12, add-in 0.3.0.0), batch 3.
+# Same models as batch 2 (night-rig-2-revit2024-2026-11-24.yaml). Every run is
+# rolled back. These are batch 2's misses arranged again: a bool result is a
+# flag and never the count (expect the count), flip-elements flips family
+# instances only, set-element-level moves walls and columns only.
+#
+# set-view-template-control is proved by TRACKING (D-53), by hand, not here:
+#     python mcp/client/heron_bridge_client.py validate --session 26904 --in "Night Rig 1124"
+#       --out brain/proof-drafts/runs/set-view-template-control.json --write
+#       --set template="Architectural Plan" --set include=false
+#       --vary "parameterNames=ZZZNOTHINGHERE|View Scale|View Scale,Detail Level|View Scale,Detail Level,Discipline"
+#       --vary-field nowFree set-view-template-control
+
+model: "Night Rig 1124 (scratch, 48 placed elements) and M_Desk (family copy from it), Revit 2024, session 26904"
+
+defaults:
+  in: "Night Rig 1124"
+  setup: []
+
+jobs:
+  - fragment: set-view-section-box
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: enclosed
+    set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", marginMm: 500, view: "{3D}"}
+    negative-set: {categories: "Elevations", inViewOnly: "FloorPlan: Level 1", marginMm: 500, view: "{3D}"}
+
+  - fragment: edit-text-values
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: changed
+    set: {categories: "Levels", inViewOnly: "Elevation: North", field: "Name", mode: prefix, replacement: "", text: "HERON-", renameViews: "no"}
+    negative-set: {categories: "Levels", inViewOnly: "Elevation: North", field: "Name", mode: replace, replacement: "X", text: "ZZZNOTHINGHERE", renameViews: "no"}
+
+  - fragment: change-element-type
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: changed
+    set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", newTypeId: "Basic Wall: Generic - 225mm Masonry"}
+    negative-set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", newTypeId: "Floor: Generic 150mm"}
+
+  - fragment: set-element-level
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: moved
+    set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", newLevel: "Level 2", keepWallBase: "false"}
+    negative-set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", newLevel: "Level 1", keepWallBase: "false"}

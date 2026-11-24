@@ -1,0 +1,32 @@
+# Night of 2026-11-24, Revit 2024 (build 24.3.60.12, add-in 0.3.0.0), batch 4.
+# Same models as batch 2. Every run is rolled back. Renaming a level needs
+# renameViews said (the card refuses rather than guess); a wall already on
+# Level 1 is the negative for set-element-level.
+
+model: "Night Rig 1124 (scratch, 48 placed elements) and M_Desk (family copy from it: Width 1525, Depth 762, Height 762, Leg Height 152), Revit 2024, session 26904"
+
+defaults:
+  in: "Night Rig 1124"
+  setup: []
+
+jobs:
+  - fragment: edit-text-values
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: changed
+    set: {categories: "Levels", inViewOnly: "Elevation: North", field: "Name", mode: prefix, replacement: "", text: "HERON-", renameViews: "no"}
+    negative-set: {categories: "Levels", inViewOnly: "Elevation: North", field: "Name", mode: replace, replacement: "X", text: "ZZZNOTHINGHERE", renameViews: "no"}
+
+  - fragment: set-element-level
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: moved
+    set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", newLevel: "Level 2", keepWallBase: "false"}
+    negative-set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", newLevel: "Level 1", keepWallBase: "false"}
+
+  - fragment: set-family-formula
+    in: "M_Desk"
+    write: true
+    expect: formulaNow
+    set: {parameterName: "Leg Height", formula: "Height / 5"}
+    negative-set: {parameterName: "Heron No Such Parameter 1124", formula: "Height / 5"}
