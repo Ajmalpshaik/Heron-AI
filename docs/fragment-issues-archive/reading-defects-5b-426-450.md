@@ -30,26 +30,6 @@
 
 ---
 
-### Row 5b-432
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`CREATE_FAMILY_FORMS`' VALUE NOTE NEVER SAID WHICH WAY A PLANE RUNS - WHICH TWO COORDINATES A PROFILE USES ON A FRONT/BACK OR LEFT/RIGHT PLANE, OR WHICH WAY `startMm` AND `endMm` GO.** Found 2026-10-11/12 on the owner's laptop, Revit 2024, building families through Heron: the note above `- name: forms` in [`brain/fragments/create-family-forms/fragment.yaml`](../../brain/fragments/create-family-forms/fragment.yaml) said only *"millimetres in the plane's own two model coordinates"*, where the single-form `CREATE_FAMILY_EXTRUSION` and `CREATE_FAMILY_REVOLUTION` cards name them. **Measured in that build:** on *"Center (Front/Back)"* the profile is X,Z and `startMm` / `endMm` are Y values toward +Y; on *"Center (Left/Right)"* the profile is Y,Z and they are X values toward +X; on a named left-right reference plane at X=a, a revolve's profile is Y,Z in the model's own Y. **Not measured:** both Center planes lie at 0, so whether `startMm` / `endMm` on a plane elsewhere count from that plane or from 0 was not seen - the code (`impl/any/fragment.cs`, the extrusion branch) passes them to Revit as offsets from the sketch plane, turned toward the + side, which says from the plane. The card is DRAFT, and D-30's fingerprint hashes only `impl/` (`brain/heron_fragment.py`, `fingerprint`), so a comment changes no proof. The same gap on the sweep is [row 429](../FRAGMENT-ISSUES.md#).
-
-**State.** **FIXED 2026-10-12 in this change - text only.** The value note now carries the three measured directions and names the unmeasured case.
-
----
-
-### Row 5b-433
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`ADD_FAMILY_CONNECTOR`'S SYSTEM EXAMPLES DID NOT NAME "Other Pipe", SO A BUILDER TYPED "Other" AND WAS REFUSED.** Seen 2026-10-11/12 on the owner's laptop, Revit 2024: `system=Other` was refused, and the call went through as *"Other Pipe"*. The refusal is by design - the card's purpose says a bare "Other" is not taken because a duct has Other Air and a pipe Other Pipe, and the code leaves it out on purpose (`impl/any/fragment.cs`, above `shownAs`) - but the value note above `- name: system`, the text `heron_resolve` prints beside the value, listed neither, so the caller guessed. Revit's names, read from the code's own refusal text and enum walk: *Other Pipe* (pipe), *Other Air* (duct, matched from the enum with spaces ignored), *Fire Protection Other*.
-
-**State.** **FIXED 2026-10-12 in this change - text only.** The value note now names "Fire Protection Other" and "Other Pipe", and says a bare "Other" is refused. The card is DRAFT; no proof moves.
-
----
-
 ### Row 5b-434
 
 *Moved from the register on 2026-11-17.*
@@ -57,16 +37,6 @@
 **Defect.** ***"how many furniture are there"* IS ANSWERED BY A TOOL THAT COUNTS BY ROOM, SPACE OR ZONE THROUGH `revit_read`, AND BY `SET_CATEGORY_SOLID_FILL`, A CHANGE, THROUGH `heron_lookup` - NEITHER COUNTS FURNITURE.** Seen 2026-10-11/12 by the owner's chat on the laptop: `revit_read` with that request named `COUNT_BY_SPATIAL_CONTAINER` (counts elements by the room, space or zone they sit in) as its best match, with `FILTER_ELEMENTS_BY_CATEGORY` and `COUNT_ELEMENTS` as runners-up - the chat chose by hand. **Measured again 2026-10-12** through this chat's live Heron server (487 capabilities, 315 PROVEN; nearness by the trained model, no re-ranker; nothing connected, so no version filter): `heron_lookup` and `revit_read` both named **`SET_CATEGORY_SOLID_FILL` (MODIFY)** best - *words #1 + nearness #20*, 7.9 ranks clear - then `COUNT_BY_SPATIAL_CONTAINER` (READ, words #11 + nearness #18), `REPORT_FAMILY_SIZE_TABLE` (READ, nearness #1), `SET_CATEGORY_VISIBILITY` (MODIFY, words #2) and `REPORT_FAMILY_TABLES_IN_PROJECT` (READ, nearness #2). Neither `COUNT_ELEMENTS` nor `FILTER_ELEMENTS_BY_CATEGORY` was on that shortlist of five. `revit_read` sent nothing to Revit, and the lookup's own warning named the write as a write. The two runs differ - which store and backend the owner's chat ran on is not recorded - so the measurement to repair against is a fresh one on both backends. Same family of defect as [row 401](../FRAGMENT-ISSUES.md#) and [row 426](../FRAGMENT-ISSUES.md#).
 
 **State.** **MOVED TO ISSUE [#909](https://github.com/Ajmalpshaik/Heron-AI/issues/909) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN - recorded, not repaired.** House rule: routing is measured, never guessed - a repair names the sentences it moves on both backends (`tools/score-routing.py`), before and after.
-
----
-
-### Row 5b-436
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **HERON COULD NOT REPLACE A FAMILY PARAMETER WITH A SHARED ONE, SO THE ONLY ROUTE LEFT TWO PARAMETERS PER SIZE.** Seen 2026-10-12 on Revit 2020 in "TRG_Mechanical Equipment_Split Air Conditioner Outdoor Unit_Wall Mounted": the owner asked for Width, Depth, Height and Wall Clearance - family parameters labelling dimensions - to become his shared parameters Unit_Width, Unit_Thickness, Unit_Height and Clearance_Rear from his shared parameter file. Revit does this in Family Types > Modify > Shared parameter > Select (`FamilyManager.ReplaceParameter`), keeping every label, formula and association; nothing in Heron called it. The only route was `ADD_FAMILY_SHARED_PARAMETERS` beside each one and `SET_FAMILY_FORMULA` "Width = Unit_Width", which leaves both in the Properties palette.
-
-**State.** **FIXED by widening ADD_FAMILY_SHARED_PARAMETERS (FRG-PAR-031) to version 2, PROVEN - signed by Ajmal PS 2026-10-12.** Revit 2020, scratch Family4, 2026-10-12: batch-prove PASS on both legs, a kept replace that the label, formula and flex followed, and the workaround refused then cleared and replaced (Group DE, DE1 to DE5). `ADD_FAMILY_SHARED_PARAMETERS` version 2 widened with an optional `replaceExisting` (pairs Old=SharedName), as `ADD_FAMILY_PARAMETERS` gained `switchExisting` and `renameExisting`: refused by name on a different kind, an old one already shared, a name not in the file, a shared name already in the family, and a formula naming the shared name; labels, formulas, associations and every type's value read back, all or nothing. Compiles 2020 to 2027. The owner's family still carries the workaround and is refused until its formulas are cleared and the extra parameters deleted. [Group DE](../needs-checking/group-de.md).
 
 ---
 

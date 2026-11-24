@@ -50,13 +50,13 @@ runs FB1 to FB3 through `batch-prove`; `--dry-run` reads it back without Revit.
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**FB1**~~ | `revit_read` capability `FIND_SHEETS_BY_REVISION_OR_NUMBER` with `revisionSequence=2` and nothing… — [full row](../needs-checking-archive/group-fb.md#row-fb1) | **Eight** |
-| ~~**FB2**~~ | The same with `sheetNumbers=17` and nothing else — [full row](../needs-checking-archive/group-fb.md#row-fb2) | `elements` empty and `notFound` 17 - neither 179 nor 1790 picked. |
-| ~~**FB3**~~ | `revisionSequence=2`, `sheetNumbers=179, 180, 1790, 999` — [full row](../needs-checking-archive/group-fb.md#row-fb3) | 179 and 180 picked; `listedWithoutRevision` 1790; `notFound` 999; `revisionsMatched` ends… |
-| ~~**FB4**~~ | `revisionDescription=FB ISSUED AS-BUILT`; then `revisionDescription=as-built` — [full row](../needs-checking-archive/group-fb.md#row-fb4) | The first picks FB1's eight and does not choose Seq 3. |
-| ~~**FB5**~~ | `revisionDate=14.10.2026`; then `revisionSequence=9`; then no values at all — [full row](../needs-checking-archive/group-fb.md#row-fb5) | The date picks 179 to 186 and 1790, both revisions named with their counts. |
-| ~~**FB6**~~ | Second route, by hand: each sheet's Revisions on Sheet, and a sheet list schedule with Current… — [full row](../needs-checking-archive/group-fb.md#row-fb6) | Seq 2 ticked or clouded on exactly FB1's eight; the schedule shows Seq 4 as current on… |
-| ~~**FB7**~~ | An observation. Set Seq 2 to Show: None in Sheet Issues/Revisions, then FB1 again; set it back — [full row](../needs-checking-archive/group-fb.md#row-fb7) | Whether the eight still come back. |
-| ~~**FB8**~~ | An observation. Try to tick Seq 2 on placeholder P-01; if Revit allows it, FB1 again — [full row](../needs-checking-archive/group-fb.md#row-fb8) | Whether P-01 is picked and its id is in `placeholders`. |
-| ~~**FB9**~~ | Then the chain the 2026-10-14 job needed: FB1's sheets to `revit_change` `MANAGE_SHEET_SETS`… — [full row](../needs-checking-archive/group-fb.md#row-fb9) | `memberCount` 8 and `notASheet` empty. |
-| ~~**FB10**~~ | FB1 and FB2 once on Revit 2024 and once on 2027 — [full row](../needs-checking-archive/group-fb.md#row-fb10) | The same answers - one implementation, every release CLOSED 2026-11-13, not passed… |
+| ~~**FB1**~~ | `revit_read` capability `FIND_SHEETS_BY_REVISION_OR_NUMBER` with `revisionSequence=2` and nothing… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **Eight** |
+| ~~**FB2**~~ | The same with `sheetNumbers=17` and nothing else — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `elements` empty and `notFound` 17 - neither 179 nor 1790 picked. |
+| ~~**FB3**~~ | `revisionSequence=2`, `sheetNumbers=179, 180, 1790, 999` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | 179 and 180 picked; `listedWithoutRevision` 1790; `notFound` 999; `revisionsMatched` ends… |
+| ~~**FB4**~~ | `revisionDescription=FB ISSUED AS-BUILT`; then `revisionDescription=as-built` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The first picks FB1's eight and does not choose Seq 3. |
+| ~~**FB5**~~ | `revisionDate=14.10.2026`; then `revisionSequence=9`; then no values at all — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The date picks 179 to 186 and 1790, both revisions named with their counts. |
+| ~~**FB6**~~ | Second route, by hand: each sheet's Revisions on Sheet, and a sheet list schedule with Current… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Seq 2 ticked or clouded on exactly FB1's eight; the schedule shows Seq 4 as current on… |
+| ~~**FB7**~~ | An observation. Set Seq 2 to Show: None in Sheet Issues/Revisions, then FB1 again; set it back — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Whether the eight still come back. |
+| ~~**FB8**~~ | An observation. Try to tick Seq 2 on placeholder P-01; if Revit allows it, FB1 again — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Whether P-01 is picked and its id is in `placeholders`. |
+| ~~**FB9**~~ | Then the chain the 2026-10-14 job needed: FB1's sheets to `revit_change` `MANAGE_SHEET_SETS`… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `memberCount` 8 and `notASheet` empty. |
+| ~~**FB10**~~ | FB1 and FB2 once on Revit 2024 and once on 2027 — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The same answers - one implementation, every release CLOSED 2026-11-13, not passed… |

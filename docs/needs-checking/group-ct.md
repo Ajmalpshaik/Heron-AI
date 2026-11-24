@@ -60,7 +60,7 @@ select C and D by hand and leave REGION out.
 | **CT7** | the arrangement's kept "Taken name" run, read back | RECORD `grouped` and `findings` - did Revit add a sketch or a plane? - and Revit's warnings in the family: NO "group changed outside group edit mode". The model is regenerated before grouping for exactly that remark of Revit's |
 | **CT8** | THE PROJECT CASE: `python tools/batch-prove.py tools/jobs/test-projject-wall-rig-2026-09-13.yaml --only group-elements --session <pid>` on test projject | version 1's answers again - grouped 4 / refused false, then grouped 0 / refused true - now with `refusalReason` saying only one element was given, and `groupName` Revit's own. The job passes `name` empty since 2026-10-07 |
 | **CT9** | the scratch family after CT1 to CT6 | ONE group, "Taken name" - no "Bracket parts", no "Group 1". Look, do not assume: a rename has survived a reported rollback before ([row 19](../fragment-issues/section-5-rows-001-025.md), OPEN), and this tool renames a group type |
-| ~~**CT10**~~ | the signature — [full row](../needs-checking-archive/group-ct.md#row-ct10) | `python brain/heron_validate.py accept group-elements --by "Ajmal PS"` on the CT1/CT2… |
+| ~~**CT10**~~ | the signature — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `python brain/heron_validate.py accept group-elements --by "Ajmal PS"` on the CT1/CT2… |
 | **CT11** | the second route | the Family Editor's Project Browser > Groups, and Edit Group on the kept group, to see its members |
 | **CT12** | CT1 on **Revit 2020** and **2027** | the same answers. Compiled on all eight releases; not run there |
 

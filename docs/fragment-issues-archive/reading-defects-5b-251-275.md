@@ -20,16 +20,6 @@
 
 ---
 
-### Row 5b-253
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **D-59's FIRST BATCH: WHAT WAS DECIDED WHILE BUILDING IT, SO NONE OF IT IS SILENT.** Eleven reading fragments, chosen from the owner's September audit log, take `includeLinks` and report `linksSearched` and `linkedMatches` - [NEEDS-CHECKING Group BE](../needs-checking/group-be.md). **(1) Nothing from a link enters a chain output.** [Row 75](../fragment-issues/section-5-rows-051-075.md) is OPEN: the chain looks carried ids up in the host. So `elements`, `unplaced`, `unenclosed` and `elevationsMm` stay the host's own and linked findings are text. **(2) Nested links are not read**, which [D-59](../decisions/D-59.md) left open; each answer counts the link placements nested inside the links it read. **DECIDED BY THE OWNER 2026-09-28: "keep counting them for now"** - nested links stay counted and unread until he says otherwise; BE13 checks the count on a real model. **(3) A view reaches a link only on Revit 2023 and later** - the view-and-link collector is absent from the 2020, 2021 and 2022 reference packages and present from 2023, read off `Nice3point.Revit.Api.RevitAPI` 2020.2.90, 2021.1.100, 2022.1.80, 2023.1.90 and 2024.3.60. It is reached by reflection because fragments compile without release symbols ([row 5b-181](../fragment-issues/section-5b-rows-176-200.md)); on the three older releases the answer says the links were NOT read, never the whole link as if it were the view. **(4) A level is matched in a link by NAME** (`filter-elements-by-category`), because a host level id means nothing in the link; the answer names the level it looked for. **(5) `list-levels` gives its linked lines the fragment's own elevation reading**, which [row 5b-180](../fragment-issues/section-5b-rows-176-200.md) disputes, so whatever settles that row corrects host and link lines together. **(6) Five often-run tools were judged and NOT given the switch**, on the owner's rule that D-59 is not narrowed silently: `select-types` (195 runs), `find-views` (164), `find-schedules` (65), `list-sheets` (55) and `find-sheets` (51). Views, sheets and schedules in a link cannot be opened, placed or edited from the host, and a type in a link cannot be placed in it; a link's own list answers a question about the link file, which is opened for that. **They stay on `check-revit-gate.py --list links`**, which still reads them as unanswered, because the owner has not agreed.
-
-**State.** **MOVED TO ISSUE [#921](https://github.com/Ajmalpshaik/Heron-AI/issues/921) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN - the group's own rows are not written back.** Read 2026-11-11 in a cloud container (no Revit): *built and NOT RUN* and *went from `PROVEN` to `DRAFT`* below describe the cards as they stood when this was written. Each card's status now is on the card - its `heron-status` line and `proof:` block - and is not retyped here; several carry a later proof, and some are DEPRECATED. Whether BE1 to BE13 were what was run is the group's to say and was NOT sorted here: for the owner. Was: **OPEN - the batch is built and NOT RUN.** It compiles on 2020 to 2027. Ten of the eleven went from `PROVEN` to `DRAFT` as version 2. **For the owner:** BE1 to BE13, and a yes or no on (6). (2) is answered.
-
----
-
 ### Row 5b-256
 
 *Moved from the register on 2026-11-17.*
@@ -80,16 +70,6 @@
 
 ---
 
-### Row 5b-263
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`tests/test_mcp_serves.py` FAILS ONE CHECK ON `main`, AND CI CANNOT SEE IT.** Found 2026-10-01 running every suite before pushing the family forms. The check is *"and the separator is said once, not once per candidate"* - `said.count("A NEWLINE separates") == 1` on the reply to `revit_read` with the request "list sheets with no views" - and it fails on `main` at `447e2dc` (#370, merged the same day, which last touched the suite and the server), measured in a separate worktree with an empty knowledge store, and identically on the branch that found it, so it is not that branch's. **CI cannot see it:** `gates.yml` lists `test_mcp_serves.py` as NOT RUNNABLE for want of the MCP SDK, and this cloud container has the SDK, so the suite ran here in full and nowhere else. **Recorded, not fixed.** **Not checked:** how many times the sentence is said, and whether the check or the reply is the one that is wrong.
-
-**State.** **FIXED 2026-10-03, in the suite; the server is unchanged - its reply says the separator once, and the suite was reading it twice.** `text_of()` flattened whatever the SDK's `call_tool` returned, and `mcp` 1.28.1 - this container's - returns a PAIR for every Heron tool, because each returns `-> str`: the text blocks, and the same answer again as structured content, `{"result": ...}`. Read whole, the pair became a Python repr of both halves - every reply twice, with no real line break in it. The sentence count was the only check that counted anything, so it alone failed; *"every other candidate handed back (8)"* was 4, read twice. Now only the text blocks are read, and a new check holds the served text equal to what the tool itself returns. **Run here:** the suite failed this one check before and passes now - `tools/change-evidence.py` ruled KEEP; the separator said once per candidate, and said not at all, each turned it red; the old reading put back turned both the new check and this one red. The SDK sends a host both halves, `content` and `structuredContent` (read in its low-level server); which of them a host puts before the model was not looked at here. CI leaves this suite out on purpose - `gates.yml` keeps the MCP SDK off its runners for its native dependencies - so a cloud session with the SDK stays the place it runs.
-
----
-
 ### Row 5b-265
 
 *Moved from the register on 2026-11-17.*
@@ -97,15 +77,3 @@
 **Defect.** **A FAMILY FROM A PICTURE: THE `family-creation` SKILL WIDENED, NOT A SECOND SKILL BESIDE IT.** Written 2026-10-01, the third of the owner's three changes - *"maybe I will give only an image"* - [NEEDS-CHECKING Group BN](../needs-checking/group-bn.md). No new tool. **What was decided:** (1) **one skill, widened.** A second skill for "from a picture" would claim the same words, need the same capabilities in the same order, and leave the host to choose between two methods for one job; the picture is step ZERO of the same method. (2) **Step zero is "read the thing first"** - what it is, its category, the forms it is made of, every size, which sizes vary - said back as ONE list. The host reads the image ([D-01](../DECISIONS.md): the host decides what the user meant), and Heron holds only the method. **A picture gives shape and proportion, never size**, so every size is asked for once, in that list ([D-33](../DECISIONS.md)), and BN1 fails a host that scales a size off the photo whatever it builds. (3) **The order is the method**, and each place it could go wrong is said where it happens: values before labels, forms drawn where the planes are NOW so their faces lie on them, locks after forms, a round label after its value, voids then a combination that measures the cut, the forms read back, then the flex. (4) **The new sentences were chosen by measuring where each lands**, not by how they read: three first drafts landed on `PLACE_FAMILY_ON_FACE`, `LOAD_FAMILY` and a size-table read; the four kept land on capabilities the skill declares. 6 of its 8 sentences reach (`tools/check-skill-routing.py`); the two that miss are the skill's own first two, missing the same way on `main`.
 
 **State.** **MOVED TO ISSUE [#902](https://github.com/Ajmalpshaik/Heron-AI/issues/902) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN - written and NOT FOLLOWED.** Like every skill, `DRAFT` until a real chat follows it to a family that flexes. **For the owner:** BN1 to BN5, after BL and BM.
-
----
-
-### Row 5b-272
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **HERON'S SERVER FROZE FOR GOOD WHEN A CHAT ASKED IT SOMETHING IN ITS FIRST SECONDS WITH REVIT OPEN: TWO THREADS WAITED ON WINDOWS' LOADER LOCK.** Found 2026-10-01 measuring a chat's start ([04 §8.6](../04-heron-mcp.md#86-a-chat-starts-ready--built-2026-10-01)). On `main`, a `heron_lookup` sent the moment the server was ready never answered - **3 runs of 3**, each cut off at 200 s, and a fourth at 300 s - while the same request 8 s later answered in 6-7 s. A stack dump at 40 s: the encoder's warm-up thread inside `create_module` for `numpy._core.multiarray` (Windows loading the DLL), and the event loop inside `threading.Thread.start()`, waiting for the reader thread `heron_bridge_client._read_line` starts when `_revit_version` asks Revit. A thread cannot start while another holds the loader lock, so the whole server - every tool - stopped. It needs Revit open (`discover` pings it), which is why the first runs that evening, with no Revit, never showed it. This is very likely what `heron_embed.warm()`'s 2026-09-06 note recorded as an import "still inside create_module 40 seconds later". **Fixed here:** `heron_embed.warm()` loads numpy on the calling thread before starting its own; three runs of three answered at once (5.3-7.6 s). **Not checked:** whether another native import reached from a background thread can do the same - the re-ranker's torch is the candidate, and is not installed on this PC.
-
-**State.** **FIXED - in a real chat, A21.**
-
----

@@ -45,12 +45,12 @@ The title blocks are two families from Revit 2020's own library, loaded into all
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**JE0**~~ | Open. The copy for this release open and in front in that Revit, nothing else of the owner's in it — [full row](../needs-checking-archive/group-je.md#row-je0) | The title bar reads JE Title Blocks Struck 2026-11-13: PASSED - the verdict is in this… |
+| ~~**JE0**~~ | Open. The copy for this release open and in front in that Revit, nothing else of the owner's in it — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The title bar reads JE Title Blocks Struck 2026-11-13: PASSED - the verdict is in this… |
 | **JE1** | *Arrange, kept in the copy.* `fragment --in "JE Title Blocks" load-family --write --apply --set "familyPath=C:/ProgramData/Autodesk/RVT 2020/Libraries/US Imperial/Titleblocks/C 17 x 22 Horizontal.rfa"`, the same for `D 22 x 34 Horizontal.rfa`, then `fragment --in "JE Title Blocks" create-sheets --write --apply --set "numbers=JE-01,JE-02,JE-03" --set "names=JE one,JE two,JE three" --set "titleBlockName=C 17 x 22 Horizontal"` | Both families loaded; three sheets made, none refused, *titleBlockNotFound* false |
 | **JE2** | *Check the arrangement.* `fragment --in "JE Title Blocks" find-sheets --set numberOrNameContains=JE-`, then `fragment --in "JE Title Blocks" report-sheet-title-blocks --expect-from find-sheets` | Three sheets; `typesInUse` exactly *C 17 x 22 Horizontal : C 17 x 22 Horizontal*. Anything else and the runs below prove nothing |
-| ~~**JE3**~~ | The positive - the D-30 positive. python tools/batch-prove.py… — [full row](../needs-checking-archive/group-je.md#row-je3) | **`replaced` 3** |
-| ~~**JE4**~~ | The negative - the D-30 negative. JE3's negative leg, the same three sheets onto the type they carry — [full row](../needs-checking-archive/group-je.md#row-je4) | `replaced` empty, `swappedInPlace` 0, `alreadyCarried` 3, `refused` empty Struck… |
-| ~~**JE5**~~ | Nothing kept. JE2 again — [full row](../needs-checking-archive/group-je.md#row-je5) | All three still on C 17 x 22 Horizontal: both legs were rolled back Struck 2026-11-13… |
+| ~~**JE3**~~ | The positive - the D-30 positive. python tools/batch-prove.py… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **`replaced` 3** |
+| ~~**JE4**~~ | The negative - the D-30 negative. JE3's negative leg, the same three sheets onto the type they carry — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `replaced` empty, `swappedInPlace` 0, `alreadyCarried` 3, `refused` empty Struck… |
+| ~~**JE5**~~ | Nothing kept. JE2 again — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | All three still on C 17 x 22 Horizontal: both legs were rolled back Struck 2026-11-13… |
 | **JE6** | *Revit 2024.* JE0 to JE5 on the 2024 copy, JE3 with `--release 2024` once the first release is signed | The same answers |
 | **JE7** | *Revit 2027.* JE0 to JE5 on the 2027 copy, JE3 with `--release 2027` | The same answers |
 

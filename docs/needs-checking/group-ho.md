@@ -29,10 +29,10 @@ model. Count Structural Columns, Structural Framing and Generic Models in `{3D}`
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**HO1**~~ | Positive - a column still goes in. Two points on Level 1, the structural column type… — [full row](../needs-checking-archive/group-ho.md#row-ho1) | `placed` 2, `failed` 0, a finding "2 placed as Column on 'Level 1'", and no finding about… |
-| ~~**HO2**~~ | Negative - row 5b-1201's own case. The Structural Framing type, `structuralType=Beam`, Level 1… — [full row](../needs-checking-archive/group-ho.md#row-ho2) | **Nothing placed:** |
-| ~~**HO3**~~ | Negative - a brace of another family. The Generic Model family, `structuralType=Brace`, one point — [full row](../needs-checking-archive/group-ho.md#row-ho3) | Refused, "A brace is placed along a line between its two ends", naming… |
-| ~~**HO4**~~ | The geometry read-back. The Generic Model family (model lines only), two points… — [full row](../needs-checking-archive/group-ho.md#row-ho4) | `placed` empty, `failed` 2, one finding naming both points as left with no solid geometry… |
+| ~~**HO1**~~ | Positive - a column still goes in. Two points on Level 1, the structural column type… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `placed` 2, `failed` 0, a finding "2 placed as Column on 'Level 1'", and no finding about… |
+| ~~**HO2**~~ | Negative - row 5b-1201's own case. The Structural Framing type, `structuralType=Beam`, Level 1… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **Nothing placed:** |
+| ~~**HO3**~~ | Negative - a brace of another family. The Generic Model family, `structuralType=Brace`, one point — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Refused, "A brace is placed along a line between its two ends", naming… |
+| ~~**HO4**~~ | The geometry read-back. The Generic Model family (model lines only), two points… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `placed` empty, `failed` 2, one finding naming both points as left with no solid geometry… |
 | ~~**HO5**~~ | *The tool it names takes the job.* `PLACE_LINE_BASED_FAMILY` with the same Structural Framing type, `structuralType=Beam`, `curves` `23420,0,0; 23640.272,2142.771,4000 \| 23640.272,2142.771,4000; 23569.859,4319.298,8000` | Two sloped beams, each with its geometry, and no warning. **Not part of HO's verdict** - that tool's proof is the owner's call; this row only says whether the sentence HO2 gives leads somewhere that works **CLOSED 2026-11-13, not passed** - `PLACE_STRUCTURAL_FAMILY` was retired into `PLACE_FAMILY_INSTANCES` on 2026-11-01 (its `deprecated:` block); `PLACE_FAMILY_INSTANCES` is PROVEN at version 5, `proof:` dated 2026-11-02. Nothing here runs on the retired card. |
 
 **Then sign** `place-structural-family` on HO1 and HO2. HO3 and HO4 are the cases its `tests/cases.yaml`
