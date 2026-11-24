@@ -268,6 +268,7 @@ an edit.
 | [D-197](#d-197--ask-to-delete-one-switch-in-settings-on-at-every-revit-start-that-stops-revits-delete-box-and-a-drafts-keep-or-discard-and-the-chat-asks-in-words-first) | Ask to Delete: one switch in Settings, on at every Revit start, that stops Revit's Delete box and a DRAFT's Keep or Discard, and the chat asks in words first | ✅ Accepted · 2026-11-23, built, not yet run in Revit |
 | [D-198](#d-198--agents-that-were-built-but-that-nothing-in-heron-called-are-retired-and-their-code-and-tests-removed) | Agents that were built but that nothing in Heron called are retired, and their code and tests removed | ✅ Accepted · 2026-11-24 |
 | [D-199](#d-199--thirteen-more-idle-modules-are-retired-update-trust-release-tagging-versioning-the-import-pipeline-and-the-workflow-engine) | Thirteen more idle modules are retired: update, trust, release, tagging, versioning, the import pipeline and the workflow engine | ✅ Accepted · 2026-11-24 |
+| [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
 
 ## Format
 
@@ -1813,3 +1814,15 @@ Of the agents D-198's strict count found idle, company standards and the agent r
 release, tagging, versioning, the import pipeline, commit and the workflow engine are retired and their code removed.
 
 **Full record:** [`decisions/D-199.md`](decisions/D-199.md)
+
+## D-200 — Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them
+
+**Status:** Accepted · **Date:** 2026-11-24 · **Accepted:** Ajmal PS, 2026-11-24, in conversation.
+**Numbering:** D-200 is the id `tools/next-id.py` printed free on 2026-11-24, with `origin/main` ending at D-199.
+**Affects:** [28](28-agent-registry.md) (7 rows RETIRED) · `brain/` · `mcp/server/` · `brain/agents/` · `tests/` · [`mcp/README.md`](../mcp/README.md)
+
+Of the seventeen modules D-198's strict count left idle, eleven are removed with their tests and contracts. Six stay,
+because a helper agent, a kept test, a modeller's skill or a waiting design relies on them. The three installer
+agents whose Python copies went stay built, by the installer.
+
+**Full record:** [`decisions/D-200.md`](decisions/D-200.md)

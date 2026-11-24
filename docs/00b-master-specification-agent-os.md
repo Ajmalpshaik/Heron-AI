@@ -383,7 +383,7 @@ Only if no fragment can do the job:
 
 > `heron_gaps` is served as an MCP tool. The hiring chain -
 > `heron_workforce.py`, `heron_hr.py`,
-> [`heron_architect.py`](../brain/heron_architect.py), run by
+> `heron_architect.py`, run by
 > `heron_creator.py` - is DRAFT, and no MCP tool reaches it. *Check external
 > knowledge* is `heron_research`, which says what Heron's own knowledge missed; the host has the network.
 > The fragment author is
@@ -418,7 +418,7 @@ This creates a controlled self-expanding organization.
 > | Executive Orchestrator | The host | [D-01](DECISIONS.md) |
 > | *(added)* Workforce Planning | Says no first: does a capability or an existing agent already cover this, and is it a fragment rather than an agent | `heron_workforce.py` |
 > | Agent HR | Writes the job description, and only after asking Workforce Planning itself whether the proposal is cleared | `heron_hr.py` |
-> | Agent Architect | Turns the job into a contract, adds nothing the job did not ask for, and designs only for an id already in the register | [`heron_architect.py`](../brain/heron_architect.py) |
+> | Agent Architect | Turns the job into a contract, adds nothing the job did not ask for, and designs only for an id already in the register | `heron_architect.py` |
 > | Agent Builder | Derives the implementation from the contract, writes no test, runs nothing | `heron_builder.py` |
 > | Training Agent | Assembles the Constitution's rules for the agent's risk level, never copies them | `heron_trainer.py`, [`heron_instructions.py`](../brain/heron_instructions.py) |
 > | QA Agent | Agent Validation - never the agent that built it | `heron_validation.py` |
@@ -505,10 +505,10 @@ This feeds the Agent Optimizer.
 > | Measure | As built | Where |
 > |---|---|---|
 > | Success · failure · user corrections | Read from recorded runs, failures first; a success somebody had to correct is a failure signal | `heron_observe.py` |
-> | Execution time | Latency, Heron's own and measured | [`heron_observability.py`](../brain/heron_observability.py), [`tools/measure-brain.py`](../tools/measure-brain.py) |
+> | Execution time | Latency, Heron's own and measured | `heron_observability.py`, [`tools/measure-brain.py`](../tools/measure-brain.py) |
 > | Token usage | The host's. Heron makes no model call and cannot see tokens | [D-58](DECISIONS.md) |
 > | Rollbacks · error types | The add-in's audit trail and run records; a failure's kind is read from a table, never asked of a model | [`HeronRuns.cs`](../platform/Heron.Core/HeronRuns.cs), [`heron_failure.py`](../mcp/server/heron_failure.py), [D-21](DECISIONS.md) |
-> | Compatibility failures | Per Revit release, never blended | [`heron_performance.py`](../brain/heron_performance.py), [`heron_matrix.py`](../brain/heron_matrix.py) |
+> | Compatibility failures | Per Revit release, never blended | `heron_performance.py`, [`heron_matrix.py`](../brain/heron_matrix.py) |
 >
 > The Agent Optimizer is `heron_optimizer.py` (risk SUGGEST): it proposes
 > and changes nothing, and it refuses to offer a looser standard - a longer timeout, a newly declared
@@ -1281,7 +1281,7 @@ Each reports: `HEALTHY` · `WARNING` · `DEGRADED` · `FAILED`
 > |---|---|---|
 > | MCP disconnected | The bridge client retries a transport fault with backoff, and retries only what is safe to retry. A Revit that went away is never replaced by another one | [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) (`HERON-MCP-REC-009`), [25](25-multi-session-and-binding.md) |
 > | Vector index corrupted | The store is derived: `python brain/heron_scope.py --rebuild` re-indexes every scope from the cards, and a lookup reports a store that has drifted | [`heron_scope.py`](../brain/heron_scope.py) |
-> | Dependency missing | Found and named, never installed unasked | `python tools/heron-ready.py`, [`heron_dependencies.py`](../brain/heron_dependencies.py) (`HERON-INS-DEP-005`) |
+> | Dependency missing | Found and named, never installed unasked | `python tools/heron-ready.py`, `heron_dependencies.py` (`HERON-INS-DEP-005`) |
 >
 > Self-healing as such is `heron_healing.py` (`HERON-OPS-HEA-006`, DRAFT):
 > it rebuilds derived state when a named generator exists and proposes everything else. It runs only from
@@ -1389,7 +1389,7 @@ Allows the platform to identify bottlenecks.
 > **As built (2026-10-18):** latency is Heron's and measured
 > ([`tools/measure-brain.py`](../tools/measure-brain.py),
 > [`tools/time-family-build.py`](../tools/time-family-build.py),
-> [`heron_observability.py`](../brain/heron_observability.py)). Token usage and model latency are the
+> `heron_observability.py`). Token usage and model latency are the
 > host's ([D-58](DECISIONS.md)); in their place Heron counts the share of requests it answered with no
 > model needed. Success, failure and rollbacks are in the audit trail and the run records.
 >
@@ -1461,7 +1461,7 @@ Skill Success · User Corrections · Execution Time · Failure Rate · Compatibi
 
 Poor-performing skills automatically enter review.
 
-> **As built (2026-10-18):** [`heron_performance.py`](../brain/heron_performance.py)
+> **As built (2026-10-18):** `heron_performance.py`
 > (`HERON-SKL-PRF-006`, DRAFT) reports success, corrections, time and failures per Revit release, never
 > blended, and always beside the counts. Nothing enters review automatically. A skill's proof is
 > `python tools/prove-skill.py` (§28).

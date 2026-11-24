@@ -179,9 +179,12 @@ def main():
               "and says a half-scaffolded agent is worse than none")
 
     print("\n4. a name that shadows an existing module is refused")
-    check(NA.prefix_collisions("brain", "regression_test")
-          == ["heron_regression"],
-          "heron_regression_test shadows heron_regression - the real case")
+    # The real case was heron_regression_test against heron_regression, on
+    # 2026-09-17. heron_regression.py was retired by D-200, so the same
+    # shape is checked against a module that is still here.
+    check(NA.prefix_collisions("brain", "matrix_test")
+          == ["heron_matrix"],
+          "heron_matrix_test shadows heron_matrix - the shape of the real case")
     check(NA.prefix_collisions("brain", "qa") == [],
           "a whole name that is nobody's prefix collides with nothing")
     check("heron_buildmatrix" not in NA.prefix_collisions(
@@ -227,7 +230,7 @@ def main():
           % unbuilt)
     if unbuilt:
         code, said = run([unbuilt, "--part", "brain",
-                          "--module", "regression_test"])
+                          "--module", "matrix_test"])
         check(code == 1 and "shadows" in said,
               "an explicit --module cannot walk around it either")
 
