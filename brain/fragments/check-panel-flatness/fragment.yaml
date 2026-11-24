@@ -1,0 +1,117 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-039
+semantic-identity: "how far out of plane is each facade panel - is every panel flat enough for one sheet of glass"
+kind: action
+domain: revit.qa
+capability: CHECK_PANEL_FLATNESS
+version: 1
+source: OFFICIAL
+risk: READ
+
+# VERSION 1 (2026-11-24) - written in a cloud session with no Revit, for
+# WN-11 in GitHub issue #1005 (the facade note's "whether each cell of a
+# twisted divided surface is flat enough for one sheet of glass - nothing
+# measures it"). Not tested in Revit. NEEDS-CHECKING Group QB, rows QB12 and
+# QB13.
+
+purpose: >
+  MEASURES HOW FAR EACH PANEL'S CORNERS ARE FROM ONE FLAT PLANE - the twist a
+  sheet of glass or a flat cladding panel would have to take on a twisted or
+  doubly curved facade. Read-only. "Are these facade panels flat enough for
+  glass", "how far out of plane is each panel", "check the flatness of the
+  panels on this twisted surface".
+
+  **ADAPTIVE PANELS, BY THEIR PLACEMENT POINTS.** For each adaptive component
+  handed in - a panel placed on the nodes of a divided surface or between
+  points - its placement points are read, the plane that fits them best is
+  found, and its value is the furthest any corner sits from that plane, in
+  millimetres. Every panel is listed worst first.
+
+  **A PANEL HERON CANNOT READ IS NAMED, NEVER GIVEN A NUMBER.** One whose
+  corners are not adaptive points - a curtain panel in a curtain wall, flat by
+  construction, or a pattern-based panel whose corners the API does not
+  return as points (an ASSUMPTION the proof settles) - and one with three
+  points or fewer, which always lie on one plane, go in `notMeasured` with
+  why.
+
+  **THE LIMIT IS THE MODELLER'S.** `toleranceMm` left out: no panel is called
+  flat enough or not - how much twist a sheet takes is the glazier's and the
+  architect's number, not Heron's. Given one, the panels over it are in
+  `overTolerance`, ready to select. Never writes anything.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The panels - adaptive components, selected in Revit or found the step
+    # before.
+    - name: elements
+      type: IList<Element>
+    # A limit in MILLIMETRES, digits only - "5". Left out: "none", every panel
+    # measured and listed, none judged.
+    - name: toleranceMm
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: measured
+      # Panels whose corners were read and measured.
+      role: result
+      type: int
+    - name: worstMm
+      # The furthest any corner of any panel sits from its panel's plane.
+      role: result
+      type: double
+    - name: overTolerance
+      # Panels over the limit given - ids, ready to select. Empty with no limit.
+      role: result
+      type: IList<ElementId>
+    - name: flatness
+      # One line per panel, worst first: its corners and how far out of plane.
+      role: result
+      type: IList<string>
+    - name: notMeasured
+      # Handed in and not measured, each with why (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE PATH FOR EVERY RELEASE, read rather than remembered. On 2026-11-24
+  tools/api-surface read the reference assemblies of all eight releases, 2020
+  through 2027, and found one signature on every one for each member this
+  calls: `AdaptiveComponentInstanceUtils.IsAdaptiveComponentInstance
+  (FamilyInstance)` and `GetInstancePlacementPointElementRefIds(FamilyInstance)`,
+  `ReferencePoint.Position`, and the XYZ arithmetic. Nothing is written. No
+  ElementId is constructed and none is read as a number.
+
+# ROUTING
+#
+#   "are these facade panels flat enough for
+#    glass", "how far out of plane is each
+#    panel"                                   -> here
+#   "check the flatness of the panels on this
+#    twisted surface"                         -> here, the panels handed in
+#   "how is this divided surface laid out"    -> REPORT_DIVIDED_SURFACES
+#   "can this element sit flat against the
+#    ceiling"                                 -> CHECK_SURFACE_FIT - an element
+#                                                against what is behind it.
+#                                                This is a panel against its
+#                                                own plane
+#   "what fall do these pipes have"           -> MEASURE_MEP_SLOPE
+
+utterances:
+  - are these facade panels flat enough for glass
+  - how far out of plane is each panel
+  - check the flatness of the panels on this twisted surface
