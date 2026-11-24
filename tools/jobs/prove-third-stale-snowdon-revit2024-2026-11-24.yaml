@@ -1,0 +1,104 @@
+# Third round of STALE cards, run 2026-11-24 on Revit 2024 (build 24.3.50.51,
+# add-in 0.2.0.0, session 11112). RESULT: PASS on all six jobs below, both
+# halves, rolled back; each draft's fingerprint matches origin/main. NOT signed.
+#
+#     python tools/batch-prove.py tools/jobs/prove-third-stale-snowdon-revit2024-2026-11-24.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/prove-third-stale-snowdon-revit2024-2026-11-24.yaml --session <pid>
+#
+# THE MODEL: Revit's own Snowdon Towers Sample Architectural, never saved.
+# move-annotation is arranged on ONE existing text note by id (1357944 on
+# FloorPlan: L2): a create-text-note setup bound the Revit selection left by
+# an earlier job in one phase and the chain in the other, and Furniture is
+# moved too - both recorded as findings. arrange-tags is NOT here: the room
+# tags on FloorPlan: L2 never overlap, even at minGapMm 20000 (POSITIVE EMPTY).
+
+model: Snowdon Towers Sample Architectural (Revit's own sample, never saved; every run rolled back), Revit
+  2024, session 11112
+defaults:
+  in: Snowdon Towers Sample Architectural
+  setup: []
+jobs:
+- fragment: set-view-section-box
+  setup:
+  - filter-elements-by-category
+  - set-selection
+  keep-chain: true
+  write: true
+  expect: applied
+  set:
+    categories: Furniture
+    inViewOnly: 'FloorPlan: L2'
+    view: '{3D}'
+    marginMm: '500'
+  negative-set:
+    categories: Furniture
+    inViewOnly: 'FloorPlan: L2'
+    view: 'FloorPlan: L2'
+    marginMm: '500'
+- fragment: move-annotation
+  write: true
+  setup:
+  - filter-elements-by-id
+  - set-selection
+  setup-set:
+    elementIds: '1357944'
+  negative-setup-set:
+    elementIds: '1357944'
+  expect: moved
+  set:
+    target: 1000,0,0
+    arrange: ''
+  negative-set:
+    target: 1000,0,0
+    arrange: align left
+  note: 'One text note on FloorPlan L2 (id 1357944). Positive moved 1. Negative - align left needs two
+    annotations: refused, moved 0.
+
+    '
+- fragment: count-by-spatial-container
+  setup:
+  - filter-elements-by-category
+  - set-selection
+  expect: groupCounts
+  set:
+    categories: Furniture
+    inViewOnly: 'FloorPlan: L2'
+    containerKind: room
+  negative-set:
+    categories: Furniture
+    inViewOnly: 'FloorPlan: L2'
+    containerKind: ZZZNOTHINGHERE
+- fragment: set-view-filter-categories
+  write: true
+  expect: changed
+  set:
+    filterNames: Walls - Living Wall
+    categories: ''
+    newName: ''
+    parameterName: Comments
+    matchValue: has no value
+  negative-set:
+    filterNames: Walls - Living Wall
+    categories: ''
+    newName: ''
+    parameterName: Comments
+    matchValue: has no value Level 1
+- fragment: manage-sheet-sets
+  write: true
+  expect: created
+  set:
+    mode: by-parameter
+    parameterName: Sheet Issue Date
+    setPrefix: none
+    values: all
+  negative-set:
+    mode: by-parameter
+    parameterName: Heron No Such Parameter 1124
+    setPrefix: none
+    values: all
+- fragment: report-view-work-plane
+  expect: workPlanes
+  set:
+    views: 'FloorPlan: L2'
+  negative-set:
+    views: 'Schedule: Door Schedule'
