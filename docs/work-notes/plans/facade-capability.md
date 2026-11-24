@@ -88,17 +88,19 @@ A change under a PROVEN card's `impl/` makes its proof stale, so none of these w
 
 ## Still NOT YET after it
 
-*WN-11 of [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) - done 2026-11-24: five new DRAFT cards,
+*WN-11 of [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) - done 2026-11-24: four new DRAFT cards,
 not tested in Revit - `edit-curtain-grid-segments` (a grid line removed, a segment taken out or put back),
 `move-curtain-grid-line` (a grid line, or the one a mullion sits on, moved), `set-mullion-join` (Make Continuous /
-Break at Join), `set-curtain-wall-embed` (Automatically Embed, with what it cuts read back) and
-`check-panel-flatness` (how far each adaptive panel is out of plane). Their Revit runs are
+Break at Join) and `check-panel-flatness` (how far each adaptive panel is out of plane). *Automatically Embed*
+moved to [row 5b-2008](../../fragment-issues/row-5b-2008.md) in [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012):
+its write card waits on the owner, because no read reads the box. Their Revit runs are
 [Group QB](../../needs-checking/group-qb.md), issue [#1320](https://github.com/Ajmalpshaik/Heron-AI/issues/1320).
 The tile pattern stays NOT YET: the API cannot set it.*
 
 Said by the `facade` method when asked, never worked round:
 
 - a curtain **system type's** grid and mullions **read back** - `report-curtain-wall-type` reads a wall type only (setting them is row 10);
+- the curtain type's *Automatically Embed* box - no tool reads or sets it yet ([row 5b-2008](../../fragment-issues/row-5b-2008.md));
 - the tile pattern of a divided surface - Revit's `CurtainPanelTilePattern` is read-only;
 - whether a fin or blade follows a later change to the curtain grid it was placed against - not measured;
 - glazing area by orientation and each facade's bearing from true north - [doc 45 §6](../../45-five-more-downloaded-skill-files.md).

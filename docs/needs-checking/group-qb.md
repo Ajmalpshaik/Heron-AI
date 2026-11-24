@@ -5,27 +5,30 @@
 > this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py) reads it back
 > into the register for every tool that reads it, so a row here is seen exactly as it was seen there.
 
-## Group QB - five facade tools: a curtain grid line or segment removed, a grid line or mullion moved, a mullion's join, Automatically Embed, a panel's flatness - DRAFT until proved (2026-11-24)
+## Group QB - four facade tools: a curtain grid line or segment removed, a grid line or mullion moved, a mullion's join, a panel's flatness - DRAFT until proved (2026-11-24)
 
 **Tracked as GitHub issue [#1320](https://github.com/Ajmalpshaik/Heron-AI/issues/1320) since 2026-11-24** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
 **Why:** WN-11 in GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) - the facade note's
 *Still NOT YET* list ([`facade-capability.md`](../work-notes/plans/facade-capability.md)): no tool removed a grid
 line or cut a segment, moved a mullion or changed its join, read or set the curtain type's *Automatically Embed*,
-or measured whether a panel is flat enough for one sheet of glass. Five new cards, written in a cloud session:
+or measured whether a panel is flat enough for one sheet of glass. Four new cards, written in a cloud session.
+The fifth, `set-curtain-wall-embed` for *Automatically Embed*, was taken out of this change on 2026-11-24: a plain
+question about the box ranked it, a write, first, and no read card reads the box - [row 5b-2008](../fragment-issues/row-5b-2008.md),
+issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012), the owner's call. Its card waits on a draft pull
+request of its own, branch `claude/s9b-curtain-wall-embed`.
 
 | Card | What it does in Revit words |
 |---|---|
 | [`edit-curtain-grid-segments`](../../brain/fragments/edit-curtain-grid-segments/fragment.yaml) (FRG-ELE-173) | a grid line taken away from one curtain wall, or segments of it taken out or put back - Add/Remove Segments |
 | [`move-curtain-grid-line`](../../brain/fragments/move-curtain-grid-line/fragment.yaml) (FRG-ELE-174) | a grid line moved along its wall - or the one a picked mullion sits on - by a distance or to a position |
 | [`set-mullion-join`](../../brain/fragments/set-mullion-join/fragment.yaml) (FRG-ELE-175) | Make Continuous or Break at Join on the mullions picked, measured off each mullion's solid |
-| [`set-curtain-wall-embed`](../../brain/fragments/set-curtain-wall-embed/fragment.yaml) (FRG-ELE-176) | Automatically Embed ticked or not on the picked curtain wall's type, and which walls it cuts read back |
 | [`check-panel-flatness`](../../brain/fragments/check-panel-flatness/fragment.yaml) (FRG-QA-039) | how far each adaptive panel's corners sit off one plane, in mm, against the modeller's limit - read only |
 
 The tile pattern of a divided surface stays NOT YET: Revit's `CurtainPanelTilePattern` is read-only.
 
-**What is done and what is not.** Every Revit member the five call was read off all eight releases' reference
-assemblies with `tools/api-surface` on 2026-11-24, one signature each, and all five compile for 2020 to 2027
+**What is done and what is not.** Every Revit member the four call was read off all eight releases' reference
+assemblies with `tools/api-surface` on 2026-11-24, one signature each, and all four compile for 2020 to 2027
 (`tools/check-fragments-compile.py`, 2026-11-24, in a cloud container). Their sentences were measured main against
 the branch on all four routing backends (the pull request has the numbers). **Not tested in Revit.** `revit_change`
 refuses each until its row below is signed.
@@ -35,7 +38,6 @@ refuses each until its row below is signed.
 - whether the grid lines a curtain wall TYPE lays out read **pinned** through the API (both grid cards refuse a pinned line);
 - whether `ElementTransformUtils.MoveElement` moves an unpinned grid line **with its mullions**;
 - whether a mullion's length along its run, off its solid, tells **continuous from broken**;
-- whether ticking *Automatically Embed* embeds a curtain wall **already drawn**, or only walls drawn after;
 - whether a **pattern-based** panel's corners come back as adaptive placement points.
 
 **The model: a scratch copy, never the working model** - "Heron QB Facade", a new project saved for this, with
@@ -55,10 +57,11 @@ Each card's `tests/cases.yaml` has every case in full.
 | **QB7** | `move-curtain-grid-line`: a move past the next line, `0.3`, a type's pinned line, a border mullion | Each refused, nothing moved |
 | **QB8** | `set-mullion-join` continuous on a mullion that stops at a transom, then break | `changed 1` each time, the length longer by about the transom's width, then back within 1 mm |
 | **QB9** | `set-mullion-join` with the curtain wall picked, and continuous twice | Refused *"Nothing given is a mullion"*; the second `changed 0`, in `unchanged` |
-| **QB10** | `set-curtain-wall-embed` yes on a curtain wall of an unticked copy type drawn inside a basic wall | `typesChanged 1`, the box reads ticked; RECORD whether it now cuts the basic wall or only a wall drawn after |
-| **QB11** | `set-curtain-wall-embed` with the basic wall picked, and yes twice | Refused *"Nothing given is a curtain wall"*; the second `typesChanged 0`, *"already has Automatically Embed ticked"* |
 | **QB12** | `check-panel-flatness` on a flat and a twisted 4-point adaptive panel, limit `10` | The twisted one *24.98 mm - OVER 10 mm*, the flat one 0 - within 10; the flat one alone is never flagged |
 | **QB13** | `check-panel-flatness` on pattern-based panels of a divided surface, and on curtain wall panels | RECORD whether pattern-based panels are measured; curtain wall panels all in `notMeasured` |
+
+QB10 and QB11 were the embed card's two rows; they left with it on 2026-11-24 (row 5b-2008) and are owed by
+nothing in this group.
 
 **Closing:** each card goes to PROVEN only with its positive, its negative and a person's name (D-30); its rows
 here are struck with the release, model and date.

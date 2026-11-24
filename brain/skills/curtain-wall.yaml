@@ -66,8 +66,6 @@ purpose: >
     on, along the wall or up it.
   - SET_MULLION_JOIN for Make Continuous or Break at Join on the mullions
     picked.
-  - SET_CURTAIN_WALL_EMBED when the curtain wall is drawn inside a basic wall
-    and must cut it - Automatically Embed on its type, every wall of the type.
   A line a type laid out arrives pinned; the first two refuse it by name.
   REPORT_CURTAIN_ELEMENTS (step 6) is run after these too.
 
@@ -98,7 +96,6 @@ needs:
   - EDIT_CURTAIN_GRID_SEGMENTS
   - MOVE_CURTAIN_GRID_LINE
   - SET_MULLION_JOIN
-  - SET_CURTAIN_WALL_EMBED
   # The proof, on the wall itself. Never skipped.
   - REPORT_CURTAIN_ELEMENTS
 
