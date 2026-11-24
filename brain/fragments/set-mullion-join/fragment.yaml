@@ -1,0 +1,115 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-175
+semantic-identity: "make these mullions continuous through the crossing, or break them at the join - Revit's Make Continuous and Break at Join"
+kind: action
+domain: revit.elements
+capability: SET_MULLION_JOIN
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# VERSION 1 (2026-11-24) - written in a cloud session with no Revit, for
+# WN-11 in GitHub issue #1005 (the facade note's "a mullion ... its join
+# changed"). Not tested in Revit. NEEDS-CHECKING Group QB, rows QB8 and QB9.
+
+purpose: >
+  SETS HOW MULLIONS MEET WHERE THEY CROSS - Revit's Make Continuous, the
+  mullion running through the crossing, and Break at Join, the mullion
+  stopping at the one it meets. "Make this mullion continuous", "break this
+  mullion at the join", "make the vertical mullions run through the
+  transoms".
+
+  **THE MULLIONS HANDED IN, AND ONLY THOSE.** Any number, on any curtain
+  walls; anything that is not a mullion is named in `notMullion` and left
+  alone. `join` is continuous or break. Nothing on a type is written.
+
+  **REVIT SAYS NOTHING BACK, SO EACH MULLION IS MEASURED.** Neither of
+  Revit's calls returns anything, and a mullion has no setting to read back.
+  So each one's length along its own run is measured off its solid before and
+  after: made continuous it grows by the width of what it crosses, broken it
+  shrinks. One that did not change the way asked is in `unchanged` with both
+  lengths and never counted - it may already have been that way, may cross
+  nothing, or the wall type's Join Condition may decide it. ASSUMPTION for the
+  proof: that this length tells continuous from broken.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Every
+  refusal is made before the first write; a mullion Revit will not take stops
+  the call and nothing it did is kept. In a shared model a mullion another
+  user holds is refused naming them.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The mullions - selected in Revit (Tab to one), or from the step before.
+    - name: elements
+      type: IList<Element>
+    # "continuous" - Make Continuous - or "break" - Break at Join.
+    - name: join
+      type: string
+      source: request
+  provides:
+    - name: changed
+      # Mullions whose length along their run changed the way asked -
+      # MEASURED, never counted off a call that returned.
+      role: result
+      type: int
+    - name: unchanged
+      # Mullions Revit took the call on whose length did not move the way
+      # asked, each with both lengths. Evidence, never a failure hidden.
+      role: accounting
+      type: IList<string>
+    - name: notMullion
+      # Handed in but not a mullion, so left alone (D-52).
+      role: accounting
+      type: IList<string>
+    - name: readBack
+      # Each mullion's length along its run before and after. A STRING - the
+      # evidence. Empty on a refusal.
+      role: accounting
+      type: string
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE PATH FOR EVERY RELEASE, read rather than remembered. On 2026-11-24
+  tools/api-surface read the reference assemblies of all eight releases, 2020
+  through 2027, and found one signature on every one for each member this
+  calls: `Mullion.JoinMullion()`, `Mullion.BreakMullion()` and
+  `Mullion.LocationCurve`; `Element.get_Geometry(Options)`, `Solid.Edges`,
+  `Edge.AsCurve()`, `GeometryInstance.GetInstanceGeometry()`;
+  `WorksharingUtils.GetCheckoutStatus` with its owner and
+  `Document.Regenerate`. No ElementId is constructed and none is read as a
+  number.
+
+# ROUTING
+#
+#   "make this mullion continuous"            -> here, join continuous
+#   "break this mullion at the join"          -> here, join break
+#   "make the vertical mullions run through
+#    the transoms"                            -> here, the vertical mullions
+#                                                handed in, continuous
+#   "change this one mullion"                 -> CHANGE_ELEMENT_TYPE - its type
+#   "change the mullions on this curtain
+#    wall type"                               -> SET_CURTAIN_WALL_GRID
+#   "move this mullion"                       -> MOVE_CURTAIN_GRID_LINE
+#   "which mullions are joined on this
+#    curtain wall"                            -> a question, never this write
+#                                                (D-86); nothing reads a join yet
+
+utterances:
+  - make this mullion continuous
+  - break this mullion at the join
+  - make the vertical mullions run through the transoms
