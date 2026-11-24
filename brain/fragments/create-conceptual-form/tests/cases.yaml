@@ -67,6 +67,27 @@ negative:
   - given: a project in front
     expect: notAFamily true and nothing made
 
+  # VERSION 2 - row 5b-2021: a loft Revit refuses names what is in the
+  # profiles, never Revit's bare "Cannot create loft form" alone.
+  - given: >
+      a mass family with three closed profiles one above another - the bottom
+      a 4-sided rectangle drawn as FIVE lines (one long side split in two, so
+      a corner sits on a straight line), the middle and top 4 lines each;
+      profiles "a,b,c,d,e | f,g,h,i | j,k,l,m", depthMm "", solid true
+    expect: >
+      EITHER a loft through the three, its volume read back - Revit took it,
+      and nothing is refused before Revit is asked - OR the call fails, rolled
+      back, with Revit's message followed by "In these profiles:" naming "the
+      profiles have different numbers of sides - 5, 4, 4" and "profile 1 has
+      two straight sides on one line, meeting at (x, y, z) mm". RECORD which.
+
+  - given: >
+      two closed 4-line profiles drawn in ONE plane, side by side; profiles
+      "a,b,c,d | e,f,g,h", depthMm ""
+    expect: >
+      the call fails, rolled back, naming "profiles 1 and 2 lie in one plane";
+      nothing made
+
 second_route:
   - >
       In the Family Editor, select the form: it highlights on the curves, and

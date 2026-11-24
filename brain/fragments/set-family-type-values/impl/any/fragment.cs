@@ -11,6 +11,13 @@
 // compared with each kind's SpecTypeId property, or enum name, rather than
 // either spelling being written down.
 //
+// NUMBER OF POLES (version 6, 2026-11-24, row 5b-2029) is an electrical spec
+// that holds a whole number - 1, 2 or 3 - and is written as one: a shared
+// "Number_of_Poles" was refused on Revit 2020 as "a kind this does not write".
+// It is `ParameterType.NumberOfPoles` on 2020 and 2021 and
+// `SpecTypeId.Int.NumberOfPoles` from 2022, the newer one named in code under
+// `#if` so the compiler checks it on every release that has it.
+//
 // EVERYTHING IS CHECKED BEFORE THE FIRST WRITE. A missing parameter, a value
 // that is not a number, a formula-driven or reporting parameter, a type name
 // Revit would refuse - any one of them refuses the whole call with nothing
@@ -131,6 +138,13 @@ var kindsNew = new List<KeyValuePair<string, object>>
     new KeyValuePair<string, object>("text",    specNamed("SpecTypeId+String", "Url")),
     new KeyValuePair<string, object>("text",    specNamed("SpecTypeId+String", "MultilineText")),
     new KeyValuePair<string, object>("material", specNamed("SpecTypeId+Reference", "Material")),
+#if !REVIT2020 && !REVIT2021
+    // VERSION 6 (2026-11-24, row 5b-2029) - NUMBER OF POLES, the electrical spec
+    // a shared parameter such as "Number_of_Poles" holds: a whole number, 1 to 3.
+    // Named in code, not by reflection, so the compiler checks it on 2022 to
+    // 2027. 2020 and 2021 read it by its enum name, in kindsOld below.
+    new KeyValuePair<string, object>("poles", SpecTypeId.Int.NumberOfPoles),
+#endif
 };
 
 var kindsOld = new Dictionary<string, string>
@@ -138,6 +152,8 @@ var kindsOld = new Dictionary<string, string>
     { "Length", "length" }, { "Angle", "angle" }, { "Number", "number" },
     { "Integer", "integer" }, { "YesNo", "yesno" }, { "Text", "text" },
     { "URL", "text" }, { "MultilineText", "text" }, { "Material", "material" },
+    // VERSION 6: ParameterType.NumberOfPoles, Revit 2020 and 2021.
+    { "NumberOfPoles", "poles" },
 };
 
 // The material a material parameter holds, by name - "<By Category>" when none.
@@ -256,6 +272,7 @@ Func<FamilyType, FamilyParameter, string, string> shown = (type, p, kindWord) =>
             var number = type.AsDouble(p);
             return number.HasValue ? number.Value.ToString(invariant) : "(no value)";
         case "integer":
+        case "poles":
             var whole = type.AsInteger(p);
             return whole.HasValue ? whole.Value.ToString(invariant) : "(no value)";
         case "yesno":
@@ -485,6 +502,17 @@ else
                 int whole;
                 if (!int.TryParse(text, System.Globalization.NumberStyles.Integer, invariant, out whole)) { problems.Add("\"" + text + "\" is not a whole number for \"" + name + "\"."); break; }
                 planned.Add(Tuple.Create(p, kindWord, (object)whole));
+                break;
+            case "poles":
+                // VERSION 6: a whole number 1 to 3 - single, two or three phase -
+                // refused before anything is written, and read back as an integer.
+                int poles;
+                if (!int.TryParse(text, System.Globalization.NumberStyles.Integer, invariant, out poles) || poles < 1 || poles > 3)
+                {
+                    problems.Add("\"" + text + "\" is not a number of poles for \"" + name + "\" - a whole number, 1, 2 or 3.");
+                    break;
+                }
+                planned.Add(Tuple.Create(p, kindWord, (object)poles));
                 break;
             case "yesno":
                 var lowered = text.ToLowerInvariant();

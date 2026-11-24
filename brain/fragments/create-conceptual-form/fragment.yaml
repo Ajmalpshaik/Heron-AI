@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,21 @@ semantic-identity: "make a surface, an extrusion, a loft, a sweep or a revolve o
 kind: action
 domain: revit.families
 capability: CREATE_CONCEPTUAL_FORM
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-24) - A LOFT REVIT REFUSES SAYS WHAT IS IN THE PROFILES.
+# FRAGMENT-ISSUES row 5b-2021 (GitHub #1345): on Revit 2024, in the Tower 171
+# glass-mass family, two lofts through 3 closed profiles answered only Revit's
+# own "Cannot create loft form". Version 2 reads the profiles AFTER Revit has
+# said no and names what it finds - different numbers of sides, two straight
+# sides on one line (the point), a profile open where the others close, one
+# not flat, two in one plane - or says none was found and to loft two at a
+# time. Nothing is refused before Revit is asked, so no loft that works today
+# is blocked. Version 1 was PROVEN 2026-10-03 (Family3, Revit 2024); its C#
+# moved, so it is DRAFT until NEEDS-CHECKING Group QM passes (D-30). The proof
+# block below is version 1's.
 
 purpose: >
   Makes a FORM ON LINES in an adaptive component, a pattern-based panel or a
@@ -46,6 +58,13 @@ purpose: >
   **READ BACK, ALL OR NOTHING**: the form, its extent and what it encloses - a
   solid's volume or a surface's area - are read again; a form holding no
   geometry fails the call. Its id comes back.
+
+  **A LOFT REVIT REFUSES IS EXPLAINED**: Revit's own message is followed by
+  what the profiles hold that a loft most often refuses - different numbers
+  of sides, two straight sides on one line, a profile open where the others
+  close, one not flat, two in one plane - or, when none is found, the advice
+  to loft two profiles at a time. Read only after Revit says no, so nothing
+  that lofts is refused first.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
