@@ -179,6 +179,13 @@ compatibility-note: >
 #    wall"                                    -> REPORT_CURTAIN_ELEMENTS. A
 #                                                question never lands on a
 #                                                write (D-86)
+#   "select all elements of type Curtain Wall" -> a selection, never a write.
+#                                                MEASURED 2026-11-24: this card's
+#                                                arrival tips a near tie on the
+#                                                trained model alone, and the
+#                                                sentence reaches
+#                                                SET_CURTAIN_PANEL_TYPE - row
+#                                                5b-2012, issue #1328
 
 utterances:
   - remove a grid line from this curtain wall
