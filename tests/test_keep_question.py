@@ -342,8 +342,17 @@ def wiring():
     check("HeronKeepQuestion.NothingToAskSentence" in verdict,
           "a run kept with no question says why none was put")
     check(before(verdict, "var held = rolledBack != null && rolledBack.Held;",
-                 "HeronKeepQuestion.Discarded(name, held, selectionRestored)"),
+                 "HeronKeepQuestion.Discarded(name, held, selectionRestored, notKept)"),
           "and a Discard has its own verdict - never the plain rollback's \"send it again with apply\"")
+    # ROW 5b-1991: the verdict is told HOW the box ended, not just that it
+    # did not keep - so a box closed unanswered, or never shown, is never
+    # called the modeller's Discard.
+    ask = NOTE_SUITE.body_of(executor, "private static string AskTheModeller(")
+    check("return shownToModeller ? Closed : NotShown;" in ask
+          and before(ask, "result = box.Show();", "shownToModeller = true;"),
+          "a box that could not be built or shown answers NotShown, not Closed - row 5b-1991")
+    check("? answered : null," in executor,
+          "and the verdict is handed the answer itself, not a yes/no 'discarded'")
 
     print("\n5. the dispatcher waits for the modeller, and the banner steps aside")
     dispatcher = code(DISPATCHER)
