@@ -63,7 +63,7 @@ has gone stale.** Derive them:
 
 | | State | Evidence |
 |---|---|---|
-| **Phase 0 — the bridge** (Steps 1–5) | ✅ **Proven** in Revit 2020 and 2024. One button connects; the thread hop counted `5,844` elements in 2024 and `3,167` in 2020; *"select all ducts"* highlighted 4 in both; with two Revits open Heron refused to guess and stopped when the chosen one closed | [HANDOVER §3](../HANDOVER.md) · [field notes](../00e-field-notes-proven-bridge.md) |
+| **Phase 0 — the bridge** (Steps 1–5) | ✅ **Proven** in Revit 2020 and 2024. One button connects; the thread hop counted `5,844` elements in 2024 and `3,167` in 2020; *"select all ducts"* highlighted 4 in both; with two Revits open Heron refused to guess and stopped when the chosen one closed | [HANDOVER §3](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#3-what-has-been-witnessed-at-a-real-revit) · [field notes](../00e-field-notes-proven-bridge.md) |
 | **Step 6 — the first write** | ⚠️ **Measured on one release.** Three ducts moved 200 mm in Revit 2024 on 2026-09-07 ([B8](../NEEDS-CHECKING.md)). On 2026-10-17 a tape measure was put on it: three ducts in a copy of Autodesk's MEP sample moved **+200.0000 mm** each in Revit 2024, read two ways, a pinned duct beside them did not move, and **one** Ctrl+Z put them back (`D1` to `D6`). Free ducts only. A forced failure mid-move and the other rails are still owed | [Group D](../needs-checking/group-d.md) |
 | **Keep or Discard, and the safety rails** | ⚠️ **Run in Revit 2024 and 2027 on 2026-10-18** on the owner's laptop — Keep, Discard, Esc and Undo pressed by hand, with try-once, the run guard, dialogs, the rollback check and the run clock beside them. PASS, FAIL and NOT RUN are kept apart row by row in Group ET and groups EM, EX, EL, EO, EZ, ER, EK, ES, EV, EJ and CP. Faults found were logged, not hidden: rows 5b-1090 to 5b-1095. The fixes merged since for 5b-1090 to 5b-1094, 5b-1100 and 5b-1137 have not been run in Revit | [Group ET](../needs-checking/group-et.md) · [FRAGMENT-ISSUES](../FRAGMENT-ISSUES.md) |
 | **The fragment library** | Mostly `PROVEN`, the rest `DRAFT` — count with the first command above, which also counts the cards retired as `DEPRECATED` when their job was merged into another | [D-30](../DECISIONS.md) · [FRAGMENT-ISSUES](../FRAGMENT-ISSUES.md) |
@@ -81,7 +81,7 @@ has gone stale.** Derive them:
 
 | Register | Holds |
 |---|---|
-| [HANDOVER.md §3](../HANDOVER.md) | The witnessed list, item by item |
+| [HANDOVER.md §3](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#3-what-has-been-witnessed-at-a-real-revit) | The witnessed list, item by item |
 | [NEEDS-CHECKING.md](../NEEDS-CHECKING.md) | Everything still owed a real Revit, one numbered item each, grouped by what it needs |
 | [FRAGMENT-ISSUES.md](../FRAGMENT-ISSUES.md) | Fragments with something wrong — found by proving, or by reading |
 | [`brain/agent-proofs/`](../../brain/agent-proofs/README.md) | The signed record of each agent run against a real model |

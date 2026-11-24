@@ -161,7 +161,7 @@ in a note the owner retires. The note is named, not linked, for that reason. **N
 entry says what the idea is, what Heron has today as read on 2026-11-19, and what it would touch. The effort
 is the note's own judgement, not a measurement. Per [D-177](decisions/D-177.md) the projects the ideas came
 from are not named; any idea taken is re-authored, never copied ([D-25](decisions/D-25.md),
-[31](31-studying-the-existing-libraries.md)).
+[31 research](31-research.md)).
 
 **The rest of the note's ideas already have a home**, which is why they are not filed here:
 

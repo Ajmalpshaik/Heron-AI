@@ -570,7 +570,7 @@ def main():
     # what it does would be a door labelled read-only.
     print()
     print("Showing is EXECUTE too - the show door and Revit's temporary isolate")
-    for op in ("run_fragment_show", "isolate_temporary", "reset_temporary"):
+    for op in ("run_fragment_show", "isolate_temporary", "hide_temporary", "reset_temporary"):
         check(declared_cs.get(op) == "EXECUTE",
               "%s is EXECUTE - found %s" % (op, declared_cs.get(op)))
     for tool, op in (("revit_show", "run_fragment_show"),
@@ -604,9 +604,20 @@ def main():
     check(bool(temporary), "the temporary isolate has its own file, RevitTemporaryView.cs")
     check(all(call in temporary for call in ("IsolateElementsTemporary(",
                                               "IsolateCategoriesTemporary(",
+                                              "HideElementsTemporary(",
+                                              "HideCategoriesTemporary(",
                                               "DisableTemporaryViewMode(")),
-          "and it calls Revit's own temporary isolate, and DisableTemporaryViewMode "
-          "by name on reset")
+          "and it calls Revit's own temporary isolate and hide, and "
+          "DisableTemporaryViewMode by name on reset")
+
+    # THE HIDE IS ITS OWN OPERATION (row 5b-2024), routed to its own method.
+    # Sent as a flag on isolate_temporary, an add-in older than it would
+    # ignore the flag and isolate what the modeller asked to hide.
+    routed_hide = re.search(r'case\s+"hide_temporary"\s*:\s*return\s+RevitTemporaryView\.(\w+)\(',
+                            operations_cs)
+    check(routed_hide is not None and routed_hide.group(1) == "Hide",
+          "hide_temporary routes to RevitTemporaryView.Hide - found %s"
+          % (routed_hide.group(1) if routed_hide else "no route"))
     check("RevitFragment.Run(" not in temporary and "Script" not in temporary,
           "and runs no fragment - the transaction is around fixed code only")
     check("new Transaction(" not in operations_cs,

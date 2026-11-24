@@ -144,7 +144,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 | [`generate-decision-summary.py`](generate-decision-summary.py) | the status table at the top of DECISIONS.md | after writing a decision - `check-docs.py` §8 fails on a stale table |
 | [`archive-fragment-issues.py`](archive-fragment-issues.py) | finished defect rows moved out of the live register | whenever rows close |
 | [`archive-needs-checking.py`](archive-needs-checking.py) | struck checks moved out of NEEDS-CHECKING | whenever checks are struck |
-| [`archive-handover.py`](archive-handover.py) | session notes moved out of HANDOVER.md, one file per sitting | whenever notes collect there |
+| [`archive-handover.py`](archive-handover.py) | session notes moved out of HANDOVER.md, one file per sitting. **Not run on HANDOVER.md since 2026-11-24:** that file is one page now, with nothing to move. Kept because `split-decisions.py`, `split-register.py`, `split-needs-checking.py` and `archive-fragment-issues.py` load its link handling | never on its own now |
 | [`agent-count.py`](agent-count.py) | each department built, host-provided, deferred and left; fails when the registry does not reconcile | before choosing an agent to build; CI's *reports* job prints it |
 | [`new-agent.py`](new-agent.py) | the contract, module and failing test of the next agent, from its registry row | when building an agent |
 
@@ -225,7 +225,7 @@ something real:
 |---|---|---|
 | **10. named in its README** | eight files in `tools/` named nowhere on this page, three of them not Python - which is why the one-liner further down, `*.py` only, could never have seen them | a row each, in [the section below](#nine-tools-this-page-did-not-describe-until-2026-09-23), with a ninth for `balance-of-work.py`, which was named only in passing |
 | **11. text hygiene** | a backspace and a form feed in one archived defect row, where the row meant to write `\u0008` and `\u000C`; and a C1 control character in [docs/07](../docs/07-installation-and-update.md), where `Addins\2020` had once been read as an octal escape and lost two characters | each written back as the text it stood for |
-| **7. the MCP tool total** | [33](../docs/33-external-repository-research.md) saying *"Heron has 14 MCP tools"* twice and [34](../docs/34-patterns-adapted.md) once, while `heron_tools.TOOLS` held more than twice that. The row this list used to carry for the count could not fire - it counted `tools/*.py` against a phrase no sentence uses | the sentences type no number now, and point at the command that lists the tools |
+| **7. the MCP tool total** | [31 research](../docs/31-research.md) saying *"Heron has 14 MCP tools"* twice and [31 research](../docs/31-research.md) once, while `heron_tools.TOOLS` held more than twice that. The row this list used to carry for the count could not fire - it counted `tools/*.py` against a phrase no sentence uses | the sentences type no number now, and point at the command that lists the tools |
 
 **And it is faster for them, not slower.** The plan that asked for these checks measured this script at
 30-37 s on a busy PC and asked for it to be timed before and after. Five runs each, on a quiet Linux
@@ -1761,7 +1761,7 @@ says so. Not a gate; exits 0.
 
 ## `measure-graph.py` — does the graph help retrieval? It does not
 
-`Q-52`, run rather than argued. [33 §5.16](../docs/33-external-repository-research.md) records
+`Q-52`, run rather than argued. [31 research](../docs/31-research.md) records
 `gbrain` reporting **+31.4 points P@5** from a graph retrieval stream. Heron's graph is a different
 object — `composes_into` / `composes_from`, derived from the contracts — so the direction was evidence
 and the magnitude was nothing. **This is Heron's own number.**
@@ -2764,7 +2764,7 @@ superseded owes nothing at all; both are printed, so a pending note is seen. It 
 the `> **SUPERSEDED BY**` banner some full records carry is not asked for: the index is where a citation lands.
 Exits 1 on a finding and 2 when it could not look. [`tests/test_check_supersessions.py`](../tests/test_check_supersessions.py)
 builds its own logs, so it runs anywhere. It came from another project's documentation audit, re-authored
-([docs/33 §5.1](../docs/33-external-repository-research.md#51-affaan-mecc), third pass).
+([31 research](../docs/31-research.md#7-the-patterns-and-what-each-became), third pass).
 
 ---
 

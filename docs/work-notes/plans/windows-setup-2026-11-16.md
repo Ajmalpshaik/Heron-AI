@@ -13,7 +13,7 @@
 >
 > **Source of the idea:** idea 12 of [the research note of 2026-11-15](../investigations/2026-11-15-revit-mcp-landscape.md)
 > (PR #877, merged the same day this note was written). The behaviours below are taken from that note's list, never from another project's
-> script ([31](../../31-studying-the-existing-libraries.md), [D-25](../../DECISIONS.md)).
+> script ([31 research](../../31-research.md), [D-25](../../DECISIONS.md)).
 
 ## 1. What it is for
 

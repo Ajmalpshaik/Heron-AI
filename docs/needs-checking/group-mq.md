@@ -28,12 +28,12 @@ at version 3 and are DRAFT at version 4 until this group proves them.
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**MQ0**~~ | Open. Revit 2024 (where it was found), on a saved test copy with a 3D view and a floor plan. — [full row](../needs-checking-archive/group-mq.md#row-mq0) | The title bar names the copy |
-| ~~**MQ1**~~ | REPORT_VISUAL_PRESET - D-30 pair, NEGATIVE FIRST. Negative: preset "Studio Glow" on the 3D view. — [full row](../needs-checking-archive/group-mq.md#row-mq1) | Negative: refused naming the seven presets, nothing compared. |
-| ~~**MQ2**~~ | REPORT_VISUAL_PRESET on the floor plan, preset Exterior Day — [full row](../needs-checking-archive/group-mq.md#row-mq2) | Each render setting skipped still says "is not a 3D view, and only a 3D view has… |
-| ~~**MQ3**~~ | APPLY_VISUAL_PRESET - D-30 pair, through Keep or Discard. Negative: preset "Studio Glow". — [full row](../needs-checking-archive/group-mq.md#row-mq3) | Negative: refused, nothing changed. |
-| ~~**MQ4**~~ | APPLY_VISUAL_PRESET on the floor plan — [full row](../needs-checking-archive/group-mq.md#row-mq4) | The render settings skipped, each naming the reason, as MQ2 |
-| ~~**MQ5**~~ | APPLY_VISUAL_PRESET after a hand-set value, through Keep or Discard. SET_GRAPHIC_DISPLAY_OPTIONS… — [full row](../needs-checking-archive/group-mq.md#row-mq5) | A finding "Replaced what '<view>' had:" naming Sun Intensity 60 -> 80, and each other… |
+| ~~**MQ0**~~ | Open. Revit 2024 (where it was found), on a saved test copy with a 3D view and a floor plan. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The title bar names the copy |
+| ~~**MQ1**~~ | REPORT_VISUAL_PRESET - D-30 pair, NEGATIVE FIRST. Negative: preset "Studio Glow" on the 3D view. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Negative: refused naming the seven presets, nothing compared. |
+| ~~**MQ2**~~ | REPORT_VISUAL_PRESET on the floor plan, preset Exterior Day — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Each render setting skipped still says "is not a 3D view, and only a 3D view has… |
+| ~~**MQ3**~~ | APPLY_VISUAL_PRESET - D-30 pair, through Keep or Discard. Negative: preset "Studio Glow". — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Negative: refused, nothing changed. |
+| ~~**MQ4**~~ | APPLY_VISUAL_PRESET on the floor plan — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The render settings skipped, each naming the reason, as MQ2 |
+| ~~**MQ5**~~ | APPLY_VISUAL_PRESET after a hand-set value, through Keep or Discard. SET_GRAPHIC_DISPLAY_OPTIONS… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | A finding "Replaced what '<view>' had:" naming Sun Intensity 60 -> 80, and each other… |
 
 **Run on 2026-11-07**, on the scrap test copy `Test for Issue` (Revit 2024, session 30316; not a job model), 3D view `{3D}` and
 floor plan `MP Plan S1` - `L1 - Architectural` could not be named, because a floor plan and a ceiling plan share the name and

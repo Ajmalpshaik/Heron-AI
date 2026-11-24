@@ -15,7 +15,7 @@ The owner's earlier brain repository was read on 2026-09-21 at commit `f5570b3`,
 > anything like that; it needs to be totally part of our own.**"*
 
 **That is also this repository's own rule**, arrived at from the other direction —
-[D-25](../../../DECISIONS.md) and [31](../../../31-studying-the-existing-libraries.md): *studied and
+[D-25](../../../DECISIONS.md) and [31 research](../../../31-research.md): *studied and
 re-authored, never imported*, and [AGENTS.md](../../../../AGENTS.md): *never mix another project's code,
 branding or wording into Heron.*
 
@@ -24,7 +24,7 @@ provenance — because a lesson with no origin cannot be checked — and every r
 terms.
 
 **Its fragment library was already read on 2026-09-06** and the result is in
-[31 §1](../../../31-studying-the-existing-libraries.md): 330 files read, 317 already covered, 4
+[31 research](../../../31-research.md): 330 files read, 317 already covered, 4
 impossible through the API, **9 genuinely missing**. **That work is not repeated here.** This pass looked
 only at the part that had never been examined — **how it debugs itself and how it grows.**
 
@@ -189,9 +189,9 @@ more than any of the checkers.
 
 | | Why |
 |---|---|
-| **Every name, path, folder and phrase** | The owner's instruction, and [31](../../../31-studying-the-existing-libraries.md). This note names nothing from there |
+| **Every name, path, folder and phrase** | The owner's instruction, and [31 research](../../../31-research.md). This note names nothing from there |
 | Its skill-routing layout, its index files, its search layer | Heron has its own — the capability registry, the skills, the knowledge stores. **Two routing systems is one too many** |
-| Its fragment library | **Already read on 2026-09-06** and classified in [31 §1](../../../31-studying-the-existing-libraries.md). Re-reading it would be work with a known answer |
+| Its fragment library | **Already read on 2026-09-06** and classified in [31 research](../../../31-research.md). Re-reading it would be work with a known answer |
 
 ---
 

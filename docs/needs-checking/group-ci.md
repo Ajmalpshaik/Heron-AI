@@ -22,10 +22,10 @@ rolled-back group; `URL` is the family's own built-in parameter.
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**CI1**~~ | validate --in "Family3" --negative-in "Family3" --write --setup add-family-parameters… — [full row](../needs-checking-archive/group-ci.md#row-ci1) | **RAN 2026-10-06:** |
-| ~~**CI2**~~ | the same, `values=Nut Material=Unobtainium; URL=https://ajmalps.com` — [full row](../needs-checking-archive/group-ci.md#row-ci2) | **RAN 2026-10-06:** |
-| ~~**CI3**~~ | `values=Nut Material=<By Category>` — [full row](../needs-checking-archive/group-ci.md#row-ci3) | **RAN 2026-10-06:** |
-| ~~**CI4**~~ | the signature — [full row](../needs-checking-archive/group-ci.md#row-ci4) | **DONE 2026-10-06:** |
+| ~~**CI1**~~ | validate --in "Family3" --negative-in "Family3" --write --setup add-family-parameters… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **RAN 2026-10-06:** |
+| ~~**CI2**~~ | the same, `values=Nut Material=Unobtainium; URL=https://ajmalps.com` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **RAN 2026-10-06:** |
+| ~~**CI3**~~ | `values=Nut Material=<By Category>` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **RAN 2026-10-06:** |
+| ~~**CI4**~~ | the signature — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **DONE 2026-10-06:** |
 | **CI5** | a material name that two materials share in different cases | refused naming both, nothing written. **Not run** - a family holding both was not arranged **Still NOT RUN 2026-11-20:** the arrangement cannot be made with Heron's own tools - `CREATE_STARTER_MATERIALS materialNames=HERON STEEL` beside an existing *Heron Steel* answered *"1 already there and left as they..."*, made nothing. Two case-twin materials need making by hand (or loading) first. |
 | **CI6** | CI1 on **Revit 2020** and **2027** | The same answers. Compiled for 2020 to 2027; `ParameterType.Material` / `URL` before 2022 is read by reflection and has not run there **Revit 2020, Material half, held 2026-11-20** (build 20191106_1200, add-in 0.2.0.0), `SET_FAMILY_TYPE_VALUES` v5 on *Heron CL Types 2.rfa* (from `Metric Generic Model.rft`, type T2 made by this card, a type parameter *Nut Material* added by `ADD_FAMILY_PARAMETERS` - kept, scratch), for issue [#980](https://github.com/Ajmalpshaik/Heron-AI/issues/980), rolled back: `values=Nut Material=glass` - *"Wrote into the type \"T2\" ... Read back: Nut Material = \"Glass\" (was <By Category>)"* - found in another case, as CI1 read on 2024; negative `Nut Material=No Such Material` - *"Nothing was written. There is no material \"No Such Material\" in this family ... the closest are \"Air Surfaces\", \"Default Wall\", \"Heron Steel\""*. The **URL** half was not run: `ADD_FAMILY_PARAMETERS` no longer takes a URL kind (*"\"URL\" is not a kind this adds"*). Revit 2027 owed. |
 

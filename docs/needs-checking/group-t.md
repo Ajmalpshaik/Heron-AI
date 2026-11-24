@@ -87,8 +87,8 @@ this session's to edit:
 
 | | |
 |---|---|
-| ~~**T1**~~ | DONE 2026-09-19. — [full row](../needs-checking-archive/group-t.md#row-t1) |
-| ~~**T2**~~ | DONE 2026-09-19. — [full row](../needs-checking-archive/group-t.md#row-t2) |
+| ~~**T1**~~ | DONE 2026-09-19. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) |
+| ~~**T2**~~ | DONE 2026-09-19. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) |
 
 ### T3 — the rest of the twenty-three are mostly not trackable, and that is correct
 

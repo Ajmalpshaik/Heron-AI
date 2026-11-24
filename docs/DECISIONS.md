@@ -702,7 +702,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-60 — A preview selects what it would change and what it would skip, up to 500
 
-**Status:** Accepted · **Date:** 2026-09-09 · **Found during:** reading [`affaan-m/ECC`](https://github.com/affaan-m/ECC) at file level ([33 §5.1](33-external-repository-research.md))
+**Status:** Accepted · **Date:** 2026-09-09 · **Found during:** reading [`affaan-m/ECC`](https://github.com/affaan-m/ECC) at file level ([31 research](31-research.md))
 **Affects:** [`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs), [`set-selection`](../brain/fragments/set-selection/), [Golden Rule 9](14-golden-rules.md), [Golden Rule 17](14-golden-rules.md), [D-55](DECISIONS.md)
 
 **Full record:** [`decisions/D-60.md`](decisions/D-60.md)
@@ -744,7 +744,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-66 — Heron checks the licence of what it ships by reading the files, not the landing page
 
-**Status:** Accepted · **Date:** 2026-09-09 · **Found during:** reading [`K-Dense-AI/scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills) at file level ([33 §5.9](33-external-repository-research.md))
+**Status:** Accepted · **Date:** 2026-09-09 · **Found during:** reading [`K-Dense-AI/scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills) at file level ([31 research](31-research.md))
 **Affects:** [`tools/check-licence.py`](../tools/check-licence.py), [`tests/test_licence_check.py`](../tests/test_licence_check.py), [17](17-open-source-and-distribution.md), [09](09-skills-and-fragments.md), [D-08](DECISIONS.md)
 
 **Full record:** [`decisions/D-66.md`](decisions/D-66.md)
@@ -922,7 +922,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-97 — The library is built out first, and proved in one pass later
 
-**Status:** Accepted · **Date:** 2026-08-30 · **Revises:** [31 §4](31-studying-the-existing-libraries.md),
+**Status:** Accepted · **Date:** 2026-08-30 · **Revises:** [31 research](31-research.md),
 **Extends:** [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported), [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere)
 **Numbering:** restored 2026-09-23 under a new number, on the owner's instruction, word for word from commit `6582810`. This decision was D-45 from 2026-08-30 until commit `2248cb3` (2026-08-31) wrote a different decision under that number and this text left the log. A citation of D-45 written before 2026-08-31 means this decision.
 
@@ -930,7 +930,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-98 — A context fragment is consumed by the host, not by another fragment
 
-**Status:** Proposed · **Date:** 2026-08-31 · **Revisits:** [31 §1](31-studying-the-existing-libraries.md),
+**Status:** Proposed · **Date:** 2026-08-31 · **Revisits:** [31 research](31-research.md),
 **Touches:** [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer), Step 13's dependency graph
 **Numbering:** restored 2026-09-23 under a new number, on the owner's instruction, word for word from commit `6582810`. This decision was D-46 from 2026-08-31 until commit `75c22a9` (2026-09-06) wrote a different decision under that number and this text left the log. A citation of D-46 written before 2026-09-06 means this decision.
 
@@ -1314,7 +1314,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-144 — A superseded decision says so under its own heading, where its citations land
 
-**Status:** Accepted · **Date:** 2026-10-19 · **Accepted:** Ajmal PS, 2026-10-19, in conversation: *"accept D-144, mark ready and merge"* · **Source:** the third file-level reading of an external project, which the owner asked for on 2026-10-18 so that its useful ideas could be taken into Heron ([33 §5.1](33-external-repository-research.md#51-affaan-mecc))
+**Status:** Accepted · **Date:** 2026-10-19 · **Accepted:** Ajmal PS, 2026-10-19, in conversation: *"accept D-144, mark ready and merge"* · **Source:** the third file-level reading of an external project, which the owner asked for on 2026-10-18 so that its useful ideas could be taken into Heron ([31 research](31-research.md#7-the-patterns-and-what-each-became))
 **Keeps:** the log's own rule, in its preamble - append-only, a reversal is a new entry and the original stays · [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) - the idea was studied in another project and re-authored here, nothing imported
 **Affects:** [`check-supersessions.py`](../tools/check-supersessions.py), [`test_check_supersessions.py`](../tests/test_check_supersessions.py), [`check-docs.py`](../tools/check-docs.py) (§13), [`tools/README.md`](../tools/README.md), and six notes in this log, under D-24, D-37, D-99, D-101 and D-105
 
@@ -1602,7 +1602,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Accepted · **Date:** 2026-11-17 · **Accepted:** Ajmal PS, 2026-11-17, in conversation: *"we are taking oly thrrtr idea not code so no need to mention there names"*
 **Extends:** [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) - studied and re-authored, never imported
-**Affects:** [AGENTS.md](../AGENTS.md) ("Never") · [docs/51](51-studying-another-revit-mcp.md)
+**Affects:** [AGENTS.md](../AGENTS.md) ("Never") · [31 research](31-research.md)
 
 **Full record:** [`decisions/D-177.md`](decisions/D-177.md)
 
@@ -1635,7 +1635,7 @@ What this makes easy. What this makes hard. What it locks in.
 **Status:** Accepted, nothing built · **Date:** 2026-11-19 · **Accepted:** Ajmal PS, 2026-11-19, in conversation, written on [#1038](https://github.com/Ajmalpshaik/Heron-AI/issues/1038): *"in one Revit because I have to connect the Heron on that Revit ... which Revit I given to AI, in that Revit"*
 **Settles:** [Q-93](open-questions/tier-3.md), both of its questions
 **Keeps:** [D-129](decisions/D-129.md) - a fragment that runs too long is stopped by its run clock · [D-152](decisions/D-152.md) - a QA checklist runs on a model
-**Affects:** nothing yet - [research note 51](51-studying-another-revit-mcp.md) item 7, a later build job
+**Affects:** nothing yet - [research note 51](31-research.md) item 7, a later build job
 
 **Full record:** [`decisions/D-181.md`](decisions/D-181.md)
 

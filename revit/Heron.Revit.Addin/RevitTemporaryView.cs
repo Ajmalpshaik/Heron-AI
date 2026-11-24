@@ -15,8 +15,9 @@ namespace Heron.Revit.Addin
 {
     /// <summary>
     /// Revit's own Temporary Hide/Isolate in the active view - "isolate
-    /// these" - and the reset that ends it. `isolate_temporary` and
-    /// `reset_temporary`, both EXECUTE in the tool registry.
+    /// these", "hide these for now" - and the reset that ends it.
+    /// `isolate_temporary`, `hide_temporary` and `reset_temporary`, all
+    /// EXECUTE in the tool registry.
     ///
     /// ============================ NEVER RUN ============================
     /// Written on a machine with no Revit. It COMPILES on 2020 through 2027
@@ -32,7 +33,8 @@ namespace Heron.Revit.Addin
     /// a FRAGMENT with Changes off would be a write path with no switch in
     /// front of it: a fragment is arbitrary C#, and inside a transaction it
     /// could change anything. So the transaction is here, around exactly one
-    /// of IsolateElementsTemporary, IsolateCategoriesTemporary or
+    /// of IsolateElementsTemporary, IsolateCategoriesTemporary,
+    /// HideElementsTemporary, HideCategoriesTemporary or
     /// DisableTemporaryViewMode, and around nothing a caller can send.
     ///
     /// WHY IT IS EXECUTE ALTHOUGH IT OPENS A TRANSACTION
@@ -61,12 +63,15 @@ namespace Heron.Revit.Addin
         /// typed or every element of the categories named - one or the other,
         /// never both.
         ///
-        /// `ids` is element ids as Revit prints them, comma separated - the
-        /// same text rule as a fragment's typed `elementIds`
-        /// (HeronBindingNote.TypedIds), matched in the model the same way
-        /// (RevitFragment.ElementsWithTypedIds), so no ElementId is ever built
-        /// from a number. `category` is the BIM words `select_by_category`
-        /// takes, from the one table both use.
+        /// `ids` is element ids as Heron's answers print them, comma
+        /// separated: Revit's number, or the long UniqueId the family form
+        /// tools give back (row 5b-2024), the two mixed as the chat has them -
+        /// read by RevitCapture.SplitIds, so they read here exactly as they do
+        /// for a picture. A number is matched in the model by the typed-id
+        /// rule (RevitFragment.ElementsWithTypedIds), a UniqueId by Revit's own
+        /// Document.GetElement(string), so no ElementId is ever built from a
+        /// number. `category` is the BIM words `select_by_category` takes, from
+        /// the one table both use.
         ///
         /// A TEMPORARY ISOLATE ALREADY ON IS REPLACED, AND THE ANSWER SAYS SO.
         /// "Isolate these" means show these and nothing else; adding them to
@@ -75,8 +80,46 @@ namespace Heron.Revit.Addin
         public static string Isolate(UIApplication app, string ids, string category,
                                      string expectProject)
         {
+            return Apply(app, ids, category, expectProject, false);
+        }
+
+        /// <summary>
+        /// Hide, in the active view, the elements whose ids were typed or every
+        /// element of the categories named - Revit's own Hide Element and Hide
+        /// Category under Temporary Hide/Isolate, the HH and HC of the view
+        /// control bar. `hide_temporary`, EXECUTE in the tool registry (row
+        /// 5b-2024, 2026-11-24: "hide for temporary all the outside panels so I
+        /// can see inside" could only be answered by selecting the 46 forms and
+        /// asking the modeller to press HH).
+        ///
+        /// A TEMPORARY HIDE/ISOLATE ALREADY ON IS KEPT, AND THESE ARE ADDED TO
+        /// IT - what Revit's own HH does. "Hide these too" after an isolate or
+        /// an earlier hide means hide more; ending what is already hidden would
+        /// show things the modeller put away. The answer says it was added to.
+        ///
+        /// ITS OWN OPERATION NAME, NOT A MODE OF `isolate_temporary`: an add-in
+        /// built before this would read a mode it did not know as nothing and
+        /// ISOLATE the very elements the modeller asked to hide. Under its own
+        /// name an older add-in answers unknown_op and nothing is done.
+        /// </summary>
+        public static string Hide(UIApplication app, string ids, string category,
+                                  string expectProject)
+        {
+            return Apply(app, ids, category, expectProject, true);
+        }
+
+        /// <summary>
+        /// The one body behind Isolate and Hide. `hide` chooses Revit's call
+        /// and the words; every check before it is the same for both.
+        /// </summary>
+        private static string Apply(UIApplication app, string ids, string category,
+                                    string expectProject, bool hide)
+        {
             var typedIds = (ids ?? "").Trim();
             var words = (category ?? "").Trim();
+            var verb = hide ? "hide" : "isolate";
+            var done = hide ? "hidden" : "isolated";
+
 
             // ONE OR THE OTHER. Both given is two different requests - these
             // elements, or everything of that kind - and picking one is a
@@ -86,19 +129,20 @@ namespace Heron.Revit.Addin
                 return Json.Error("ambiguous_request",
                     "Both element ids and a category were given, and those are two different "
                     + "requests - these elements, or everything of that kind. NOTHING was "
-                    + "isolated. Send one or the other.");
+                    + done + ". Send one or the other.");
             }
 
             if (typedIds.Length == 0 && words.Length == 0)
             {
-                return Json.Error("nothing_to_isolate",
-                    "Nothing was named to isolate. Give element ids, comma separated as Revit "
-                    + "shows them, or a category such as 'ducts' or 'pipes, pipe fittings'.");
+                return Nothing(hide,
+                    "Nothing was named to " + verb + ". Give element ids, comma separated as "
+                    + "Heron's answers print them, or a category such as 'ducts' or "
+                    + "'pipes, pipe fittings'.");
             }
 
             Document doc;
             View view;
-            var refusal = ActiveView(app, expectProject, "isolated", out doc, out view);
+            var refusal = ActiveView(app, expectProject, done, out doc, out view);
             if (refusal != null) return refusal;
 
             var wanted = new List<ElementId>();
@@ -107,40 +151,62 @@ namespace Heron.Revit.Addin
 
             if (typedIds.Length > 0)
             {
-                string problem;
-                var typed = HeronBindingNote.TypedIds(typedIds, out problem);
+                // TWO SHAPES OF ID, EACH READ ITS OWN WAY - the picture's rule
+                // (5b-1314), from the same method, so a form's long id out of
+                // REPORT_FAMILY_FORMS or CREATE_FAMILY_FORMS is taken here too.
+                var typed = new List<string>();
+                var unique = new List<string>();
+                var problem = RevitCapture.SplitIds(typedIds, typed, unique, done);
                 if (problem != null) return Json.Error("bad_request_value", problem);
-                if (typed == null)
+
+                if (typed.Count > 0)
                 {
-                    return Json.Error("bad_request_value",
-                        "\"" + typedIds + "\" is not a list of element ids. Type them as Revit "
-                        + "shows them - digits only, comma separated. NOTHING was isolated.");
+                    var found = RevitFragment.ElementsWithTypedIds(doc, typed, out problem)
+                                as List<ElementId>;
+                    if (found == null)
+                    {
+                        return Json.Error("bad_request_value",
+                            (problem ?? "The ids typed could not be found in this model.")
+                            + " NOTHING was " + done + ".");
+                    }
+                    wanted.AddRange(found);
                 }
 
-                var found = RevitFragment.ElementsWithTypedIds(doc, typed, out problem)
-                            as List<ElementId>;
-                if (found == null)
+                // A UNIQUEID IS REVIT'S OWN LOOKUP. One that names nothing here
+                // - another family's form, the project in front instead of the
+                // family, a typing slip - refuses the whole request, named, as
+                // one number that names nothing does. An element named both
+                // ways is counted once.
+                var missing = new List<string>();
+                foreach (var id in unique)
+                {
+                    var element = doc.GetElement(id);
+                    if (element == null) { missing.Add(id); continue; }
+                    if (!wanted.Contains(element.Id)) wanted.Add(element.Id);
+                }
+                if (missing.Count > 0)
                 {
                     return Json.Error("bad_request_value",
-                        (problem ?? "The ids typed could not be found in this model.")
-                        + " NOTHING was isolated.");
+                        "These long ids name nothing in \"" + doc.Title + "\": "
+                        + string.Join(", ", missing.ToArray()) + ". NOTHING was " + done
+                        + ". Give ids from an answer about the model in front.");
                 }
+
                 // A TYPE IS NOT A PLACED ELEMENT, and the typed-id rule finds
                 // types too - an id an earlier answer printed may be one. A type
-                // has nothing to draw, so isolating it would either throw or
-                // count an element nobody can see. One refuses the request, as
-                // one unknown category word does.
+                // has nothing to draw, so isolating or hiding it would either
+                // throw or count an element nobody can see. One refuses the
+                // request, as one unknown category word does.
                 var types = new List<string>();
-                foreach (var id in found)
+                foreach (var id in wanted)
                     if (doc.GetElement(id) is ElementType) types.Add(id.ToString());
                 if (types.Count > 0)
                 {
                     return Json.Error("bad_request_value",
                         "These ids name element TYPES, not placed elements, and a type has "
-                        + "nothing to isolate: " + string.Join(", ", types.ToArray())
-                        + ". NOTHING was isolated. Give the ids of placed elements.");
+                        + "nothing to " + verb + ": " + string.Join(", ", types.ToArray())
+                        + ". NOTHING was " + done + ". Give the ids of placed elements.");
                 }
-                wanted.AddRange(found);
 
                 // HOW MANY OF THEM THIS VIEW CAN SHOW AT ALL. An element on
                 // another level, or one the view's own settings hide, is
@@ -180,8 +246,8 @@ namespace Heron.Revit.Addin
                     if (found == null)
                     {
                         return Json.Error("unknown_category",
-                            "This model has no '" + name + "' category, so it cannot be isolated. "
-                            + "NOTHING was isolated.");
+                            "This model has no '" + name + "' category, so it cannot be "
+                            + done + ". NOTHING was " + done + ".");
                     }
 
                     if (wanted.Contains(found.Id)) continue;
@@ -191,55 +257,72 @@ namespace Heron.Revit.Addin
 
                 if (wanted.Count == 0)
                 {
-                    return Json.Error("nothing_to_isolate",
+                    return Nothing(hide,
                         "No category was given. Try 'ducts', or several at once like "
                         + "'pipes, pipe fittings'.");
                 }
             }
 
             var byCategory = names.Count > 0;
-            var replaced = view.IsTemporaryHideIsolateActive();
+            var wasOn = view.IsTemporaryHideIsolateActive();
+
+            // AN ISOLATE REPLACES, A HIDE ADDS - see Isolate and Hide above.
+            var replaced = wasOn && !hide;
 
             // WHAT REVIT'S UNDO LIST WILL SAY if it lists this at all - which
             // is NEEDS-CHECKING ES's question, not something assumed here.
-            var label = "Heron: isolate "
+            var label = "Heron: " + verb + " "
                         + (byCategory ? string.Join(", ", names.ToArray()) : wanted.Count + " element(s)")
                         + " temporarily";
 
             string failed;
-            var done = Within(doc, label, () =>
+            var kept = Within(doc, label, () =>
             {
                 if (replaced) view.DisableTemporaryViewMode(TemporaryViewMode.TemporaryHideIsolate);
-                if (byCategory) view.IsolateCategoriesTemporary(wanted);
-                else view.IsolateElementsTemporary(wanted);
+                if (hide)
+                {
+                    if (byCategory) view.HideCategoriesTemporary(wanted);
+                    else view.HideElementsTemporary(wanted);
+                }
+                else
+                {
+                    if (byCategory) view.IsolateCategoriesTemporary(wanted);
+                    else view.IsolateElementsTemporary(wanted);
+                }
             }, out failed);
 
-            if (!done)
+            if (!kept)
             {
-                return Json.Error("isolate_failed",
+                return Failed(hide,
                     failed + " The view's own visibility settings were not touched.");
             }
 
             // WHAT REVIT SAYS NOW, not what this method meant. A call that
-            // returned cleanly and left no isolate on is a failure, and it
-            // would otherwise be reported as one that worked.
+            // returned cleanly and left no temporary hide/isolate on is a
+            // failure, and it would otherwise be reported as one that worked.
             var active = view.IsTemporaryHideIsolateActive();
             if (!active)
             {
-                return Json.Error("isolate_failed",
-                    "Revit accepted the isolate in \"" + view.Name + "\" and reports no "
+                return Failed(hide,
+                    "Revit accepted the " + verb + " in \"" + view.Name + "\" and reports no "
                     + "Temporary Hide/Isolate on afterwards, so nothing can be said to be "
-                    + "isolated. The view's own visibility settings were not touched.");
+                    + done + ". The view's own visibility settings were not touched.");
             }
 
             // documentPath BESIDE THE TITLE AND THE KEYS, for the reason the
-            // reset gives below: the server's pin compares it.
+            // reset gives below: the server's pin compares it. `isolated`
+            // keeps its name for a hide too - it is the count of what the
+            // request named, and the server reads it under that name - and
+            // `mode` says which it was, so the answer can never call a hide an
+            // isolate.
             var fields = new List<string>
             {
+                Json.Str("mode", verb),
                 Json.Num("isolated", wanted.Count),
                 Json.Str("isolatedBy", byCategory ? "category" : "element id"),
                 Json.Str("view", view.Name),
                 Json.Bool("replacedEarlier", replaced),
+                Json.Bool("addedToEarlier", hide && wasOn),
                 Json.Str("document", doc.Title),
                 Json.Str("documentPath", string.IsNullOrEmpty(doc.PathName) ? null : doc.PathName),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
@@ -252,6 +335,26 @@ namespace Heron.Revit.Addin
             if (inView >= 0) fields.Add(Json.Num("inView", inView));
 
             return Json.Ok(fields.ToArray());
+        }
+
+        /// <summary>
+        /// The refusal when nothing was named, under the request's own code.
+        /// EACH CODE TYPED WHOLE, inside its own Json.Error, never built from
+        /// a verb: tests/test_failure_analysis.py checks the failure table
+        /// (mcp/server/heron_failure.py) against the codes written in Json.Error
+        /// calls, read as text - a code made of pieces is one it cannot see.
+        /// </summary>
+        private static string Nothing(bool hide, string message)
+        {
+            return hide ? Json.Error("nothing_to_hide", message)
+                        : Json.Error("nothing_to_isolate", message);
+        }
+
+        /// <summary>Revit refused the hide or the isolate - Nothing's rule for the code.</summary>
+        private static string Failed(bool hide, string message)
+        {
+            return hide ? Json.Error("hide_failed", message)
+                        : Json.Error("isolate_failed", message);
         }
 
         /// <summary>

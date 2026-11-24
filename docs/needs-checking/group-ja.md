@@ -29,11 +29,11 @@ PROVEN tools, a 3 mm ring on *Casing Right* (X 147 to 150) and one on *Casing Le
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**JA0**~~ | Negative FIRST. `sizeParameters=Ring Width, Ring Height` (640, 440 - the ring's outside) — [full row](../needs-checking-archive/group-ja.md#row-ja0) | Refused - "The opening of the ring face on "Casing Right" is 600 x 400 mm ..."… |
-| ~~**JA1**~~ | The port. `sizeParameters=Width, Height` — [full row](../needs-checking-archive/group-ja.md#row-ja1) | `connector` "duct connector, Supply Air, rectangular 600 x 400 mm, at X 150, Y 0, Z 0… |
-| ~~**JA2**~~ | The flex. JA1 kept on the owner's word, then Length 400, Width 1000, Height 250 through… — [full row](../needs-checking-archive/group-ja.md#row-ja2) | At X 200, Y 0, Z 0, 1000 x 250 mm; put back to 300 / 600 / 400 Struck 2026-11-13: PASSED… |
-| ~~**JA3**~~ | A face of one loop is unchanged. `facePlane` naming a plain box's face, as version 4's proof — [full row](../needs-checking-archive/group-ja.md#row-ja3) | The same answer as version 4, no word of an opening Struck 2026-11-13: PASSED - the… |
-| ~~**JA4**~~ | The signature, on the owner's word only, after JA0 to JA3 — [full row](../needs-checking-archive/group-ja.md#row-ja4) | `python brain/heron_validate.py accept add-family-connector --by "Ajmal PS"` Struck… |
+| ~~**JA0**~~ | Negative FIRST. `sizeParameters=Ring Width, Ring Height` (640, 440 - the ring's outside) — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Refused - "The opening of the ring face on "Casing Right" is 600 x 400 mm ..."… |
+| ~~**JA1**~~ | The port. `sizeParameters=Width, Height` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `connector` "duct connector, Supply Air, rectangular 600 x 400 mm, at X 150, Y 0, Z 0… |
+| ~~**JA2**~~ | The flex. JA1 kept on the owner's word, then Length 400, Width 1000, Height 250 through… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | At X 200, Y 0, Z 0, 1000 x 250 mm; put back to 300 / 600 / 400 Struck 2026-11-13: PASSED… |
+| ~~**JA3**~~ | A face of one loop is unchanged. `facePlane` naming a plain box's face, as version 4's proof — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The same answer as version 4, no word of an opening Struck 2026-11-13: PASSED - the… |
+| ~~**JA4**~~ | The signature, on the owner's word only, after JA0 to JA3 — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `python brain/heron_validate.py accept add-family-connector --by "Ajmal PS"` Struck… |
 
 A row that fails stays open; nothing in a row changes to make it pass.
 

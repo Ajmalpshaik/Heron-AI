@@ -261,7 +261,7 @@ the way every Revit starts, and it says so) — and says where each fact came fr
 
 Revit stores lengths internally in **decimal feet**, regardless of what the user sees on screen.
 Surveyed Revit MCP servers take **millimetres** at the tool boundary and convert
-([26 §6](26-prior-art-revit-mcp.md)).
+([31 research](31-research.md)).
 
 Heron must fix this explicitly, because a silent unit mismatch is the classic wrong-by-304.8 error and
 it is silent right up until someone looks at the model.
@@ -528,7 +528,7 @@ Tested without Revit.
 | **Connect and check** | which Revit, which model, is Heron working | `READ` | nothing | `revit_health`, `revit_use_session`, `revit_use_this_model`, `heron_version`, `heron_diagnose`, `heron_companion` |
 | **Saved commands** | keep a job as a named command; list, show, delete ([docs/49](49-saved-commands-and-the-heron-panel.md)) | `READ` - writes only the modeller's own command files | nothing. Running one is `revit_change` or `revit_read`, from the chat or from Revit's Heron panel | `heron_commands` |
 | **QA checklists** | keep checks in the modeller's words as a named checklist; list, show, save, a starter, run, delete ([docs/50](50-qa-checklists.md)) | `ANALYZE` through `run_fragment_read` - `revit_read`'s own level, because `run` reads the model check by check through it; the rest writes only the modeller's own checklist files | a connected Revit to run; Changes may be off. Each check must be PROVEN, or it is NOT RUN | `heron_checklist` |
-| **Read a file** | a sheet register in an .xlsx or .csv on the modeller's PC, for making the sheets ([docs/48 §5.3](48-studying-bimlogiq.md#53-item-7---sheets-from-excel)) | `READ` - reads the file, sends nothing to Revit | the file. Making the sheets is `revit_change` with what it hands back - or, while that card is DRAFT, the command line and `try-once` | `heron_sheet_list` |
+| **Read a file** | a sheet register in an .xlsx or .csv on the modeller's PC, for making the sheets ([31 research](31-research.md#11-still-owed)) | `READ` - reads the file, sends nothing to Revit | the file. Making the sheets is `revit_change` with what it hands back - or, while that card is DRAFT, the command line and `try-once` | `heron_sheet_list` |
 
 `heron_tools.ALWAYS_LOADED` names the few a chat is given before it asks (§8.6); every other tool is one
 search away.
@@ -984,11 +984,14 @@ open a view, zoom"* and no confirmation. Only this side held it back: §8.1's do
   So do `revit_change`'s two refusals a screen-only job meets first - not proven, and Changes off - and
   `heron_method`'s list of a job's capabilities says `EXECUTE` runs through it.
 - **Revit's Temporary Hide/Isolate needs a transaction, so it is not a fragment.** `revit_isolate_temporary`
-  and `revit_reset_temporary` call two FIXED operations, `isolate_temporary` and `reset_temporary`
-  (`RevitTemporaryView.cs`): one transaction round `IsolateElementsTemporary`, `IsolateCategoriesTemporary`
-  or `DisableTemporaryViewMode`, in the active view, taking element ids or BIM category words. A
+  and `revit_reset_temporary` call FIXED operations, `isolate_temporary`, `hide_temporary` and
+  `reset_temporary` (`RevitTemporaryView.cs`): one transaction round `IsolateElementsTemporary`,
+  `IsolateCategoriesTemporary`, `HideElementsTemporary`, `HideCategoriesTemporary` or
+  `DisableTemporaryViewMode`, in the active view, taking element ids - Revit's number or a family form's
+  long id - or BIM category words. `mode=hide` is Revit's own HH, sent as its own operation so an older
+  add-in refuses it rather than isolating ([row 5b-2024](fragment-issues/row-5b-2024.md)). A
   transaction opened for fragment code with Changes off would be a write path with no switch in front of
-  it; these open one for three Revit calls and nothing a caller sends.
+  it; these open one for Revit's temporary-view calls and nothing a caller sends.
 - **A DRAFT runs here and says DRAFT, as a read does.** [D-117](DECISIONS.md) refuses a fragment that is
   not PROVEN only where a change is KEPT; its items 3 and 4 leave a run that keeps nothing, and a read,
   unasked. The show door opens no transaction, so it keeps nothing in the model.

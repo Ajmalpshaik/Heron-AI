@@ -139,7 +139,7 @@ Research                  26, 31 - 35, 39, 45, 48, 51, 52
 | 49 | [Saved Commands and the Heron Panel](../49-saved-commands-and-the-heron-panel.md) | **A job the modeller kept, saved from the chat as a named command with its inputs, and run again from a panel docked in Revit.** One capability per command (one click, one undo); run through `revit_change`'s own body, so every rule and Keep or Discard apply as for a chat. [D-151](../decisions/D-151.md), proposed. Compiled for 2020 to 2027 and tested without Revit; not run in a real Revit |
 | 50 | [QA Checklists](../50-qa-checklists.md) | **Checks written in the modeller's own words, saved as a named checklist and run in one go** — from the chat, or the Companion's QA Checklist page. Each check is one capability that only reads, with a pass rule on one output it declares. PASS means *meets the value checked*; NOT RUN says why and is never a pass. [D-152](../decisions/D-152.md), proposed. Tested without Revit; not run in a real Revit |
 
-Research — 26, 31 to 35, 39, 45, 48, 51 and 52 — is on its own page: [Research](research.md).
+Research — 31, 32 and 52 (31 holds what were 26, 31, 33 to 35, 39, 45, 48 and 51) — is on its own page: [Research](research.md).
 
 ## Reading conventions
 

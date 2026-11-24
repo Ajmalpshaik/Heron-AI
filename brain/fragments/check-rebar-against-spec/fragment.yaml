@@ -8,7 +8,7 @@ id: FRG-ELE-169
 semantic-identity: "compare the placed reinforcement with the spec values handed in, and say for each value whether it meets it"
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
-# 2026-11-09: docs/48-studying-bimlogiq.md section 5 item 8 - "Rebar from a
+# 2026-11-09: docs/31-research.md section 11 (former note 48, item 8) - "Rebar from a
 # spec - read the bar sizes and covers from a given spec, then place, then
 # check anchorage and bar length" - which the owner started that day ("yes
 # start item 8"). The spec is read by the host and confirmed by the modeller;

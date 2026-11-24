@@ -31,7 +31,7 @@ an add-in loads, a tab appears, or a file landed in the right folder.
 > **BUILT** — the code exists and compiles.
 > **PROVEN** — it has been seen working, on the real thing, and the evidence is recorded.
 > **NOT STARTED** — nothing exists.
-> These are different words on purpose. [`docs/HANDOVER.md §3`](../../../HANDOVER.md) keeps the same
+> These are different words on purpose. [`docs/HANDOVER.md §3`](../../../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#3-what-has-been-witnessed-at-a-real-revit) keeps the same
 > distinction for the rest of the project.
 
 ---

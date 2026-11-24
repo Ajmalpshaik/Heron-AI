@@ -11,8 +11,8 @@
 
 The owner answered four rows in their GitHub issues, and one pull request made each change:
 [row 5b-1841](../fragment-issues/row-5b-1841.md) (issue #1041, answer A),
-[row 5b-194](../fragment-issues-archive/reading-defects-5b-176-200.md#row-5b-194) and
-[row 108](../fragment-issues-archive/proving-defects-101-125.md#row-108) (issue #912), and
+[row 5b-194](../fragment-issues/section-5b-rows-176-200.md) and
+[row 108](../fragment-issues/section-5-rows-101-125.md) (issue #912), and
 [row 5b-1594](../fragment-issues/row-5b-1594.md) (issue #911). **Nothing here has met a Revit.** Built
 and tested in a cloud container on 2026-11-20 - the add-in compiled for every release 2020 to 2027, every
 fragment compiled on every release it claims, and the suites named in each row pass - which is not a

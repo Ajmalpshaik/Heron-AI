@@ -92,7 +92,7 @@ And the larger job they serve: **port the working AJ Tools tools onto Heron's fr
 
 **Step 1 means start from the whole working tool so its complete behaviour is visible** — not paste it
 in and keep it. Steps 2 and 3 are the rewrite. Read that way it is the same instruction he gave on
-2026-08-28, already recorded in [31](../../../31-studying-the-existing-libraries.md):
+2026-08-28, already recorded in [31 research](../../../31-research.md):
 
 > *"You can check and study everything, but don't copy-paste blindly. Check, study, and take what you
 > need… 1. Check and edit. 2. If you want to add, add. 3. If you want to split, split."*

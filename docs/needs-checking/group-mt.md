@@ -9,7 +9,7 @@
 
 **Tracked as GitHub issue [#984](https://github.com/Ajmalpshaik/Heron-AI/issues/984) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-The owner's ask: [docs/48](../48-studying-bimlogiq.md) section 5 item 2, *"Annotation template + Tag in one
+The owner's ask: [31 research](../31-research.md) section 5 item 2, *"Annotation template + Tag in one
 pass, no overlaps, batch over many views"*, and his word on how - *"upgrade the tag tool or combine the tool
 or if you need to make as new also you can do it"*. Made NEW, at DRAFT, because both cards it overlaps are
 PROVEN and widening either would send it back to DRAFT and out of the chat's reach (D-117) until proved

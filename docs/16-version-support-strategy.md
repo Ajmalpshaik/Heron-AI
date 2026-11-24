@@ -21,7 +21,7 @@ Eight versions today, growing by one every year:
 | 2024 | .NET Framework 4.8 | **64-bit** | `ElementId.IntegerValue` → `ElementId.Value` |
 | 2025 | **.NET 8** | 64-bit | **Runtime break** |
 | 2026 | .NET 8 | 64-bit | |
-| 2027 | **.NET 10** | 64-bit | **Third runtime.** **Confirmed** — `brain/heron_dotnet.py` pins `2027: 10`, `Directory.Build.props` maps it, CI compiles 2027 with the .NET 10 SDK on every pull request and every push to `main`, and a real Revit 2027 loaded the add-in on 2026-09-19 ([`A12`](NEEDS-CHECKING.md)). This cell said *"Reported by a shipping project ([26 sec.3](26-prior-art-revit-mcp.md)); confirm against the SDK"* until 2026-09-21 — an open action that had closed twice over ([row 5b-62](FRAGMENT-ISSUES.md)) |
+| 2027 | **.NET 10** | 64-bit | **Third runtime.** **Confirmed** — `brain/heron_dotnet.py` pins `2027: 10`, `Directory.Build.props` maps it, CI compiles 2027 with the .NET 10 SDK on every pull request and every push to `main`, and a real Revit 2027 loaded the add-in on 2026-09-19 ([`A12`](NEEDS-CHECKING.md)). This cell said *"Reported by a shipping project ([31 research](31-research.md)); confirm against the SDK"* until 2026-09-21 — an open action that had closed twice over ([row 5b-62](FRAGMENT-ISSUES.md)) |
 
 *Runtime versions must be verified against the installed SDKs before being locked in — see spec §24.*
 
@@ -69,7 +69,7 @@ This is the real one. **One assembly cannot target both runtimes.** There is no 
 <TargetFrameworks>net48;net8.0-windows;net10.0-windows</TargetFrameworks>
 ```
 
-**[NOTE]** Three runtimes, not two — Revit 2027 moves to .NET 10 ([26 §3](26-prior-art-revit-mcp.md)).
+**[NOTE]** Three runtimes, not two — Revit 2027 moves to .NET 10 ([31 research](31-research.md)).
 This does not change the strategy; the adapter layer absorbs it. It does confirm that a new runtime
 arrives roughly every two years, which is the strongest argument for keeping all version-conditional
 code confined to adapters.
