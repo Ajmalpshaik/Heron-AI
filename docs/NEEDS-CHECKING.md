@@ -1750,6 +1750,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-py.md`](needs-checking/group-py.md)
 
+## Group QE - LINK_FAMILY_PARAMETER version 7: a plain element id in `forms` names the element, as its unique id does - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qe.md`](needs-checking/group-qe.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
