@@ -49,3 +49,30 @@ jobs:
       upright lines. Negative: created empty, facesAsked 0, refused naming
       the Walls element "Basic Wall : Generic - 200mm", Mark "Heron JM Wall",
       as not a mass or a generic model, ending NOTHING WAS MADE.
+
+  # NEEDS-CHECKING Group QK - VERSION 2 (row 5b-2020, issue #1344), written
+  # 2026-11-24 in a cloud session, NOT RUN. Group QK's rig adds the mass
+  # "Heron QK Fold" (4 upright faces, a top, an underside and one face tilted
+  # 45 degrees) and, BY HAND, a curtain system of "Heron JM 1500" on its four
+  # upright faces (Model by Face > Curtain System). A setup step cannot lay
+  # it: setup values never reach a step that changes the model (row 5b-917).
+  # The positive asks for the sloped face alone - bare, so made; the
+  # negative for "all but top and underside", which takes in the four faces
+  # already glazed, so it must be REFUSED and nothing made. Both rolled back.
+  - fragment: create-curtain-system
+    set:
+      host: "Heron QK Fold"
+      curtainSystemType: "Heron JM 1500"
+      faces: "sloped"
+    negative-set:
+      host: "Heron QK Fold"
+      curtainSystemType: "Heron JM 1500"
+      faces: "all but top and underside"
+    expect: created
+    note: >
+      QK5 and QK6. Positive: created 1, facesAsked 1, facesTaken 1,
+      alreadyNear 1, alreadyGlazed 0; the face list shows the four upright
+      faces carrying the hand-made curtain system and the sloped one ASKED.
+      Negative: created empty, alreadyGlazed 4, refused naming the four
+      upright faces as already carrying a curtain system and the sloped face
+      as bare, ending NOTHING WAS MADE.

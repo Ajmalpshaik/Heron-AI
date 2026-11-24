@@ -1,18 +1,27 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-127
-semantic-identity: "lay a curtain system of a named type on the faces of a placed mass or generic model - its upright side faces, its top, or every face - as Curtain System by Face does"
+semantic-identity: "lay a curtain system of a named type on chosen faces of a placed mass or generic model - upright, top, underside, sloped or tilted, by number, or all but some - never over a face that already carries one, as Curtain System by Face does"
 kind: action
 domain: revit.elements
 capability: CREATE_CURTAIN_SYSTEM
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 2 (2026-11-24, row 5b-2020, issue #1344): faces chosen by kind -
+# now underside and sloped too - by NUMBER, joined, or "all but" some; every
+# reply lists the host's faces numbered; and a face asked that already carries
+# a curtain system REFUSES the call. Seen on Revit 2024 on a folded mass of 14
+# faces: "vertical" left its 3 tilted faces bare, and "all" would have laid a
+# second system over the 7 already glazed and glazed the roof and the
+# cantilever soffit too. Version 1's proof below is kept as the record; its C#
+# moved, so it is DRAFT until NEEDS-CHECKING Group QK is run and signed.
+#
 # WHY IT EXISTS - comments, not `purpose`, because `purpose` is searched and
 # long text pulls other sentences here.
 # 2026-10-28: the modeller asked "put a curtain system on the faces of this
@@ -39,10 +48,16 @@ risk: MODIFY
 # THE FACES, AND THE ONE DEFAULT. "vertical" when nothing is said: every face
 # whose normal is level to within 1 degree - a curved face judged at nine
 # points across it, every one level. "top": every face looking straight up to
-# within 1 degree. "all": every face, the underside included. A sloped face is
-# only reached by "all". A host with no face of the kind asked is refused,
-# with how many faces of each kind it has. Nothing beyond this default is
-# assumed: a word this does not know is refused, naming the three.
+# within 1 degree; "underside" straight down. "sloped": every other face -
+# tilted, or curved so that it is none of those. "all": every face. A face is
+# also named by its NUMBER (1, 2, 3 ... in the order Revit reads the faces),
+# and every reply - a dry run, a refusal, a run - lists the host's faces
+# numbered: kind, which way it looks, area, and any curtain system it already
+# carries. Kinds and numbers join ("vertical and sloped", "3, 5 and 9", "4 to
+# 7"), and "all but" / "all except" takes faces away ("all but top and
+# underside"). Numbers need ONE host. A host with no face of what was asked is
+# refused with its faces listed. Nothing beyond the default is assumed: a word
+# this does not know is refused, naming the ones it does.
 #
 # THE FACES' REFERENCES ARE READ THROUGH THE FAMILY'S OWN GEOMETRY -
 # GeometryInstance.GetSymbolGeometry() with no transform, which the API
@@ -65,10 +80,17 @@ risk: MODIFY
 # all, THROWS and the whole call goes back. Fewer faces taken than handed in
 # is said in the findings, not hidden.
 #
-# A CURTAIN SYSTEM ALREADY STANDING IN A HOST'S OUTLINE is counted before the
-# write (`alreadyNear`) and named. Whether it sits on the same faces is NOT
-# read: Revit's API gives a curtain system no host face to read back. What
-# Revit does with a second one on the same faces is NEEDS-CHECKING JM8.
+# NEVER A SECOND SKIN. On Revit 2020 a second curtain system on the same faces
+# was simply made over the first (NEEDS-CHECKING JM8). So each curtain system
+# standing in a host's outline is counted (`alreadyNear`) and READ before the
+# write: Revit's API gives a curtain system no host face to read back, so each
+# of its curtain grids is read cell by cell, and the host face that holds the
+# middle of every edge of a cell, to within 5 mm, is the face it sits on. A
+# face asked that already carries one (`alreadyGlazed`) refuses the whole
+# call, naming the faces glazed and the ones still bare, so the modeller asks
+# again for the bare ones. A standing system whose cells cannot be read is
+# named as such - the old warning, not a refusal. Whether this reading finds
+# what Revit lays is NEEDS-CHECKING Group QK.
 #
 # NOT KNOWN WITHOUT A REAL REVIT - ASSUMPTIONS FOR THE PROOF TO SETTLE
 # (NEEDS-CHECKING Group JM):
@@ -78,17 +100,21 @@ risk: MODIFY
 #   - which of a face's grid directions Revit calls U and which V, and
 #     whether its counts match the ones derived in the plan (JM2);
 #   - what a second curtain system on the same faces does (JM8).
+# And for version 2 (NEEDS-CHECKING Group QK): that the faces are numbered the
+# same on every read of an unchanged mass; that "sloped" finds a folded mass's
+# tilted faces; that a face carrying a curtain system is found from the
+# system's cells and refused, and a bare one is not.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Every
 # refusal is made before the first write, one host refused refuses the call,
 # and one call is one undo entry.
 purpose: >
-  Creates a new curtain system on the faces of a mass - or a generic model -
-  placed in the project, as Revit's Curtain System by Face does, of the
-  curtain system type the request names. The faces: the upright side faces
-  (the default), the top, or all of them. Answers with each new curtain
-  system and, read back from Revit, the faces it took and the grid lines on
-  each.
+  Lays a new curtain system, of the type the request names, on the faces of
+  a mass - or a generic model - placed in the project, as Revit's Curtain
+  System by Face does: the upright side faces (the default), the top, the
+  underside, the sloped or tilted faces, faces by number, or all but some -
+  never a face already glazed. Answers with each curtain system read back
+  from Revit, the faces it took and the grid lines on each.
 
 contract:
   needs:
@@ -114,7 +140,10 @@ contract:
     - name: curtainSystemType
       type: string
       source: request
-    # vertical (the default - the upright side faces), top, or all.
+    # vertical (the default - the upright side faces), top, underside,
+    # sloped, all; face numbers as the reply lists them ("3, 5 and 9", "4 to
+    # 7"); joined ("vertical and sloped") or taken away ("all but top and
+    # underside").
     - name: faces
       type: string
       source: request
@@ -145,6 +174,12 @@ contract:
     - name: alreadyNear
       # Curtain systems already standing within a host's outline before the
       # write. A warning, never a thing made (D-52).
+      role: accounting
+      type: int
+    - name: alreadyGlazed
+      # Faces asked that already carry a curtain system, read off the standing
+      # systems' curtain grids before the write. Above 0 refuses the call: a
+      # second skin is never laid over the first (row 5b-2020, D-52).
       role: accounting
       type: int
     - name: refused
@@ -241,6 +276,18 @@ compatibility-note: >
 #   "curtain system by face on the side
 #    faces of mass Tower A"                  -> here, host "Tower A"
 #   "make a facade on the mass faces"        -> here
+#   "put a curtain system on the sloped
+#    faces of this mass", "curtain system on
+#    all faces except the top and underside",
+#    "curtain system on faces 3, 5 and 9"    -> here (version 2). Measured
+#                                               2026-11-24, main against the
+#                                               branch, all four backends: see
+#                                               NEEDS-CHECKING Group QK
+#   "which faces of this mass already have a
+#    curtain system"                         -> NOT HERE - a question (D-86).
+#                                               No read answers it yet, and it
+#                                               reaches this card on main:
+#                                               row 5b-2028, issue #1365
 #   "draw a curtain wall between these
 #    points"                                 -> CREATE_WALL, with a curtain wall
 #                                               type. A curtain WALL is drawn
@@ -316,3 +363,5 @@ utterances:
   - put a curtain system on the faces of this mass
   - make a facade on the mass faces
   - curtain system by face on the side faces of mass Tower A
+  - glaze only the tilted faces of the folded mass with a curtain system
+  - curtain system on every face of this mass except its roof and underside
