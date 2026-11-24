@@ -3001,6 +3001,11 @@ def cmd_try_once(name, values=None, session=None, in_document=None):
     elif answer == "discard":
         told = ("run ONCE on the live model through the Keep or Discard box in Revit "
                 "(D-119) on %s; the modeller pressed Discard" % today)
+    elif answer == "not_shown":
+        # Row 5b-1991: the box never appeared, so nobody chose anything.
+        told = ("run ONCE on the live model on %s, but the Keep or Discard box could NOT "
+                "be shown in Revit, so the modeller was not asked and nothing was kept"
+                % today)
     else:
         told = ("run ONCE on the live model through the Keep or Discard box in Revit "
                 "(D-119) on %s; the modeller closed the box, which discards" % today)
