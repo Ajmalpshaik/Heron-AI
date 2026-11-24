@@ -1758,6 +1758,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qb.md`](needs-checking/group-qb.md)
 
+## Group QD - REPORT_WALL_ATTACHMENTS: which walls are attached to a roof, read and never changed - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qd.md`](needs-checking/group-qd.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

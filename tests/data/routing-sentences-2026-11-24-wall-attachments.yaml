@@ -1,0 +1,60 @@
+# ROUTING SENTENCES FROZEN 2026-11-24, BEFORE THE NEW READ CARD
+# REPORT_WALL_ATTACHMENTS WAS WRITTEN - for GitHub issue #1127, row 5b-1924's
+# walls-to-roof part ("which walls are attached to the roof" reached
+# SHAPE_WALL_TOPS_TO_ROOF or ATTACH_WALLS, two writes, because no read said
+# which walls are attached).
+#
+# Measured beside it, never committed: routing-sentences-2026-11-23.yaml and
+# its neighbours, the owner's 79 and the plain questions (score-routing's two
+# frozen sets), and every declared sentence of ATTACH_WALLS,
+# SHAPE_WALL_TOPS_TO_ROOF, REPORT_JOINED_ELEMENTS and REPORT_CONSTRAINTS as each
+# stood on main.
+#
+# Read by tools/score-routing.py --sentences. The first sentence is the row's
+# own; every other one is this session's, written before the card and declared
+# on no card. Never reworded to buy back a rank: a sentence here is the
+# instrument.
+groups:
+- group: '5b-1924 (#1127): which walls are attached to a roof - asked'
+  expect: want REPORT_WALL_ATTACHMENTS
+  sentences:
+  - which walls are attached to the roof
+  - are these walls attached to the roof
+  - which walls have their tops attached to this roof
+  - show me the walls that are attached to the roof
+  - is the top of this wall attached to anything
+  - how many walls are attached to the roof
+  - which walls are not attached to the roof yet
+  - what is this wall attached to at the top
+- group: '5b-1924 (#1127): asked, and not a write whatever answers it'
+  expect: not-a-write
+  sentences:
+  - which of these walls are attached at the base
+  - did the walls get attached to the roof
+  - check whether the walls reach the roof
+- group: '5b-1924 (#1127): guards - the writes beside it keep their own requests'
+  sentences:
+  - say: attach these walls to the roof
+    expect: want ATTACH_WALLS
+  - say: detach the wall tops from the roof
+    expect: want ATTACH_WALLS
+  - say: attach the base of these walls to the floor
+    expect: want ATTACH_WALLS
+  - say: make the wall tops follow the roof
+    expect: want SHAPE_WALL_TOPS_TO_ROOF
+  - say: close the gable above these walls
+    expect: want SHAPE_WALL_TOPS_TO_ROOF
+  - say: attach these columns to the roof
+    expect: want ATTACH_COLUMNS
+- group: '5b-1924 (#1127): guards - the reads beside it keep their own questions'
+  sentences:
+  - say: which elements is this wall joined to
+    expect: want REPORT_JOINED_ELEMENTS
+  - say: what is locked to this wall
+    expect: want REPORT_CONSTRAINTS
+  - say: how steep is this roof
+    expect: want REPORT_ROOF_SLOPES
+  - say: what is this roof made of
+    expect: want REPORT_COMPOUND_STRUCTURE
+  - say: what is the top constraint of this wall
+    expect: neutral
