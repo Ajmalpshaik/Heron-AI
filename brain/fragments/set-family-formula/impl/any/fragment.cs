@@ -14,9 +14,10 @@
 // alone. Only the family's OWN parameter names are checked, so a text formula
 // with quoted strings in it is left alone.
 //
-// THE ONE WRITE IS THE FORMULA, and a refusal from Revit THROWS so the host
-// rolls the call back and quotes Revit. What the family holds afterwards - the
-// formula and the value it produced - is read back, never assumed.
+// THE ONE WRITE IS THE FORMULA, made inside a SubTransaction. A refusal from
+// Revit is rolled back there and comes back through `refused` with Revit's
+// words (version 3). What the family holds afterwards - the formula and the
+// value it produced - is read back, never assumed.
 //
 // VERSION 2 (2026-11-23, row 5b-2001): THE VALUE IS READ BY ITS KIND.
 // Version 1 read every value with `FamilyType.AsValueString`, which gave
@@ -26,6 +27,13 @@
 // angle or any other measured value as Revit shows it, as before. The current
 // type holds an INSTANCE parameter's value too - its default for a new
 // placement - so the same read serves both.
+//
+// VERSION 3 (2026-11-24): REVIT'S REFUSAL COMES BACK AS `refused`. Version 2
+// threw it, so "Neck Top + 10 mm" on Neck Top itself - measured on Revit 2020
+// - ended `fragment_threw` with the right words in the wrong place, which is
+// how a crash looks. SetFormula and the regenerate now run in a SubTransaction
+// that is rolled back on Revit's refusal, and the same words come back through
+// `refused` and `findings`, nothing kept.
 
 var findings = new List<string>();
 var formulaNow = "";
@@ -39,6 +47,7 @@ var wantedFormula = formula == null ? "" : formula.Trim();
 
 FamilyParameter target = null;
 var nothingToDo = false;
+var had = "";
 
 // A TICK BOX IS FOUND BY WHAT IT IS - the version-safe check CREATE_SHEETS and
 // SET_PARAMETER_VALUES_BY_ID make: SpecTypeId.Boolean.YesNo from 2022; null on
@@ -155,21 +164,33 @@ else
 if (refused == null && !nothingToDo && target != null)
 {
     var fm = doc.FamilyManager;
-    var had = target.Formula ?? "";
+    had = target.Formula ?? "";
 
+    // VERSION 3: REVIT'S REFUSAL IS A REFUSAL, NOT A THROW. The formula and
+    // the regenerate run inside a SubTransaction; when Revit will not take the
+    // formula - a loop through the parameter it sets, a name it cannot find - it
+    // is rolled back and Revit's words come back through `refused`, so nothing
+    // is kept and the call still ends normally.
+    var trial = new SubTransaction(doc);
     try
     {
+        trial.Start();
         fm.SetFormula(target, wantedFormula.Length == 0 ? null : wantedFormula);
+        doc.Regenerate();
+        trial.Commit();
     }
     catch (Exception ex)
     {
-        throw new InvalidOperationException("Revit refused the formula \"" + wantedFormula + "\" on \""
-            + wantedName + "\": " + ex.Message + " Names are written bare, spaces and all; a unit may "
-            + "follow a number (60 mm); and a formula cannot use the parameter it sets, directly or "
-            + "through another. Nothing was kept.");
+        try { if (trial.HasStarted() && !trial.HasEnded()) trial.RollBack(); } catch (Exception) { }
+        refused = "Revit refused the formula \"" + wantedFormula + "\" on \"" + wantedName + "\": "
+            + ex.Message + " Names are written bare, spaces and all; a unit may follow a number (60 mm); "
+            + "and a formula cannot use the parameter it sets, directly or through another. Nothing was kept.";
     }
+}
 
-    doc.Regenerate();
+if (refused == null && !nothingToDo && target != null)
+{
+    var fm = doc.FamilyManager;
 
     // READ BACK - the formula the family holds and what it produced.
     var readBack = fm.get_Parameter(wantedName);
@@ -203,11 +224,14 @@ if (refused == null && !nothingToDo && target != null)
 // ON A REFUSAL, what the parameter HAS is still the answer: its formula and
 // the value it gives are read from the family, so an empty `formulaNow` always
 // means "no formula" and never "nothing was looked at".
+// After Revit's own refusal (version 3) that is read AFTER the rollback, and
+// the parameter is found again by name rather than trusted from before it.
 if (refused != null && target != null)
 {
-    formulaNow = target.Formula ?? "";
+    var holdingParameter = doc.FamilyManager.get_Parameter(wantedName) ?? target;
+    formulaNow = holdingParameter.Formula ?? "";
     var holding = doc.FamilyManager.CurrentType;
-    if (holding != null) valueNow = valueIn(holding, target);
+    if (holding != null) valueNow = valueIn(holding, holdingParameter);
 }
 
 if (refused != null) findings.Add(refused);
