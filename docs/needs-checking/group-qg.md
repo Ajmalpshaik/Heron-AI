@@ -7,7 +7,7 @@
 
 ## Group QG - Automatically Embed: REPORT_CURTAIN_WALL_TYPE version 2 reads it, SET_CURTAIN_WALL_EMBED ticks it - DRAFT until proved (2026-11-24)
 
-**Tracked as GitHub issue - number written here once it is opened.** The checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+**Tracked as GitHub issue [#1349](https://github.com/Ajmalpshaik/Heron-AI/issues/1349) since 2026-11-24** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
 **LOCAL work - it needs Revit on the owner's PC.** A cloud session cannot run any of it.
 
