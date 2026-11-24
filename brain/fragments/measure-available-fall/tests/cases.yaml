@@ -1,3 +1,10 @@
+# CANNOT BE ARRANGED YET (row 5b-1970). This card has two single-element needs
+# (`upstream` and `downstream`), and the only word that binds one is `selected`, which means exactly one
+# element and binds that one to BOTH - so no case below can be given two different
+# elements as written, and following `selected` measures an element against itself
+# (0 mm) as an answer, not a refusal. Do not run these cases until a way to name two
+# elements exists. See docs/fragment-issues/row-5b-1970.md.
+
 positive:
   - given: >
       a gully at level 0 and a manhole 24000 mm away whose invert is 300 mm

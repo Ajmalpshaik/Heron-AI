@@ -41,8 +41,10 @@ in `%TEMP%\heron-work\ol`. A write of either is the thing being measured, so it 
 window and saved, `ol-family` in front holding an unsaved reference plane:
 
 ```
-python mcp/client/heron_bridge_client.py validate activate-document --set "documentPath=<ol-host.rvt's full path>" --negative-set "documentPath=<ol-family.rfa's full path>"
+python mcp/client/heron_bridge_client.py validate activate-document --set "documentPath=<ol-host.rvt's full path>" --negative-set "documentPath=C:\nope\missing.rfa"
 ```
+
+**The negative of a proof is OL5's missing file, not OL4's switch (row 5b-1968).** A switch that HAPPENS answers `activated true` and `activeAfter` *ol-family* - both results, so a batch reads NEG NOT EMPTY and `accept` refuses it. OL4 is read by eye beside the proof; the missing file is what reads empty (version 2's signed negative).
 
 The positive leaves `ol-family` with its unsaved work for `ol-host`; the negative then leaves `ol-host`,
 with nothing unsaved, for `ol-family` - and must say `leftBehindWritten false`. Read

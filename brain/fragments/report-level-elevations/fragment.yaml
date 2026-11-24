@@ -281,11 +281,19 @@ utterances:
   - what elevation is each level at
   - list the levels and their heights
   - is this model on a survey offset
-  - why are my heights wrong
-  - check the project base point
+  # ADDED 2026-11-23 (row 5b-1984, issue #1127): since CREATE_LEVELS' label
+  # became revit.datums, "what datums are in this project" reached that write
+  # on both re-ranked backends. Inside the eight the re-ranker reads (D-134);
+  # "why are my heights wrong", ninth now, is declared and still reached by
+  # identity.
+  - what datums do we have
   # MOVED 2026-11-01 from LIST_LEVELS, merged into this card.
   - list the levels
   - how many levels
+  # These two were fifth and sixth until 2026-11-23 (row 5b-1984); the merged
+  # LIST_LEVELS lines go on below them.
+  - check the project base point
+  - why are my heights wrong
   - what levels do we have
   - show me the levels
   - what are the floor levels

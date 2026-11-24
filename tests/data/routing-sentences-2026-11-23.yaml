@@ -1,0 +1,124 @@
+# ROUTING SENTENCES FROZEN 2026-11-23, BEFORE ANY CARD WAS EDITED - for GitHub
+# issues #1260 (row 5b-1985), #1127 (rows 5b-1984, 5b-1882, 5b-1924), #1169
+# (5b-1944), #1176 (5b-1951), #1177 (5b-1952), #1187 (5b-1953), #1188
+# (5b-1954) and #1039 (5b-1848). The groups for the last five rows are in
+# routing-sentences-2026-11-21-b.yaml and were measured beside this file, not
+# copied into it.
+#
+# Measured beside them, never committed: the owner's 79, the plain questions,
+# tests/test_routing_phrases.py's sentences, the other 2026-11-21 sets and every
+# declared sentence of the cards in play, as each stood on main.
+#
+# Read by tools/score-routing.py --sentences. Where a row quotes a sentence, it
+# is that row's. Every other sentence is this session's own, written before the
+# change and declared on no card. Never reworded to buy back a rank: a sentence
+# here is the instrument.
+groups:
+- group: '5b-1985 (#1260): read the Mark values'
+  expect: want READ_ELEMENT_PARAMETERS
+  sentences:
+  - please read the mark values for me
+  - read the mark values
+  - read the Mark of the selected doors
+  - show me the mark values on these walls
+  - what marks do these pipes have
+  - give me the Mark parameter of each selected element
+- group: '5b-1985 (#1260): guards - the card''s first eight, and the select beside it'
+  sentences:
+  - say: what is the insulation thickness of this duct
+    expect: want READ_ELEMENT_PARAMETERS
+  - say: what is the diameter of this pipe
+    expect: want READ_ELEMENT_PARAMETERS
+  - say: what size is this duct
+    expect: want READ_ELEMENT_PARAMETERS
+  - say: what workset is this on
+    expect: want READ_ELEMENT_PARAMETERS
+  - say: which ones have no value
+    expect: want READ_ELEMENT_PARAMETERS
+  - say: select the elements whose mark is A-01
+    expect: want SELECT_BY_PARAMETER_VALUE
+  - say: renumber the marks of these doors
+    expect: neutral
+- group: '5b-1984 (#1127): what datums are in this project'
+  expect: not-a-write
+  sentences:
+  - what datums are in this project
+  - what levels and grids are in this project
+  - list the datums in this model
+  - which datums does this model have
+  - show me all the levels and grids
+  - how many datums are in the model
+  - say: what grids are in this model
+    expect: want LIST_GRIDS
+- group: '5b-1984 (#1127): guards - making levels'
+  expect: want CREATE_LEVELS
+  sentences:
+  - create levels every 3000 mm
+  - add five levels at 3500 mm spacing
+  - make a new level at 12000
+- group: '5b-1882 (#1127): insulation questions left'
+  expect: not-a-write
+  sentences:
+  - how thick is the insulation on this duct
+  - what insulation does this duct have
+  - how thick is the pipe insulation
+  - tell me the insulation thickness of the selected pipes
+- group: '5b-1882 (#1127): guards - insulating'
+  expect: want SET_MEP_INSULATION
+  sentences:
+  - insulate these ducts at 25 mm
+  - add 50 mm insulation to these pipes
+- group: '5b-1924 (#1127): link room bounding'
+  expect: not-a-write
+  sentences:
+  - is the architectural link set to room bounding
+  - which linked models bound the rooms
+  - does the arch link have room bounding on
+  - say: turn on room bounding for the architectural link
+    expect: want SET_LINK_ROOM_BOUNDING
+- group: '5b-1924 (#1127): object styles line weights and colours'
+  expect: not-a-write
+  sentences:
+  - what line weight do ducts have in object styles
+  - what colour are pipes in object styles
+  - what is the projection line weight of walls in object styles
+  - say: set the line weight of ducts to 5 in object styles
+    expect: want SET_OBJECT_STYLE
+- group: '5b-1924 (#1127): revision numbering'
+  expect: not-a-write
+  sentences:
+  - what numbering does revision C use
+  - which numbering sequence does each revision use
+  - is revision B numbered per sheet or per project
+- group: '5b-1924 (#1127): selections'
+  expect: want FILTER_ELEMENTS_BY_CATEGORY
+  sentences:
+  - pick all the air terminals
+  - select all the duct fittings
+  - select every air terminal in this view
+  - grab all the pipe fittings
+- group: '5b-1924 (#1127): walls attached to a roof - no read exists, watched'
+  sentences:
+  - say: which walls are attached to the roof
+    expect: not-a-write
+- group: '5b-1944 (#1169): set a run''s offset'
+  expect: want WRITE_ELEMENT_PARAMETERS
+  sentences:
+  - set the offset of these ducts
+  - change the duct offset to 2700
+  - set the middle elevation of this pipe
+  - put these pipes at 3000 from the level
+  - set the mep offset
+  - raise these ducts to an offset of 3200
+  - change the middle elevation of the selected pipes to 2900
+- group: '5b-1944 (#1169): a run''s offset asked'
+  expect: not-a-write
+  sentences:
+  - what is the offset of this duct
+  - how high above the level is this pipe
+  - what is the middle elevation of this duct
+- group: '5b-1951 (#1176): select by name, held out'
+  expect: want SELECT_BY_PARAMETER_VALUE
+  sentences:
+  - select the level Level 1
+  - find the grid called C and select it

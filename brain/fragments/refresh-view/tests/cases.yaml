@@ -1,3 +1,9 @@
+# NO ARRANGEABLE EMPTY LEG AND NOTHING TO VARY (row 5b-1969, Q-98): the only negative
+# below, a run with no UI document, cannot be arranged - the add-in always binds a
+# UIDocument (RevitFragment.cs lines 250-269) - and the card takes no typed input, so
+# D-53 tracking has nothing to follow. How it is signed is the owner's call (Q-98);
+# until then it is a by-hand reading and goes in no batch job.
+
 positive:
   - given: >
       a plan on screen, a parameter changed on a visible element through another

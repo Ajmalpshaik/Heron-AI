@@ -16,10 +16,16 @@ positive:
       the same table through Revit 2020's UnitType names, said in `findings`
 
 negative:
+  # NOT A SETUP STEP (row 5b-1973): SET_PROJECT_UNITS is risk ADMIN, and a setup step
+  # at PUBLISH or ADMIN is refused whatever the flags. The card has no typed input to
+  # --vary either, so this is TRACKING done by hand, as NEEDS-CHECKING CJ4 does it:
+  # three KEPT states on a scratch project with the Admin switch on, one command at a
+  # time, read after each, then put back.
   - given: >
       the same project with HVAC: Cooling Load and Heating Load set to
       British thermal units per hour (Btu/h) and Air Flow to Cubic feet per
-      minute (CFM) by SET_PROJECT_UNITS as a rolled-back setup
+      minute (CFM) by SET_PROJECT_UNITS - run by itself, kept, on a scratch
+      copy, then this card read again
     expect: >
       exactly those three rows changed to Btu/h and CFM and every other row
       as before - a reader repeating a remembered table, or the template's

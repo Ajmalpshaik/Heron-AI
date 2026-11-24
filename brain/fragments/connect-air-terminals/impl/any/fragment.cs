@@ -29,6 +29,33 @@
 // rolled back whole when Revit refuses any part of it or the head still reads
 // open - nothing is left behind for that head, and it is named in `refused`.
 //
+// VERSION 3 (2026-11-23, WN-79 - work note FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07
+// C05, issue #1005) - ONE KIND OF CONNECTION EVIDENCE, AND THE DUCT CHOSEN FROM
+// THE ONES THAT FIT. Version 2 took a terminal's FIRST End connector whatever
+// its domain, trusted `IsConnected` - an intent flag, wrong in a real model
+// (REPORT_CONNECTORS) - both to skip a terminal and to call it joined, and
+// picked the nearest duct before asking whether it could take the terminal.
+// So a nearer return duct beside a supply diffuser hid the supply duct behind
+// it, and Revit 2024 was seen joining a supply diffuser to a return duct (row
+// 5b-187). Now:
+//   - only an AIR TERMINAL (its category) is tapped; anything else handed in
+//     with a duct end - a fan coil, an AHU - is refused by name, never counted;
+//   - the terminal's connector is its HVAC (duct) End connector, never a pipe
+//     or electrical one;
+//   - "joined" is read off the PHYSICAL PARTNERS in AllRefs, the rule
+//     REPORT_CONNECTORS uses: refs owned by the terminal itself or by an
+//     MEPSystem are not partners. That decides the skip AND the result, and a
+//     head's join too;
+//   - the ducts are FILTERED FIRST - a straight Duct only, and one whose system
+//     classification is not the opposite air system of the terminal's (supply,
+//     return, exhaust) - then the nearest of those within maxDistanceMm is
+//     taken. A nearer duct skipped as the wrong system is said by id;
+//   - after the tap the terminal must be joined to THAT duct, directly or
+//     through the one fitting between them; joined to anything else goes to
+//     `refused`, never `connected`.
+// Version 2 was PROVEN (its proof block kept as the record); its C# moved, so
+// the card is DRAFT until NEEDS-CHECKING Group PZ proves version 3 (D-30).
+//
 // ONE CALL DOES THE WHOLE JOB. ConnectAirTerminalOnDuct creates the tap fitting
 // on the duct, positions it under the terminal's connector and connects both
 // ends. By hand this is a fitting instance, the duct's parameter at that point
@@ -129,20 +156,128 @@ if (ducts != null)
 var mainsUsed = new HashSet<ElementId>();
 var headsSeen = new HashSet<ElementId>();
 
-// The terminal's own connector - not its insertion point. See the header.
-Func<Element, Connector> connectorOf = e =>
+// VERSION 3: WHAT IS PHYSICALLY JOINED TO A CONNECTOR - the elements that own
+// its partners in AllRefs, leaving out the connector's own element and the
+// logical MEPSystem, which AllRefs carries too (REPORT_CONNECTORS' rule).
+// IsConnected is never asked. Null when AllRefs cannot be read: could not look
+// is not open.
+Func<Connector, List<ElementId>> partnersOf = c =>
 {
+    var owners = new List<ElementId>();
+    if (c == null) return null;
+    try
+    {
+        var self = c.Owner == null ? ElementId.InvalidElementId : c.Owner.Id;
+        foreach (Connector other in c.AllRefs)
+        {
+            Element owner = null;
+            try { owner = other.Owner; } catch { }
+            if (owner == null || owner is MEPSystem || owner.Id == self) continue;
+            if (!owners.Contains(owner.Id)) owners.Add(owner.Id);
+        }
+    }
+    catch { return null; }
+    return owners;
+};
+
+// VERSION 3: AN AIR TERMINAL IS ITS CATEGORY. ConnectAirTerminalOnDuct is
+// Revit's call for an air terminal; a fan coil or an AHU with a duct spigot is
+// not one, and is refused rather than tried.
+var airTerminalCategory = new ElementId(BuiltInCategory.OST_DuctTerminal);
+Func<Element, bool> isAirTerminal = e =>
+{
+    try { return e != null && e.Category != null && e.Category.Id == airTerminalCategory; }
+    catch { return false; }
+};
+
+// The terminal's own DUCT connectors - not its insertion point (see the
+// header), and VERSION 3: only HVAC End connectors, never a pipe or an
+// electrical one a family may also carry. Null when they cannot be read.
+Func<Element, List<Connector>> ductEndsOf = e =>
+{
+    var ends = new List<Connector>();
     var instance = e as FamilyInstance;
-    if (instance == null || instance.MEPModel == null) return null;
+    if (instance == null || instance.MEPModel == null) return ends;
     var manager = instance.MEPModel.ConnectorManager;
-    if (manager == null) return null;
+    if (manager == null) return ends;
     try
     {
         foreach (Connector connector in manager.Connectors)
-            if (connector.ConnectorType == ConnectorType.End) return connector;
+            if (connector.ConnectorType == ConnectorType.End && connector.Domain == Domain.DomainHvac)
+                ends.Add(connector);
+    }
+    catch { return null; }
+    return ends;
+};
+
+// VERSION 3: WHICH AIR SYSTEM A CONNECTOR IS ON - supply, return or exhaust -
+// or null when it is none of the three (other air, undefined, unreadable),
+// and then nothing is refused on it.
+Func<Connector, string> airSystemOf = c =>
+{
+    try
+    {
+        var kind = c.DuctSystemType;
+        if (kind == DuctSystemType.SupplyAir) return "supply air";
+        if (kind == DuctSystemType.ReturnAir) return "return air";
+        if (kind == DuctSystemType.ExhaustAir) return "exhaust air";
     }
     catch { }
     return null;
+};
+
+// A duct's air system, read off its own connectors - the first that says one.
+Func<Element, string> ductSystemOf = d =>
+{
+    var curve = d as MEPCurve;
+    if (curve == null || curve.ConnectorManager == null) return null;
+    try
+    {
+        foreach (Connector c in curve.ConnectorManager.Connectors)
+        {
+            var said = airSystemOf(c);
+            if (said != null) return said;
+        }
+    }
+    catch { }
+    return null;
+};
+
+// VERSION 3: IS THE TERMINAL JOINED TO THAT DUCT - directly, or through the one
+// fitting the tap puts between them. Answers null when it is, otherwise why
+// not, in the modeller's words.
+Func<Element, ElementId, string> notJoinedTo = (e, ductId) =>
+{
+    var fresh = doc.GetElement(e.Id);
+    var ends = ductEndsOf(fresh);
+    if (ends == null) return "its duct connector could not be read back";
+    var others = new List<ElementId>();
+    foreach (var end in ends)
+    {
+        var partners = partnersOf(end);
+        if (partners == null) return "what its duct connector is joined to could not be read back";
+        foreach (var id in partners)
+        {
+            if (id == ductId) return null;
+            var between = doc.GetElement(id) as FamilyInstance;
+            if (between != null && between.MEPModel != null && between.MEPModel.ConnectorManager != null)
+            {
+                try
+                {
+                    foreach (Connector c in between.MEPModel.ConnectorManager.Connectors)
+                    {
+                        var next = partnersOf(c);
+                        if (next != null && next.Contains(ductId)) return null;
+                    }
+                }
+                catch { }
+            }
+            if (!others.Contains(id)) others.Add(id);
+        }
+    }
+    if (others.Count == 0) return "nothing is physically joined to its duct connector";
+    return "it is joined to " + string.Join(", ", others.Select(x => x.ToString()).ToArray())
+        + ", which does not reach duct " + ductId;
 };
 
 // Where a terminal is and which way it faces. Null when either cannot be read,
@@ -201,18 +336,29 @@ foreach (var terminal in elements)
         var instance = (FamilyInstance)head;
 
         // The head's open pipe end. All piping ends connected already: skipped.
+        // VERSION 3: open means NO PHYSICAL PARTNER, read off AllRefs - never
+        // the IsConnected flag (the header).
         Connector open = null;
+        var headUnreadable = false;
         try
         {
             foreach (Connector c in instance.MEPModel.ConnectorManager.Connectors)
             {
                 if (c.ConnectorType != ConnectorType.End || c.Domain != Domain.DomainPiping) continue;
-                if (!c.IsConnected && open == null) open = c;
+                var partners = partnersOf(c);
+                if (partners == null) { headUnreadable = true; break; }
+                if (partners.Count == 0 && open == null) open = c;
             }
         }
         catch (Exception ex)
         {
             refused.Add(string.Format("{0}: its connectors could not be read - {1}", head.Id, ex.Message));
+            continue;
+        }
+        if (headUnreadable)
+        {
+            refused.Add(string.Format("{0}: what its pipe connector is joined to could not be read, so no "
+                + "branch was drawn", head.Id));
             continue;
         }
         if (open == null) { alreadyConnected.Add(head.Id); continue; }
@@ -341,8 +487,14 @@ foreach (var terminal in elements)
             var joinProblem = "";
             if (riserEnd != null)
             {
-                // READ IT BACK. ConnectTo returning is not a connection.
-                try { open.ConnectTo(riserEnd); joined = open.IsConnected; }
+                // READ IT BACK. ConnectTo returning is not a connection, and
+                // VERSION 3: joined means the RISER is the head's partner.
+                try
+                {
+                    open.ConnectTo(riserEnd);
+                    var partners = partnersOf(open);
+                    joined = partners != null && partners.Contains(riser.Id);
+                }
                 catch (Exception ex) { joinProblem = ex.Message; }
             }
 
@@ -389,27 +541,66 @@ foreach (var terminal in elements)
         continue;
     }
 
-    var connector = connectorOf(terminal);
-    if (connector == null)
+    // VERSION 3: AN AIR TERMINAL ONLY - anything else with a duct end is refused
+    // by name, never tapped and never counted.
+    if (!isAirTerminal(terminal))
     {
-        refused.Add(string.Format("{0}: no connector could be read - is it an air terminal?", terminal.Id));
+        var categoryName = "no category";
+        try { if (terminal.Category != null) categoryName = terminal.Category.Name; } catch { }
+        refused.Add(string.Format("{0} ('{1}', {2}): not an air terminal, so it was not tapped. Only Air "
+            + "Terminals are tapped into a duct here; equipment with a duct spigot is joined with "
+            + "CONNECT_INTO_MAIN", terminal.Id, terminal.Name, categoryName));
         continue;
     }
 
-    var isConnected = false;
-    try { isConnected = connector.IsConnected; } catch { }
-    if (isConnected) { alreadyConnected.Add(terminal.Id); continue; }
+    var ends = ductEndsOf(terminal);
+    if (ends == null)
+    {
+        refused.Add(string.Format("{0}: its connectors could not be read", terminal.Id));
+        continue;
+    }
+    if (ends.Count == 0)
+    {
+        refused.Add(string.Format("{0} ('{1}'): it has no duct connector, so there is nothing to tap",
+            terminal.Id, terminal.Name));
+        continue;
+    }
 
-    // Nearest duct whose centreline passes within reach of THAT connector.
+    // VERSION 3: ALREADY JOINED is read off the partners, never IsConnected. A
+    // terminal with a duct end physically joined is skipped - reconnecting it
+    // leaves the old tap behind (the header).
+    Connector connector = null;
+    var joinedAlready = false;
+    var unreadable = false;
+    foreach (var end in ends)
+    {
+        var partners = partnersOf(end);
+        if (partners == null) { unreadable = true; break; }
+        if (partners.Count > 0) joinedAlready = true;
+        else if (connector == null) connector = end;
+    }
+    if (unreadable)
+    {
+        refused.Add(string.Format("{0}: what its duct connector is joined to could not be read, so it was "
+            + "not tapped", terminal.Id));
+        continue;
+    }
+    if (joinedAlready || connector == null) { alreadyConnected.Add(terminal.Id); continue; }
+
+    // VERSION 3: THE DUCTS THAT FIT, THEN THE NEAREST OF THOSE. A straight Duct
+    // only - a pipe is a head's main, and flex or a cable tray is not tapped -
+    // and not one on the opposite air system. A nearer duct passed over for
+    // its system is said, so the choice is never silent.
+    var terminalSystem = airSystemOf(connector);
     Element nearest = null;
     var nearestDistance = double.MaxValue;
+    Element nearerWrong = null;
+    var nearerWrongDistance = double.MaxValue;
+    string nearerWrongSystem = null;
 
     foreach (var duct in ducts)
     {
-        if (duct == null) continue;
-        // VERSION 2: `ducts` may hold the pipes a sprinkler branches to. An
-        // air terminal taps a duct, never one of those.
-        if (duct is Pipe) continue;
+        if (!(duct is Duct)) continue;
         var location = duct.Location as LocationCurve;
         if (location == null || location.Curve == null) continue;
 
@@ -417,12 +608,35 @@ foreach (var terminal in elements)
         try { distance = location.Curve.Distance(connector.Origin); }
         catch { continue; }
 
+        var ductSystem = ductSystemOf(duct);
+        if (terminalSystem != null && ductSystem != null && ductSystem != terminalSystem)
+        {
+            if (distance < nearerWrongDistance)
+            {
+                nearerWrongDistance = distance;
+                nearerWrong = duct;
+                nearerWrongSystem = ductSystem;
+            }
+            continue;
+        }
+
         if (distance < nearestDistance) { nearestDistance = distance; nearest = duct; }
+    }
+
+    var passedOver = "";
+    if (nearerWrong != null && nearerWrongDistance <= maxDistance
+        && (nearest == null || nearerWrongDistance < nearestDistance))
+    {
+        passedOver = string.Format("; duct {0}, {1:0} mm away, was passed over - it is {2} and the terminal "
+            + "is {3}", nearerWrong.Id, nearerWrongDistance * 304.8, nearerWrongSystem, terminalSystem);
     }
 
     if (nearest == null || nearestDistance > maxDistance)
     {
         noDuctNear.Add(terminal.Id);
+        if (passedOver.Length > 0)
+            findings.Add(string.Format("{0}: no duct of its own system within {1:0} mm{2}", terminal.Id,
+                maxDistanceMm, passedOver));
         continue;
     }
 
@@ -440,21 +654,19 @@ foreach (var terminal in elements)
             continue;
         }
 
-        // READ IT BACK. A returned true is not a connection.
-        var reallyJoined = false;
-        try { reallyJoined = connectorOf(terminal).IsConnected; }
-        catch { reallyJoined = false; }
-
-        if (!reallyJoined)
+        // READ IT BACK. A returned true is not a connection, and VERSION 3: a
+        // connection is to THIS duct, read off the partners.
+        var why = notJoinedTo(terminal, nearest.Id);
+        if (why != null)
         {
-            refused.Add(string.Format("{0}: the tap was accepted and the terminal is STILL open",
-                terminal.Id));
+            refused.Add(string.Format("{0}: the tap into {1} was accepted, and {2} - not counted as "
+                + "connected. Look at it before keeping this", terminal.Id, nearest.Id, why));
             continue;
         }
 
         connected++;
-        findings.Add(string.Format("{0} tapped into {1}, {2:0} mm away",
-            terminal.Id, nearest.Id, nearestDistance * 304.8));
+        findings.Add(string.Format("{0} tapped into {1}, {2:0} mm away{3}",
+            terminal.Id, nearest.Id, nearestDistance * 304.8, passedOver));
     }
     catch (Exception ex)
     {

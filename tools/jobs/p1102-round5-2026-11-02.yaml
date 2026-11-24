@@ -25,11 +25,9 @@ jobs:
     negative-in: "P1102 Family"
     negative-set: {}
 
-  - fragment: report-level-elevations
-    expect: storeys
-    set: {includeLinks: false}
-    negative-in: "P1102 MEP Family"
-    negative-set: {includeLinks: false}
+  # REMOVED 2026-11-23 (row 5b-1969, Q-98): report-level-elevations always writes its
+  # `storeys` line and has nothing to vary, so this negative would read NEG NOT EMPTY.
+  # It is proved by a by-hand reading, as the owner decides in Q-98.
 
   - fragment: select-openings
     expect: elements

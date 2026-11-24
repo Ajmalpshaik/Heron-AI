@@ -737,7 +737,7 @@ The other 340 Revit repos. No new idea for Heron in these: mostly copies of an u
 
 What follows it, in order:
 
-1. Make the Delete box count what Revit really deletes: run the delete, collect every id that went, roll back - and confirm the roll back with the check above. *(Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-9).)*
+1. Make the Delete box count what Revit really deletes: run the delete, collect every id that went, roll back - and confirm the roll back with the check above. *done 2026-11-23 (WN-9, issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005)), found already built: the delete box ([D-142](../../decisions/D-142.md), `revit/Heron.Revit.Addin/RevitFragmentDelete.cs`) counts what Revit's `DocumentChanged` reported deleted - a wall's doors, a duct's fittings, a floor's sketch - rolls the run back and checks every element is back one by one, and on Delete runs again and keeps only the exact set shown. Seen in Revit: NEEDS-CHECKING [Group NY](../../needs-checking/group-ny.md) NY1, 2026-11-16 - deleting one floor listed 8 elements, its sketch and sketch plane among them.*
 2. Point the same read-back at Keep: `verify: passed / failed / skipped` beside `outcome:` on every change.
 3. Tie each approval (Delete box, apply-move, a DRAFT's one run, Admin and Publish) to the exact request and the model's state: one use, a few minutes. *(Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-10).)*
 4. Owner decision, recorded as a decision: where `write.enabled`, Admin and Publish may live, so that an AI with file access cannot switch them on.

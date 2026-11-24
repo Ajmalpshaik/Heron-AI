@@ -859,8 +859,12 @@ def test_a_fragment_already_run_is_left_alone():
           % (", ".join(overlap[:5]) or "none"))
 
 
-def test_a_fragment_with_nothing_to_vary_is_marked():
-    print("A fragment with no second leg is marked, not emitted")
+def test_a_fragment_with_nothing_to_vary_is_offered_a_second_model():
+    print("A card taking only the model is offered a two-model pair, not sent to tracking")
+    # Row 5b-1975 (1): rule (e) sent a card taking only `doc` to D-53 tracking -
+    # "both legs would be the same run twice" - but `negative-in:` on a second
+    # model gives it a real empty leg: list-linked-models, report-family-template
+    # and report-family-type-catalog were each signed that way.
 
     supply = {"elements": "IList<Element>"}
     _, ordinal, ladder = GJ.write_threshold()
@@ -868,11 +872,113 @@ def test_a_fragment_with_nothing_to_vary_is_marked():
     lonely = FakeFragment("report-open-documents",
                           needs=[{"name": "doc", "type": "Document"},
                                  {"name": "app", "type": "Application"}])
-    reasons = GJ.blockers(lonely, supply, ordinal, ladder)
-    check(any("same run twice" in r for r in reasons),
-          "both legs would be the same run, so it says so")
-    check(any("TRACKING" in r for r in reasons),
-          "and it points at tracking rather than leaving a dead end")
+    check(not GJ.blockers(lonely, supply, ordinal, ladder),
+          "a card with nothing but the model is not marked unarrangeable")
+    lines = "\n".join(GJ.job_block(lonely, False, supply))
+    check('    in: "FILL IN"' in lines and '    negative-in: "FILL IN"' in lines,
+          "its job has an `in:` and a `negative-in:`, both blank for the person")
+    check("SECOND model" in lines and "TRACKING" in lines,
+          "and says what the second model is, and that tracking is the other way")
+
+    # The two jobs batch-prove reads as a negative arrangement.
+    parsed = yaml.safe_load("jobs:\n" + lines)
+    row = parsed["jobs"][0]
+    check(row["in"] == "FILL IN" and row["negative-in"] == "FILL IN"
+          and row["fragment"] == "report-open-documents",
+          "read back by the YAML reader, with the keys read_jobs takes")
+
+    # Against the real library, and the three that were signed this way.
+    found, _ = HF.load_all()
+    real = dict((f.slug, f) for f in found.values())
+    for slug in ("list-linked-models", "report-family-template",
+                 "report-family-type-catalog"):
+        card = real.get(slug)
+        if card is None or card.status != "DRAFT":
+            continue
+        check(not GJ.blockers(card, GJ.chain_provides(real), ordinal, ladder),
+              "%s is not unarrangeable" % slug)
+
+
+def test_a_need_bound_to_another_on_purpose_is_not_the_same_set_refused():
+    print("A card that sets a set against itself on purpose is arranged with keep-chain")
+    # Row 5b-1975 (2): check-minimum-clearance declares `targets` binds
+    # `elements` and was refused as "the same set"; version 3's proof bound both
+    # from one filter with keep-chain.
+
+    supply = {"elements": "IList<Element>"}
+    _, ordinal, ladder = GJ.write_threshold()
+    found, _ = HF.load_all()
+    real = dict((f.slug, f) for f in found.values())
+
+    for slug in GJ.SAME_SET_ON_PURPOSE:
+        card = real[slug]
+        bound = [HF.need_binds(n) for n in card.needs()
+                 if HF.need_source(n) == "fragment"]
+        check(any(bound.count(b) > 1 for b in bound),
+              "%s still binds two needs to one name, so it is still named here"
+              % slug)
+        check(not any("same set" in r for r in
+                      GJ.blockers(card, GJ.chain_provides(real), ordinal, ladder)),
+              "%s is not refused as the same set" % slug)
+        lines = "\n".join(GJ.job_block(card, False, GJ.chain_provides(real)))
+        check("keep-chain: true" in lines
+              and "setup: [%s]" % GJ.SETUP_CHAIN[0] in lines,
+              "and its job keeps the chain, with the selector alone")
+
+    # A card NOT named is still refused: find-nearest-elements measures a set
+    # from itself and answers with nothing.
+    pair = FakeFragment("find-nearest-elements", needs=[
+        {"name": "elements", "type": "IList<Element>"},
+        {"name": "targets", "type": "IList<Element>", "binds": "elements"},
+    ])
+    check(any("same set" in r for r in GJ.blockers(pair, supply, ordinal, ladder)),
+          "a card that is not named is still refused")
+
+
+def test_an_optional_need_that_cannot_be_typed_is_left_out_not_a_refusal():
+    print("An optional need the add-in binds absent is left out of the job")
+    # Row 5b-1975 (3): draw-mep-schematic's `start` is an `Element` marked
+    # optional, refused as "cannot be typed in" - and its proof ran without it.
+
+    supply = {"elements": "IList<Element>"}
+    _, ordinal, ladder = GJ.write_threshold()
+
+    optional = FakeFragment("draws-something", needs=[
+        {"name": "start", "type": "Element", "source": "request",
+         "optional": "true"},
+        {"name": "systemName", "type": "string", "source": "request"}])
+    required = FakeFragment("draws-another", needs=[
+        {"name": "start", "type": "Element", "source": "request"},
+        {"name": "systemName", "type": "string", "source": "request"}])
+    check(not GJ.blockers(optional, supply, ordinal, ladder),
+          "an optional Element need does not refuse the card")
+    check(any("cannot be typed in" in r
+              for r in GJ.blockers(required, supply, ordinal, ladder)),
+          "the same need, not optional, still does")
+    lines = "\n".join(GJ.job_block(optional, False, supply))
+    check("start (Element) is optional" in lines and "LEFT OUT" in lines
+          and "start:" not in lines.replace("# start", "")
+          and "systemName:" in lines,
+          "the job says it was left out and offers no blank for it")
+
+
+def test_two_single_element_needs_are_not_advised_the_selected_word():
+    print("A card with two single-element needs is marked, and not told to pass `selected`")
+    # Row 5b-1970: `selected` binds the one chosen element to BOTH needs, so the
+    # advice measured an element against itself (0 mm) - an answer, not a refusal.
+    supply = {"elements": "IList<Element>"}
+    _, ordinal, ladder = GJ.write_threshold()
+    pair = FakeFragment("measures-two", needs=[
+        {"name": "first", "type": "Element", "source": "request"},
+        {"name": "second", "type": "Element", "source": "request"}])
+    reasons = GJ.blockers(pair, supply, ordinal, ladder)
+    check(len(reasons) == 2 and all("TWO single-element needs" in r for r in reasons)
+          and not any("pass `selected`" in r for r in reasons),
+          "both are named, and neither is advised `selected`: %s" % reasons)
+    one = FakeFragment("measures-one", needs=[
+        {"name": "first", "type": "Element", "source": "request"}])
+    check(any("pass `selected`" in r for r in GJ.blockers(one, supply, ordinal, ladder)),
+          "a card with ONE such need is still told `selected`, which is right")
 
 
 def test_two_needs_filled_from_one_value_are_marked():
@@ -936,6 +1042,58 @@ def generated():
     return GJ.build(library, ordinal, name, ladder)
 
 
+def _generate(*argv):
+    """(exit code, stdout, stderr) of `generate-jobs.py <argv>`, in this process."""
+    import contextlib
+    import io as _io
+    out, err = _io.StringIO(), _io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        code = GJ.main(list(argv))
+    return code, out.getvalue(), err.getvalue()
+
+
+def test_an_only_name_that_is_not_a_card_is_refused_and_a_comma_is_split():
+    print("`--only` refuses a name no card has, and reads a comma as a list")
+    # Row 5b-1983: --only no-such-card and --only a,b each printed "0 emitted"
+    # and exited 0, which reads exactly like a card with nothing left to arrange.
+    found, _ = HF.load_all()
+    library = dict((f.slug, f) for f in found.values())
+    picked = GJ.candidates(library)
+    check(len(picked) >= 2, "the library has two candidates to ask for")
+    first, second = picked[0], picked[1]
+
+    code, out, err = _generate("--only", "no-such-card")
+    check(code == 1 and "`--only no-such-card` is not a card" in err and not out,
+          "a name no card has is refused with its name, and nothing is written (%s)"
+          % err.strip().splitlines()[:1])
+
+    code, out, err = _generate("--only", "%s,no-such-card" % first)
+    check(code == 1 and "no-such-card" in err and "jobs:" not in out,
+          "one bad name in a comma list refuses the whole list, naming it")
+
+    code, out, err = _generate("--only", "%s,%s" % (first, second))
+    code_two, out_two, err_two = _generate("--only", first, "--only", second)
+    check(code == 0 and "2 DRAFT fragment(s)" in err,
+          "a comma-separated list is split: both cards are looked at (%s)"
+          % err.strip().splitlines()[-2:])
+    check(code_two == 0 and out_two == out and err_two == err,
+          "and it is the same file as repeating --only")
+
+    code, out, err = _generate("--only", " , ")
+    check(code == 1 and "names no card" in err, "an empty list is refused too")
+
+    near = first[:-1] + ("x" if first[-1] != "x" else "y")
+    code, out, err = _generate("--only", near)
+    check(code == 1 and "did you mean `%s`" % first in err,
+          "a near miss names the card it is near (%s)" % err.strip().splitlines()[:1])
+
+    proven = sorted(s for s, f in library.items() if f.status == "PROVEN")[0]
+    code, out, err = _generate("--only", proven)
+    check(code == 0 and "`%s` is a card but not a candidate" % proven in err
+          and "PROVEN" in err,
+          "a card that is not a candidate is a card: the zero is explained, not refused")
+
+
 def test_the_output_is_the_shape_batch_prove_already_parses():
     print("What comes out is example.yaml's shape, read by the real reader")
 
@@ -960,7 +1118,8 @@ def test_the_output_is_the_shape_batch_prove_already_parses():
         for row in parsed["jobs"]:
             keys |= set(row)
         allowed = set(["fragment", "setup", "set", "negative-set", "write",
-                       "cross", "in", "negative-in", "expect", "timeout", "note"])
+                       "cross", "in", "negative-in", "expect", "timeout", "note",
+                       "keep-chain"])
         check(keys <= allowed, "and every job key is one read_jobs reads (%s)"
               % ", ".join(sorted(keys - allowed)))
 
@@ -1041,8 +1200,10 @@ def test_the_input_names_are_the_contract_s_own():
     wrong, covered = [], []
     for row in parsed["jobs"]:
         frag = library[row["fragment"]]
+        # An optional need that cannot be typed is LEFT OUT, and says so (row 5b-1975).
+        omitted = set(name for name, _ in GJ.left_out(frag))
         declared = set(n.get("name") for n in frag.needs()
-                       if HF.need_source(n) == "request")
+                       if HF.need_source(n) == "request") - omitted
         typed = set(row.get("set") or {}) - set(GJ.SHARED_INPUTS)
         for name in sorted(typed - declared):
             wrong.append("%s does not need %r" % (frag.slug, name))
@@ -1117,10 +1278,14 @@ def main():
                  test_risk_decides_the_write_path_for_every_fragment_in_the_library,
                  test_finished_work_is_never_emitted,
                  test_a_fragment_already_run_is_left_alone,
-                 test_a_fragment_with_nothing_to_vary_is_marked,
+                 test_a_fragment_with_nothing_to_vary_is_offered_a_second_model,
+                 test_a_need_bound_to_another_on_purpose_is_not_the_same_set_refused,
+                 test_an_optional_need_that_cannot_be_typed_is_left_out_not_a_refusal,
+                 test_two_single_element_needs_are_not_advised_the_selected_word,
                  test_two_needs_filled_from_one_value_are_marked,
                  test_a_need_the_chain_cannot_fill_is_marked,
                  test_a_risk_out_of_reach_is_marked,
+                 test_an_only_name_that_is_not_a_card_is_refused_and_a_comma_is_split,
                  test_the_output_is_the_shape_batch_prove_already_parses,
                  test_the_generated_file_is_runnable_once_the_blanks_are_filled,
                  test_the_category_and_the_view_are_left_blank,
