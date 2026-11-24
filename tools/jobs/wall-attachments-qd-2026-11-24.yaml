@@ -1,0 +1,47 @@
+# NEEDS-CHECKING Group QD - REPORT_WALL_ATTACHMENTS (DRAFT), which walls
+# have their top or base attached to a roof. Built 2026-11-24 in a cloud
+# session with no Revit, for row 5b-1924 / issue #1127. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/wall-attachments-qd-2026-11-24.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/wall-attachments-qd-2026-11-24.yaml --session <2026 pid>
+#
+# THE MODEL (docs/needs-checking/group-qd.md, QD1): "qd-attach", a scratch
+# project from Revit 2026's default architectural template (metric), saved
+# under %TEMP%\heron-work\qd, never a working model. On Level 1, four
+# `Generic - 200mm` walls on their centrelines - A (0,0)-(10000,0), B
+# (10000,0)-(10000,8000), C (10000,8000)-(0,8000), D (0,8000)-(0,0) - Top
+# Constraint Unconnected 4000; a roof by footprint R over the rectangle at
+# Level 2 (3000); a floor F at Level 2 laid over wall D alone. A and B: Attach
+# Top to R. D: Attach Top to F. C: nothing attached. A fifth wall E,
+# (14000,0)-(18000,0), with nothing over it and nothing attached. Saved.
+#
+# THE ARRANGEMENT. select-in-region picks ONE wall each time by a box round
+# it, walls only, so no roof is handed in and every roof counts (fragment-
+# proving, rule 5). Positive: wall A - attached to R. Negative: wall E -
+# attached to nothing, a different selection, not an empty one (rules 3 and
+# 5). READ - nothing is changed by either.
+model: "qd-attach: a scratch project, a roof R over walls A to D with A and B attached to it, D attached to a floor, C and a fifth wall E free"
+defaults:
+  write: false
+  in: "qd-attach"
+  setup: [select-in-region, set-selection]
+jobs:
+  - fragment: report-wall-attachments
+    expect: attachedToRoof
+    set:
+      minMm: "500,-500,-100"
+      maxMm: "9500,500,4500"
+      exact: "false"
+      categories: Walls
+    negative-set:
+      minMm: "14500,-500,-100"
+      maxMm: "17500,500,4500"
+      exact: "false"
+      categories: Walls
+    note: >
+      QD2 (positive) and QD3 (negative). Positive: wall A - attachedToRoof 1,
+      the report "Walls <A> ...: top attached to Roofs <R> ...". Negative:
+      wall E - attachedToRoof 0, unread 0, wallsRead 1, "not attached to
+      anything at its top or its base". On Revit 2024 (QD5) the positive's
+      attachedToRoof is EMPTY by design and attachedTargetUnread holds A:
+      run this job on 2026, never 2024, or the positive reads empty.
