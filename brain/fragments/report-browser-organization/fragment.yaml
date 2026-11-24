@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "how is the project browser organised, and which views does i
 kind: action
 domain: revit.views
 capability: REPORT_BROWSER_ORGANIZATION
-version: 1
+# VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005) - a view or sheet whose filter test or folders Revit will not give is
+# counted in `unresolvedItems`, never read as shown, and "Every view and sheet
+# shows" is said only when every one was read. It was PROVEN at version 1;
+# that proof stays below as the record, and the card is DRAFT until its
+# NEEDS-CHECKING check runs and is signed (D-30).
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -46,6 +52,13 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+    - name: unresolvedItems
+      # VERSION 2 (D-64). Views and sheets whose organisation filter test or
+      # folder path Revit would not give, so in neither the hidden nor the
+      # shown count. Always carried; a sentence in `findings` names it only
+      # when it is above 0.
+      role: accounting
+      type: int
 
 proof:
   date: '2026-11-16'

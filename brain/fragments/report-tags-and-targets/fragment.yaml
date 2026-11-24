@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "what is each tag on this drawing actually pointing at"
 kind: action
 domain: revit.annotation
 capability: REPORT_TAGS_AND_TARGETS
-version: 1
+# VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005) - a tag whose targets Revit will not give is listed in
+# `unresolvedTags`, where version 1 listed it as an orphan pointing at
+# nothing. It was PROVEN at version 1; that proof stays below as the record,
+# and the card is DRAFT until its NEEDS-CHECKING check runs and is signed
+# (D-30).
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -70,6 +76,12 @@ contract:
       # it resolved (D-52).
       role: accounting
       type: int
+    - name: unresolvedTags
+      # VERSION 2 (D-64). Tags in the view whose targets Revit would not give
+      # - never counted as orphans, never in `tagTargets`. Always carried;
+      # empty when every read answered.
+      role: accounting
+      type: IList<ElementId>
 
 proof:
   date: '2026-09-08'

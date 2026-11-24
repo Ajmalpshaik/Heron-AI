@@ -1,5 +1,12 @@
 // NOT STANDALONE. Assumes `doc`, `categories` and `shorterThanMm` are in scope;
-// leaves `elements`, `shortestMm`, `examined` and `findings`.
+// leaves `elements`, `shortestMm`, `examined`, `skippedCurves` and `findings`.
+//
+// VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A LINE WHOSE CURVE WILL NOT READ IS COUNTED. Version 1 passed over
+// an element whose location curve or length Revit would not give without a
+// word, so "0 of N are shorter" could leave out the very line that is.
+// `skippedCurves` carries the count every time; the sentence naming it is
+// added only when it is above 0, so every other answer reads as version 1's.
 //
 // A READ. It opens no transaction and needs none, and it deletes nothing.
 //
@@ -18,6 +25,8 @@ const double MillimetresPerFoot = 304.8;
 var elements = new List<Element>();
 var shortestMm = 0.0;
 var examined = 0;
+// VERSION 2 (D-64): curve-driven elements whose curve or length would not read.
+var skippedCurves = 0;
 var findings = new List<string>();
 
 if (shorterThanMm <= 0)
@@ -49,13 +58,13 @@ else
         if (located == null) continue;
 
         Curve curve = null;
-        try { curve = located.Curve; } catch { continue; }
-        if (curve == null) continue;
+        try { curve = located.Curve; } catch { skippedCurves++; continue; }
+        if (curve == null) { skippedCurves++; continue; }
 
         examined++;
 
         double length;
-        try { length = curve.Length; } catch { continue; }
+        try { length = curve.Length; } catch { skippedCurves++; continue; }
 
         var mm = length * MillimetresPerFoot;
         if (!found || mm < shortestMm)
@@ -74,6 +83,12 @@ else
         found ? shortestMm : 0,
         bounded ? "" : ". THIS WAS UNBOUNDED - every duct, pipe and wall in the "
             + "model was measured. Give a category list if you meant lines"));
+
+    // VERSION 2 (D-64): said only when a curve was passed over.
+    if (skippedCurves > 0)
+        findings.Add(string.Format("{0} element(s) with a location line would not give their curve or "
+            + "its length, so they were NOT measured - one of them could be shorter than the threshold",
+            skippedCurves));
 
     if (elements.Count > 0)
     {

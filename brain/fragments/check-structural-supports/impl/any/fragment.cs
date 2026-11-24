@@ -1,5 +1,15 @@
 // NOT STANDALONE. Assumes `doc`, `elements` and `toleranceMm` are in scope;
-// leaves `unsupported`, `checkedCount`, `report` and `findings` behind.
+// leaves `unsupported`, `checkedCount`, `report`, `skippedMembers` and
+// `findings` behind.
+//
+// VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A BEAM OR COLUMN WITH NO LOCATION TO CHECK IS COUNTED. Version 1
+// passed over a beam with no location line, or a column with no base point,
+// without a word, so "0 end(s) or base(s) with nothing found" could be said
+// of a member never checked. `skippedMembers` carries the count every time;
+// the sentence naming it is added only when it is above 0, so every other
+// answer reads as version 1's. Elements of other categories are not counted -
+// they are not beams or columns.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -19,6 +29,8 @@
 const double MmPerFoot = 304.8;
 var unsupported = new List<string>();
 var checkedCount = 0;
+// VERSION 2 (D-64): beams and columns handed in with no location to check.
+var skippedMembers = 0;
 var lines = new List<string>();
 var findings = new List<string>();
 var tolerance = (toleranceMm <= 0 ? 50.0 : toleranceMm) / MmPerFoot;
@@ -54,7 +66,7 @@ foreach (var element in elements)
     if (element.Category.Id == framing)
     {
         var curve = element.Location as LocationCurve;
-        if (curve == null || curve.Curve == null) continue;
+        if (curve == null || curve.Curve == null) { skippedMembers++; continue; }
         checkedCount++;
         for (var end = 0; end < 2; end++)
         {
@@ -82,7 +94,7 @@ foreach (var element in elements)
             var box = element.get_BoundingBox(null);
             basePoint = box == null ? point.Point : new XYZ(point.Point.X, point.Point.Y, box.Min.Z);
         }
-        if (basePoint == null) continue;
+        if (basePoint == null) { skippedMembers++; continue; }
         checkedCount++;
         if (!supported(basePoint, element.Id, true))
         {
@@ -95,3 +107,7 @@ foreach (var element in elements)
 var report = string.Join(" | ", lines);
 findings.Add(checkedCount + " beam(s) and column(s) checked; " + unsupported.Count + " end(s) or base(s) with nothing found "
     + "to bear on. A geometric check by bounding box - not a structural analysis.");
+// VERSION 2 (D-64): said only when a beam or column was passed over.
+if (skippedMembers > 0)
+    findings.Add(skippedMembers + " beam(s) or column(s) had no location line or base point to check, so they were "
+        + "NOT checked and are in neither count above.");

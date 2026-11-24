@@ -46,6 +46,13 @@ negative:
       pre-2022 branch is wrong it fails silently on exactly the release the
       owner runs live
 
+  - given: >
+      VERSION 2, NEGATIVE. the view version 1 was proved on
+    expect: >
+      tagTargets, linkedTags, orphanTags and multiTags exactly as version 1's,
+      unresolvedTags written down (empty expected) - a tag in it is in neither
+      orphanTags nor tagTargets
+
 second_route:
   - >
     in Revit, select a tag and use the highlight to see what it points at, or

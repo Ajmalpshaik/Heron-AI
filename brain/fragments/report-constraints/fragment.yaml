@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "what is holding this element, and what moves with it"
 kind: action
 domain: revit.qa
 capability: REPORT_CONSTRAINTS
-version: 1
+# VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005) - a constraint whose references Revit will not give is counted in
+# `unresolvedConstraints`, where version 1 let an element it held read as
+# unconstrained. It was PROVEN at version 1; that proof stays below as the
+# record, and the card is DRAFT until its NEEDS-CHECKING check runs and is
+# signed (D-30).
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -69,6 +75,12 @@ contract:
       # How many constraints were walked. There is no `wall.Constraints` to
       # read, so every constraint in the model is checked - a count of work
       # DONE, never of things found (D-52).
+      role: accounting
+      type: int
+    - name: unresolvedConstraints
+      # VERSION 2 (D-64). Constraints whose references Revit would not give,
+      # so what they hold is not known - above 0, an element in
+      # `unconstrained` may be held by one of them. Always carried.
       role: accounting
       type: int
 
