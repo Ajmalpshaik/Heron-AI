@@ -408,3 +408,22 @@ utterances:
   - set the offset of these ducts
   - set the middle elevation of this pipe
   - set the mep offset
+  # ADDED 2026-11-24 (row 5b-1944, issue #1169, session S14) - a run's offset
+  # set TO a value, in more words: on main "change the duct offset to 2700"
+  # and "raise these ducts to an offset of 3200" reached OFFSET_ELEMENTS, which
+  # moves runs sideways, and a cable tray's or conduit's offset reached no
+  # card that sets it. The offset is the built-in RBS_OFFSET_PARAM on ducts,
+  # pipes, cable trays and conduits on every release - written by the name
+  # Properties shows (Offset, or Middle Elevation on newer releases) or as
+  # "{RBS_OFFSET_PARAM}" on any release (version 7's braces). After the eight
+  # the re-ranker reads (D-134).
+  - change the offset of these cable trays and conduits to a new height
+  - raise this duct to a new offset above its level
+  - set a new middle elevation on these runs
+  # The row's own three requests left after pull request #1313 (5b-1944):
+  # each reached OFFSET_ELEMENTS, MOVE_ELEMENTS, OFFSET_MEP_SECTION or
+  # READ_ELEMENT_LEVEL on main.
+  - change the duct offset to 2700
+  - raise these ducts to an offset of 3200
+  - change the middle elevation of the selected pipes to 2900
+  - put these pipes at 3000 from the level

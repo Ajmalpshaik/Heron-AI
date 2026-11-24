@@ -1782,6 +1782,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qh.md`](needs-checking/group-qh.md)
 
+## Group QJ - REPORT_ROOF_REACH: does one roof reach another, measured with rays and changed nothing; and a duct's and a pipe's offset written by WRITE_ELEMENT_PARAMETERS - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qj.md`](needs-checking/group-qj.md)
+
 ## Group QM - CREATE_CONCEPTUAL_FORM version 2: a loft Revit refuses says what is in the profiles - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qm.md`](needs-checking/group-qm.md)

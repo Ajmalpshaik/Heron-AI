@@ -44,7 +44,7 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_exemplar as REF                                   # noqa: E402
 import heron_convention as NAM                                 # noqa: E402
-import heron_import as IMPORT                                  # noqa: E402
+import heron_fragment as FRAG                                  # noqa: E402
 import heron_contract as CON                                   # noqa: E402
 
 FAILURES = []
@@ -133,8 +133,9 @@ def main():
 
     print("\n5. it proposes and enters at the bottom rung")
     check(answer["adopted"] is False, "`adopted` is false")
-    check(REF.ENTERS_AT is IMPORT.ENTERS_AT,
-          "REF.ENTERS_AT IS IMPORT.ENTERS_AT - the same object")
+    check(REF.ENTERS_AT is FRAG.STATUSES[0],
+          "REF.ENTERS_AT IS FRAG.STATUSES[0] - the same object (it was read "
+          "off heron_import.py until D-199 retired it)")
     check(answer["enters_at"] == "DISCOVERED",
           "and it is %r" % answer["enters_at"])
     check(any("explicit yes" in line for line in answer["unjudged"]),

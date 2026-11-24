@@ -73,7 +73,7 @@ Every module communicates **through the Kernel** instead of directly depending o
 > | Fragment Registry | [`heron_fragment.py`](../brain/heron_fragment.py), read from each `fragment.yaml` | `heron_lookup`, `revit_read`, `revit_change` and the rest |
 > | Tool Registry | [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs) per operation, `heron_tools.TOOLS` per MCP tool | every request |
 > | Memory Manager | one store per scope, [`heron_scope.py`](../brain/heron_scope.py); what may be remembered, `heron_memory.py` | the stores: every search · the rules: their own test only |
-> | Workflow Manager | [`heron_workflow.py`](../mcp/server/heron_workflow.py) (§3) | its own test only |
+> | Workflow Manager | `heron_workflow.py` (§3) | its own test only |
 > | State Manager | the same file's checkpoint store; the live state is the add-in's lease, stop and run records | the add-in's: every request |
 > | Logging | [`HeronAudit.cs`](../platform/Heron.Core/HeronAudit.cs), one line per request; the brain's [`heron_audit.py`](../brain/heron_audit.py) | every request |
 > | Security | the gate in the add-in (§29); [`heron_secrets.py`](../brain/heron_secrets.py) (§30) | the gate: every request · secrets: no tool the server serves |
@@ -130,7 +130,7 @@ Requirement -> Search -> Plan -> Generate -> Review -> Build -> Test -> Deploy
 > true first, the steps in order from the skill's file in [`brain/skills/`](../brain/skills/), and each
 > capability with its risk and status on this Revit ([04 §8.7](04-heron-mcp.md)). The host then sends
 > the steps one call at a time. The Workflow Engine is built as
-> [`heron_workflow.py`](../mcp/server/heron_workflow.py) (`HERON-KRN-WFL-007`, `DRAFT`): stages in order,
+> `heron_workflow.py` (`HERON-KRN-WFL-007`, `DRAFT`): stages in order,
 > a timeout each, a retry only when the failure table says one is safe
 > ([`heron_failure.py`](../mcp/server/heron_failure.py), [D-21](DECISIONS.md)), finished stages undone in
 > reverse, and checkpoints (§21). It has no parallel stages and no approvals, and **nothing but
@@ -541,7 +541,7 @@ Step 1 ✓  Step 2 ✓  Step 3 ✓  Step 4 FAILED
 After fixing Step 4: **continue from Step 4**, not restart everything.
 
 > **As built (2026-10-18): built, and reached by no tool.**
-> [`heron_workflow.py`](../mcp/server/heron_workflow.py) keeps each stage's output on disk under its
+> `heron_workflow.py` keeps each stage's output on disk under its
 > Workflow ID, keyed by the hash of its input, continues from the first stage not done, and says what it
 > is waiting on (`waiting_on()`). Only `tests/test_workflow.py` runs it. A job served by `heron_method`
 > has no checkpoint: after a fix, the host decides which step to send again.
@@ -1430,7 +1430,7 @@ Heron Kernel · Capability Registry · Workflow Engine · Agent Registry · Agen
 > |---|---|---|---|---|
 > | 1 | Heron Kernel | Parts, and no single Kernel (§1) | [`platform/Heron.Core`](../platform/README.md), `tools/check-structure.py` | the C# half: every request · the Python half: mixed (§1) |
 > | 2 | Capability Registry | Derived from the fragment cards (§2) | [`heron_capability.py`](../brain/heron_capability.py) | served: `heron_capabilities`, `heron_lookup`, `heron_resolve` |
-> | 3 | Workflow Engine | Stages, timeouts, retries asked of the failure table, checkpoints; a job reaches the host as a method (§3) | [`heron_workflow.py`](../mcp/server/heron_workflow.py); `heron_method` | the engine: reached by no tool · the methods: served |
+> | 3 | Workflow Engine | Stages, timeouts, retries asked of the failure table, checkpoints; a job reaches the host as a method (§3) | `heron_workflow.py`; `heron_method` | the engine: reached by no tool · the methods: served |
 > | 4 | Agent Registry | The register's rows, assembled into one record per agent | [28](28-agent-registry.md), [`heron_agents.py`](../brain/heron_agents.py), `python tools/agent-count.py` | reached by no tool |
 > | 5 | Agent Factory / HR | Job description, design, build, a creator that can only assign `PROPOSED`, training; a new row is scaffolded by `tools/new-agent.py` | `heron_hr.py`, `heron_creator.py` | reached by no tool |
 > | 6 | RAG Librarian | Chooses the scopes before anything is searched | `librarian()` in [`heron_retrieve.py`](../brain/heron_retrieve.py) | served: `heron_standards`, `heron_research` |
@@ -1442,14 +1442,14 @@ Heron Kernel · Capability Registry · Workflow Engine · Agent Registry · Agen
 > | 12 | Sandbox | No containment: a new agent's first run is watched ([D-84](DECISIONS.md)); a DRAFT's one run is held behind Keep or Discard ([D-119](DECISIONS.md)) (§10) | `heron_sandbox.py`, `try-once` in [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) | a sandbox: not built · the one run: seen in Revit ([Group EM](needs-checking/group-em.md)) |
 > | 13 | Automated Testing | The suites and the gates on every pull request; nothing runs inside Revit by itself | [`tests/`](../tests/README.md), [`gates.yml`](../.github/workflows/gates.yml), `python tools/check-gaps.py` | built |
 > | 14 | Golden Test Library | Cases audited without Revit; none is run (§28) | [`tests/golden/cases.py`](../tests/golden/cases.py) | built · a case is proven by a person in Revit |
-> | 15 | Version / Provenance system | git history, the card's `id` and `version`, the proof's fingerprint (§7) | `tools/check-metadata.py`, `tools/check-signatures.py`, [`heron_versioning.py`](../brain/heron_versioning.py) | built · `heron_versioning.py`: reached by no tool |
+> | 15 | Version / Provenance system | git history, the card's `id` and `version`, the proof's fingerprint (§7) | `tools/check-metadata.py`, `tools/check-signatures.py`, `heron_versioning.py` | built · `heron_versioning.py`: reached by no tool |
 > | 16 | Security + Permission Layer | Seven levels; Changes, Admin, Publish and Ask to Keep, in Heron's Settings window since [D-150](decisions/D-150.md); the gate in the add-in (§29) | [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs) | every request · seen in Revit 2024 ([Group ES](needs-checking/group-es.md)); Ask to Keep not run ([Group HG](needs-checking/group-hg.md)) · **2026-11-20:** the Ask to Keep switch turned on and off in Revit 2020 and read back ([Group NP](needs-checking/group-np.md)), what it does to a change still not run; Changes, Admin and Publish held in Revit's memory since [D-166](decisions/D-166.md) |
 > | 17 | Audit Trail | One line per request, keyed by Workflow ID, never pruned; the brain's own beside it | [`HeronAudit.cs`](../platform/Heron.Core/HeronAudit.cs), [`heron_audit.py`](../brain/heron_audit.py), [D-62](DECISIONS.md) | every request |
 > | 18 | Rollback / Recovery | A change rolled back whole; the stop; backups with a restore drill. Session rollback and Safe Mode written, not wired (§35) | [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`tools/heron-backup.py`](../tools/heron-backup.py), `heron_rollback.py`, `heron_safemode.py` | the rollback and the stop: seen in Revit ([Group ET](needs-checking/group-et.md), [Group EZ](needs-checking/group-ez.md)) · session rollback, Safe Mode: reached by no tool · **2026-11-20:** the session rollback, `heron_rollback.py`, was retired on 2026-11-16 (`Heron-Status: DEPRECATED`, [row 5b-1747](fragment-issues/row-5b-1747.md)); a chat's own last change is taken back with Revit's Undo, `revit_undo_last` ([D-157](decisions/D-157.md), [D-175](decisions/D-175.md)) |
 > | 19 | Background Queue | `P0` to `P6`, and user work always wins (§22) | `heron_queue.py`, `heron_scheduler.py` | reached by no tool |
 > | 20 | Self-Diagnostics | One report, with a next step per finding (§34) | [`heron_diagnose.py`](../mcp/server/heron_diagnose.py) | served: `heron_diagnose` |
 > | 21 | Automatic Installer | A window and a command line; per user; files from a published release (§32) | [`platform/Heron.Installer`](../platform/README.md), [D-90](DECISIONS.md), [D-96](DECISIONS.md) | built · run on the owner's PCs, not every row ([Group EP](needs-checking/group-ep.md)) · **2026-11-20:** and the one Setup file a modeller downloads, since [D-167](decisions/D-167.md) (§32) |
-> | 22 | Automatic Update Manager | Says whether a newer release exists, and updates nothing; an install replaces ([D-94](DECISIONS.md)) | [`UpdateCheck.cs`](../platform/Heron.Installer/UpdateCheck.cs), [`heron_update.py`](../brain/heron_update.py) | not built as an updater |
+> | 22 | Automatic Update Manager | Says whether a newer release exists, and updates nothing; an install replaces ([D-94](DECISIONS.md)) | [`UpdateCheck.cs`](../platform/Heron.Installer/UpdateCheck.cs), `heron_update.py` | not built as an updater |
 > | 23 | GitHub Agent | Push, pull requests and releases are a person's ([Golden Rule 12](14-golden-rules.md)) | `heron_github.py` | reached by no tool |
 > | 24 | Standards Agent | On demand; one agent with a subject ([D-76](DECISIONS.md)) (§17) | `heron_standards`, `heron_iso.py` | served · **2026-11-20:** `heron_iso.py` is imported only by its own test; `heron_standards` answers through `librarian()` and `heron_conflict.py` (`standards` in [`heron_brain.py`](../mcp/server/heron_brain.py), `python tools/module-reach.py --list`) |
 > | 25 | BIM QA Agent | The `CHECK_` fragments; the one-report module written, not wired (§18) | [`heron_modelqa.py`](../brain/heron_modelqa.py) | the checks: served through `revit_read` · `heron_modelqa.py`: reached by no tool |

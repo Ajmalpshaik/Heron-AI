@@ -95,7 +95,7 @@ Claude Code is the *host*, the Kernel is Heron's *spine*.
 >   of the stack and depends on nothing.
 > - **The Python half is separate modules,** each DRAFT: the event bus
 >   `heron_events.py`, the workflow engine
->   [`heron_workflow.py`](../mcp/server/heron_workflow.py), the instruction registry
+>   `heron_workflow.py`, the instruction registry
 >   [`heron_instructions.py`](../brain/heron_instructions.py), feature flags
 >   [`heron_flags.py`](../brain/heron_flags.py), the resource manager
 >   `heron_resources.py` and the model router
@@ -163,7 +163,7 @@ the Orchestrator thin, which [Golden Rule 2](14-golden-rules.md) requires.
 > ([D-01](DECISIONS.md#d-01--execution-host-claude-code-plugin)). For a job of several steps, Heron hands
 > the host the method through `heron_method`: what must be true first, the steps in order, and each
 > capability with its risk ([04 §8.7](04-heron-mcp.md#87-a-new-pc-as-quick-as-the-old-one--built-2026-10-09)).
-> The Workflow Engine with checkpoints is [`heron_workflow.py`](../mcp/server/heron_workflow.py)
+> The Workflow Engine with checkpoints is `heron_workflow.py`
 > (DRAFT). No tool the server serves calls it yet: `grep -l 'heron_workflow' mcp/server/*.py` prints
 > nothing - the tools have been in more than one file since 2026-11-11 (`heron_tools.SERVER_FILES`).
 

@@ -156,7 +156,7 @@ A change? no, a read -> the answer, the model untouched
 |---|---|
 | **Heron Kernel** | The spine every module talks through instead of depending on each other. Holds the registries, permissions, event bus, state and logging. **Plumbing, never intelligence** — no BIM knowledge lives in it. [23 §1](23-heron-kernel.md) |
 | **Capability Registry** | *"What can Heron currently do?"* The Orchestrator matches **capabilities**, never agent names — which is what makes agents replaceable. [18 §2](18-agent-operating-system.md) |
-| **Workflow Engine** | Owns ordering, retries, timeouts, rollback and checkpoints. The Orchestrator decides *what*; this ensures it *happens correctly*. The Orchestrator is the host ([D-01](DECISIONS.md)); the engine is [`heron_workflow.py`](../mcp/server/heron_workflow.py), DRAFT, and no tool the server serves calls it yet. [23 §3](23-heron-kernel.md) |
+| **Workflow Engine** | Owns ordering, retries, timeouts, rollback and checkpoints. The Orchestrator decides *what*; this ensures it *happens correctly*. The Orchestrator is the host ([D-01](DECISIONS.md)); the engine is `heron_workflow.py`, DRAFT, and no tool the server serves calls it yet. [23 §3](23-heron-kernel.md) |
 | **Checkpoint** | Persisted stage output letting a failed multi-stage workflow resume from the failed step rather than restarting. [23 §4](23-heron-kernel.md) |
 | **Evidence** | The stated reasons behind a decision — which fragment, which versions, what success history. For a `MODIFY`, **no evidence means refused, not downgraded**. [23 §6](23-heron-kernel.md) |
 | **Confidence** | An agent's self-reported certainty (`HIGH`/`MEDIUM`/`LOW`/`UNKNOWN`). **Never a substitute for validation.** [23 §5](23-heron-kernel.md) |
