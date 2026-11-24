@@ -32,12 +32,12 @@ back, with `basePlane=Ref. Level` and `topPlane=Head Top`. A flex is the same wi
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**IZ0**~~ | Negative FIRST. `parameterName=Zero Flats`, `sides=6` — [full row](../needs-checking-archive/group-iz.md#row-iz0) | Refused before anything is made - "... |
-| ~~**IZ1**~~ | *The hexagon.* `parameterName=Head Across Flats`, `sides=6` | `size` *"6 sides, 18 mm across the flats and 20.78 mm across the corners, 7.5 mm high, centred at X 0, Y 0, from Z 0 to 7.5"*; 7 locks (six sides and the top); two centre planes made and pinned, the front-back pair on Center (Front/Back) **Held - PASS (after the fix), Revit 2020, 2026-10-24: the results table below.** |
-| ~~**IZ2**~~ | The flex. IZ1 as setup, `trials=Head Across Flats=46 \| Head Across Flats=10` — [full row](../needs-checking-archive/group-iz.md#row-iz2) | The prism MEASURED 53.12 x 46 and 11.55 x 10 mm, centred at X 0, Y 0, and put back to… |
-| ~~**IZ3**~~ | Other even counts. `sides=8`, then `sides=4`; the octagon flexed as IZ2 — [full row](../needs-checking-archive/group-iz.md#row-iz3) | Octagon 18 across the flats and 19.48 across the corners, 9 locks, flexing to 46 x 46 and… |
-| ~~**IZ4**~~ | An odd count. `sides=5` — [full row](../needs-checking-archive/group-iz.md#row-iz4) | Refused - "an EVEN number of sides, 4 to 12 ..." - nothing made Struck 2026-11-13: PASSED… |
-| ~~**IZ5**~~ | The signature, on the owner's word only, after IZ0 to IZ4 — [full row](../needs-checking-archive/group-iz.md#row-iz5) | `python brain/heron_validate.py accept extrude-polygon-between-planes --by "Ajmal PS"`… |
+| ~~**IZ0**~~ | Negative FIRST. `parameterName=Zero Flats`, `sides=6` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Refused before anything is made - "... |
+| ~~**IZ1**~~ | The hexagon. `parameterName=Head Across Flats`, `sides=6` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `size` "6 sides, 18 mm across the flats and 20.78 mm across the corners, 7.5 mm high… |
+| ~~**IZ2**~~ | The flex. IZ1 as setup, `trials=Head Across Flats=46 \| Head Across Flats=10` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The prism MEASURED 53.12 x 46 and 11.55 x 10 mm, centred at X 0, Y 0, and put back to… |
+| ~~**IZ3**~~ | Other even counts. `sides=8`, then `sides=4`; the octagon flexed as IZ2 — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Octagon 18 across the flats and 19.48 across the corners, 9 locks, flexing to 46 x 46 and… |
+| ~~**IZ4**~~ | An odd count. `sides=5` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Refused - "an EVEN number of sides, 4 to 12 ..." - nothing made Struck 2026-11-13: PASSED… |
+| ~~**IZ5**~~ | The signature, on the owner's word only, after IZ0 to IZ4 — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `python brain/heron_validate.py accept extrude-polygon-between-planes --by "Ajmal PS"`… |
 
 A row that fails stays open; nothing in a row changes to make it pass.
 

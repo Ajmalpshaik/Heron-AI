@@ -50,16 +50,6 @@
 
 ---
 
-### Row 5b-231
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **TALK'S LISTENER STOPPED WHEN A MESSAGE WAS WAITING, AND THE MESSAGE WAS CLAIMED AND LOST WHEN THE CHAT CLOSED.** Found 2026-09-27 on the owner's PC, Revit 2024, his test copy *heron ai bulding*, by NEEDS-CHECKING row AS4 ([group AS](../needs-checking/group-as.md)). The Talk button saved `message-1.json` and `selection-1.json` at 19:20:10. The Talk chat's listener, which had rewritten `listener-53412.json` every five seconds since 19:11:27, rewrote it for the last time at 19:20:07.8 and did not claim the message, and the chat showed nothing - no `<channel source="heron"` in its transcript. At 19:26:14.7 Claude Code closed the chat's server; at 19:26:14.9 the message became `message-1.taken.json`, claimed in the server's last moment and shown to nobody; at 19:26:17.5 Revit closed and deleted it. In [`heron_talk.py`](https://github.com/Ajmalpshaik/Heron-AI/blob/5b18541a/mcp/server/heron_talk.py) the loop claims in `collect()`, and between finding a message and claiming it asks `live_revits()` - `bridge.discover()`, which pings each Revit's bridge - which Revits are live. That is where it waited, on the evidence of the times; which call it waited in, no stack showed. **The modeller's words were taken and lost** - the one failure D-104 said Talk could not have
-
-**State.** **CLOSED 2026-09-27 - Talk was removed** on the owner's instruction ([D-105](../DECISIONS.md#d-105--talk-is-removed-and-the-modeller-works-with-heron-in-the-chat-only)): the listener, the mailbox and the button are gone, so there is nothing left to fix. Why the listener waited was never found, and D-105 makes it the first question for any second attempt
-
----
-
 ### Row 5b-233
 
 *Moved from the register on 2026-11-17.*
@@ -80,46 +70,6 @@
 
 ---
 
-### Row 5b-240
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`ARRANGE_TAGS` TAKES ITS GAP AND ITS FALLBACK TAG SIZE AS MODEL MILLIMETRES, WHILE ITS CARD SAYS PAPER.** Found 2026-09-27 reading the tag fragments before writing `OFFSET_TAGS_FROM_HOST` (FRG-VIEW-113, [Group AY](../needs-checking/group-ay.md)). `brain/fragments/arrange-tags/fragment.yaml` describes `minGapMm` as *"the clear gap to leave between two tags, on paper terms the reader judges"*, but `impl/any/fragment.cs` sets `gap = minGapMm * MmToFeet` and the fallback half-width to `fallbackTagWidthMm * MmToFeet / 2.0` - **never multiplied by the view's scale**. Its own proof shows it: `minGapMm 5000` gave `gap 16.40` ft, which is 5000 mm in the MODEL, and `fallbackTagWidthMm 20` gave `halfWidth` 10 mm. So a caller who types the 3 mm paper gap the card asks for gets 3 model mm - 0.04 mm on a 1:75 sheet - and a 20 mm fallback tag is treated as 0.27 mm wide on paper. `STACK_TAGS` states the rule this breaks: *"THE GAP IS A PAPER DISTANCE AND HAS TO BE MULTIPLIED BY THE VIEW SCALE"*.
-
-**State.** **MOVED TO ISSUE [#924](https://github.com/Ajmalpshaik/Heron-AI/issues/924) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN - recorded, not fixed.** ARRANGE_TAGS is PROVEN, and any change under its `impl/` makes the proof stale and sends it back to DRAFT, so the fix waits for the owner's yes and a re-proof. The fix is `* view.Scale` on the gap and on both fallback sizes, with the card saying so; the measured sizes, read off leaderless tags in the view, are already model distances and stay as they are.
-
----
-
-### Row 5b-241
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **NOTHING IN THE LIBRARY CHANGES A VIEW FILTER'S CATEGORIES, AND *"remove the Duct Systems category from the Supply Air view filter"* REACHES `CREATE_VIEW_FILTERS_BY_RULE`, A TOOL THAT MAKES NEW FILTERS.** Found 2026-09-27 in "heron ai bulding", Revit 2024, when the three filters that `create-view-filters-by-rule` (FRG-VIEW-111) made were kept holding Duct Systems, which the owner had said to leave out ([group AX](../needs-checking/group-ax.md)). No `capability:` line in `brain/fragments/` edits a `ParameterFilterElement`'s categories or rule after it exists. `CREATE_VIEW_FILTER`, `CREATE_VIEW_FILTERS_BY_VALUE` and `CREATE_VIEW_FILTERS_BY_RULE` all create one; `APPLY_VIEW_FILTER` and `REMOVE_VIEW_FILTER` put one on a view or take it off. This worktree's `heron_lookup` ranked the new create tool first on that sentence, words and nearness agreeing. **It cannot do harm there** - the names already exist, so it answers `alreadyExists` and creates nothing - **and it cannot help either**. When found, the only fix was Manage, Filters by hand, or Ctrl+Z while the change is still the top of the undo list.
-
-**State.** **FIXED in the same change, 2026-09-27**, on the owner's decision, which the chat he was working in relayed: fix it through Heron, not by hand. `SET_VIEW_FILTER_CATEGORIES` (FRG-VIEW-112, DRAFT) sets an existing filter's categories by its name through `ParameterFilterElement.SetCategories`, present 2020 to 2027. It took Duct Systems off the three filters and put the eight duct categories on; a second run returned `alreadySet` 3 ([group AX](../needs-checking/group-ax.md)). The sentence above now reaches it through `lookup`, measured on a scratch store built from this branch. Still missing: changing an existing filter's RULE.
-
----
-
-### Row 5b-242
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **A PROOF JOB WITH `setup-set` BUT NO `negative-setup-set` SENDS ITS NEGATIVE-SET TO THE SETUP CHAIN, SO THE NEGATIVE IS REFUSED BEFORE THE FRAGMENT RUNS.** Found 2026-09-28 by the Codex review of PR #344 on `tools/jobs/offset-tags-from-host-heron-ai-bulding-2026-09-27.yaml`, and confirmed in the code: `mcp/client/heron_bridge_client.py` picks the negative phase's setup values as `negative_setup_values or using or values`, where `using` is the negative-set, so the POSITIVE's `setup-set` is never a fallback for the negative. A job whose chain needs different values from its fragment - `select-by-category-name` needing `categoryName`, the fragment needing `tagCategories` - therefore sends the chain the fragment's values on the negative leg, and the chain refuses for a missing value. `--dry-run` reports WOULD RUN, because it checks that a negative is arranged, not that its chain can bind. Fixed in that job by adding `negative-setup-set`. **The same shape is on main** in `tools/jobs/set-schedule-field-totals-project1-2026-09-27.yaml` (Group AT's AT1): `setup-set` names the schedule, `negative-set` holds only `fieldNames`, and there is no `negative-setup-set` - a scan of every job file on 2026-09-28 found that one and no other.
-
-**State.** **FIXED 2026-10-08, project review - the dry run now refuses the shape.** `tools/batch-prove.py` `job_refusal()` refuses a job with `setup-set:` and `negative-set:` and no `negative-setup-set:`, saying the negative leg's chain would be handed the `negative-set:` and naming the key to add; the runner's fallback is unchanged, so no real run behaves differently. A dry run over every job file refuses exactly one - AT1's - and it now carries `negative-setup-set: nameContains: Air Terminal Schedule` and reads WOULD RUN. `tests/test_batch_prove.py` holds it, seen to FAIL first. Was: **OPEN - recorded.** AT1's job file wants `negative-setup-set: nameContains: Air Terminal Schedule` before it is run. The wider fix is either the runner falling back to the positive's `setup-set` for the negative when the negative names none, or `batch-prove --dry-run` refusing a job whose setup chain would receive values it does not declare.
-
----
-
-### Row 5b-243
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **NOTHING IN THE LIBRARY MADE A VIEW LIST, AND *"create a view list"* REACHED `CREATE_SHEET_LIST`, WHICH COULD ONLY MAKE A SHEET LIST.** Found 2026-09-27 in "heron ai bulding", Revit 2024, Heron session 46596, when the owner asked for two schedules kept apart: a Sheet List (made with `CREATE_SHEET_LIST`) and a View List of only the views placed on a sheet. No `brain/fragments/` implementation calls `ViewSchedule.CreateViewList`, and the chat he was working in measured `heron_lookup` sending *"create a view list"* to `CREATE_SHEET_LIST` - so the nearest answer made a list of the SHEETS, a plausible index of the wrong things, and the only other route was View tab, Schedules, View List by hand.
-
-**State.** **FIXED in the same change, 2026-09-27, by editing the existing tool, on the owner's rule that an existing tool is extended rather than a new one added.** `CREATE_SHEET_LIST` (FRG-SHT-011) is version 2: a new value `listKind` - blank or `sheets` makes the sheet list exactly as before, `views` calls `ViewSchedule.CreateViewList` (present with the same one-argument signature in all eight releases' RevitAPI.xml, 2020 to 2027) with the same fields by name, the same refusal listing the real names and the same sort, and anything else is refused with nothing created. **`listKind` must be SENT, blank or not** - the add-in refuses any `source: request` value that arrives with none ([row 227](../fragment-issues/section-5b-rows-176-200.md)), so it is not marked `optional: true`. "Only the placed views" needed no new code: `SET_SCHEDULE_FILTERS` (FRG-VIEW-060, PROVEN, unchanged) already writes `has value`, and Sheet Number has a value exactly when a view is on a sheet. The change is inside a PROVEN `impl/`, so the fragment goes back to DRAFT with its 2026-09-13 proof kept; the re-proof is [Group AZ](../needs-checking/group-az.md). Compiles on 2020 to 2027.
-
----
-
 ### Row 5b-246
 
 *Moved from the register on 2026-11-17.*
@@ -127,15 +77,3 @@
 **Defect.** **A QUESTION ABOUT THE REVISION NUMBERING SEQUENCES OR THE ARC LENGTH, IN WORDS NOBODY DECLARED, REACHES A TOOL THAT CHANGES THEM.** Measured 2026-09-28 through `heron_retrieve.find` on a scratch store built from this change ([group BA](../needs-checking/group-ba.md)). Every sentence the owner's brief named reaches its tool by identity, and so do the declared questions *"what is the revision cloud arc length"*, *"show me the revision numbering sequences"* and *"are the revisions numbered per sheet or per project"* (LIST_REVISIONS). But *"list the revision numbering sequences"* and *"which numbering sequences are there"* reach DELETE_REVISION_NUMBERING_SEQUENCE, and *"what arc length does this project use for revision clouds"* reaches SET_REVISION_SETTINGS. Widening LIST_REVISIONS' `semantic-identity` to name the sequences and the arc length moved neither, and cost two nearness hits library-wide, so it was put back. **Neither can change the model on a question**: the delete refuses without `confirm` repeating the sequence's name, and the setter with both values empty refuses as *"nothing was asked for"* - while its `findings` still reads both settings back, which answers the question.
 
 **State.** **MOVED TO ISSUE [#955](https://github.com/Ajmalpshaik/Heron-AI/issues/955) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN - recorded, not fixed.** The same shape as the paraphrase surface check-routing's own risk section says it cannot see. A fix belongs in retrieval (a question should prefer a READ), not in more utterances on one fragment.
-
----
-
-### Row 5b-248
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **THE FILTERS TAB OF VISIBILITY/GRAPHICS COULD NOT BE FILLED IN: `APPLY_VIEW_FILTER` SET A COLOUR OR TWO AND NO PATTERN, HAD NO ENABLE FILTER TICK, STAMPED CUT VALUES WHERE NOTHING CAN BE CUT, AND NOTHING COULD READ A FILTER'S ROW BACK.** Found 2026-09-28 in "heron ai bulding", Revit 2024, session 46596, on the owner's Supply Air, Return Air and Exhaust Air filters on `FloorPlan: Level 1 - Air Terminal Layout` and `{3D}`. All six carried a surface and a cut pattern COLOUR with no pattern, which paints nothing, and a cut line and cut pattern colour on filters whose eight duct categories all answer `IsCuttable` false, so Revit greys those columns out and draws none of it. The add-in's override parser (`OneOverride` in [`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs)) took nine keys and left the patterns out on purpose ([D-72](../decisions/D-72.md)); `APPLY_VIEW_FILTER` had no Enable Filter; `REPORT_VIEW_FILTERS` said which views use a filter and nothing about how. **And both cards were wrong about Revit 2020.** `APPLY_VIEW_FILTER` said `SetIsFilterEnabled` arrived at 2024 and `REPORT_VIEW_FILTERS` said `GetOrderedFilters` did; the reference assemblies show both, and `GetIsFilterEnabled`, present 2021 to 2027 and absent from 2020 - read off all eight on 2026-09-28.
-
-**State.** **FIXED in the same change, 2026-09-28, by editing the three existing tools** - the owner's rule that an existing tool is edited, never a new one added. **The parser** now takes line patterns, foreground and background fill patterns with their colours and Visible ticks for the surface and the cut, by the name Revit shows or `solid` (found by `IsSolidFill` on a drafting pattern, never an id), refuses an unknown or MODEL pattern by name, refuses Enable Filter and Visibility typed as overrides by saying where they go, and takes `none` for no override - add-in C#, **live after the add-in is redeployed and Revit restarted**. **`APPLY_VIEW_FILTER` version 2** adds `enabled` (reached by name at run time, not under `#if REVIT2020`, because of [row 5b-181](../fragment-issues/section-5b-rows-176-200.md) - on 2020 a non-blank value refuses the whole call), `keepOtherSettings` (blank keeps everything the override does not set) and `solidFill` (the solid foreground pattern from fragment code, so it works before the restart), says "cut not applicable to this filter's categories" and names them instead of stamping, and returns a `summary` of what changed. **`REPORT_VIEW_FILTERS` version 2** takes `viewName` and reads every control of every filter's row back as one string. Both went back to `DRAFT`; the re-proof is [Group BC](../needs-checking/group-bc.md). Run on the six pairs through the fragment-side path, read back, and a second run answered NOTHING CHANGED on all six. Not built here: moving a filter up or down the list, which the owner kept for another session.
-
----

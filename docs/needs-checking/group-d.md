@@ -27,12 +27,12 @@ the code, not the model, and it does not close D3.**
 
 | ID | Do this | Pass looks like |
 |---|---|---|
-| ~~**D1**~~ | "move the ducts up 200 mm" — [full row](../needs-checking-archive/group-d.md#row-d1) | **PASSED 2026-10-17.** |
-| ~~**D2**~~ | Say yes — [full row](../needs-checking-archive/group-d.md#row-d2) | **PASSED 2026-10-17.** |
-| ~~**D3**~~ | MEASURE ONE. — [full row](../needs-checking-archive/group-d.md#row-d3) | **PASSED 2026-10-17 - all three measured, and each is +200.0000 mm.** |
-| ~~**D4**~~ | Look at the screen without clicking or zooming — [full row](../needs-checking-archive/group-d.md#row-d4) | **PASSED 2026-10-17, measured on the window, not judged by eye.** |
-| ~~**D5**~~ | One — [full row](../needs-checking-archive/group-d.md#row-d5) | **PASSED 2026-10-17.** |
-| ~~**D6**~~ | "move them down 50 mm" — [full row](../needs-checking-archive/group-d.md#row-d6) | **PASSED 2026-10-17.** |
+| ~~**D1**~~ | "move the ducts up 200 mm" — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PASSED 2026-10-17.** |
+| ~~**D2**~~ | Say yes — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PASSED 2026-10-17.** |
+| ~~**D3**~~ | MEASURE ONE. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PASSED 2026-10-17 - all three measured, and each is +200.0000 mm.** |
+| ~~**D4**~~ | Look at the screen without clicking or zooming — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PASSED 2026-10-17, measured on the window, not judged by eye.** |
+| ~~**D5**~~ | One — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PASSED 2026-10-17.** |
+| ~~**D6**~~ | "move them down 50 mm" — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PASSED 2026-10-17.** |
 
 ### The run that closed D1 to D6 - 2026-10-17
 

@@ -30,17 +30,16 @@ waiting on a person is not a build failure.
 which are schedules. The same foot prints how many fragments are still `DRAFT` against how many are
 proved, counted from disk as it runs.
 
-**Two more things live in [HANDOVER.md](HANDOVER.md), once each, and this page only points at them**
-(written 2026-11-12):
+**Two more things, and this page only points at them** (re-pointed 2026-11-24, when HANDOVER.md was cut
+to one page):
 
-- **What to run on your PC with Revit open, in order** - the command, the model and the Revit release for
-  each - is the numbered list under the table in
-  [its top section](HANDOVER.md#where-this-stands-right-now--read-this-then-9a-or-9). The tool's *REVIT OPEN*
-  bucket lists every row; that list is the order.
+- **What to run on your PC with Revit open, in order** - the tool's *REVIT OPEN* bucket lists every row,
+  and that list is the order. The older numbered list, with the model and release for each, is kept in
+  [the long handover's top section](handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#where-this-stands-right-now--read-this-then-9a-or-9).
 - **What waits for your word and is on no line of the tool** - a decision still *Proposed* above all, which
   the tool does not read ([row 5b-1582](fragment-issues/row-5b-1582.md)), and PROVEN tools whose known
-  defects are held for your yes - is the newest table of
-  [its section 8](HANDOVER.md#8-what-is-waiting-on-the-owner).
+  defects are held for your yes - was the newest table of
+  [the long handover's section 8](handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#8-what-is-waiting-on-the-owner).
 
 ---
 

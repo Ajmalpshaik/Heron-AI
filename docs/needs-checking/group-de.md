@@ -54,15 +54,15 @@ With `HERON_CLIENT_ID=ajmal-pc`, `--session <process id>` when two Revits are co
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**DE1**~~ | Arrange on Revit 2020: Manage > Shared Parameters, Create, a scratch file with a group "Heron Test"… — [full row](../needs-checking-archive/group-de.md#row-de1) | two types; Width labelling one dimension; Half Width driven by the formula - Struck… |
-| ~~**DE2**~~ | `python tools/batch-prove.py tools/jobs/replace-family-shared-parameters-2026-10-12.yaml`… — [full row](../needs-checking-archive/group-de.md#row-de2) | positive ("Width=Heron Unit Width; Depth=Heron Unit Depth", two in one call as the… |
+| ~~**DE1**~~ | Arrange on Revit 2020: Manage > Shared Parameters, Create, a scratch file with a group "Heron Test"… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | two types; Width labelling one dimension; Half Width driven by the formula - Struck… |
+| ~~**DE2**~~ | `python tools/batch-prove.py tools/jobs/replace-family-shared-parameters-2026-10-12.yaml`… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | positive ("Width=Heron Unit Width; Depth=Heron Unit Depth", two in one call as the… |
 | **DE3** | By hand through `revit_change`, DE2's positive kept. Then Family Types: change Heron Unit Width to 700 in a type | Family Types shows Heron Unit Width with the shared marker where Width was, values 600 and 900; the dimension's label reads Heron Unit Width; at 700 the planes move and Half Width reads 350 - the second route, and the flex |
-| ~~**DE4**~~ | The owner's case: in a fresh copy of DE1's family, the workaround first… — [full row](../needs-checking-archive/group-de.md#row-de4) | **refused** |
+| ~~**DE4**~~ | The owner's case: in a fresh copy of DE1's family, the workaround first… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **refused** |
 | **DE5** | The other refusals, each its own call: "Width=Not In The File"; "Heron Unit Width=Heron Test Tag" after DE3 (already shared); "Height=Heron Unit Width" where Height is not in the family; "Width=Heron Unit Width; Half Width=Heron Unit Width"; a project in front | each refused with its reason, nothing changed; the project `notAFamily` true |
 | **DE6** | **Measure Revit's own rule.** A family parameter named exactly as the shared one - "Heron Unit Width" made by `ADD_FAMILY_PARAMETERS` - then "Heron Unit Width=Heron Unit Width", once with no formula reading it and once with Half Width reading it; the second also by hand in Family Types > Modify > Shared parameter | without a formula: replaced. With one: Heron refuses, by the rule it was given; **record whether Revit's own dialog refuses too.** If Revit allows it, the rule is wider than Revit's and the owner decides whether to narrow it |
 | **DE7** | `parameterGroup` "Identity Data" on DE2's positive; and with the family saved and a type catalogue "Heron Replace Shared Test.txt" beside it whose first line names Width | the shared one under Identity Data; a finding naming Width in the catalogue's first line |
 | **DE8** | DE2 and DE4 on **Revit 2024** and **2027** - the ForgeTypeId side of every reflected call | the same answers. Compiled on all eight releases; what Revit DOES was measured on none |
-| ~~**DE9**~~ | The signature, on the owner's word only, after DE2, DE3 and DE4 — [full row](../needs-checking-archive/group-de.md#row-de9) | `python brain/heron_validate.py accept add-family-shared-parameters --by "Ajmal PS"`. |
+| ~~**DE9**~~ | The signature, on the owner's word only, after DE2, DE3 and DE4 — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `python brain/heron_validate.py accept add-family-shared-parameters --by "Ajmal PS"`. |
 
 ### Run 2026-10-12 - Revit 2020, scratch Family4 (DE1 to DE5)
 

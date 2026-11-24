@@ -26,7 +26,7 @@ before choosing. Decidable during Phase 0 rather than before it, since Phase 0 g
 
 **Research favours pyRevit.** A shipping Revit MCP server executes IronPython inside Revit via pyRevit's
 built-in Routes server -- proven, maintained by someone else, and the owner already knows it
-([26](../26-prior-art-revit-mcp.md)).
+([31 research](../31-research.md)).
 
 → [09 §10](../09-skills-and-fragments.md)
 

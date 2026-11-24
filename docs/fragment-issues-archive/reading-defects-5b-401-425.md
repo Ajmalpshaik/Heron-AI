@@ -20,56 +20,6 @@
 
 ---
 
-### Row 5b-402
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`tests/test_mcp_serves.py` DOES NOT RETURN INSIDE `check-gaps`' 300-SECOND CEILING IN A CLOUD CONTAINER, SO `check-gaps` LISTS IT UNFINISHED.** Found 2026-10-09 running `python tools/check-gaps.py` end to end for the first time in the project review of 2026-10-08 (its plan retired 2026-11-19 - [the work-notes README](../work-notes/README.md)) (at low priority, beside two other agents' builds, on 4 CPUs): *HUNG test_mcp_serves.py - still running after 300s, gave up*. Timed side by side under the same load: `main` at 661384f6 took 445 s and this branch 562 s, both exit 0. So the suite was already over the ceiling before this branch's new sections (row 5b-233's lookup, row 5b-274's activity list) were added; they add about a quarter. `SUITE_TIMEOUT` in [`tools/check-gaps.py`](../../tools/check-gaps.py) says 300 s is about four times the slowest suite measured there, 78 s on 2026-09-10. NOT measured on an unloaded machine or on the owner's PC.
-
-**State.** **MOVED TO ISSUE [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN - recorded, not fixed.** Either the suite is made faster or `check-gaps` gives it a ceiling of its own, and the choice is for whoever owns that rule; raising the one ceiling for every suite would let a hung suite wait longer before it is named.
-
----
-
-### Row 5b-403
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **THE COMPANION'S PAGE ACTIONS THAT REACH REVIT STILL GUESS HOW A CALL ENDED, OR WRITE REFUSED FOR A REPLY THAT IS NOT OK.** Carried from [row 5b-389](../fragment-issues/section-5b-rows-376-400.md) on 2026-10-09, when that row's `revit_*` half was fixed. Four page actions in mcp/server/heron_mcp_server.py reach Revit and write their own line on the activity list. `_apply_change` (companion_apply) records revit_change's answer with no outcome, so that line is guessed from its first line. It calls `_through(revit_change, origin="companion")` with no reply_out, a line tests/test_companion.py pins as text. `_apply_table` (companion_table_apply) writes `refused` only when the fragment's resultJson says nothing was applied, and no outcome otherwise, so a lost answer or revit_busy is guessed. `_sprinkler_layout_place` (companion_sprinkler_layout_place) writes `refused` for any revit_change reply that is not ok, so a lost placement answer shows as refused. Its good line is guessed, and its earlier refusals write no line. `_load_settings` (companion_load, the page's Load from Revit) writes `refused` for any revit_read reply that is not ok, so a lost answer or revit_busy shows as refused. Its good line is guessed. Its earlier returns (NotBound, list_views not answered, the pin's refusal, no active view) write no line at all. Since row 5b-389, `_through` hands the body's own label back in reply_out["ended"], and that is the hook the repair can use. Read in the source, NOT RUN.
-
-**State.** **FIXED 2026-11-19 - each Companion page action that reaches Revit writes how it ended as the door's body said it - the label `_through` hands back in reply_out["ended"]: `_apply_change` now passes a reply_out, `_apply_table` uses it where the table is not stale, `_sprinkler_layout_place` calls a reply that is not ok by that label (a lost answer is failed and said as not known, never refused) and writes a line for each of its earlier refusals, and `_load_settings` the same for its five. tests/test_outcome_line.py section 5e drives both Apply actions against a stand-in Revit (kept is ok; lost, no answer and busy are failed; Changes off is refused); tests/test_companion.py reads all four, and the line it pinned was changed with them.** Tracked as issue [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) until then. Was: **OPEN - recorded, not fixed.** The repair records the label `_through` hands back in reply_out["ended"] on each page action's line. `_apply_change` needs a reply_out on its `_through` call, which changes the line tests/test_companion.py pins, so the Companion's owner should agree to that first.
-
----
-
-### Row 5b-408
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`.claude/skills/heron-session/bin/hook_log.py` LINE 39 HOLDS `\H` IN AN ORDINARY DOCSTRING - `%LOCALAPPDATA%\Heron\logs` - SO UNDER PYTHON 3.12 A HOOK THAT IMPORTS IT PRINTS *"SyntaxWarning: invalid escape sequence '\H'"* TO ITS STDERR.** The same class as [row 379](../fragment-issues/section-5b-rows-376-400.md), one file over. Seen 2026-10-09 in the session [row 5b-378](../fragment-issues/section-5b-rows-376-400.md) measured: two hook results in that chat's transcript carry it - the SessionStart hook's stderr, 204 bytes, and the PreToolUse hook's on the chat's only Write, 226 bytes. Reproduced 2026-10-10 on the owner's PC, Python 3.12.10, by compiling the file with warnings shown: `hook_log.py:39: SyntaxWarning: invalid escape sequence '\H'`. `heron_guard.py`, `main_moved.py` and `session_line.py` each import it to write their diary line. **It repeats because no Python 3.12 cache of the file is kept:** the main checkout's `bin/__pycache__` holds only `hook_log.cpython-311.pyc`, so every 3.12 run compiles it again - why 3.12 writes none there was not checked. **Cosmetic today:** the diary line is still written and no hook's decision changes. A later Python is due to make the sequence an error, and `import hook_log` sits inside guards written never to raise (`heron_guard.diary` catches `Exception`), so the hooks' diary would then stop without a word. A doubled backslash or a raw docstring ends it; row 379's test, `tests/test_placement.py` section 7, is the shape of the guard. **Recorded, not fixed:** this change records measurements only.
-
-**State.** **FIXED 2026-10-11 by [#473](https://github.com/Ajmalpshaik/Heron-AI/pull/473).** The backslashes are doubled, and the same defect in `tests/test_bridge_roundtrip.py` and `tools/check-products.py`, found by compiling all 536 tracked Python files, is fixed with it. `tests/test_compiles_quietly.py` compiles every tracked file from source and fails on any warning: on main before the change it named all three files; after, 0 warnings.
-
----
-
-### Row 5b-413
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **"KEEP ONLY THE UNIQUE DATES TYPED ON THE SHEETS" COULD NOT BE ANSWERED: BOTH DATE TOOLS LOST THE DATES TO THE REPLY'S THREE-ITEM CUT.** Found 2026-10-10 on the owner's model `4355-BHVD-3D-50C10-BL001A` (Revit 2020, session 36948). `FIND_DATES_IN_VIEWS` read every text note and found 7 dates, but `findings` is a list and `RevitFragment.Describe` sends its first three, so 5 of the 7 never reached the reply. `EXTRACT_DATES_FROM_TEXT` needs a selection and returns a dictionary, which is sent as a count alone. Not a new defect - the same cut as the earlier rows on truncated lists; this row is the job it blocked. **Answered by a new tool, DRAFT:** `LIST_DATES_ON_SHEETS` ([its card](../../brain/fragments/list-dates-on-sheets/fragment.yaml)) reads every sheet with nothing selected, keeps only text notes a sheet owns, and leaves the whole list as one string, `dateList`, which the reply prints in full. It ran on that model - by mistake before its trial: the chat was still pinned to it while a scratch project was in front. It only reads and nothing changed. It returned the same 7 dates, on 15 of the 19 sheets. Proof plan: [Group CY](../needs-checking/group-cy.md).
-
-**State.** **ANSWERED BY A NEW TOOL, DRAFT.** The general cut stays as recorded.
-
----
-
-### Row 5b-414
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **ON REVIT 2020 A QUESTION ABOUT THE LETTERS NOW REACHES A WRITE, AND THE ISSUED-REVISION RULE WOULD REFUSE A LETTER-LIST CHANGE THAT CHANGES NO PRINTED LETTER.** Found 2026-10-10 widening `EDIT_REVISION_NUMBERING_SEQUENCE` to 2020 and 2021 (version 2, DRAFT). (1) *"what letters does the alphanumeric revision numbering use"* went to `LIST_REVISIONS` and now reaches this write on 2020, as it already reached `CREATE_REVISION_NUMBERING_SEQUENCE` on 2022 and later. Guarded: a question carries no values, and the tool refuses when nothing was asked for. (2) *"change the sheet numbers to start at 100"* reaches this tool on 2022 and later and now on 2020 too - wrong before this change. (3) **A decision for the owner:** a list change is refused while any ISSUED revision uses that numbering. On `4355-BHVD-3D-50C10-BL001A` the list reads `AA, BB, CC, D, E ...` and the wanted one `AA, BB, CC, DD ...`, which leaves AA to CC printing exactly what they print now - the rule refuses it all the same. Whether to refuse only when an issued revision's printed letter would really change is the owner's call; unchanged here.
-
-**State.** **MOVED TO ISSUE [#926](https://github.com/Ajmalpshaik/Heron-AI/issues/926) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN.** (1) and (2) recorded; (3) waits for the owner.
-
----
-
 ### Row 5b-415
 
 *Moved from the register on 2026-11-17.*
@@ -107,16 +57,6 @@
 **Defect.** **A RESET OR UNINSTALL OF A MICROSOFT STORE CLAUDE APP DELETES ITS PRIVATE COPY OF APPDATA - EVERY PACKAGE CLAUDE INSTALLED, HERON'S KNOWLEDGE STORE AND PROJECT MEMORY, AND THE BRAIN'S AUDIT - AND NOTHING IN HERON SAID SO.** Found 2026-10-10 on the owner's laptop, from the redirection [row 5b-416](../fragment-issues/section-5b-rows-401-425.md) records. Windows keeps a packaged app's redirected writes in `%LOCALAPPDATA%\Packages\<package>\LocalCache` and removes that folder when the app is reset (Settings, Apps, Installed apps, Claude, Advanced options, Reset) or uninstalled - Windows' behaviour for packaged apps as the owner gave it, NOT tried here, since it would delete his data. On the laptop that folder holds every `--user` package Claude installed, `global.db`, the project memory under `knowledge\projects` (load runs, design basis, earlier answers), `audit-brain-202610.jsonl`, the Companion notes and the hooks' log ([row 5b-418](../fragment-issues/section-5b-rows-401-425.md)). The packages and the store can be made again (`heron-ready`, `heron_scope --rebuild`); the project memory and the brain's audit cannot. `platform/Heron.Core/HeronPaths.cs` says DATA *"must survive every update, uninstall and reinstall"*, and on such a PC another program's Reset deletes it. Before this row, no file in `docs/` named the Store build's copy (grep for MSIX, WindowsApps, LocalCache, AnthropicPBC). **Not checked:** whether an update of the Claude app, as opposed to a Reset, keeps the folder.
 
 **State.** **MOVED TO ISSUE [#900](https://github.com/Ajmalpshaik/Heron-AI/issues/900) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN - recorded, not repaired.** The warning proposed with [row 5b-417](../fragment-issues/section-5b-rows-401-425.md) names it, in `heron-ready` section 2a and WHAT-TO-INSTALL §1b. Keeping DATA where an app reset cannot reach it is part of [Q-63](../OPEN-QUESTIONS.md), Ajmal PS's to decide. **FIXED IN CODE 2026-10-18 - [D-135](../decisions/D-135.md):** Heron's DATA no longer lives in the copy, so a Reset takes only the packages Claude installed itself and the old copies of Heron's data, which the first use has carried out. Heron deletes none of them; removing them is the owner's to decide. Not tried: a Reset itself. **2026-10-18 on the laptop - HF1 PASS ([Group HF](../needs-checking/group-hf.md), [#654](https://github.com/Ajmalpshaik/Heron-AI/pull/654)):** the store, every project's memory and the brain's audit were carried into `%USERPROFILE%\.heron` and read there from outside the app, so a Reset no longer holds Heron's only copy of them. A Reset itself is still not tried, and removing the old copies ([HF6](../needs-checking/group-hf.md)) was not put to the owner (noted 2026-10-18).
-
----
-
-### Row 5b-420
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`tests/test_heron_ready.py` FAILED THREE TIMES IN SIXTEEN RUNS OF THE COMMITTED TOOL ON THE OWNER'S LAPTOP ON 2026-10-10, AT TWO DIFFERENT STEPS, WITH NOTHING CHANGED BETWEEN RUNS - AND NO FAILING RUN'S TOOL OUTPUT WAS CAPTURED.** Found capturing the before-evidence for [row 5b-417](../fragment-issues/section-5b-rows-401-425.md) at commit 489a6e63, from Claude's tool shell inside the Store app, other Claude sessions running beside it. Twice the suite itself failed section 4: `--snapshot` exited 1 and wrote no file, so the four checks reading the file failed with it (`lookup_seconds` None). Once a scratch copy of the suite failed section 1: the tool exited 1 with no PyYAML, as it should, but its output lacked `pip install --user -r requirements.txt`. The other thirteen passed - the suite once, and a copy that printed the tool's whole output on every run nine times in a row. **Not found:** the cause - the suite prints only its own verdicts, and the tool's output from the failing runs was not kept. An exit 1 with no file would fit an exception `write_snapshot()` does not catch, which is a guess. **Not checked:** another PC, or this one with no other sessions running.
-
-**State.** **MOVED TO ISSUE [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN - intermittent, cause not found; recorded, not repaired.** A suite that printed the tool's output beside a failed check would name the cause the next time. NOT RUN: CI or the office PC for this.
 
 ---
 

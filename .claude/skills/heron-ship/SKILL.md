@@ -14,7 +14,7 @@ day it matters.* Every tool below is documented one at a time in
 order, and — the part that costs an hour when it is missing — which failures mean the machine rather
 than the change.**
 
-Adapted from `garrytan/gstack`'s `ship` ([33 §5.7](../../../docs/33-external-repository-research.md)),
+Adapted from `garrytan/gstack`'s `ship` ([31 research](../../../docs/31-research.md)),
 which does the same job for a web product: merge the base branch, run the tests, review the diff, bump
 the version. **Heron's version is different because Heron's failures are different** — some of its
 checks need a compiler, a knowledge store or the whole git history that a container may not have (§5),

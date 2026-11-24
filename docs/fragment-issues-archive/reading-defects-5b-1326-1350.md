@@ -57,15 +57,3 @@
 **Defect.** **"ADD FOUR MORE FLOOR LEVELS" MOVED FROM `CREATE_LEVELS` (FRG-DOC-008, PROVEN) TO `CREATE_LEVEL` (FRG-ELE-022, PROVEN) WHEN THE FOUR MASSING CARDS OF [GROUP JO](../needs-checking/group-jo.md) WERE ADDED.** Measured 2026-10-28 in a cloud container with `tools/check-routing.py` on the `model` backend, main (605 fragments) against the branch (609): the routing row in `create-levels`' card is reached on main and NOT REACHED on the branch, `CREATE_LEVELS` second. Taking each of the four new cards out alone, `tools/score-routing.py` still gave `CREATE_LEVEL` - so no one card's words do it; the four together move a near-tie between two level cards. Both write levels, so the answer is a sibling, not a crossing. The same run moved *"T10 at 150 both faces of these walls"* (claimed by `PLACE_AREA_REINFORCEMENT`, NOT REACHED on main too) from `PAINT_FACES` to `CREATE_WALLS_BY_FACE` - wrong before and wrong after. Neither was reworded to win back its rank.
 
 **State.** **MOVED TO ISSUE [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN - recorded, not repaired.** The lexical backend CI runs, and the owner's `model+rerank`, were not asked here.
-
----
-
-### Row 5b-1348
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`tests/test_skill_proving.py` JUDGED ONE STEP'S NEED BY ANOTHER STEP'S LINE WHEN TWO STEPS OF ONE METHOD SHARE A NEED'S NAME.** Seen 2026-10-29 in CI on pull request #763 (job "Every suite, and NOT RUN kept apart from FAILED"), and again locally: *"massing-study/create-opening's `host` says to type `selected`"*, twice. The check in section 5 reads every line of the emitted job file that starts `host:`; `massing-study` declares both `CREATE_OPENING`, whose `host` is ONE element (hint *"type `selected`"*, correct), and `CREATE_CURTAIN_SYSTEM` (FRG-ELE-127, from #764), whose `host` is a string (hint *"string"*, correct too) - so the first was failed on the second's line. No method needed two steps with one need name until this one.
-
-**State.** **FIXED 2026-10-29**, tests only: each need is read in its own job's block - the lines from its `- fragment:` to the next - and a by-hand step with no job of its own fails by name. Shown to fail first: with `tools/prove-skill.py`'s one-element hint changed to *"type its name"*, the narrowed check fails on six steps across `check-connectivity`, `clash-reroute` and `massing-study`, `CREATE_OPENING`'s `host` among them; with the hint restored it passes. Run in a cloud container.
-
----

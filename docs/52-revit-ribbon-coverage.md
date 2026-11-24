@@ -14,7 +14,7 @@ See docs/29-metadata-standard.md
 > [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007)), because its *The API cannot do it* and
 > *Still UNSURE* lists and its four tab-by-tab tables were in no register and no other document. The
 > owner left the choice of home to the session that did it, and a numbered research document was
-> chosen, beside [48](48-studying-bimlogiq.md) and [51](51-studying-another-revit-mcp.md). **The words
+> chosen, beside [31 research](31-research.md) and [31 research](31-research.md). **The words
 > below are unchanged; only links were re-pointed** and the work note's lifecycle paragraph was
 > replaced by this one.
 >

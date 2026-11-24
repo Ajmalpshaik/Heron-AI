@@ -169,7 +169,7 @@ Discard** first ([D-126](docs/DECISIONS.md)); and Ctrl+Z takes the whole change 
 ### Status
 
 **Built and proven are different words here, on purpose.** The bridge — Phase 0 — is proven in Revit
-2020 and 2024 ([HANDOVER §3](docs/HANDOVER.md), [field notes](docs/00e-field-notes-proven-bridge.md));
+2020 and 2024 ([HANDOVER §3](docs/handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#3-what-has-been-witnessed-at-a-real-revit), [field notes](docs/00e-field-notes-proven-bridge.md));
 most other parts are built and still owed a real Revit. No count is typed on these pages: how many
 fragments are `PROVEN`, `DRAFT` or `DEPRECATED` comes from
 `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`, and

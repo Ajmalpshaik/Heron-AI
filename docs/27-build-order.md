@@ -124,7 +124,7 @@ PHASE 2
 
 | Steps | State | Evidence |
 |---|---|---|
-| 1 to 5 | **Proven** in Revit 2020 and 2024 | Golden cases `G-01` to `G-07` in [`tests/golden/cases.py`](../tests/golden/cases.py) (`G-04`, *Revit is busy*, on 2020 only) · the witnessed list in [HANDOVER §3](HANDOVER.md) · [the field notes](00e-field-notes-proven-bridge.md). **Those records read `STALE` today** — the code has moved under them since: `python tests/test_golden.py` says which, and a stale proof is owed a re-run, not withdrawn |
+| 1 to 5 | **Proven** in Revit 2020 and 2024 | Golden cases `G-01` to `G-07` in [`tests/golden/cases.py`](../tests/golden/cases.py) (`G-04`, *Revit is busy*, on 2020 only) · the witnessed list in [HANDOVER §3](handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#3-what-has-been-witnessed-at-a-real-revit) · [the field notes](00e-field-notes-proven-bridge.md). **Those records read `STALE` today** — the code has moved under them since: `python tests/test_golden.py` says which, and a stale proof is owed a re-run, not withdrawn |
 | 6 | **Measured** on Revit 2024 | [Group D](needs-checking/group-d.md), `D1` to `D6`, 2026-10-17 — one Ctrl+Z, and +200.0000 mm on three ducts. Golden `G-09`, `G-10`, `G-11` and `G-17` (the preview, the distance, one undo, the audit) were recorded PROVEN on 2024 from that run and read `STALE` today. `G-08` (the write gate) and `G-12` to `G-16` (a failure forced mid-move, an expired preview, a model that changed, the wrong model, a second chat) have never met Revit — `python tests/test_golden.py` lists both. `G-12` is the *Phase 1 ends here* gate below |
 | 7 to 14 | **Built** | The *Status, 2026-08-29* note under Step 14. `python tools/check-gaps.py` checks each has a module in `brain/` and a test. Step 14's own proof — ten skills, each proven — is **not met**: `grep -h '^heron-status:' brain/skills/*.yaml \| sort \| uniq -c` |
 | 15, 16, 17, 18 | **Not steps** | [Steps 15, 16 and 17](#steps-15-16-and-17--recorded-2026-09-06-because-they-were-in-use-and-were-not-written-down) below: batch markers, and Step 18 is defined nowhere |
@@ -441,7 +441,7 @@ its clean output is believed — the same standard `check-api-surface.py` was he
 the mechanism, then written here in Heron's shape, with Heron's reasoning, carrying **none** of their
 names, dependencies or branding. Each starts at `DRAFT` whatever status it held where it was read.
 
-**The method is [31 — Studying the existing libraries](31-studying-the-existing-libraries.md)**, written
+**The method is [31 — Studying the existing libraries](31-research.md)**, written
 2026-08-28 on the owner's instruction: *check and edit · add · split*, with what may travel and what may
 not. Read it before taking anything. Its arithmetic is the part that shapes this step: there are
 **398 fragments there and 221 carry a verification**, and every one of those arrives here **unproven** —
@@ -552,7 +552,7 @@ exists"*, and only this table tells them apart.
 step that exists — which is how three of them came to.
 
 **It has happened again, in source headers rather than fragments: `Heron-Step: 18`.** It first appeared
-on 2026-09-12 in `docs/34` - the upgrade plan, a work note from 2026-11-15 until it retired on 2026-11-21, its research rule moved to [31 §6](31-studying-the-existing-libraries.md#6-studying-an-outside-project---the-research-rule) - and since then heads
+on 2026-09-12 in `docs/34` - the upgrade plan, a work note from 2026-11-15 until it retired on 2026-11-21, its research rule moved to [31 research](31-research.md#6-studying-an-outside-project---the-research-rule) - and since then heads
 tools, tests and documents written after that day; no section of this file defines it. Count where it is
 used with:
 
@@ -588,7 +588,7 @@ first — before it, nothing accumulates; after it, everything does.
 
 **Steps 7 to 14 are above** — written out on 2026-08-28, when Phase 2 started. That is where Heron stops
 being a tool bridge and starts being a platform, and it is also where it starts doing things
-[the existing Revit MCP servers](26-prior-art-revit-mcp.md) do not.
+[the existing Revit MCP servers](31-research.md) do not.
 
 This section used to read *"Steps 7+ follow ROADMAP Phase 2"* and end with **"but none of it matters
 until Step 6 works."** The second half was overtaken by events rather than proved wrong: Step 6 did not

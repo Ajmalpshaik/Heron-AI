@@ -29,9 +29,9 @@ from the same folder.
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**DI1**~~ | Positive: the exhaust fan TRG_FAN_EXHAUST FAN: AX45 (450mm Long), id 7614932, sampleOnly, type… — [full row](../needs-checking-archive/group-di.md#row-di1) | **DONE 2026-10-12.** |
-| ~~**DI2**~~ | Negative: the louvre TCM_EAL_T001_ExhaustLouvre: Standard, id 7701431, the same switches — [full row](../needs-checking-archive/group-di.md#row-di2) | **DONE 2026-10-12.** |
-| ~~**DI3**~~ | Before and after: version 1 from a base worktree of origin/main against version 2, same fan, same… — [full row](../needs-checking-archive/group-di.md#row-di3) | **DONE 2026-10-12.** |
+| ~~**DI1**~~ | Positive: the exhaust fan TRG_FAN_EXHAUST FAN: AX45 (450mm Long), id 7614932, sampleOnly, type… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **DONE 2026-10-12.** |
+| ~~**DI2**~~ | Negative: the louvre TCM_EAL_T001_ExhaustLouvre: Standard, id 7701431, the same switches — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **DONE 2026-10-12.** |
+| ~~**DI3**~~ | Before and after: version 1 from a base worktree of origin/main against version 2, same fan, same… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **DONE 2026-10-12.** |
 | **DI4** | Compare DI1 by hand: the fan's Properties palette, Edit Type, and the five views its tags are in | each value as the palette shows it; the two *Classification.Uniclass.Pr.Number* rows in Edit Type; each tag's head where the view shows it |
 | **DI5** | The signature, on the owner's word only, from this worktree | `python brain/heron_validate.py accept report-parameter-inventory --by "Ajmal PS"`. **The draft quotes `record` whole** - about 50 KB lands in the card's proof block; say whether that is wanted before signing |
 | **DI6** | On **Revit 2024** and **2027**: a model whose element carries a same-name shared pair and a tag | the same answer. The 2022 tag members (`GetTaggedLocalElementIds`, `GetLeaderEnd`) were compiled against, not run |

@@ -9,7 +9,7 @@
 
 ### 2026-11-14 night — A NIGHT ON REVIT 2024 ALONE: SCRATCH MODELS HERON MADE, TEN DRAFTS AND SEVEN DEFECTS
 
-Written to the rule in [section 11](../HANDOVER.md#11-handover--2026-09-12): what is NEW, a MISTAKE worth not repeating,
+Written to the rule in [section 11](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#11-handover--2026-09-12): what is NEW, a MISTAKE worth not repeating,
 what is still TO DO. Branch `claude/pc-proofs-2024-2026-11-14`, cut from `main` at e6c7cb28 after PR #869 merged on
 the owner's admin-bypass yes. Revit 2024 on the owner's laptop, session 3592, add-in 0.2.0.0, *Ask to Keep* off; the
 owner asleep, his word: *test continuously, do not close Revit, keep anything needing a delete box or a click for the

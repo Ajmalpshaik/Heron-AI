@@ -49,7 +49,7 @@ fix, and `PLACE_VIEW_ON_SHEET` uses it.)
 2020-2027. `ScheduleFieldType.Formula` exists and `AddField(ScheduleFieldType)` accepts it at compile time,
 but **no member on any release gives a field its formula** - `ScheduleField` has none, and
 `TableCellCalculatedValueData` has only `GetName()`. This was first measured on 2026-09-07
-([31 - studying the existing libraries](../../31-studying-the-existing-libraries.md), *"A gap claim of my
+([31 research](../../31-research.md), *"A gap claim of my
 own, refuted by trying to build it"*) and is unchanged on 2025-2027. *Percentage:* **the reference does not
 confirm the forum claim for this one.** `ScheduleField.PercentageOf` and `PercentageBy` both have a setter
 on 2020-2027, and `ScheduleFieldType.Percentage` exists, so `AddField(ScheduleFieldType.Percentage)` and

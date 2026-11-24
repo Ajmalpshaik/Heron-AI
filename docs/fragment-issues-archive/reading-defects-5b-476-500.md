@@ -50,26 +50,6 @@
 
 ---
 
-### Row 5b-479
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`CREATE_VIEW_FILTER` COULD NEVER RUN: ITS `parameterId` IS AN `ElementId` THE ADD-IN BINDS BY NO NAME, SO EVERY CALL WAS REFUSED AT BINDING WHATEVER WAS TYPED - AND ITS RULE FACTORY SAT BEHIND A `#if REVIT2020` THAT AN ADD-IN BUILT BEFORE 2026-10-09 NEVER DEFINES.** The `create-view-filter` part of [row 5b-191](../FRAGMENT-ISSUES.md#): that row fixed the HINT, which now says *CANNOT BE TYPED BY NAME*, and left the fragment unreachable - `OneIdNamed` in [`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) has rules for `levelId`, `sheetId`, `phaseId`, `viewFamilyTypeId` and the like, and none for `parameterId`. Version 2's `moreRules` already found its parameters by the name Revit shows, so the fragment held the right lookup and did not use it for its own first rule. Its factories also split on an `#if` naming `REVIT2020`, `REVIT2021` and `REVIT2022`, the shape [row 5b-181](../FRAGMENT-ISSUES.md#) recorded: an add-in that passes no release symbols compiles the two-argument `CreateEqualsRule`, which 2020 to 2022 do not have. **Read in the source; no call had ever reached Revit.**
-
-**State.** **FIXED 2026-10-15 - version 3, DRAFT until Ajmal PS signs it ([DS7](../needs-checking/group-ds.md)).** Edited, not replaced - the same card, the same FRG id. [`fragment.cs`](../../brain/fragments/create-view-filter/impl/any/fragment.cs) takes `parameterName: string`, looked up among `ParameterFilterUtilities.GetFilterableParametersInCommon` for the given categories by label (`doc.GetElement`, `LabelUtils.GetLabelFor`) or by built-in name; none or two refuses and nothing is made. `matchValue` may lead with the Filters dialog's operator - equals, does not equal, contains, does not contain, begins with, does not begin with, ends with, does not end with - as `CREATE_VIEW_FILTERS_BY_RULE` version 2 reads one; none is equals. Every factory, the first rule's and `moreRules`', is reached by REFLECTION by method name - two arguments where they exist, otherwise three with `false` - so there is no `#if` left, and 2020 to 2022 are no longer case sensitive where version 2 passed `true`. Revit's own `ElementFilterIsAcceptableForParameterFilterElement` is asked before anything is created. Nothing had ever bound `parameterId`, so no caller broke: `tools/jobs/`, `tests/` and `mcp/` hold no call, only dated job-file comments that describe the old state, left as records. **Evidence:** `tools/check-fragments-compile.py` - every fragment compiles on all eight releases. On **Revit 2020** (session 25244), in "Project2", a new unsaved Systems-template project - [`create-view-filter-project2-revit2020-2026-10-15.yaml`](../../tools/jobs/create-view-filter-project2-revit2020-2026-10-15.yaml), `batch-prove` PASS: Levels, `parameterName` Name, `matchValue` *does not contain Level 1*, red, on `{3D}` - `created` id 918728, rolled back; `parameterName` System Classification - refused, *"no parameter the filter's categories share is called "System Classification" - nothing was made"*, `created` null. Second route: the positive KEPT (id 918729), then `REPORT_VIEW_FILTERS` on `{3D}` - the filter on it, red lines and fills, filters 10 to 11 - and `TEST_VIEW_FILTER_MATCH` on both levels - matched Level 2 only. **Not checked:** `moreRules` and `combine` on a model (DS7's own row), and Revit 2021 to 2027. **2026-10-15, later:** signed by Ajmal PS and set to PROVEN on his yes.
-
----
-
-### Row 5b-487
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **THE FAMILY METHOD NEVER ASKED FOR A FAMILY TO BE SAVED BEFORE A LARGE BUILD, AND NOTHING COULD SAY WHETHER IT HAD BEEN.** Seen 2026-10-14 on Revit 2020, building two fixed monitor families (a 55 and a 60 inch, each with a wall bracket) in families made from a template and never saved: asked whether the 60 inch family had been saved, the chat had no read that could tell - `REPORT_OPEN_DOCUMENTS` counted the family windows and listed none ([row 435](../FRAGMENT-ISSUES.md#)) - and `family-creation` step 0 said nothing about saving at all, while step 11 a already asks for Ctrl+S on a never-saved HOST before a nested part is made. A family closed with no file is lost with everything built in it, and Heron cannot prevent that: Revit will not save the document in front while Heron holds it, and SAVE_DOCUMENT saves only a document that already has a file (a house and two towers were lost unsaved on 2026-10-13, in projects).
-
-**State.** **FIXED in the method 2026-10-16, DRAFT like every step of it.** `family-creation` step 0 now says: where `REPORT_OPEN_DOCUMENTS` lists the family in front as NEVER SAVED and the build is large, ask the modeller once to save it (Ctrl+S) before the first write - Heron cannot save the family in front itself. Served whole by `heron_method("family-creation")`; a skill's text is indexed by no search (`tools/check-skill-routing.py` says why), so the line moves no routing. It rests on [row 435](../FRAGMENT-ISSUES.md#)'s version 2, which is what can see NEVER SAVED. Watching it happen is NEEDS-CHECKING [Group EI](../needs-checking/group-ei.md) EI8 - an observation, not a proof.
-
----
-
 ### Row 5b-490
 
 *Moved from the register on 2026-11-17.*
@@ -80,16 +60,6 @@
 
 ---
 
-### Row 5b-491
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **EVERY MCP TOOL'S DESCRIPTION REACHED THE HOST INDENTED FOUR SPACES A LINE ON PYTHON 3.12 - THE OWNER'S - SO THE SAME TOOL LIST COST MORE ON HIS PC THAN IN A CONTAINER, AND A SIZE READ OFF THE SOURCE WAS NOT THE SIZE A HOST WAS SERVED.** Found 2026-10-17 while building `python mcp/server/heron_tools.py --sizes` ([04 §8.8](../04-heron-mcp.md)). The SDK takes a tool's description as `fn.__doc__` stands (`func_doc = description or fn.__doc__ or ""`, `mcpserver/tools/base.py`), and Python 3.13 strips a docstring's common indentation when it compiles it where 3.11 and 3.12 keep it. Measured on `main` through the SDK's own `list_tools`, in a cloud container: 47,170 characters of description on Python 3.12.3 (SDK 2.3.0) against 44,246 on 3.13.16 (SDK 2.2.0) - 3,014 of them indentation, 456 in the six tools every chat is given before it asks. CI runs 3.11 and has no SDK, so nothing compared the two.
-
-**State.** **FIXED 2026-10-17 in the change that added `--sizes`.** `_Labelled.tool` hands the SDK `inspect.cleandoc(fn.__doc__)`, which is the text `ast.get_docstring` returns, so the description is the same on every Python and `--sizes` measures off the source what a host is handed: 36,560 characters on both 3.12.3 and 3.13.16 after the change's trims. `tests/test_mcp_serves.py` holds served and measured equal through a real SDK - **FAIL** against `main`'s server (45 tools differ), ok on the change. What it costs on the owner's own PC was derived from his Python's version, not measured there.
-
----
-
 ### Row 5b-496
 
 *Moved from the register on 2026-11-17.*
@@ -97,25 +67,3 @@
 **Defect.** **TWO SUITES GO RED ON MAIN ONCE `model2vec` IS INSTALLED - `tests/test_routing_phrases.py` FAILS FOUR CHECKS AND `tests/test_retrieve.py` ONE - AND BOTH EXIT 3 OR PASS WITHOUT IT, SO CI AND A PLAIN CONTAINER NEVER SEE IT.** Found 2026-10-17 in a cloud container while building D-119's Keep or Discard path, which touches no fragment and no retrieval: after `pip install --user model2vec` (0.10.0, `minishlab/potion-base-8M`) a clean worktree of main at `37ccfbd` fails exactly as the branch does. `test_routing_phrases.py`: *'change the area scheme name from rentable to lettable' -> CREATE_AREA_PLAN* (5b-337), *'line the viewports up' -> REPORT_VIEWPORT_TYPES* (146), and *'is project north rotated from true north' -> SET_PROJECT_LOCATION, ADMIN* (5b-346) twice. `test_retrieve.py` section 1: *'the two sentences now AGREE on 1 of 5 (FRG-MEP-003)'*. Before the install the same container ran `test_retrieve.py` green and `test_routing_phrases.py` as exit 3. Not measured: whether the owner's PC, on its own store and model, fails the same five.
 
 **State.** **MOVED TO ISSUE [#958](https://github.com/Ajmalpshaik/Heron-AI/issues/958) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN - recorded, not repaired.** The sentences and their rankings are routing work for whoever owns those cards; this row only says both suites are red where they can run.
-
----
-
-### Row 5b-499
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`ISOLATE_ELEMENTS` IS DECLARED EXECUTE AND ITS CODE ASSUMES AN OPEN TRANSACTION.** Its header says so - *"ASSUMES AN OPEN TRANSACTION (Golden Rule 16)"* - because `View.IsolateElementsTemporary` is refused by Revit outside one. EXECUTE says it changes only what is shown, and the show door, which opens none, is where an EXECUTE fragment now goes; there Revit refuses it in its own words. Through `revit_change` it runs, but only with Changes ON - for a job that changes only the screen. `HIDE_ELEMENTS`, `SHOW_ELEMENTS` and `HIGHLIGHT_VS_REST` are MODIFY and are not in question.
-
-**State.** **FIXED 2026-10-17 - re-declared MODIFY, [D-125](../DECISIONS.md) item 3.** A fragment whose code needs Heron's transaction says the level that gives it one. Its `impl/` did not move, so its proof - taken on the write path and rolled back - stands. Sent to the show door it is now refused before anything is sent, and that refusal names `revit_isolate_temporary`, which does the job with Changes off; through `revit_change` it runs as before. Observed by NEEDS-CHECKING [Group ES](../needs-checking/group-es.md) ES11.
-
----
-
-### Row 5b-500
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`SELECT_FROM_LINK` DECLARES "SELECT ELEMENTS INSIDE A LINKED MODEL" AND SELECTS NOTHING - IT READS.** Found 2026-10-17 by `tools/check-routing.py` after `ZOOM_TO_LINKED_ELEMENTS` was added: on the keyword route the new fragment now ranks first for that sentence and for SELECT_FROM_LINK's *"read the elements from this link"*, and above `ZOOM_TO_ELEMENTS` for its *"zoom to these"*. **The identity route still answers all three with their own fragment** - `heron_retrieve` names FRG-SEL-020, FRG-SEL-020 and FRG-SEL-030, PROVEN - so a host asking any of them gets what it got before; the ranking is a report, and no utterance was weakened to buy it back.
-
-**State.** **FIXED 2026-10-17.** The phrase moved to `ZOOM_TO_LINKED_ELEMENTS`, which puts linked elements in the selection, and `SELECT_FROM_LINK`'s card says where it went. A card's utterances are outside `impl/`, so `SELECT_FROM_LINK`'s proof stands. While `ZOOM_TO_LINKED_ELEMENTS` is DRAFT the identity route OFFERS it rather than running it unasked, which is the right answer for a run nobody has watched.
-
----

@@ -216,7 +216,7 @@ And sample size travels with the score. **3/3 is not 100%.**
 ## 7. The other trust question — **who is speaking**
 
 **Added 2026-09-09, from reading [`alibaba/open-code-review`](https://github.com/alibaba/open-code-review)
-at file level ([33 §5.13](33-external-repository-research.md)).** It ships an `ASSURANCE_CASE.md` whose
+at file level ([31 research](31-research.md)).** It ships an `ASSURANCE_CASE.md` whose
 first table is not a lifecycle at all:
 
 | their actor | their trust level |

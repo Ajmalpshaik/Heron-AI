@@ -44,14 +44,14 @@ on a scratch family made for it, never on a family somebody is building; with `H
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**DA1**~~ | RUN, BOTH HALVES HELD 2026-10-17 - Revit 2024.3 on the laptop, session 44252, "Heron Forms Scratch"… — [full row](../needs-checking-archive/group-da.md#row-da1) | positive: `formCount` 10, `formIds` ten ids, `built` ten entries with their extents and… |
-| ~~**DA2**~~ | RUN, PASS 2026-10-17 - Revit 2024.3, session 14196. — [full row](../needs-checking-archive/group-da.md#row-da2) | the same ten built and KEPT; `REPORT_FAMILY_FORMS` lists ten forms with the same ids, in… |
-| ~~**DA3**~~ | RUN, PASS 2026-10-17 - Revit 2024.3, session 44252 — [full row](../needs-checking-archive/group-da.md#row-da3) | each refused with nothing built - the row named and the least depth said, a row is an… |
+| ~~**DA1**~~ | RUN, BOTH HALVES HELD 2026-10-17 - Revit 2024.3 on the laptop, session 44252, "Heron Forms Scratch"… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | positive: `formCount` 10, `formIds` ten ids, `built` ten entries with their extents and… |
+| ~~**DA2**~~ | RUN, PASS 2026-10-17 - Revit 2024.3, session 14196. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | the same ten built and KEPT; `REPORT_FAMILY_FORMS` lists ten forms with the same ids, in… |
+| ~~**DA3**~~ | RUN, PASS 2026-10-17 - Revit 2024.3, session 44252 — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | each refused with nothing built - the row named and the least depth said, a row is an… |
 | **DA4** | **RUN, THE ROLLED-BACK HALF PASS 2026-10-17 - Revit 2024.3, session 44252, "Heron Forms Scratch 2"** - all ten calls' `built` read the same extents and solid volumes as DA1's ten entries (call 9: 0.524 L, where the list wrote 523,598.7 mm³). The kept half is still owed. the second route: the same ten built one call at a time with the single-form tools on a second scratch family - **rolled back for now, see *Run it* below** | the two families' `REPORT_FAMILY_FORMS` read the same kinds, extents and volumes; ten undo entries there, one here |
-| ~~**DA5**~~ | RUN, PASS 2026-10-17 - Revit 2024.3, session 44252: — [full row](../needs-checking-archive/group-da.md#row-da5) | the time the call takes inside Revit (the audit log's `ms`), against the 11 batches it… |
-| ~~**DA6**~~ | RUN, PASS 2026-10-17 on Revit 2020.2 (session 33916) and 2027.3 (session 42696) — [full row](../needs-checking-archive/group-da.md#row-da6) | the same answers - what Revit DOES has been measured on 2024 only, if at all |
-| ~~**DA8**~~ | RUN, PASS 2026-10-17 - the laptop, Revit 2024.3, session 44252 — [full row](../needs-checking-archive/group-da.md#row-da8) | positive: built on the FIRST call, no copy into Revit's folder; negative: refused naming… |
-| ~~**DA7**~~ | DONE 2026-10-17 - signed by Ajmal PS and promoted to PROVEN, merged in pull request #624 — [full row](../needs-checking-archive/group-da.md#row-da7) | `python brain/heron_validate.py accept create-family-forms --by "Ajmal PS"` on DA1's… |
+| ~~**DA5**~~ | RUN, PASS 2026-10-17 - Revit 2024.3, session 44252: — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | the time the call takes inside Revit (the audit log's `ms`), against the 11 batches it… |
+| ~~**DA6**~~ | RUN, PASS 2026-10-17 on Revit 2020.2 (session 33916) and 2027.3 (session 42696) — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | the same answers - what Revit DOES has been measured on 2024 only, if at all |
+| ~~**DA8**~~ | RUN, PASS 2026-10-17 - the laptop, Revit 2024.3, session 44252 — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | positive: built on the FIRST call, no copy into Revit's folder; negative: refused naming… |
+| ~~**DA7**~~ | DONE 2026-10-17 - signed by Ajmal PS and promoted to PROVEN, merged in pull request #624 — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `python brain/heron_validate.py accept create-family-forms --by "Ajmal PS"` on DA1's… |
 
 ### Run it - inputs prepared 2026-10-17 in a cloud session, NONE OF IT RUN
 

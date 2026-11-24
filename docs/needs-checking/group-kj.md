@@ -61,10 +61,10 @@ run below is rolled back except KJ5's one run. The job file is
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**KJ0**~~ | Open. "test projject" open and in front in Revit 2024, Changes on at the ribbon — [full row](../needs-checking-archive/group-kj.md#row-kj0) | The title bar reads test projject CLOSED 2026-11-04, not passed - the card was retired… |
-| ~~**KJ1**~~ | Check the arrangement. At least one Basic Wall drawn in the host model, not in a link; no schedule… — [full row](../needs-checking-archive/group-kj.md#row-kj1) | A wall selected in the host shows a Basic Wall type in Properties. |
-| ~~**KJ2**~~ | Read the category list - also the "none named" negative. `create-material-takeoff` with `--write`… — [full row](../needs-checking-archive/group-kj.md#row-kj2) | Nothing made; refused No category was named ... |
-| ~~**KJ3**~~ | The D-30 positive, and its negative - THE NEGATIVE FIRST. The job file — [full row](../needs-checking-archive/group-kj.md#row-kj3) | Negative: `category` Grids - nothing made, refused naming Grids, `validCategories` filled. |
-| ~~**KJ4**~~ | The refusals and the reports. KJ3's positive with `fieldNames` "Material: Name,Colour Of Moon"… — [full row](../needs-checking-archive/group-kj.md#row-kj4) | First: made, Colour Of Moon in `missingFields`, `fieldsAvailable` listing the material… |
-| ~~**KJ5**~~ | Kept, through `try-once`, on the modeller's yes. KJ3's positive on a saved copy — [full row](../needs-checking-archive/group-kj.md#row-kj5) | Keep or Discard. |
-| ~~**KJ6**~~ | Revit 2020. KJ3 again — [full row](../needs-checking-archive/group-kj.md#row-kj6) | The same answers. |
+| ~~**KJ0**~~ | Open. "test projject" open and in front in Revit 2024, Changes on at the ribbon — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The title bar reads test projject CLOSED 2026-11-04, not passed - the card was retired… |
+| ~~**KJ1**~~ | Check the arrangement. At least one Basic Wall drawn in the host model, not in a link; no schedule… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | A wall selected in the host shows a Basic Wall type in Properties. |
+| ~~**KJ2**~~ | Read the category list - also the "none named" negative. `create-material-takeoff` with `--write`… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Nothing made; refused No category was named ... |
+| ~~**KJ3**~~ | The D-30 positive, and its negative - THE NEGATIVE FIRST. The job file — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Negative: `category` Grids - nothing made, refused naming Grids, `validCategories` filled. |
+| ~~**KJ4**~~ | The refusals and the reports. KJ3's positive with `fieldNames` "Material: Name,Colour Of Moon"… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | First: made, Colour Of Moon in `missingFields`, `fieldsAvailable` listing the material… |
+| ~~**KJ5**~~ | Kept, through `try-once`, on the modeller's yes. KJ3's positive on a saved copy — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Keep or Discard. |
+| ~~**KJ6**~~ | Revit 2020. KJ3 again — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The same answers. |

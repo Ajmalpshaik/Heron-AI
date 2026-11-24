@@ -257,7 +257,7 @@ of it.
 
 #### And three more chunker-time decisions, added 2026-09-10
 
-All from [the field reading, recorded in docs/34 §2.23](../../../34-patterns-adapted.md#223-built---a-chunk-carries-its-heading-path-read-off-the-document-and-a-rule-is-never-cut-from-its-exception), all designed
+All from [the field reading, recorded in docs/34 §2.23](../../../31-research.md#72-a-chunk-carries-its-heading-path-and-a-rule-is-never-cut-from-its-exception), all designed
 in [`00-structure.md` §3.8](00-structure.md), and **all cheap here and expensive anywhere else.**
 
 | | Do | Test it with |
@@ -395,7 +395,7 @@ labelled answers**, and an attempt to express it as one query still raises.
 
 **This stage begins with a count, not with code.**
 
-[`34 §2.13`](../../../34-patterns-adapted.md) measured a third retrieval stream at six settings and
+[31 research](../../../31-research.md) measured a third retrieval stream at six settings and
 **all six lost**, because Heron's graph is dense — median 50 neighbours per fragment, worst 230. A
 document graph is a different graph, so the finding does not transfer automatically. **The test that
 decides it does.**
