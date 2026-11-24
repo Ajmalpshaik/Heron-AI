@@ -188,15 +188,11 @@ def main():
                   encoding="utf-8").read().lower()
     check("derived" in backup,
           "...and tools/heron-backup.py really talks about derived state")
-    import heron_healing as HEA
+    # The repair rule is still declared; the agent that carried it out,
+    # HERON-OPS-HEA-006 (heron_healing.py), was retired by D-198.
     check(PATHS.OPERATIONS["repair"][PATHS.DERIVED] is True
           and PATHS.OPERATIONS["repair"][PATHS.DATA] is False,
-          "repair covers derived and not data...")
-    check(HEA.repair("docs/DECISIONS.md").get("refused")
-          == "NOT_KNOWN_TO_BE_DERIVED",
-          "...and HERON-OPS-HEA-006 really refuses a source of truth")
-    check(HEA.repair("docs/agent-map.html").get("repaired") is True,
-          "and really repairs a derived one")
+          "repair covers derived and not data")
 
     print()
     print("6. HERON-OPS-UPD-010 asks this agent")

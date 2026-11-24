@@ -162,7 +162,7 @@ and says so where it does it.
 
 Settled by the owner on 2026-09-16, [D-79](DECISIONS.md), closing [F15](PROPOSALS.md). Before that date
 two documents disagreed about the parts and **no document gave a shape at all**, so
-[`HERON-NAM-VAL-002`](../brain/heron_naming.py) refused this one kind rather than guess — a guess would
+`HERON-NAM-VAL-002` refused this one kind rather than guess — a guess would
 have BECOME the convention by being the only thing enforcing one.
 
     <domain>-<capability>-<purpose>-<platform>-<component>-v<n>
@@ -204,8 +204,8 @@ So the two agents do different things and the answer says which:
 
 | agent | what it can do |
 |---|---|
-| [`HERON-NAM-GEN-001`](../brain/heron_naming.py) | **generates**, because it is handed the six parts |
-| [`HERON-NAM-VAL-002`](../brain/heron_naming.py) | **checks the shape** — and reports that it checked the shape, never that it checked the parts |
+| `HERON-NAM-GEN-001` | **generates**, because it is handed the six parts |
+| `HERON-NAM-VAL-002` | **checks the shape** — and reports that it checked the shape, never that it checked the parts |
 
 **Single-token parts were considered and rejected.** They would make a name decomposable
 (`mep-ductinsulation-check-revit-fitting-v1`) at the cost of the one thing

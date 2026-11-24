@@ -229,12 +229,9 @@ def one(where):
               "page whose only value is that its findings are real")
     finally:
         os.unlink(caller)
-    passed = [row for row in rows if row["agent"] == "HERON-IMP-FEX-004"]
-    check(passed and "NOT_A_FOLDER" in passed[0]["failures"]
-          and not passed[0]["unreachable"],
-          "HERON-IMP-FEX-004 declares NOT_A_FOLDER, never writes it, and is "
-          "not accused - HERON-IMP-FIL-002 produces it and FEX-004 hands "
-          "the answer back")
+    # The real example of a pass-through, HERON-IMP-FEX-004 handing back
+    # HERON-IMP-FIL-002's NOT_A_FOLDER, was retired by D-198 with its
+    # module. The staged caller above checks the same rule.
 
     print("\n5. everything else is asked of the contract's owner")
     logic = io.open(os.path.join(ROOT, "tools",
