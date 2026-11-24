@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -192,43 +192,43 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-23'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: louvre-scratch (1,598 elements), Revit 2020, session 49564
-  positive_case: run ONCE on the live model through the Keep or Discard box in Revit (D-119)
-    on 2026-11-23; the modeller saw the result in Revit and pressed Keep, and Revit kept it
-    as one undo step. returned arrayId 6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b34, arrayView
-    Func`1, axis 2, axisLetters 3 item(s) [X, Y, Z], dbNamespace Autodesk.Revit.DB, describe
-    Func`2, driver FamilyParameter, faceWord Func`3, findings 2 item(s) [Arrayed the solid
-    extrusion 9bc1f173-118f-46a0-8986-057ae741..., When a type's count changes, Revit remakes
-    the copies, and t...], flags BindingFlags, halfMillimetre 0.00164041994750656, heldBy
-    Func`2, insertionOf Func`2, invariant CultureInfo, isInteger Func`2, labelled true, labelledPlaneOf
-    Func`2, lowest Func`3, memberForms 6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b2a,6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b3a,6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b46,6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b52,
-    members 6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b32,6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b42,6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b4e,6cc5b335-b2e2-426d-926a-1d20224c1cb2-00000b5a,
+  model: PX Box (1,576 elements), Revit 2020, session 29500
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned arrayId 3601d8ce-680f-4a04-996d-4da53c07106e-00000b07,
+    arrayView Func`1, axis 2, axisLetters 3 item(s) [X, Y, Z], dbNamespace Autodesk.Revit.DB,
+    describe Func`2, driver FamilyParameter, faceWord Func`3, findings 2 item(s) [Arrayed
+    the solid extrusion 6fcb91fb-164c-4fa4-9ca4-17488d88..., When a type's count changes,
+    Revit remakes the copies, and t...], flags BindingFlags, groupedIn Func`2, halfMillimetre
+    0.00164041994750656, heldBy Func`2, insertionOf Func`2, invariant CultureInfo, isInteger
+    Func`2, labelled true, labelledPlaneOf Func`2, lowest Func`3, memberForms 3601d8ce-680f-4a04-996d-4da53c07106e-00000aff,3601d8ce-680f-4a04-996d-4da53c07106e-00000b0d,3601d8ce-680f-4a04-996d-4da53c07106e-00000b17,3601d8ce-680f-4a04-996d-4da53c07106e-00000b21,
+    members 3601d8ce-680f-4a04-996d-4da53c07106e-00000b06,3601d8ce-680f-4a04-996d-4da53c07106e-00000b14,3601d8ce-680f-4a04-996d-4da53c07106e-00000b1e,3601d8ce-680f-4a04-996d-4da53c07106e-00000b28,
     n 5, notAFamily false, original Extrusion, originalForm Extrusion, ownerView (null), ownerless
     false, plain Func`2, problems 0 item(s), refused (null), revitAssembly RuntimeAssembly,
     sameKind Func`3, shapeOf Func`2, sketchPlaneOf Func`2, stepMm 45, toLast false, unitAlong
     Func`2, unnamedPlane Func`2. inputs came form as given; count as given; step as given.
-    on louvre-scratch
-  negative_case: 'run with form=9bc1f173-118f-46a0-8986-057ae7412ca8-00000a8f, count=Blade_Count,
+    on PX Box
+  negative_case: 'run with form=3601d8ce-680f-4a04-996d-4da53c07106e-00000acb, count=Blade_Count,
     step=X 45 instead - chosen because it should not contain what this fragment reports -
     run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
     returned arrayId , arrayView Func`1, axis 0, axisLetters 3 item(s) [X, Y, Z], dbNamespace
     Autodesk.Revit.DB, describe Func`2, driver FamilyParameter, faceWord Func`3, findings
-    1 item(s) [Nothing was arrayed. A copy of this extrusion cannot leave t...], flags BindingFlags,
-    halfMillimetre 0.00164041994750656, heldBy Func`2, insertionOf Func`2, invariant CultureInfo,
-    isInteger Func`2, labelled false, labelledPlaneOf Func`2, lowest Func`3, memberForms ,
-    members , n 5, notAFamily false, original Extrusion, originalForm Extrusion, ownerView
-    (null), ownerless false, plain Func`2, problems 1 item(s) [A copy of this extrusion cannot
-    leave the plane it is sketch...], refused Nothing was arrayed. A copy of this extrusion
-    cannot leave the plane it is sketched on, Center (Left/Right), and a row along X leaves
-    it: a trial row of 3, rolled back, moved its copies 0 and 0 mm of the 45 and 90 mm asked,
-    so every copy would sit on the original. A row along Y or Z stays in that plane. For a
-    row along X, sketch the form on a plane the row runs along - Ref. Level or Center (Front/Back)
-    in Revit''s own templates - or, with a fixed count, make each one its own form at its
-    own place., revitAssembly RuntimeAssembly, sameKind Func`3, shapeOf Func`2, sketchPlaneOf
-    Func`2, stepMm 45, toLast false, unitAlong Func`2, unnamedPlane Func`2. inputs came form
-    as given; count as given; step as given. on louvre-scratch'
+    1 item(s) [Nothing was arrayed. The solid extrusion 3601d8ce-680f-4a04-...], flags BindingFlags,
+    groupedIn Func`2, halfMillimetre 0.00164041994750656, heldBy Func`2, insertionOf Func`2,
+    invariant CultureInfo, isInteger Func`2, labelled false, labelledPlaneOf Func`2, lowest
+    Func`3, memberForms , members , n 5, notAFamily false, original Extrusion, originalForm
+    Extrusion, ownerView (null), ownerless false, plain Func`2, problems 1 item(s) [The solid
+    extrusion 3601d8ce-680f-4a04-996d-4da53c07106e-000...], refused Nothing was arrayed. The
+    solid extrusion 3601d8ce-680f-4a04-996d-4da53c07106e-00000acb is already a copy in the
+    array 3601d8ce-680f-4a04-996d-4da53c07106e-00000ad3 - 3 in all - and sits inside the group
+    "Array Group 1" 3601d8ce-680f-4a04-996d-4da53c07106e-00000ad2, that array''s member. A
+    form already in an array is not arrayed again. The array''s original is the solid extrusion
+    6fcb91fb-164c-4fa4-9ca4-17488d88393c-00000a90. To change how many there are, change the
+    array''s count: the number Revit shows on the array when a copy is selected. For a second
+    row, name a form that is in no array or group., revitAssembly RuntimeAssembly, sameKind
+    Func`3, shapeOf Func`2, sketchPlaneOf Func`2, stepMm 45, toLast false, unitAlong Func`2,
+    unnamedPlane Func`2. inputs came form as given; count as given; step as given. on PX Box'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
@@ -236,8 +236,8 @@ proof:
     revit_release: '2020'
     revit_build: 20191106_1200(x64)
     addin_version: 0.3.0.0
-    addin_hash: 3545dba0dc8cd0c7
-  fingerprint: 178d534c3db8b97a
+    addin_hash: dc82efa01aa2e93e
+  fingerprint: 39f8741ebad6e9a7
   releases:
   - release: '2024'
     date: '2026-11-12'

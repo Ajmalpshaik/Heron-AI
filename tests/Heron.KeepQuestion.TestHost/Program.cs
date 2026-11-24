@@ -187,19 +187,55 @@ namespace Heron.KeepQuestion.TestHost
 
             Console.WriteLine();
             Console.WriteLine("5. what the chat is told after a Discard");
-            var gone = HeronKeepQuestion.Discarded("CREATE_LEVEL", true, true);
+            var gone = HeronKeepQuestion.Discarded("CREATE_LEVEL", true, true,
+                                                   HeronKeepQuestion.AnswerDiscard);
             Check(gone.Contains("NOTHING WAS KEPT") && gone.Contains("no new undo entry"),
                   "a Discard Revit rolled back says nothing was kept and no undo entry was made");
             Check(gone.Contains("selection was put back"), "and that their selection is back");
             Check(gone.Contains("not a failure") && gone.Contains("only if they ask")
                   && !gone.Contains("with apply"),
                   "and that it is their decision, never to be sent again on its own (Article 25)");
-            Check(HeronKeepQuestion.Discarded("CREATE_LEVEL", true, false).Contains("could not be put back"),
+            Check(HeronKeepQuestion.Discarded("CREATE_LEVEL", true, false,
+                                              HeronKeepQuestion.AnswerDiscard)
+                      .Contains("could not be put back"),
                   "a selection that could not be restored is said, not hidden");
 
-            var unsure = HeronKeepQuestion.Discarded("CREATE_LEVEL", false, true);
+            var unsure = HeronKeepQuestion.Discarded("CREATE_LEVEL", false, true,
+                                                     HeronKeepQuestion.AnswerDiscard);
             Check(unsure.Contains("MAY STILL HOLD") && !unsure.Contains("NOTHING WAS KEPT"),
                   "a Discard Revit did not report rolled back never claims nothing was kept");
+
+            // ROW 5b-1991: ONLY A PRESSED DISCARD IS THE MODELLER'S CHOICE.
+            Check(gone.Contains("The modeller chose Discard"),
+                  "a pressed Discard is called the modeller's choice");
+            foreach (var other in new[] { HeronKeepQuestion.AnswerClosed,
+                                          HeronKeepQuestion.AnswerNotShown, null, "" })
+            {
+                foreach (var held in new[] { true, false })
+                {
+                    var told = HeronKeepQuestion.Discarded("CREATE_LEVEL", held, true, other);
+                    Check(!told.Contains("chose Discard") && !told.Contains("their decision, not"),
+                          "a box ended by '" + (other ?? "null") + "' (held " + held + ") is never "
+                          + "called the modeller's Discard - row 5b-1991");
+                    Check(held ? told.Contains("NOTHING WAS KEPT") && !told.Contains("MAY STILL HOLD")
+                               : told.Contains("MAY STILL HOLD") && !told.Contains("NOTHING WAS KEPT"),
+                          "and it says whether the rollback held, as a Discard does");
+                }
+            }
+            var closed = HeronKeepQuestion.Discarded("CREATE_LEVEL", true, true,
+                                                     HeronKeepQuestion.AnswerClosed);
+            Check(closed.Contains("closed without Keep or Discard being chosen")
+                  && closed.Contains("did not press Discard") && closed.Contains("Ask them"),
+                  "a box closed with no link chosen says so, and the chat asks before sending again");
+            var notShown = HeronKeepQuestion.Discarded("CREATE_LEVEL", true, true,
+                                                       HeronKeepQuestion.AnswerNotShown);
+            Check(notShown.Contains("could not be shown") && notShown.Contains("NOT asked")
+                  && notShown.Contains("not the modeller's decision"),
+                  "a box that never appeared says nobody was asked");
+            Check(HeronKeepQuestion.AnswerDiscard == "discard"
+                  && HeronKeepQuestion.AnswerClosed == "closed"
+                  && HeronKeepQuestion.AnswerNotShown == "not_shown",
+                  "the answer words are the ones the reply and the Python side read");
 
             Console.WriteLine();
             Console.WriteLine("6. the view zoomed to the change - the owner's ask, 2026-10-18");
