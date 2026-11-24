@@ -139,6 +139,10 @@ def registry():
             # fact; `deferred` holds the decision id, which is what gets
             # printed, so a reader can go and disagree with it.
             deferred=_deferred(cols[3]),
+            # RETIRED, the same rule: only with a decision's name on it. A
+            # retired agent was built and then removed on purpose, so it is
+            # neither BUILT nor LEFT (D-198).
+            retired=_retired(cols[3]),
         )
     return agents, headings, stated_totals
 
@@ -152,6 +156,16 @@ DEFERRED = re.compile(r"\bDEFERRED\b[^.]{0,60}?\[(D-\d+)\]")
 def _deferred(cell):
     """The decision deferring this agent, or None. Never a bare promise."""
     found = DEFERRED.search(cell or "")
+    return found.group(1) if found else None
+
+
+# "**RETIRED 2026-11-24 by [D-198](decisions/D-198.md)**" - as DEFERRED above.
+RETIRED = re.compile(r"\bRETIRED\b[^.]{0,60}?\[(D-\d+)\]")
+
+
+def _retired(cell):
+    """The decision retiring this agent, or None. Never a bare word."""
+    found = RETIRED.search(cell or "")
     return found.group(1) if found else None
 
 
@@ -269,6 +283,12 @@ def main():
             d["built"] += 1
             if a["tier"] == "T1":
                 d["t1built"] += 1
+        elif a["retired"]:
+            # RETIRED BY A DECISION: built once, removed on purpose (D-198).
+            # Not LEFT - nobody is to build it - and printed by name below.
+            d["retired"] += 1
+            if a["tier"] == "T1":
+                d["t1retired"] += 1
         elif a["deferred"]:
             # NOT BUILT AND NOT OUTSTANDING. Counted apart so LEFT stays a
             # list somebody can finish, and printed by name below so the
@@ -292,10 +312,11 @@ def main():
 
     grand = collections.Counter()
     for name, c in rows:
-        left = c["total"] - c["built"] - c["host"] - c["defer"]
-        t1left = c["T1"] - c["t1built"] - c["t1defer"]
+        left = c["total"] - c["built"] - c["host"] - c["defer"] - c["retired"]
+        t1left = c["T1"] - c["t1built"] - c["t1defer"] - c["t1retired"]
         grand.update(dict(total=c["total"], built=c["built"], host=c["host"],
-                          defer=c["defer"], left=left, t1left=t1left,
+                          defer=c["defer"], retired=c["retired"], left=left,
+                          t1left=t1left,
                           T1=c["T1"], T2=c["T2"], T3=c["T3"]))
         w("%-*s %6d %6d %5s %6s %6d %8d\n" % (
             widest, name, c["total"], c["built"],
@@ -355,6 +376,14 @@ def main():
         w("  Each names the decision deferring it. When what it is waiting "
           "for exists,\n  the decision is what has to change first.\n")
 
+    retired = sorted(aid for aid, a in agents.items()
+                     if a["retired"] and aid not in claims and aid not in hosts)
+    if retired:
+        w("\nRETIRED BY A DECISION  (built once, removed on purpose - not outstanding)\n")
+        for aid in retired:
+            w("  %-26s %-5s %s\n"
+              % (aid, agents[aid]["retired"], agents[aid]["name"]))
+
     # --- the gates --------------------------------------------------------
     # 1. Every department heading must match the rows beneath it.
     for name, claimed in headings:
@@ -409,6 +438,8 @@ def main():
           "second opinion, not a finding.)\n")
     else:
         for aid in sorted(set(was) - set(claims)):
+            if aid in agents and agents[aid]["retired"]:
+                continue  # removed on purpose, and the registry row says by which decision
             problems.append(
                 "'%s' was claimed by %s in the last commit and is claimed by "
                 "nothing now. Either it was deleted on purpose, or a file was "
@@ -426,9 +457,9 @@ def main():
     # `%d agents` and `%d left` off it. `deferred` sits between them and is
     # named, so the page a person reads to know what remains says both.
     w("Register reconciles: %d agents, %d built, %d host-provided, "
-      "%d deferred, %d left.\n"
+      "%d deferred, %d retired, %d left.\n"
       % (grand["total"], grand["built"], grand["host"], grand["defer"],
-         grand["left"]))
+         grand["retired"], grand["left"]))
     return 0
 
 

@@ -4,10 +4,10 @@
 > decisions closed and the register stopped being the bottleneck.
 >
 > **As built (2026-10-18): BUILT, NOT RUN AGAINST A PROVIDER.** The first adapter §3 asks for was built
-> the same day (#168, commit `c4aed3b1`): [`brain/heron_provider.py`](../brain/heron_provider.py) - one
+> the same day (#168, commit `c4aed3b1`): `brain/heron_provider.py` - one
 > `LOCAL` adapter for Ollama at `127.0.0.1:11434` (`HERON_OLLAMA_URL` moves it), standard library only,
 > with `probe`, `call`, `usage_tokens` and `register`. Its `call` takes a model and a prompt, not §2.4's
-> intent-shaped signature. [`tests/test_provider.py`](../tests/test_provider.py) runs it over real
+> intent-shaped signature. `tests/test_provider.py` runs it over real
 > sockets - a refused connection with nothing listening, a 401, a late answer - and its first run found
 > the kind of shape mismatch §6 predicted, in `counts_as_evidence()` rather than `record()`: it read keys
 > the adapter's result did not carry (NEEDS-CHECKING [K3](needs-checking/group-k.md)). **K3 is still NOT RUN:** it needs Ollama installed
@@ -17,7 +17,7 @@
 > **2026-11-16: `judge()` is the adapter's own now.** `HERON-KRN-MAV-017` was cut to its register row -
 > whether a provider is reachable, and the fallback when it is not, are the host's
 > ([D-65](decisions/D-65.md)) - and keeps only the degraded mark and `counts_as_evidence()`. Its
-> `judge()` moved, logic unchanged, into [`heron_provider.py`](../brain/heron_provider.py) beside the probe
+> `judge()` moved, logic unchanged, into `heron_provider.py` beside the probe
 > it reads, and its `resolve()` is gone ([row 5b-1747](fragment-issues/row-5b-1747.md)). Where this page
 > says `heron_availability.judge()`, the function is `heron_provider.judge()`; the sections below are
 > left as they were written. Whether this adapter should probe, judge or call a provider at all, against
@@ -25,7 +25,7 @@
 
 ### At a glance — the adapter as built, and what nothing uses yet
 
-Read from [`heron_provider.py`](../brain/heron_provider.py) on 2026-10-18: it registers with the router,
+Read from `heron_provider.py` on 2026-10-18: it registers with the router,
 hands `judge()` the keys it reads, and adds up only the token counts a provider reported. A search for
 `heron_provider` finds it imported by its own test and nothing else.
 
@@ -88,7 +88,7 @@ included. The note at the top says what was built that day.)*
 
 ## 1. What is actually missing, exactly
 
-`HERON-KRN-MDL-010` — [`brain/heron_router.py`](../brain/heron_router.py) — answers *which adapter*:
+`HERON-KRN-MDL-010` — `brain/heron_router.py` — answers *which adapter*:
 
 ```python
 return {"adapter": name, "reason": "..."}

@@ -1098,10 +1098,10 @@ cleaning up - while the modeller's own request always goes first. The parts give
 | [Part 2 §50](../00b-master-specification-agent-os.md) | P0 User interaction · P1 Required execution · P2 Required validation · P3 Maintenance · P4 Learning · P5 Optimization · P6 Cleanup |
 | [Part 3 §52](../00c-master-handover-baseline.md) | P0 User Task · P1 Required Validation · P2 System Health · P3 Knowledge Maintenance · P4 Learning · P5 Optimization · P6 Cleanup |
 | [Part 4 §22](../00d-additional-requirements.md) | Priority 1 User request · 2 Required validation · 3 System maintenance · 4 RAG indexing · 5 Learning |
-| The code: `PRIORITIES` in [`heron_queue.py`](../../brain/heron_queue.py) | Part 2's, from [21 §12](../21-resilience-and-operations.md) |
+| The code: `PRIORITIES` in `heron_queue.py` | Part 2's, from [21 §12](../21-resilience-and-operations.md) |
 
 **What all four agree on:** the user's work comes first, and background work waits for it.
-[`heron_scheduler.py`](../../brain/heron_scheduler.py) holds that as *nothing from P2 to P6 runs during a
+`heron_scheduler.py` holds that as *nothing from P2 to P6 runs during a
 user task*. **Where they differ:** whether *required execution* is a level of its own, where validation
 sits, whether *system health* and *RAG indexing* are named, and how many levels there are. No decision picks
 one; 21 §12 follows Part 2, and the code follows 21 §12. Neither module is reached by any tool the server

@@ -1,0 +1,78 @@
+# Re-proving ten STALE cards (signed, then their code changed) - run 2026-11-24
+# on Revit 2024 (build 24.3.50.51, add-in 0.2.0.0, session 11112).
+# RESULT ON THAT RUN: PASS on all six jobs below, both halves, every run rolled
+# back. Drafts were written on that PC and are NOT signed - the owner signs.
+#
+#     python tools/batch-prove.py tools/jobs/prove-ten-stale-snowdon-revit2024-2026-11-24.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/prove-ten-stale-snowdon-revit2024-2026-11-24.yaml --session <pid>
+#
+# THE MODEL is Revit's own "Snowdon Towers Sample Architectural" (Program Files
+# Samples, write-protected, never saved), with a second project open so
+# activate-document has something to switch from. Values were read off that
+# model: levels L2 (2463.8 mm) and L5, furniture on FloorPlan: L2 (61 pieces),
+# material Aluminum, title block "E1 30 x 42 Horizontal_Snowdon", family
+# type "Chair-Breuer : Chair-Breuer". Points for place-family-instances are
+# absolute, so z is L2's elevation.
+
+model: "Snowdon Towers Sample Architectural (Revit's own sample, opened read-only from Program Files; every run rolled back), Revit 2024, session 11112"
+
+defaults:
+  in: "Snowdon Towers Sample Architectural"
+  setup: []
+
+jobs:
+  - fragment: read-element-parameters
+    setup: [filter-elements-by-category, set-selection]
+    expect: values
+    set: {categories: "Furniture", inViewOnly: "FloorPlan: L2", parameterName: "Level"}
+    negative-set: {categories: "Furniture", inViewOnly: "FloorPlan: L2", parameterName: "Heron No Such Parameter 1124"}
+    note: >
+      Positive - 61 furniture pieces on L2, each read for Level. Negative -
+      a parameter no element carries: values empty, never a fallback.
+
+  - fragment: set-material-properties
+    write: true
+    expect: fieldsChanged
+    set: {materialsNamed: "Aluminum", fieldValues: "Manufacturer=Heron Prove 1124"}
+    negative-set: {materialsNamed: "Heron No Such Material 1124", fieldValues: "Manufacturer=Heron Prove 1124"}
+    note: >
+      Positive fieldsChanged 1 on Aluminum. Negative refused, no material
+      matches, fieldsChanged 0.
+
+  - fragment: set-parameter-values-by-id
+    write: true
+    expect: written
+    set: {rows: "key=Name|in=Levels;L5|Name=Heron Prove L5", renameViews: "no"}
+    negative-set: {rows: "key=Name|in=Levels;Heron No Such Level|Name=Heron Prove L5", renameViews: "no"}
+    note: >
+      Positive written 1, level L5 reads Heron Prove L5 (rolled back). Negative
+      written 0, no level of that name.
+
+  - fragment: place-family-instances
+    write: true
+    expect: placed
+    set: {symbol: "Chair-Breuer : Chair-Breuer", points: "0,0,2463.8; 2000,0,2463.8", level: "L2", rotationDegrees: "90"}
+    negative-set: {symbol: "Chair-Breuer : Chair-Breuer", points: "0,0,2463.8; 2000,0,2463.8", level: "L2", rotationDegrees: "ninety"}
+    note: >
+      Positive placed 2 chairs on L2. Negative refused "'ninety' is not a rotation", placed 0.
+
+  - fragment: create-sheets
+    write: true
+    expect: created
+    set:
+      sheets: "Sheet Number|Sheet Name;HP-901|HERON PROVE 1;HP-902|HERON PROVE 2"
+      titleBlockName: "E1 30 x 42 Horizontal_Snowdon"
+    negative-set:
+      sheets: "Sheet Number|Sheet Name;HP-901|HERON PROVE 1;HP-902|HERON PROVE 2"
+      titleBlockName: "NoSuchTitleBlockAnywhere"
+    note: >
+      Positive created 2 sheets HP-901 and HP-902. Negative titleBlockNotFound,
+      created empty.
+
+  - fragment: activate-document
+    expect: activated
+    set: {documentPath: 'C:\Program Files\Autodesk\Revit 2024\Samples\Snowdon Towers Sample Architectural.rvt'}
+    negative-set: {documentPath: 'C:\nope\heron-missing-1124.rvt'}
+    note: >
+      Project2 is in front, so the positive brings Snowdon to the front:
+      activated true. Negative refused naming the missing path, activated false.

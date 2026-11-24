@@ -1,6 +1,15 @@
 // NOT STANDALONE. Assumes `doc` is in scope; leaves `volumeComputation`,
 // `roomAreaComputation`, `areaSchemes`, `placedRooms`, `roomsWithVolume`,
-// `placedSpaces`, `spacesWithVolume`, `notAProject` and `findings` behind.
+// `placedSpaces`, `spacesWithVolume`, `notAProject`, `unresolvedAreas` and
+// `findings` behind.
+//
+// VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - AN AREA OR AREA PLAN THAT WILL NOT SAY ITS SCHEME IS COUNTED.
+// Version 1 passed over one whose AreaScheme Revit would not give without a
+// word, so a scheme's "N area(s) on M area plan(s)" - what deleting it would
+// take with it - could be short. `unresolvedAreas` carries the count every
+// time; the sentence naming it is added only when it is above 0, so every
+// other answer reads as version 1's.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -49,6 +58,8 @@ var roomsWithVolume = 0;
 var placedSpaces = 0;
 var spacesWithVolume = 0;
 var notAProject = false;
+// VERSION 2 (D-64): areas and area plans whose scheme Revit would not give.
+var unresolvedAreas = 0;
 
 // The dialog's words for each boundary location, in the order it lists them,
 // and what each means for a room's area.
@@ -194,7 +205,7 @@ else
         if (area == null) continue;
         AreaScheme owner = null;
         try { owner = area.AreaScheme; } catch (Exception) { }
-        if (owner == null) continue;
+        if (owner == null) { unresolvedAreas++; continue; }
         areasIn[owner.Id] = areasIn.ContainsKey(owner.Id) ? areasIn[owner.Id] + 1 : 1;
     }
 
@@ -204,7 +215,7 @@ else
         if (plan.IsTemplate || plan.ViewType != ViewType.AreaPlan) continue;
         AreaScheme owner = null;
         try { owner = plan.AreaScheme; } catch (Exception) { }
-        if (owner == null) continue;
+        if (owner == null) { unresolvedAreas++; continue; }
         plansIn[owner.Id] = plansIn.ContainsKey(owner.Id) ? plansIn[owner.Id] + 1 : 1;
     }
 
@@ -227,4 +238,10 @@ else
         : string.Format("Area Schemes: {0} - listed one per line. Deleting a scheme in the dialog also deletes "
             + "its area plans and the areas on them, so the counts beside each are what it would take with it.",
             areaSchemes.Count));
+
+    // VERSION 2 (D-64): said only when an area or area plan was passed over.
+    if (unresolvedAreas > 0)
+        findings.Add(string.Format("{0} area(s) or area plan(s) would not say which scheme they belong to, "
+            + "so they are in none of the counts beside the schemes - those counts may be short.",
+            unresolvedAreas));
 }

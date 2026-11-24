@@ -78,7 +78,7 @@ wording.~~ **Mode** must be granted. ~~Conflating the two would let a user talk 
 > **[D-27](DECISIONS.md#d-27--one-voice-and-the-answers-shape-follows-the-questions-shape), 2026-08-28:**
 > there is no persona to infer (§2), so nothing about the user is inferred at all — which makes the rule
 > above stronger, not weaker: a mode is granted, by a person, and nothing a chat says stands in for that.
-> [`heron_profile.py`](../brain/heron_profile.py) (`HERON-USR-PRO-001`, DRAFT) refuses a fact that was inferred
+> `heron_profile.py` (`HERON-USR-PRO-001`, DRAFT) refuses a fact that was inferred
 > rather than declared, and a mode that no person granted. The struck sentence is recorded as [PROPOSALS F19](PROPOSALS.md),
 > and so is the second one: with no persona left to conflate with a mode, it was rewritten on 2026-11-15,
 > on F19's decision of that day, to say the danger itself.
