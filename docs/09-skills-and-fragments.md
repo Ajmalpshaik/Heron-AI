@@ -363,7 +363,7 @@ This is Golden Rule 4 made executable. See [13 — Testing & Quality](13-testing
 
 > **As built (2026-10-18):** steps 1 and 2 are each card's `revit:` list and
 > `tools/check-fragments-compile.py` (§7), which builds and does not run. Steps 3 to 6 are
-> [`heron_regression.py`](../brain/heron_regression.py): it compares results it is handed against what
+> `heron_regression.py`: it compares results it is handed against what
 > the card claims, and refuses a claimed release with no result rather than counting it as passed.
 > [`heron_buildmatrix.py`](../brain/heron_buildmatrix.py) compares the build matrix, release by release,
 > with the recorded [`regression-matrix.json`](../brain/regression-matrix.json). Both are `DRAFT`, their

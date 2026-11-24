@@ -113,12 +113,11 @@ the source without looking at the import lines. `tests/test_mcp_serves.py` holds
 | `heron_health` | is Heron working, as one verdict - and, since 2026-11-12, the one line `revit_health` prints under each connected Revit for what that Revit's own add-in says of *Ask to Keep* for a change made through `revit_change`: on, off, *does not say* for an older add-in that does not report it, or *could not read it* when no usable answer came - never the default ([docs/04 §4](../docs/04-heron-mcp.md), not yet run in Revit - [Group NP](../docs/needs-checking/group-np.md)) | the server (`revit_health`), `heron_diagnose` |
 | `heron_diagnose` | self-diagnostics in one answer | the server (`heron_diagnose`), and its own command line |
 | `heron_running_code` | whether this process still runs the Python on disk (rule 5) | the server |
-| `heron_install_health` | checks an install end to end | its own command line and its tests |
 | `heron_register` | registers the server with the host | its own command line and its tests |
-| `heron_discovery` | reads what other MCP servers on the PC say about themselves, as claims | its own command line and its tests |
 | `heron_command_run` | runs ONE saved command on ONE named Revit, through `revit_change`'s or `revit_read`'s own body - what Revit's Heron panel starts ([docs/49](../docs/49-saved-commands-and-the-heron-panel.md), [D-151](../docs/decisions/D-151.md), Proposed). Added 2026-11-08; this table did not name it until 2026-11-11 | its own command line, which the add-in's panel starts; `heron_tools` and `brain/heron_commands.py` name it |
-| `heron_workflow` | checkpoints and *Continue* ([docs/23](../docs/23-heron-kernel.md)) | **its tests only**: nothing imports it |
 | `heron_runtime` | what Heron can do right now, and why not, in Revit words ([docs/04 §6b](../docs/04-heron-mcp.md)) | the server (`heron_why`, since 2026-11-15 - [PROPOSALS F1](../docs/PROPOSALS.md)); until then its tests only, on purpose |
+
+Removed on 2026-11-24 because nothing imported them: `heron_workflow` ([D-199](../docs/decisions/D-199.md)), `heron_install_health` and `heron_discovery` ([D-200](../docs/decisions/D-200.md)). Git history keeps them.
 
 ## Rules for this folder
 
