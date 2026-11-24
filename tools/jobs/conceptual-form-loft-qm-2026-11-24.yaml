@@ -1,0 +1,63 @@
+# The re-proof of CREATE_CONCEPTUAL_FORM version 2 - NEEDS-CHECKING Group QM,
+# rows QM1 and QM2 (row 5b-2021, issue #1345). UNTIL IT PASSES THE CARD IS
+# DRAFT AND REFUSED IN A CHAT - every surface, extrusion, loft, sweep and
+# revolve in a mass or adaptive family, Tower 171's glass mass included.
+#
+#     python tools/batch-prove.py tools/jobs/conceptual-form-loft-qm-2026-11-24.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/conceptual-form-loft-qm-2026-11-24.yaml
+#
+# THE ARRANGEMENT, about five minutes by hand, before the run:
+#
+#   1. File > New > Family > Conceptual Mass > "Metric Mass". Save it as
+#      "Heron QM Loft" in %TEMP%\heron-work\qm, and leave it OPEN.
+#   2. Add a level at 3000 mm (Create > Level).
+#   3. With Reference Line (Draw panel, the Reference toggle on), draw a closed
+#      6000 x 3000 rectangle on Level 1 - four lines - and a closed 4000 x 2000
+#      rectangle on the 3000 level above it - four lines.
+#   4. Ask the chat for the eight lines' ids (select them; "what are the ids of
+#      the selected lines"), and replace the placeholders below: LOW-1 to LOW-4
+#      the bottom rectangle, TOP-1 to TOP-4 the top one.
+#
+# `--dry-run` says WOULD RUN with a placeholder still in - replace each first.
+#
+# POSITIVE: a solid loft between the two rectangles, its volume read back.
+# NEGATIVE: the same two profiles with a depth - refused by the card itself
+#   ("A depth was given with 2 profiles"), nothing made, formId empty.
+#
+# VERSION 2's OWN CHANGE - the words after a loft Revit refuses - is NOT a leg
+# here: a refused loft ends by throwing (the call fails and rolls back), which
+# a batch cannot read as a negative. It is QM2 and QM3 in Group QM, asked in a
+# chat on the same family, the reply read by eye.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK -
+# LOOK at the family afterwards anyway: rollback has failed before on this PC
+# (BD1).
+
+model: A new family from the Metric Mass template, "Heron QM Loft"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: create-conceptual-form
+    in: "Heron QM Loft"
+    expect: formId
+    set:
+      # PLACEHOLDERS - the two rectangles' line ids, bottom then top.
+      profiles: "LOW-1,LOW-2,LOW-3,LOW-4 | TOP-1,TOP-2,TOP-3,TOP-4"
+      depthMm: ""
+      path: ""
+      axis: ""
+      angleDegrees: ""
+      solid: true
+    negative-set:
+      profiles: "LOW-1,LOW-2,LOW-3,LOW-4 | TOP-1,TOP-2,TOP-3,TOP-4"
+      depthMm: "500"
+      path: ""
+      axis: ""
+      angleDegrees: ""
+      solid: true
+    note: >
+      Positive: a solid loft between the rectangles, volume read back (about
+      38 m3 / 38000 L for these sizes - record it). Negative: a depth with two
+      profiles refused before anything is made. Then QM2 and QM3 by chat.

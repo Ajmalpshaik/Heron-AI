@@ -133,6 +133,14 @@ negative:
       refused with some of the real group names offered. Not the nearest
       group taken
 
+  # Row 5b-2030 (2026-11-24): the card now says what the code already did.
+  - given: >
+      kind Shared, parameterNames a name the shared parameter file holds,
+      parameterGroup empty, replaceExisting false
+    expect: >
+      refused - no group was named; nothing added. The shared kind's heading
+      is never defaulted, unlike a family kind's
+
   - given: >
       three names where the THIRD holds a character Revit refuses in a name
     expect: >

@@ -55,8 +55,12 @@ purpose: >
   decision about the family - sizes that describe the product are type,
   anything that varies per placed unit is instance - and it is not guessed.
   The group is the heading in the Properties palette, matched by the name Revit
-  shows. Left empty, lengths and angles go under Dimensions and everything else
-  under Data.
+  shows. Left empty for a family kind, lengths and angles go under Dimensions
+  and everything else under Data. **For the office's shared parameters it is
+  never defaulted** - an empty group adding them is refused, nothing added -
+  because where a shared parameter sits is the office's convention, and its
+  kind comes from the file, so no one heading follows from what was asked.
+  Replacing, empty keeps each parameter under its own heading.
 
   **ALL OR NOTHING.** Every name, the kind and the group are checked before the
   first parameter is added. If Revit then refuses one - a character it does not
@@ -106,9 +110,11 @@ contract:
       type: bool
       source: request
     # The Properties palette heading, as Revit names it - "Dimensions",
-    # "Mechanical", "Identity Data". Empty files lengths and angles under
-    # Dimensions and the rest under Data. Not used when switching. When
-    # replacing (version 4), empty keeps each parameter under its own heading.
+    # "Mechanical", "Identity Data". For a family kind (Length, Number...),
+    # empty files lengths and angles under Dimensions and the rest under Data.
+    # For kind Shared, ADDING, it is REQUIRED - empty is refused, nothing
+    # added (row 5b-2030). When replacing (version 4), empty keeps each
+    # parameter under its own heading. Not used when switching or renaming.
     - name: parameterGroup
       type: string
       source: request
