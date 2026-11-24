@@ -30,3 +30,16 @@ saved in `%TEMP%\heron-work\pv`, with an Integer parameter *Blade_Count* = 5 and
 | **PW1** | *Positive, as before.* A loose blade, `count=Blade_Count`, `step=Z 45`, through the Keep or Discard box; press Keep. | Arrayed, 5 in all, the count following *Blade_Count*; `members` and `memberForms` four ids each. Nothing about groups is said. |
 | **PW2** | *Negative - an ARRAYED form.* After PW1, `validate --write --kept` with `--negative-set "form=<a copy's form id from memberForms>" --negative-set "count=Blade_Count" --negative-set "step=X 45"`. | **`negative` is a refusal, NOT `fragment_threw`.** `refused` begins *"Nothing was arrayed."* and says the blade is a copy in the array (PW1's `arrayId`), *5 in all, its count following "Blade_Count"*, names the group and the array's original, and says to change *Blade_Count* in each type or name a form in no array or group. Nothing is kept. **RECORD** whether the same comes back for the ORIGINAL blade's id (*"the original of the array"*). |
 | **PW3** | *Negative - a plain model group.* A second extrusion, grouped by hand (Create Group), no array; `count=3`, `step=Z 45`. | Refused naming the group and *"Ungroup it in Revit first"*; nothing made. |
+
+### Results, 2026-11-24 - Revit 2020, session 29500
+
+**Arranged:** scratch family *PX Box* (`%TEMP%\heron-work\px`, see [Group PX](group-px.md)) with an INSTANCE Integer
+*Blade_Count* = 5 and two loose blade extrusions on *Center (Left/Right)*. The arrayed form for PW2 was made by the
+PROVEN version 5 (kept, `count=3`, `step=Z 45`: array `3601d8ce-...-00000ad3`), not by PW1, so both halves of this
+proof ran rolled back (`validate --write`) and no save was needed. Run from branch `claude/prove-three-family-tools`.
+
+| Row | Result |
+|---|---|
+| PW1, run 2026-11-24 | **PASS** (rolled back, not through the Keep box) - loose blade `6fcb91fb-...-00000a87`, `count=Blade_Count`, `step=Z 45`: *"Arrayed the solid extrusion ...: 5 in all, 45 mm apart along +Z, the count following "Blade_Count" in each type - every copy read back."* Nothing about groups said. |
+| PW2, run 2026-11-24 | **PASS** - a copy from version 5's array (`3601d8ce-...-00000acb`), `step=X 45`: a refusal, not `fragment_threw` - *"Nothing was arrayed. The solid extrusion ... is already a copy in the array ... - 3 in all - and sits inside the group "Array Group 1" ..., that array's member. A form already in an array is not arrayed again. The array's original is the solid extrusion ...-00000a90."* Signed by Ajmal PS 2026-11-24, card PROVEN. |
+| PW3 | **NOT RUN** - needs a group made by hand (Create Group); not needed for the proof. Still owed. |
