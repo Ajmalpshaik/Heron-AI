@@ -1750,6 +1750,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-py.md`](needs-checking/group-py.md)
 
+## Group QC - CHANGE_ELEMENT_TYPE version 3: every refused element says why - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qc.md`](needs-checking/group-qc.md)
+
 ## Group QB - four facade tools: a curtain grid line or segment removed, a grid line or mullion moved, a mullion's join, a panel's flatness - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qb.md`](needs-checking/group-qb.md)
