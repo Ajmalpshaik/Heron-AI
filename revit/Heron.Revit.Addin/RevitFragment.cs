@@ -1455,7 +1455,8 @@ namespace Heron.Revit.Addin
                                                   counted, described);
             var verdict = WithVerdict(answer, apply, name, rolledBack, keptNote, said,
                                       nothingToAsk,
-                                      answered != null && answered != Keep && answered != RestOfJob,
+                                      answered != null && answered != Keep && answered != RestOfJob
+                                          ? answered : null,
                                       selectionRestored, keptUnderGrant, keptNothing, described,
                                       outsideTheGroup);
 
@@ -1688,10 +1689,13 @@ namespace Heron.Revit.Addin
         /// The modeller's possible answers to the box (D-119) - and D-138's
         /// fourth, the third link: keep this, and keep the rest of the job
         /// without asking. Keep and RestOfJob are the only two that keep.
+        /// NotShown is no answer at all: the box could not be built or shown,
+        /// so nobody was asked (row 5b-1991).
         /// </summary>
         private const string Keep = "keep";
-        private const string Discard = "discard";
-        private const string Closed = "closed";
+        private const string Discard = HeronKeepQuestion.AnswerDiscard;
+        private const string Closed = HeronKeepQuestion.AnswerClosed;
+        private const string NotShown = HeronKeepQuestion.AnswerNotShown;
         private const string RestOfJob = "keep_rest";
 
         /// <summary>
@@ -2114,6 +2118,7 @@ namespace Heron.Revit.Addin
             // in Revit 2024 threw past both and reached the chat as a raw .NET
             // sentence.
             var result = TaskDialogResult.Cancel;
+            var shownToModeller = false;
             try
             {
                 var box = new TaskDialog(HeronKeepQuestion.Title)
@@ -2155,6 +2160,7 @@ namespace Heron.Revit.Addin
                 {
                     result = box.Show();
                 }
+                shownToModeller = true;
             }
             catch (Exception ex)
             {
@@ -2172,7 +2178,10 @@ namespace Heron.Revit.Addin
             if (result == TaskDialogResult.CommandLink1) return Keep;
             if (result == TaskDialogResult.CommandLink2) return Discard;
             if (offerRest && result == TaskDialogResult.CommandLink3) return RestOfJob;
-            return Closed;
+
+            // ROW 5b-1991: A BOX THAT NEVER APPEARED IS NOT A CLOSED ONE. Both
+            // roll back, but only a box the modeller saw can be called theirs.
+            return shownToModeller ? Closed : NotShown;
         }
 
         /// <summary>
@@ -2192,7 +2201,11 @@ namespace Heron.Revit.Addin
                     ? HeronKeepGrant.ChoseKeepRest()
                     : answered == Discard
                         ? "You were asked in Revit and pressed DISCARD."
-                        : "You were asked in Revit and closed the box, which discards.";
+                        : answered == NotShown
+                            ? "The Keep or Discard box could not be shown in Revit, so you were "
+                              + "NOT asked, and nothing was kept."
+                            : "You were asked in Revit and closed the box without choosing Keep "
+                              + "or Discard, which discards.";
 
             return answer.Substring(0, answer.Length - 1)
                  + "," + Json.Bool("asked", true)
@@ -4092,7 +4105,7 @@ namespace Heron.Revit.Addin
         private static string WithVerdict(string answer, bool applied, string name,
                                           HeronRollbackWitness.Outcome rolledBack,
                                           string keptNote, HeronFailureNote said,
-                                          bool nothingToAsk, bool discardedByModeller,
+                                          bool nothingToAsk, string notKept,
                                           bool selectionRestored, string keptUnderGrant,
                                           bool keptNothing,
                                           HeronChangeReport.Described changed,
@@ -4217,15 +4230,18 @@ namespace Heron.Revit.Addin
                     brief = HeronKeepGrant.KeptSentence(keptUnderGrant) + " " + brief;
                 }
             }
-            else if (discardedByModeller)
+            else if (notKept != null)
             {
                 // THE MODELLER'S DISCARD IS NOT A ROLLBACK TO TRY AGAIN, and the
                 // plain rollback's "send it again with apply" would invite one
-                // (Article 25). Its own sentence, with Revit's rollback status.
+                // (Article 25). Its own sentence, with Revit's rollback status,
+                // naming how the box ended - pressed Discard, closed unanswered,
+                // or never shown - so only a pressed Discard is called the
+                // modeller's choice (row 5b-1991).
                 // "NOTHING WAS KEPT" ONLY WHEN IT HELD - Revit's status,
                 // nothing the run added still standing and nothing it changed
                 // still holding, as far as read - like every rollback.
-                verdict = HeronKeepQuestion.Discarded(name, held, selectionRestored)
+                verdict = HeronKeepQuestion.Discarded(name, held, selectionRestored, notKept)
                         + (rolledBack != null && rolledBack.Stands
                             ? " " + rolledBack.StillThere() : "");
                 kind = "discarded";
@@ -4381,7 +4397,7 @@ namespace Heron.Revit.Addin
                  // ROW 5b-1594: work outside the group stands - true only when it
                  // was rolled back as `held && outsideTheGroup` says above.
                  + "," + Json.Bool("outsideStands", !applied && held && outsideTheGroup != null
-                                                    && !discardedByModeller && !keptNothing)
+                                                    && notKept == null && !keptNothing)
                  + check
                  + "," + Json.Num("warnings", said == null ? 0 : said.DismissedCount)
                  + "," + Json.Arr("warningsDismissed", listed)

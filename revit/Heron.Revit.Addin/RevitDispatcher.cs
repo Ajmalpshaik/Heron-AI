@@ -1320,7 +1320,11 @@ namespace Heron.Revit.Addin
             if (failure == null)
             {
                 var answered = Json.ReadString(response, "modellerAnswer");
-                if (answered == "discard" || answered == "closed") return "Discarded - nothing was kept";
+                if (answered == HeronKeepQuestion.AnswerDiscard) return "Discarded - nothing was kept";
+                if (answered == HeronKeepQuestion.AnswerClosed)
+                    return "Box closed without an answer - nothing was kept";
+                if (answered == HeronKeepQuestion.AnswerNotShown)
+                    return "Keep box could not be shown - nothing was kept";
                 if (answered == "keep") return "Kept - one undo step";
                 // D-197: no box, because Ask to Delete is off - kept, or, when Revit
                 // counted nothing, rolled back (D-160); the reply's verdict says which.
