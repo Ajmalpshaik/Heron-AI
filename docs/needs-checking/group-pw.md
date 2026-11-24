@@ -15,14 +15,14 @@ refused. Version 6 of [`array-family-forms`](../../brain/fragments/array-family-
 form's group before anything is tried. It compiles for Revit 2020 to 2027 (`tools/check-fragments-compile.py`).
 **None of it has met a Revit.** The card is `DRAFT` until PW1 and PW2 pass ([D-30](../DECISIONS.md)). Rebuild the
 add-in and restart Revit first (`python tools/heron-ready.py`) - that needs Revit closed, so it is the owner's step.
-Version 5's own proof is in pull request #1275; whichever merges second keeps the card `DRAFT` at version 6.
+Version 5 was `PROVEN` on 2026-11-23 (louvre-scratch, Revit 2020). Version 6 was signed `PROVEN` on 2026-11-24 by PW1 and PW2 - see Results, below; PW3 is still owed.
 
 | Tool | Was | Now | Row | Checks |
 |---|---|---|---|---|
-| [`array-family-forms`](../../brain/fragments/array-family-forms/fragment.yaml) (`ARRAY_FAMILY_FORMS`) | DRAFT v5 | DRAFT v6 | [5b-1998](../fragment-issues/row-5b-1998.md) | PW1, PW2, PW3 |
+| [`array-family-forms`](../../brain/fragments/array-family-forms/fragment.yaml) (`ARRAY_FAMILY_FORMS`) | PROVEN v5 | DRAFT v6, PROVEN 2026-11-24 | [5b-1998](../fragment-issues/row-5b-1998.md) | PW1, PW2, PW3 |
 
 **The model: a scratch family, never a working one.** `louvre-scratch` again, or a new metric Generic Model family
-saved in `%TEMP%\heron-work\pv`, with an Integer parameter *Blade_Count* = 5 and a blade extrusion sketched on
+saved in `%TEMP%\heron-work\pw`, with an Integer parameter *Blade_Count* = 5 and a blade extrusion sketched on
 *Ref. Level*.
 
 | ID | Do this | Pass looks like |
