@@ -1,6 +1,7 @@
 // NOT STANDALONE. Assumes `doc` and `curtainWallType` are in scope; leaves
-// `gridsLaidOut`, `mullionPositionsFilled`, `layoutsDisagreeing`, `settings`,
-// `wallsOfType`, `refused` and `findings` behind.
+// `gridsLaidOut`, `mullionPositionsFilled`, `layoutsDisagreeing`,
+// `automaticallyEmbed`, `joinCondition`, `settings`, `wallsOfType`, `refused`
+// and `findings` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -26,6 +27,16 @@
 // recognise - a Revit in another language - are printed as they are and
 // judged neither way.
 //
+// AUTOMATICALLY EMBED AND JOIN CONDITION (VERSION 2, 2026-11-24) are the
+// type's two Construction settings, read by id like the rest:
+// ALLOW_AUTO_EMBED, held as 1 or 0, and the Join Condition - Revit gives TWO
+// ids that label, AUTO_JOIN_CONDITION_WALL and AUTO_JOIN_CONDITION, and which
+// one a curtain wall type carries has not been read off a model, so the _WALL
+// id is asked first, the other second, and the answer names the id that
+// answered. Its stored number is printed beside the words Revit displays for
+// it and never named by this file. A setting that cannot be read says NOT
+// READ - never "no" and never "not defined" (D-52).
+//
 // A CURTAIN SYSTEM IS NOT READ HERE. Its type is a CurtainSystemType, not a
 // wall type, and the add-in resolves `curtainWallType` among WALL types only,
 // so a curtain system's name is refused before this code runs.
@@ -35,6 +46,8 @@ const double MillimetresPerFoot = 304.8;
 var gridsLaidOut = 0;
 var mullionPositionsFilled = 0;
 var layoutsDisagreeing = new List<string>();
+var automaticallyEmbed = "";
+var joinCondition = "";
 var settings = "";
 var wallsOfType = 0;
 var refused = "";
@@ -201,6 +214,42 @@ else
             "{0} grid: layout {1}; spacing {2}; adjust for mullion size {3}. {0} mullions: {4}",
             directions[d], layoutText, spacingText, adjustText, string.Join(", ", mullionTexts)));
     }
+    // CONSTRUCTION - Automatically Embed, then Join Condition. A read that
+    // fails says so; nothing is guessed in its place (D-52).
+    var embedParameter = curtainWallType.get_Parameter(BuiltInParameter.ALLOW_AUTO_EMBED);
+    if (embedParameter == null)
+        automaticallyEmbed = "NOT READ - the type has no Automatically Embed setting this reads";
+    else if (embedParameter.StorageType == StorageType.Integer)
+        automaticallyEmbed = embedParameter.AsInteger() != 0 ? "yes" : "no";
+    else
+        automaticallyEmbed = "NOT READ - Automatically Embed is held as " + embedParameter.StorageType
+            + ", not as a tick box";
+
+    Parameter joinParameter = null;
+    var joinIdUsed = "";
+    foreach (var joinId in new[] { BuiltInParameter.AUTO_JOIN_CONDITION_WALL, BuiltInParameter.AUTO_JOIN_CONDITION })
+    {
+        joinParameter = curtainWallType.get_Parameter(joinId);
+        if (joinParameter != null) { joinIdUsed = joinId.ToString(); break; }
+    }
+    if (joinParameter == null)
+    {
+        joinCondition = "NOT READ - the type has no Join Condition setting this reads";
+    }
+    else
+    {
+        string shownJoin = null;
+        try { shownJoin = joinParameter.AsValueString(); } catch (Exception) { shownJoin = null; }
+        var heldJoin = joinParameter.StorageType == StorageType.Integer
+            ? "Revit's value " + joinParameter.AsInteger()
+            : "held as " + joinParameter.StorageType;
+        joinCondition = string.IsNullOrEmpty(shownJoin)
+            ? string.Format("NOT READ - Revit shows nothing for it ({0}, read by {1})", heldJoin, joinIdUsed)
+            : string.Format("'{0}' ({1}, read by {2})", shownJoin, heldJoin, joinIdUsed);
+    }
+    parts.Add(string.Format("construction: automatically embed {0}; join condition {1}",
+        automaticallyEmbed, joinCondition));
+
     settings = string.Join(" | ", parts);
 
     findings.Add(string.Format(
@@ -210,6 +259,10 @@ else
     findings.Add(string.Format(
         "{0} of 2 directions laid out with grid lines, {1} of 6 mullion positions filled. See "
         + "settings", gridsLaidOut, mullionPositionsFilled));
+    findings.Add(string.Format(
+        "Automatically Embed (Type Properties > Construction): {0}. Join Condition: {1}",
+        automaticallyEmbed == "yes" ? "ticked" : automaticallyEmbed == "no" ? "not ticked" : automaticallyEmbed,
+        joinCondition));
     if (layoutsDisagreeing.Count > 0)
         findings.Add(string.Format(
             "{0} layout(s) are shown by Revit as a different layout from the number stored - "

@@ -15,8 +15,9 @@ line or cut a segment, moved a mullion or changed its join, read or set the curt
 or measured whether a panel is flat enough for one sheet of glass. Four new cards, written in a cloud session.
 The fifth, `set-curtain-wall-embed` for *Automatically Embed*, was taken out of this change on 2026-11-24: a plain
 question about the box ranked it, a write, first, and no read card reads the box - [row 5b-2008](../fragment-issues/row-5b-2008.md),
-issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012), the owner's call. Its card waits on a draft pull
-request of its own, branch `claude/s9b-curtain-wall-embed`.
+issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012), the owner's call. The owner chose to widen the read
+on 2026-11-24, and the card landed with `REPORT_CURTAIN_WALL_TYPE` version 2; its Revit run is
+[Group QG](group-qg.md).
 
 | Card | What it does in Revit words |
 |---|---|
@@ -61,7 +62,7 @@ Each card's `tests/cases.yaml` has every case in full.
 | **QB13** | `check-panel-flatness` on pattern-based panels of a divided surface, and on curtain wall panels | RECORD whether pattern-based panels are measured; curtain wall panels all in `notMeasured` |
 
 QB10 and QB11 were the embed card's two rows; they left with it on 2026-11-24 (row 5b-2008) and are owed by
-nothing in this group.
+nothing in this group - they are QG5 and QG6 of [Group QG](group-qg.md).
 
 **Closing:** each card goes to PROVEN only with its positive, its negative and a person's name (D-30); its rows
 here are struck with the release, model and date.
