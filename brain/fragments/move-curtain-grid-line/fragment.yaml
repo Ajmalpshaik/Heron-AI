@@ -1,0 +1,142 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-174
+semantic-identity: "move this mullion, or the curtain grid line it sits on, along one curtain wall - by a distance or to a position"
+kind: action
+domain: revit.elements
+capability: MOVE_CURTAIN_GRID_LINE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# VERSION 1 (2026-11-24) - written in a cloud session with no Revit, for
+# WN-11 in GitHub issue #1005 (the facade note's "a mullion moved"). Not
+# tested in Revit. NEEDS-CHECKING Group QB, rows QB5 to QB7.
+
+purpose: >
+  MOVES A CURTAIN GRID LINE ON ONE CURTAIN WALL, and the mullions on it and
+  the panels either side with it - Revit's Move on a curtain grid line,
+  typed: "move this mullion 300 mm", "move the grid line at 1500 to 1800",
+  "shift this transom up 200".
+
+  **A MULLION IS MOVED BY ITS GRID LINE.** In Revit a mullion follows the
+  grid line under it, so a mullion handed in names the line of the same wall
+  that runs its way within 5 mm of it, and that line moves. A mullion on the
+  wall's border sits on no grid line: named in `notMovable`, never moved. A
+  grid line can be handed in itself, or the curtain wall with `direction`
+  and `lineAt` naming the line by where it is, the way ADD_CURTAIN_GRID_LINES
+  places one. Everything handed in must be on ONE straight curtain wall.
+
+  **`move` IS A DISTANCE OR A PLACE, IN MILLIMETRES.** "300" or "+300" moves
+  each line 300 mm toward the wall's END (the end it was drawn to) for a
+  vertical line, or UP for a horizontal one; "-300" the other way; "to 1800"
+  puts ONE line 1800 mm along from the grid's start, or above its base. Left
+  and right depend on the view, so they are never taken.
+
+  **NO LINE ONTO OR PAST ANOTHER, NONE AT THE EDGE.** A move that would put a
+  line onto or past a line that is not moving, or within 100 mm of the grid's
+  edge, is refused before anything moves - panels would merge or change
+  order, and a number typed in metres would move a line by a fraction of a
+  millimetre. A PINNED line - one a curtain wall type laid out at its spacing
+  - is refused by name: unpin it first (SET_PIN_STATE), or change the type
+  (SET_CURTAIN_WALL_GRID). This wall only: nothing on its type is written.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Every
+  refusal is made before the first write. After one regeneration every line
+  is measured: within 1 mm of where it was sent, with the same number of
+  mullions on it as before - or the call stops and nothing it did is kept.
+  ASSUMPTION for the proof: that Revit's move of an unpinned grid line by the
+  API carries its mullions as its Move tool does; the read-back settles it. In
+  a shared model a wall another user holds is refused naming them.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The mullions or curtain grid lines to move - or the one curtain wall,
+    # with `direction` and `lineAt` naming the line.
+    - name: elements
+      type: IList<Element>
+    # MILLIMETRES: "300" or "+300" toward the wall's end or up, "-300" the
+    # other way, or "to 1800" - one line put at that position.
+    - name: move
+      type: string
+      source: request
+    # Only when the curtain wall itself is handed in: "vertical" or
+    # "horizontal" - which way the line to move runs.
+    - name: direction
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # Only when the curtain wall itself is handed in: where the line is, in
+    # millimetres along the wall from its start or above its base.
+    - name: lineAt
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: moved
+      # Grid lines moved, each MEASURED where it landed after Revit rebuilt the
+      # wall, with its mullions on it.
+      role: result
+      type: int
+    - name: notMovable
+      # Handed in and left alone - a border mullion, an angled line, something
+      # that is not a mullion or a grid line - each with why (D-52).
+      role: accounting
+      type: IList<string>
+    - name: readBack
+      # Each line's position before and after, its mullions, and the wall's
+      # panels before and after. A STRING - the evidence. Empty on a refusal.
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE PATH FOR EVERY RELEASE, read rather than remembered. On 2026-11-24
+  tools/api-surface read the reference assemblies of all eight releases, 2020
+  through 2027, and found one signature on every one for each member this
+  calls: `ElementTransformUtils.MoveElement(Document, ElementId, XYZ)`;
+  `CurtainGridLine.FullCurve`; `Mullion.LocationCurve`; `CurtainGrid`'s
+  `GetUGridLineIds`, `GetVGridLineIds`, `GetMullionIds`, `GetPanelIds` and
+  `GetCurtainCells`; `CurtainCell.CurveLoops`; `Element.Pinned`;
+  `Wall.CurtainGrid`; `WorksharingUtils.GetCheckoutStatus` with its owner;
+  `Document.Regenerate` and the application's `AngleTolerance`. No ElementId is
+  constructed and none is read as a number.
+
+# ROUTING
+#
+#   "move this mullion 300 mm"                -> here, the mullion selected,
+#                                                move "300"
+#   "move the grid line at 1500 to 1800"      -> here, the wall, vertical,
+#                                                lineAt 1500, move "to 1800"
+#   "shift this transom up 200"               -> here, move "200"
+#   "move these elements 500 mm east"         -> MOVE_ELEMENTS - anything, in
+#                                                space. A mullion follows its
+#                                                grid line, which this moves
+#                                                along its own wall
+#   "change this one mullion"                 -> CHANGE_ELEMENT_TYPE
+#   "make this mullion continuous"            -> SET_MULLION_JOIN
+#   "remove this grid line"                   -> EDIT_CURTAIN_GRID_SEGMENTS
+#   "change the curtain wall grid spacing"    -> SET_CURTAIN_WALL_GRID
+
+utterances:
+  - move this mullion 300 mm to the left
+  - move the curtain grid line at 1500 to 1800
+  - shift this curtain grid line up 200 mm
+  - move the transom on this curtain wall to 1100
