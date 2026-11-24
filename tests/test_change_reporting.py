@@ -236,7 +236,7 @@ def main():
     # A DISCARD IS THE MODELLER'S ANSWER, NOT A ROLLBACK TO TRY AGAIN. Its
     # verdict is its own - never the plain rollback's "send it again with
     # apply" - and revit_change ends it as refused, with no after-change table.
-    check("verdict = HeronKeepQuestion.Discarded(name, held, selectionRestored)" in fragment,
+    check("verdict = HeronKeepQuestion.Discarded(name, held, selectionRestored, notKept)" in fragment,
           "a Discard's verdict is HeronKeepQuestion.Discarded, with whether the rollback held")
     check("NOTHING WAS KEPT" in question and "MAY STILL HOLD" in question
           and "send it again only if they ask" in question,

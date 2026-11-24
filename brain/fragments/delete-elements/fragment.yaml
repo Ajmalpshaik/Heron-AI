@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -147,36 +147,37 @@ contract:
       type: string
 
 proof:
-  date: '2026-11-16'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: Heron OE Roofs (3,331 elements), Revit 2024, session 18772
-  positive_case: 'run with categories=Roofs - the first of 3 tracked inputs - the arrangement
-    was re-made first by running select-in-region, set-selection with this phase''s own values
-    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned alsoWent 16, askedFor 1, askedIds 1 item(s) [352583], attachedBefore Attached,
-    and in plan under a roof, floor or ceiling being deleted: wall 352603 (top attached),
-    wall 352604 (top attached), wall 352605 (top attached), wall 352606 (top attached), candidates
-    4 item(s) [(Autodesk.Revit.DB.Wall, True, False), (Autodesk.Revit.DB.Wall, True, False),
-    (Autodesk.Revit.DB.Wall, True, False), ...], deleted 17 item(s) [352581, 352582, 352583,
-    ...], detachedWalls 4 item(s) [352603, 352604, 352605, ...], hostBoxes 1 item(s) [Autodesk.Revit.DB.BoundingBoxXYZ],
-    isAttached Func`3, refused 0 item(s), wallsNote 4 wall(s) were attached to what was deleted
-    and are DETACHED now - each wall''s top or base goes back to its own height and level:
-    352603, 352604, 352605, 352606. On Revit 2024 Heron cannot attach a wall again - Attach
-    Top/Base by hand (Modify | Walls) once the new roof, floor or ceiling is in.. inputs came
-    elements from set-selection (1). on Heron OE Roofs'
+  model: 4355-BHVD-3D-60P00-BL003A (43,051 elements), Revit 2020, session 29500
+  positive_case: 'run with elementIds=8697022 - the first of 3 tracked inputs - the arrangement
+    was re-made first by running filter-elements-by-id with this phase''s own values - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned alsoWent 0, askedFor 1, askedIds 1 item(s) [8697022], attachedBefore , candidates
+    0 item(s), deleted 1 item(s) [8697022], deletedByCategory 1 deleted. Asked for 1: Air
+    Terminals 1. Nothing else went. Each was read before the delete, from Revit''s own trial
+    of it; every id is in deletedWhat., deletedWhat 1 entry(ies), detachedWalls 0 item(s),
+    hostBoxes 0 item(s), isAttached Func`3, readBeforeDelete 1 item(s) [System.String[]],
+    refused 0 item(s), wallsNote . inputs came elements from filter-elements-by-id (1). on
+    4355-BHVD-3D-60P00-BL003A'
   negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). delete-elements\
     \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
     \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
     \ about a set it was not given - is caught here by the answer following the input exactly\
-    \ across 3 different inputs:\n\n      categories=Roofs -> detachedWalls 4 item(s) [352603,\
-    \ 352604, 352605, ...]\n      categories=Floors -> detachedWalls 0 item(s)\n      categories=Roofs,\
-    \ Floors -> detachedWalls 4 item(s) [352603, 352604, 352605, ...]\n\n    Different inputs,\
-    \ exact matches every time. A fragment falling back to the active view, the whole model,\
-    \ or a previous run could not do that."
+    \ across 3 different inputs:\n\n      elementIds=8697022 -> askedIds 1 item(s) [8697022]\n\
+    \      elementIds=8700586 -> askedIds 1 item(s) [8700586]\n      elementIds=8697022,9284295\
+    \ -> askedIds 2 item(s) [8697022, 9284295]\n\n    Different inputs, exact matches every\
+    \ time. A fragment falling back to the active view, the whole model, or a previous run\
+    \ could not do that."
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 90e2d3e949cb830b
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: dc82efa01aa2e93e
+  fingerprint: edd73baa67ce280c
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
