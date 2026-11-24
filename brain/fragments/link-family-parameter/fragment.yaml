@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -278,58 +278,62 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-23'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: louvre-scratch (1,600 elements), Revit 2020, session 49564
-  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
-    on 2026-11-23; the modeller saw the result in Revit and pressed Keep, and Revit kept it
-    as one undo step. returned alreadyLinked 0, asked 2 item(s) [(Extrusion Start, Blade_Start,
-    False), (Extrusion End, Blade_End, False)], byCategory false, byForms true, byNested false,
-    changed 2, chosen 1 item(s) [Extrusion], classificationOf Func`2, dbNamespace Autodesk.Revit.DB,
-    describe Func`2, ductFlow 1 item(s) [id -1013405], everyCategory false, everySystem false,
-    extrusionEndField 1 item(s) [id -1001801], extrusionStartField 1 item(s) [id -1001800],
-    findings 2 item(s) [Family ''louvre-scratch'': 2 link(s) or value(s) changed and 0...,
-    The links are in the family only. Placed units in a project ...], flags BindingFlags,
-    isExtrusionField Func`2, isFlow Func`2, isMaterialField Func`2, isVoidForm Func`2, kindName
-    Func`2, kindOf Func`2, lacking 0 item(s), leftOut 0, linkReport Extrusion id 2703: Extrusion
-    Start not linked -> Blade_Start (reads -200); Extrusion End not linked -> Blade_End (reads
-    200) - Extrusion Start and Extrusion End run along +X here: its sketch plane, on "Center
-    (Left/Right)", faces +X, so a positive value goes right; the form now runs X -200 to 200
-    mm, linked true, matched 1, materialField 1 item(s) [id -1002107], materialWords Func`2,
-    modelAxis Func`2, nameOf Func`2, notAFamily false, pipeFlow 1 item(s) [id -1140213], planAlready
-    2 item(s) [False, False], planBefore 2 item(s) [, ], plans 2 item(s) [(Autodesk.Revit.DB.Extrusion,
-    Autodesk.Revit.DB.Parameter, A..., (Autodesk.Revit.DB.Extrusion, Autodesk.Revit.DB.Parameter,
-    A...], quoted Func`2, reads Func`2, refused (null), revitAssembly RuntimeAssembly, saidCategory
-    , saidFamily , saidForms 9bc1f173-118f-46a0-8986-057ae7412ca8-00000a8f, saidSystem , saidType
-    , sameKind Func`3, sameSystem Func`3, sameWord Func`3, spaced Func`2, squash Func`2, systemWords
-    Func`2, unlessNone Func`2, ways 1, whatEachLacks Func`1. inputs came category not given
-    - "none", the card''s own default (optional); system not given - "none", the card''s own
-    default (optional); forms as given; family not given - "none", the card''s own default
-    (optional); type not given - "none", the card''s own default (optional); links as given
-    (2). on louvre-scratch'
-  negative_case: 'run with forms=9bc1f173-118f-46a0-8986-057ae7412ca8-00000a8f, links=Extrusion
-    End=No_Such_Parameter instead - chosen because it should not contain what this fragment
-    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
-    afterwards. returned alreadyLinked 0, asked 1 item(s) [(Extrusion End, No_Such_Parameter,
-    False)], byCategory false, byForms true, byNested false, changed 0, chosen 1 item(s) [Extrusion],
-    classificationOf Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2, ductFlow 1 item(s)
-    [id -1013405], everyCategory false, everySystem false, extrusionEndField 1 item(s) [id
-    -1001801], extrusionStartField 1 item(s) [id -1001800], findings 1 item(s) [Nothing was
-    changed. No family parameter is called "No_Such_...], flags BindingFlags, isExtrusionField
+  model: TRG_Mechanical Equipment_Air Handling Unit_DX_SKM MAH-0202S2M (7,444 elements), Revit
+    2020, session 4872
+  positive_case: 'run ONCE on the live model on 2026-11-24 with NO Keep or Discard box - the
+    owner''s Ask to Delete switch was off in Revit (D-197) - so NOBODY LOOKED at the result
+    in Revit; Revit kept it as one undo step. returned alreadyLinked 0, asked 1 item(s) [(Material,
+    TRG_AHU_Spring White, False)], byCategory false, byForms true, byNested false, changed
+    4, chosen 4 item(s) [Free Form Element, Free Form Element, Free Form Element, ...], classificationOf
+    Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2, ductFlow 1 item(s) [id -1013405],
+    everyCategory false, everySystem false, extrusionEndField 1 item(s) [id -1001801], extrusionStartField
+    1 item(s) [id -1001800], findings 3 item(s) [Family ''TRG_Mechanical Equipment_Air Handling
+    Unit_DX_SKM MA..., A Material SET holds that material in every type. Linked to ..., The
+    links are in the family only. Placed units in a project ...], flags BindingFlags, isExtrusionField
     Func`2, isFlow Func`2, isMaterialField Func`2, isVoidForm Func`2, kindName Func`2, kindOf
-    Func`2, lacking 0 item(s), leftOut 0, linkReport , linked false, matched 1, materialField
-    1 item(s) [id -1002107], materialWords Func`2, modelAxis Func`2, nameOf Func`2, notAFamily
-    false, pipeFlow 1 item(s) [id -1140213], planAlready 0 item(s), planBefore 0 item(s),
-    plans 0 item(s), quoted Func`2, reads Func`2, refused Nothing was changed. No family parameter
-    is called "No_Such_Parameter". The ones that could drive "Extrusion End" (Length) on Extrusion
-    id 2703: Blade_End, Blade_Start, Default Elevation, Test_Height, Test_Width., revitAssembly
-    RuntimeAssembly, saidCategory , saidFamily , saidForms 9bc1f173-118f-46a0-8986-057ae7412ca8-00000a8f,
+    Func`2, lacking 0 item(s), leftOut 0, linkReport Form id 8825: Material <By Category>
+    -> TRG_AHU_Spring White  ||  Form id 8826: Material <By Category> -> TRG_AHU_Spring White  ||  Form
+    id 8827: Material <By Category> -> TRG_AHU_Spring White  ||  Form id 8828: Material <By
+    Category> -> TRG_AHU_Spring White, linked false, matched 4, materialField 1 item(s) [id
+    -1002107], materialWords Func`2, modelAxis Func`2, nameOf Func`2, notAFamily false, pipeFlow
+    1 item(s) [id -1140213], planAlready 4 item(s) [False, False, False, ...], planBefore
+    4 item(s) [<By Category>, <By Category>, <By Category>, ...], plans 4 item(s) [(Autodesk.Revit.DB.FreeFormElement,
+    Autodesk.Revit.DB.Parame..., (Autodesk.Revit.DB.FreeFormElement, Autodesk.Revit.DB.Parame...,
+    (Autodesk.Revit.DB.FreeFormElement, Autodesk.Revit.DB.Parame..., ...], quoted Func`2,
+    reads Func`2, refused (null), revitAssembly RuntimeAssembly, saidCategory , saidFamily
+    , saidForms ac635ea5-cc0b-4d6b-a7bb-fc450e9481b5-00002279,ac635ea5-cc0b-4d6b-a7bb-fc450e9481b5-0000227a,ac635ea5-cc0b-4d6b-a7bb-fc450e9481b5-0000227b,ac635ea5-cc0b-4d6b-a7bb-fc450e9481b5-0000227c,
     saidSystem , saidType , sameKind Func`3, sameSystem Func`3, sameWord Func`3, spaced Func`2,
     squash Func`2, systemWords Func`2, unlessNone Func`2, ways 1, whatEachLacks Func`1. inputs
     came category not given - "none", the card''s own default (optional); system not given
     - "none", the card''s own default (optional); forms as given; family not given - "none",
     the card''s own default (optional); type not given - "none", the card''s own default (optional);
-    links as given (1). on louvre-scratch'
+    links as given (1). on TRG_Mechanical Equipment_Air Handling Unit_DX_SKM MAH-0202S2M'
+  negative_case: run with links=Material=No_Such_Material instead - chosen because it should
+    not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyLinked 0, asked 1 item(s)
+    [(Material, No_Such_Material, False)], byCategory false, byForms false, byNested false,
+    changed 0, chosen 0 item(s), classificationOf Func`2, dbNamespace Autodesk.Revit.DB, describe
+    Func`2, ductFlow 1 item(s) [id -1013405], everyCategory false, everySystem false, extrusionEndField
+    1 item(s) [id -1001801], extrusionStartField 1 item(s) [id -1001800], findings 1 item(s)
+    [Nothing was changed. No elements were named - a category suc...], flags BindingFlags,
+    isExtrusionField Func`2, isFlow Func`2, isMaterialField Func`2, isVoidForm Func`2, kindName
+    Func`2, kindOf Func`2, lacking 0 item(s), leftOut 0, linkReport , linked false, matched
+    0, materialField 1 item(s) [id -1002107], materialWords Func`2, modelAxis Func`2, nameOf
+    Func`2, notAFamily false, pipeFlow 1 item(s) [id -1140213], planAlready 0 item(s), planBefore
+    0 item(s), plans 0 item(s), quoted Func`2, reads Func`2, refused Nothing was changed.
+    No elements were named - a category such as "Duct Connector" or "Extrusion", or "all"
+    (with a system); or forms, nested parts, detail and symbolic lines, regions, model text
+    and reference points by the ids the tools that made them gave back, or "selected"; or
+    a nested family and its type, for its type parameters., revitAssembly RuntimeAssembly,
+    saidCategory , saidFamily , saidForms , saidSystem , saidType , sameKind Func`3, sameSystem
+    Func`3, sameWord Func`3, spaced Func`2, squash Func`2, systemWords Func`2, unlessNone
+    Func`2, ways 0, whatEachLacks Func`1. inputs came category not given - "none", the card's
+    own default (optional); system not given - "none", the card's own default (optional);
+    forms not given - "none", the card's own default (optional); family not given - "none",
+    the card's own default (optional); type not given - "none", the card's own default (optional);
+    links as given (1). on TRG_Mechanical Equipment_Air Handling Unit_DX_SKM MAH-0202S2M
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
@@ -337,8 +341,8 @@ proof:
     revit_release: '2020'
     revit_build: 20191106_1200(x64)
     addin_version: 0.3.0.0
-    addin_hash: 3545dba0dc8cd0c7
-  fingerprint: ab29509bccef9f76
+    addin_hash: 76bb05d6be25750f
+  fingerprint: 4aeb48a648477a35
   releases:
   - release: '2024'
     date: '2026-11-12'

@@ -1774,6 +1774,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qg.md`](needs-checking/group-qg.md)
 
+## Group QI - temporary HIDE in the active view, and a form's long id taken by the hide and the isolate - BUILT, NOT RUN IN REVIT (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qi.md`](needs-checking/group-qi.md)
+
 ## Group QJ - REPORT_ROOF_REACH: does one roof reach another, measured with rays and changed nothing; and a duct's and a pipe's offset written by WRITE_ELEMENT_PARAMETERS - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qj.md`](needs-checking/group-qj.md)
