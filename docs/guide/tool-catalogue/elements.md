@@ -2756,7 +2756,7 @@ Says whether one roof reaches another, as a read only. Two roofs are selected; r
 3. In a Claude chat, ask in your own words, for example *"does this roof reach the other roof"*. Say the values under **You say** in the same sentence.
 4. Heron answers in the chat. Nothing in the model changes.
 
-Other ways to ask: *"does this extrusion roof meet that roof"* · *"what is the gap between this roof and the other one"*
+Other ways to ask: *"does this extrusion roof meet the other roof"* · *"what is the gap between this roof and the other one"*
 
 <a id="report-roof-slopes"></a>
 

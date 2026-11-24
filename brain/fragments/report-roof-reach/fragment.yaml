@@ -124,13 +124,13 @@ utterances:
   # the wing roof run into the main roof" - requests - came here on every
   # backend (measured 2026-11-24).
   - does this roof reach the other roof
-  - does this extrusion roof meet that roof
+  - does this extrusion roof meet the other roof
   - what is the gap between this roof and the other one
   - how far short of the other roof does this roof end
   - is this roof touching the other roof
   - measure the gap between these two roofs
-  - how far is this roof from that one
-  - does the end of this roof meet the face of that roof
+  - how far is this roof from the other one
+  - does the end of this roof meet the face of the other roof
   # The row's own, ninth so the re-ranker's eight are unchanged (D-134): on
   # lexical it reached EXTEND_ROOF_TO_ROOF, a write, with eight lines alone.
   - does the extrusion roof meet the main roof
