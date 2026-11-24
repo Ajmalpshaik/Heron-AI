@@ -1,0 +1,86 @@
+# THE PROOF PLAN, written 2026-11-24 in a cloud session with no Revit, and NOT
+# RUN. Not tested in Revit (D-30). The owner runs it - NEEDS-CHECKING Group
+# QB, rows QB5 to QB7, and tools/jobs/move-curtain-grid-line.yaml is the
+# positive and the negative as a batch.
+#
+# THE ARRANGEMENT, in the one transaction group `validate` rolls back:
+#   1. CREATE_WALL: one wall 9000 mm long, 3000 mm high on "Level 1", from
+#      0,68000,0 to 9000,68000,0, of "Curtain Wall: Curtain Wall" (no grid)
+#   2. ADD_CURTAIN_GRID_LINES: vertical "equal 6" - lines at 1500, 3000,
+#      4500, 6000, 7500 mm from its start, NOT pinned (added by hand)
+#   3. this fragment with the wall from the chain, direction "vertical",
+#      lineAt "3000", move "300"
+#
+# THE NUMBERS ARE DERIVED: 3000 + 300 = 3300, still short of the next line at
+# 4500, and more than 100 mm inside the 9000 mm grid.
+
+positive:
+  - given: >
+      THE JOB FILE'S CASE - the arrangement above, Revit 2020 or 2024
+    expect: >
+      moved 1, notMovable empty, refused empty. readBack "the vertical line
+      from 3000 to 3300 mm", "measured along the wall from the grid's start",
+      panels 6 before and 6 now. REPORT_CURTAIN_ELEMENTS afterwards: still 5
+      vertical lines
+
+  - given: >
+      steps 1 and 2 with mullionType "Rectangular Mullion : 50 x 150mm" on
+      the ADD_CURTAIN_GRID_LINES step (any rectangular mullion type the copy
+      has), kept in a scratch copy; then ONE of the new interior mullions -
+      the one at 4500 - selected and this fragment run with move "-200"
+    expect: >
+      moved 1 - "the vertical line from 4500 to 4300 mm, with its 1 mullion".
+      In an elevation the mullion is at 4300 and the panels either side are
+      1300 and 1700 mm wide (from 3000 to 4300, 4300 to 6000) - measure with
+      an aligned dimension. If the call stops with "carried 1 mullion(s)
+      before and has 0 on it now", the ASSUMPTION that a moved line carries
+      its mullions did not hold: a FINDING, recorded
+
+  - given: >
+      the first case's arrangement; move "to 1400" - past the line at 1500
+    expect: >
+      refused - the line at 1500 is in the way ("onto or past the vertical
+      line at 1500 mm"). Then move "to 2400" on lineAt "3000": moved 1, "from
+      3000 to 2400 mm"
+
+  - given: the first case again on the other release of the two
+    expect: the same answer
+
+negative:
+  - given: >
+      THE JOB FILE'S NEGATIVE. The same arrangement and the same request,
+      with CREATE_WALL's wallType "Basic Wall: Generic - 200mm" - the
+      arrangement stops at step 2 (ADD_CURTAIN_GRID_LINES refuses a basic
+      wall), so run the fragment by hand with that basic wall selected
+    expect: >
+      moved 0, readBack empty, refused "No curtain wall holds what was
+      given", notMovable names the wall - "is not a curtain wall, a curtain
+      grid line or a mullion". The basic wall did not move
+
+  - given: >
+      the first positive's arrangement; move "0.3" - metres typed
+    expect: >
+      refused "A move of 0.3 mm is less than 5 mm"; moved 0
+
+  - given: >
+      a wall whose lines come from its TYPE (Group JJ's "HERON JJ 1500", Fixed
+      Distance 1500); lineAt "3000", move "300"
+    expect: >
+      refused "... is pinned - the lines a curtain wall type lays out arrive
+      pinned to it ... SET_PIN_STATE ... SET_CURTAIN_WALL_GRID". If it moves
+      instead, the ASSUMPTION that a type's lines read pinned did not hold: a
+      FINDING, recorded
+
+  - given: >
+      a corner or end mullion of the second positive's wall selected - one on
+      the wall's border; move "100"
+    expect: >
+      refused "No grid line to move", notMovable "sits on the wall's end
+      edge, not on a grid line"; moved 0
+
+second_route:
+  - >
+      By hand on the kept run: an elevation of the wall, an aligned dimension
+      from the wall's start to the moved line - 3300 for the first case.
+      REPORT_CURTAIN_ELEMENTS counts the same lines, mullions and panels
+      before and after
