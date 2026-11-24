@@ -120,6 +120,7 @@ namespace Heron.Revit.Addin
             var verb = hide ? "hide" : "isolate";
             var done = hide ? "hidden" : "isolated";
 
+
             // ONE OR THE OTHER. Both given is two different requests - these
             // elements, or everything of that kind - and picking one is a
             // guess that looks exactly like an answer.
@@ -133,7 +134,7 @@ namespace Heron.Revit.Addin
 
             if (typedIds.Length == 0 && words.Length == 0)
             {
-                return Json.Error("nothing_to_" + verb,
+                return Nothing(hide,
                     "Nothing was named to " + verb + ". Give element ids, comma separated as "
                     + "Heron's answers print them, or a category such as 'ducts' or "
                     + "'pipes, pipe fittings'.");
@@ -256,7 +257,7 @@ namespace Heron.Revit.Addin
 
                 if (wanted.Count == 0)
                 {
-                    return Json.Error("nothing_to_" + verb,
+                    return Nothing(hide,
                         "No category was given. Try 'ducts', or several at once like "
                         + "'pipes, pipe fittings'.");
                 }
@@ -292,7 +293,7 @@ namespace Heron.Revit.Addin
 
             if (!kept)
             {
-                return Json.Error(verb + "_failed",
+                return Failed(hide,
                     failed + " The view's own visibility settings were not touched.");
             }
 
@@ -302,7 +303,7 @@ namespace Heron.Revit.Addin
             var active = view.IsTemporaryHideIsolateActive();
             if (!active)
             {
-                return Json.Error(verb + "_failed",
+                return Failed(hide,
                     "Revit accepted the " + verb + " in \"" + view.Name + "\" and reports no "
                     + "Temporary Hide/Isolate on afterwards, so nothing can be said to be "
                     + done + ". The view's own visibility settings were not touched.");
@@ -334,6 +335,26 @@ namespace Heron.Revit.Addin
             if (inView >= 0) fields.Add(Json.Num("inView", inView));
 
             return Json.Ok(fields.ToArray());
+        }
+
+        /// <summary>
+        /// The refusal when nothing was named, under the request's own code.
+        /// EACH CODE TYPED WHOLE, inside its own Json.Error, never built from
+        /// a verb: tests/test_failure_analysis.py checks the failure table
+        /// (mcp/server/heron_failure.py) against the codes written in Json.Error
+        /// calls, read as text - a code made of pieces is one it cannot see.
+        /// </summary>
+        private static string Nothing(bool hide, string message)
+        {
+            return hide ? Json.Error("nothing_to_hide", message)
+                        : Json.Error("nothing_to_isolate", message);
+        }
+
+        /// <summary>Revit refused the hide or the isolate - Nothing's rule for the code.</summary>
+        private static string Failed(bool hide, string message)
+        {
+            return hide ? Json.Error("hide_failed", message)
+                        : Json.Error("isolate_failed", message);
         }
 
         /// <summary>
