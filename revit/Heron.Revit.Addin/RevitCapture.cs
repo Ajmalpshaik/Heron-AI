@@ -863,8 +863,13 @@ namespace Heron.Revit.Addin
         /// neither shape refuses the whole list, named, rather than being
         /// dropped: a picture of fewer things than were asked for with no
         /// reason given is the failure the refusals here exist to prevent.
+        ///
+        /// SHARED WITH THE TEMPORARY HIDE/ISOLATE (row 5b-2024), so a form's
+        /// long id reads the same there as it does here. `notDone` is the word
+        /// its refusals end with - "pictured" here, "hidden" or "isolated" there.
         /// </summary>
-        private static string SplitIds(string text, List<string> typed, List<string> unique)
+        internal static string SplitIds(string text, List<string> typed, List<string> unique,
+                                        string notDone = "pictured")
         {
             var numbers = new List<string>();
             foreach (var piece in text.Split(','))
@@ -876,7 +881,7 @@ namespace Heron.Revit.Addin
                 {
                     if (unique.Contains(part))
                         return part + " is typed more than once - type each id once. "
-                             + "Nothing was pictured.";
+                             + "Nothing was " + notDone + ".";
                     unique.Add(part);
                 }
                 else if (Digits(part)) numbers.Add(part);
@@ -884,19 +889,19 @@ namespace Heron.Revit.Addin
                     return "\"" + part + "\" is not an element id. Give the ids as Heron's "
                          + "answers print them - Revit's number, digits only, or the long id "
                          + "the family form tools give back - comma separated, with nothing "
-                         + "else in the list. Nothing was pictured.";
+                         + "else in the list. Nothing was " + notDone + ".";
             }
 
             if (numbers.Count == 0 && unique.Count == 0)
                 return "'" + text + "' is not a list of element ids. Type them as Heron's "
-                     + "answers print them, comma separated. Nothing was pictured.";
+                     + "answers print them, comma separated. Nothing was " + notDone + ".";
             if (numbers.Count == 0) return null;
 
             string problem;
             var read = HeronBindingNote.TypedIds(string.Join(",", numbers.ToArray()), out problem);
             if (read == null)
                 return problem ?? "'" + text + "' is not a list of element ids. Type them as "
-                     + "Revit shows them - digits only, comma separated. Nothing was pictured.";
+                     + "Revit shows them - digits only, comma separated. Nothing was " + notDone + ".";
             typed.AddRange(read);
             return null;
         }
