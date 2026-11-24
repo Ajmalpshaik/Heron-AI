@@ -1,6 +1,14 @@
 // NOT STANDALONE. Assumes `doc`, `masses`, `siteArea` and `withOutlines` are
-// in scope; leaves `elements`, `massCount`, `grossFloorAreaM2`, `report` and
-// `findings` behind.
+// in scope; leaves `elements`, `massCount`, `grossFloorAreaM2`, `report`,
+// `skippedMasses` and `findings` behind.
+//
+// VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - AN ELEMENT OF THE MASS CATEGORY THIS DOES NOT READ IS COUNTED.
+// Version 1 passed over one that is not a family instance, or whose type would
+// not read, without a word, and answered "This project has no conceptual
+// masses" over it. `skippedMasses` carries the count every time; the sentence
+// naming it rides only on the empty answer, so an answer that reads a mass
+// reads as version 1's.
 //
 // READ ONLY - opens no transaction.
 //
@@ -47,10 +55,14 @@ var asked = new List<string>();
 foreach (var part in (masses ?? "").Split(','))
     if (part.Trim() != "") asked.Add(part.Trim());
 var found = new List<FamilyInstance>();
+// VERSION 2 (D-64): elements of the Mass category this does not read - not a
+// family instance (a DirectShape given the Mass category, say), or one whose
+// type Revit will not give. Counted whatever `masses` asks for.
+var skippedMasses = 0;
 foreach (var candidate in new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Mass).WhereElementIsNotElementType())
 {
     var instance = candidate as FamilyInstance;
-    if (instance == null || instance.Symbol == null) continue;
+    if (instance == null || instance.Symbol == null) { skippedMasses++; continue; }
     if (asked.Count > 0)
     {
         var label = instance.Symbol.FamilyName + " : " + instance.Symbol.Name;
@@ -64,6 +76,11 @@ if (found.Count == 0)
     findings.Add(asked.Count == 0
         ? "This project has no conceptual masses. In-place masses (Massing & Site > In-Place Mass) and loaded mass families both count."
         : "No mass matched \"" + string.Join(", ", asked) + "\" - an id, or words of its family or type name.");
+// VERSION 2 (D-64): said only on the empty answer, and only when something was
+// passed over.
+if (found.Count == 0 && skippedMasses > 0)
+    findings.Add(skippedMasses + " element(s) of the Mass category were passed over - not a mass family "
+        + "instance this reads (a DirectShape given the Mass category, say) - so they are not in this answer.");
 
 // Every solid of a mass, in project coordinates.
 var options = new Options();

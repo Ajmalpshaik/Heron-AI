@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PHS-032
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "what design options exist and what is inside them"
 kind: filter
 domain: revit.document
 capability: REPORT_DESIGN_OPTIONS
-version: 1
+# VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005) - an element whose design option Revit will not give is counted in
+# `unresolvedElements`, never silently left out of an option's count, and a
+# sentence names it only when it is above 0. It was PROVEN at version 1; that
+# proof stays below as the record, and the card is DRAFT until its
+# NEEDS-CHECKING check runs and is signed (D-30).
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -48,6 +54,12 @@ contract:
     - name: activeOption
       role: result
       type: string
+    - name: unresolvedElements
+      # VERSION 2 (D-64). Elements whose DesignOption Revit would not give, so
+      # they are in no option's count. Always carried; a sentence in
+      # `findings` names it only when it is above 0.
+      role: accounting
+      type: int
 
 proof:
   date: '2026-09-13'

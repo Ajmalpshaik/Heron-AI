@@ -1,6 +1,15 @@
 // NOT STANDALONE. Assumes `doc`, `circuitKind`, `circuitName` and
 // `includeLinks` are in scope; leaves `elements`, `panels`, `findings`,
-// `linksSearched` and `linkedMatches` behind.
+// `linksSearched`, `linkedMatches` and `unresolvedCircuits` behind.
+//
+// VERSION 4 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - A CIRCUIT THAT WILL NOT GIVE ITS LOADS IS COUNTED. Version 3, asked
+// for what is on NO circuit, passed over such a circuit without a word, so
+// every load on it was selected as on no circuit - a failed read answered as a
+// no (D-52). `unresolvedCircuits` carries the count every time, in this model
+// and any link read; the sentence naming it is added only when it is above 0
+// and only to the "on no circuit" answer, so every other answer reads as
+// version 3's.
 //
 // A CIRCUIT'S Elements ARE ITS LOADS. THE PANEL IS NOT AMONG THEM. Measured: a
 // circuit plainly involving a receptacle and a panelboard reported ONE element.
@@ -97,6 +106,9 @@ var wantNone = wantKind.Equals("none", StringComparison.OrdinalIgnoreCase)
     || wantKind.Equals("unassigned", StringComparison.OrdinalIgnoreCase);
 
 // Every load of every circuit in a document, by id.
+// VERSION 4 (D-64): circuits whose loads Revit would not give.
+var unresolvedCircuits = 0;
+
 Func<Document, HashSet<ElementId>> onACircuit = d =>
 {
     var carried = new HashSet<ElementId>();
@@ -108,7 +120,7 @@ Func<Document, HashSet<ElementId>> onACircuit = d =>
             foreach (Element load in circuit.Elements)
                 if (load != null) carried.Add(load.Id);
         }
-        catch (Exception) { }
+        catch (Exception) { unresolvedCircuits++; }
     }
     return carried;
 };
@@ -158,6 +170,11 @@ if (wantNone)
         findings.Add(string.Format("{0} piece(s) of electrical equipment have no supply circuit of their own. "
             + "They are NOT selected - a panel feeds circuits, and one with no supply is often the main "
             + "board, not a fault", equipmentUnfed));
+    // VERSION 4 (D-64): said only when a circuit of THIS model was passed over -
+    // links are read below, and their circuits join the count after this line.
+    if (unresolvedCircuits > 0)
+        findings.Add(string.Format("{0} circuit(s) in this model would not give their loads, so an element "
+            + "on one of them may be selected here as on NO circuit", unresolvedCircuits));
     if (checkedCount == 0)
         findings.Add("Nothing in the model has an electrical connector, so there was nothing to check - "
             + "the same answer a model with no electrical work at all gives");

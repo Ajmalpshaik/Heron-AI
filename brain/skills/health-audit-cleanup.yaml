@@ -86,8 +86,10 @@ purpose: >
      id; READ_ELEMENT_PHASE (PROVEN) for the phase each was created in and
      the phase it is demolished in; SET_SELECTION (PROVEN) through
      revit_show, with show, to put them on screen. REPORT_DESIGN_OPTIONS
-     (PROVEN) says whether the model has design options at all, and how many
-     elements sit in each. Read the modeller the list - not the total - and
+     (DRAFT, version 2 - version 1 was PROVEN; version 2 adds a count of
+     elements whose option would not read, NEEDS-CHECKING Group QH) says
+     whether the model has design options at all, and how many elements sit
+     in each. Read the modeller the list - not the total - and
      say plainly what step 3 does not know: which of each pair is kept, and
      whether the two are in different phases or different design options.
      On a model with more than one phase in use, or with design options,
@@ -179,7 +181,8 @@ needs:
   # read and the capabilities that only pick: a lookup names a method whose
   # needs hold one of its answers, and these five answer "what is this",
   # "which phase is this on", "select these". Not measured with them here.
-  # All five PROVEN on 2026-11-11.
+  # All five PROVEN on 2026-11-11; REPORT_DESIGN_OPTIONS back to DRAFT at
+  # version 2 on 2026-11-24 (D-64, WN-7), until Group QH runs.
   - DELETE_ELEMENTS
   # Only when the warnings named it - step 8.
   - STRAIGHTEN_OFF_AXIS_LINES
