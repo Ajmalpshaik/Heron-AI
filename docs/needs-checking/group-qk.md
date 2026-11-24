@@ -23,7 +23,7 @@ which had to stay solid. [`create-curtain-system`](../../brain/fragments/create-
 - Every reply - dry run, refusal, run - **lists the host's faces numbered**: kind, the way it looks (compass point in
   the model's own directions, and its tilt), area, any curtain system it already carries, and which are asked.
 - **A face asked that already carries a curtain system refuses the whole call** (`alreadyGlazed`), naming the glazed
-  faces and the bare ones. Revit gives a curtain system no host face to read back, so it is found from the standing
+  faces and the bare ones. The owner chose refusing over skipping the glazed faces, 2026-11-24, Ajmal: *"A"*. Revit gives a curtain system no host face to read back, so it is found from the standing
   system: each curtain grid is read cell by cell, and the host face holding the middle of every edge of a cell, to
   within 5 mm, is the face that grid sits on.
 
