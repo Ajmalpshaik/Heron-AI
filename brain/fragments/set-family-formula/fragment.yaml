@@ -106,29 +106,34 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
-    Revit 2024, session 32340'
+  model: PX Box (1,576 elements), Revit 2020, session 29500
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned cleared false, findings 1 item(s)
-    ["Height" = Width / 2, read back from the family. In the curr...], formulaNow Width /
-    2, notAFamily false, nothingToDo false, refused (null), target FamilyParameter, valueNow
-    300.0, wantedFormula Width / 2, wantedName Height. inputs came parameterName as given;
-    formula as given. on Family1
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned cleared false, findings 1 item(s) [The document in front
-    is a project, not a family open in the...], formulaNow , notAFamily true, nothingToDo
-    false, refused The document in front is a project, not a family open in the Family Editor,
-    so it has no family formulas. Open the family first., target (null), valueNow , wantedFormula
-    Width / 2, wantedName Height. inputs came parameterName as given; formula as given. on
-    Project1
+    the transaction group ROLLED BACK afterwards. returned cleared true, findings 1 item(s)
+    [Cleared the formula "Height + Neck Depth" on "Neck Top". It ...], formulaNow , isYesNo
+    Func`2, notAFamily false, nothingToDo false, refused (null), target FamilyParameter, valueIn
+    Func`3, valueNow 350.0, wantedFormula , wantedName Neck Top, yesNoProperty (null), yesNoSpec
+    (null), yesNoSpecs (null). inputs came parameterName as given; formula as given. on PX
+    Box
+  negative_case: run with parameterName=No Such Parameter, formula= instead - chosen because
+    it should not contain what this fragment reports - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned cleared false, findings
+    1 item(s) ["No Such Parameter" is not a parameter of this family, so no...], formulaNow
+    , isYesNo Func`2, notAFamily false, nothingToDo false, refused "No Such Parameter" is
+    not a parameter of this family, so no formula was set. ADD_FAMILY_PARAMETERS makes one.,
+    target (null), valueIn Func`3, valueNow , wantedFormula , wantedName No Such Parameter,
+    yesNoProperty (null), yesNoSpec (null), yesNoSpecs (null). inputs came parameterName as
+    given; formula as given. on PX Box
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 2432812853c486cc
-
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: dc82efa01aa2e93e
+  fingerprint: 1e30b3e9d580b7ca
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

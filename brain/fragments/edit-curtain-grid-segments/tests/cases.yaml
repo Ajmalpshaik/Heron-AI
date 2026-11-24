@@ -1,0 +1,104 @@
+# THE PROOF PLAN, written 2026-11-24 in a cloud session with no Revit, and NOT
+# RUN. Not tested in Revit. Nothing here has touched a model (D-30); every case
+# says what to arrange and what must come back. The owner runs it -
+# NEEDS-CHECKING Group QB, rows QB1 to QB4, and
+# tools/jobs/edit-curtain-grid-segments.yaml is the positive and the negative
+# as a batch.
+#
+# THE WALL AND ITS LINES ARE MADE, NOT FOUND, SO NOTHING ALREADY PLACED CAN
+# CHANGE. In the one transaction group `validate` rolls back:
+#   1. CREATE_WALL draws one wall 9000 mm long and 3000 mm high on "Level 1",
+#      from 0,64000,0 to 9000,64000,0 - 64 m north of the origin, clear of the
+#      building - of "Curtain Wall: Curtain Wall", a type with no grid (Group
+#      JJ's row JJ0 read both layouts as None in its rig)
+#   2. ADD_CURTAIN_GRID_LINES puts vertical lines on it, "equal 6" - at 1500,
+#      3000, 4500, 6000 and 7500 mm from its start. Lines added by hand are
+#      not pinned, so this card may take them
+#   3. a second ADD_CURTAIN_GRID_LINES call for the transom - "horizontal",
+#      "1100" - is the arrangement of the segment cases; batch-prove takes one
+#      `set:`, so the segment cases are arranged by hand (QB2)
+#
+# THE NUMBERS BELOW ARE DERIVED, NOT REMEMBERED. 9000 / 6 = 1500. With a
+# transom at 1100, each vertical line has TWO segments - 0 to 1100 and 1100
+# to 3000 above the base - so a point at 500 names the bottom one.
+#
+# READ `readBack` BEFORE `changed`. It must name ONE curtain wall whose
+# vertical lines were 5 before.
+
+positive:
+  - given: >
+      THE JOB FILE'S CASE. The arrangement above, steps 1 and 2, in a saved
+      scratch project, Revit 2020 or 2024: direction "vertical", lineAt
+      "3000", segmentsAt left out (all), action left out (remove)
+    expect: >
+      changed 1, notFound empty, refused empty. readBack: "vertical lines 5
+      before, 4 now", panels 6 before and 5 after, and "the vertical line at
+      3000 mm taken away". REPORT_CURTAIN_ELEMENTS on the wall afterwards
+      counts 4 vertical grid lines
+
+  - given: >
+      steps 1 and 2, then by hand a transom: ADD_CURTAIN_GRID_LINES
+      horizontal "1100" on the same wall, kept in a scratch copy. This
+      fragment: direction "vertical", lineAt "3000", segmentsAt "500"
+    expect: >
+      changed 1 - the bottom segment of the line at 3000 taken out; the top
+      one (1100 to 3000) stays. In an elevation the bottom two panels either
+      side of 3000 read as ONE panel. readBack "the segment at 500 mm taken
+      out". Then action "restore", the same lineAt and segmentsAt: changed 1,
+      "put back", and the two panels are two again
+
+  - given: >
+      the arrangement of the second case after its segment was taken out;
+      action "restore", segmentsAt left out (all)
+    expect: >
+      changed 1, "every segment put back"
+
+  - given: the first case again on the other release of the two, 2020 or 2024
+    expect: the same answer. One path serves every release
+
+negative:
+  - given: >
+      THE JOB FILE'S NEGATIVE. The same arrangement and the SAME request,
+      with CREATE_WALL's wallType "Basic Wall: Generic - 200mm" instead - a
+      basic wall on the same line (ADD_CURTAIN_GRID_LINES refuses it, so the
+      job's arrangement stops there; run the fragment with the basic wall
+      selected). A wall it must NOT touch, not an empty selection
+    expect: >
+      changed 0, readBack empty. notCurtain names the wall - "is a wall with
+      no curtain grid"; refused begins "Nothing given is a curtain wall" and
+      ends "Nothing was changed"
+
+  - given: >
+      the first positive's arrangement; lineAt "3300" - no line there
+    expect: >
+      refused "A line named is not there ... no vertical line within 5 mm of
+      3300 mm - they are at 1500, 3000, 4500, 6000, 7500 mm. Nothing was
+      changed"; changed 0. The wall keeps all five lines
+
+  - given: >
+      a wall whose lines come from its TYPE - a copy of Curtain Wall with
+      Vertical Grid Layout Fixed Distance, Spacing 1500, one 9000 x 3000 wall
+      of it drawn by hand and saved (Group JJ's "HERON JJ 1500" will do);
+      lineAt "3000"
+    expect: >
+      refused "... is pinned - the lines a curtain wall type lays out arrive
+      pinned to it ... SET_PIN_STATE ... SET_CURTAIN_WALL_GRID. Nothing was
+      changed". If instead it is deleted, the ASSUMPTION that a type's lines
+      read pinned did not hold: a FINDING, recorded, and the card is changed
+      before it is proved
+
+  - given: >
+      the second positive's arrangement; segmentsAt "1100" - on the joint
+      between the two segments; and separately segmentsAt "500, 2000" - both
+      segments of the line
+    expect: >
+      the first refused "sits on the joint between two segments"; the second
+      refused "That is every segment ... say all". changed 0 both times
+
+second_route:
+  - >
+      By hand on the kept run: open an elevation of the wall, select the
+      curtain grid lines and count them; Revit's own Add/Remove Segments on
+      the line at 3000 shows its bottom segment dashed (taken out) in the
+      second case. REPORT_CURTAIN_ELEMENTS counts the same lines and panels.
+      Edit Type on the wall's type: its Vertical Grid Layout is unchanged

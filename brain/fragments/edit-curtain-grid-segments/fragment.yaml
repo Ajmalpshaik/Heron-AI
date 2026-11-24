@@ -1,0 +1,196 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-173
+semantic-identity: "remove a grid line from this one curtain wall, or take out or put back one segment of it - Revit's Add/Remove Segments"
+kind: action
+domain: revit.elements
+capability: EDIT_CURTAIN_GRID_SEGMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# VERSION 1 (2026-11-24) - written in a cloud session with no Revit, for
+# WN-11 in GitHub issue #1005 (the facade note's "a grid line REMOVED, or one
+# segment cut, on one wall"). Not tested in Revit. NEEDS-CHECKING Group QB,
+# rows QB1 to QB4.
+
+purpose: >
+  TAKES A CURTAIN GRID LINE AWAY from ONE curtain wall - the one picked in
+  Revit - or takes out one or more of its SEGMENTS, the pieces between the
+  lines that cross it, or puts back segments taken out before. Revit's own
+  Add/Remove Segments tool and deleting a grid line, typed: "remove the
+  vertical grid line at 3000 on this curtain wall", "cut that grid line out
+  of the bottom panel only", "put back the segment I removed".
+
+  **THIS WALL ONLY.** The change is on the wall's own curtain grid; nothing
+  on its family type is written, so no other wall changes with it.
+  SET_CURTAIN_WALL_GRID is the one that changes a type's layout for all its
+  walls. ADD_CURTAIN_GRID_LINES adds new lines.
+
+  **ONE STRAIGHT CURTAIN WALL AT A TIME.** Exactly one among what is handed
+  in; anything else that is not a curtain wall is named in `notCurtain` and
+  left alone; two curtain walls are refused; a curved one is refused.
+
+  **A LINE IS NAMED BY WHERE IT IS.** `direction` vertical - a line running up
+  the wall, `lineAt` its distance ALONG the wall from its START - or
+  horizontal - a transom, `lineAt` its HEIGHT above the BASE. Millimetres,
+  digits only, commas between, measured off the grid's own edges, the way
+  ADD_CURTAIN_GRID_LINES places a line; a line within 5 mm is that line. A
+  position with no line there refuses the whole call, naming where the lines
+  that way are.
+
+  **A SEGMENT IS NAMED BY A POINT ON IT.** `segmentsAt` left out or "all": the
+  whole line. Otherwise millimetres on the line - a height on a vertical line,
+  a distance from the start on a horizontal one - and each picks the segment
+  whose span holds it. A point on the joint between two segments is refused,
+  because which one was meant cannot be told. Naming every segment a line has
+  left is refused: say "all" to take the line away.
+
+  **`action` remove or restore.** Left out it is remove. Remove with "all"
+  deletes the line, and the mullions on it go with it, counted; remove with
+  points takes those segments out. Restore with "all" puts every segment
+  taken out back; restore with points puts those back. A segment already the
+  way asked is skipped and named, never counted.
+
+  **A PINNED LINE IS REFUSED, BY NAME.** The lines a curtain wall type lays
+  out arrive pinned to it; taking one away or apart changes what the type
+  drew on this wall, so it is a deliberate act - SET_PIN_STATE unpins it
+  first, or SET_CURTAIN_WALL_GRID changes the type for every wall.
+  ASSUMPTION for the proof: that a type's own lines read pinned through the
+  API as they show the pin in Revit.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Every
+  refusal is made before the first write. After one regeneration every change
+  is read back off the wall - a deleted line no longer there, a removed
+  segment among the skipped ones, a restored one among the existing - and one
+  that is not stops the call, and nothing it did is kept. In a shared model a
+  wall another user holds is refused naming them.
+
+# WHAT THE ANSWER CARRIES - in a comment, not in the purpose, so the indexed
+# words stay about the job:
+#
+#   readBack   the lines that way before and after, the wall's panels and
+#              mullions before and after, and each change made
+#   changed    lines deleted + segments taken out + segments put back, each
+#              READ BACK, never counted off a call that returned
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # THE ONE CURTAIN WALL - selected in Revit, or what the step before made.
+    - name: elements
+      type: IList<Element>
+    # "vertical" or "horizontal" - which way the named lines run.
+    - name: direction
+      type: string
+      source: request
+    # MILLIMETRES, digits only, commas between: a vertical line's distance
+    # along the wall from its start, or a horizontal line's height above its
+    # base.
+    - name: lineAt
+      type: string
+      source: request
+    # "all" - the whole line - or millimetres ON the line, each naming the
+    # segment that holds it: a height on a vertical line, a distance from the
+    # start on a horizontal one.
+    - name: segmentsAt
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # "remove" or "restore".
+    - name: action
+      type: string
+      source: request
+      optional: true
+      absent: remove
+  provides:
+    - name: changed
+      # Lines deleted, segments taken out and segments put back - each read
+      # back off the wall after Revit rebuilt it.
+      role: result
+      type: int
+    - name: notFound
+      # Positions named where the wall has no line that way - each with where
+      # its lines are. The evidence it looked (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notCurtain
+      # Handed in but not a curtain wall, so left alone (D-52).
+      role: accounting
+      type: IList<string>
+    - name: readBack
+      # The wall as Revit holds it after, beside before. A STRING, because a
+      # reply cuts a list to three items and this is the evidence. Empty on a
+      # refusal.
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE PATH FOR EVERY RELEASE, read rather than remembered. On 2026-11-24
+  tools/api-surface read the reference assemblies of all eight releases, 2020
+  through 2027, and found one signature on every one for each member this
+  calls: `CurtainGridLine.ExistingSegmentCurves` and `SkippedSegmentCurves`
+  (CurveArray), `FullCurve`, `RemoveSegment(Curve)`, `AddSegment(Curve)` and
+  `AddAllSegments()`; `CurtainGrid.GetCurtainCells`, `GetUGridLineIds`,
+  `GetVGridLineIds`, `GetPanelIds` and `GetMullionIds`; `CurtainCell.CurveLoops`;
+  `Element.Pinned`; `Document.Delete(ElementId)`; `Wall.CurtainGrid`;
+  `WorksharingUtils.GetCheckoutStatus` with its owner; `Document.Regenerate`
+  and the application's `AngleTolerance`. No ElementId is constructed and none
+  is read as a number.
+
+# ROUTING - repeated in ADD_CURTAIN_GRID_LINES.
+#
+#   "remove the grid line at 3000 on this
+#    curtain wall", "delete this curtain grid
+#    line"                                    -> here, direction and lineAt,
+#                                                segmentsAt all
+#   "cut the grid line out of the bottom
+#    panel only", "remove one segment of this
+#    grid line"                               -> here, segmentsAt a point on it
+#   "put back the segment I removed"          -> here, action restore
+#   "add a grid line at 1200", "divide this
+#    curtain wall into six panels"            -> ADD_CURTAIN_GRID_LINES. New
+#                                                lines; this takes lines and
+#                                                segments away and back
+#   "change the curtain wall grid spacing"    -> SET_CURTAIN_WALL_GRID - the
+#                                                type, every wall of it
+#   "delete these elements"                   -> DELETE_ELEMENTS - anything,
+#                                                by id. This names a grid line
+#                                                by where it is and reads the
+#                                                wall back
+#   "move this mullion", "move the grid line" -> MOVE_CURTAIN_GRID_LINE
+#   "where are the grid lines on this curtain
+#    wall"                                    -> REPORT_CURTAIN_ELEMENTS. A
+#                                                question never lands on a
+#                                                write (D-86)
+#   "select all elements of type Curtain Wall" -> a selection, never a write.
+#                                                MEASURED 2026-11-24: this card's
+#                                                arrival tips a near tie on the
+#                                                trained model alone, and the
+#                                                sentence reaches
+#                                                SET_CURTAIN_PANEL_TYPE - row
+#                                                5b-2012, issue #1328
+
+utterances:
+  - remove a grid line from this curtain wall
+  - remove this grid line from the curtain wall
+  - delete the vertical grid line at 3000 on this curtain wall
+  - remove one segment of this curtain grid line
+  - cut the grid line out of the bottom panel only
+  - put back the curtain grid segment I removed

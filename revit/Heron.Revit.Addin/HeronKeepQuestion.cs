@@ -282,9 +282,32 @@ namespace Heron.Revit.Addin
             "Revit reported nothing added, changed or deleted in the model, so the modeller "
             + "was not asked.";
 
+        /// <summary>The modeller pressed Discard - the reply's modellerAnswer.</summary>
+        public const string AnswerDiscard = "discard";
+
         /// <summary>
-        /// The verdict when the modeller chose Discard - or closed the box,
-        /// which discards.
+        /// The box was closed with no link chosen - Esc, its X, or anything
+        /// else that shut it - which discards.
+        /// </summary>
+        public const string AnswerClosed = "closed";
+
+        /// <summary>
+        /// The box could not be built or shown, so nobody was asked, and the
+        /// change was rolled back - row 5b-1991.
+        /// </summary>
+        public const string AnswerNotShown = "not_shown";
+
+        /// <summary>
+        /// The verdict when a change was asked about and not kept: the
+        /// modeller pressed Discard, the box was closed without an answer, or
+        /// the box never appeared.
+        ///
+        /// ONLY A PRESSED DISCARD IS CALLED THE MODELLER'S CHOICE - row
+        /// 5b-1991. On 2026-11-22 three of five changes sent back-to-back came
+        /// back as "the modeller chose Discard" when the modeller had chosen
+        /// Discard on none of them. A box closed with no link chosen, or one
+        /// that could not be shown, is said as exactly that, so the chat asks
+        /// rather than treats it as a decision.
         ///
         /// "NOTHING WAS KEPT" ONLY WHEN THE ROLLBACK HELD - Revit reported the
         /// group rolled back AND nothing the run added is still standing
@@ -292,26 +315,51 @@ namespace Heron.Revit.Addin
         /// on 2026-09-09 a rollback did not hold while Heron said it had.
         /// Otherwise it says the model may still hold the change. And never
         /// "send it again with apply", which the plain rollback's verdict
-        /// says: the modeller has just answered.
+        /// says: the modeller has just answered, or has to be asked.
         /// </summary>
-        public static string Discarded(string name, bool held, bool selectionRestored)
+        /// <param name="answer">AnswerDiscard, AnswerClosed or AnswerNotShown.
+        /// Anything else is read as AnswerClosed - never as a pressed Discard.</param>
+        public static string Discarded(string name, bool held, bool selectionRestored,
+                                       string answer)
         {
+            string how;
+            string after;
+            if (answer == AnswerDiscard)
+            {
+                how = "The modeller chose Discard in Revit";
+                after = "This was their decision, not a failure - send it again only if they ask.";
+            }
+            else if (answer == AnswerNotShown)
+            {
+                how = "The Keep or Discard box could not be shown in Revit, so the modeller was "
+                    + "NOT asked and the change was not kept";
+                after = "This was not the modeller's decision. Tell them the box did not appear, "
+                      + "and send it again only if they ask.";
+            }
+            else
+            {
+                how = "The Keep or Discard box was closed without Keep or Discard being chosen "
+                    + "(Esc, its close button, or something else shut it), which discards";
+                after = "The modeller did not press Discard. Ask them whether they meant to "
+                      + "discard it before sending it again.";
+            }
+
             if (!held)
             {
-                return "The modeller chose Discard in Revit, and the rollback could not be "
+                return how + ", and the rollback could not be "
                      + "confirmed - Revit did not report the transaction group rolled back, or "
                      + "something the run added is still in the model - so "
                      + "THE MODEL MAY STILL HOLD what '" + Named(name) + "' did. Look at it in "
                      + "Revit before trusting anything here, and do not save until you have.";
             }
 
-            return "The modeller chose Discard in Revit, so NOTHING WAS KEPT: '" + Named(name)
+            return how + ", so NOTHING WAS KEPT: '" + Named(name)
                  + "' ran, Revit reported the transaction group rolled back, and there is no "
                  + "new undo entry. "
                  + (selectionRestored
                        ? "Their own selection was put back. "
                        : "Their own selection could not be put back. ")
-                 + "This was their decision, not a failure - send it again only if they ask.";
+                 + after;
         }
 
         /// <summary>

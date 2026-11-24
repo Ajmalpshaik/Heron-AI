@@ -365,7 +365,16 @@ def _ended(reply, word=None):
         return "nothing changed, nothing kept - no undo entry"
     if kind == "discarded":
         # D-126's Discard. Whether its rollback held is the verdict's to say,
-        # in the modeller's words - this line only names who decided.
+        # in the modeller's words - this line only names who decided. Row
+        # 5b-1991: only a pressed Discard is the modeller's; a box closed
+        # unanswered, or never shown, is said as that.
+        answer = reply.get("modellerAnswer")
+        if answer == "not_shown":
+            return ("NOT KEPT - the Keep or Discard box could not be shown, nobody was asked - "
+                    "the verdict says whether the rollback held")
+        if answer == "closed":
+            return ("NOT KEPT - the Keep or Discard box was closed without an answer - "
+                    "the verdict says whether the rollback held")
         return "DISCARDED by the modeller - the verdict says whether the rollback held"
     if kind == "notHeld":
         return "THE ROLLBACK DID NOT HOLD - the model still holds part of it"

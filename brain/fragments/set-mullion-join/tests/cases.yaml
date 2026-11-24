@@ -1,0 +1,53 @@
+# THE PROOF PLAN, written 2026-11-24 in a cloud session with no Revit, and NOT
+# RUN. Not tested in Revit (D-30). The owner runs it - NEEDS-CHECKING Group
+# QB, rows QB8 and QB9. Mullions are picked (Tab), so there is no batch job:
+# the arrangement is made by hand in a scratch copy and run with try-once or
+# validate.
+#
+# THE ARRANGEMENT, in a saved scratch project: one curtain wall 9000 x 3000
+# of "Curtain Wall: Curtain Wall"; ADD_CURTAIN_GRID_LINES vertical "equal 3"
+# (3000, 6000) and horizontal "1100", each with mullionType a rectangular
+# mullion type the copy has (50 x 150 will do). By Revit's default the
+# crossing at 3000 / 1100 has one of the two running through. READ which with
+# the elevation zoomed in, and RECORD it, before running anything.
+
+positive:
+  - given: >
+      the arrangement; the interior VERTICAL mullion segment at 3000 from 0
+      to 1100 selected (the one below the transom) - if it already runs
+      through, use the transom segment beside it instead; join "continuous"
+    expect: >
+      changed 1, unchanged empty. readBack gives its length before and after,
+      the after LONGER by about the transom's width (50 mm for a 50 x 150).
+      In the elevation the selected mullion now runs through the crossing
+
+  - given: the same mullion afterwards, join "break"
+    expect: >
+      changed 1, the length back to the first case's "before" within 1 mm
+
+  - given: the first case on the other release of the two, 2020 or 2024
+    expect: the same answer
+
+negative:
+  - given: >
+      the arrangement; the CURTAIN WALL itself selected, not a mullion; join
+      "continuous"
+    expect: >
+      changed 0, readBack empty; notMullion names the wall "is not a mullion";
+      refused "Nothing given is a mullion". No mullion changed
+
+  - given: >
+      a mullion that already runs through (after the first case), join
+      "continuous" again
+    expect: >
+      changed 0, unchanged names it "no longer than before: it may already run
+      through ...". Nothing claimed
+
+  - given: join "diagonal"
+    expect: refused, naming continuous and break; nothing changed
+
+second_route:
+  - >
+      By hand: Revit's own Make Continuous / Break at Join toggle on the same
+      mullion in a copy shows the same look; REPORT_CURTAIN_ELEMENTS counts the
+      same mullions before and after
