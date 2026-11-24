@@ -2,7 +2,7 @@
 
 2026-11-15. Active — a one-session research note. Retire it (delete it) once the owner has read it and anything worth keeping has moved into docs/26 or a register. *(Tracked as GitHub issue [#1008](https://github.com/Ajmalpshaik/Heron-AI/issues/1008) since 2026-11-16 (WN-36).)*
 
-Method: the search run of 2026-11-15 found 548 GitHub repositories. 82 were studied file by file (cloned and read), plus pyRevit's own documentation and one helper add-in. The other 466 were swept by README and file list (358 Revit-related, 50 other BIM tools, 58 not BIM at all), and 22 of those were cloned to check one idea in code. Nothing from any repo was built, installed or run. The GitHub API and several vendor pages (help.autodesk.com, aecpilot.com, nonica.io and others) were blocked in this session, so star counts come from the search run's listing or from github.com pages read the same day, and every Autodesk, price and product fact comes from search-engine summaries. Those need confirming on the vendor's own page; section "Autodesk and the paid tools" marks them. This note updates [docs/26](../../26-prior-art-revit-mcp.md) (2026-08-27, re-checked 2026-09-22).
+Method: the search run of 2026-11-15 found 548 GitHub repositories. 82 were studied file by file (cloned and read), plus pyRevit's own documentation and one helper add-in. The other 466 were swept by README and file list (358 Revit-related, 50 other BIM tools, 58 not BIM at all), and 22 of those were cloned to check one idea in code. Nothing from any repo was built, installed or run. The GitHub API and several vendor pages (help.autodesk.com, aecpilot.com, nonica.io and others) were blocked in this session, so star counts come from the search run's listing or from github.com pages read the same day, and every Autodesk, price and product fact comes from search-engine summaries. Those need confirming on the vendor's own page; section "Autodesk and the paid tools" marks them. This note updates [31 research](../../31-research.md) (2026-08-27, re-checked 2026-09-22).
 
 ---
 
@@ -25,7 +25,7 @@ Method: the search run of 2026-11-15 found 548 GitHub repositories. 82 were stud
 
 *done 2026-11-19: every idea below has a register home (WN-30). The untaken ones - 6, 9, 11, 13, 14, 15, idea 10's journal half and three of the smaller ideas - are filed undecided as [PROPOSALS](../../PROPOSALS.md) F46 to F55, and the same section's table says where each of the others went: a decision, a NEEDS-CHECKING group, an issue, or already held.*
 
-House rule ([docs/31](../../31-studying-the-existing-libraries.md), D-25): every idea below is re-authored in Heron's own words and code. No code, wording, names or branding come across, whatever the licence. MIT and Apache sources are credited when an idea is used; GPL, AGPL, no-licence and noncommercial sources give the idea only.
+House rule ([31 research](../../31-research.md), D-25): every idea below is re-authored in Heron's own words and code. No code, wording, names or branding come across, whatever the licence. MIT and Apache sources are credited when an idea is used; GPL, AGPL, no-licence and noncommercial sources give the idea only.
 
 Ranked by value to a modeller's safety and trust first, then by effort. **Effort is my judgement, not a measurement.** Where several projects do the same thing it is one row, with the best example first.
 
@@ -84,7 +84,7 @@ What still separates Heron, in one paragraph: proof per operation on named real 
 
 ## Corrections to docs/26
 
-Each row is what this study's code reading found against what [docs/26](../../26-prior-art-revit-mcp.md) says. The owner resolves them by editing docs/26.
+Each row is what this study's code reading found against what [31 research](../../31-research.md) says. The owner resolves them by editing docs/26.
 
 | What docs/26 says | What the code shows | Source file |
 |---|---|---|

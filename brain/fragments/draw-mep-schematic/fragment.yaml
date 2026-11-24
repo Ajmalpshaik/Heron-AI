@@ -8,7 +8,7 @@ id: FRG-MEP-102
 semantic-identity: "make a new drafting view and draw one duct or pipe system on it in single lines, from its source to every terminal, each run labelled with Revit's own size, flow and pressure drop"
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
-# 2026-11-08: the owner's ask, docs/48-studying-bimlogiq.md section 5 item 5 -
+# 2026-11-08: the owner's ask, docs/31-research.md section 11 (former note 48, item 5) -
 # "3D to 2D MEP schematic - one system traced, drawn as single lines on a
 # drafting view, with sizes, flow and pressure drop" - and his "yes start item
 # 5". Measured that day on a scratch store (lexical and model, no release
@@ -393,7 +393,7 @@ compatibility-note: >
 # "all the mep in this view" here; the purpose now says "its connectors are
 # followed", and the utterance is the owner's section 2 wording.
 utterances:
-  # The owner's own words: docs/48-studying-bimlogiq.md section 5 item 5 (the
+  # The owner's own words: docs/31-research.md section 11 (former note 48, item 5) (the
   # last), its section 2 table ("3D to 2D schematic"), and his request of
   # 2026-11-08.
   - draw a schematic of supply air system SA-01

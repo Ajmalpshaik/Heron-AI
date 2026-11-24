@@ -73,7 +73,7 @@ Each is asked **once, on its own**, by the package that needs it — never four 
    PC and in the cloud, where [`tools/cloud-setup.sh`](../../../../tools/cloud-setup.sh) installs
    `python-is-python3`). Remove the `hooks:` block from the skill's frontmatter so it runs once. Then make
    everything that describes it true: the skill, `tests/test_heron_guard.py` (it asserts the frontmatter
-   declares the hook), [34 §2.9](../../../34-patterns-adapted.md) and the answer to Q-49 in
+   declares the hook), [31 research](../../../31-research.md) and the answer to Q-49 in
    [OPEN-QUESTIONS](../../../OPEN-QUESTIONS.md) — append a dated line saying why the wiring moved
    ([01 §3 H2](01-findings.md)).
 2. **"Has `main` moved?" before a merge.** A PreToolUse hook on `Bash` that, when the command merges or
@@ -98,8 +98,8 @@ Each is asked **once, on its own**, by the package that needs it — never four 
      a PROVEN fragment's `impl/` is reported as *waiting*, because fixing it breaks the proof. The two
      bytes already in `docs/FRAGMENT-ISSUES.md` are fixed once the register split allows it;
    - **the MCP tool total derived** from `heron_tools.TOOLS` and prose checked against it — fixing the "14
-     MCP tools" lines in [33](../../../33-external-repository-research.md) and
-     [34](../../../34-patterns-adapted.md) — and replacing the count pattern in `check-docs.py` that today
+     MCP tools" lines in [31 research](../../../31-research.md) and
+     [31 research](../../../31-research.md) — and replacing the count pattern in `check-docs.py` that today
      matches no line at all (reported).
    - `check-docs` already took 30–37 s on a busy PC on 2026-09-22. **Measure it before and after**, and do
      not make it slower than it needs to be.

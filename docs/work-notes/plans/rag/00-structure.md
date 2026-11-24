@@ -59,7 +59,7 @@ So the six split three ways:
 | **1** Searches again | **Reporting.** The host already loops. It cannot loop well because retrieval never tells it *"this was a coin toss"* | say the confidence out loud |
 | **6** Answers from what it found | **Reporting, plus one check.** The host writes the answer — that is D-01. The brain owes it a packet it cannot invent from, **and a way to say a draft drifted from it** | citations in the packet, and §3.6a |
 | **3** Knows a clause is inside a section | **Decided at ingestion.** Cannot be retrofitted cheaply — chunking is where hierarchy is won or lost | get it right in Stage 1 |
-| **2** Follows relationships | New machinery — a third retrieval route, and **conditional**: the same idea over the *fragment* graph was measured at six settings and lost ([`34 §2.13`](../../../34-patterns-adapted.md)) | a density count decides whether it is built at all |
+| **2** Follows relationships | New machinery — a third retrieval route, and **conditional**: the same idea over the *fragment* graph was measured at six settings and lost ([31 research](../../../31-research.md)) | a density count decides whether it is built at all |
 | **4** Decides where to look | New machinery — the Librarian | must not become a merged query (§3.4) |
 | **5** Re-reads its shortlist | New machinery — a re-ranker model | optional and absent-tolerant, like the encoder |
 
@@ -116,7 +116,7 @@ provider**, because whatever asked for its capability never named it.
 
 > ### ⚠ This section was written without checking, and the repository had already tried it
 >
-> [**`34 §2.13`**](../../../34-patterns-adapted.md) records a third retrieval stream **measured
+> [**`34 §2.13`**](../../../31-research.md) records a third retrieval stream **measured
 > and rejected**: [`tools/measure-graph.py`](../../../../tools/measure-graph.py), 360 questions,
 > four query shapes, **six settings — all six lost.** The gentlest cost 1.1 points of P@1, the
 > strongest 14, and **P@5 never improved at any setting**, so it did not widen recall either — the
@@ -423,7 +423,7 @@ shortlist drops a candidate that clears the version filter and bears no relation
 
 ### 3.8 What the field reading changed — *2026-09-10, and one of them is free*
 
-[the field reading, recorded in docs/34 §2.23](../../../34-patterns-adapted.md#223-built---a-chunk-carries-its-heading-path-read-off-the-document-and-a-rule-is-never-cut-from-its-exception) covered
+[the field reading, recorded in docs/34 §2.23](../../../31-research.md#72-a-chunk-carries-its-heading-path-and-a-rule-is-never-cut-from-its-exception) covered
 [LightRAG](https://github.com/HKUDS/LightRAG), [RAGFlow](https://github.com/infiniflow/ragflow),
 Anthropic's [contextual retrieval](https://www.anthropic.com/engineering/contextual-retrieval), IBM's
 [Docling](https://docling.org/), current chunking practice for regulated documents, CPU re-rankers, and
@@ -577,7 +577,7 @@ answers; with an out-of-date one present, it says **out of date** rather than **
 **Seventy-nine requirements were written before anything mentioned it.** A search of the whole plan for
 Rule 19, permission level, injection or untrusted text returned **nothing**.
 
-**And the repository had already seen it coming.** [`34 §2.11`](../../../34-patterns-adapted.md) calls
+**And the repository had already seen it coming.** [31 research](../../../31-research.md) calls
 the guard on the path from retrieval into context **"the most valuable single item the whole programme
 produced, because it lands on work not yet done"**, and says exactly why:
 
@@ -604,7 +604,7 @@ host. **Rule 19's *why* is not abstract: the consequence is a write to a live pr
 | | |
 |---|---|
 | **Data, never instruction** | A chunk is carried as **quoted source with its citation**, marked as content. It is never spliced into a packet in a position where it reads as direction |
-| **Guard the path, before assembly** | Chunks are scanned **before** they are built into a packet — the seam [`34 §2.11`](../../../34-patterns-adapted.md) names |
+| **Guard the path, before assembly** | Chunks are scanned **before** they are built into a packet — the seam [31 research](../../../31-research.md) names |
 | **Flag, never truncate** | An oversized or suspicious chunk is **reported, not trimmed.** Truncating lets a payload be padded past the scanner's window, which turns the guard into a formality |
 
 **And the permission side is already right, which is why this is a gap and not a hole.**
@@ -814,6 +814,6 @@ Deciding all six adds three more, and each is small enough to answer in a senten
 | **S-1** | When the Librarian needs two scopes, does Heron ask two questions itself, or hand the choice back to the host? | 3.4 | ✅ **TAKEN AS THE DEFAULT 2026-09-11, and the two turned out not to conflict.** The brain asks each named scope **separately** — milliseconds against a local file — and **hands back one labelled answer per scope, choosing none**. That is *asking two questions* in mechanism and *handing it back* in contract, which is what D-01 and R-62 actually require: the brain reports what each scope holds, and deciding what the user meant is the host's act. **Flagged for the owner rather than closed by me** |
 | **S-2** | ~~How deep does a document's hierarchy go?~~ | 3.3 | ✅ **ANSWERED 2026-09-11 — arbitrary depth, as a `parent_id`.** Fixed levels are a guess about documents nobody has read yet, and QCS, ISO 19650, Ashghal and a company standard all nest differently. One column instead of a guess |
 | **S-3** | Is the confidence a number, or a sentence? | 3.1 | **Both, and the sentence is the contract.** `heron_retrieve` already says *"both routes agree"* in words, and words are what survived every other measurement in this repository |
-| **S-4** | **Take [Docling](https://docling.org/) for document parsing, or write it?** It is local, keeps documents on the machine, and preserves headings, tables and reading order — which is R-66 and §3.3 already built. It is also **by far the largest dependency this repository would have taken**: `brain/` needs `pyyaml` and nothing else today, and Docling brings a deep-learning parsing stack that **downloads models on first run** and wants Python 3.10+ | [the field reading §3.4, recorded in docs/34 §2.23](../../../34-patterns-adapted.md#223-built---a-chunk-carries-its-heading-path-read-off-the-document-and-a-rule-is-never-cut-from-its-exception) | ✅ **ANSWERED 2026-09-11 — write it, and let one real PDF decide.** Not a preference: the simple parser is written, run against **one real QCS section**, and the output is read. Clause numbers and headings come out clean → **done, no dependency**. It cannot cope → **take Docling, knowing exactly why.** The same method that settled the graph route — six measurements rather than an argument ([`34 §2.13`](../../../34-patterns-adapted.md)). **500 MB against a `brain/` that needs 0.7 MB is not a change to make on a guess** |
+| **S-4** | **Take [Docling](https://docling.org/) for document parsing, or write it?** It is local, keeps documents on the machine, and preserves headings, tables and reading order — which is R-66 and §3.3 already built. It is also **by far the largest dependency this repository would have taken**: `brain/` needs `pyyaml` and nothing else today, and Docling brings a deep-learning parsing stack that **downloads models on first run** and wants Python 3.10+ | [the field reading §3.4, recorded in docs/34 §2.23](../../../31-research.md#72-a-chunk-carries-its-heading-path-and-a-rule-is-never-cut-from-its-exception) | ✅ **ANSWERED 2026-09-11 — write it, and let one real PDF decide.** Not a preference: the simple parser is written, run against **one real QCS section**, and the output is read. Clause numbers and headings come out clean → **done, no dependency**. It cannot cope → **take Docling, knowing exactly why.** The same method that settled the graph route — six measurements rather than an argument ([31 research](../../../31-research.md)). **500 MB against a `brain/` that needs 0.7 MB is not a change to make on a guess** |
 
 **Nothing on this page needs a decision to start.** Stage 0 and 0b can run tomorrow.

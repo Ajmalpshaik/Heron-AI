@@ -20,16 +20,6 @@
 
 ---
 
-### Row 5b-1402
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`EXPORT_MODEL_TO_IFC`'S `schema` CANNOT BE TYPED - BOTH LEGS REFUSED `bad_request_value` BEFORE ANYTHING RAN.** Measured Revit 2020 session 59096 (33624 before a restart), on "P1102 MEP" - a scratch copy of Revit 2020's own `Samples\rme_advanced_sample_project.rvt` in `%TEMP%\heron-work\prove-1102` - 2026-11-02, run by the owner from `prove-admin-publish.py` with Changes, Admin and Publish on: `schema=IFC2x3` (and `scopeViewId=3D Duct & Equipment`) came back `bad_request_value: Heron can be handed a view, a level, a category, an element type ...` in the positive and the negative alike. The card takes `schema` as an `IFCVersion` on purpose; the request binder has no way to build one from text, so the card cannot run through `revit_change` or `validate` at all. Heron's input layer, not the model.
-
-**State.** **MOVED TO ISSUE [#951](https://github.com/Ajmalpshaik/Heron-AI/issues/951) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN 2026-11-02 - Recorded, not fixed.**
-
----
-
 ### Row 5b-1404
 
 *Moved from the register on 2026-11-17.*
@@ -80,26 +70,6 @@
 
 ---
 
-### Row 5b-1409
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`SET_MEP_JUSTIFICATION` REFUSED EVERY DUCT ON REVIT 2024 TOO - ROW 5b-1397 IS NOT A REVIT 2020 MATTER.** Measured Revit 2024.3 session 59960, on "Snowdon Towers Sample HVAC" - a scratch copy of Revit 2024's own `Samples\Snowdon Towers Sample HVAC.rvt` in `%TEMP%\heron-work\prove-1102\s2024`, its 6 links loaded from the copies beside it - 2026-11-02, job file `tools/jobs/p1102-round16-revit2024-hvac-2026-11-02.yaml`: the 191 ducts of `FloorPlan: L2`, `horizontalOffsetMm 50, verticalOffsetMm 50`, returned `set 0` and 193 findings beginning `Refused: id 1365662: 2 of 2 offset(s) did not take the value` - the same answer row 5b-1397 recorded on Revit 2020 the same morning, now on a second release and a second model. Rolled back.
-
-**State.** **MOVED TO ISSUE [#942](https://github.com/Ajmalpshaik/Heron-AI/issues/942) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN 2026-11-02 - recorded, not fixed.** Read with row 5b-1397; the card stays DRAFT.
-
----
-
-### Row 5b-1410
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **TWO CARDS DECLARED AN ALWAYS-FILLED REPORT SENTENCE `role: result` - `CHECK_FAMILY_SIZE_TABLES`' `report` AND `CHECK_FAMILY_STANDARDS`' `familyReport` - SO NO NEGATIVE COULD COME BACK EMPTY.** Measured on Revit 2024.3 session 59960, 2026-11-02, on "P1102 Elbow24" - a copy of Revit 2020's US Metric `Pipe\Fittings\Generic\M_Elbow - Generic.rfa` in `%TEMP%\heron-work\prove-1102\fam`, job files `tools/jobs/p1102-round18-families-revit2024-2026-11-02.yaml` and `p1102-round19-revit2024-2026-11-02.yaml`. `check-family-size-tables`: the family's table replaced by one with no FOD column gave `problemCount 1` (MISSING COLUMN: 'Fitting Outside Diameter'), the same rows written as a new table gave `problemCount 0` - and `report` still read `ROWS NOT CHECKED ...` and `UNUSED TABLE ...`, so batch-prove and `accept` called the negative NEG NOT EMPTY. `check-family-standards`: `namePattern "TRG_"` gave `offStandard 1`, no name rule gave `offStandard 0, warned 0` (0 FAIL, 13 PASS) - and `familyReport` still listed every PASS line. The same card already declares its other always-filled sentence, `classificationReport`, `role: accounting`. Both sentences are now `role: accounting` with a comment naming this row; the counts are the result. `fragment.yaml` is outside the proof seal: `brain/heron_fragment.py --show` printed the same fingerprint before and after (`1dacdb5181c7e77a`, `b9a7beb08bb9010e`), and each draft was re-made from the run already recorded, not a new one. Also measured: `namePattern` is a CONTAINS test, so `*` fails every family by name - the 2026-10-18 job's `"*"` negative was never a wildcard.
-
-**State.** **FIXED 2026-11-02 - the two roles, in the cards' own text.** Both cards proved the same day on those runs.
-
----
-
 ### Row 5b-1411
 
 *Moved from the register on 2026-11-17.*
@@ -107,16 +77,6 @@
 **Defect.** **`EXPORT_FAMILIES` IS REFUSED ON REVIT 2024 TOO, FOR A DIFFERENT FAMILY - ROW 5b-1407 IS THE PROOF ROUTE, NOT THE ELBOWS.** Measured on Revit 2024.3 session 59960, 2026-11-02, run by the owner from `prove-admin-publish-4.py` with Changes, Admin and Publish on, on "Snowdon Towers Sample Structural" - a scratch copy of Revit 2024's own `Samples\Snowdon Towers Sample Structural.rvt` in `%TEMP%\heron-work\prove-1102\s2024`: `nameContains "Concrete-Rectangular-Column"` returned `saved 0`, `savedAs 0 entry(ies)` and `refused 1 item(s) [Concrete-Rectangular-Column: Revit refused to open it for ed...]` - the same refusal row 5b-1407 met for two duct elbows on Revit 2020, now on a second release, a second model and a structural family. So the cause is not those families. Every proof of a PUBLISH card runs inside the write path's TransactionGroup, and opening a family for editing is one of the calls Revit makes only with no transaction open; the card cannot reach `EditFamily` there. Not traced past the cut message. Three earlier attempts the same minute were refused `model_in_use` - this chat's own name lookup held the model for three quiet minutes; a refused call does not renew a hold, and Free this model frees only the model in front.
 
 **State.** **MOVED TO ISSUE [#941](https://github.com/Ajmalpshaik/Heron-AI/issues/941) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN 2026-11-02 - recorded, not fixed.** The card stays DRAFT until a proof route outside the transaction group exists, or its kept run (D-120) on a model the modeller chooses.
-
----
-
-### Row 5b-1412
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **THREE MORE CARDS DECLARED AN ALWAYS-FILLED FIELD `role: result` - `REPORT_SPRINKLER_NETWORK`' `networkJson` (ROW 5b-1401), `SET_EXPORT_SETUP_OPTIONS`' `kindUsed` AND `SET_SCHEDULE_OPTIONS`' `applied`.** Measured on Revit 2020, "P1102 MEP" - a scratch copy of Revit 2020's own `Samples\rme_advanced_sample_project.rvt` - 2026-11-02, job files `tools/jobs/p1102-round5-2026-11-02.yaml`, `p1102-round8-2026-11-02.yaml` and `p1102-round9-2026-11-02.yaml`, read again from the run records those rounds wrote. `report-sprinkler-network`: `elementCount 29` for "Fire Protection Wet 1" and `0` for "ZZZ No Such System", while `networkJson` carried the list of systems it chose from in both. `set-export-setup-options`: `done true`, `changed "fileVersion: 2018 -> 2013"` against `done false`, `changed` empty for `units=parsecs` - and `kindUsed "DWG"` in both, because it names the setup that was FOUND. `set-schedule-options`: `changed 4` against `changed 0` for `showTitle "maybe"` - and `applied` read "nothing it could set" for each schedule in the negative. Each field is now `role: accounting` with a comment naming this row, row 5b-1410's shape; the count or flag beside it is the result. `fragment.yaml` only: `brain/heron_fragment.py --show` printed the same fingerprints before and after (`8cffde063d891c0f`, `35a30fad0832ce4c`, `4b32d0d29b408cc2`), and each draft was re-made from the run already recorded. The cards that were looked at and NOT changed, because their sentence is the answer itself: `report-findings`, `report-category-overrides` (its hidden categories are real in any view), `report-browser-organization`, `report-level-elevations`; `describe-blank-parameters` declares no result at all.
-
-**State.** **FIXED 2026-11-02 - the three roles, in the cards' own text; row 5b-1401 with it.** The three cards proved the same day on those runs.
 
 ---
 
@@ -147,16 +107,6 @@
 **Defect.** **NO HERON CARD CAN READ OR SET THE KEYNOTE NUMBERING METHOD: THE REVIT API HAS NO MEMBER FOR IT ON ANY RELEASE.** Found 2026-11-02 when asked to build Annotate > Keynoting Settings - the modeller's words *"set keynote numbering to by sheet"*. Keynoting Settings' Numbering Method (By keynote / By sheet) has no type, property or parameter in RevitAPI.xml on any release 2020 through 2027: no `KeynotingOptions` type, no `BuiltInParameter` beyond `KEYNOTE_PARAM`, `KEYNOTE_NUMBER`, `KEYNOTE_TEXT` and `SHEET_ASSEMBLY_KEYNOTE`, and `KeynoteTable` declares only `GetKeynoteTable`. The one member that reaches the dialog is `PostableCommand.KeynotingSettings`, which opens it for the modeller and reports nothing back. The sentence reaches `REPORT_KEYNOTES`, a READ, with and without the host's question flag - a question card for a change nobody can make. Not caused by this change; no card was written, and the sentence is declared on no card. `LOAD_KEYNOTE_FILE`, `REPORT_KEYNOTES` and `REPORT_KEYNOTE_FILE` (Group LZ) say so in their routing tables - the last since the keynote-file read moved to it on 2026-11-02; the sentence still reaches `REPORT_KEYNOTES`, with and without the flag.
 
 **State.** **MOVED TO ISSUE [#919](https://github.com/Ajmalpshaik/Heron-AI/issues/919) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN.** For the owner: whether a card that posts `PostableCommand.KeynotingSettings` - the dialog opened for the modeller to choose By sheet by hand, as `OPEN_RENDER_DIALOG` does for rendering - is wanted, or whether the host should answer the sentence in words. Until one is chosen, nothing claims it.
-
----
-
-### Row 5b-1423
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **NO HERON DOOR CAN RELOAD LATEST OR SYNC WITH CENTRAL: REVIT REFUSES BOTH WHILE ANY TRANSACTION GROUP IS OPEN, AND EVERY DOOR THAT MAY CHANGE A MODEL RUNS INSIDE ONE.** Found 2026-11-02 when asked to build Revit's Collaborate > Reload Latest - the modeller's words *"reload latest"*, *"get the latest changes from central"*, *"update my local copy from the central model"*. `Document.ReloadLatest(ReloadLatestOptions)` and `Document.SynchronizeWithCentral` each throw *"Operation is not permitted when there is any open sub-transaction, transaction, or transaction group"* - RevitAPI.xml read on every release 2020 through 2027. `RevitFragment.Run` starts one `TransactionGroup` in the target model before any `MODIFY`, `PUBLISH` or `ADMIN` fragment runs, and a fragment declaring `noTransactionOpen` ([D-125](../DECISIONS.md)) runs inside that group too. The read door opens none, but counts the model before and after and refuses a changed one (row 5b-350), and a reload declared `READ` would be a false risk (Golden Rule 19). So `SYNC_WITH_CENTRAL` (DRAFT, never run in Revit) cannot sync as written either - [row 365](../fragment-issues/section-5b-rows-351-375.md) said so in passing and left it as found. The one route in the library with no group is `UIApplication.PostCommand`, which `OPEN_RENDER_DIALOG` uses; `PostableCommand.ReloadLatest` is present 2020 through 2027, but a posted command runs after Heron has answered, so a card could report neither Revit's result nor the model after the reload, and Keep or Discard would count no change. Not caused by this change; no card was written.
-
-**State.** **ANSWERED 2026-11-19 - by hand: Reload Latest and Sync with Central stay the modeller's own clicks on Revit's Collaborate tab. No reload card is built, no route is opened with no transaction group, no posted command is used for either, and `SYNC_WITH_CENTRAL` stays as found (DRAFT, never run in Revit). Recorded as [D-185](../DECISIONS.md). Nothing in code changed.** Tracked as issue [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) until then. Was: **OPEN.** For the owner: an add-in route that runs one named fragment with no group open - the route row 365 found missing for a save - or a posted Revit command for reload latest whose result is read back by a separate read afterwards; and which risk either carries. Until one is chosen no reload card is written and `SYNC_WITH_CENTRAL` stays as found.
 
 ---
 

@@ -30,12 +30,12 @@ GitHub, and then back on his PC with Revit to test what was built.
 commit [08](../plugin-extension/08-lessons-from-the-brain.md) read. It is read-only reference
 ([HANDOVER](../../../HANDOVER.md): *read it, never edit it, never commit to it*). **Nothing in this folder
 carries its names, paths, files or wording**, and nothing built from this plan may either —
-[D-25](../../../DECISIONS.md), [31](../../../31-studying-the-existing-libraries.md),
+[D-25](../../../DECISIONS.md), [31 research](../../../31-research.md),
 [AGENTS.md](../../../../AGENTS.md). A cloud session does **not** need that repository: everything it
 needs is in this folder.
 
 **Two earlier reads are not repeated here.** Its fragment library was classified in
-[31 §1](../../../31-studying-the-existing-libraries.md) — every eligible file read, every gap built — and
+[31 research](../../../31-research.md) — every eligible file read, every gap built — and
 its working habits were taken in [08](../plugin-extension/08-lessons-from-the-brain.md).
 
 ## Read in this order

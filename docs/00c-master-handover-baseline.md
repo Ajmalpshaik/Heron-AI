@@ -98,7 +98,7 @@ What Heron AI is · why it is being built · how the system should work · how u
 >
 > | Milestone | State | Evidence |
 > |---|---|---|
-> | Phase 0 — the bridge, Steps 1 to 5 | **Proven** in Revit 2020 and 2024 | [HANDOVER §3](HANDOVER.md), [field notes](00e-field-notes-proven-bridge.md) |
+> | Phase 0 — the bridge, Steps 1 to 5 | **Proven** in Revit 2020 and 2024 | [HANDOVER §3](handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#3-what-has-been-witnessed-at-a-real-revit), [field notes](00e-field-notes-proven-bridge.md) |
 > | Step 6 — the first write | **Measured on one release:** on 2026-10-17 three ducts moved +200 mm in Revit 2024 and one Ctrl+Z put them back. A failure forced mid-move is still owed | [Group D](needs-checking/group-d.md) |
 > | Keep or Discard and the safety rails | Run by hand in Revit 2024 and 2027 on 2026-10-18; the faults found were logged | [Group ET](needs-checking/group-et.md) |
 > | The fragment library | Mostly `PROVEN`, the rest `DRAFT` or - cards retired since this note - `DEPRECATED` — `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` | [D-30](DECISIONS.md) |
@@ -129,7 +129,7 @@ Heron AI determines what technical work is required.
 >
 > | Sentence | As built | Evidence |
 > |---|---|---|
-> | *"Select all ducts."* | `revit_select_by_category` — proven at Phase 0: the ducts highlighted on screen in Revit 2020 and 2024 | [HANDOVER §3](HANDOVER.md) |
+> | *"Select all ducts."* | `revit_select_by_category` — proven at Phase 0: the ducts highlighted on screen in Revit 2020 and 2024 | [HANDOVER §3](handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#3-what-has-been-witnessed-at-a-real-revit) |
 > | *"Move them 200 mm up."* | `revit_preview_move`, then `revit_apply_move` — measured once, in Revit 2024 | [Group D](needs-checking/group-d.md) |
 > | *"Add end caps."* · *"Create a dimension."* · *"Check these against our standard."* | A capability in the fragment library, found by `heron_lookup` — for example `cap-open-pipe-ends`, `create-dimension`, `check-model-standards`. Whether each is proven is the `heron-status:` line of its own `brain/fragments/<id>/fragment.yaml` | [D-30](DECISIONS.md) |
 > | *"Fix this."* | No capability of its own. The host works out what *this* is, and Heron asks for any input it would otherwise have to assume | [D-33](DECISIONS.md) |
@@ -1267,7 +1267,7 @@ This makes Heron traceable.
 > **As built (2026-10-18):** one append-only line per request, keyed by Workflow ID, kept on the PC and
 > never pruned (`platform/Heron.Core/HeronAudit.cs`, written by the add-in's dispatcher): the time, the
 > workflow, the operation, whether it succeeded, and fields such as the document and the timing. Seen
-> working in a real Revit at Phase 0 ([HANDOVER §3](HANDOVER.md)). The brain keeps its own file — which
+> working in a real Revit at Phase 0 ([HANDOVER §3](handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#3-what-has-been-witnessed-at-a-real-revit)). The brain keeps its own file — which
 > fragment a lookup chose and whether it resolved, but **never the user's sentence**
 > (`brain/heron_audit.py`, [D-62](DECISIONS.md)). Every element a change touched is in its run record
 > (`heron_run_record`). Not recorded: the host's reasoning, which Heron cannot see.
@@ -1453,7 +1453,7 @@ User only sees: ~~*"All ducts selected."*~~ ***"Selected 126 ducts in Tower-A.rv
 > block, as written*, and the path below replaces it
 > ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)).
 > The path that ran in Revit 2020 and 2024 at Phase 0 is much shorter: the ducts were highlighted on screen and confirmed by eye
-> ([HANDOVER §3](HANDOVER.md), [Step 4](27-build-order.md)).
+> ([HANDOVER §3](handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#3-what-has-been-witnessed-at-a-real-revit), [Step 4](27-build-order.md)).
 
 ```mermaid
 flowchart TD

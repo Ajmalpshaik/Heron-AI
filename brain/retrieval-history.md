@@ -529,7 +529,7 @@ the source's words"* means, allowing an ellipsis and nothing more.
 ## 2026-09-11 — the document graph's density, and the route that still has no vote
 
 **Stage 5 begins with a count, not with code**, because the same idea over the **fragment** graph was
-measured at six settings and **lost every one** ([`34 §2.13`](../docs/34-patterns-adapted.md)) — and
+measured at six settings and **lost every one** ([31 research](../docs/31-research.md)) — and
 the property that decided it was **density**: a median of **50** neighbours per fragment, **worst
 230**, so *"the neighbours of the best hit"* was a large slice of the library added as competitors.
 

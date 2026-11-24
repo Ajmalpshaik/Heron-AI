@@ -40,14 +40,14 @@ Selection. **And a scratch project** from the default template, for the project 
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**IO0**~~ | Negatives FIRST. In the family: `revit_view_image`, `elements` = `999999999`; then `elements` = Ref. — [full row](../needs-checking-archive/group-io.md#row-io0) | The first refused naming the id, "name no placed element". |
-| ~~**IO1**~~ | The fault's own case (5b-1311). In the family: count the forms (`REPORT_FAMILY_FORMS`) and note… — [full row](../needs-checking-archive/group-io.md#row-io1) | **The picture of the solid in 3D** |
-| ~~**IO2**~~ | `elements` = all three forms' numbers, and Ref. — [full row](../needs-checking-archive/group-io.md#row-io2) | 3 framed, Ref. |
-| ~~**IO3**~~ | The read by id (5b-1312). `REPORT_FAMILY_FORMS`, `which` = the void's id exactly as… — [full row](../needs-checking-archive/group-io.md#row-io3) | `formCount` 1, the void alone with that id, X and Y -50 to 50 mm, Z -10 to 510 mm… |
-| ~~**IO4**~~ | `which` = the two solids' ids, commas between, the first typed twice — [full row](../needs-checking-archive/group-io.md#row-io4) | `formCount` 2, each once; `scanned` 3 Struck 2026-11-13: PASSED - the verdict is in this… |
-| ~~**IO5**~~ | Nothing else moved. `which` = `all`, `void`, and left out — [full row](../needs-checking-archive/group-io.md#row-io5) | `formCount` 3, 1 and 3, as version 2 answers; the left-out call's binding note which not… |
-| ~~**IO6**~~ | Negatives. `which` = the first solid's id with its FIRST character changed (never the last eight… — [full row](../needs-checking-archive/group-io.md#row-io6) | Each refused, "Nothing was read", `formCount` 0, `scanned` 0: "is not an id in this… |
-| ~~**IO7**~~ | The job it was for. On a scratch copy of one of the 2026-10-21 CCTV monitor families: flex it… — [full row](../needs-checking-archive/group-io.md#row-io7) | Its extents after the flex on one line, not ~100 forms; the picture of that one part. |
+| ~~**IO0**~~ | Negatives FIRST. In the family: `revit_view_image`, `elements` = `999999999`; then `elements` = Ref. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The first refused naming the id, "name no placed element". |
+| ~~**IO1**~~ | The fault's own case (5b-1311). In the family: count the forms (`REPORT_FAMILY_FORMS`) and note… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **The picture of the solid in 3D** |
+| ~~**IO2**~~ | `elements` = all three forms' numbers, and Ref. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | 3 framed, Ref. |
+| ~~**IO3**~~ | The read by id (5b-1312). `REPORT_FAMILY_FORMS`, `which` = the void's id exactly as… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `formCount` 1, the void alone with that id, X and Y -50 to 50 mm, Z -10 to 510 mm… |
+| ~~**IO4**~~ | `which` = the two solids' ids, commas between, the first typed twice — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `formCount` 2, each once; `scanned` 3 Struck 2026-11-13: PASSED - the verdict is in this… |
+| ~~**IO5**~~ | Nothing else moved. `which` = `all`, `void`, and left out — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `formCount` 3, 1 and 3, as version 2 answers; the left-out call's binding note which not… |
+| ~~**IO6**~~ | Negatives. `which` = the first solid's id with its FIRST character changed (never the last eight… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Each refused, "Nothing was read", `formCount` 0, `scanned` 0: "is not an id in this… |
+| ~~**IO7**~~ | The job it was for. On a scratch copy of one of the 2026-10-21 CCTV monitor families: flex it… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Its extents after the flex on one line, not ~100 forms; the picture of that one part. |
 
 **Then sign** `report-family-forms` version 3 on IO3 with IO6's first negative, after IO3 to IO6 have passed;
 and close row 5b-1311 on IO0 to IO2 - `capture_view` is the add-in's own, not a fragment, so there is no card

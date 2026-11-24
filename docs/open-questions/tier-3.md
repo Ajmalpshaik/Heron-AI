@@ -11,7 +11,7 @@
 ### ✅ Q-53 — What checks the licence of knowledge Heron imports, before Heron's users redistribute it? → **A gate that reads the files** *(asked and answered 2026-09-09)*
 
 Found by reading [`K-Dense-AI/scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills)
-at file level ([33 §5.9](../33-external-repository-research.md)), and it is not hypothetical — it is a live
+at file level ([31 research](../31-research.md)), and it is not hypothetical — it is a live
 example of the failure.
 
 **Its README says the project is MIT and that you may *"modify, distribute, and use freely."* Four of
@@ -68,7 +68,7 @@ turned off over a cast.
 ### ✅ Q-52 — Should the composition graph become a third retrieval stream? → **No. Measured.** *(asked and answered 2026-09-09)*
 
 Found by reading [`rohitg00/agentmemory`](https://github.com/rohitg00/agentmemory) at file level
-([33 §5.5](../33-external-repository-research.md)). It fuses **three** streams — BM25, vector and a graph —
+([31 research](../31-research.md)). It fuses **three** streams — BM25, vector and a graph —
 by weighted RRF at `RRF_K = 60`. [`heron_retrieve.py`](../../brain/heron_retrieve.py) fuses **two**, at the
 same constant, chosen independently. [`heron_graph.py`](../../brain/heron_graph.py) exists and is not one
 of them; its only production caller is [`check-gaps.py`](../../tools/check-gaps.py).
@@ -97,7 +97,7 @@ the before, and [D-39](../DECISIONS.md) already requires a disagreement to be an
 counted.
 
 **AND SOMEBODY HAS MEASURED IT — added 2026-09-09 from
-[`garrytan/gbrain`](https://github.com/garrytan/gbrain)** ([33 §5.16](../33-external-repository-research.md)),
+[`garrytan/gbrain`](https://github.com/garrytan/gbrain)** ([31 research](../31-research.md)),
 which the owner named the same day. It reports **+31.4 points P@5 from the graph stream** over its own
 graph-disabled variant and over vector-only RAG, on a 240-page corpus.
 
@@ -155,7 +155,7 @@ because it changes no ranking. If it is ever wanted it is a separate question, n
 ### ✅ Q-51 — What guards the path from retrieval to context, on the day Heron indexes text it did not write? → **Stamp it. Provenance, not scanning** *(asked 2026-09-09, answered 2026-09-20)*
 
 Found by reading [`ruvnet/ruflo`](https://github.com/ruvnet/ruflo) at file level
-([33 §5.2](../33-external-repository-research.md)). Its `agentdb-retrieval-guard.ts` scans every chunk
+([31 research](../31-research.md)). Its `agentdb-retrieval-guard.ts` scans every chunk
 coming back from vector search **before** it is assembled into a prompt, and reports 93–100% undefended
 attack success against poisoned memory entries.
 
@@ -375,7 +375,7 @@ stops promising what the code does not do - so the rename is the deliverable her
 ### ✅ Q-50 — Should a preview select the elements it is about to change? → **Yes, both sets, capped at 500** *(asked and answered 2026-09-09)*
 
 Found by reading [`affaan-m/ECC`](https://github.com/affaan-m/ECC) at file level
-([33 §5.1](../33-external-repository-research.md)). Its `plan-canvas` skill opens a plan **in the human's
+([31 research](../31-research.md)). Its `plan-canvas` skill opens a plan **in the human's
 browser** so they can point at the element they mean instead of describing it, and its own reason is
 that *"move this, change that"* is easier pointed at than typed.
 
@@ -399,7 +399,7 @@ as thirty highlighted ducts.
    showing is worse than telling, and nobody has said what it is.
 
 **A second half arrived the same day**, from the index at
-[33 §5.10](../33-external-repository-research.md): the **"approve with changes"** pattern — *"modifying
+[31 research](../31-research.md): the **"approve with changes"** pattern — *"modifying
 tool input before execution… the reference design for safe-by-default harnesses that don't simply block
 or permit."*
 
@@ -450,7 +450,7 @@ modified execution. It is not part of D-60 and it is not answered here.
 ### ✅ Q-49 — Should Heron's gates run automatically, or stay checks a person remembers? → **YES, as a hook in a skill** *(asked and answered 2026-09-09)*
 
 Found by reading [`affaan-m/ECC`](https://github.com/affaan-m/ECC) at file level
-([33 §5.1](../33-external-repository-research.md)). Its `hooks/hooks.json` registers **PreToolUse** hooks
+([31 research](../31-research.md)). Its `hooks/hooks.json` registers **PreToolUse** hooks
 that run before a tool does and can refuse it. **Heron has no `.claude/settings.json` and no hooks of
 any kind.**
 
@@ -474,7 +474,7 @@ Heron; it is not part of what a modeller installs, and it must never be confused
 3. **A `.claude/settings.json` PreToolUse hook**, which is the host's and only helps whoever uses that
    host.
 4. **The hook declared in a skill's own frontmatter** — found on 2026-09-09 in
-   [`garrytan/gstack`](https://github.com/garrytan/gstack) ([33 §5.7](../33-external-repository-research.md)),
+   [`garrytan/gstack`](https://github.com/garrytan/gstack) ([31 research](../31-research.md)),
    whose `careful`, `freeze` and `guard` skills each carry their `PreToolUse` entry inline. **The guard
    installs with the capability**, so the two cannot drift apart, and
    [`.claude/skills/`](../../.claude/skills/) already exists here. This is the best of the four.
@@ -565,7 +565,7 @@ to say whether links were included.**
 
 **Independent evidence arrived on 2026-09-09**, from
 [`tirth8205/code-review-graph`](https://github.com/tirth8205/code-review-graph) read at file level
-([33 §5.6](../33-external-repository-research.md)). Its `uncertainty.py` exists because *"a bare
+([31 research](../31-research.md)). Its `uncertainty.py` exists because *"a bare
 `result_count: 0` is ambiguous — it can mean **this graph cannot see that relationship**."* Same failure,
 different industry, and they reached it with no knowledge of Heron. A fragment that collects the host
 and stays silent about links is that sentence exactly.
@@ -799,7 +799,7 @@ every future fragment held to it.
 
 **A cheaper answer arrived on 2026-09-09**, from
 [`tirth8205/code-review-graph`](https://github.com/tirth8205/code-review-graph) read at file level
-([33 §5.6](../33-external-repository-research.md)). The reason to hesitate here is cost — every fragment
+([31 research](../31-research.md)). The reason to hesitate here is cost — every fragment
 naming what it turned down makes every answer longer. **They measured it the other way round:**
 
 > One short sentence on the empty case is therefore a **token saving, not a cost**: it replaces a
@@ -1071,7 +1071,7 @@ fingerprint alone.
 
 ### ✅ Q-93 — Checking a folder of models overnight: in the modeller's Revit one model at a time, or a separate Revit for each model? → **Shape 1, in the one Revit Heron is connected to; opening read-only is a read** *(new, 2026-11-17, answered 2026-11-19)*
 
-**Where it comes from.** Item 7 of the build order in [research note 51](../51-studying-another-revit-mcp.md),
+**Where it comes from.** Item 7 of the build order in [research note 51](../31-research.md),
 which the owner asked to be built one by one: *"many models overnight, read only - one report at the end"*.
 Checking each item against Heron before building it found two things the build cannot decide alone.
 

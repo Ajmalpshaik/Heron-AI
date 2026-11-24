@@ -30,16 +30,6 @@
 
 ---
 
-### Row 5b-279
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`tests/test_heron_session.py` FAILS ON EVERY PUSH TO `main` SINCE #379, AND NO PULL REQUEST CAN SEE IT.** Found 2026-10-02 checking `main`'s CI after merging #386 - no Revit involved. The suite's last check runs the session line on the repository itself and expects *"on this repository it states the PROVEN count grep derives"*. #379 (`9c17d23`) made `.claude/skills/heron-session/bin/session_line.py` deliberately SILENT in the main checkout with branch `main` out, where the owner's Revit chats run - and that is exactly what CI's checkout of a push to `main` is (`.git/HEAD` reads `ref: refs/heads/main`). A pull request's checkout is a detached merge commit, so the line speaks and the suite passes; every push to `main` since - #379, #380, #381, #383, #385, #386 - has its *Every suite* job red on this one check. **Reproduced both ways** in a clone at `6fb42df`: `git checkout -B main` fails the check, `git checkout --detach` passes it, nothing else changed. **Recorded, not fixed** - the line's silence is the decision, the check is what assumed otherwise. **Proposed patch:** where `ROOT` is the main checkout with `main` out, check the line is silent - the behaviour #379 chose - and say the count could not be checked there; or run the line against a temporary detached worktree of `ROOT`.
-
-**State.** **FIXED 2026-10-02, in the suite; the line is unchanged.** The check on this repository now runs the line twice. Once with the modeller's-chat rule set aside - a script written in the suite's temporary folder swaps `modeller_checkout` for one that always says no and runs the line's own `main()` - which must state the PROVEN count grep derives, inside 5 s, whatever this repository has checked out. Once as it is, which must print nothing where the repository is the main checkout with branch `main` out - asked of git, not read the way the line reads it - and the same count anywhere else. No worktree: a test that adds one to the repository's own `.git` leaves it behind when it is killed. **Run in a clone at `aeff14e`:** on `git checkout -B main`, CI's checkout of a push, the old suite failed this one check and the new one passes - `tools/change-evidence.py` ruled KEEP; on `git checkout --detach`, a pull request's, both pass. Three deliberate breaks on the `main` checkout each turned the new suite red: the line speaking there, a PROVEN count wrong on this repository alone, and a 6 s delay on this repository alone. The last two are what the old suite could not see on `main`, where the line it ran did no work.
-
----
-
 ### Row 5b-280
 
 *Moved from the register on 2026-11-17.*
@@ -110,26 +100,6 @@
 
 ---
 
-### Row 5b-290
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **NAMING ROOMS NEEDS THEIR ELEMENT IDS, AND THE REPLY THAT LISTS THEM SHOWS ONLY THREE.** Found 2026-10-02 in Project2: 5 rooms were placed and `created` printed `352546, 352548, 352549, ...`. To name them, IMPORT_PARAMETER_VALUES needs an id per row, so the last two ids were GUESSED (352550 to 352553, all named Shop); the import wrote 5 and named the 2 spare rows unmatched, so nothing went wrong - but only because both shops had one name. The three-item cut is the reply formatter's (see the memory and the earlier rows on truncated lists); this row is the job it blocks. **Fix when owned:** either a fragment that names a room by its number or by a point inside it, or the central reply fix that prints a full id list when a later step needs it.
-
-**State.** **CLOSED 2026-11-16** - found finished while the open rows were moved to GitHub issues: SET_PARAMETER_VALUES_BY_ID (PROVEN, signed 2026-10-13, row 5b-459) names rooms by their Number, so no id has to be guessed. Was: **OPEN - recorded, not built.**
-
----
-
-### Row 5b-291
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **A FAMILY BUILT FROM A PHOTO TAKES ONE CALL PER SHAPE.** Found 2026-10-02 in Family1: a minibus took 42 forms plus planes, a cut and 10 colour calls; a helicopter 23 forms and 7 colour calls - about 100 round trips for two objects, each one a separate undo entry. Every form is a CREATE_FAMILY_EXTRUSION or CREATE_FAMILY_REVOLUTION with values the caller already had in one list. **Fix when owned:** one fragment that takes a list of forms (kind, plane, profile, range, material) and builds them in one transaction, reading each back as the single-form fragments do - or a documented chain that does the same. Measure the turn time before and after (see where-heron-time-goes).
-
-**State.** **CLOSED 2026-11-16** - found finished while the open rows were moved to GitHub issues: CREATE_FAMILY_FORMS (PROVEN 2026-11-02) builds one form or a whole list in one call, as one undo; row 5b-651 records 43 forms in 6 calls. Was: **OPEN - recorded, not built.**
-
----
-
 ### Row 5b-294
 
 *Moved from the register on 2026-11-17.*
@@ -167,16 +137,6 @@
 **Defect.** **ADD_FAMILY_CONNECTOR (FRG-MEP-053) REFUSES REVIT'S OWN NAME FOR A FIRE PROTECTION SYSTEM.** Found 2026-10-03 in Family2 (a Sprinklers family, Revit 2024, session 41260): `system=Fire Protection Wet` was refused with *No connector system is called "Fire Protection Wet"*, and `system=FireProtectWet` made *pipe connector, Fire Protect Wet*. The fragment matched only the `PipeSystemType` enum names with the spaces taken out, and the enum says `FireProtect...` where Revit's System Classification list says **Fire Protection Wet, Fire Protection Dry, Fire Protection Pre-Action, Fire Protection Other** - so a modeller typing what Revit shows is refused, and the refusal offered no close name because neither squashed name contains the other. The two hydronic systems differ the same way (enum `SupplyHydronic`, shown *Hydronic Supply*). **Fixed in the fragment, DRAFT:** each system is matched by its enum name AND by the name Revit displays for it (a table of the six that differ, used only when that enum value exists in the release running); the report and the refusal print the displayed name, and the refusal's list of accepted names now includes the fire protection ones. Pipe "Other" is NOT taken as Other Pipe: a duct has Other Air, and a bare "Other" would pick the kind for the modeller. **Proof owed:** on a real family, `Fire Protection Wet` makes a pipe connector reading Fire Protection Wet in Properties, and `Fire Protection Wett` is refused naming the fire protection systems.
 
 **State.** **MOVED TO ISSUE [#901](https://github.com/Ajmalpshaik/Heron-AI/issues/901) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN - fixed in source 2026-10-03; the proof this row asks for is still owed.** Read 2026-11-11 in a cloud container (no Revit): the card is PROVEN since - its status and proof are on the card - but that proof (2026-10-24, a duct accessory family on Revit 2020, `system` Supply Air) ran no fire protection name. Still owed: `Fire Protection Wet` making a pipe connector that reads Fire Protection Wet in Properties, and `Fire Protection Wett` refused naming the fire protection systems. Was: **OPEN - fixed in source 2026-10-03; the fragment stays DRAFT until proved on a real model.**
-
----
-
-### Row 5b-298
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **PLACE_ROOM_AT_POINT (FRG-GEO-029) CALLS EVERY SPACE IT PLACES "NOT ENCLOSED".** Found 2026-10-03 in the unsaved Revit 2024 project Project2 (session 41260): placing rooms at 37 and then 42 points returned `unenclosed 0`, but placing MEP spaces at the SAME points (`asSpace=true`) returned `unenclosed 37` and `unenclosed 42` - every space. Straight afterwards SELECT_IN_REGION found each space with a bounding box, and REPORT_ROOM_SPACE_DATA on Space 2 (id 353348) read it as enclosed (only *volume not computed*, because the project's volume computation is off). The fragment read `Area` in the same breath as `NewSpace`, before Revit had regenerated, so every space read 0 - the same false zero PLACE_ROOMS found and fixed on 2026-09-13. The fragment's own proof of 2026-09-13 recorded `unenclosed 5` of 5 rooms, which this probably explains too. **Measured the same day on the same model** - Project2 saved as *c bulding test* (79 rooms, 79 spaces), Revit 2024, session 41260 - against an 8000 x 6000 mm box of four `Generic - 200mm` walls built on the empty Roof level 300 m from the building and deleted afterwards on the owner's word, every run rolled back: one point inside the box and one outside gave `created 2, unenclosed 1` naming only the outside one, and the inside point alone gave `unenclosed 0` - for rooms AND for spaces. The OLD code on the same box gave `unenclosed 2` and `unenclosed 1` for spaces: the inside space too, which is the defect reproduced. `heron_validate accept` wants either an empty negative leg, which this fragment cannot give (it always places something), or a D-53 tracking set, and `validate --vary` split its values on commas, which every point contains - so **`validate --vary` and `tools/prove-tracking.py` now split on a pipe (the vertical bar) when a value list has one**, and the D-53 tracking run followed: 1, 2 and 3 points on Roof made 1, 2 and 3 spaces, rolled back. **Signed by Ajmal PS and promoted back to PROVEN on 2026-10-03, on his approval after the runs passed.** **Fixed in the fragment:** every point is placed first, the document is regenerated once, and only then is each room or space measured. **The code changed inside a PROVEN `impl/`, so the fingerprint moved and the fragment is DRAFT again, its 2026-09-13 proof kept in the card as the record of the old code. Proof owed** ([Group BW](../needs-checking/group-bw.md)) on a real model: points inside enclosed areas give `unenclosed 0` for rooms AND for spaces, and a point outside any enclosure is named in `unenclosed`, for both.
-
-**State.** **FIXED 2026-10-03 - proved on Project2 and PROVEN again.**
 
 ---
 

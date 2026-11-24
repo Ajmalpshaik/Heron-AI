@@ -40,7 +40,7 @@ Never on a working family, and never on the modeller's own signature family. Wit
 | **DY7** | In a Generic Model family, `styleName` "Heron Model Sub", colour 0,0,255, weight 2, `patternName` "", `familyCategory` true | Object Styles > Model Objects lists it with projection weight 2; its cut weight is Revit's default - this tool does not set one |
 | **DY8** | Version 1 unchanged: Group DL's DL2 line-style leg, `familyCategory` left out | made then refused exactly as DL2 says |
 | **DY9** | DY2 on **Revit 2024** and **2027** | the same answers - compiled on all eight, run on none |
-| ~~**DY10**~~ | The signature, on the owner's word only, after DY2 to DY8 — [full row](../needs-checking-archive/group-dy.md#row-dy10) | `python brain/heron_validate.py accept create-line-style --by "Ajmal PS"`. |
+| ~~**DY10**~~ | The signature, on the owner's word only, after DY2 to DY8 — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | `python brain/heron_validate.py accept create-line-style --by "Ajmal PS"`. |
 
 **Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
 written: `CREATE_LINE_STYLE` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,

@@ -9,7 +9,7 @@
 
 ### 2026-11-13 — THE OWNER'S PC PROVES WHAT #855 BUILT, AND THE PROVING FINDS NEW DEFECTS ON THE WAY
 
-Written to the rule in [section 11](../HANDOVER.md#11-handover--2026-09-12): what is NEW, a MISTAKE worth not repeating,
+Written to the rule in [section 11](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#11-handover--2026-09-12): what is NEW, a MISTAKE worth not repeating,
 what is still TO DO. It covers branch `claude/pc-proofs-2026-11-12` (draft PR #869), cut from `main` at
 10334996, on the owner's laptop: Revit 2024 in the morning, Revit 2020 from the afternoon - **one Revit at a time,
 the owner's rule for a 16 GB PC**. Every run was on a saved scratch copy under `%TEMP%\heron-work`; each group's

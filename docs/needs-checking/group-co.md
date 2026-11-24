@@ -28,11 +28,11 @@ After every run REPORT_FAMILY_PARAMETERS read CC 1 to 2 and CC 2 to 3 at 300 mm 
 
 | # | Check | Expected |
 |---|---|---|
-| ~~**CO1**~~ | On the scratch family - CC 1 to 2 and CC 2 to 3 (type lengths), Total = CC 1 to 2 + CC 2 to 3, a… — [full row](../needs-checking-archive/group-co.md#row-co1) | **RAN 2026-10-07:** |
-| ~~**CO2**~~ | The same family renamed, then FLEX_FAMILY setting Pipe CC 1 to 2 to a new length — [full row](../needs-checking-archive/group-co.md#row-co2) | **RAN 2026-10-07:** |
-| ~~**CO3**~~ | A new name already in the family in other capitals, "CC 1 to 2=cc 2 to 3" — [full row](../needs-checking-archive/group-co.md#row-co3) | **RAN 2026-10-07** |
+| ~~**CO1**~~ | On the scratch family - CC 1 to 2 and CC 2 to 3 (type lengths), Total = CC 1 to 2 + CC 2 to 3, a… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **RAN 2026-10-07:** |
+| ~~**CO2**~~ | The same family renamed, then FLEX_FAMILY setting Pipe CC 1 to 2 to a new length — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **RAN 2026-10-07:** |
+| ~~**CO3**~~ | A new name already in the family in other capitals, "CC 1 to 2=cc 2 to 3" — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **RAN 2026-10-07** |
 | **CO4** | A SHARED parameter renamed | Refused, saying its name comes with its GUID; nothing renamed |
 | **CO5** | A new name with an operator (Pipe CC 1-2), a digit first, or a character Revit refuses (Pipe:CC) | Each refused by name, nothing renamed |
 | **CO6** | A parameter a nested family's parameter is linked to, renamed | The link read back unchanged in keptLinks - **not yet run**: the scratch family has no nested family |
 | **CO7** | The first positive case on Revit 2020 | The same read-back as on 2024 |
-| ~~**CO8**~~ | The run records in `brain/proof-drafts/runs/` read and signed — [full row](../needs-checking-archive/group-co.md#row-co8) | Drafted 2026-10-07 from `runs/add-family-parameters.json` (CO1 + CO3; gap: no second… |
+| ~~**CO8**~~ | The run records in `brain/proof-drafts/runs/` read and signed — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Drafted 2026-10-07 from `runs/add-family-parameters.json` (CO1 + CO3; gap: no second… |

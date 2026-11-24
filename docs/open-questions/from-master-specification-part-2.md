@@ -93,7 +93,7 @@ discovered?
 | **Yes** | pyRevit Routes becomes a viable transport, potentially replacing the custom bridge |
 | **No** | It stays a **scripting-execution** option only (Q-7a). [D-02](../DECISIONS.md) named pipes remain the transport -- multi-Revit is not negotiable |
 
--> [26](../26-prior-art-revit-mcp.md)
+-> [31 research](../31-research.md)
 
 **Answer: closed as not applicable — Heron does not use Routes, on either count.**
 [D-28](../DECISIONS.md) settled Q-7a as **Roslyn C# in process**, which removes the scripting-execution use
