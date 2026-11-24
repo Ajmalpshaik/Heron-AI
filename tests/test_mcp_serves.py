@@ -497,7 +497,8 @@ async def exercise(server):
         "revit_preview_move": ["category", "distance"],
         "revit_read": ["capability", "values", "expect_from", "request"],
         "revit_show": ["capability", "values", "expect_from", "request"],
-        "revit_isolate_temporary": ["ids", "category"],
+        # `mode` since row 5b-2024: "hide" is Revit's own HH.
+        "revit_isolate_temporary": ["ids", "category", "mode"],
         "revit_reset_temporary": [],
         "revit_undo_last": ["check_only"],
         # `dry_run` since D-155: the run rolled back, asked for from the chat.
@@ -1360,6 +1361,50 @@ async def exercise_show(module):
               and "replaced it" in said and "revit_reset_temporary" in said,
               "and says how many, how many this view can show, that an earlier "
               "isolate was replaced, and how it ends")
+
+        # TEMPORARY HIDE, row 5b-2024: the same tool with mode "hide" sends its
+        # OWN operation - never isolate_temporary with a flag an older add-in
+        # would ignore - and takes a form's long id as given.
+        revit.asked[:] = []
+        revit.reply = {"ok": True, "mode": "hide", "isolated": 2,
+                       "isolatedBy": "element id", "view": "{3D}",
+                       "replacedEarlier": False, "addedToEarlier": True,
+                       "document": "Project1", "projectKey": "key-1"}
+        form = "cc308a19-1b2c-4d5e-8f90-a1b2c3d4e5f6-00000c45"
+        said = await call("revit_isolate_temporary",
+                          {"ids": "925629, " + form, "mode": "hide"})
+        op, args, _ = revit.asked[-1] if revit.asked else (None, {}, None)
+        check(op == "hide_temporary" and args.get("ids") == "925629, " + form
+              and args.get("expectProject") == "key-1",
+              "mode hide sends hide_temporary with the ids as typed, a form's long id "
+              "included, and the pin - found %r %r" % (op, args))
+        check(said.startswith("Hid 2 element(s)") and "Isolated" not in said
+              and "hidden on top of it" in said and "revit_reset_temporary" in said,
+              "and says it HID them, that it added to the hide/isolate already on, and "
+              "how it ends - found %r" % said[:160])
+
+        revit.asked[:] = []
+        said = await call("revit_isolate_temporary", {"ids": "925629", "mode": "hdie"})
+        check(not revit.asked and "Nothing was sent" in said and "hdie" in said,
+              "a mode that is neither isolate nor hide is refused before anything is "
+              "sent - read as an isolate it would show only what was to be hidden")
+
+        revit.asked[:] = []
+        revit.reply = {"ok": False, "error": "unknown_op",
+                       "message": "hide_temporary is not an operation Heron knows."}
+        said = await call("revit_isolate_temporary", {"category": "walls", "mode": "hide"})
+        check("older than temporary hide" in said and "nothing was hidden" in said
+              and "HH" in said,
+              "an add-in older than hide refuses it as unknown, and the chat is told "
+              "nothing was hidden and what to press instead")
+
+        revit.asked[:] = []
+        revit.reply = {"ok": True, "isolated": 1, "isolatedBy": "element id",
+                       "view": "Level 1", "document": "Project1", "projectKey": "key-1"}
+        said = await call("revit_isolate_temporary", {"ids": "925629"})
+        op, _, _ = revit.asked[-1] if revit.asked else (None, {}, None)
+        check(op == "isolate_temporary" and said.startswith("Isolated 1 element(s)"),
+              "with no mode it is the isolate it always was - found %r" % op)
 
         revit.asked[:] = []
         revit.reply = {"ok": True, "reset": True, "view": "Level 1",

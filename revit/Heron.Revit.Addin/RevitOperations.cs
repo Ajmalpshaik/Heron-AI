@@ -325,6 +325,16 @@ namespace Heron.Revit.Addin
                                                       Json.ReadString(request, "category"),
                                                       Json.ReadString(request, "expectProject"));
 
+                // Revit's own Hide Element / Hide Category under Temporary
+                // Hide/Isolate (HH, HC) - row 5b-2024. ITS OWN NAME, so an
+                // add-in older than it answers unknown_op rather than reading
+                // a "hide" it does not know as an isolate.
+                case "hide_temporary":
+                    return RevitTemporaryView.Hide(app,
+                                                   Json.ReadString(request, "ids"),
+                                                   Json.ReadString(request, "category"),
+                                                   Json.ReadString(request, "expectProject"));
+
                 case "reset_temporary":
                     return RevitTemporaryView.Reset(app, Json.ReadString(request, "expectProject"));
 
