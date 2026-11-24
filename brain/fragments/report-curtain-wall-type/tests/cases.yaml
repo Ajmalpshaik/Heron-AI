@@ -1,3 +1,9 @@
+# VERSION 2 (2026-11-24): Automatically Embed and Join Condition are read
+# too. Version 1 was PROVEN on 2026-10-18 by the first positive and first
+# negative below; version 2 is DRAFT until NEEDS-CHECKING Group QG is run -
+# the two embed cases at the end of `positive` and `negative` are its new
+# ones, written in a cloud session with no Revit and NOT RUN.
+#
 # THE PROOF PLAN, written 2026-09-24 and NOT RUN. Nothing here has touched a
 # model (D-30); every case says what to arrange and what must come back. The
 # owner runs it, on a TEST COPY - tools/jobs/report-curtain-wall-type-test-
@@ -62,6 +68,28 @@ positive:
       the same answer. One path serves every release, and this is the release
       at the other end of the range
 
+  - given: >
+      VERSION 2. A copy of "Curtain Wall: Curtain Wall" named "HERON QG Embed",
+      made by hand with DUPLICATE_TYPE, its Automatically Embed UNTICKED in
+      Type Properties > Construction and its Join Condition left as it came;
+      curtainWallType "HERON QG Embed". Then tick the box by hand (or with
+      SET_CURTAIN_WALL_EMBED once its own row is signed) and read it again
+    expect: >
+      first read: automaticallyEmbed "no"; joinCondition the words Type
+      Properties shows for Join Condition, with Revit's value and the id that
+      answered - RECORD which id, AUTO_JOIN_CONDITION_WALL or
+      AUTO_JOIN_CONDITION; findings says "Automatically Embed (Type Properties
+      > Construction): not ticked". Second read: automaticallyEmbed "yes",
+      "ticked". The grid and mullion parts of settings are the same both times
+
+  - given: >
+      VERSION 2, the version 1 cases above run again - the Storefront type and
+      the basic-wall negative
+    expect: >
+      every grid and mullion setting as version 1 read it, the same counts,
+      and settings ending with a "construction:" part. The basic wall type is
+      still refused, with automaticallyEmbed and joinCondition empty
+
 negative:
   - given: >
       the same five steps and the same request, with curtainWallType "Basic
@@ -90,11 +118,22 @@ negative:
       because a curtain system's type is not a wall type. Recorded as the
       boundary, not as a failure of this fragment
 
+  - given: >
+      VERSION 2. The same HERON QG Embed type with Automatically Embed
+      UNTICKED, asked the plain question "is automatically embed on for this
+      curtain wall" through revit_read
+    expect: >
+      automaticallyEmbed "no" and NOTHING CHANGED - the box still unticked in
+      Type Properties afterwards. The question reaches this read, never
+      SET_CURTAIN_WALL_EMBED (D-86). A box Revit does not give this read comes
+      back "NOT READ - ...", never "no" (D-52)
+
 second_route:
   - >
       Type Properties of the same type in Revit: Vertical Grid and Horizontal
       Grid (Layout, Spacing, Adjust for Mullion Size) and Vertical Mullions and
-      Horizontal Mullions (Interior, Border 1, Border 2), compared with
-      `settings` line for line. On a rolled-back run the dialog has nothing left
+      Horizontal Mullions (Interior, Border 1, Border 2), and Construction
+      (Automatically Embed, Join Condition), compared with `settings` line for
+      line. On a rolled-back run the dialog has nothing left
       to show, so the second positive - a type that stays in the model - is
       where this route can be taken
