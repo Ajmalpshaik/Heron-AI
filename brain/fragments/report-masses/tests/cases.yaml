@@ -26,3 +26,12 @@ negative:
   - given: the same two masses, masses "NoSuchFamily"
     expect: >
       massCount 0 and the finding naming the words that matched nothing
+
+  - given: >
+      VERSION 2, NEGATIVE. a project with no mass at all, then the project
+      with masses
+    expect: >
+      no mass: version 1's "This project has no conceptual masses" and
+      skippedMasses 0, with no "passed over" sentence. With masses: every line
+      as version 1's, skippedMasses written down (0 expected), and no such
+      sentence - it rides only on the empty answer

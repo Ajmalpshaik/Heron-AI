@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,14 @@ semantic-identity: "everything wired onto one circuit, or onto every circuit of 
 kind: filter
 domain: revit.mep
 capability: SELECT_BY_ELECTRICAL_CIRCUIT
-version: 3
+# VERSION 4 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005) - a circuit whose loads Revit will not give is counted in
+# `unresolvedCircuits`, where version 3, asked for what is on no circuit,
+# selected its loads as on no circuit; a sentence names it only on that answer
+# and only when it is above 0. It was PROVEN at version 3; that proof stays
+# below as the record, and the card is DRAFT until its NEEDS-CHECKING check
+# runs and is signed (D-30).
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -116,6 +123,13 @@ contract:
       # up in THIS model (FRAGMENT-ISSUES row 75).
       role: accounting
       type: IList<string>
+    - name: unresolvedCircuits
+      # VERSION 4 (D-64). Circuits, in this model and any link read, whose
+      # loads Revit would not give, so an element on one may read as on no
+      # circuit. Always carried; a sentence in `findings` names it only on the
+      # on-no-circuit answer and only when it is above 0.
+      role: accounting
+      type: int
 
 proof:
   date: '2026-10-18'

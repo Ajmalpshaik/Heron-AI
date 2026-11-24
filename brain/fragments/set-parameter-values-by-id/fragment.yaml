@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -227,7 +227,24 @@ capability: SET_PARAMETER_VALUES_BY_ID
 # it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group NJ's
 # NJ5 and NJ14 are run (D-30). Kept out of the purpose and the identity line, for the
 # reason version 3 gives.
-version: 10
+#
+# VERSION 11 (2026-11-24, FRAGMENT-ISSUES 5b-2017) - A VALUE REVIT TURNS DOWN
+# IS REFUSED, NEVER THROWN, and back to DRAFT. On Revit 2020 (session 29500,
+# 4355-BHVD-3D-60P00-BL003A) a CSV writing -1 into six shared Yes/No sheet
+# parameters ended `fragment_threw`: "Nothing was kept. 9567876: Revit would
+# not take '-1' for Hold List (Yes/No) {f13626b3-...}" - the right words,
+# nothing kept, but the shape of a crash. Now (1) a tick box takes 1 or 0 (yes,
+# no, true, false, on, off) and anything else is turned down while the rows are
+# checked, before any row is written: "is a Yes/No, which takes 1 or 0" - in
+# `stale` for id rows and a CSV, in `refused` by key; (2) by id, every value is
+# written in ONE sub-transaction, and one Revit still turns down - or throws on
+# - rolls it back and comes back in `stale`, `applied` false, nothing kept.
+# All or nothing holds as before; the keyed rows were already refused row by
+# row. Version 10 was PROVEN on 2026-11-23 (the proof block below, kept as the
+# record of what it proved); its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group QF's QF4 and QF5 are run (D-30). Kept out of the purpose
+# and the identity line, for the reason version 3 gives.
+version: 11
 source: OFFICIAL
 risk: MODIFY
 
@@ -371,9 +388,11 @@ contract:
     - name: resultJson
       role: accounting
       type: string
-    # Rows that stopped the run - changed in Revit, gone, read-only. Nothing
-    # was written when this is not empty. Turned down, never found (D-52).
-    # Id rows only; always empty by key.
+    # Rows that stopped the run - changed in Revit, gone, read-only, a tick
+    # box given something but 1 or 0, or (version 11, row 5b-2017) a value
+    # Revit turned down as it was written. Nothing was written when this is
+    # not empty. Turned down, never found (D-52). Id rows only; always empty
+    # by key.
     - name: stale
       role: accounting
       type: IList<string>

@@ -50,16 +50,6 @@
 
 ---
 
-### Row 5b-1063
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`save-document` WITH `closeWindow` CLOSES THE WINDOW AND THEN ANSWERS *"ROLLED BACK NOTHING WAS KEPT ... Send it again with apply to keep it"*.** Met 2026-10-17 on the owner's laptop, Revit 2024 session 8168, while arranging [E4](../needs-checking/group-e.md) ([the run](../needs-checking/group-e.md#the-2026-10-17-run-of-e1-e10-g1-g2-and-g4)), twice: `heron_bridge_client.py fragment save-document --write --set documentPath=<a test copy> --set closeWindow=true`, on *Rails-S dynamo sample* and then on *Rails-F Snowdon Facades*, each not in front and with nothing unsaved. Each reply: `closed` true, `saved` false, *"'Rails-S dynamo sample' had no unsaved changes ..."*, *"'Rails-S dynamo sample' is closed."* - under the client's verdict *"ROLLED BACK NOTHING WAS KEPT. 'save-document' ran for real and Revit reported the transaction group rolled back afterwards, so the counts above are what it actually did rather than a guess. Send it again with apply to keep it."* A closed window is not rolled back - the fragment's own purpose says it is PUBLISH and not undoable - and sending it again with apply would ask to close a window already closed. **NOT checked:** where the verdict is chosen (the client's sentence for every write run without apply, or the publish path), what `--apply` would have answered, and the closed windows by a read afterwards - that Revit was closed before one could be taken
-
-**State.** **FIXED 2026-11-19 - the client's `fragment` command prints, under the add-in's verdict of a run sent as `run_fragment_publish` and not kept, that the job's outward work - a file written, a document saved, a window closed - still stands, and not to send it again with --apply (`outward_not_taken_back` in mcp/client/heron_bridge_client.py). The add-in's own sentence is C# and unchanged. tests/test_admin_publish.py section 4; not run on a Revit.** Tracked as issue [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) until then. Was: **OPEN - recorded, not fixed.** Found while doing something else; the words belong to the client or the publish path, not to the move
-
----
-
 ### Row 5b-1065
 
 *Moved from the register on 2026-11-17.*
@@ -77,25 +67,3 @@
 **Defect.** **FROM INSIDE THE STORE CLAUDE, A WRITE INTO A FOLDER THAT ALREADY EXISTS ON THE REAL DISK LANDS ON THE REAL DISK - NOT IN THE APP'S COPY - SO THE INSTALLERS' REFUSAL SAYS SOMETHING THIS LAPTOP DOES NOT DO.** Measured 2026-10-17 on the owner's laptop, Store Claude `AnthropicPBC.Claude_2.31226.1.0_x64__fnn82j28hfe8t`: a folder made under `%APPDATA%\Heron` from the owner's own terminal; from Claude's shell, a line appended to a file in it and a NEW file made in it; read back from the terminal, both were on the real disk, and the copy's `LocalCache\Roaming\Heron` held no such folder. The refusal ([row 495](../fragment-issues/section-5b-rows-401-425.md)) says *"an add-in installed from here would land where Revit never looks"*, and [Q-63](../OPEN-QUESTIONS.md) with rows 416 to 419 describes every write under AppData as sent to the copy. What row 416 measured on 2026-10-10 were writes whose folders did not yet exist outside - the packages, the store. On this laptop every `Addins\<release>` folder exists, so an install from inside would plausibly have reached Revit after all. **NOT checked:** a folder that exists in BOTH places, such as `Python\Python312\site-packages` now; a new folder made from inside; and the add-in install itself from inside - the refusal stopped it, as it should.
 
 **State.** **MOVED TO ISSUE [#900](https://github.com/Ajmalpshaik/Heron-AI/issues/900) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN - recorded, not fixed.** The refusal itself stays: from inside, where a file lands depends on which folders exist where, which nobody installing can see. Its SENTENCE, and Q-63's description of the copy, are the question - for Ajmal PS, or the next session on the installer. **MEASURED 2026-10-17 at 23:53 - the case this row left NOT checked ([D-135](../decisions/D-135.md)):** in a folder that exists in BOTH places, a new file, a new folder, an edit to a file both hold and a write-then-rename all land in the COPY - the rename even over a file only the real disk held, leaving a new file in the copy that hides the real one; only an append to a file the real disk alone held reached it. A new FOLDER made from inside a real-only folder reached the real disk. So the refusal's sentence is true wherever the copy holds the folder, and which folders it holds depends on what was installed from where - the refusal stays; its wording is still the installer's session's.
-
----
-
-### Row 5b-1067
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`tools/check-gaps.py` NAMED `brain/heron_install.py` AS IMPORTED BY NO SUITE - ITS ONE UNFINISHED ITEM ON A PLAIN CONTAINER - WHILE [`tests/test_install_lines.py`](../../tests/test_install_lines.py) TESTS IT: THE SUITE LOADS IT BY PATH, AND THE CHECK COUNTED ONLY AN `import`.** Found 2026-10-17 running check-gaps for [pull request #628](https://github.com/Ajmalpshaik/Heron-AI/pull/628) on main `a5a349ba` and again on `2f6124ab`, in a cloud container without `model2vec`: exit 1, and the UNFINISHED list held only *"1 brain module(s) are imported by no suite at all: brain/heron_install.py"*. `brain/heron_install.py` came with [row 5b-944](../fragment-issues/section-5b-rows-926-950.md)'s change (#600), and its suite loads it through `importlib.util.spec_from_file_location` from `os.path.join(BRAIN, "heron_install.py")` on purpose, so that a missing module is one FAIL line rather than a traceback. The brain section of check-gaps counted an `import` or `from` line naming the module and nothing else, the reading row 5b-91 gave it.
-
-**State.** **FIXED 2026-10-17 in the tool - tooling, no fragment, no Revit.** One reading, `suite_loads()` in `tools/check-gaps.py`: an import counts, and so does the module's file name as an argument to `os.path.join` in a suite that calls `spec_from_file_location`; a comment naming the file, a path with no loader and a longer module name do not. [`tests/test_check_gaps.py`](../../tests/test_check_gaps.py) holds all of that and the real tree's `test_install_lines.py`; against the tool as it stood it failed 3 checks and crashed on none. check-gaps on the fixed tree: *"UNFINISHED - nothing"*, exit 0. **Not checked here:** whether a suite that loads a module tests it well - check-gaps counts that one exists.
-
----
-
-### Row 5b-1071
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`tests/test_data_home.py` FAILS 6 CHECKS OFF WINDOWS ON PYTHON 3.13 AND PASSES ON 3.11 AND 3.12: IT PLANTS `USERPROFILE` AS A LINUX PATH AND ASKS `data_home()` AS WINDOWS, AND FROM 3.13 `ntpath.isabs()` SAYS A PATH WITH NO DRIVE IS NOT ABSOLUTE, SO THE PLANTED HOME IS NONE.** Found 2026-10-18 in a cloud container while fixing [row 1069](../FRAGMENT-ISSUES.md#): the same 6 fail on the D-135 branch before that change - *"home() is the default home (None)"*, the first carry and its note, the waiting second chat, the stale lock - and `python3.11` and `python3.12` pass the suite whole on the same tree. CI pins 3.11, so CI does not see it. `data_home()` is right to refuse a profile with no drive on Windows ([row 168](../FRAGMENT-ISSUES.md#)); what is not a Windows path on 3.13 is the suite's planted `os.path.join(top, "profile")`, which on Windows is a drive path and passes.
-
-**State.** **FIXED 2026-10-18 in the suite - tested in a cloud container, `heron_paths` unchanged.** Section 5's five planted-PC calls go through `home_of()`, which has `data_home()` answer the planted profile's `.heron` for that one call, the way section 5c already plants it; the `HERON_DATA` call after them keeps the real `data_home()`, and section 1 still tests its Windows rule on Windows spellings. The suite passes whole on `python3.11`, `python3.12` and `python3.13`. Teeth: with `home()` broken to return before it carries, 5 of section 5's checks FAIL on 3.13, and pass again restored.
-
----

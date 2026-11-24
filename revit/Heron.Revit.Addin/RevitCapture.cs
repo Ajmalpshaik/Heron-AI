@@ -592,6 +592,14 @@ namespace Heron.Revit.Addin
         /// this accepts - "CeilingPlan: Level 1", the view type as Revit spells
         /// it - so the chat can copy one back exactly. Templates are never a
         /// match: a template is a set of settings, not something to look at.
+        ///
+        /// A SHEET ALSO ANSWERS TO ITS NUMBER, AND ANY VIEW TO ITS ELEMENT ID
+        /// (row 5b-2015), read only when no view carries the text as its name.
+        /// On Revit 2020, 2026-11-24, three sheets of 4355-BHVD-3D-60P00-BL003A
+        /// were all "Unnamed", and the refusal offered "DrawingSheet: Unnamed"
+        /// three times - none of them usable. Sheets are listed by number now,
+        /// "Sheet A101 - Unnamed", which is read back. The binder's OneView
+        /// reads the same three ways through the same helpers.
         /// </summary>
         private static View ViewNamed(Document doc, string name, out string problem)
         {
@@ -617,15 +625,35 @@ namespace Heron.Revit.Addin
 
             if (found.Count == 0)
             {
+                // Row 5b-2015: a sheet's number, or a view's element id - the
+                // text naming two different views that way is refused.
+                var sheet = RevitFragment.SheetNumbered(doc, name);
+                var byId = RevitFragment.ViewWithId(doc, name);
+                if (byId != null && byId.IsTemplate) byId = null;
+                if (sheet != null && byId != null && !sheet.Id.Equals(byId.Id))
+                {
+                    problem = Json.Error("ambiguous_view",
+                        "'" + name + "' is the number of " + RevitFragment.ViewLabel(sheet)
+                        + " and the element id of " + RevitFragment.ViewLabel(byId)
+                        + ". Write '" + RevitFragment.ViewLabel(sheet) + "' for the sheet. "
+                        + "Nothing was pictured.");
+                    return null;
+                }
+                if (sheet != null) return sheet;
+                if (byId != null) return byId;
+
                 problem = Json.Error("no_such_view",
-                    "There is no view called '" + name + "' in \"" + doc.Title + "\". "
-                    + "revit_views names the view in front; the Project Browser has the rest. "
-                    + "Nothing was pictured.");
+                    "There is no view called '" + name + "' in \"" + doc.Title + "\", and no "
+                    + "sheet numbered that. revit_views names the view in front; the Project "
+                    + "Browser has the rest. A sheet is named by its number too - 'A101' or "
+                    + "'Sheet A101 - Plans' - and any view by its element id. Nothing was pictured.");
                 return null;
             }
 
             var names = new List<string>();
-            foreach (var view in found) names.Add(view.ViewType.ToString() + ": " + view.Name);
+            foreach (var view in found)
+                names.Add(view is ViewSheet ? RevitFragment.ViewLabel(view)
+                                            : view.ViewType.ToString() + ": " + view.Name);
             names.Sort(StringComparer.Ordinal);
             problem = Json.Error("ambiguous_view",
                 found.Count + " views are called '" + name + "'. Name one exactly as written "
@@ -835,8 +863,13 @@ namespace Heron.Revit.Addin
         /// neither shape refuses the whole list, named, rather than being
         /// dropped: a picture of fewer things than were asked for with no
         /// reason given is the failure the refusals here exist to prevent.
+        ///
+        /// SHARED WITH THE TEMPORARY HIDE/ISOLATE (row 5b-2024), so a form's
+        /// long id reads the same there as it does here. `notDone` is the word
+        /// its refusals end with - "pictured" here, "hidden" or "isolated" there.
         /// </summary>
-        private static string SplitIds(string text, List<string> typed, List<string> unique)
+        internal static string SplitIds(string text, List<string> typed, List<string> unique,
+                                        string notDone = "pictured")
         {
             var numbers = new List<string>();
             foreach (var piece in text.Split(','))
@@ -848,7 +881,7 @@ namespace Heron.Revit.Addin
                 {
                     if (unique.Contains(part))
                         return part + " is typed more than once - type each id once. "
-                             + "Nothing was pictured.";
+                             + "Nothing was " + notDone + ".";
                     unique.Add(part);
                 }
                 else if (Digits(part)) numbers.Add(part);
@@ -856,19 +889,19 @@ namespace Heron.Revit.Addin
                     return "\"" + part + "\" is not an element id. Give the ids as Heron's "
                          + "answers print them - Revit's number, digits only, or the long id "
                          + "the family form tools give back - comma separated, with nothing "
-                         + "else in the list. Nothing was pictured.";
+                         + "else in the list. Nothing was " + notDone + ".";
             }
 
             if (numbers.Count == 0 && unique.Count == 0)
                 return "'" + text + "' is not a list of element ids. Type them as Heron's "
-                     + "answers print them, comma separated. Nothing was pictured.";
+                     + "answers print them, comma separated. Nothing was " + notDone + ".";
             if (numbers.Count == 0) return null;
 
             string problem;
             var read = HeronBindingNote.TypedIds(string.Join(",", numbers.ToArray()), out problem);
             if (read == null)
                 return problem ?? "'" + text + "' is not a list of element ids. Type them as "
-                     + "Revit shows them - digits only, comma separated. Nothing was pictured.";
+                     + "Revit shows them - digits only, comma separated. Nothing was " + notDone + ".";
             typed.AddRange(read);
             return null;
         }
@@ -1221,6 +1254,21 @@ namespace Heron.Revit.Addin
             // finally touches `view`.
             var viewName = view.Name;
             var viewType = view.ViewType.ToString();
+            // WHICH VIEW, BY ID AND - FOR A SHEET - NUMBER (row 5b-2015), so a
+            // view in front that shares its name can be named back exactly.
+            // A named view only: the elements way's 3D view and a region's copy
+            // are temporary, and their ids are gone once the group rolls back.
+            string viewId = null;
+            string sheetNumber = null;
+            if (mode == "view")
+            {
+                viewId = view.Id.ToString();
+                var sheet = view as ViewSheet;
+                if (sheet != null)
+                {
+                    try { sheetNumber = sheet.SheetNumber; } catch { sheetNumber = null; }
+                }
+            }
 
             // WHERE THE PICTURE SITS IN THE MODEL, for a named plan only - the
             // temporary 3D view of the elements way has none to give (row
@@ -1307,6 +1355,8 @@ namespace Heron.Revit.Addin
                 Json.Str("mode", mode),
                 Json.Str("view", viewName),
                 Json.Str("viewType", viewType),
+                Json.Str("viewId", viewId),
+                Json.Str("sheetNumber", string.IsNullOrEmpty(sheetNumber) ? null : sheetNumber),
                 Json.Num("pixelWidth", width),
                 Json.Bool("widthClamped", clamped),
                 sized ? Json.Num("pictureWidth", pictureWidth) : null,

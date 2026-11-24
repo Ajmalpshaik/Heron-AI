@@ -177,7 +177,7 @@ If a user repeatedly performs a workflow successfully — *"select all ducts and
 > real Revit; recognising a repeat is still not built.)
 > [`heron_userskills.py`](../brain/heron_userskills.py) plans raising a personal skill one step at a
 > time - user, then company, then global - refuses a raise its author approves, and moves nothing.
-> [`heron_memory.py`](../brain/heron_memory.py) decides what may be remembered and writes nothing: a
+> `heron_memory.py` decides what may be remembered and writes nothing: a
 > candidate carrying a credential is refused whole. Both are `DRAFT`, and no MCP tool reaches either.
 
 ---
@@ -198,8 +198,8 @@ User Knowledge -> Candidate -> Review -> Validation -> Community Proposal
 A fragment carries usage history, failure history, and sometimes literal parameter names, family names or project identifiers. A "generic" duct-selection fragment can easily contain `PROJ-QA-2026-Ashghal-DuctType-A`. Automated sanitisation is not sufficient — a human must see the exact payload. This is `PUBLISH` level, always, no exceptions and no remembered consent.
 
 > **As built (2026-10-18):** there is no community store and no submission path. Two parts of one are
-> written: [`heron_contribution.py`](../brain/heron_contribution.py) prepares a submission only after a
-> review of each item that has seen its payload, and [`heron_pullrequest.py`](../brain/heron_pullrequest.py)
+> written: `heron_contribution.py` prepares a submission only after a
+> review of each item that has seen its payload, and `heron_pullrequest.py`
 > opens a pull request only on a confirmation naming the head it opens. Both are `DRAFT`, and no MCP tool
 > reaches either. Shared company knowledge is a git repository when there is demand
 > ([D-41](DECISIONS.md#d-41--single-user-now-company-knowledge-is-a-git-repo-and-the-admin-is-the-reviewer)).
@@ -225,11 +225,11 @@ Design constraints:
 Tracked as [Q-16](OPEN-QUESTIONS.md) — which existing repositories are in scope for the first import.
 
 > **As built (2026-10-18):** the pipeline is
-> [`heron_pipeline.py`](../brain/heron_pipeline.py). It reads its step order from the specification,
+> `heron_pipeline.py`. It reads its step order from the specification,
 > never modifies the source folder, and maps each step to an agent.
 > [`heron_import.py`](../brain/heron_import.py) prepares the manifest for a person's review, and
 > everything enters at `DISCOVERED`. Both are DRAFT, and no MCP tool serves either. The study of the
-> existing libraries is [31](31-studying-the-existing-libraries.md): mechanisms are re-authored, never
+> existing libraries is [31 research](31-research.md): mechanisms are re-authored, never
 > imported ([D-25](DECISIONS.md#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported)).
 
 ---
@@ -382,8 +382,8 @@ Naming must be predictable and searchable (§31), but identity is an **ID**, nev
 
 > **As built (2026-10-18):** a fragment's identity is the `id:` in its card, never its folder name
 > ([09 §4](09-skills-and-fragments.md#4-knowledge-identity-30)), and a project's store is named by the
-> model's own id, never its file name. [`heron_rename.py`](../brain/heron_rename.py) refuses to rename
-> before identity exists, and [`heron_references.py`](../brain/heron_references.py) lists the edits a
+> model's own id, never its file name. `heron_rename.py` refuses to rename
+> before identity exists, and `heron_references.py` lists the edits a
 > rename needs in five places - imports, references, metadata, registry and docs. Both return a plan and
 > write nothing; both are `DRAFT`, and no MCP tool reaches either.
 
@@ -403,11 +403,11 @@ Three practical defences:
 | **Supersession** | New knowledge that contradicts old knowledge **replaces** it and records the replacement. It does not sit beside it. |
 | **Budget** | Each scope has a size budget. Approaching it triggers consolidation, not silent growth. |
 
-> **As built (2026-10-18):** two of the three are rules in [`heron_memory.py`](../brain/heron_memory.py),
+> **As built (2026-10-18):** two of the three are rules in `heron_memory.py`,
 > which decides and writes nothing. **Expiry:** a temporary item that arrives without a time to live is
 > refused, and a project item is recorded as archiving when its project closes; no duration is chosen
 > there. **Supersession:** a new item that replaces an old one names what it replaces. **Budget** is not
-> built: no scope has a size budget. [`heron_budget.py`](../brain/heron_budget.py) is a different thing,
+> built: no scope has a size budget. `heron_budget.py` is a different thing,
 > a token and cost budget.
 
 The measure of a good memory system is not how much it remembers. It is how reliably it returns the right thing — which usually means remembering **less**, and more deliberately.

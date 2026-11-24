@@ -210,10 +210,14 @@ namespace Heron.Core
                 // code with Changes OFF would be a write path with no switch in
                 // front of it. So the one transaction here is in
                 // RevitTemporaryView.cs, and it calls IsolateElementsTemporary,
-                // IsolateCategoriesTemporary or DisableTemporaryViewMode and
+                // IsolateCategoriesTemporary, HideElementsTemporary,
+                // HideCategoriesTemporary or DisableTemporaryViewMode and
                 // nothing else. The view's saved visibility is untouched - the
-                // Temporary Hide/Isolate border is Revit saying so.
+                // Temporary Hide/Isolate border is Revit saying so. The hide
+                // (row 5b-2024) has its own name so an older add-in refuses it
+                // as unknown rather than isolating what was asked to be hidden.
                 { "isolate_temporary",  HeronRisk.Execute },
+                { "hide_temporary",     HeronRisk.Execute },
                 { "reset_temporary",    HeronRisk.Execute },
 
                 // READ - what `undo_own` would answer now, and NOTHING SENT

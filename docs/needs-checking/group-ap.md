@@ -11,7 +11,7 @@
 **Tracked as GitHub issue [#993](https://github.com/Ajmalpshaik/Heron-AI/issues/993) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
 **The owner's PC, Revit 2024 first, on a scratch model - never his own design.** Every row comes out of
-[39](../39-three-downloaded-skill-sets.md), which studied three sets of skill files the owner downloaded,
+[31 research](../31-research.md), which studied three sets of skill files the owner downloaded,
 and each row says which of its findings it settles:
 
 - [`slope-roof-edges`](../../brain/fragments/slope-roof-edges/fragment.yaml) - `SLOPE_ROOF_EDGES`, FRG-ELE-071 - a
@@ -44,4 +44,4 @@ otherwise, so every scratch file ends as it began.
 | **AP10** | The `building-shell` skill in one chat, on a NEW project with nothing in it: *"a two-storey box 12000 by 8000 on levels at 0, 3000 and 6000; walls Generic - 200mm; one wall across each floor at 6000; a 300 slab on each floor; a room either side of it; ceilings at 2700; and a hip roof at 25 degrees"* | The host follows the skill's order and asks for anything the sentence leaves out. **The count at the skill's last step, derived from the sentence:** 3 levels; 5 walls a floor, 10 in all; 2 slabs; 4 rooms, none unenclosed; 4 ceilings; 1 roof; and a total wall length of 96000 mm on the walls' centrelines. Record every place it strays from the order - that is the evidence for or against writing the order down as steps |
 | **AP11** | **The readers' [row 5b-203](../fragment-issues/section-5b-rows-201-225.md) negatives, on one scratch model.** Inside an architectural link, bind a shared `Fire Rating` to Walls, Ceilings, Structural Columns and Structural Framing beside any already there; in the host, bind a project `Space Type` to MEP Spaces and a shared `Angle` to Pipe Fittings. Then run each fragment `READERS` lists in `tests/test_same_name_guard.py` on its own 5b-203 case in its `tests/cases.yaml`, with `includeLinks` true where it takes it | Each case as its file writes it: a doubled linked Fire Rating reads `NOT READ - N parameters share that name`, never a value and never `not set`; a doubled Space Type or Angle comes back null with a finding that names the element; the two selects count the element in `ambiguous` and match nothing. **A value read from either parameter is the defect** |
 
-**Not in this group, because not built:** everything in [39](../39-three-downloaded-skill-sets.md) §5.
+**Not in this group, because not built:** everything in [31 research](../31-research.md) §5.

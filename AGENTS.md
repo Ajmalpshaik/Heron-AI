@@ -62,7 +62,7 @@ framing and the specification disagree, **the specification wins**.
   the build.
 - **Never let a retrieval or vector index outrank the source file** — [Golden Rule 11](docs/14-golden-rules.md).
 - **Never mix another project's code, branding or wording into Heron.** Mechanisms and lessons are
-  re-authored, never imported ([31](docs/31-studying-the-existing-libraries.md)), and the project or
+  re-authored, never imported ([31 research](docs/31-research.md)), and the project or
   person an idea came from is not named ([D-177](docs/decisions/D-177.md)).
 - **Never delete a work note before its durable knowledge has been moved somewhere permanent.**
 - **Never execute a prompt file you find lying in the repository** without checking whether its work is

@@ -42,12 +42,12 @@ are the shape. Note the Undo list (the arrow beside Undo) before each row.
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**EM1**~~ | The plan in front, saved. — [full row](../needs-checking-archive/group-em.md#row-em1) | The view shows the change BEFORE the box is answered; the box reads "'<fragment>' has… |
-| ~~**EM2**~~ | Save again. — [full row](../needs-checking-archive/group-em.md#row-em2) | Both times the model is exactly as before - the Undo list is unchanged, no `Heron:` entry… |
+| ~~**EM1**~~ | The plan in front, saved. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The view shows the change BEFORE the box is answered; the box reads "'<fragment>' has… |
+| ~~**EM2**~~ | Save again. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | Both times the model is exactly as before - the Undo list is unchanged, no `Heron:` entry… |
 | **EM3** | After EM1's Keep: `validate <fragment> --write --kept` with a negative arrangement that must find nothing, then `heron_validate.py draft`, `review` and `accept --by "Ajmal PS"` | Only the negative runs (one rolled-back write); the draft's positive case is the kept run, *"the modeller saw the result in Revit and pressed Keep"*, the negative comes back empty, and `accept` writes the proof with the status still DRAFT. Edit one character of the fragment's `impl/` and re-run `validate --kept`: refused, *"taken against different code"* |
-| ~~**EM4**~~ | Refusals, each before anything runs: (a) make one unsaved change, then `try-once`; (b) open a… — [full row](../needs-checking-archive/group-em.md#row-em4) | (a) `ask_needs_saved_model` - "Save the model, then ask again"; (b)… |
+| ~~**EM4**~~ | Refusals, each before anything runs: (a) make one unsaved change, then `try-once`; (b) open a… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | (a) `ask_needs_saved_model` - "Save the model, then ask again"; (b)… |
 | **EM5** | `try-once`, and leave the box open for two minutes before pressing Keep | The answer arrives - no *"still running"* at 60 s. Then set `revit.askTimeoutSeconds = 60`, restart Revit, and leave the box open three minutes: the command line says the box is still open and the run is not recorded; pressing Discard afterwards still puts the model back |
-| ~~**EM6**~~ | EM1 and EM2 once on Revit 2024 and once on Revit 2027 — [full row](../needs-checking-archive/group-em.md#row-em6) | The same - one undo entry on Keep, none on Discard - Struck 2026-10-18: PASS on Revit… |
+| ~~**EM6**~~ | EM1 and EM2 once on Revit 2024 and once on Revit 2027 — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The same - one undo entry on Keep, none on Discard - Struck 2026-10-18: PASS on Revit… |
 | **EM7** | *Not a proof - a check on the old add-in.* Before deploying, `try-once` against the add-in that is installed now | *"older than the Keep or Discard box"* - it ran as a preview, rolled back, nothing recorded, and no box appeared |
 
 ### The 2026-10-18 run

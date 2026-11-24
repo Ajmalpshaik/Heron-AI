@@ -11,7 +11,7 @@ See docs/29-metadata-standard.md
 
 > **Status: built, compiled for Revit 2020 to 2027, tested without Revit. Never run in a real Revit.**
 > Decision: [D-151](decisions/D-151.md), **Proposed**. Asked by the owner on 2026-11-08 after
-> [docs/48](48-studying-bimlogiq.md) §5 item 1: *"same like a companian app a docoble panel ... same like
+> [31 research](31-research.md) §5 item 1: *"same like a companian app a docoble panel ... same like
 > daynamo if i save that and if i clock it will run"*.
 
 ---

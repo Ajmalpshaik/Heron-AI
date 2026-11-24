@@ -1,5 +1,12 @@
-// NOT STANDALONE. Assumes `doc` is in scope; leaves `findings`, `optionCount`
-// and `activeOption` behind.
+// NOT STANDALONE. Assumes `doc` is in scope; leaves `findings`, `optionCount`,
+// `activeOption` and `unresolvedElements` behind.
+//
+// VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+// #1005) - AN ELEMENT THAT WILL NOT SAY ITS OPTION IS COUNTED. Version 1 passed
+// over an element whose DesignOption threw without a word, so an option's
+// "N element(s) inside" could be short with nothing saying so.
+// `unresolvedElements` carries the count every time; the sentence naming it is
+// added only when it is above 0, so every other answer reads as version 1's.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -15,6 +22,7 @@
 
 var findings = new List<string>();
 var activeOption = "Main Model";
+var unresolvedElements = 0;
 
 var options = new List<Element>();
 foreach (var element in new FilteredElementCollector(doc)
@@ -46,7 +54,7 @@ else
     {
         DesignOption option = null;
         try { option = element.DesignOption; }
-        catch { continue; }
+        catch { unresolvedElements++; continue; }
         if (option == null) continue;
         countByOption[option.Id] = (countByOption.ContainsKey(option.Id) ? countByOption[option.Id] : 0) + 1;
     }
@@ -78,6 +86,11 @@ else
                 ? ". Those are hidden from most views and from every schedule while this option is not active"
                 : ""));
     }
+
+    // VERSION 2 (D-64): said only when an element was passed over.
+    if (unresolvedElements > 0)
+        findings.Add(string.Format("{0} element(s) would not say which design option they are in, so they "
+            + "are in none of the counts above - those counts may be short", unresolvedElements));
 
     findings.Insert(0, string.Format("{0} design option(s). Currently editing: {1}. Elements in a "
         + "NON-active option are excluded from most views and schedules - that is the usual reason a "

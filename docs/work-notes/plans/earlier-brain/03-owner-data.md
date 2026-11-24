@@ -11,7 +11,7 @@
 there. They are carried here so a cloud session can **build the mechanism and test it** — and then, on the
 PC, each set goes into **his own store** ([05](05-pc-proving.md)). **Heron ships none of it.** The Keyword
 Agent's own rule is that it *"ships NO LIST"*, and a built-in vocabulary is the synonym table
-[D-34](../../../DECISIONS.md) refuses ([`brain/heron_keywords.py`](../../../../brain/heron_keywords.py)).
+[D-34](../../../DECISIONS.md) refuses (`brain/heron_keywords.py`).
 Standards follow [D-33](../../../DECISIONS.md) and [D-83](../../../DECISIONS.md): **offered by name, as a
 question, never applied silently.** This file is deleted with the folder.
 

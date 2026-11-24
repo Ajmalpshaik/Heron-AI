@@ -1,0 +1,74 @@
+# Fourth round of STALE cards, 2026-11-24, Revit 2024 (build 24.3.50.51, add-in
+# 0.2.0.0). RESULT: PASS on the three jobs below, both halves, rolled back;
+# fingerprints match origin/main. NOT signed.
+#
+#     python tools/batch-prove.py tools/jobs/prove-fourth-stale-snowdon-revit2024-2026-11-24.yaml --dry-run
+#
+# THE MODEL: Revit's own Snowdon Towers Sample Architectural, never saved, with
+# a blank "Project2" open (no links). filter-elements-in-room takes its
+# elements from the chain, never a category: categories= on the card itself
+# is dropped.
+#
+# Tried and NOT here:
+#  - report-category-overrides: every view hides some category - a schedule
+#    and a family plan both listed hidden ones - so its negative is never
+#    empty. It wants D-53 tracking.
+#  - read-room-geometry: no room in the sample that exists and is unbounded
+#    was found for its negative; a missing name is refused before it runs.
+#  - export-parameters-to-csv: writes a row per element in both halves, and
+#    blanks "Level", which read-element-parameters reads on the same
+#    elements - recorded as a finding.
+
+model: Snowdon Towers Sample Architectural (Revit's own sample, never saved; every run rolled back), Revit
+  2024, session 11112
+defaults:
+  in: Snowdon Towers Sample Architectural
+  setup: []
+jobs:
+- fragment: frame-elements-in-camera
+  write: true
+  setup:
+  - filter-elements-by-category
+  - set-selection
+  expect: framed
+  set:
+    categories: Furniture
+    inViewOnly: 'FloorPlan: L2'
+    viewName: Heron Frame - Furniture
+    direction: south-east
+    lookDownDeg: '30'
+  negative-set:
+    categories: Sheets
+    viewName: Heron Frame - Sheets
+    direction: south-east
+    lookDownDeg: '30'
+- fragment: check-link-coordinates
+  expect: coordinates
+  set:
+    toleranceMm: 0
+  negative-in: Project2
+  negative-set:
+    toleranceMm: 0
+  note: 'Positive - Snowdon''s six links, each placement''s coordinates against the host. Negative - Project2
+    has no links: coordinates empty.
+
+    '
+- fragment: filter-elements-in-room
+  setup:
+  - filter-elements-by-category
+  - set-selection
+  setup-set:
+    categories: Furniture
+    inViewOnly: 'FloorPlan: L2'
+  negative-setup-set:
+    categories: Text Notes
+    inViewOnly: 'FloorPlan: L2'
+  expect: elements
+  set:
+    room: Studio Unit 203
+  negative-set:
+    room: Studio Unit 203
+  note: 'Positive - of the 61 furniture pieces on L2, the ones inside Studio Unit 203 (count-by-spatial-container
+    put 2 there). Negative - the 2 text notes on L2: no location point, nothing inside.
+
+    '

@@ -20,26 +20,6 @@
 
 ---
 
-### Row 5b-1302
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`FRAME_ELEMENTS_IN_CAMERA` VERSION 3 TRUSTS TWO REVIT 2020 MEASUREMENTS ON EVERY RELEASE, AND ITS READ-BACK CANNOT TELL IT.** Found 2026-10-21 by a code-review agent reading PR #716 (Codex was out of review credit), after the owner signed version 3 on Revit 2020. (1) Row 5b-1301 dropped the crop box's Z-bottom guard (`Math.Min(CropBox.Min.Z, -deepest * 1.1)`) because Revit 2020 ignores it on a perspective view, and now only `reachFar()` reaches a deep corner - which does nothing, silently, when the far clip parameter is missing, read-only or refused. On a release that honours the crop box's Z bottom instead, elements beyond it would be clipped and `framed` undercount. (2) `windowDistance()` falls back to 0.1 ft in an empty `catch`, and the same number both places the window and checks it, so a release that draws the window elsewhere, or whose crop shape cannot be read, still reads back *"its window drawn 30 mm in front of the eye"* with a self-consistent `framed` and `lens`. Neither was seen: both are about releases this was not run on (2021 to 2027).
-
-**State.** **FIXED IN THE CODE 2026-10-21, DRAFT, with row [1304](../FRAGMENT-ISSUES.md#) - `FRAME_ELEMENTS_IN_CAMERA` version 4 does what this cell asked: the Z-bottom guard is back after `reachFar()`, and `reachFar()` and `windowDistance()` say when they could not do their job. Not seen on any release; the cross-release proof still owes a picture.** Was: **OPEN - left for the next version, deliberately.** Fixing either changes the code under the signature the owner gave the same hour, and both change nothing on Revit 2020. The fix, for whoever next widens the card or proves it on another release (D-131): keep the Z-bottom guard after `reachFar()`; have `reachFar()` and `windowDistance()` say when they could not do their job, as a finding (*"the far clip could not be pushed out"*, *"the crop shape could not be read; 0.1 ft was assumed"*). The cross-release proof should look at a picture, as Group IF did - the numbers cannot catch this.
-
----
-
-### Row 5b-1313
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **TWO PULL REQUESTS GAVE FOUR NEW FRAGMENTS TWO IDS, EACH PASSED EVERY GATE ALONE, AND `main` WENT RED ONLY WHEN BOTH HAD MERGED - BECAUSE `tools/next-id.py` READS GROUPS, 5b ROWS, QUESTIONS AND DECISIONS, NEVER A FRAGMENT'S `id:`.** Found 2026-10-22 merging [#714](https://github.com/Ajmalpshaik/Heron-AI/pull/714) a minute after [#713](https://github.com/Ajmalpshaik/Heron-AI/pull/713), both started in the cloud on 2026-10-21: #713 gave FRG-VIEW-150 to `SET_FAMILY_LABEL_LAYOUT` and FRG-VIEW-151 to `COPY_LABELS_FROM_FAMILY`, #714 gave the same two to `SET_TEXT_TYPE` and `REPORT_TEXT_TYPES`. Each had taken the next free id in its area as the fragment-author rules say (`grep -h '^id:' brain/fragments/*/fragment.yaml`), which reads only its own checkout - #714 also grepped every remote branch before writing, and #713's was not yet pushed. On `main` at `a4500598`, `python brain/heron_fragment.py`, `tools/check-signatures.py` and `tools/check-docs.py` (section 9) each exited 1: *"id FRG-VIEW-151 is already used by copy-labels-from-family"*. `tools/next-id.py` ran on both branches before each merge and said nothing, because the fragment id is no register it reads; the merge hook named #713 as a commit main had, as advice, after the merge had been asked for.
-
-**State.** **FIXED ON MAIN the same day** - the later pull request's two cards moved to FRG-VIEW-152 and FRG-VIEW-153 (row 5b-1300), nothing else changed; `heron_fragment.py`, `check-signatures` and `check-docs` exit 0 again. **OPEN - the cause:** `tools/next-id.py` could read every fragment card's `id:` on main, every branch and every open pull request, as it reads the other four registers, and print the next free id per area with HELD TWICE - recorded, not built (AGENTS.md: a defect found while doing something else is recorded). Until then: run `git grep -h '^id: FRG-<AREA>-' $(git branch -r \| grep -v HEAD) -- brain/fragments` before taking a fragment id, and again just before merging.
-
----
-
 ### Row 5b-1324
 
 *Moved from the register on 2026-11-17.*

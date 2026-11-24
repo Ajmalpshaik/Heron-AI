@@ -9,7 +9,7 @@
 
 ### 2026-11-21 evening — THE MERGES OF 2026-11-21: THE NEW WORK WAITS FOR REVIT, AND FIVE QUESTIONS WAIT FOR THE OWNER
 
-Written to the rule in [section 11](../HANDOVER.md#11-handover--2026-09-12): what is NEW, a MISTAKE worth not
+Written to the rule in [section 11](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#11-handover--2026-09-12): what is NEW, a MISTAKE worth not
 repeating, what is still TO DO. A cloud session with no Revit, bringing the status pages up after the day's
 merges, with `origin/main` at `0429fc1c` when it began and `6aba1f57` when it ended. **Every number below is a record of this day, not a count to carry
 forward** - derive today's with the command beside it.

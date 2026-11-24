@@ -298,7 +298,7 @@ bridge speaks the same protocol; only the two lines that open the connection dif
 Its checks pass here — the framing, the JSON parser, the token, the newest-connection-wins
 handover, the toggle cycle, and **the whole lease**. What it does **not** cover is the Windows named
 pipe itself: its naming, its security descriptor, and the `CreateNewInstance` flag that
-[HANDOVER §4](HANDOVER.md) note 2 was written about. Revit runs on Windows, so `A4` in the register
+[HANDOVER §4](handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#4-the-things-that-will-bite-you) note 2 was written about. Revit runs on Windows, so `A4` in the register
 still means the Windows run — this is a strong signal ahead of it, not a replacement for it. *(That
 Windows run passed on 2026-09-06 - [Group A](needs-checking/group-a.md).)*
 

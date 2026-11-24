@@ -219,14 +219,17 @@ _KNOWN = {
 
     # --- Revit's temporary isolate, in the active view (RevitTemporaryView) -
     #
-    # The first four return before its transaction opens, so nothing in the
-    # view changed. The last two are Revit refusing inside it: rolled back,
+    # The refusals return before its transaction opens, so nothing in the
+    # view changed. The *_failed codes are Revit refusing inside it: rolled back,
     # and a temporary isolate never touches the model in any case.
     "ambiguous_request": (REFUSED, FIX_FIRST,
                           "element ids and a category were both given - two different "
                           "requests - so nothing was isolated"),
     "nothing_to_isolate": (REFUSED, FIX_FIRST,
                           "nothing was named to isolate - no element ids and no category"),
+    # The temporary HIDE (row 5b-2024) - the same checks, its own codes.
+    "nothing_to_hide":   (REFUSED, FIX_FIRST,
+                          "nothing was named to hide - no element ids and no category"),
     # "no_view" is shared with capture_view below - one key, one sentence
     # true of both. A second entry for it here was silently overwritten.
     "not_this_view":     (REFUSED, FIX_FIRST,
@@ -234,6 +237,9 @@ _KNOWN = {
                           "schedule or a legend - so nothing was done"),
     "isolate_failed":    (ROLLED_BACK, FIX_FIRST,
                           "Revit refused the temporary isolate, and the view's own "
+                          "visibility settings were not touched"),
+    "hide_failed":       (ROLLED_BACK, FIX_FIRST,
+                          "Revit refused the temporary hide, and the view's own "
                           "visibility settings were not touched"),
     "reset_failed":      (ROLLED_BACK, FIX_FIRST,
                           "Revit refused to end the temporary hide/isolate; nothing in the "

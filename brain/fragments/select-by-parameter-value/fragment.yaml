@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -22,7 +22,18 @@ capability: SELECT_BY_PARAMETER_VALUE
 # SELECT_BY_NUMERIC_PARAMETER were merged in - see the purpose's last paragraph
 # and the comment at the end of the routing table. The proof below was
 # version 2's, kept as the record; DRAFT at the time, until version 4 is proved.
-version: 4
+#
+# Version 5 (2026-11-24, row 5b-2016) changed impl/: a parameter may be named
+# "Name {BUILT_IN_NAME}" or "Name {GUID}" to reach ONE of two parameters that
+# share a name - SET_PARAMETER_VALUES_BY_ID's version 9 form - and the refusal
+# for a doubled name now names each one that way. Seen on Revit 2020 (session
+# 29500, 4355-BHVD-3D-60P00-BL003A): every sheet carries "Sheet Number" twice,
+# so all 15 were refused, rightly, and "Sheet Number {SHEET_NUMBER}" answered
+# "NOTHING carries it". A name as typed is read exactly as version 4 read it.
+# Version 4 was PROVEN on 2026-11-02 (the proof below, kept as the record of
+# what it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING
+# Group QF's QF2 and QF3 are run (D-30).
+version: 5
 source: OFFICIAL
 risk: READ
 
@@ -91,6 +102,11 @@ contract:
   needs:
     - name: doc
       type: Document
+    # A parameter's name as Properties shows it, or Family, Type or Family and
+    # Type. VERSION 5 (row 5b-2016): where TWO parameters share the name -
+    # "Sheet Number" on every sheet - "Sheet Number {SHEET_NUMBER}" names the
+    # built-in Revit's API calls that, and "Name {GUID}" the shared parameter
+    # with that GUID; the refusal for a doubled name gives both forms.
     - name: parameterName
       type: string
       source: request

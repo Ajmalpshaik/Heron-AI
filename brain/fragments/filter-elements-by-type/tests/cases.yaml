@@ -14,6 +14,13 @@ positive:
       the link's count of 'family : type' in `linkedMatches`, checked against
       a schedule of that type opened in the link
 
+  - given: >
+      VERSION 3. a ROOM handed in as the exemplar - a room has no type
+    expect: >
+      found 0, unresolvedType 1, and the last line of linkedMatches "The
+      element given has no type, so nothing was searched for - found 0 is not
+      "none of this type""
+
 negative:
   - given: a project with two DIFFERENT diffuser types that both read 600x600 on the plan
     expect: >
@@ -55,6 +62,12 @@ negative:
     expect: >
       "Links NOT read: this Revit cannot read a link through a view" and
       linksSearched 0 - never the whole link reported as if it were the view
+
+  - given: >
+      VERSION 3, NEGATIVE. the 600x600 diffuser again, inViewOnly null
+    expect: >
+      unresolvedType 0, no "has no type" line, and found, elements and
+      linkedMatches exactly as version 2 gave them
 
 second_route:
   - Revit's own Select All Instances - In Entire Project, and In Active View, which are the same two answers

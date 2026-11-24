@@ -30,12 +30,12 @@ GitHub, and then back on his PC with Revit to test what was built.
 commit [08](../plugin-extension/08-lessons-from-the-brain.md) read. It is read-only reference
 ([HANDOVER](../../../HANDOVER.md): *read it, never edit it, never commit to it*). **Nothing in this folder
 carries its names, paths, files or wording**, and nothing built from this plan may either —
-[D-25](../../../DECISIONS.md), [31](../../../31-studying-the-existing-libraries.md),
+[D-25](../../../DECISIONS.md), [31 research](../../../31-research.md),
 [AGENTS.md](../../../../AGENTS.md). A cloud session does **not** need that repository: everything it
 needs is in this folder.
 
 **Two earlier reads are not repeated here.** Its fragment library was classified in
-[31 §1](../../../31-studying-the-existing-libraries.md) — every eligible file read, every gap built — and
+[31 research](../../../31-research.md) — every eligible file read, every gap built — and
 its working habits were taken in [08](../plugin-extension/08-lessons-from-the-brain.md).
 
 ## Read in this order
@@ -58,7 +58,7 @@ its working habits were taken in [08](../plugin-extension/08-lessons-from-the-br
 3. **Numbers carry the day they were measured and the command that derives them.** They move; the command
    does not.
 4. **The owner's data in [03](03-owner-data.md) is not product content.** Heron ships empty stores — the
-   Keyword Agent's own rule is that it *"ships NO LIST"* ([`brain/heron_keywords.py`](../../../../brain/heron_keywords.py),
+   Keyword Agent's own rule is that it *"ships NO LIST"* (`brain/heron_keywords.py`,
    [D-34](../../../DECISIONS.md)). His words and his standards go into **his** stores on **his** PC
    ([05](05-pc-proving.md)); this folder only carries them there.
 

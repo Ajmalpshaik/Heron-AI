@@ -2360,7 +2360,7 @@ Save
 > person's review, and everything enters at `DISCOVERED`; both are DRAFT
 > ([10 §5](10-memory-and-knowledge.md)). What has been brought in from other libraries was studied and
 > re-authored by hand, starting at DRAFT ([D-25](DECISIONS.md), [D-44](DECISIONS.md),
-> [31](31-studying-the-existing-libraries.md)).
+> [31 research](31-research.md)).
 
 ## 68. Reference Workflow — Fragment Update
 

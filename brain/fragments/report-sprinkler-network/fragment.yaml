@@ -9,7 +9,12 @@ semantic-identity: "one fire protection piping system's pipes, fittings, valves 
 kind: filter
 domain: revit.mep
 capability: REPORT_SPRINKLER_NETWORK
-version: 2
+# VERSION 3 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005) - a piping connector whose domain or type Revit will not give is
+# counted in `skippedConnectors`, where version 2 left it out of the network
+# without a word; a sentence names it only when it is above 0, and the JSON is
+# unchanged. Still DRAFT (D-30).
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -105,6 +110,13 @@ contract:
     - name: findings
       role: accounting
       type: IList<string>
+    - name: skippedConnectors
+      # VERSION 3 (D-64). Connectors of the system's elements whose domain or
+      # type Revit would not give, so they and any join through them are not
+      # in `networkJson`. Always carried; a sentence in `findings` names it
+      # only when it is above 0.
+      role: accounting
+      type: int
 
 proof:
   date: '2026-11-02'

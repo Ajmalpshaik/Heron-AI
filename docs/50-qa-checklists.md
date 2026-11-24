@@ -10,7 +10,7 @@ See docs/29-metadata-standard.md
 # 50 — QA checklists
 
 > **Status: built, tested without Revit. Never run in a real Revit.** Decision: [D-152](decisions/D-152.md),
-> **Proposed**. Asked by the owner on 2026-11-08 after [docs/48](48-studying-bimlogiq.md) §5 item 4:
+> **Proposed**. Asked by the owner on 2026-11-08 after [31 research](31-research.md) §5 item 4:
 > *"QAQC Checklist. We need it ... We can add also in the companion app also."*
 
 ---

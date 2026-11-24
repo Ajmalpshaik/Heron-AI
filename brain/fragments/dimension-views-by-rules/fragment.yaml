@@ -8,7 +8,7 @@ id: FRG-VIEW-177
 semantic-identity: "dimension every duct, pipe, cable tray and conduit run in several plans in one go, by a rule per category - the grid, wall, column or parallel run to string it from, one side or both, a reach across the run - one string per run"
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
-# 2026-11-08: the owner's ask, docs/48-studying-bimlogiq.md section 5 item 3 -
+# 2026-11-08: the owner's ask, docs/31-research.md section 11 (former note 48, item 3) -
 # "Dimension template for MEP runs - categories, which faces, spacing, string
 # placement, per view" - and his own add-in's "Auto MEP Dimension" tool,
 # pointed at as the job wanted. Measured that day on a scratch store, Revit
@@ -437,7 +437,7 @@ compatibility-note: >
 # took "where does this duct run from and to". The words were changed,
 # measured, and none reaches it now - row 5b-1478.
 utterances:
-  # The owner's own words, docs/48-studying-bimlogiq.md section 5 item 3 and
+  # The owner's own words, docs/31-research.md section 11 (former note 48, item 3) and
   # its feature table, section 2 ("Dimension by template rules").
   - dimension template for MEP runs
   - dimension by template rules

@@ -54,7 +54,7 @@ is moved aside first, because the job writes to that path.
 | **GP8** | After GP0: the GP1 call with **no `toWorkset` at all** | **exactly version 2**: the copies on the active workset Workset1, `onWorksets` empty, `refused` empty, and the binding note *toWorkset not given - "active", the card's own default (optional)* |
 | **GP9** | GP1, GP2 and GP8 once on Revit 2024 and once on 2027 | the same answers - a WorksetId is an int on every release, and 2024's 64-bit ElementId is not involved |
 | **GP10** | Routing, on the owner's PC after the store is rebuilt from `main`: `heron_lookup` *"copy these and keep them on the same workset"* | `COPY_ELEMENTS`, by identity - measured in the cloud on both backends (trained model with and without the re-ranker), never yet on the owner's PC |
-| ~~**GP11**~~ | After GP1 and GP2 pass: read brain/proof-drafts/copy-elements.yaml, then python… — [full row](../needs-checking-archive/group-gp.md#row-gp11) | the card PROVEN again with a new fingerprint; `revit_change` keeps changes from it again… |
+| ~~**GP11**~~ | After GP1 and GP2 pass: read brain/proof-drafts/copy-elements.yaml, then python… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | the card PROVEN again with a new fingerprint; `revit_change` keeps changes from it again… |
 | **GP12** | *The first use, on the owner's word, on a project he chooses - never a 4355-\* model:* builders-work openings copied with `toWorkset=source` | every copy on BHVD_BW_WALL_OPENING (or that project's own openings workset), no `SET_ELEMENT_WORKSET` afterwards |
 
 **Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was

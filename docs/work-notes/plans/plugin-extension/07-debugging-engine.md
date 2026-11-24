@@ -234,7 +234,7 @@ parts where a wrong answer breaks Heron itself rather than one fragment.
 
 **And the split is already how Heron is built**, which is why it costs nothing: `heron_evolve`,
 `heron_split` and `heron_healing` all **propose and never apply**, and
-[`heron_sandbox.py`](../../../../brain/heron_sandbox.py) exists precisely so a new agent runs in
+`heron_sandbox.py` exists precisely so a new agent runs in
 isolation before it is allowed near real work.
 
 **What is genuinely open inside this answer:** whether a `DRAFT` fragment fix applies silently or still

@@ -20,46 +20,6 @@
 
 ---
 
-### Row 5b-1278
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`SET_RENDER_SETTINGS` THREW BEFORE SETTING ANYTHING WHEN A DPI WAS ASKED FOR ON A VIEW WHOSE OUTPUT WAS SCREEN.** Found 2026-10-20 running [Group IB](../needs-checking/group-ib.md)'s IB3 on Revit 2020, on a perspective view `FRAME_ELEMENTS_IN_CAMERA` had just made. Asked for `output` `150 DPI`, version 1 read `RenderingSettings.PrinterResolution` first, to put it back if the DPI was not offered. Revit threw *"The resolution target is not printer."* - the read sat outside the try that guarded the write - and the whole call came back `fragment_threw`. Nothing was kept.
-
-**State.** **FIXED IN CODE AND RUN 2026-10-20, Revit 2020 - version 2, signed by Ajmal PS, PROVEN.** The printer level is read only when the output is already Printer, and is put back only if it was read. Run: Draft, Printer 150 DPI, Exterior: Sun only, Sky: Few Clouds, exposure 13 / 6500 - `changed` 5 of 5; the signed record is Medium, 300 DPI, Sun and Artificial, Sky: Cloudy - `changed` 4 of 4, the schedule refused. Compiles on 2020 to 2027.
-
----
-
-### Row 5b-1279
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`SET_GRAPHIC_DISPLAY_OPTIONS` THREW ON A PERSPECTIVE VIEW BECAUSE ITS READ-BACK ASKED FOR DEPTH CUEING, AND THEN COULD NOT SET SMOOTH LINES ON A VIEW WITH NO SILHOUETTE LINE STYLE.** Found 2026-10-20 running [Group IB](../needs-checking/group-ib.md)'s IB5 on Revit 2020, on the perspective view `FRAME_ELEMENTS_IN_CAMERA` had just made. (1) Version 1's read-back called `View.GetDepthCueing()` whatever was asked, and Revit threw *"This view cannot use Depth Cueing"*. The sun, shadow and sketchy-line changes rolled back with it. (2) With that fixed, `SetViewDisplayModel` refused smooth lines: *"The silhouette line style id is not a valid line style to apply to the view."* The new view's silhouette style id was -1. Measured with a rolled-back probe: given a line style first, the same call took.
-
-**State.** **FIXED IN CODE AND RUN 2026-10-20, Revit 2020 - version 2, signed by Ajmal PS, PROVEN.** Depth cueing is read only where `CanUseDepthCueing` says the view offers it; the read-back says *"not offered in this view"* otherwise. A view whose silhouette style is no line style is given Wide Lines (matched with or without the angle brackets) before the display model is written. Silhouettes are left on or off as they were, and the finding says so. Run and kept: sun 80, shadow 40, smooth lines on, sketchy 5 / 3 - `changed` 4 of 4. **Not known:** the name `Wide Lines` in a Revit that is not in English - there the old refusal stands. Compiles on 2020 to 2027.
-
----
-
-### Row 5b-1282
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`APPLY_VISUAL_PRESET`'S DUSK SKIPPED THE SUN: REVIT REFUSED THE DATE IT WAS HANDED FOR `GetSunset`.** Found 2026-10-20 running [Group IC](../needs-checking/group-ic.md)'s IC6 on Revit 2020, rolled back, `Exterior Dusk` on a perspective view. Every other setting was set and read back, and the Sun line read *"Sun skipped - Revit would not give the sunset for the site: Revit does not accept input DateTime objects if they are of kind DateTypeKind.Unspecified Parameter name: dateTime"*. `SunAndShadowSettings.GetSunset` takes only a `DateTime` whose `Kind` is Utc or Local. `REPORT_VISUAL_PRESET` works out the same dusk time and is likely to hit the same refusal - not run.
-
-**State.** **FIXED IN CODE AND RUN 2026-10-20 (evening), on the owner's word ("you can fix that visualizer fault") - `APPLY_VISUAL_PRESET` and `REPORT_VISUAL_PRESET` version 2, DRAFT until signed.** (1) The date is handed over as UTC; the refusal is gone. (2) Then the dusk read **10:52**, which is wrong. **Measured with a rolled-back probe:** for 21 June, site Boston (time zone -5, project time = UTC-5 here), `GetSunset` returned **16:22 UTC** and `GetSunrise` **01:10 UTC**. The true times are about 00:24 and 09:10 UTC. Both are Boston's standard-time 19:22 and 04:10 less **the laptop's own 3 hours** (Arabian Standard Time): Revit 2020 hands back the site's time turned to UTC by the PC's zone. So the PC's zone is taken off again (`ToLocalTime`), and dusk is the sunset less 30 minutes in project time. Run, rolled back: *"Sun still 18:52 (as the preset)"*, and the finding *"Dusk is half an hour before Revit's sunset for the site on 21 June 2026: 19:22 project time"*. The read gives the same 18:52. **Not known:** whether Revit 2021 and later return the same, and whether the Sun Settings dialog's *Sunrise to sunset* shows 19:22 - that comparison is the owner's (IC6).
-
----
-
-### Row 5b-1283
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`APPLY_VISUAL_PRESET` SKIPPED DEPTH CUEING ON AN ELEVATION, SAYING IT IS OFFERED IN ELEVATIONS - THE REAL REASON, MEASURED, IS THE VIEW'S DISCIPLINE.** Found 2026-10-20 running [Group IC](../needs-checking/group-ic.md)'s IC7 on Revit 2020, rolled back, `Presentation Elevation` on `South - Mech`, a Mechanical elevation of the Systems template. It answered *"Depth Cueing skipped - 'South - Mech' cannot use depth cueing - Revit offers it in elevations and sections"*. **Measured with rolled-back probes:** `CanUseDepthCueing` is false on every elevation of the template, Mechanical and Electrical. Far Clipping set to 1 or 2 left it false, and so did each visual style. It turned **true once View Discipline was set to Architectural**. `SET_GRAPHIC_DISPLAY_OPTIONS` gives the same sentence. An MEP modeller's elevations, as the template makes them, never take it.
-
-**State.** **FIXED IN CODE AND RUN 2026-10-20 (evening), on the owner's word - the reason only; `APPLY_VISUAL_PRESET` and `REPORT_VISUAL_PRESET` version 2, `SET_GRAPHIC_DISPLAY_OPTIONS` version 3, DRAFT until signed.** A view that takes no depth cueing now says why: *"'South - Mech' cannot use depth cueing - its View Discipline is Mechanical, and Revit 2020 offered depth cueing in an elevation only once that was Architectural (Properties, View Discipline)"*. Run, rolled back, in the preset and as `SET_GRAPHIC_DISPLAY_OPTIONS`' refusal. **Not changed:** a preset never changes a view's discipline. That stays the modeller's setting, because it changes how the other trades draw. Coordination discipline was not tried.
-
----
-
 ### Row 5b-1292
 
 *Moved from the register on 2026-11-17.*
