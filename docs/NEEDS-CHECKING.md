@@ -1774,6 +1774,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qg.md`](needs-checking/group-qg.md)
 
+## Group QM - CREATE_CONCEPTUAL_FORM version 2: a loft Revit refuses says what is in the profiles - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qm.md`](needs-checking/group-qm.md)
+
+## Group QN - the Changes question opens in front of Settings, and a press that changed nothing is said - BUILT, NOT RUN IN REVIT (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qn.md`](needs-checking/group-qn.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

@@ -985,6 +985,14 @@ namespace Heron.Kernel.TestHost
                   && modifySaid.Contains("off again whenever Revit starts"),
                   "except the way on: Settings only, and off again at every start - D-166");
 
+            // WHERE IN THE WINDOW - row 5b-2019: the modeller could not find
+            // Changes in Settings, and the chat had to read the add-in's C#.
+            Check(modifySaid.Contains("Changes at the top")
+                  && modifySaid.Contains("reads OFF: press it")
+                  && adminSaid.Contains("Changes at the top")
+                  && needsChanges.Contains("Changes at the top"),
+                  "every refusal says where the switch is inside Settings - row 5b-2019");
+
             // FAILS CLOSED.
             Check(!HeronPermissions.Allows(HeronRisk.Modify, null)
                   && !HeronPermissions.Allows(HeronRisk.Admin, null)

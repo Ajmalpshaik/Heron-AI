@@ -130,7 +130,8 @@ namespace Heron.Revit.Addin
                 // WHICH THING ASKED, at the moment it asks.
                 _log(_question.Name + " window asked.");
 
-                _shell.Window.ShowDialog();
+                // In front of the Settings window that asked - row 5b-2019.
+                HeronWindowStyle.ShowModal(_shell, _log);
                 return _turnOn;
             }
             catch (Exception ex)
