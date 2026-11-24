@@ -225,3 +225,11 @@ utterances:
   # offered, the attach requests reached ATTACH_COLUMNS. At the END - and the card has
   # fewer than eight, so the re-ranker reads this line too (D-134).
   - attach the tops of the walls up to the roof
+  # ADDED 2026-11-24, row 5b-1924 (issue #1127). The new read
+  # REPORT_WALL_ATTACHMENTS answers "which walls are attached to the roof",
+  # and on Revit 2024 - where ATTACH_WALLS is not offered - its words took
+  # "attach these walls to the roof" from this card. This is the modeller's
+  # own request on Villa 2, Revit 2024 (issue #852, Q-91), the one this card
+  # was built to answer there; on 2025 and later ATTACH_WALLS still takes it
+  # (measured 2026-11-24, lexical and model).
+  - attach all walls to the roof

@@ -1,0 +1,90 @@
+# D-30: the negative case is what catches "succeeded and said the wrong
+# thing" - for this read, a wall not attached reported as attached, a wall
+# attached to a FLOOR reported as attached to the roof, or a wall whose
+# attachment could not be read reported as "not attached".
+#
+# THE ARRANGEMENT (NEEDS-CHECKING Group QD). A scratch project, never a
+# working model, on Revit 2026 AND on Revit 2024 - the two readings differ by
+# release. Level 1 and Level 2 (3000 mm). Four walls A, B, C, D on Level 1,
+# Top Constraint Unconnected 4000 mm, in a 10000 x 8000 mm rectangle; one roof
+# by footprint R over the rectangle at Level 2. Walls A and B: Modify Walls >
+# Attach Top/Base > Top, pick R. Wall C: left unattached. Wall D: a floor F
+# at Level 2 laid over D alone, and D's TOP attached to F, not to R. Wall E,
+# away from the rest, unattached. Write down each
+# wall's "Top is Attached" and "Base is Attached" from Properties before the
+# run. Save the project.
+
+positive:
+  - given: >
+      REVIT 2026. the roof R selected, nothing else
+    expect: >
+      attachedToRoof [A, B]; wallsRead every wall in the model (5);
+      attachedTargetUnread empty; unread empty; report one line each for A
+      and B, "Walls <id> "<type>": top attached to Roofs <R id> "<type>"";
+      the first finding "2 of the 5 wall(s) in this model attached to the
+      roof selected at the top or the base; 3 read and attached to no roof
+      selected (1 of them attached to something else ...)". Nothing changed -
+      the undo list has no new entry
+
+  - given: >
+      REVIT 2026. walls A, C and D selected, no roof
+    expect: >
+      attachedToRoof [A]; wallsRead 3; report a line for A (top attached to
+      the roof), C "not attached to anything at its top or its base", and D
+      "not attached to a roof - attached to Floors <F id>"
+
+  - given: >
+      REVIT 2026. nothing selected
+    expect: >
+      attachedToRoof [A, B]; every wall read; the finding names "a roof", and
+      D is counted among those attached to something else
+
+  - given: >
+      REVIT 2024. the roof R selected
+    expect: >
+      attachedToRoof EMPTY; attachedTargetUnread [A, B, D] - every wall with
+      an end attached, whatever to; the first finding opens "3 of the 5
+      wall(s) in this model have a top or base attached - BUT BEFORE REVIT
+      2025 REVIT DOES NOT SAY WHAT A WALL IS ATTACHED TO"; and a finding that
+      the roof selected could not be checked against on this release. Never
+      "attached to the roof" for D, which is attached to a floor
+
+negative:
+  - given: >
+      REVIT 2026. wall C alone selected - a wall attached to nothing
+    expect: >
+      attachedToRoof EMPTY, wallsRead 1, unread empty; report "Walls <C id>
+      ...: not attached to anything at its top or its base"; the first finding
+      "0 of the 1 wall(s) selected attached to a roof at the top or the base;
+      1 read and attached to no roof". NOT reported as attached because a
+      roof is above it
+
+  - given: >
+      REVIT 2026. wall D and the roof R selected - D attached to a floor, not
+      to R
+    expect: >
+      attachedToRoof EMPTY; report "not attached to the roof selected -
+      attached to Floors <F id>"; a finding "Roofs <R id> ...: no wall read is
+      attached to it"
+
+  - given: >
+      REVIT 2024. wall C alone selected
+    expect: >
+      attachedTargetUnread EMPTY, attachedToRoof EMPTY, wallsRead 1; report
+      "not attached to anything at its top or its base" - C's "Top is
+      Attached" and "Base is Attached" both off, as written down
+
+  - given: >
+      a floor alone selected - neither a wall nor a roof
+    expect: >
+      wallsRead 0; findings "Nothing selected is a wall or a roof, so no wall
+      was read ..." and "Floors <id> ... is not a wall or a roof, so it was
+      left out" - never every wall in the model read instead
+
+second_route:
+  - given: >
+      walls A to E, by hand
+    expect: >
+      each wall's Properties - "Top is Attached" and "Base is Attached" - and,
+      on 2026, Modify Walls > Detach Top/Base hovering each wall's top shows
+      the roof it is attached to; the same as the report, wall for wall

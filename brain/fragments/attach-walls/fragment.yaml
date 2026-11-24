@@ -122,6 +122,8 @@ compatibility-note: >
 #   "set the wall top to level 2"             -> SET_ELEMENT_LEVEL, topLevelId
 #   "attach these columns to the roof"        -> ATTACH_COLUMNS - columns,
 #                                                with the target selected
+#   "which walls are attached to the roof"    -> REPORT_WALL_ATTACHMENTS - a
+#                                                question, read (row 5b-1924)
 #   "attach all walls to the roof"            -> SHAPE_WALL_TOPS_TO_ROOF on
 #                                                Revit 2022 to 2024, a profile
 #                                                edited to the roof; here from

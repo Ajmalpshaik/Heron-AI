@@ -1,0 +1,123 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-180
+semantic-identity: "which walls are attached to a roof, and to which one - a read, nothing changed"
+
+# WHY IT EXISTS - comments, not `purpose`, because `purpose` is searched.
+#
+# FRAGMENT-ISSUES row 5b-1924, GitHub issue #1127 (2026-11-20, measured again
+# 2026-11-23 for pull request [S2] Routing misses). Asked "which walls are
+# attached to the roof", every backend answered SHAPE_WALL_TOPS_TO_ROOF or
+# ATTACH_WALLS - two writes - because no read in the library said which walls
+# are attached. Checked first, by what each card DOES: REPORT_CONSTRAINTS reads
+# locked dimensions and alignments, REPORT_JOINED_ELEMENTS reads geometry
+# joins, REPORT_ELEMENT_DEPENDENCIES what is deleted with an element; none
+# reads a wall's Attach Top/Base, and ATTACH_WALLS and SHAPE_WALL_TOPS_TO_ROOF
+# change the model.
+#
+# WHAT IT READS, BY RELEASE - tools/api-surface --members, the Nice3point
+# reference packages 2020 to 2027, read 2026-11-24:
+#   2025 to 2027  Wall.GetAttachmentIds(AttachmentLocation.Top / Base) - the
+#                 element each end is attached to, so "attached to THIS roof"
+#                 is read, not guessed.
+#   2020 to 2024  no such member. The read-only values WALL_TOP_IS_ATTACHED
+#                 and WALL_BOTTOM_IS_ATTACHED (2020 to 2027) say only THAT an
+#                 end is attached; the answer says plainly that the target
+#                 cannot be read on that release, and those walls are never
+#                 counted as attached to the roof.
+#
+# ROUTING - repeated in ATTACH_WALLS and SHAPE_WALL_TOPS_TO_ROOF.
+#
+#   "which walls are attached to the roof"  -> here. A question, answered by
+#                                              reading
+#   "attach these walls to the roof"        -> ATTACH_WALLS (2025 on)
+#   "make the wall tops follow the roof"    -> SHAPE_WALL_TOPS_TO_ROOF
+#   "what is this wall joined to"           -> REPORT_JOINED_ELEMENTS - a
+#                                              join is not an attachment
+kind: action
+domain: revit.elements
+capability: REPORT_WALL_ATTACHMENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Answers a question, and changes nothing in the model: which walls are held
+  by a roof through Attach Top/Base. Each wall that is held is named, with its
+  type, which end is held - its top, its base, or both - and the roof that
+  holds it, by name and id. The roofs in the selection are the ones the
+  question is about, and any roof counts when none is selected; the walls in
+  the selection are the ones read, and every wall in the model is read when
+  none is selected. Anything else in the selection is named and left out.
+
+  A wall that could not be read is named with the reason and is never
+  counted as free. Revit 2020 to 2024 record only whether a wall end is held,
+  not by what - it may be a floor or a ceiling as well as a roof - so on those
+  releases the answer lists those walls apart and says plainly that the roof
+  cannot be confirmed. Revit 2025 and later name the element itself.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # FROM THE SELECTION. Roofs are the roofs asked about; walls are the walls
+    # read. Anything else is named and left out. Empty, every wall in the
+    # model is read against every roof.
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: attachedToRoof
+      # Walls whose top or base is attached to a roof asked about, read by
+      # element - Revit 2025 and later only. Always empty before 2025.
+      role: result
+      type: IList<ElementId>
+    - name: attachedTargetUnread
+      # BEFORE 2025 ONLY: walls whose top or base is attached to SOMETHING -
+      # a roof, a floor or a ceiling, Revit does not say which. Never counted
+      # as attached to the roof (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: unread
+      # Walls whose attachments could not be read, each named with the reason
+      # in `findings`. Never counted as not attached (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: wallsRead
+      # Walls whose attachments were read - a count of work done.
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING, one line per wall attached (and, for walls selected, per
+      # wall not attached), so no cut on the way to a chat shortens it to a
+      # count.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Two readings in one implementation, by compile symbol. REVIT2025_OR_GREATER:
+  Wall.GetAttachmentIds and AttachmentLocation, present 2025 to 2027 and
+  absent 2020 to 2024, name what each end is attached to. Earlier releases
+  read BuiltInParameter.WALL_TOP_IS_ATTACHED and WALL_BOTTOM_IS_ATTACHED,
+  present 2020 to 2027, which say only whether an end is attached. ElementIds
+  are compared as ElementIds, never as integers, so the 2024 64-bit change
+  does not reach this. No units call is made.
+
+utterances:
+  - list the walls a roof is holding
+  - which walls is this roof holding
+  - what holds each wall up at the roof
+  - is any wall still free under the roof
+  - report how each wall end is fixed
+  - are the walls connected to the roof
+  - which roof holds each wall
+  - find the walls held by a roof
