@@ -489,7 +489,7 @@ Trust Score: Unproven ->  newly created agent
 > `heron_evaluator.py` (`HERON-AHR-EVL-007`, DRAFT), scores an agent only
 > after activation, against its own contract, and does not count a warranted refusal as a failure.
 > `python brain/heron_agents.py` reports health and performance as UNMEASURED.
-> [`heron_trust.py`](../brain/heron_trust.py) is a different thing: content trust under Golden Rule 19.
+> `heron_trust.py` is a different thing: content trust under Golden Rule 19.
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): a score no longer leads to Production - [D-30](DECISIONS.md) (one recorded proof, not a count of runs), [D-39](DECISIONS.md) (leaving shadow needs an explained disagreement and a human signature; a percentage would invite a threshold), [Article 4](../HERON_CONSTITUTION.md) and [Article 20](../HERON_CONSTITUTION.md) (`PRODUCTION` requires a human). The score itself and its factors are left as written.
 
@@ -999,7 +999,7 @@ Only after successful validation does content enter the production architecture.
 > **As built (2026-10-18):** the pipeline reads its steps from Part 1 §28
 > ([00](00-master-specification.md)), not from this section, and maps every step to a built import agent,
 > a few of them on a reading rather than on a register row. Everything imported enters at `DISCOVERED`,
-> one rung below what Heron writes itself, and [`heron_import.py`](../brain/heron_import.py) prepares the
+> one rung below what Heron writes itself, and `heron_import.py` prepares the
 > manifest for a person to accept. Part 1's list moves content into place (its step 12) before validating
 > it (step 14), while this section validates before placing. Today's pipeline writes nothing, so the
 > difference has not yet had an effect.
@@ -1073,7 +1073,7 @@ A change in one component triggers dependency analysis.
 > Heron's version, the bridge protocol and each connected add-in's, and whether they agree. The installer
 > reads the product manifest and downloads from a named GitHub release ([D-93](DECISIONS.md),
 > [D-96](DECISIONS.md)); an install replaces the last, with no separate upgrade path
-> ([D-94](DECISIONS.md)). [`heron_update.py`](../brain/heron_update.py) (`HERON-OPS-UPD-010`, DRAFT) is
+> ([D-94](DECISIONS.md)). `heron_update.py` (`HERON-OPS-UPD-010`, DRAFT) is
 > the update rules written as refusals, the first *never without consent*. The MCP SDK is tracked across
 > major versions as Revit is ([D-45](DECISIONS.md)). What a change reaches is computed by
 > `heron_upstream.py` and `heron_graph.py`.
@@ -1722,7 +1722,7 @@ Old data should not simply be discarded.
 > `%USERPROFILE%\.heron`, the old places were copied forward and nothing in them was deleted
 > ([D-135](DECISIONS.md), `python brain/heron_paths.py --carry`).
 > `heron_migration.py` refuses a workspace that does not record its schema
-> version, and [`heron_update.py`](../brain/heron_update.py) refuses a migration with no backup; both are
+> version, and `heron_update.py` refuses a migration with no backup; both are
 > DRAFT.
 
 ## 80. Final End-to-End Example

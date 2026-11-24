@@ -194,3 +194,13 @@ utterances:
   # ADDED 2026-11-23 (row 5b-1944, issue #1169) - the row's own question; it
   # reached OFFSET_ELEMENTS, a write that moves runs sideways, on three backends.
   - what is the offset of this duct
+# ADDED 2026-11-24 (row 5b-1944, issue #1169, session S14) - the offset asked
+# of a cable tray, a conduit or a pipe in more words. On main "what offset are
+# these pipes at" and "tell me the offset of the selected conduits" reached
+# writes. The offset is RBS_OFFSET_PARAM, read here by built-in on every
+# release whatever Properties calls it.
+  - what offset are these cable trays and conduits at
+  - tell me the height of this pipe above its level
+  - show me the offset of the selected ducts and pipes
+  - which level is this pipe or duct on
+  - what offset is this run at above its level
