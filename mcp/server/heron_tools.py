@@ -1113,6 +1113,11 @@ def describe():
 # state, what every tool call passes through - and no tool. A file that holds
 # tools goes between it and the entry file, which imports each of them:
 # heron_inventory.py is the inventory reads, revit_phases to revit_groups.
+# So does a file of helpers the entry file moved out and imports near its top
+# - heron_fragment_values.py, heron_pinned_model.py and heron_why_facts.py
+# since 2026-11-24. They hold no tool, so they register nothing and their
+# place in the list changes nothing a host is served; they are on it because
+# the suites read those helpers as text, through server_text().
 #
 # AND THE LIST'S ORDER IS HALF OF THE ORDER A HOST IS SERVED THE TOOLS IN. The
 # SDK lists tools in the order they register, which for a tool in another
@@ -1122,7 +1127,8 @@ def describe():
 # `served_order` below: the entry file's own tools first, as it defines them,
 # then each other file's, in this list's order. The entry file imports the
 # tool files below its last tool, in that order, and two suites hold it there.
-SERVER_FILES = ("heron_server_core.py", "heron_inventory.py", "heron_mcp_server.py")
+SERVER_FILES = ("heron_server_core.py", "heron_fragment_values.py", "heron_pinned_model.py",
+                "heron_why_facts.py", "heron_inventory.py", "heron_mcp_server.py")
 
 
 def server_files():
