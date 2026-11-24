@@ -288,6 +288,102 @@ if (refused == null)
 
     var kind = pivot != null ? "revolve" : route.Count > 0 ? (groups.Count > 1 ? "swept blend" : "sweep")
         : groups.Count > 1 ? "loft" : hasDepth ? "extrusion" : "surface";
+
+    // WHY A LOFT WAS REFUSED - row 5b-2021. Revit's own word is a bare "Cannot
+    // create loft form". These are read from the profiles ONLY AFTER Revit has
+    // said no, so a loft Revit makes today is never refused for them - Revit
+    // lofts four sides to five, and through a corner on a straight line, often
+    // enough that refusing them first would block lofts that work. What is
+    // looked for: different numbers of sides, two straight sides on one line, a
+    // profile open where the others close, a profile not flat, two profiles in
+    // one plane. A reading that itself fails says nothing, and never hides
+    // Revit's own message.
+    Func<string> loftCauses = () =>
+    {
+        try
+        {
+            var causes = new List<string>();
+            var sides = groups.Select(g => g.Count).ToList();
+            if (sides.Distinct().Count() > 1)
+                causes.Add("the profiles have different numbers of sides - " + string.Join(", ", sides)
+                    + ", in the order given");
+
+            var closed = groups.Select(g => closes(g)).ToList();
+            if (closed.Any(c => c) && closed.Any(c => !c))
+                causes.Add("profile " + string.Join(" and ", Enumerable.Range(0, groups.Count).Where(k => !closed[k])
+                    .Select(k => (k + 1).ToString(invariant))) + " does not close while the others do");
+
+            var planes = new List<Tuple<int, XYZ, XYZ>>();
+            for (var k = 0; k < groups.Count; k++)
+            {
+                var name = "profile " + (k + 1).ToString(invariant);
+                var lines = groups[k].Select(c => c.GeometryCurve as Line).Where(l => l != null).ToList();
+                var bends = new List<string>();
+                for (var i = 0; i < lines.Count; i++)
+                    for (var j = i + 1; j < lines.Count; j++)
+                    {
+                        XYZ meet = null;
+                        foreach (var a in new[] { lines[i].GetEndPoint(0), lines[i].GetEndPoint(1) })
+                            foreach (var b in new[] { lines[j].GetEndPoint(0), lines[j].GetEndPoint(1) })
+                                if (meet == null && a.DistanceTo(b) < halfMillimetre) meet = a;
+                        if (meet != null && lines[i].Direction.CrossProduct(lines[j].Direction).GetLength() < 1e-6)
+                            bends.Add("(" + mm(meet.X) + ", " + mm(meet.Y) + ", " + mm(meet.Z) + ")");
+                    }
+                if (bends.Count > 0)
+                    causes.Add(name + " has two straight sides on one line, meeting at " + string.Join(" and ", bends)
+                        + " mm - a corner that does not turn; draw those sides as one line");
+
+                if (!closed[k]) continue;
+                var ring = groups[k].Count == 1 ? null : ringOf(groups[k]);
+                if (groups[k].Count > 1 && ring == null)
+                {
+                    causes.Add(name + "'s curves do not run end to end");
+                    continue;
+                }
+                if (ring == null) continue;
+                double nx = 0, ny = 0, nz = 0;
+                for (var i = 0; i < ring.Count; i++)
+                {
+                    var p = ring[i];
+                    var q = ring[(i + 1) % ring.Count];
+                    nx += (p.Y - q.Y) * (p.Z + q.Z);
+                    ny += (p.Z - q.Z) * (p.X + q.X);
+                    nz += (p.X - q.X) * (p.Y + q.Y);
+                }
+                var size = Math.Sqrt(nx * nx + ny * ny + nz * nz);
+                if (size < 1e-9)
+                {
+                    causes.Add(name + " encloses no area");
+                    continue;
+                }
+                var facing = new XYZ(nx / size, ny / size, nz / size);
+                if (ring.Any(p => Math.Abs((p - ring[0]).DotProduct(facing)) > halfMillimetre))
+                {
+                    causes.Add(name + " is not flat");
+                    continue;
+                }
+                planes.Add(Tuple.Create(k, facing, ring[0]));
+            }
+            for (var i = 0; i < planes.Count; i++)
+                for (var j = i + 1; j < planes.Count; j++)
+                    if (planes[i].Item2.CrossProduct(planes[j].Item2).GetLength() < 1e-6
+                        && Math.Abs((planes[j].Item3 - planes[i].Item3).DotProduct(planes[i].Item2)) < halfMillimetre)
+                        causes.Add("profiles " + (planes[i].Item1 + 1).ToString(invariant) + " and "
+                            + (planes[j].Item1 + 1).ToString(invariant) + " lie in one plane - a loft goes from one "
+                            + "plane to the next");
+
+            return causes.Count > 0
+                ? " In these profiles: " + string.Join("; ", causes) + ". Those are what Revit's loft most often "
+                    + "refuses - change them and try again."
+                : " Nothing a loft usually refuses was found in the profiles (their sides counted, a corner on a "
+                    + "straight line, open and closed, flat, one plane each) - loft two profiles at a time to find the "
+                    + "pair Revit refuses.";
+        }
+        catch (Exception)
+        {
+            return "";
+        }
+    };
     Form form = null;
     // A revolve can come back as more than one form, by Revit's own remark.
     var made = new List<Form>();
@@ -321,7 +417,9 @@ if (refused == null)
     {
         throw new InvalidOperationException("Revit would not make the " + kind + ": " + ex.Message
             + (route.Count > 0 ? " Revit's rule for a sweep: the path lies in one plane, and each profile's plane meets "
-                + "the path square to it." : "") + " The call failed, and Heron rolls the whole call back.");
+                + "the path square to it." : "")
+            + (kind == "loft" ? loftCauses() : "")
+            + " The call failed, and Heron rolls the whole call back.");
     }
     if (form == null)
         throw new InvalidOperationException("Revit made no " + kind + ". The call failed, and Heron rolls the whole call "

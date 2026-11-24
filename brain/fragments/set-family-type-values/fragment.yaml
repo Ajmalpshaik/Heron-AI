@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -18,7 +18,18 @@ capability: SET_FAMILY_TYPE_VALUES
 # Heron Link Angle Test, both halves) and SIGNED by Ajmal PS on his word in the
 # chat ("Yes, sign it") - the proof below was then version 4's; version 3's is in git
 # history. The proof draft it was accepted from is git-ignored, as every one is.
-version: 5
+#
+# VERSION 6 (2026-11-24, row 5b-2029) - NUMBER OF POLES, and back to DRAFT.
+# Found 2026-11-24 on Revit 2020, filling an air handling unit family: the
+# shared parameter "Number_of_Poles" (spec Number of Poles) was refused - "holds
+# a kind this does not write (NumberOfPoles)" - while power, pressure, air flow,
+# text, length and mass in the same call wrote. impl/ now writes that kind as a
+# whole number 1, 2 or 3, refused before anything is written otherwise, and
+# reads it back as an integer. Every other kind is written exactly as version 5
+# wrote it. Version 5 was PROVEN (the proof block below, kept as the record of
+# what it proved); its C# moved, so it is DRAFT again until version 6 is proved
+# on a real model - tests/cases.yaml, positive_poles and negative_poles (D-30).
+version: 6
 source: OFFICIAL
 risk: MODIFY
 
@@ -55,8 +66,10 @@ purpose: >
   because a unit typed into the value is how a length ends up a thousand times
   wrong. Every other MEASURED kind - an area, an air flow, a volume, a
   pressure - is read in the family's own units by Revit's own parser, so its
-  unit may be typed ("94.4 L/s") or left out (version 4). A kind this does not
-  write at all is refused by name rather than written as something else.
+  unit may be typed ("94.4 L/s") or left out (version 4). A Number of Poles -
+  the electrical spec a shared "Number_of_Poles" holds - is a whole number 1,
+  2 or 3 (version 6). A kind this does not write at all is refused by name
+  rather than written as something else.
 
   **A MATERIAL IS WRITTEN BY ITS NAME** - "Nut Material=Steel - Galvanised" -
   and only a material the family already holds: the exact name, or the same
@@ -302,7 +315,12 @@ compatibility-note: >
   `Definition.ParameterType` up to 2022 and `Definition.GetDataType()` from 2022,
   so it is read by reflection and compared with the SpecTypeId property, or the
   enum name, of each kind this writes. Lengths and angles are plain arithmetic
-  at the edge - millimetres divided by 304.8, degrees times pi over 180. Every
+  at the edge - millimetres divided by 304.8, degrees times pi over 180. A
+  Number of Poles (version 6) is `ParameterType.NumberOfPoles` on 2020 and 2021
+  and `SpecTypeId.Int.NumberOfPoles` from 2022 - named in code under `#if
+  !REVIT2020 && !REVIT2021`, so the compiler checks it on 2022 to 2027 - stored
+  as an integer and written with the `FamilyManager.Set(FamilyParameter, int)`
+  overload, the same 2020 through 2027. Every
   other measured kind (version 4) uses `UnitFormatUtils.TryParse` and `Format`
   with the family's `Units`: by `Definition.UnitType` on 2020 and 2021, by
   `Definition.GetDataType()` from 2022 - an `#if REVIT2020 || REVIT2021`, the

@@ -154,3 +154,34 @@ negative_many:
 
   - given: a family with a type called "All", typeName "all"
     expect: refused naming the type, pointing at "every type"
+
+# VERSION 6 (2026-11-24, row 5b-2029) - Number of Poles. Each fails on version
+# 5, which refused the kind by name. Run on Revit 2020 (ParameterType) AND on
+# one release from 2022 (SpecTypeId) - the kind is found two different ways.
+positive_poles:
+  - given: >
+      a SAVED scratch mechanical equipment family with one type, the shared
+      parameter "Number_of_Poles" (spec Number of Poles) added as a type
+      parameter; values "Number_of_Poles=3"
+    expect: >
+      written 1 - "Number_of_Poles = 3" read back as an integer, and 3 shown
+      for Number_of_Poles in the Family Types dialog with that type chosen
+
+  - given: the same family, typeName "all", values "Number_of_Poles=1"
+    expect: every type reads 1 for Number_of_Poles, one entry in Revit's undo list
+
+negative_poles:
+  - given: the same family, values "Number_of_Poles=7"
+    expect: >
+      refused - "7" is not a number of poles, 1, 2 or 3; nothing written,
+      Number_of_Poles still reads 3
+
+  - given: the same family, values "Number_of_Poles=three"
+    expect: refused - not a whole number; nothing written
+
+  - given: >
+      the same family with a type length "Width", values
+      "Number_of_Poles=2; Width=600mm"
+    expect: >
+      refused naming the unit in Width - all or nothing, Number_of_Poles not
+      written either and still reads 3

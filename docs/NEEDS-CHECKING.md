@@ -1790,6 +1790,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qo.md`](needs-checking/group-qo.md)
 
+## Group QM - CREATE_CONCEPTUAL_FORM version 2: a loft Revit refuses says what is in the profiles - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qm.md`](needs-checking/group-qm.md)
+
+## Group QN - the Changes question opens in front of Settings, and a press that changed nothing is said - BUILT, NOT RUN IN REVIT (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qn.md`](needs-checking/group-qn.md)
+
 ## Group QP - connector sized by Duct Size and Pipe Size and taken in a ring's bore, model text measured on its letters, a freeform answer naming the live material tool - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qp.md`](needs-checking/group-qp.md)

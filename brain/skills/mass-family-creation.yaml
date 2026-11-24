@@ -54,7 +54,9 @@ purpose: >
      consumed by it. A curved edge is a spline through three or more
      points, so a round plan is two splines meeting - close to a circle,
      not one; the modeller sees it before step 4.
-  4. THE FORM: CREATE_CONCEPTUAL_FORM (PROVEN) on the outline's curve ids -
+  4. THE FORM: CREATE_CONCEPTUAL_FORM (DRAFT since its version 2 of
+     2026-11-24 - a chat refuses it until NEEDS-CHECKING Group QM re-proves
+     it) on the outline's curve ids -
      - A BLOCK: one profile and depthMm the block's height - an extrusion
        straight up.
      - A TAPERING OR TWISTING TOWER: steps 2 and 3 again at each height
