@@ -6,7 +6,7 @@
 
 **Every tool Heron has for Revit, by job** - what each one does, how you reach it, what it needs, what you get, and on which Revit releases it is built and proved. It is written by a script from Heron's own tool cards, so no count or status on these pages is typed by a person.
 
-Heron holds **617 live tools**: **479 are usable in a chat**, 48 are not proved yet but run because they change nothing in the model, and 90 are refused until they are proved. 135 retired tools are left out - each one's card names the tool that replaced it.
+Heron holds **617 live tools**: **472 are usable in a chat**, 55 are not proved yet but run because they change nothing in the model, and 90 are refused until they are proved. 135 retired tools are left out - each one's card names the tool that replaced it.
 
 ## How you reach a tool
 
@@ -60,14 +60,14 @@ Heron starts with every switch off, so it only reads until you turn **Changes** 
 
 | Job | Tools | Usable in a chat | Not proved, still run | Refused until proved |
 |---|---|---|---|---|
-| [Annotation - tags, dimensions and text](tool-catalogue/annotation.md) | 35 | 28 | 0 | 7 |
+| [Annotation - tags, dimensions and text](tool-catalogue/annotation.md) | 35 | 27 | 1 | 7 |
 | [Export and print](tool-catalogue/export.md) | 8 | 6 | 0 | 2 |
 | [Families](tool-catalogue/families.md) | 55 | 48 | 2 | 5 |
-| [Finding and selecting](tool-catalogue/selection.md) | 25 | 23 | 2 | 0 |
+| [Finding and selecting](tool-catalogue/selection.md) | 25 | 21 | 4 | 0 |
 | [Geometry and placement](tool-catalogue/geometry.md) | 34 | 28 | 4 | 2 |
 | [Levels and grids](tool-catalogue/datums.md) | 8 | 6 | 1 | 1 |
 | [MEP - ducts, pipes, systems and equipment](tool-catalogue/mep.md) | 84 | 58 | 9 | 17 |
-| [Model checks](tool-catalogue/model-checks.md) | 32 | 25 | 7 | 0 |
+| [Model checks](tool-catalogue/model-checks.md) | 32 | 22 | 10 | 0 |
 | [Model elements and types](tool-catalogue/elements.md) | 124 | 96 | 7 | 21 |
 | [Parameters](tool-catalogue/parameters.md) | 17 | 11 | 1 | 5 |
 | [Phases](tool-catalogue/phases.md) | 3 | 3 | 0 | 0 |
@@ -76,7 +76,7 @@ Heron starts with every switch off, so it only reads until you turn **Changes** 
 | [Schedules](tool-catalogue/schedules.md) | 12 | 12 | 0 | 0 |
 | [Sheets and title blocks](tool-catalogue/sheets.md) | 28 | 25 | 0 | 3 |
 | [The project and its settings](tool-catalogue/project.md) | 43 | 23 | 8 | 12 |
-| [Views and visibility](tool-catalogue/views.md) | 89 | 71 | 4 | 14 |
+| [Views and visibility](tool-catalogue/views.md) | 89 | 70 | 5 | 14 |
 
 ## Keeping this page true
 

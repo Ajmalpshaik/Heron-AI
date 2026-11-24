@@ -1,11 +1,13 @@
-# Needs checking — Group QI
+# Needs checking — Group QO
 
 > One group of [the register](../NEEDS-CHECKING.md), in its own file so that it can be read alone. **The
 > register's rules, and every group's place in it, are on that page.** A new row for this group goes in
 > this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py) reads it back
 > into the register for every tool that reads it, so a row here is seen exactly as it was seen there.
 
-## Group QI - seven reading tools count what they pass over, WN-7 batch 2 (D-64) - DRAFT until proved (2026-11-24)
+## Group QO - seven reading tools count what they pass over, WN-7 batch 2 (D-64) - DRAFT until proved (2026-11-24)
+
+**Tracked as GitHub issue [#1376](https://github.com/Ajmalpshaik/Heron-AI/issues/1376) since 2026-11-24** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
 **LOCAL work - it needs Revit on the owner's PC.** A cloud session cannot run any of it.
 
@@ -53,9 +55,9 @@ Written in a cloud container with no Revit. Every fragment compiles on 2020 to 2
 named in the job files. Two job files, because the cards were last run on two releases:
 
 ```text
-python tools/batch-prove.py tools/jobs/qi-wn7-batch2-revit2024-2026-11-24.yaml --dry-run
-python tools/batch-prove.py tools/jobs/qi-wn7-batch2-revit2024-2026-11-24.yaml --session <process id>
-python tools/batch-prove.py tools/jobs/qi-wn7-batch2-revit2020-2026-11-24.yaml --session <process id>
+python tools/batch-prove.py tools/jobs/qo-wn7-batch2-revit2024-2026-11-24.yaml --dry-run
+python tools/batch-prove.py tools/jobs/qo-wn7-batch2-revit2024-2026-11-24.yaml --session <process id>
+python tools/batch-prove.py tools/jobs/qo-wn7-batch2-revit2020-2026-11-24.yaml --session <process id>
 ```
 
 Dry runs on 2026-11-24: 6 WOULD RUN (2024) and 1 WOULD RUN (2020). `REPORT_CONSTRAINTS` and
@@ -64,10 +66,10 @@ reads their negative as NEG NOT EMPTY - that is how the card works, not a failur
 
 | ID | Do this | Pass looks like |
 |---|---|---|
-| **QI1** | *`REPORT_CONSTRAINTS` version 2 - Revit 2024, Snowdon-scratch_ajmal.al.* The walls of one plan, then its ducts | Both: `constrainedBy`, `lockedTo` and `unconstrained` as version 1 gives them on the same elements; `unresolvedConstraints` written down (0 expected) |
-| **QI2** | *`SELECT_BY_PIN_STATE` version 2 - Revit 2024, Snowdon-scratch_ajmal.al. THE NEGATIVE FIRST.* Ducts pinned, then not pinned | Version 1's *"0 of N scanned element(s) are pinned"* and *"N of N ... NOT pinned"*; `unresolvedElements` written down (0 expected) and **no** *"would not say whether they are pinned"* sentence while it is 0 |
-| **QI3** | *`REPORT_TAGS_AND_TARGETS` version 2 - Revit 2024, Snowdon-scratch_ajmal.al.* The Parking plan, then a plan with tags | Parking: `tagCount` 0, `unresolvedTags` empty. The plan with tags: `tagTargets`, `orphanTags` and `multiTags` as version 1 reads them; `unresolvedTags` written down (empty expected) - a tag in it is in neither `orphanTags` nor `tagTargets` |
-| **QI4** | *`FIND_DEGENERATE_LINES` version 2 - Revit 2024, Project1 work_ajmal.al, version 1's own job.* Ducts at 100000 mm, then 0.001 mm | Both as version 1's; `skippedCurves` written down (0 expected) and **no** *"would not give their curve or its length"* sentence while it is 0 |
-| **QI5** | *`REPORT_BROWSER_ORGANIZATION` version 2 - Revit 2024, Snowdon-scratch_ajmal.al and a new Project1.* | Both: the organisation lines and first finding as version 1 reads them; `unresolvedItems` written down (0 expected) and no *"would not say whether the organisation's filter hides them"* sentence while it is 0 |
-| **QI6** | *`CHECK_STRUCTURAL_SUPPORTS` version 2 - Revit 2024, Heron Gap Fill Batch 7 Test, its gap-fill arrangement.* Level 2 framing, then the Level 1 columns with a floor under them | Both as version 1's; `skippedMembers` written down (0 expected) and no *"had no location line or base point"* sentence while it is 0 |
-| **QI7** | *`SELECT_BY_HOST` version 2 - Revit 2020, Project2, round 5's arrangement (places two windows - a scratch write).* | Negative: version 1's *"Nothing is HOSTED on it"*. Positive: the windows, as version 1's proof. Both: `unresolvedElements` written down (0 expected) and **no** *"would not say what hosts them"* sentence while it is 0 |
+| **QO1** | *`REPORT_CONSTRAINTS` version 2 - Revit 2024, Snowdon-scratch_ajmal.al.* The walls of one plan, then its ducts | Both: `constrainedBy`, `lockedTo` and `unconstrained` as version 1 gives them on the same elements; `unresolvedConstraints` written down (0 expected) |
+| **QO2** | *`SELECT_BY_PIN_STATE` version 2 - Revit 2024, Snowdon-scratch_ajmal.al. THE NEGATIVE FIRST.* Ducts pinned, then not pinned | Version 1's *"0 of N scanned element(s) are pinned"* and *"N of N ... NOT pinned"*; `unresolvedElements` written down (0 expected) and **no** *"would not say whether they are pinned"* sentence while it is 0 |
+| **QO3** | *`REPORT_TAGS_AND_TARGETS` version 2 - Revit 2024, Snowdon-scratch_ajmal.al.* The Parking plan, then a plan with tags | Parking: `tagCount` 0, `unresolvedTags` empty. The plan with tags: `tagTargets`, `orphanTags` and `multiTags` as version 1 reads them; `unresolvedTags` written down (empty expected) - a tag in it is in neither `orphanTags` nor `tagTargets` |
+| **QO4** | *`FIND_DEGENERATE_LINES` version 2 - Revit 2024, Project1 work_ajmal.al, version 1's own job.* Ducts at 100000 mm, then 0.001 mm | Both as version 1's; `skippedCurves` written down (0 expected) and **no** *"would not give their curve or its length"* sentence while it is 0 |
+| **QO5** | *`REPORT_BROWSER_ORGANIZATION` version 2 - Revit 2024, Snowdon-scratch_ajmal.al and a new Project1.* | Both: the organisation lines and first finding as version 1 reads them; `unresolvedItems` written down (0 expected) and no *"would not say whether the organisation's filter hides them"* sentence while it is 0 |
+| **QO6** | *`CHECK_STRUCTURAL_SUPPORTS` version 2 - Revit 2024, Heron Gap Fill Batch 7 Test, its gap-fill arrangement.* Level 2 framing, then the Level 1 columns with a floor under them | Both as version 1's; `skippedMembers` written down (0 expected) and no *"had no location line or base point"* sentence while it is 0 |
+| **QO7** | *`SELECT_BY_HOST` version 2 - Revit 2020, Project2, round 5's arrangement (places two windows - a scratch write).* | Negative: version 1's *"Nothing is HOSTED on it"*. Positive: the windows, as version 1's proof. Both: `unresolvedElements` written down (0 expected) and **no** *"would not say what hosts them"* sentence while it is 0 |
