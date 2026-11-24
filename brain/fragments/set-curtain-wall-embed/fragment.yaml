@@ -1,0 +1,136 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-176
+semantic-identity: "make this curtain wall cut the wall it is drawn in - tick or untick Automatically Embed on its type, and read back which walls it cuts"
+kind: action
+domain: revit.elements
+capability: SET_CURTAIN_WALL_EMBED
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# VERSION 1 (2026-11-24) - written in a cloud session with no Revit, for
+# WN-11 in GitHub issue #1005 (the facade note's "the curtain type's
+# Automatically Embed box - no tool reads or sets it"). Not tested in Revit.
+# NEEDS-CHECKING Group QG (rows QB10 and QB11 of Group QB until it was held
+# back on row 5b-2008; it lands with REPORT_CURTAIN_WALL_TYPE version 2, which
+# reads the box, 2026-11-24).
+#
+# WHY NOT WRITE_ELEMENT_PARAMETERS. That card writes any one parameter, by
+# name, on what it is handed, and could tick the box on a curtain wall TYPE
+# handed in. It reads the value back, which is not the job: the job is the
+# wall being cut. This takes the curtain wall the modeller picked, writes its
+# type's box by the built-in id - never a name that changes with Revit's
+# language - says how many walls share the type, and reads back off the walls
+# which ones each curtain wall cuts, before and after. Reading the box alone
+# is REPORT_CURTAIN_WALL_TYPE's since its version 2 (row 5b-2008).
+
+purpose: >
+  MAKES A CURTAIN WALL CUT AN OPENING IN THE BASIC WALL IT IS DRAWN IN - or
+  stop cutting - by ticking or unticking Automatically Embed on its curtain
+  wall type (Type Properties > Construction). "Make this curtain wall embed in
+  the brick wall", "tick automatically embed on this curtain wall type", "the
+  curtain wall is not cutting the wall it sits in".
+
+  **THE BOX IS THE TYPE'S, SO EVERY WALL OF THE TYPE CHANGES.** The curtain
+  walls handed in name their types; each type's box is written once, and the
+  answer says how many walls in the model have that type. A type already that
+  way is named in `alreadyThat` and not written. Anything handed in that is
+  not a curtain wall - the brick wall itself, say - is named in `notCurtain`
+  and left alone.
+
+  **WHAT IT CUTS IS READ OFF THE WALLS.** For each curtain wall handed in,
+  every wall whose box meets its box is asked what it holds embedded, before
+  and after, so the answer says which walls it cut before and which it cuts
+  now. ASSUMPTION for the proof: whether ticking the box embeds a curtain wall
+  already drawn, or only those drawn after, has not been measured - the
+  before-and-after says which, and nothing is claimed beyond it.
+
+  `embed` is yes or no. The box is found by Revit's own built-in id, never by
+  its name. ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule
+  16). Every refusal is made before the first write; a type that will not take
+  it, or reads back otherwise after one regeneration, stops the call and
+  nothing it did is kept. In a shared model a type another user holds is
+  refused naming them.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The curtain walls whose types should embed - selected in Revit.
+    - name: elements
+      type: IList<Element>
+    # "yes" - tick Automatically Embed - or "no".
+    - name: embed
+      type: string
+      source: request
+  provides:
+    - name: typesChanged
+      # Curtain wall types whose box was written and READ BACK as asked.
+      role: result
+      type: int
+    - name: alreadyThat
+      # Types already set the way asked, so not written (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notCurtain
+      # Handed in but not a curtain wall, so left alone (D-52).
+      role: accounting
+      type: IList<string>
+    - name: readBack
+      # Each type's box after, the walls of each type, and what each curtain
+      # wall cut before and cuts now. A STRING - the evidence.
+      role: accounting
+      type: string
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE PATH FOR EVERY RELEASE, read rather than remembered. On 2026-11-24
+  tools/api-surface read the reference assemblies of all eight releases, 2020
+  through 2027: `BuiltInParameter.ALLOW_AUTO_EMBED` is there on every one,
+  -1001009; the online API reference labels it "Automatically Embed" (the label
+  was not read from an assembly). Also one signature each on every release:
+  `Element.get_Parameter(BuiltInParameter)`, `Parameter.AsInteger`,
+  `Parameter.Set(int)`, `Parameter.IsReadOnly` and `StorageType`;
+  `HostObject.FindInserts(bool, bool, bool, bool)`; `BoundingBoxIntersectsFilter
+  (Outline)` and `new Outline(XYZ, XYZ)`; `Element.get_BoundingBox`;
+  `Wall.WallType`, `WallType.Kind`; `WorksharingUtils.GetCheckoutStatus` with its
+  owner and `Document.Regenerate`. No ElementId is constructed and none is
+  read as a number.
+
+# ROUTING
+#
+#   "make this curtain wall embed in the brick
+#    wall", "the curtain wall is not cutting
+#    the wall it sits in"                     -> here, the curtain wall
+#                                                selected, embed yes
+#   "tick automatically embed on this curtain
+#    wall type"                               -> here, embed yes
+#   "is automatically embed ticked on this
+#    curtain wall type"                       -> REPORT_CURTAIN_WALL_TYPE. A
+#                                                question never lands on a
+#                                                write (D-86). MEASURED
+#                                                2026-11-24 RANKING HERE on
+#                                                three backends while no
+#                                                read held the words - row
+#                                                5b-2008, issue #1012; that
+#                                                read reads it since its v2
+#   "set the comments on these walls"         -> WRITE_ELEMENT_PARAMETERS
+#   "set the curtain wall grid spacing"       -> SET_CURTAIN_WALL_GRID
+
+utterances:
+  - make this curtain wall embed in the brick wall
+  - tick automatically embed on this curtain wall type
+  - the curtain wall is not cutting the wall it sits in, make it cut

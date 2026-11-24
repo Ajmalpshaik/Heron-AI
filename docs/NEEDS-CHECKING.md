@@ -1758,6 +1758,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qd.md`](needs-checking/group-qd.md)
 
+## Group QG - Automatically Embed: REPORT_CURTAIN_WALL_TYPE version 2 reads it, SET_CURTAIN_WALL_EMBED ticks it - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qg.md`](needs-checking/group-qg.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
