@@ -1766,6 +1766,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qd.md`](needs-checking/group-qd.md)
 
+## Group QF - a sheet named by its number, one of two same-named parameters selected, a refused value never thrown - BUILT, NOT RUN IN REVIT (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qf.md`](needs-checking/group-qf.md)
+
 ## Group QH - nine reading tools count what they pass over, WN-7 batch 1 (D-64) - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qh.md`](needs-checking/group-qh.md)
