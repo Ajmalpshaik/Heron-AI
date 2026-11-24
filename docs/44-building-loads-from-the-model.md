@@ -187,7 +187,7 @@ The owner asked for it *"exactly copy paste"*. The licence would allow that with
 done, for four reasons:
 
 1. **Heron's standing rule.** Reference projects are studied and re-authored, never imported - not their
-   names, code or dependencies ([AGENTS.md](../AGENTS.md), [31](31-studying-the-existing-libraries.md)).
+   names, code or dependencies ([AGENTS.md](../AGENTS.md), [31 research](31-research.md)).
 2. **It solves a different building.** Its engine is residential; the owner's buildings are offices and
    schools in Qatar.
 3. **Heron already has the commercial engine.** `heron_hvac` ([41](41-hvac-design.md)) computes a room's

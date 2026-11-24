@@ -11,7 +11,7 @@
 
 ### 2026-11-11 — A CLICK IN REVIT ANSWERS THE CHAT, FIVE EVERYDAY JOBS GET A METHOD, AND A CLOUD CHAT NOBODY SET UP GETS A LIBRARY
 
-Written to the rule in [section 11](../HANDOVER.md#11-handover--2026-09-12): what is NEW, a MISTAKE worth not repeating,
+Written to the rule in [section 11](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#11-handover--2026-09-12): what is NEW, a MISTAKE worth not repeating,
 what is still TO DO. Everything here was built in a cloud container; **nothing in it has run in Revit.**
 The fixes of the day are in `git log --first-parent d77439ad..` on the branch and in their rows, not here.
 

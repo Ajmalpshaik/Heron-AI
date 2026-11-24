@@ -23,7 +23,7 @@ See docs/29-metadata-standard.md
 Revit 2024-2026, first release 2026-10-30. **Its repository holds a README only, with no code and no
 licence**, so it is all rights reserved: nothing of its code, name, wording or look comes into Heron, and
 there is no code to read in any case. What it gives is the **list of ideas** below - studied and
-re-authored, never imported ([D-25](../../DECISIONS.md), [docs/31](../../31-studying-the-existing-libraries.md)).
+re-authored, never imported ([D-25](../../DECISIONS.md), [31 research](../../31-research.md)).
 
 Check it again before each phase - its release notes are where a new idea shows first. Its hosted
 dashboard page (`ibrahimfahdah.github.io`) is not reachable from a cloud session's network.

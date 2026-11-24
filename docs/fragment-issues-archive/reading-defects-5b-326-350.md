@@ -30,16 +30,6 @@
 
 ---
 
-### Row 5b-332
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`project.beyond` GIVEN AS A TABLE IS DROPPED, THOUGH THE CODE SAYS IT IS READ.** Found 2026-10-06: `revit_building_loads` with `"beyond": {"352557": "ground", "352590": "outside"}` inside `project` asked both questions again. `brain/heron_building_loads.py` `_given_answers` reads it through `_value()`, which takes a dict as one labelled value and returns its `value` key - None here - so the table vanishes. The docstring of `answers()` offers both shapes, `project["beyond"] = {element: word}` and `beyond:<element>` keys; only the second works.
-
-**State.** **FIXED 2026-10-06.** `_table()` reads the table as given or labelled (`{"value": table}`); `flat()` writes it out as the page's own `beyond:<element>` keys at the start of `run()` and before `heron_brain.building_loads` merges a call with the last kept run - so the answer is kept with the run, printed on the sheet, covered by the confirmation, and a later table changes only the elements it names. A key given beside the table wins over its row. Tests: `tests/test_building_loads.py` (`test_5b332_...`, `test_seam_5b332_...`), each seen to fail first.
-
----
-
 ### Row 5b-336
 
 *Moved from the register on 2026-11-17.*
@@ -77,46 +67,6 @@
 **Defect.** **TWO FRAGMENTS DESCRIBE A LEVEL'S ELEVATION DIFFERENTLY.** Found 2026-10-06 by the same review (R8): `create-level/impl/any/fragment.cs` says `Level.Elevation` is measured from the internal origin and `ProjectElevation` from the elevation base; `measure-ceiling-height/impl/any/fragment.cs` says `ProjectElevation` is the one in model coordinates. Which one a point's z is measured from decides where `PLACE_FAMILY_INSTANCES` puts a head sent at a height - and whether `NewFamilyInstance` takes that z as absolute is not measured either (AJ1 and AJ4 ran on a level at 0).
 
 **State.** **MOVED TO ISSUE [#904](https://github.com/Ajmalpshaik/Heron-AI/issues/904) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN - waiting on a run.** The sprinkler layout sends `ProjectElevation + ceiling - deflector`, reads both elevations and each existing head's z with its Elevation from Level, and its read-back says CHECK when a placed head is not at the height asked - NEEDS-CHECKING CG3 and CG6 settle it on a level not at zero. Whichever comments are wrong are then corrected.
-
----
-
-### Row 5b-341
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **A FAMILY TYPE'S MATERIAL AND URL HAD TO BE TYPED BY HAND.** Found 2026-10-06 in the family `GM_PipeSupport_HexNut`: `SET_FAMILY_TYPE_VALUES` refused `Nut Material=TRG_Steel_Galvanised` and `URL=https://ajmalps.com` with *holds a kind this does not write ... set in the Family Types dialog for now*, and eight more support families were waiting on the same two values.
-
-**State.** **FIXED in version 2, PROVEN - signed by Ajmal PS 2026-10-06** - a material is written by its name (exact, or another case when only one matches; absent refuses naming the three closest, and none is made; `<By Category>` or `none` clears it) and a URL, or any text-stored kind, as text. Rolled-back runs on scratch Family3 in [NEEDS-CHECKING CI](../needs-checking/group-ci.md).
-
----
-
-### Row 5b-342
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **A PARAMETER ASKED FOR BY ITS ID IS NOT PROOF THE ELEMENT CARRIES IT.** Found 2026-10-06 fixing rows 334 and 335 in Project2 (Revit 2024, session 51820). On an M_Supply Diffuser - Circular - Round Neck - Ceiling Mounted placed on a level's plane, `get_Parameter(INSTANCE_FREE_HOST_OFFSET_PARAM)` returned a parameter named "Offset from Host", not read-only, whose `Set` answered **true** and kept nothing - it read 0 before and after a rebuild - and `get_Parameter(FAMILY_LEVEL_PARAM)` returned an empty "Level". Neither is in the element's own `Parameters`, and the Properties palette shows neither. The first makes a write look done; the second put three diffusers on no level for FILTER_ELEMENTS_BY_CATEGORY (row 335).
-
-**State.** **MOVED TO ISSUE [#947](https://github.com/Ajmalpshaik/Heron-AI/issues/947) 2026-11-16** - still open, tracked there; this row is kept whole. Was: **OPEN - recorded; fixed only in the two fragments it bit.** PLACE_FAMILY_INSTANCES version 2 reads what an element carries off its own parameter set, and FILTER_ELEMENTS_BY_CATEGORY version 3 passes over a level parameter that holds no level. Other fragments that treat `get_Parameter(id) != null` as "the element has it" and write through it have not been looked for - SET_ELEMENT_LEVEL picks its offset parameter that way, guarded by a read-back of the height.
-
----
-
-### Row 5b-343
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **A FAMILY TYPE COULD NOT BE RENAMED OR DELETED.** Found 2026-10-06 in the family `GM_PipeSupport_HexNut`: the type `Standard`, made by `SET_FAMILY_TYPE_VALUES`, had to become `HexNut - ISO 4032`, and nothing in the library called `FamilyManager.RenameCurrentType` - `RENAME_ELEMENTS` renames types in a PROJECT, not a family's own types. Renamed by hand.
-
-**State.** **FIXED in version 3, PROVEN - signed by Ajmal PS 2026-10-06** - `"Type Name=New name"` in `values` renames the type `typeName` names (only one that exists; never to a name another type has in any case, or with a character Revit forbids), and the optional `deleteType` deletes it, alone, never the last type; `typesNow` reads the types back. Rolled-back runs on scratch Family14 in [NEEDS-CHECKING CL](../needs-checking/group-cl.md).
-
----
-
-### Row 5b-344
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **A FAMILY HERON CREATED COULD BE NEITHER SEEN NOR SAVED, AND NOTHING STARTED A PROJECT.** Found 2026-10-06 building the nested parts of Rejin's pipe support: `CREATE_FAMILY_DOCUMENT` made the family in memory with no window, and `SAVE_DOCUMENT` refuses a document with no path rather than invent one - by design - so every part was started by hand through File > New > Family > Metric Generic Model.rft. `NewProjectDocument` appeared in no fragment.
-
-**State.** **FIXED in version 2, PROVEN - signed by Ajmal PS 2026-10-06.** `CREATE_FAMILY_DOCUMENT` version 2 takes `savePath` (the caller's, never overwritten, folder never created), saves, closes the windowless copy and opens the file in a window; a template is a full path or a name looked up in this Revit's own template folder. New `CREATE_PROJECT_DOCUMENT` (FRG-DOC-039) is the same body for a project, DRAFT - never run on a model. Aimed at the document in front it saves and returns `openNext` for `ACTIVATE_DOCUMENT`, because Revit opens no window while that document is modifiable. Runs on Revit 2024 in [NEEDS-CHECKING CM](../needs-checking/group-cm.md).
 
 ---
 

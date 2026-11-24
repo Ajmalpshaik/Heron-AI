@@ -32,16 +32,16 @@ the launcher passes may change.
 
 | # | Check | Expected |
 |---|---|---|
-| ~~**AS1**~~ | Deploy the add-in to Revit 2024, open a test copy, and look at Heron > AI Bridge — [full row](../needs-checking-archive/group-as.md#row-as1) | **PASSED 2026-09-27 on the owner's PC, Revit 2024** |
-| ~~**AS2**~~ | In the Heron folder, double-click `mcp\heron-talk.cmd` — [full row](../needs-checking-archive/group-as.md#row-as2) | **PASSED 2026-09-27 on the owner's PC, Revit 2024** |
+| ~~**AS1**~~ | Deploy the add-in to Revit 2024, open a test copy, and look at Heron > AI Bridge — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PASSED 2026-09-27 on the owner's PC, Revit 2024** |
+| ~~**AS2**~~ | In the Heron folder, double-click `mcp\heron-talk.cmd` — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **PASSED 2026-09-27 on the owner's PC, Revit 2024** |
 | ~~**AS3**~~ | **The negative.** Close that chat and start Claude the ordinary way. Connect Heron, select three ducts, press **Talk**, type *count these*, press Enter | **PASSED 2026-09-27 on the owner's PC, Revit 2024** - the verdict is in *Group AS was RUN*, below. Talk was removed that evening ([D-105](../DECISIONS.md#d-105--talk-is-removed-and-the-modeller-works-with-heron-in-the-chat-only)). *It was to look like:* The box stays open, says **no chat is listening, so nothing was sent**, and the words are still in it. `%LOCALAPPDATA%\Heron\talk\<Revit pid>` holds **no** `message-*.json`. **FAIL** - a message file written with nobody listening - would be a modeller's words lost in silence |
-| ~~**AS4**~~ | The positive. — [full row](../needs-checking-archive/group-as.md#row-as4) | **FAILED 2026-09-27 on the owner's PC** |
-| ~~**AS5**~~ | Revit does not wait, and "these" means what was sent. — [full row](../needs-checking-archive/group-as.md#row-as5) | **CANNOT BE RUN from 2026-09-27.** |
-| ~~**AS6**~~ | In the Talk box, press Win+H and say select all ducts on level one — [full row](../needs-checking-archive/group-as.md#row-as6) | **CANNOT BE RUN from 2026-09-27.** |
-| ~~**AS7**~~ | Changes still guard the model. — [full row](../needs-checking-archive/group-as.md#row-as7) | **CANNOT BE RUN from 2026-09-27.** |
-| ~~**AS8**~~ | Two Revits. — [full row](../needs-checking-archive/group-as.md#row-as8) | **CANNOT BE RUN from 2026-09-27.** |
-| ~~**AS9**~~ | Close Revit — [full row](../needs-checking-archive/group-as.md#row-as9) | **CANNOT BE RUN from 2026-09-27.** |
-| ~~**AS10**~~ | AS1, AS3 and AS4 on Revit 2020 and Revit 2027 — [full row](../needs-checking-archive/group-as.md#row-as10) | **CANNOT BE RUN from 2026-09-27.** |
+| ~~**AS4**~~ | The positive. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **FAILED 2026-09-27 on the owner's PC** |
+| ~~**AS5**~~ | Revit does not wait, and "these" means what was sent. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **CANNOT BE RUN from 2026-09-27.** |
+| ~~**AS6**~~ | In the Talk box, press Win+H and say select all ducts on level one — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **CANNOT BE RUN from 2026-09-27.** |
+| ~~**AS7**~~ | Changes still guard the model. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **CANNOT BE RUN from 2026-09-27.** |
+| ~~**AS8**~~ | Two Revits. — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **CANNOT BE RUN from 2026-09-27.** |
+| ~~**AS9**~~ | Close Revit — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **CANNOT BE RUN from 2026-09-27.** |
+| ~~**AS10**~~ | AS1, AS3 and AS4 on Revit 2020 and Revit 2027 — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | **CANNOT BE RUN from 2026-09-27.** |
 
 ### Group AS was RUN on the owner's PC - 2026-09-27. AS1 TO AS3 PASSED, AS4 FAILED, AND TALK WAS REMOVED
 

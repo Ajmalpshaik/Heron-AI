@@ -9,7 +9,7 @@
 
 **Tracked as GitHub issue [#1002](https://github.com/Ajmalpshaik/Heron-AI/issues/1002) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-The owner's ask: [docs/48](../48-studying-bimlogiq.md) section 5 item 5, *"3D to 2D MEP schematic - one system
+The owner's ask: [31 research](../31-research.md) section 5 item 5, *"3D to 2D MEP schematic - one system
 traced, drawn as single lines on a drafting view, with sizes, flow and pressure drop"*, and his "yes start item
 5". Made NEW, at DRAFT. It overlaps `TRACE_CONNECTIVITY` (DRAFT), `REPORT_MEP_PRESSURE_DROP`,
 `CREATE_DRAFTING_VIEW`, `CREATE_TEXT_NOTE` and `DRAW_FAMILY_DETAIL_LINES` (all PROVEN) - none was edited;

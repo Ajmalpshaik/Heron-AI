@@ -99,7 +99,7 @@ wrote nothing, and `hook-report.py` listed the two refusals. **Not yet seen on t
 ## How it behaves, and why each choice was made
 
 Three of these come from `garrytan/gstack`'s `check-freeze.sh`, read at `c8f0c4e`
-([33 §5.7](../../../docs/33-external-repository-research.md)). The mechanism is **re-authored, not
+([31 research](../../../docs/31-research.md)). The mechanism is **re-authored, not
 copied** ([D-25](../../../docs/DECISIONS.md)), and in **Python rather than bash** — Heron is developed on
 Windows, where a bash hook simply would not run.
 

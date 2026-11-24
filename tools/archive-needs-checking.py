@@ -333,6 +333,12 @@ def _readme(p):
         "",
         "How many rows each file holds is derived, not typed: `grep -c '^### Row' docs/needs-checking-archive/*.md`",
         "",
+        "**Done checks are removed, not kept (2026-11-24, the owner's request).** On that day every row here",
+        "was deleted: each was a check already done, and no open GitHub issue read them. Its struck line",
+        "stays in the register, linking to this page. A removed row's full text is in git history:",
+        "`git log -S '### Row E11' --oneline -- docs/needs-checking-archive/`, then `git show` the commit",
+        "before it.",
+        "",
     ])
 
 

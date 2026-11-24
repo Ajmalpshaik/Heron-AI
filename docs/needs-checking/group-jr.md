@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#994](https://github.com/Ajmalpshaik/Heron-AI/issues/994) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-Recorded as worth building in [doc 45 §6](../45-five-more-downloaded-skill-files.md) (*"Panel sizes on a
+Recorded as worth building in [doc 45 §6](../31-research.md) (*"Panel sizes on a
 curtain wall, grouped within the modeller's tolerance"*) and in the
 [facade plan](../work-notes/plans/facade-capability.md), where it waited for the owner's word because it
 widens a PROVEN tool. The owner gave it on 2026-10-29 (*"build the three widenings too"*), knowing the change
@@ -64,11 +64,11 @@ SELECT_BY_PARAMETER_VALUE and SET_SELECTION, both PROVEN. Every line below with 
 | **JR8** | *An empty cell.* On JR-MIXED, unpin and delete one 1500 panel; select the wall; the same line; then Ctrl+Z | `emptyCells` 1 and version 1's *"1 EMPTY cell(s)"* line; the size line ends *"1 empty cell(s) in no size - there is no panel there to measure"* and counts *"5 at 1500 x 3000 mm"*. If Revit will not delete the panel, RECORD that and the row closes |
 | **JR9** | *The second route, by hand.* A Curtain Panel schedule: fields Width, Height, Count; sorted and grouped by Width then Height; *Itemize every instance* off; filtered by the host wall's Mark if the template offers it, else read on JR-MIXED's panels | One row per size, the same counts as JR1 and JR4 at tolerance 0 |
 | **JR10** | *Routing, on the PC's backend.* `heron_lookup` for *"how many different panel sizes are on this curtain wall"*, *"how many different panel sizes does this facade have"*, *"group the curtain panels by size"* | The first reaches REPORT_CURTAIN_ELEMENTS - declared there. The other two are not declared; **record** where they land. On the container's backend on 2026-10-29 the second reached it by ranking, 7 ranks clear, and the third was **a coin toss** with SET_CURTAIN_PANEL_TYPE, a write, second - 0.4 of a rank apart while this card was PROVEN, 0.0 once version 2 made it DRAFT, still first by words. A write answering it here is a finding for the card's routing table, not a reason to declare words the modeller has not said |
-| ~~**JR11**~~ | Signing, on the owner's word only, after JR1 to JR5. python brain/heron_validate.py draft… — [full row](../needs-checking-archive/group-jr.md#row-jr11) | The proof block written. |
+| ~~**JR11**~~ | Signing, on the owner's word only, after JR1 to JR5. python brain/heron_validate.py draft… — [full row removed 2026-11-24 - in git history](../needs-checking-archive/README.md) | The proof block written. |
 
 A row that fails stays open; nothing in a row changes to make it pass.
 
 **What this group does not settle.** A curtain **system**'s panels: the tool reads a curtain wall, and a curtain
 system handed in is *"not a wall"* - the [`facade`](../../brain/skills/facade.yaml) method's route B step 4 says
 to run it on the system, which version 1 does not do either (recorded, not changed here). The glass area by
-orientation is [doc 45 §6](../45-five-more-downloaded-skill-files.md)'s, not this.
+orientation is [doc 45 §6](../31-research.md)'s, not this.

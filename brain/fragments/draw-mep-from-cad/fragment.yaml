@@ -8,7 +8,7 @@ id: FRG-MEP-103
 semantic-identity: "turn the duct and pipe linework of a linked CAD background into real ductwork or pipework in one go - the runs, their elbows and tees, at the dimensions handed in"
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
-# 2026-11-09: docs/48-studying-bimlogiq.md section 5 item 6 - "CAD lines to
+# 2026-11-09: docs/31-research.md section 11 (former note 48, item 6) - "CAD lines to
 # ducts and pipes - read the CAD layer, ask size and type, draw the run" - and
 # the owner's words the same day: "NOT ONLY FROM THE LAYERS. IF I SAY
 # UNDERSTAND FROM THE CAD, IT WILL TAKE THE SCREENSHOT AND IT WILL UNDERSTAND

@@ -11,7 +11,7 @@
 
 ### 2026-11-12 — EVERY REPLY SAYS HOW IT ENDED IN ONE WORD, PROVEN TOOLS THAT ANSWERED WRONGLY ARE REPAIRED AND DRAFT AGAIN, AND A DEFECT ROW GETS A FILE OF ITS OWN
 
-Written to the rule in [section 11](../HANDOVER.md#11-handover--2026-09-12): what is NEW, a MISTAKE worth not repeating,
+Written to the rule in [section 11](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#11-handover--2026-09-12): what is NEW, a MISTAKE worth not repeating,
 what is still TO DO. It covers the branch `claude/stoic-planck-folhnp` from the evening of 2026-11-11, after
 [that day's note](../handover-archive/2026-11-11-a-click-in-revit-answers-the-chat-five-everyday-jobs-get-a.md)
 was written, to 2026-11-12. Everything on the branch was built in a cloud container; **nothing on it has run
@@ -72,9 +72,9 @@ in Revit.** The fixes are in `git log --first-parent origin/main..` on the branc
 **TO DO.**
 
 - **On the owner's PC, Revit open:** the one ordered list is in
-  [HANDOVER's top section](../HANDOVER.md#where-this-stands-right-now--read-this-then-9a-or-9), under its table -
+  [HANDOVER's top section](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#where-this-stands-right-now--read-this-then-9a-or-9), under its table -
   Groups NK and NL first, because merging the branch leaves their cards DRAFT on `main` until they are run.
-- **The owner's word, no Revit:** [HANDOVER §8](../HANDOVER.md#8-what-is-waiting-on-the-owner), its newest
+- **The owner's word, no Revit:** [HANDOVER §8](../handover-archive/2026-11-24-the-long-handover-kept-whole-when-handover-was-cut-to-one-page.md#8-what-is-waiting-on-the-owner), its newest
   table - D-153 and D-154, five open questions, the PROVEN tools whose known defects are held for his yes,
   the withdrawn repair, and Article 9's wording.
 - **In no register group yet:** the outcome line in a real chat on a real Revit (rows 5b-1159 and 5b-1561).

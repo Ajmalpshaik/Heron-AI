@@ -30,16 +30,6 @@
 
 ---
 
-### Row 5b-1219
-
-*Moved from the register on 2026-11-17.*
-
-**Defect.** **`tests/test_mcp_serves.py` TYPED A FRAGMENT'S STATUS INTO A CHECK, SO IT WENT RED ON EVERY MACHINE WITH THE MCP SDK THE DAY THAT FRAGMENT WAS PROVEN - AND CI, WHICH HAS NO SDK, NEVER RAN IT.** Found 2026-10-19 running `tools/check-gaps.py` for [#680](https://github.com/Ajmalpshaik/Heron-AI/pull/680) in a cloud container with `mcp` installed: one check failed, *"and says it is a DRAFT - a claim, not a proof"*, after the `revit_show` of `ZOOM_TO_LINKED_ELEMENTS`. That card became PROVEN in 73408ddf ([#662](https://github.com/Ajmalpshaik/Heron-AI/pull/662)), so the server rightly said *"'ZOOM_TO_LINKED_ELEMENTS' is PROVEN ... and its code has not changed since"*: the code was right and the check was stale. It failed the same way on `main` at `addd60a6` and `23b17d83` before any change. `.github/workflows/gates.yml` lists the suite as not runnable without the SDK, so nothing red reached a pull request.
-
-**State.** **FIXED 2026-10-19, in the suite only - no server code changed.** The check now reads the card's own `heron-status` (new `status_of`, beside `first_with`, both over one `cards()` reader) and expects the answer to match: PROVEN or PRODUCTION says *"is PROVEN"* and never *"Treat this answer as a claim"*; anything else says DRAFT and claim. A second check runs the same show with `brain.proof_status` read as DRAFT - the pattern the suite already uses for a stale proof - so a DRAFT show's wording is tested whatever the library holds. **Seen to fail:** with `_proof_line` made to call every answer a claim, the PROVEN check went red; with it made never to, the DRAFT check went red (each beside an existing read check); restored, the suite exits 0 with the SDK installed.
-
----
-
 ### Row 5b-1221
 
 *Moved from the register on 2026-11-17.*
