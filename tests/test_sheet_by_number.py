@@ -185,7 +185,7 @@ def words(inventory):
     check("view_named(reply.get(\"view\"), reply.get(\"viewType\"), reply.get(\"viewId\")" in inventory
           and "reply.get(\"activeViewId\")" in inventory,
           "revit_view_image and revit_views both say it")
-    check("a sheet\n      NUMBER, or a view's element id" in inventory,
+    check("a sheet NUMBER, or a view's element id" in inventory,
           "and the tool's own words tell the chat a sheet number and an id are taken")
 
 

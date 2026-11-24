@@ -706,12 +706,10 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280,
     Take a picture of a Revit view and LOOK at it - to check what you just
     did, instead of trusting a count. Give ONE of:
 
-    - `view`: a view or sheet name as the Project Browser shows it, a sheet
-      NUMBER, or a view's element id; empty is the view in front, and the
-      answer gives its id. Pictured as it stands - template, crop, filters -
-      and not changed. Two views of one name are listed "ViewType: Name" to
-      copy, sheets "Sheet A101 - Name". A cropped plan, no annotation crop,
-      maps to model mm (MX19).
+    - `view`: a view or sheet name, a sheet NUMBER, or a view's element id;
+      empty is the view in front, its id given. Pictured as it stands, not
+      changed. Two of one name are listed "ViewType: Name", sheets "Sheet
+      A101 - Name". A cropped plan, no annotation crop, maps to model mm.
     - `elements`: element ids, comma separated, as Heron prints them -
       Revit's number, or a form's long id from CREATE_FAMILY_FORMS or
       REPORT_FAMILY_FORMS. Framed in a temporary isometric 3D view, a section
