@@ -3,7 +3,7 @@
 # box answer this card exists to avoid), two roofs whose ends face nothing
 # called apart, or an overlap read as a gap.
 #
-# THE ARRANGEMENT (NEEDS-CHECKING Group QH). The scratch project "roofjoin-oy"
+# THE ARRANGEMENT (NEEDS-CHECKING Group QJ). The scratch project "roofjoin-oy"
 # of Group OY, never a working model, as EXTEND_ROOF_TO_ROOF's cases set it
 # out: the MAIN ROOF (a roof by footprint, gable, 0,0 to 12000,8000 mm on
 # Level 2, its long sides at 30 degrees), the WING ROOF (a roof by extrusion
@@ -30,7 +30,7 @@ positive:
   - given: >
       the same pair after EXTEND_ROOF_TO_ROOF has been run on it with
       maxExtendMm 10000 and KEPT (do this in a copy of the project, saved as
-      roofjoin-qh-met)
+      roofjoin-qj-met)
     expect: >
       meets 1, gapMm 0; the first finding "YES - ... already overlap, so one
       reaches the other and goes into it" - the extended end passes through
@@ -38,7 +38,9 @@ positive:
       report says "OVERLAP - ... m3"
 
   - given: >
-      a wall and the two roofs of the first case selected
+      a wall and the two roofs of the first case selected (roofjoin-oy has no
+      wall: draw one away from the roofs in the copy and save, as Group PG's
+      PG1 says)
     expect: >
       the first case's answer, and a finding "Walls <id> is not a roof by
       extrusion or by footprint ... and was left out"

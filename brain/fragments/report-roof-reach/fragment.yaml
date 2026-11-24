@@ -39,7 +39,7 @@ semantic-identity: "is there a gap between two roofs: how far the end of one roo
 # Element.GetGeometryObjectFromReference, Face.Project and ComputeNormal,
 # ExtrusionRoof.GetProfile, FootPrintRoof.GetProfiles and get_DefinesSlope,
 # BooleanOperationsUtils.ExecuteBooleanOperation. Compiled 2020 to 2027 by
-# tools/check-fragments-compile.py; NOT RUN IN REVIT - NEEDS-CHECKING Group QH.
+# tools/check-fragments-compile.py; NOT RUN IN REVIT - NEEDS-CHECKING Group QJ.
 #
 # ROUTING - repeated in EXTEND_ROOF_TO_ROOF and MEASURE_DISTANCE.
 #
