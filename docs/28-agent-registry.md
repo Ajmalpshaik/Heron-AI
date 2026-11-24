@@ -416,7 +416,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 
 ### The order the agents were built in - seams first
 
-**Moved here on 2026-11-21 from the work note `agent-build-order-2026-09-13.md`**, written 2026-09-13 when
+**Moved here on 2026-11-21 from the work note `agent-build-order-2026-09-13.md`** (retired 2026-11-24), written 2026-09-13 when
 the owner asked for the order that makes each agent easier to build than the one before it - *"if we create
 something it can be used for next creation easily"*. Every block it ordered is built: `python
 tools/agent-count.py` reports none left, the two it does not build are deferred by
