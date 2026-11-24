@@ -96,9 +96,13 @@ purpose: >
      agreed:
      a. CREATE_WALLS_BY_FACE with a wall type - Wall by Face on every side
         face, Finish Face: Exterior on the mass face unless the modeller
-        says otherwise. A glazed block is CREATE_CURTAIN_SYSTEM (PROVEN,
-        Group JM) with a curtain system type instead - its upright faces, or
-        "top" for a glazed roof - and its grid and mullions are
+        says otherwise. A glazed block is CREATE_CURTAIN_SYSTEM (DRAFT
+        again at version 2 since 2026-11-24 - version 1 was proved in Group
+        JM; version 2 waits on Group QK, and a DRAFT's kept change is refused,
+        D-117) with a curtain system type instead - its upright faces, "top"
+        for a glazed roof, "sloped" for a folded block's tilted faces, face
+        numbers from its reply, or "all but top and underside"; a face that
+        already carries a curtain system is refused, never glazed twice - and its grid and mullions are
         SET_CURTAIN_WALL_GRID on that curtain system type, Grid 1 and Grid 2
         (Group JP proved the grid and the mullion setters on 2026-11-01; the
         mullions were merged into the grid setter that day, version 4). Both
