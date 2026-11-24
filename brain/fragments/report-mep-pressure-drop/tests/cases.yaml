@@ -73,6 +73,13 @@ negative:
     expect: >
       linksSearched 1, not 2 - it counts files, not placements
 
+  - given: >
+      VERSION 3, NEGATIVE. the systems version 2 was proved on
+    expect: >
+      every system's lines as version 2's, skippedSections written down (0
+      expected) and no "could not be read and are in neither the rows" line
+      under any system while it is 0
+
 second_route:
   - >
     Select the system in Revit and read its properties - Total Pressure Loss and

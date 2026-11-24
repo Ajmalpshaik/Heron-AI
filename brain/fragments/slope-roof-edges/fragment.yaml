@@ -288,3 +288,8 @@ utterances:
   # REPORT_ROOF_SLOPES carries a pitch question ninth as its counterweight.
   - slope every edge of this roof
   - set this roof to a 30 degree pitch
+  # ADDED 2026-11-24 (row 5b-1953, issue #1187) - the row's own request. It
+  # still reached REPORT_ROOF_SLOPES, a read, on lexical, the fused scores a
+  # rank apart; four held-out wordings of a pitch request reach this card on
+  # every backend. Tenth, after the eight the re-ranker reads (D-134).
+  - give this roof a 25 degree pitch

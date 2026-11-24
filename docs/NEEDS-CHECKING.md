@@ -1778,6 +1778,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qi.md`](needs-checking/group-qi.md)
 
+## Group QH - nine reading tools count what they pass over, WN-7 batch 1 (D-64) - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qh.md`](needs-checking/group-qh.md)
+
+## Group QJ - REPORT_ROOF_REACH: does one roof reach another, measured with rays and changed nothing; and a duct's and a pipe's offset written by WRITE_ELEMENT_PARAMETERS - DRAFT until proved (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qj.md`](needs-checking/group-qj.md)
+
 ## Group QP - connector sized by Duct Size and Pipe Size and taken in a ring's bore, model text measured on its letters, a freeform answer naming the live material tool - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qp.md`](needs-checking/group-qp.md)

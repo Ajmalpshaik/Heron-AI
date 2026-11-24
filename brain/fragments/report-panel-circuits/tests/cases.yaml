@@ -23,5 +23,14 @@ negative:
       that circuit's id in `unassigned` and on the ON NO PANEL line, not
       under DB-1
 
+  - given: >
+      VERSION 2, NEGATIVE. panelName empty, then a panel name nobody uses, on
+      the model version 1 was proved on
+    expect: >
+      empty: the schedule and counts as version 1's, unresolvedCircuits
+      written down (0 expected) and no "would not say which panel feeds them"
+      sentence while it is 0. The unused name: version 1's "No circuit is fed
+      from a panel named ..." and unresolvedCircuits 0
+
 second_route:
   - DB-1's panel schedule view in Revit, read side by side - the same circuit numbers, loads and totals

@@ -143,6 +143,7 @@ place will be followed by whoever reads it next.
 | Why is it built this way? | [`docs/DECISIONS.md`](docs/DECISIONS.md) |
 | What is designed but not built? | the numbered documents, [`docs/README.md`](docs/README.md) |
 | How many fragments are proven? | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` |
+| What does an agent do, and is it built? | `python brain/heron_agents.py HERON-XXX-YYY-NNN` |
 | What is genuinely unfinished? | `python tools/check-gaps.py` |
 | What still needs a real Revit? | [`docs/NEEDS-CHECKING.md`](docs/NEEDS-CHECKING.md) |
 | What is broken in the library? | [`docs/FRAGMENT-ISSUES.md`](docs/FRAGMENT-ISSUES.md) |

@@ -168,7 +168,7 @@ logic, not re-implement it** — two copies of a deploy rule is two rules that d
 | R-52 | The installer **asks where to keep** that folder and never chooses for the user. What they answer is the project folder the AI is later opened in | Owner, 2026-09-22: *"it will ask where you need to keep"*; answers [Q-PE-14](03-open-questions.md) | MUST *(tracked as GitHub issue [#1011](https://github.com/Ajmalpshaik/Heron-AI/issues/1011) since 2026-11-16 (WN-45))* |
 | R-53 | **After that download, nothing needs the internet.** Installing, re-installing and every tool work offline | Owner, 2026-09-22; and it is what makes R-15 true rather than aspirational | MUST |
 | R-54 | With internet, the installer **checks whether a newer release exists and says so**. It does **not** fetch the plugin again to find out | Owner, 2026-09-22: *"it will check only if there is update or not, no need to download again"* | MUST |
-| R-55 | An update found is **offered, never applied**. One click to take it, and *"not now"* means not asked again | Owner, 2026-09-22: *"it will tell to update and one click need to update"*; [`brain/heron_update.py`](../../../../brain/heron_update.py) rules 1 and 7 | MUST |
+| R-55 | An update found is **offered, never applied**. One click to take it, and *"not now"* means not asked again | Owner, 2026-09-22: *"it will tell to update and one click need to update"*; `brain/heron_update.py` rules 1 and 7 | MUST |
 | R-56 | The reason R-54 exists: somebody who downloaded **days ago** would otherwise never learn a newer release was published | Owner, 2026-09-22: *"if someone downloaded this repo some days before and we made update, that time he will not receive update"* | MUST |
 
 ### Installing

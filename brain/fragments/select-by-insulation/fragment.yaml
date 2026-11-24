@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "which ducts and pipes are insulated, and which are still bar
 kind: filter
 domain: revit.mep
 capability: SELECT_BY_INSULATION
-version: 2
+# VERSION 3 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
+# #1005) - insulation or lining whose host Revit will not give is counted in
+# `unresolvedCoverings`, where version 2 let the duct or pipe under it read as
+# bare; a sentence names it only when it is above 0. It was PROVEN at version
+# 2; that proof stays below as the record, and the card is DRAFT until its
+# NEEDS-CHECKING check runs and is signed (D-30).
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -108,6 +114,12 @@ contract:
       # up in THIS model (FRAGMENT-ISSUES row 75).
       role: accounting
       type: IList<string>
+    - name: unresolvedCoverings
+      # VERSION 3 (D-64). Host-model insulation or lining elements whose host
+      # Revit would not give, so what they wrap is counted bare. Always
+      # carried; a sentence in `findings` names it only when it is above 0.
+      role: accounting
+      type: int
 
 proof:
   date: '2026-10-18'
