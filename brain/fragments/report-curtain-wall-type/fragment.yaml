@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-074
-semantic-identity: "the grid layout, spacing and mullion types a curtain wall type holds, each way, and whether Automatically Embed is ticked and its Join Condition"
+semantic-identity: "a curtain wall type's settings read back - grid layout and spacing, mullion types, Automatically Embed on or off, Join Condition"
 kind: action
 domain: revit.reporting
 capability: REPORT_CURTAIN_WALL_TYPE
@@ -253,15 +253,18 @@ compatibility-note: >
 #                                            yet. A curtain system's type is not
 #                                            a wall type
 
+# THE RE-RANKER READS THE FIRST EIGHT (D-134), so version 2's embed
+# questions sit among them; the order moves nothing else.
 utterances:
   - what is the grid spacing on this curtain wall
-  - what grid layout does this curtain wall type have
+  - is automatically embed on for this curtain wall
   - which mullion type is on the curtain wall borders
-  - what spacing are the curtain grid lines
+  - is automatically embed ticked on this curtain wall type
   - show me the curtain wall type settings
+  - does this curtain wall type embed in the wall it is drawn in
+  - what grid layout does this curtain wall type have
+  - what is the join condition of this curtain wall type
+  - what spacing are the curtain grid lines
   - is this curtain wall fixed distance or maximum spacing
   - what mullions are on this curtain wall type
-  - is automatically embed on for this curtain wall
-  - is automatically embed ticked on this curtain wall type
-  - does this curtain wall type embed in the wall it is drawn in
-  - what is the join condition of this curtain wall type
+  - does a curtain wall of this type cut the wall it is drawn in

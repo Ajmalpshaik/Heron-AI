@@ -30,30 +30,27 @@ risk: MODIFY
 # is REPORT_CURTAIN_WALL_TYPE's since its version 2 (row 5b-2008).
 
 purpose: >
-  MAKES A CURTAIN WALL CUT AN OPENING IN THE BASIC WALL IT IS DRAWN IN - or
-  stop cutting - by ticking or unticking Automatically Embed on its curtain
-  wall type (Type Properties > Construction). "Make this curtain wall embed in
-  the brick wall", "tick automatically embed on this curtain wall type", "the
-  curtain wall is not cutting the wall it sits in".
+  TICKS OR UNTICKS AUTOMATICALLY EMBED (Type Properties > Construction) on the
+  type of each curtain wall picked, so that it cuts an opening in the wall it
+  is drawn in, or stops.
 
-  **THE BOX IS THE TYPE'S, SO EVERY WALL OF THE TYPE CHANGES.** The curtain
-  walls handed in name their types; each type's box is written once, and the
-  answer says how many walls in the model have that type. A type already that
-  way is named in `alreadyThat` and not written. Anything handed in that is
-  not a curtain wall - the brick wall itself, say - is named in `notCurtain`
-  and left alone.
+  **THE BOX BELONGS TO THE TYPE, SO EVERYTHING SHARING IT CHANGES.** Each one
+  picked is followed to its type, each type is written once, and the answer
+  counts how many share it. One already set as asked is named in `alreadyThat`
+  and not written. Anything picked that is not a curtain wall - the brick wall
+  itself, say - is named in `notCurtain` and left alone.
 
-  **WHAT IT CUTS IS READ OFF THE WALLS.** For each curtain wall handed in,
-  every wall whose box meets its box is asked what it holds embedded, before
-  and after, so the answer says which walls it cut before and which it cuts
-  now. ASSUMPTION for the proof: whether ticking the box embeds a curtain wall
-  already drawn, or only those drawn after, has not been measured - the
-  before-and-after says which, and nothing is claimed beyond it.
+  **WHAT IT CUTS IS READ OFF THE MODEL.** Every wall whose box meets each one
+  picked is asked what it holds inside it, before and after, so the answer
+  lists what it cut before and what it cuts now. ASSUMPTION for the proof:
+  whether ticking the box affects one already drawn, or only those drawn
+  after, has not been measured - the before-and-after says which, and nothing
+  is claimed beyond it.
 
   `embed` is yes or no. The box is found by Revit's own built-in id, never by
   its name. ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule
-  16). Every refusal is made before the first write; a type that will not take
-  it, or reads back otherwise after one regeneration, stops the call and
+  16). Every refusal is made before the first write; a type that refuses it,
+  or reads back otherwise after one regeneration, stops the call and
   nothing it did is kept. In a shared model a type another user holds is
   refused naming them.
 
