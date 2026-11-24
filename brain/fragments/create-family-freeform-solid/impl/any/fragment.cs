@@ -2,6 +2,12 @@
 // scope; leaves `formId`, `built`, `notAFamily`, `refused` and `findings`
 // behind.
 //
+// VERSION 2 (2026-11-24, row 5b-2034) - THE ANSWER NAMES THE LIVE MATERIAL
+// TOOL. A solid's answer said its material was SET_FAMILY_FORM_MATERIAL, a
+// card merged into LINK_FAMILY_PARAMETER on 2026-11-01 and refused since, so a
+// modeller following the answer was refused. It now names LINK_FAMILY_PARAMETER.
+// Nothing else changed.
+//
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
 // ONE SMOOTH FORM THE CLASSIC FORMS CANNOT MAKE, built as a solid and kept in
@@ -854,8 +860,9 @@ if (refused == null)
         findings.Add("A void CUTS NOTHING by being made. It cuts a solid once the two are combined - Revit's Cut "
             + "Geometry, which COMBINE_FAMILY_FORMS does with this id and the solid's.");
     else
-        findings.Add("Its material is SET_FAMILY_FORM_MATERIAL with this id, and showing it at Fine only is "
-            + "SET_FAMILY_FORM_VISIBILITY - both take any family form.");
+        findings.Add("Its material is LINK_FAMILY_PARAMETER with this id - Material linked to a family parameter, "
+            + "or set to a material the family holds - and showing it at Fine only is SET_FAMILY_FORM_VISIBILITY - "
+            + "both take any family form.");
 }
 
 if (refused != null) findings.Add(refused);
