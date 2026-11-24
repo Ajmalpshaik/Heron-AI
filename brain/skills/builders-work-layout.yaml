@@ -121,7 +121,7 @@ purpose: >
      and dimension a delete takes, as step 8 does here.
 
   5. THE OPENING DEPTH. SET_PARAMETER_VALUES_BY_ID (DRAFT since its version
-     10 of 2026-11-20; keepFace came in at version 3 and no proof has run it)
+     11 of 2026-11-24; keepFace came in at version 3 and no proof has run it)
      with keepFace=outside: the depth parameter the modeller names ("Wall
      Width") set to the depth they give,
      with the OUTSIDE face of the wall kept where it is - one row per opening,
@@ -149,7 +149,8 @@ purpose: >
      id as Revit shows it. Look at the view after each string: `measured` is
      what Revit measured, and a string through a tag is moved by the modeller.
 
-  7. TAGS. For openings in this model: SELECT_BY_PARAMETER_VALUE (PROVEN)
+  7. TAGS. For openings in this model: SELECT_BY_PARAMETER_VALUE (DRAFT
+     since its version 5 of 2026-11-24, a read, so it runs and says so)
      with parameterName the shared parameter, matchText "Openings",
      matchMode contains and categories Generic Models, then
      TAG_ELEMENTS_IN_VIEW (TAG_ELEMENTS was merged into it at version 6,

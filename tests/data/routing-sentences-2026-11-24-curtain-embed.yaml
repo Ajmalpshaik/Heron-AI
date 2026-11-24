@@ -1,0 +1,134 @@
+# ROUTING SENTENCES FOR ROW 5b-2008 (#1012) - REPORT_CURTAIN_WALL_TYPE version 2
+# reads Automatically Embed, and SET_CURTAIN_WALL_EMBED (#1323) lands.
+#
+# HONEST ABOUT WHEN: the first sentence of each 5b-2008 group is the row's
+# own or the owner's brief's (frozen before this change); the rest were
+# written by the S12 session on 2026-11-24 AFTER the read card's new
+# utterances, and none of them is declared word for word on any card.
+# The 5b-329 group is tests/test_routing_phrases.py's guard set plus the
+# fifth paraphrase it leaves out; the neutral group is #1321's two recorded
+# moves; the "declared on main" groups are every utterance the curtain cards
+# held on origin/main, so a card that loses one of its own lines shows.
+#
+# Read by tools/score-routing.py --sentences. Never reworded to buy back a
+# rank: a sentence here is the instrument.
+groups:
+- group: '5b-2008 (#1012): is Automatically Embed on - asked'
+  expect: want REPORT_CURTAIN_WALL_TYPE
+  sentences:
+  - is automatically embed ticked on this curtain wall type
+  - is automatically embed on for this curtain wall
+  - does this curtain wall type have automatically embed turned on
+  - is the embed option on for this curtain wall
+  - what is the automatically embed setting on the storefront type
+  - is automatic embed switched on for this curtain wall type
+  - check if automatically embed is enabled on this curtain wall
+  - which join condition does this curtain wall type use
+- group: '5b-2008 (#1012): asked, and not a write whatever answers it'
+  expect: not-a-write
+  sentences:
+  - will this curtain wall cut the basic wall it is drawn in
+  - does this curtain wall embed automatically
+  - is this curtain wall set to embed in the host wall
+  - what are the type settings of this curtain wall
+- group: '5b-2008 (#1012): Automatically Embed - asked for'
+  expect: want SET_CURTAIN_WALL_EMBED
+  sentences:
+  - turn on automatically embed for this curtain wall
+  - make the curtain wall cut the brick wall it sits in
+  - embed this curtain wall in the wall behind it
+  - switch on automatically embed for the storefront type
+  - untick automatically embed on this curtain wall type
+- group: '5b-329 guard: select by curtain wall type - never a write'
+  expect: not-a-write
+  sentences:
+  - select all walls of type Curtain Wall
+  - select all the curtain walls of type Storefront
+  - select all elements of type Curtain Wall
+  - select all instances of the Storefront curtain wall type
+  - select every wall that uses the Curtain Wall type
+- group: 'neutral moves recorded on #1321 (row 5b-2008)'
+  expect: neutral
+  sentences:
+  - delete this mullion
+  - where are the grid lines on this curtain wall
+- group: 'declared on main: REPORT_CURTAIN_WALL_TYPE'
+  expect: want REPORT_CURTAIN_WALL_TYPE
+  sentences:
+  - what is the grid spacing on this curtain wall
+  - what grid layout does this curtain wall type have
+  - which mullion type is on the curtain wall borders
+  - what spacing are the curtain grid lines
+  - show me the curtain wall type settings
+  - is this curtain wall fixed distance or maximum spacing
+  - what mullions are on this curtain wall type
+- group: 'declared on main: SET_CURTAIN_WALL_GRID'
+  expect: want SET_CURTAIN_WALL_GRID
+  sentences:
+  - set the curtain wall grid spacing
+  - set a curtain wall's grid spacing on the type
+  - change the curtain grid layout to fixed distance
+  - space the vertical curtain grid lines at 1500
+  - make the horizontal curtain grid maximum spacing
+  - make the vertical grid fixed distance 1500
+  - set the mullions on this curtain wall type
+  - set a curtain wall's mullions on the type
+  - change the mullion type on the curtain wall
+  - put rectangular mullions on the curtain wall borders
+  - take the border mullions off this curtain wall type
+- group: 'declared on main: REPORT_CURTAIN_ELEMENTS'
+  expect: want REPORT_CURTAIN_ELEMENTS
+  sentences:
+  - what panels and mullions are in this curtain wall
+  - what is in this curtain wall
+  - how many curtain panels are there
+  - list the mullions on this facade
+  - how many grid lines in this curtain wall
+  - how many grid lines are in this curtain wall
+  - break down this curtain wall
+  - what is this facade made of
+  - how much glass is in this facade
+  - which panel types are on this wall
+  - how many different panel sizes are on this curtain wall
+- group: 'declared on main: SET_MULLION_JOIN'
+  expect: want SET_MULLION_JOIN
+  sentences:
+  - make this mullion continuous
+  - break this mullion at the join
+  - make the vertical mullions run through the transoms
+- group: 'declared on main: EDIT_CURTAIN_GRID_SEGMENTS'
+  expect: want EDIT_CURTAIN_GRID_SEGMENTS
+  sentences:
+  - remove a grid line from this curtain wall
+  - remove this grid line from the curtain wall
+  - delete the vertical grid line at 3000 on this curtain wall
+  - remove one segment of this curtain grid line
+  - cut the grid line out of the bottom panel only
+  - put back the curtain grid segment I removed
+- group: 'declared on main: MOVE_CURTAIN_GRID_LINE'
+  expect: want MOVE_CURTAIN_GRID_LINE
+  sentences:
+  - move this mullion 300 mm to the left
+  - move the curtain grid line at 1500 to 1800
+  - shift this curtain grid line up 200 mm
+  - move the transom on this curtain wall to 1100
+- group: 'declared on main: ADD_CURTAIN_GRID_LINES'
+  expect: want ADD_CURTAIN_GRID_LINES
+  sentences:
+  - divide this curtain wall into six panels
+  - add a grid line at 1200 from the bottom of this curtain wall
+  - add vertical grid lines at 900 and 2700 on just this wall
+  - split this curtain wall into 4 equal bays with mullions
+  - add a transom at 1100
+- group: 'declared on main: SET_CURTAIN_PANEL_TYPE'
+  expect: want SET_CURTAIN_PANEL_TYPE
+  sentences:
+  - change the bottom row of panels on this curtain wall to solid panels
+  - put spandrel panels on every floor line
+  - change panel type in the second column
+- group: 'declared on main: CHECK_PANEL_FLATNESS'
+  expect: want CHECK_PANEL_FLATNESS
+  sentences:
+  - are these facade panels flat enough for glass
+  - how far out of plane is each panel
+  - check the flatness of the panels on this twisted surface

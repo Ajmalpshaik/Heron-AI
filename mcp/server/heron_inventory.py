@@ -437,7 +437,9 @@ def revit_views() -> str:
     active = reply.get("activeView")
     if active:
         lines.append("")
-        lines.append("Active view %r (%s)" % (active, reply.get("activeViewType")))
+        lines.append("Active view %s" % view_named(active, reply.get("activeViewType"),
+                                                     reply.get("activeViewId"),
+                                                     reply.get("activeSheetNumber")))
         lines.append("  template      %s" % (reply.get("activeViewTemplate") or "none"))
         lines.append("  discipline    %s" % (reply.get("activeViewDiscipline") or "not given"))
         lines.append("  detail level  %s" % (reply.get("activeViewDetailLevel") or "not given"))
@@ -668,6 +670,21 @@ def fit_line(reply):
     return None
 
 
+def view_named(name, kind, view_id=None, sheet_number=None):
+    """A view as the answer names it (row 5b-2015): a sheet by its number
+    first - "sheet A101 - 'Unnamed' (DrawingSheet, view id 123)" - because
+    sheets share names and numbers do not; any view with its element id when
+    the add-in sends one. Both are read back as `view`. An add-in older than
+    this server sends neither, and the words are as before."""
+    said = "%r" % (name,)
+    if sheet_number:
+        said = "sheet %s - %s" % (sheet_number, said)
+    detail = [kind] if kind else []
+    if view_id:
+        detail.append("view id %s" % view_id)
+    return "%s (%s)" % (said, ", ".join(str(d) for d in detail)) if detail else said
+
+
 def region_line(reply, where):
     """The first line of a region picture (row 5b-1710): which plan, what
     region, how wide, and whether the plan's tags and dimensions came with it.
@@ -689,10 +706,10 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280,
     Take a picture of a Revit view and LOOK at it - to check what you just
     did, instead of trusting a count. Give ONE of:
 
-    - `view`: a view or sheet name as the Project Browser shows it; empty is
-      the view in front. Pictured as it stands - template, crop, filters -
-      and not changed. Two views of one name are listed "ViewType: Name" to
-      copy. A cropped plan, no annotation crop, maps to model mm (MX19).
+    - `view`: a view or sheet name, a sheet NUMBER, or a view's element id;
+      empty is the view in front, its id given. Pictured as it stands, not
+      changed. Two of one name are listed "ViewType: Name", sheets "Sheet
+      A101 - Name". A cropped plan, no annotation crop, maps to model mm.
     - `elements`: element ids, comma separated, as Heron prints them -
       Revit's number, or a form's long id from CREATE_FAMILY_FORMS or
       REPORT_FAMILY_FORMS. Framed in a temporary isometric 3D view, a section
@@ -793,8 +810,9 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280,
                          "not asked for: %s. They are still in the family."
                          % reply.get("hiddenCrossing"))
     else:
-        lines = ["A picture of %r (%s) in %s, %s."
-                 % (reply.get("view"), reply.get("viewType"), where, across(reply))]
+        lines = ["A picture of %s in %s, %s."
+                 % (view_named(reply.get("view"), reply.get("viewType"), reply.get("viewId"),
+                               reply.get("sheetNumber")), where, across(reply))]
     if reply.get("widthClamped"):
         lines.append("The width asked for was outside 320 to 2400 px, so %s was used."
                      % reply.get("pixelWidth"))

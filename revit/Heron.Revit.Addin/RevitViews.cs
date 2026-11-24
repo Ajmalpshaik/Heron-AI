@@ -180,6 +180,11 @@ namespace Heron.Revit.Addin
                 Json.Num("templatesNothingUses", unusedTemplates),
                 Json.Str("activeView", active == null ? null : SafeName(active)),
                 Json.Str("activeViewType", active == null ? null : TypeNameOf(active)),
+                // ROW 5b-2015: the view in front by its id, and a sheet by its
+                // number - three sheets of one model were all "Unnamed", and
+                // the name alone could not say which was in front.
+                Json.Str("activeViewId", active == null ? null : active.Id.ToString()),
+                Json.Str("activeSheetNumber", SheetNumberOf(active)),
                 Json.Str("activeViewTemplate", active == null ? null
                          : NameOfId(doc, TemplateIdOf(active))),
                 Json.Str("activeViewDiscipline", active == null ? null
@@ -339,6 +344,15 @@ namespace Heron.Revit.Addin
                 var element = doc.GetElement(id);
                 return element == null ? null : element.UniqueId;
             }
+            catch (Autodesk.Revit.Exceptions.ApplicationException) { return null; }
+        }
+
+        /// <summary>A sheet's number, or null for a view that is not a sheet (row 5b-2015).</summary>
+        private static string SheetNumberOf(View view)
+        {
+            var sheet = view as ViewSheet;
+            if (sheet == null) return null;
+            try { return string.IsNullOrEmpty(sheet.SheetNumber) ? null : sheet.SheetNumber; }
             catch (Autodesk.Revit.Exceptions.ApplicationException) { return null; }
         }
 

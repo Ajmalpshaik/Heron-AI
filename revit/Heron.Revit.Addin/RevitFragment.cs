@@ -5772,6 +5772,105 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// THE SHEET TEXT NAMES BY ITS NUMBER, or null - row 5b-2015. Three
+        /// sheets of 4355-BHVD-3D-60P00-BL003A are all called "Unnamed", so on
+        /// Revit 2020, 2026-11-24, a name could not tell them apart and the
+        /// refusal offered "DrawingSheet: Unnamed" three times. A sheet number
+        /// is unique in a model, so it is what names a sheet: "A101", "Sheet
+        /// A101", or "Sheet A101 - Plans" as ViewLabel writes it - the part
+        /// after " - " must then be that sheet's name. Exact first, then any
+        /// case; two numbers matching only in any case is null, never a pick.
+        /// </summary>
+        internal static ViewSheet SheetNumbered(Document doc, string text)
+        {
+            var typed = (text ?? "").Trim();
+            var asked = typed;
+            if (asked.StartsWith("Sheet ", StringComparison.OrdinalIgnoreCase))
+                asked = asked.Substring(6).Trim();
+            if (asked.Length == 0) return null;
+
+            var sheets = new List<ViewSheet>();
+            foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(ViewSheet)))
+            {
+                var sheet = element as ViewSheet;
+                if (sheet != null) sheets.Add(sheet);
+            }
+
+            Func<string, ViewSheet> numbered = number =>
+            {
+                ViewSheet hit = null;
+                foreach (var sheet in sheets)
+                {
+                    string own;
+                    try { own = sheet.SheetNumber; } catch { continue; }
+                    if (string.Equals(own, number, StringComparison.Ordinal)) return sheet;
+                }
+                var anyCase = 0;
+                foreach (var sheet in sheets)
+                {
+                    string own;
+                    try { own = sheet.SheetNumber; } catch { continue; }
+                    if (!string.Equals(own, number, StringComparison.OrdinalIgnoreCase)) continue;
+                    anyCase++;
+                    hit = sheet;
+                }
+                return anyCase == 1 ? hit : null;
+            };
+
+            // A number that itself begins "Sheet " is read as typed first.
+            var whole = numbered(typed) ?? numbered(asked);
+            if (whole != null) return whole;
+
+            // "A101 - Plans": the number, then the name it must carry.
+            var dash = asked.IndexOf(" - ", StringComparison.Ordinal);
+            if (dash <= 0) return null;
+            var byNumber = numbered(asked.Substring(0, dash).Trim());
+            if (byNumber == null) return null;
+            string name;
+            try { name = byNumber.Name; } catch { return null; }
+            return string.Equals(name, asked.Substring(dash + 3).Trim(), StringComparison.OrdinalIgnoreCase)
+                ? byNumber : null;
+        }
+
+        /// <summary>
+        /// THE VIEW WHOSE ELEMENT ID TEXT IS, or null - row 5b-2015. Matched
+        /// as text against each view's own Id.ToString(), so no ElementId is
+        /// built from a number and 2024's 64-bit ids need nothing (D-05).
+        /// </summary>
+        internal static View ViewWithId(Document doc, string text)
+        {
+            var asked = (text ?? "").Trim();
+            if (asked.Length == 0) return null;
+            foreach (var c in asked) if (c < '0' || c > '9') return null;
+            foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(View)))
+            {
+                var view = element as View;
+                if (view != null && view.Id.ToString() == asked) return view;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// How a view is written so that it can be copied back and reach that
+        /// view alone - row 5b-2015. A sheet by its number and name, "Sheet
+        /// A101 - Plans", which SheetNumbered reads; anything else "FloorPlan:
+        /// Level 1", the way OneView and the picture tool already read it.
+        /// </summary>
+        internal static string ViewLabel(View view)
+        {
+            var sheet = view as ViewSheet;
+            string name;
+            try { name = view.Name; } catch { name = "(unreadable name)"; }
+            if (sheet != null)
+            {
+                string number;
+                try { number = sheet.SheetNumber; } catch { number = null; }
+                if (!string.IsNullOrEmpty(number)) return "Sheet " + number + " - " + name;
+            }
+            return view.ViewType + ": " + name;
+        }
+
+        /// <summary>
         /// One view, by name, or a refusal that says how to name it uniquely.
         ///
         /// A NAME THAT MATCHES TWICE IS NEVER CHOSEN FROM. Revit lets a floor
@@ -5788,6 +5887,11 @@ namespace Heron.Revit.Addin
         /// The refusal lists what is actually there, because a message telling
         /// somebody to be more specific without saying what the choices are
         /// makes them go and look it up.
+        ///
+        /// A SHEET ALSO ANSWERS TO ITS NUMBER, AND ANY VIEW TO ITS ELEMENT ID
+        /// (row 5b-2015), read only when no view carries the text as its name -
+        /// so every name that worked before reaches exactly what it reached.
+        /// Sheets that share a name are listed by number in the refusal.
         /// </summary>
         private static object OneView(Document doc, string text, out string problem)
         {
@@ -5812,9 +5916,17 @@ namespace Heron.Revit.Addin
                     if (narrowed.Count == 1) return narrowed[0];
                     if (narrowed.Count > 1)
                     {
+                        // Row 5b-2015: sheets sharing a name are told apart by
+                        // their numbers, which are unique.
+                        var numbered = new List<string>();
+                        foreach (var candidate in narrowed)
+                            if (candidate is ViewSheet) numbered.Add("\"" + ViewLabel(candidate) + "\"");
                         problem = narrowed.Count + " views in " + doc.Title + " are called \""
                                 + rest + "\" and are all " + kind + ", so even the type does "
-                                + "not say which is meant. Rename one.";
+                                + "not say which is meant. "
+                                + (numbered.Count == narrowed.Count
+                                      ? "Name the sheet by its number: " + string.Join(", or ", numbered.ToArray()) + "."
+                                      : "Rename one.");
                         return null;
                     }
                 }
@@ -5822,10 +5934,27 @@ namespace Heron.Revit.Addin
 
             if (found.Count == 0)
             {
+                // Row 5b-2015: no view by that name - a sheet's number, or a
+                // view's element id. Text that is both, for two different
+                // views, is refused rather than read as either.
+                var sheet = SheetNumbered(doc, text);
+                var byId = ViewWithId(doc, text);
+                if (sheet != null && byId != null && !sheet.Id.Equals(byId.Id))
+                {
+                    problem = "\"" + text + "\" is the number of " + ViewLabel(sheet)
+                            + " and the element id of " + ViewLabel(byId) + " in " + doc.Title
+                            + ", so it does not say which is meant. Write \"" + ViewLabel(sheet)
+                            + "\" for the sheet.";
+                    return null;
+                }
+                if (sheet != null) return sheet;
+                if (byId != null) return byId;
+
                 problem = "No view called \"" + text + "\" in " + doc.Title
                         + ". The name has to match the Project Browser exactly, capitals "
                         + "included. Two views may share a name, and then it is written "
-                        + "\"FloorPlan: L2\".";
+                        + "\"FloorPlan: L2\"; a sheet can be named by its number - \"A101\" "
+                        + "or \"Sheet A101 - Plans\" - and any view by its element id.";
                 return null;
             }
 
@@ -5834,7 +5963,9 @@ namespace Heron.Revit.Addin
             foreach (var view in found)
             {
                 if (view.IsTemplate) templates++;
-                var option = view.ViewType + ": " + text;
+                // Row 5b-2015: a sheet by its number, which is unique - three
+                // sheets called "Unnamed" were offered as one choice three times.
+                var option = view is ViewSheet ? ViewLabel(view) : view.ViewType + ": " + text;
                 if (!choices.Contains(option)) choices.Add(option);
             }
 

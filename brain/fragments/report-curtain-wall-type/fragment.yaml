@@ -1,15 +1,28 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-074
-semantic-identity: "the grid layout, spacing and mullion types a curtain wall type holds, each way"
+semantic-identity: "a curtain wall type's settings read back - grid layout and spacing, mullion types, Automatically Embed on or off, Join Condition"
 kind: action
 domain: revit.reporting
 capability: REPORT_CURTAIN_WALL_TYPE
-version: 1
+# VERSION 2 (2026-11-24) - AUTOMATICALLY EMBED AND JOIN CONDITION READ, and
+# back to DRAFT. Version 1 was PROVEN on 2026-10-18 (the proof block below,
+# kept as the record of what it proved); its C# changed, so it is DRAFT until
+# NEEDS-CHECKING Group QG is run (D-30). Why: a plain question - "is
+# automatically embed on for this curtain wall" - ranked the write
+# SET_CURTAIN_WALL_EMBED first on every routing backend, because no read card
+# held the words (FRAGMENT-ISSUES row 5b-2008, issue #1012; the owner chose
+# this widening, option (a), on 2026-11-24). The type's two Construction
+# settings are now read by id - ALLOW_AUTO_EMBED, and the Join Condition by
+# AUTO_JOIN_CONDITION_WALL, else AUTO_JOIN_CONDITION - and come back as
+# `automaticallyEmbed` and `joinCondition`, in `settings` and in `findings`.
+# A setting that cannot be read says NOT READ (D-52). The grid and mullion
+# reads are unchanged. Written in a cloud session with no Revit.
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -17,8 +30,19 @@ purpose: >
   Reads what a curtain wall TYPE is set to - for its Vertical Grid and its
   Horizontal Grid, the Layout, the Spacing in millimetres and Adjust for
   Mullion Size, and for its Vertical and Horizontal Mullions, the Interior,
-  Border 1 and Border 2 types by "Family: Type" name, or none - and how many
-  placed walls use the type. It changes nothing.
+  Border 1 and Border 2 types by "Family: Type" name, or none - its
+  Construction settings, whether Automatically Embed is ticked and the Join
+  Condition, and how many placed walls use the type. It changes nothing.
+
+  **AUTOMATICALLY EMBED IS A QUESTION, SO IT IS ANSWERED HERE.** "Is
+  automatically embed on for this curtain wall type" is read, never handed to
+  SET_CURTAIN_WALL_EMBED, which ticks the box (D-86). The box is read by its
+  id, ALLOW_AUTO_EMBED, and answered yes, no or NOT READ - a box that could
+  not be read is never reported as unticked (D-52). The Join Condition is
+  printed as Revit displays it, beside the number it holds and the id that
+  answered: Revit labels two ids "Join Condition", AUTO_JOIN_CONDITION_WALL
+  and AUTO_JOIN_CONDITION, and which one a curtain wall type carries is asked
+  of the type, _WALL first, rather than assumed.
 
   **IT EXISTS BECAUSE THE QUESTIONS WERE LANDING ON WRITES.** Measured through
   the host's own find on 2026-09-24: once SET_CURTAIN_WALL_GRID and
@@ -86,10 +110,21 @@ contract:
       # empty unless the assumption SET_CURTAIN_WALL_GRID writes on is wrong.
       role: result
       type: IList<string>
+    - name: automaticallyEmbed
+      # The type's Automatically Embed box: "yes", "no", or a line starting
+      # "NOT READ" saying why - never "no" for a box that was not read (D-52).
+      role: result
+      type: string
+    - name: joinCondition
+      # The type's Join Condition as Revit displays it, with the number it
+      # holds and the id that answered, or a line starting "NOT READ".
+      role: result
+      type: string
     - name: settings
       # EVERY SETTING READ, both directions, in words: layout (the enum's name,
       # Revit's number and Revit's display), spacing in millimetres, adjust for
-      # mullion size, and the three mullion types. A STRING, because a reply
+      # mullion size, and the three mullion types; then Automatically Embed and
+      # Join Condition. A STRING, because a reply
       # cuts a list to three items and this is the answer. Accounting: it is
       # what the two counts above count, and a refusal leaves it empty.
       role: accounting
@@ -163,13 +198,25 @@ compatibility-note: >
   CURTAINGRID_ADJUST_BORDER_VERT and _HORIZ as "Adjust for Mullion Size" among
   them - and `CurtainSystemType` as its own class, derived from
   HostObjAttributes and not from WallType, on all eight. No ElementId is
-  constructed and none is read as a number.
+  constructed and none is read as a number. Version 2 (2026-11-24): read the
+  same way with `tools/api-surface --members BuiltInParameter`,
+  ALLOW_AUTO_EMBED (-1001009), AUTO_JOIN_CONDITION_WALL (-1007395) and
+  AUTO_JOIN_CONDITION (-1007387) are on all eight releases; RevitAPI.xml (2024)
+  labels the first "Automatically Embed" and both others "Join Condition".
 
 # ROUTING - repeated in SET_CURTAIN_WALL_GRID and REPORT_CURTAIN_ELEMENTS.
 #
 #   "what is the grid spacing on this curtain wall"    -> here
 #   "which mullion type is on the curtain wall borders" -> here
 #   "show me the curtain wall type settings"           -> here
+#   "is automatically embed on for this curtain wall", "is automatically
+#    embed ticked on this curtain wall type", "what is the join condition
+#    of this curtain wall type"                        -> here, since version
+#                                            2 (row 5b-2008). A question never
+#                                            lands on a write (D-86)
+#   "tick automatically embed on this curtain wall type", "make this curtain
+#    wall embed in the brick wall"        -> SET_CURTAIN_WALL_EMBED. This one
+#                                            reads the box and changes nothing
 #   "set the curtain wall grid spacing"   -> SET_CURTAIN_WALL_GRID. This one
 #                                            reads the same settings and
 #                                            changes none
@@ -206,11 +253,18 @@ compatibility-note: >
 #                                            yet. A curtain system's type is not
 #                                            a wall type
 
+# THE RE-RANKER READS THE FIRST EIGHT (D-134), so version 2's embed
+# questions sit among them; the order moves nothing else.
 utterances:
   - what is the grid spacing on this curtain wall
-  - what grid layout does this curtain wall type have
+  - is automatically embed on for this curtain wall
   - which mullion type is on the curtain wall borders
-  - what spacing are the curtain grid lines
+  - is automatically embed ticked on this curtain wall type
   - show me the curtain wall type settings
+  - does this curtain wall type embed in the wall it is drawn in
+  - what grid layout does this curtain wall type have
+  - what is the join condition of this curtain wall type
+  - what spacing are the curtain grid lines
   - is this curtain wall fixed distance or maximum spacing
   - what mullions are on this curtain wall type
+  - does a curtain wall of this type cut the wall it is drawn in
