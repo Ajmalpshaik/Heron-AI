@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -139,38 +139,47 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: Project2 (3,027 elements), Revit 2020, session 13520
+  model: Night Rig 1124 (3,349 elements), Revit 2024, session 26904
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values. returned findings
-    3 item(s) [2 element(s) counted by room: 2 landed in one, 0 did not. Co...,   Room 1 1                                       1,   Room
-    2 2                                       1], groupCounts 2 item(s) [1, 1], groupFor Func`2,
-    groupNames 2 item(s) [Room 1 1, Room 2 2], includeLinks false, kind room, linkBlocked
-    , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedLanded 0, linkedMatches
-    1 item(s) [Host model only - links not read], linkedRooms 0 item(s), linkedRoomsFrom 0
-    item(s), linkedRoomsTo 0 item(s), linkedSkipped 0, linkedSpaces 0 item(s), linkedSpacesFrom
-    0 item(s), linkedSpacesTo 0 item(s), linkedTotal 0, linksSearched 0, nestedLinks 0, placed
-    2, pointOf Func`2, rooms 2 item(s) [Room 1, Room 2], skippedContainers 0, spaces 0 item(s),
-    unplaced 0. inputs came elements from the selection (2); containerKind as given; includeLinks
-    not given - false (optional). on Project2'
-  negative_case: 'run with categoryName=Furniture, containerKind=ZZZNOTHINGHERE, inViewOnly=FloorPlan:
+    filter-elements-by-category, set-selection with this phase''s own values. returned chooseAmong
+    Func`4, findings 2 item(s) [1 element(s) counted by room: 1 landed in one, 0 did not.
+    Co...,   Room 1                                         1], groupCounts 1 item(s) [1],
+    groupFor Func`2, groupNames 1 item(s) [Room 1], includeLinks false, kind room, labelOf
+    Func`2, linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s),
+    linkedLanded 0, linkedMatches 1 item(s) [Host model only - links not read], linkedRooms
+    0 item(s), linkedRoomsFrom 0 item(s), linkedRoomsTo 0 item(s), linkedSkipped 0, linkedSpaces
+    0 item(s), linkedSpacesFrom 0 item(s), linkedSpacesTo 0 item(s), linkedTotal 0, linksSearched
+    0, nestedLinks 0, notLoaded 0 item(s), otherStoreyOnly 0, placed 1, pointOf Func`2, rooms
+    1 item(s) [Room 1], skippedContainers 0, spaces 0 item(s), storeyCache 0 entry(ies), storeyElevationsIn
+    Func`2, storeyOf Func`2, tiesTakenFirst 0, tolerance 0.00328083989501312, unplaced 0.
+    inputs came elements from the selection (1); containerKind as given; includeLinks not
+    given - false (optional). on Night Rig 1124'
+  negative_case: 'run with categories=Generic Models, containerKind=ZZZNOTHINGHERE, inViewOnly=FloorPlan:
     Level 1 instead - chosen because it should not contain what this fragment reports - the
-    arrangement was re-made first by running select-by-category-name, set-selection with this
-    phase''s own values. returned findings 2 item(s) [0 element(s) counted by (nothing): 0
-    landed in one, 0 did no..., ''ZZZNOTHINGHERE'' is not a container this fragment knows.
-    It ...], groupCounts 0 item(s), groupFor Func`2, groupNames 0 item(s), includeLinks false,
-    kind zzznothinghere, linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes
-    0 item(s), linkedLanded 0, linkedMatches 1 item(s) [Host model only - links not read],
-    linkedRooms 0 item(s), linkedRoomsFrom 0 item(s), linkedRoomsTo 0 item(s), linkedSkipped
-    0, linkedSpaces 0 item(s), linkedSpacesFrom 0 item(s), linkedSpacesTo 0 item(s), linkedTotal
-    0, linksSearched 0, nestedLinks 0, placed 0, pointOf Func`2, rooms 0 item(s), skippedContainers
-    0, spaces 0 item(s), unplaced 0. inputs came elements from the selection (2); containerKind
-    as given; includeLinks not given - false (optional). on Project2'
+    arrangement was re-made first by running filter-elements-by-category, set-selection with
+    this phase''s own values. returned chooseAmong Func`4, findings 2 item(s) [0 element(s)
+    counted by (nothing): 0 landed in one, 0 did no..., ''ZZZNOTHINGHERE'' is not a container
+    this fragment knows. It ...], groupCounts 0 item(s), groupFor Func`2, groupNames 0 item(s),
+    includeLinks false, kind zzznothinghere, labelOf Func`2, linkBlocked , linkDocs 0 item(s),
+    linkPlacements 0 item(s), linkTypes 0 item(s), linkedLanded 0, linkedMatches 1 item(s)
+    [Host model only - links not read], linkedRooms 0 item(s), linkedRoomsFrom 0 item(s),
+    linkedRoomsTo 0 item(s), linkedSkipped 0, linkedSpaces 0 item(s), linkedSpacesFrom 0 item(s),
+    linkedSpacesTo 0 item(s), linkedTotal 0, linksSearched 0, nestedLinks 0, notLoaded 0 item(s),
+    otherStoreyOnly 0, placed 0, pointOf Func`2, rooms 0 item(s), skippedContainers 0, spaces
+    0 item(s), storeyCache 0 entry(ies), storeyElevationsIn Func`2, storeyOf Func`2, tiesTakenFirst
+    0, tolerance 0.00328083989501312, unplaced 0. inputs came elements from the selection
+    (1); containerKind as given; includeLinks not given - false (optional). on Night Rig 1124'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: f8e015f9c265cd01
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.3.0.0
+    addin_hash: b5c1b9426090689f
+  fingerprint: 5983ba94f24d994c
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

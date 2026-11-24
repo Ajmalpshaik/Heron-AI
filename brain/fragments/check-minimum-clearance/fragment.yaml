@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -215,62 +215,66 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
+  model: Night Rig 1124 (3,349 elements), Revit 2024, session 26904
   positive_case: run as it would normally be run - the arrangement was re-made first by running
     filter-elements-by-category with this phase's own values. returned MillimetresPerFoot
     304.8, assumeThicknessMm 0, assumedFeet 0, assumedJacket HashSet`1, axisGap Func`5, bareCount
-    10, buildingCategories 9 item(s) [OST_Walls, OST_Floors, OST_Roofs, ...], clearances 0
+    6, buildingCategories 9 item(s) [OST_Walls, OST_Floors, OST_Roofs, ...], clearances 0
     entry(ies), connectedTo Func`2, defaultClearance 16.4041994750656, describeLinked Func`3,
-    findings 46 item(s) [45 pair(s) too close of 45 checked, bare geometry. Distances...,   Mitered
-    Elbows / Taps (id 404243) to Mitered Elbows / Taps...,   Mitered Elbows / Taps (id 404243)
-    to Mitered Elbows / Taps..., ...], fireRatingOf Func`2, flagged HashSet`1, gapsMm 45 entry(ies),
-    ignoreConnected false, includeInsulation false, includeLinks false, insulatedCount 0,
-    insulationOn false, jacketCache 0 entry(ies), jacketOf Func`2, judgedBy 45 entry(ies),
+    findings 14 item(s) [13 pair(s) too close of 15 checked, bare geometry. Distances...,   Generic
+    - 200mm (id 352516) to Generic - 200mm (id 352517)...,   Generic - 200mm (id 352516) to
+    Generic - 200mm (id 352518)..., ...], fireRatingOf Func`2, flagged HashSet`1, gapsMm 13
+    entry(ies), ignoreConnected false, includeInsulation false, includeLinks false, insulatedCount
+    0, insulationOn false, jacketCache 0 entry(ies), jacketOf Func`2, judgedBy 13 entry(ies),
     linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches
     1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, maxRows
-    50, measurable HashSet`1, modelledInsulated HashSet`1, modelledJacketOf Func`2, nestedLinks
-    0, pairsChecked 45, pairsSeen HashSet`1, reach 16.4041994750656, rowLimit 50, rows 45
-    item(s) [  Mitered Elbows / Taps (id 404243) to Mitered Elbows / Taps...,   Mitered Elbows
-    / Taps (id 404243) to Mitered Elbows / Taps...,   Mitered Elbows / Taps (id 404243) to
-    Mitered Elbows / Taps..., ...], targetInfo 10 item(s) [[Autodesk.Revit.DB.Mechanical.Duct,
-    Autodesk.Revit.DB.Boundi..., [Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi...,
-    [Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi..., ...], targetJacket 10
-    entry(ies), tooClose 45 item(s) [404243 -> 411658, 404243 -> 411660, 404243 -> 411724,
-    ...], tooCloseIds 10 item(s) [404243, 411658, 411660, ...], violations 45, withoutBox
-    HashSet`1. inputs came elements from filter-elements-by-category (10); targets from filter-elements-by-category
-    as 'elements' (10); defaultClearance as given; rules as given (0); includeInsulation as
+    50, measurable HashSet`1, modelBox Func`2, modelledInsulated HashSet`1, modelledJacketOf
+    Func`2, nestedLinks 0, noModelGeometry HashSet`1, pairsChecked 15, pairsSeen HashSet`1,
+    reach 16.4041994750656, rowLimit 50, rows 13 item(s) [  Generic - 200mm (id 352516) to
+    Generic - 200mm (id 352517)...,   Generic - 200mm (id 352516) to Generic - 200mm (id 352518)...,   Generic
+    - 200mm (id 352516) to Generic - 200mm (id 352519)..., ...], targetInfo 6 item(s) [[Autodesk.Revit.DB.Wall,
+    Autodesk.Revit.DB.BoundingBoxXYZ], [Autodesk.Revit.DB.Wall, Autodesk.Revit.DB.BoundingBoxXYZ],
+    [Autodesk.Revit.DB.Wall, Autodesk.Revit.DB.BoundingBoxXYZ], ...], targetJacket 6 entry(ies),
+    tooClose 13 item(s) [352516 -> 352517, 352516 -> 352518, 352516 -> 352519, ...], tooCloseIds
+    6 item(s) [352516, 352517, 352518, ...], violations 13, withoutBox HashSet`1. inputs came
+    elements from filter-elements-by-category (6); targets from filter-elements-by-category
+    as 'elements' (6); defaultClearance as given; rules as given (0); includeInsulation as
     given; assumeThicknessMm not given - "0", the card's own default (optional); ignoreConnected
     not given - false (optional); maxRows not given - "50", the card's own default (optional);
-    includeLinks not given - false (optional). on P1102 MEP
-  negative_case: run with category=Sprinklers, defaultClearance=1, includeInsulation=False,
+    includeLinks not given - false (optional). on Night Rig 1124
+  negative_case: run with categories=Sheets, defaultClearance=5000, includeInsulation=False,
     rules= instead - chosen because it should not contain what this fragment reports - the
     arrangement was re-made first by running filter-elements-by-category with this phase's
     own values. returned MillimetresPerFoot 304.8, assumeThicknessMm 0, assumedFeet 0, assumedJacket
-    HashSet`1, axisGap Func`5, bareCount 6, buildingCategories 9 item(s) [OST_Walls, OST_Floors,
-    OST_Roofs, ...], clearances 0 entry(ies), connectedTo Func`2, defaultClearance 0.00328083989501312,
-    describeLinked Func`3, findings 1 item(s) [0 pair(s) too close of 15 checked, bare geometry.
-    Distances ...], fireRatingOf Func`2, flagged HashSet`1, gapsMm 0 entry(ies), ignoreConnected
-    false, includeInsulation false, includeLinks false, insulatedCount 0, insulationOn false,
-    jacketCache 0 entry(ies), jacketOf Func`2, judgedBy 0 entry(ies), linkBlocked , linkDocs
-    0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host
-    model only - links not read], linkedTotal 0, linksSearched 0, maxRows 50, measurable HashSet`1,
-    modelledInsulated HashSet`1, modelledJacketOf Func`2, nestedLinks 0, pairsChecked 15,
-    pairsSeen HashSet`1, reach 0.00328083989501312, rowLimit 50, rows 0 item(s), targetInfo
-    6 item(s) [[Autodesk.Revit.DB.FamilyInstance, Autodesk.Revit.DB.Boundin..., [Autodesk.Revit.DB.FamilyInstance,
-    Autodesk.Revit.DB.Boundin..., [Autodesk.Revit.DB.FamilyInstance, Autodesk.Revit.DB.Boundin...,
-    ...], targetJacket 6 entry(ies), tooClose 0 item(s), tooCloseIds 0 item(s), violations
-    0, withoutBox HashSet`1. inputs came elements from filter-elements-by-category (6); targets
-    from filter-elements-by-category as 'elements' (6); defaultClearance as given; rules as
+    HashSet`1, axisGap Func`5, bareCount 0, buildingCategories 9 item(s) [OST_Walls, OST_Floors,
+    OST_Roofs, ...], clearances 0 entry(ies), connectedTo Func`2, defaultClearance 16.4041994750656,
+    describeLinked Func`3, findings 2 item(s) [0 pair(s) too close of 0 checked, bare geometry.
+    Distances a..., Fewer than two measurable elements, so no pair could be comp...], fireRatingOf
+    Func`2, flagged HashSet`1, gapsMm 0 entry(ies), ignoreConnected false, includeInsulation
+    false, includeLinks false, insulatedCount 0, insulationOn false, jacketCache 0 entry(ies),
+    jacketOf Func`2, judgedBy 0 entry(ies), linkBlocked , linkDocs 0 item(s), linkPlacements
+    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
+    linkedTotal 0, linksSearched 0, maxRows 50, measurable HashSet`1, modelBox Func`2, modelledInsulated
+    HashSet`1, modelledJacketOf Func`2, nestedLinks 0, noModelGeometry HashSet`1, pairsChecked
+    0, pairsSeen HashSet`1, reach 16.4041994750656, rowLimit 50, rows 0 item(s), targetInfo
+    0 item(s), targetJacket 0 entry(ies), tooClose 0 item(s), tooCloseIds 0 item(s), violations
+    0, withoutBox HashSet`1. inputs came elements from filter-elements-by-category (0); targets
+    from filter-elements-by-category as 'elements' (0); defaultClearance as given; rules as
     given (0); includeInsulation as given; assumeThicknessMm not given - "0", the card's own
     default (optional); ignoreConnected not given - false (optional); maxRows not given -
     "50", the card's own default (optional); includeLinks not given - false (optional). on
-    P1102 MEP
+    Night Rig 1124
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 594b5a5d7a33c398
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.3.0.0
+    addin_hash: b5c1b9426090689f
+  fingerprint: d20d8c893ef5c6ee
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
