@@ -105,6 +105,9 @@ compatibility-note: >
 #   "change the mullions on this curtain
 #    wall type"                               -> SET_CURTAIN_WALL_GRID
 #   "move this mullion"                       -> MOVE_CURTAIN_GRID_LINE
+#   "delete this mullion"                     -> DELETE_ELEMENTS. MEASURED
+#                                                2026-11-24 RANKING HERE on all
+#                                                four backends - row 5b-2008
 #   "which mullions are joined on this
 #    curtain wall"                            -> a question, never this write
 #                                                (D-86); nothing reads a join yet
