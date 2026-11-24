@@ -1,0 +1,71 @@
+# Re-proving ten STALE cards - the family half, run 2026-11-24 on Revit 2024
+# (build 24.3.50.51, add-in 0.2.0.0, session 11112).
+# RESULT ON THAT RUN: PASS on all three jobs below, both halves, rolled back.
+# That PC ran the 2026-11-22 Heron. On origin/main of 2026-11-24
+# report-family-forms and create-family-forms were re-proved on 2026-11-23
+# (ALREADY), and link-family-parameter's code moved to version 7, so its run
+# here (version 5) must be run again. save-document matches main's code.
+#
+#     python tools/batch-prove.py tools/jobs/prove-ten-stale-chair-revit2024-2026-11-24.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/prove-ten-stale-chair-revit2024-2026-11-24.yaml --session <pid>
+#
+# THE MODEL: in Snowdon Towers Sample Architectural, OPEN_FAMILY_FOR_EDITING
+# familyName=Chair-Breuer, saveFolder=<a scratch folder> writes and opens
+# Chair-Breuer.rfa: 5 solid forms (2 extrusions, 3 sweeps), no voids, material
+# parameters Seat/Back Material and Tubing Material. The seat extrusion's id
+# below is that copy's unique id - read it again with report-family-forms on
+# another PC, it may differ.
+#
+# save-document is PUBLISH, so no batch sends it. It was proved by name, with
+# Snowdon as the working document and one unsaved edit made in Chair-Breuer
+# first (a first run with no edit saved nothing - saveAsked false - and is NOT
+# evidence):
+#     python mcp/client/heron_bridge_client.py validate --session <pid>
+#       --in "Snowdon Towers Sample Architectural"
+#       --out brain/proof-drafts/runs/save-document.json --allow-publish --write
+#       --set "documentPath=<folder>\Chair-Breuer.rfa" --set closeWindow=false --set saveAsPath=
+#       --negative-set "documentPath=C:\nope\heron-missing-1124.rfa"
+#       --negative-set closeWindow=false --negative-set saveAsPath= save-document
+#     (one command, on one line)
+# Positive saveAsked true, the file's time moved; negative refused, no document
+# is saved at that path.
+
+model: "Chair-Breuer (a copy written by OPEN_FAMILY_FOR_EDITING from Snowdon Towers Sample Architectural to %TEMP%\\heron-work\\prove-1124; 5 solid forms, 0 voids, material parameters Seat/Back Material and Tubing Material), Revit 2024, session 11112"
+
+defaults:
+  in: "Chair-Breuer"
+  setup: []
+
+jobs:
+  - fragment: report-family-forms
+    expect: formCount
+    set: {which: "solid"}
+    negative-set: {which: "void"}
+    note: >
+      Positive formCount 5 (2 extrusions, 3 sweeps). Negative - the family has
+      no voids: formCount 0, never the solids as a fallback.
+
+  - fragment: create-family-forms
+    write: true
+    expect: formCount
+    set:
+      forms: "kind=extrusion workPlane=Ref. Level profile=0,0; 600,0; 600,200; 200,200; 200,500; 0,500 startMm=0 endMm=100 solid=true"
+    negative-set:
+      forms: "kind=extrusion workPlane=Ref. Level profile=0,0; 400,400; 400,0; 0,200 startMm=0 endMm=100 solid=true"
+    note: >
+      Positive formCount 1, an L-shaped extrusion. Negative the figure-of-eight:
+      refused before anything is made, the profile crosses itself, formCount 0.
+
+  - fragment: link-family-parameter
+    write: true
+    expect: changed
+    set:
+      forms: "70a7f7c9-f2e8-467c-8846-12812aafb947-001b0311"
+      links: "Material=Tubing Material"
+    negative-set:
+      forms: "70a7f7c9-f2e8-467c-8846-12812aafb947-001b0311"
+      links: "Material=Heron No Such Parameter 1124"
+    note: >
+      The seat extrusion re-linked from its own material to Tubing Material:
+      changed 1. Negative - a parameter the family has not got: refused,
+      changed 0, nothing linked.
