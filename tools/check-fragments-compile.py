@@ -145,6 +145,12 @@ USINGS = [
     # by `var` (REPORT_MATERIAL_TEXTURES) was the way round it until a
     # fragment had to WRITE one. A promise the executor must keep too.
     "Autodesk.Revit.DB.Visual",
+    # Point clouds - the filter a linked scan's points are read through. Added
+    # 2026-11-25 for PROPOSE_LEVELS_FROM_POINT_CLOUD: the points themselves are
+    # reached by `var`, but a filter is made only by the static factory class
+    # in this namespace, and no other route builds one. A promise the executor
+    # must keep too.
+    "Autodesk.Revit.DB.PointClouds",
 ]
 
 CSPROJ = """<Project Sdk="Microsoft.NET.Sdk">

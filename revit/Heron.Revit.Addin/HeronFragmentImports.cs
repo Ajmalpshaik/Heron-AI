@@ -72,6 +72,11 @@ namespace Heron.Revit.Addin
             // rendering draw a material with (D-146). Editing one needs its
             // edit scope, which lives nowhere else.
             "Autodesk.Revit.DB.Visual",
+
+            // Point clouds - a linked scan's points are read through a filter,
+            // and only the static factory in this namespace makes one
+            // (PROPOSE_LEVELS_FROM_POINT_CLOUD, 2026-11-25).
+            "Autodesk.Revit.DB.PointClouds",
         };
     }
 }
