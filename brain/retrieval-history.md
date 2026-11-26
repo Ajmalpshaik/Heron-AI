@@ -1611,7 +1611,7 @@ descriptions after about half his questions found no right tool. **Utterances on
 identity, purpose, contract or `impl/` - each a general modeller line that pairs a job's verb with the
 set, colour, size or category said beside it; none is one of his 79, a plain question or a suite
 sentence, and none is another live card's. Measured in a cloud container (no Revit), `main` `b83b30db`
-against the branch, 754 cards, every run on a store of its own built fresh: `lexical`, and `model`
+(and again on `35cd59e0` after merging it, every figure the same) against the branch, 754 cards, every run on a store of its own built fresh: `lexical`, and `model`
 (model2vec, `minishlab/potion-base-8M`, no re-ranker).
 
 | | `lexical`, main -> branch | `model`, main -> branch |
