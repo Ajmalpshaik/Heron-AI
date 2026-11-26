@@ -765,6 +765,8 @@ namespace Heron.Revit.Addin
             // Read from the switch alone, never from the request (Golden Rule 19).
             var asksInRevit = HeronPermissions.AsksInRevit();
             var deletedUnasked = 0;
+            // ROW 5b-1992: what a preview would delete, said on its reply.
+            List<ElementId> deleteAhead = null;
             var keptUnasked = false;
 
             // Said in the question, not decided by it: what a publish sent out
@@ -1291,7 +1293,8 @@ namespace Heron.Revit.Addin
                     var deleteRefused = DeleteGate(app, target, name, request, apply || asking,
                                                    asksInRevit, sendsOut, changed, described,
                                                    footprint, group, watch, ref confirmed,
-                                                   out deleteAgain, out deletedUnasked);
+                                                   out deleteAgain, out deletedUnasked,
+                                                   out deleteAhead);
                     if (deleteRefused != null) return deleteRefused;
                     if (deleteAgain)
                     {
@@ -1498,6 +1501,8 @@ namespace Heron.Revit.Addin
             // D-197: WHAT ASK TO DELETE OFF LET THROUGH, said on the reply - a
             // delete Revit did not ask about, and a DRAFT's run nobody looked at.
             if (deletedUnasked > 0 && apply) verdict = WithDeleteUnasked(verdict, deletedUnasked);
+            if (deleteAhead != null && !apply)
+                verdict = WithDeleteAhead(verdict, target, deleteAhead, asksInRevit);
             if (keptUnasked) verdict = WithUnasked(verdict, apply && groupKept);
             if (keptUnderGrant != null) return WithGrant(verdict, keptUnderGrant);
             return answered != null ? WithAnswer(verdict, answered, refreshed) : verdict;
