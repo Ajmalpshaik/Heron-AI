@@ -192,3 +192,7 @@ utterances:
   - zoom in on what you found
   - take me to that element
   - select and show me these
+  # ADDED 2026-11-26, row 5b-2046: zoom to one element reached
+  # ZOOM_TO_LINKED_ELEMENTS.
+  - zoom to it
+  - zoom to that one

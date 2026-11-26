@@ -429,3 +429,15 @@ utterances:
   - make a wall material takeoff with material name, area and volume
   - create a material takeoff schedule for floors
   - material takeoff of all the concrete
+  # ADDED 2026-11-26, row 5b-2046: a schedule of one MEP category, with fields
+  # named or copied from another schedule, reached ADD_FAMILY_PARAMETERS,
+  # CONNECT_AIR_TERMINALS and CREATE_VIEW_FILTER; every line above named a sheet
+  # list, a key schedule or a takeoff.
+  - make a mechanical equipment schedule
+  - create a pipe accessory schedule with these fields
+  - make a schedule of this category with these parameters
+  - make another schedule like this one for a different category
+  # ADDED 2026-11-26, row 5b-2046: the same, said of MEP terminals and
+  # equipment.
+  - make a schedule of the diffusers and grilles
+  - create an equipment schedule with these fields

@@ -236,3 +236,10 @@ utterances:
   # 5b-1944 it took that place and the re-ranker chose ADD_CURTAIN_GRID_LINES.
   # A move from one height to another is this card's, by a distance.
   - move all these units from one height up to another
+  # ADDED 2026-11-26, row 5b-2046: a move from one height to another, or
+  # towards a wall or a door, reached CREATE_FROM_ROOM_BOUNDARIES,
+  # REPORT_DOOR_ROOM_LINKS and DIMENSION_ROOMS.
+  - move these units from one elevation to another
+  - move it towards the door side of the room
+  - move the unit to the middle between two walls
+  - move all of these up to a new height

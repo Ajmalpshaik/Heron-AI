@@ -482,3 +482,7 @@ utterances:
   # write) or REPORT_TEXT_TYPES; a note's text is the parameter it reads. At the END, so the eight the
   # re-ranker reads (D-134) are unchanged.
   - read the text of these notes
+  # ADDED 2026-11-26, row 5b-2046: checking a text parameter such as
+  # Description reached SET_MEP_JUSTIFICATION and SET_DUCT_LINING, writes.
+  - check the description on these
+  - what does the description parameter say

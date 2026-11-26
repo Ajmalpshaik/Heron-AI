@@ -307,3 +307,7 @@ utterances:
 # its two looks from colours and greys EVERY OTHER element in the view, where
 # this applies one prepared override to the set and leaves the rest alone. It
 # stays its own card: five owner answer keys and mep-grayout.yaml name it.
+  # ADDED 2026-11-26, row 5b-2046: one set of ducts given an RGB colour in a
+  # named view reached AUTO_SIZE_MEP and GROUP_AND_COUNT.
+  - change these to an RGB colour in this view
+  - give the ducts of one size a colour in this view and leave the rest

@@ -299,3 +299,7 @@ utterances:
   # many diffusers are there in the model?" from 4th to 5th on the trained
   # backend. FILTER_ELEMENTS_IN_ROOM, a read, answers it today.
   - count these by zone
+  # ADDED 2026-11-26, row 5b-2046: a count inside one space reached
+  # READ_SPACE_LOADS and COUNT_ELEMENTS.
+  - how many are inside this space
+  - how many of these are in the biggest room

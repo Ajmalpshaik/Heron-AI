@@ -108,3 +108,9 @@ utterances:
   # on any frozen set became riskier (retrieval-history.md, 2026-10-17).
   - what type is this wall
   - what category is this family
+  # ADDED 2026-11-26, row 5b-2046: a list of family and type names for a set
+  # reached SELECT_TYPES, CHECK_CATEGORY_MISMATCH and writes.
+  - list the family names of these
+  - give me the family name and type name of each one
+  - which families are these
+  - show the family and type of every selected element

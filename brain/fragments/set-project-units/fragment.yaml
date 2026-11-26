@@ -180,3 +180,8 @@ utterances:
   # flag, and the second once the first was declared.
   - change the project units to imperial
   - set cooling load to Btu/h
+  # ADDED 2026-11-26, row 5b-2046: an instruction to show loads and airflow in
+  # other units sits between READ_SPACE_LOADS, REPORT_PROJECT_UNITS and this
+  # card on the model; these say show beside a unit.
+  - show the loads in kW instead of watts
+  - make the loads show in Btu/h

@@ -169,3 +169,15 @@ utterances:
   - add up the areas per system
   - what is the total per type
   - a bill of quantities for these
+  # ADDED 2026-11-26, row 5b-2046: the largest size, and a report of the sizes,
+  # reached EDIT_MEP_SIZES and SET_MEP_SIZE, writes.
+  - what is the biggest size here
+  - which size is the biggest one in the model
+  - report the sizes by width
+  # ADDED 2026-11-26, row 5b-2046: the largest and the smallest of the sizes in
+  # use reached EDIT_MEP_SIZES and REPORT_DUCT_CONDUIT_SIZES, which edits or
+  # lists the sizes set up in the project, not the sizes modelled.
+  - the smallest and largest sizes of the ducts in the model
+  - biggest and smallest pipe size used
+  - which duct sizes are used in this model
+  - list the duct sizes in use, largest first

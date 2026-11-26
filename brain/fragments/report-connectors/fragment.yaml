@@ -381,3 +381,12 @@ utterances:
   - which connectors on this unit are not used
   - does the duct match the equipment connection
   - check the equipment connectors
+  # ADDED 2026-11-26, row 5b-2046: the shape of the connectors on placed
+  # accessories, and whether a run is open at an end, reached
+  # SET_FAMILY_CONNECTOR_ROLES, CHECK_FLOW_DIRECTION and TRACE_CONNECTIVITY.
+  - which of these have round connectors
+  - check the connector shape on these
+  - is this connected at both ends or open
+  # ADDED 2026-11-26, row 5b-2046: the same, said of accessories.
+  - are any of the accessories round
+  - is this duct open at the end

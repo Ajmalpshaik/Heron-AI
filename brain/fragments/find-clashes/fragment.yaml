@@ -399,3 +399,7 @@ utterances:
   - what penetrates this wall
   # ...and its semantic identity, which nothing else declares:
   - what is physically overlapping this one element
+  # ADDED 2026-11-26, row 5b-2046: overlap with the ceiling, and clashes inside
+  # the model only, reached MEASURE_CEILING_HEIGHT.
+  - are the ducts hitting the ceiling
+  - clashes inside this model only, not the links
