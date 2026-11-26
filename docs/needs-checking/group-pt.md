@@ -34,7 +34,7 @@ as the row was seen: `python mcp/client/heron_bridge_client.py fragment set-fami
 | ~~**PT1**~~ | *The row's own text, quoted.* `--set "typeName=Type 1" --set "values=Filter_Efficiency=\"92-94 % (EN 779 mod.), 70 % ASHRAE 52/76; design 81 % / 91 %\"; Filter_Cell=Bag, G4"`. Open Family Types. | Kept. `written` reads back `Filter_Efficiency` as `92-94 % (EN 779 mod.), 70 % ASHRAE 52/76; design 81 % / 91 %` - the semicolon kept, no quote marks - and `Filter_Cell` as `Bag, G4`. Family Types shows the same. One Ctrl+Z takes both back. |
 | ~~**PT2**~~ | *Negative: the same text unquoted, then a quote never closed.* `--set "values=Filter_Efficiency=70 % ASHRAE 52/76; design 81 % / 91 %"`, then `--set "values=Filter_Efficiency=\"92 %; design 81 %; Filter_Cell=G4"`. | Both refused `[bad_request_value]`, nothing written, the type unchanged. The first: *"design 81 % / 91 %" is not an entry for 'values' ... A value that holds a semicolon goes in double quotes*. The second: *'Filter_Efficiency' in 'values' opens a double quote and never closes it*. |
 | ~~**PT3**~~ | *An unquoted list is as it was.* `--set "values=Width=600; Filter_Cell=G4"`. | Kept, exactly as before this change: `Width = 600` mm and `Filter_Cell = G4`. |
-| **PT4** | *Spaces and a quote inside - owed AGAIN on `set-family-type-values` version 7 (row [5b-2050](../fragment-issues/row-5b-2050.md) fixed 2026-11-26).* `--set "values=Filter_Cell=\" G4 - \\\"bag\\\" \""` (the value as Heron receives it: `Filter_Cell=" G4 - \"bag\" "`); then on a family with two types `--set "typeName=all" --set "values=Filter_Cell=\" a; b \""`; then, unquoted, `--set "values=Filter_Cell=   G4   "`. | `Filter_Cell` reads back ` G4 - "bag" ` - the leading and trailing space kept, the two inner quote marks written as quote marks - and both types read ` a; b `, the answer's `route` recorded. The unquoted one reads `G4`, trimmed as before. **If Revit itself drops a space at the ends**, the call fails *Not every value held what was asked for*, nothing kept: record that as what Revit does, not a pass - it is then a new row, never a reason to trim again. |
+| ~~**PT4**~~ | *Spaces and a quote inside - owed AGAIN on `set-family-type-values` version 7 (row [5b-2050](../fragment-issues/row-5b-2050.md) fixed 2026-11-26).* `--set "values=Filter_Cell=\" G4 - \\\"bag\\\" \""` (the value as Heron receives it: `Filter_Cell=" G4 - \"bag\" "`); then on a family with two types `--set "typeName=all" --set "values=Filter_Cell=\" a; b \""`; then, unquoted, `--set "values=Filter_Cell=   G4   "`. | `Filter_Cell` reads back ` G4 - "bag" ` - the leading and trailing space kept, the two inner quote marks written as quote marks - and both types read ` a; b `, the answer's `route` recorded. The unquoted one reads `G4`, trimmed as before. **If Revit itself drops a space at the ends**, the call fails *Not every value held what was asked for*, nothing kept: record that as what Revit does, not a pass - it is then a new row, never a reason to trim again. |
 | **PT5** | *Every type, text holding a `;`.* `--set "typeName=all" --set "values=Filter_Efficiency=\"a; b\""`. | Kept in one change, and both types read back `a; b`. The answer's `route` says which way was taken. If it is *"no type made current"*, Revit took a `;` inside a formula's string - record that; if it is *"each type made current in turn"*, record the reason the answer gives. Either is a pass if both types read `a; b`. |
 
 ### Results, 2026-11-26 - Revit 2020, session 32484, add-in 0.3.0.0 (file `df0d401c52ca05f4`, built from main `e8c3be150`)
@@ -63,3 +63,17 @@ text, line for line as version 6. Compiled for Revit 2020 to 2027 (`tools/check-
 has run it. **Owed:** PT4 again, as its line above now says, and PT5 on a family with two types - both on version 7.
 The card's own Number of Poles proof (issue [#1372](https://github.com/Ajmalpshaik/Heron-AI/issues/1372)) is run
 again on version 7 at the same sitting, then the card is signed once.
+
+### Results, later 2026-11-26 - version 7, Revit 2020, session 32484, add-in file `df0d401c52ca05f4`
+
+Run from this pull request's head `01c699827`, on the same scratch `pt-ahu`, rolled back.
+
+| Row | Result |
+|---|---|
+| PT4, run again 2026-11-26 on version 7 | **PASS** - `Keynote=" G4 - \"bag\" "` read back *Keynote = " G4 - "bag" "*: both outer spaces kept and both inner quote marks written - Revit itself keeps the spaces. A quoted value of three spaces read back as three spaces. An UNQUOTED `Keynote=  G4  ` still read back *"G4"*, trimmed as before; PT1 and PT3 read back exactly as in the version 6 run. |
+| PT5 | Still owed on a family with two types - `pt-ahu` has one. |
+
+**Signed 2026-11-26 by Ajmal PS** (his typed word in chat, "Yes, sign it"; signature put on by the session):
+`set-family-type-values` version 7, card PROVEN - on the Number of Poles proof job
+[`poles-1372-revit2020-2026-11-26.yaml`](../../tools/jobs/poles-1372-revit2020-2026-11-26.yaml) run on this version
+(3 written and read back, 7 refused, nothing written).
