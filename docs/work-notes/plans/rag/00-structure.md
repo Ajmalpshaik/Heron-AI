@@ -5,7 +5,8 @@
 > [DECISIONS.md](../../../DECISIONS.md), **those win and this note is out of date.**
 > **Status:** **Active — the shape is decided, and parts of it are built since:** Stages 1 and 2 in
 > `brain/heron_ingest.py`, Stage 6's `--refresh` in `brain/heron_embed.py`, Stage 7 in
-> `brain/heron_rerank.py` ([brain/README](../../../../brain/README.md)). Which requirements are done is
+> `brain/heron_rerank.py` until [D-201](../../../decisions/D-201.md) removed it on 2026-11-26
+> ([brain/README](../../../../brain/README.md)). Which requirements are done is
 > [01 §6](01-requirements.md)'s state column. Opened 2026-09-10.
 > **Owner:** Ajmal PS. **Decided by him, 2026-09-10:** all six structural questions are in scope.
 > **This note does not write a decision into [DECISIONS.md](../../../DECISIONS.md).** A work note does
@@ -235,7 +236,8 @@ because the test asserted the arithmetic rather than the intention. **Two of the
 [`05 §4.4`](../../../05-heron-brain.md) names do not exist at all** — nothing records success rate,
 nothing records recency of use.
 
-**And since 2026-09-11, the seam.** [`brain/heron_rerank.py`](../../../../brain/heron_rerank.py) bounds
+**And since 2026-09-11, the seam** - removed with the re-ranker on 2026-11-26,
+[D-201](../../../decisions/D-201.md). `brain/heron_rerank.py` bounded
 the re-rank to twenty pairs in one place, carries the cross-encoder's opinion **beside** the fused score
 rather than inside it, and reports `absent` on every machine without one — which at the time of writing
 is every machine this repository has ever run on. **No cross-encoder has run**: the weights need

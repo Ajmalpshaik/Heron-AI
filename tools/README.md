@@ -623,13 +623,12 @@ card's words. **`--sentences`** asks a frozen set instead of the two above, and 
 
 - **`--tree`** measures another checkout, such as a detached worktree of main, with **that tree's own
   search code** over a store built from its cards. Default: this checkout.
-- **`--backend`** is `lexical`, `model`, `lexical+rerank`, `model+rerank`, `all`, or `installed` (the
+- **`--backend`** is `lexical`, `model`, `all`, or `installed` (the
   default: whatever answers, named by what answered). **Each backend is asked in a process of its own on a
   scratch store**, so a backend is never mixed with another, and the store every chat reads is never
   touched. A backend this machine has not got is **NOT ASKED** and named; the others still run.
 - **Every answer carries the backends that produced it**, and a run whose answers ran on anything else —
-  the trained model asked for and lexical answering, a re-ranker on a run asked for without one (row 481),
-  a shortlist of two or more the cross-encoder did not re-read — is refused: **not written with `--out`,
+  the trained model asked for and lexical answering (row 481) — is refused: **not written with `--out`,
   and not compared when it is read back**.
 - **Every run says which cards it was asked on** (`Cards:`, a fingerprint of every file under
   `brain/fragments`, kept in the record as each run's `cards`), and a run whose cards changed while it was
@@ -640,21 +639,13 @@ card's words. **`--sentences`** asks a frozen set instead of the two above, and 
 - **`--compare`** lists every sentence whose answer changed against an earlier record, per backend,
   tagged **want**, **bad** or **neutral**, with the questions reaching a write and the wanted answers
   reached, before and after. Sentences are matched by their words, so a set that grew still compares.
-- **`--shortlists`** records, per sentence, the shortlist the re-ranker read — at most its top 20, with
-  each passage, its fused score and its cross-encoder score. No hook in `heron_retrieve`: the tool wraps
-  its `_rerank` from outside, so it works on a main older than this tool too.
-- **`--identities <file> --card <CAPABILITY>`** is the fast loop: one candidate identity per line,
-  re-scored **offline** with `heron_rerank` on those shortlists, **one line per candidate** — wanted
-  sentences won, bad ones taken (questions counted apart), neutral ones taken. `--from` names the record;
-  without it, the shortlists just taken. A sentence answered by an exact phrase never reaches the
-  re-ranker and is skipped; one whose shortlist did not hold the card is **out of reach** — a new identity
-  moves the words and nearness routes too, so only a full run settles it. It needs a cross-encoder on
-  this machine and refuses without one.
+- `--shortlists`, `--identities`, `--card` and `--from` - recording the shortlist a cross-encoder read
+  and re-scoring candidate identities on it offline, and the `+rerank` backends - went with the
+  re-ranker on 2026-11-26 ([D-201](../docs/decisions/D-201.md)).
 
 **It exits 0 whatever it finds** (D-100); exit 2 when nothing was measured, the set is malformed, or a
-record would be written on the wrong backend. The code and its tests need no model. A run with the
-cross-encoder needs `sentence-transformers` and huggingface.co once for the weights
-([`heron_rerank.py`](../brain/heron_rerank.py)).
+record would be written on the wrong backend. The code and its tests need no model. A run on `model`
+needs model2vec and huggingface.co once for the weights ([`heron_embed.py`](../brain/heron_embed.py)).
 
 ---
 
@@ -1877,8 +1868,8 @@ declared** — the diff outranks the label. Touching a fragment owes a run again
 `semantic-identity`, `utterances`, `purpose`, `domain` or a YAML comment moved, and nothing else in that
 fragment's folder did, the signal is `fragment-routing` - it owes `check-routing` and `check-intrusion`,
 not a Revit run, because Revit reads none of that text and D-30's fingerprint covers `impl/` alone.
-`purpose` is prose, and counts as routing because the lookup indexes it; `domain` is the re-ranker's
-and a lookup's filter, so a wrong one can hide a card - `check-routing` measures that, a Revit run
+`purpose` is prose, and counts as routing because the lookup indexes it; `domain` is indexed by the
+words route and is a lookup's filter, so a wrong one can hide a card - `check-routing` measures that, a Revit run
 cannot (added on the owner's word, 2026-10-17). Any other key - contract,
 risk, revit, runtime, status, proof, capability - or anything under `impl/` or `tests/`, or a card that
 is new or will not parse, keeps `fragment-behaviour`. [Row 5b-862](../docs/FRAGMENT-ISSUES.md).
@@ -2033,7 +2024,7 @@ correct; silent degradation plus an install list nobody can follow is how a pers
 backend believing they are on the better one.**
 
 **It does not install anything.** Saying so is better than a tool that half-installs. Every size it
-prints is read from the code that owns the download - `heron_rerank.SIZE`, `heron_embed.SIZE`,
+prints is read from the code that owns the download - `heron_embed.SIZE`,
 `heron_ingest.PDF_READER_SIZE` - never typed in it.
 
 ## `heron-ready.py` — a new PC made as quick as the old one, before the first chat

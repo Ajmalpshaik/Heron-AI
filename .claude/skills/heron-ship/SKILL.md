@@ -207,8 +207,9 @@ Python would put every other suite on a backend CI does not use. Measured 2026-1
 both installs above: this one and `test_bridge_roundtrip.py`, its host not yet built, were the only
 suites waiting. **Where the system Python already has model2vec it runs, and a red there may be the
 machine:** measured 2026-11-12 in a cloud container with model2vec and no re-ranker installed, it failed 8
-checks - the same 8 on `origin/main` at `c65509a9`, so not the branch's change. That is the model
-alone, where the PC ranks `model+rerank` (§3a): run it on main's tree before reading such a red as yours.
+checks - the same 8 on `origin/main` at `c65509a9`, so not the branch's change. Since D-201 removed the
+re-ranker (2026-11-26) the PC ranks on the model alone too, so those reds are the PC's as well - card
+wording, owed in their rows: run it on main's tree before reading such a red as yours.
 
 **Derive which ones, rather than reading a list here** — the same rule as the suite total four lines
 up, and for the same reason it is written twice:
@@ -276,7 +277,7 @@ again on the venv, where an exit 3 fails the job. "They drag in native dependenc
 measured that day rather than repeated: the lock installs on Linux from wheels alone, in seconds. The job
 still **fails the build if a suite on its not-runnable list runs there after all**, so a suite that
 starts running comes off that list in the same change - which today holds `test_routing_phrases.py`
-alone, for the re-ranker.
+alone, for its reds on the model (row 5b-1882).
 
 **Nothing else should fail on any machine.** `test_graph.py` and `test_reachable.py` were on this list
 until 2026-09-12, when both were fixed rather than excused — each had a fixture describing a repository
@@ -468,35 +469,28 @@ say every capability is still reachable; **what moved, sentence by sentence, is
 ```bash
 WORK="$(mktemp -d)"     # rough work goes outside Heron's folder, never beside it (AGENTS.md); s.yaml goes here
 git worktree add --detach "$WORK/main-wt" origin/main
-python tools/score-routing.py --sentences "$WORK/s.yaml" --tree "$WORK/main-wt" --backend all --shortlists --out "$WORK/main.json"
+python tools/score-routing.py --sentences "$WORK/s.yaml" --tree "$WORK/main-wt" --backend all --out "$WORK/main.json"
 python tools/score-routing.py --sentences "$WORK/s.yaml" --backend all --compare "$WORK/main.json"
 git worktree remove "$WORK/main-wt"
 ```
 
 - **Freeze the sentences before you edit the card**, each with `want <CAPABILITY>`, `not-a-write` or
   `neutral`. A set written after the edit measures the edit's own words back.
-- **Name the backend.** Four were measured in row 485: `lexical` (CI's), `model`, and each `+rerank` -
-  the owner's PC is `model+rerank`. A backend this machine has not got is **NOT ASKED**, which is
-  **NOT RUN**, never a pass: a cloud container usually has `lexical` alone. Leave the others to the PC,
-  and say so - or, where PyPI and huggingface.co answer, put them in a **venv of their own** and run the
-  tool with its Python (each backend's process uses the same one). Measured 2026-10-17: all four in
-  about 8 minutes and 5.8 GB, PyPI's CUDA torch because download.pytorch.org was refused. **Never in
-  the system Python:** `heron_embed` falls back to sentence-transformers when model2vec is missing, so
-  every suite would then run on a backend CI does not.
-- **The venv needs the weights too: `python brain/heron_rerank.py --fetch --yes` with its Python, once.**
-  Until then the re-ranker is `absent`. `score-routing` refuses `model+rerank` (NOT ASKED), but
-  `tests/test_routing_phrases.py` and `tests/test_retrieve.py` run on the model alone and do not say so -
-  measured 2026-10-29, when the first "re-ranker" run of a session was not one (row 5b-1293).
-- **The re-ranker reads a card's identity and its first eight utterances (D-134); the order of utterances
-  moves nothing else.** So a misroute only the re-ranker makes is tried by reordering first: an identity
-  is read by all three routes, and rewording one can fix the re-ranker and break the model (row 5b-1293).
-- **A refused run is the point, not a nuisance.** Row 481's "both backends" were both re-ranked, found
-  later. The tool now refuses to write, or to compare against, a run whose answers ran on another backend.
+- **Name the backend.** Two: `lexical` (CI's) and `model` - the owner's PC is `model`. (Row 485
+  measured each with `+rerank` too, until D-201 removed the re-ranker on 2026-11-26.) A backend this
+  machine has not got is **NOT ASKED**, which is **NOT RUN**, never a pass: a cloud container usually
+  has `lexical` alone. Leave the model to the PC, and say so - or, where PyPI and huggingface.co answer,
+  put model2vec in a **venv of its own** and run the tool with its Python (each backend's process uses
+  the same one). **Never in the system Python:** every suite would then run on a backend CI does not.
+- **The order of a card's utterances moves nothing.** It did while the re-ranker read a card's identity
+  and its first eight (D-134, superseded by D-201); the words and nearness routes read them all.
+- **A refused run is the point, not a nuisance.** Row 481's "both backends" were not the backends asked
+  for, found later. The tool refuses to write, or to compare against, a run whose answers ran on
+  another backend.
 - **Every `bad` line is a finding to report**, and it exits 0 (D-100). Never reword a sentence to buy it
   back.
-- **Trying wordings for an identity?** `--identities "$WORK/ids.txt" --card NAME --from "$WORK/main.json"` re-scores
-  them offline on the recorded shortlists, one line per wording. It is a screen: build the winner in full,
-  on both trees, before you claim it.
+- **Trying wordings for an identity?** Build each in full and run `--sentences` on it. The offline
+  re-scoring screen (`--identities`) went with the re-ranker it re-scored for (D-201).
 
 ## 4. The one that exits 1 on purpose
 
