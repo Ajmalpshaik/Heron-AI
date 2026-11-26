@@ -22,8 +22,10 @@ THE ORDER MATTERS AND IT IS NOT NEGOTIABLE
   3. Reciprocal rank fusion, to make one list out of two.
   4. A small quality nudge, which may settle a near-tie and may not overturn a
      clearly better match.
-     Nothing re-orders the list after this: the optional second reader that
-     did was removed by D-201, measured as no clear gain over the model alone.
+     One thing re-orders the list after this, and only inside that same
+     near-tie: a card that changes nothing goes ahead of a write the status
+     nudge alone could have put first (D-205, prefer_unchanging). The optional
+     second reader that re-ordered it wholesale was removed by D-201.
   5. SAY HOW CONTESTED THE RESULT WAS. Stages 1 to 4 already compute every
      number this needs and used to throw all of them away, so a coin toss and
      a clear winner came back wearing the same face. See Contest.
@@ -160,6 +162,9 @@ class Candidate(object):
         # D-191: the clause's counts from heron_usage, when the modeller has
         # ever said it helped - {offered, helped, last_helped}. None otherwise.
         self.usage = None
+        # D-205: the id of the write this card was put first ahead of, by
+        # prefer_unchanging(). None on every card it did not move.
+        self.put_ahead_of = None
 
     @property
     def score(self):
@@ -556,8 +561,37 @@ def ran(ranked):
 # Stages 2 to 4 - two searches, fused, then nudged
 # ---------------------------------------------------------------------------
 
+def prefer_unchanging(ranked, safe):
+    """`ranked`, with a near-tied card that changes nothing put first - D-205.
+
+    `safe` is the highest risk that leaves the model unchanged, a word on the
+    ladder, given by the caller from the tool registry (Golden Rule 19) -
+    heron_brain passes question_ceiling(). None changes nothing.
+
+    When the winner is above `safe` and a card at or below it scores within
+    QUALITY_SPAN of the winner - a gap the status nudge alone could have
+    made, so the routes did not prefer the write - that card goes first and
+    the rest keep their order. It reads the declared risks and the scores,
+    never the request's words: whether the user asked a question is the
+    host's call (D-01), and with the host's `question` flag every write is
+    already left out (D-128). The margin is derived, never typed; the owner
+    chose it over one whole rank, which cost a change request of his its
+    first place. The card moved records what it was put ahead of.
+    """
+    if (safe is None or len(ranked) < 2
+            or not above_ceiling(ranked[0].row["risk"], safe)):
+        return ranked
+    for i, got in enumerate(ranked[1:], 1):
+        if ranked[0].score - got.score >= QUALITY_SPAN:
+            break
+        if not above_ceiling(got.row["risk"], safe):
+            got.put_ahead_of = ranked[0].id
+            return [got] + ranked[:i] + ranked[i + 1:]
+    return ranked
+
+
 def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
-             pool=20, ceiling=None):
+             pool=20, ceiling=None, safe=None):
     """The full stack. Returns (candidates, excluded).
 
     `pool` is how deep each route is asked before fusing - docs/05 s4's "top
@@ -567,6 +601,7 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
     that is invisible if nearness is only asked for three.
 
     `ceiling` is eligible()'s: a question's risk ceiling, or None (D-128).
+    `safe` is prefer_unchanging()'s, or None (D-205).
     """
     allowed, excluded = eligible(store, revit, domain, kind, ceiling=ceiling)
     if not allowed:
@@ -645,7 +680,7 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
                                    c.keyword_rank if c.keyword_rank else 999,
                                    c.id))
 
-    return ranked[:limit], excluded
+    return prefer_unchanging(ranked, safe)[:limit], excluded
 
 
 # ---------------------------------------------------------------------------
@@ -1066,7 +1101,7 @@ def librarian(text, scopes=None, project=None, limit=5, project_name=None):
     return out
 
 
-def find(store, text, revit=None, limit=5, ceiling=None):
+def find(store, text, revit=None, limit=5, ceiling=None, safe=None):
     """What the rest of Heron calls. Identity and cache first, then the stack.
 
     Steps 9's two one-lookup routes still come first and still mean what they
@@ -1083,6 +1118,9 @@ def find(store, text, revit=None, limit=5, ceiling=None):
     words of a question is still a write, so under a ceiling it falls through
     to the ranked search over what is left - and if nothing below the ceiling
     matches, the answer is "nothing", which is the honest one.
+
+    `safe` is prefer_unchanging()'s (D-205): given, a ranked card that changes
+    nothing goes first on a near-tie with a write, and the note says so.
     """
     SEARCH.ensure_tables(store)
     allowed, _ = eligible(store, revit, ceiling=ceiling)
@@ -1107,7 +1145,7 @@ def find(store, text, revit=None, limit=5, ceiling=None):
 
     pool = 20
     ranked, excluded = retrieve(store, text, revit=revit, limit=limit, pool=pool,
-                                ceiling=ceiling)
+                                ceiling=ceiling, safe=safe)
     if not ranked:
         note = "nothing matched"
         blocked = [e for e in excluded if "Revit" in e.reason]
@@ -1123,6 +1161,10 @@ def find(store, text, revit=None, limit=5, ceiling=None):
 
     best = ranked[0]
     note = "%d candidate(s); best found by %s" % (len(ranked), best.why())
+    if best.put_ahead_of:
+        note += (". Put first ahead of %s, which changes the model and was "
+                 "within what the status nudge alone could move (D-205)"
+                 % best.put_ahead_of)
 
     # A candidate no route agreed on is a WEAK match, and saying so costs
     # nothing while staying silent costs the user a wrong turn.
