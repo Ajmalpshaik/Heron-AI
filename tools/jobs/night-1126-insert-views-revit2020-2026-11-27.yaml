@@ -1,0 +1,13 @@
+# 2026-11-27, Revit 2020 - INSERT_VIEWS_FROM_FILE into "Night Rig 1126" from "Night OU21.rvt" (a new DefaultMetric
+# project made tonight, holding a kept drafting view "OU21 Draft" (create-drafting-view, PROVEN), saved and its
+# window closed). Negative: "Level 1", a floor plan in that file - not a drafting view or legend. ROLLED BACK.
+model: "Night Rig 1126 (scratch copy of the Revit 2020 MEP sample), Revit 2020"
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+jobs:
+  - fragment: insert-views-from-file
+    write: true
+    expect: newViews
+    set: {filePath: "C:/Users/ajmal/AppData/Local/Temp/heron-work/night-1126/model/Night OU21.rvt", viewNames: "OU21 Draft", into: ""}
+    negative-set: {filePath: "C:/Users/ajmal/AppData/Local/Temp/heron-work/night-1126/model/Night OU21.rvt", viewNames: "Level 1", into: ""}
