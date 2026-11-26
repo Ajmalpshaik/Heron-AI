@@ -53,7 +53,7 @@ runs - expected, NOT RUN. Every line below with `HERON_CLIENT_ID=ajmal-pc`, `--s
 | **JW9** | *Taken out while still joined.* After JW2, in the same rolled-back group, `read-mep-system` on the duct feeding a terminal taken out | **Record** whether the terminal stays off the system, and the duct's system name. A terminal Revit puts back on its own makes `changed` count it as taken out when it is not - the read-back is immediate |
 | **JW10** | *The base equipment.* The system's base equipment selected, `edit=remove`, the system named | `changed` 0, named as the base equipment and left |
 | **JW11** | *Kept, through `try-once`, on the modeller's yes.* Remove, as JW2, on a saved copy | Keep: the System Browser lists the system without those terminals; then `read-mep-system` on them finds no system - the second route |
-| **JW12** | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The four sentences reach this card by identity, and *"make a supply air system from these"* reaches `CREATE_MEP_SYSTEM`. Any sentence the re-ranker moves to this card from another is a row of its own |
+| ~~**JW12**~~ | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The four sentences reach this card by identity, and *"make a supply air system from these"* reaches `CREATE_MEP_SYSTEM`. Any sentence the re-ranker moves to this card from another is a row of its own **CLOSED 2026-11-26** - [D-201](../decisions/D-201.md) (2026-11-26) removed the `+rerank` backends, so the run this row asked for on `model+rerank` can no longer be made anywhere, and the owner's PC now ranks on `model`. The run on `model` that answers its look-for is on record in the routing paragraph below, measured 2026-11-01 in a cloud container; it was not made again on 2026-11-26, and this is not a run on the PC. |
 
 **Then sign**, on the owner's word only: `python brain/heron_validate.py accept edit-mep-system --by
 "Ajmal PS"` once its positive and negative pass - **and, since 2026-11-04, [Group JV](group-jv.md)'s
@@ -63,7 +63,7 @@ piping half below is version 1 to the word - and `heron-status` set to PROVEN in
 row that fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here. The four sentences above reach this card
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on. The four sentences above reach this card
 by identity. *"add this diffuser to the existing supply system"* and *"remove these air terminals from
 the system"* reach it ranked; on the same tree without it they reached `CREATE_MEP_SYSTEM` and
 `CONNECT_AIR_TERMINALS`. *"take these sprinklers off the system"* still reaches `REPORT_SPRINKLER_NETWORK`,

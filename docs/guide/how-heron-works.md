@@ -22,7 +22,7 @@ flowchart TD
     CC["<b>Claude Code</b> — the host<br/>works out what you meant"]
     MS["<b>Heron MCP server</b> — Python<br/>the tools · finds the capability"]
     BR["<b>Heron Brain</b> — Python<br/>fragments · skills · knowledge · calculations"]
-    SR["<b>Search</b> — finds the capability<br/>word match · built in, always on<br/><i>model2vec</i> — reads meaning · optional<br/><i>re-ranker</i> — a second read · optional"]
+    SR["<b>Search</b> — finds the capability<br/>word match · built in, always on<br/><i>model2vec</i> — reads meaning · optional"]
     AD["<b>Heron Revit add-in</b> — C#<br/>compiles and runs the fragment<br/>a change: one named TransactionGroup"]
     RV[("<b>Revit</b><br/>2020 → latest")]
     CP["<b>Heron Companion</b><br/>a page beside Revit<br/>live view · editable tables"]
@@ -64,7 +64,7 @@ Claude Code           host: works out what the modeller meant (D-01)
 Heron MCP server      Python: the tools, finds the capability  <->  Heron Brain: fragments, skills,
      |  named pipe, this PC only                                      knowledge, calculations
      |                                                                Search: word match (built in),
-     |                                                                model2vec, re-ranker (optional)
+     |                                                                model2vec (optional)
 Heron Revit add-in    C#: compiles and runs the fragment; a change runs in one named TransactionGroup
      |  ExternalEvent, Revit's main thread
 Revit                 2020 -> latest
@@ -149,13 +149,12 @@ Cloud session            Claude Code -> Heron (library tools only, no revit_ too
 |---|---|---|
 | **Word match** | Matches letters and words | Built in, always runs |
 | **model2vec** | Reads meaning — *"stop the air going the wrong way"* can reach the flow-direction check without sharing a word with it | Optional |
-| **Re-ranker** | Gives the top picks a second, slower read | Optional |
-
-Without the two add-ons Heron falls back to the word match, and **every answer says which search ran**.
-Measured on 2026-09-24, model2vec found more of the owner's questions; the re-ranker was worse at
-picking tools and is the largest download in Heron.
-[WHAT-TO-INSTALL §2](../WHAT-TO-INSTALL.md#2-optional--the-two-search-add-ons) has the figures and how to
-install or remove either.
+Without model2vec Heron uses the word match, and **every answer says which search ran**. Measured on
+2026-11-26 at 753 fragments, neither was clearly better on the owner's questions, so model2vec stays
+optional. A third level, a **re-ranker** that gave the top picks a second, slower read, was removed on
+2026-11-26 ([D-201](../decisions/D-201.md)): no clear gain, and the largest download Heron had.
+[WHAT-TO-INSTALL §2](../WHAT-TO-INSTALL.md#2-optional--the-trained-search-model) has the figures and how
+to install or remove model2vec.
 
 ## Go deeper
 

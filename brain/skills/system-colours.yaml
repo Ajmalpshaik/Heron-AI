@@ -215,8 +215,8 @@ purpose: >
 # that set, bar the few the plain questions hold; measured on review,
 # 2026-11-12, every live card's capability name as the request, the same
 # backend, on the branch with main merged in: none changed for this method.
-# NOT MEASURED AT ALL: the spelling backend CI uses, and the re-ranker the
-# owner's PC has.
+# NOT MEASURED AT ALL: the spelling backend CI uses. (The re-ranker the
+# owner's PC had then was removed on 2026-11-26, D-201.)
 utterances:
   - colour code the services, one colour for each system
   - give every system its own colour and put the same on the other drawings

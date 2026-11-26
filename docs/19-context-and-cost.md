@@ -215,7 +215,7 @@ flowchart TD
     RUN["<b>Runs in this one call</b> — no model call<br/>only a PROVEN fragment, with every value given"]
     C{{"3 · Were these words resolved before?"}}
     CAND["<b>A candidate, never a decision</b> — D-61"]
-    S["<b>4 · Word match and meaning, fused</b><br/>meaning when model2vec is installed<br/>the re-ranker re-reads the top 20, when installed"]
+    S["<b>4 · Word match and meaning, fused</b><br/>meaning when model2vec is installed"]
     H(["<b>Back to the host</b><br/>ranked candidates, each with what it needs<br/>the host chooses or asks — D-01, D-58"])
 
     W --> F --> I
@@ -251,8 +251,7 @@ The modeller's words, passed on by the host
 3. These words resolved before?
      yes -> a candidate, never a decision (D-61) -> back to the host
      no  -> 4
-4. Word match and meaning, fused (meaning when model2vec is installed);
-   the re-ranker re-reads the top 20, when installed -> back to the host
+4. Word match and meaning, fused (meaning when model2vec is installed) -> back to the host
 Back to the host: ranked candidates, each with what it needs; the host chooses or asks (D-01, D-58)
 ```
 

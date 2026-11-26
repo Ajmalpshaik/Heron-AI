@@ -3907,7 +3907,7 @@ async def exercise_lookup_says(module):
 
     # THE RUNNERS-UP CARRY THE SAME THREE, AND NOTHING MOVED. D-01: which one
     # the user meant is the host's to decide; D-65 and D-100: no status, risk
-    # or door re-ranks, hides or floors a candidate - it only shows more.
+    # or door re-orders, hides or floors a candidate - it only shows more.
     said, found = await lookup("make the pipes slope down to the drain")
     order = [found.get("capability")]
     for one in found.get("candidates") or []:

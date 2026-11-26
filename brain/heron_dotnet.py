@@ -627,6 +627,10 @@ check.__doc__ = check.__doc__ % THE_GATE
 
 
 def main(argv):
+    # Rows 5b-2041 to 5b-2044: print safely on a cp1252 console.
+    import heron_console
+    heron_console.safe_streams()
+
     print("DOTNET COMPATIBILITY   what a build would need, before it starts")
     print("=" * 72)
 

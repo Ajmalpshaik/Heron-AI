@@ -928,38 +928,6 @@ def main():
                 check(offered[:1] == ["builders-work-layout"],
                       "and the live lookup names it first too - %s" % offered)
 
-            # AND WHERE A RE-RANKER READS - row 5b-1032. The two live checks
-            # above passed on the spelling backend and the trained one, and
-            # failed on the owner's PC: the cross-encoder reads a card's
-            # identity and its first eight utterances (D-134), and
-            # CREATE_LINEAR_DIMENSION declared its builders work phrase
-            # twelfth, so the card fell out of the five and nothing linked the
-            # method. CI has no re-ranker, so this builds the passage one is
-            # given - as heron_search.index stores it - rather than ranking it.
-            import heron_fragment as FRAG
-            import heron_rerank as RERANK
-            import heron_retrieve as RETRIEVE
-            passage = getattr(RETRIEVE, "_fragment_passage", None)
-            capped = getattr(RERANK, "passage_said", None)
-            check(passage is not None and capped is not None,
-                  "heron_retrieve and heron_rerank still say what a re-ranker "
-                  "reads of a card")
-            wanted = set(SKILL.load_all()[0]["builders-work-layout"].needs())
-            told = []
-            for card in (FRAG.load_all()[0].values()
-                         if passage and capped else []):
-                if card.data.get("capability") not in wanted:
-                    continue
-                row = {"semantic_identity": card.data.get("semantic-identity"),
-                       "capability": card.data.get("capability"),
-                       "domain": card.data.get("domain")}
-                read = RETRIEVE.Candidate(card.data.get("id"), row)
-                read.said = capped(card.utterances())
-                if "builders work" in passage(read).lower():
-                    told.append(row["capability"])
-            check(told, "a capability the builders work method needs says "
-                        "\"builders work\" where a re-ranker reads - %s" % told)
-
             layout = BRAIN.method("builders-work-layout")
             # Read as words: a step's own lines keep their breaks in the YAML.
             steps = " ".join((layout or {}).get("purpose", "").split())
@@ -1186,8 +1154,8 @@ def main():
                   "assume which one a new project starts on (row 5b-1653)")
 
             # THEIR WORDS. The capabilities are the ones the live lookup
-            # returned for each sentence on 2026-11-12 (the trained encoder,
-            # no re-ranker); only the skills decide here, so this holds on
+            # returned for each sentence on 2026-11-12 (the trained encoder);
+            # only the skills decide here, so this holds on
             # any backend. The first three are each method's own sentence.
             # The other four are what the first wording cost and the words
             # were changed to give back: a QUESTION that named no method
