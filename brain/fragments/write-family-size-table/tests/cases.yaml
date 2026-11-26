@@ -4,7 +4,7 @@
 # Revit names an imported table after the CSV FILE, so a file named anything
 # other than the table creates a SECOND table and leaves the first untouched -
 # and the answer reads "imported true" either way. Measured on 2026-09-16:
-# TRG_Union_Copper__Unione.csv reported 9 rows before and 9 after while the
+# ABC_Union_Copper__Unione.csv reported 9 rows before and 9 after while the
 # table it was meant to correct never changed.
 
 positive:

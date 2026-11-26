@@ -124,7 +124,7 @@ purpose: >
        by its exact name, "from <material>" to copy a good look onto many, or
        generic with matchShading so the render keeps the colour the modeller
        chose.
-     - No suitable material yet: CREATE_STARTER_MATERIALS adds the TRG_
+     - No suitable material yet: CREATE_STARTER_MATERIALS adds the ABC_
        starter set - clear glass, stainless and galvanised steel, brushed
        aluminium, smooth concrete, white painted plaster, grey floor tile,
        oak, carpet, ceiling tile, galvanised duct, copper pipe - each with a

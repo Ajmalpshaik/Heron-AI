@@ -1763,3 +1763,7 @@ Step 6 is finished, and not before. At that point:
 ## 2026-09-22 — ONE DOWNLOAD, BOTH DOORS, AND AN UPDATE CHECK THAT ONLY CHECKS
 
 **Its own file:** [`needs-checking/group-af.md`](needs-checking/group-af.md)
+
+## Group RB - no office's name built into Heron: starter materials with no default prefix, and two material refusals and the view-filter refusals with a neutral example - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-rb.md`](needs-checking/group-rb.md)

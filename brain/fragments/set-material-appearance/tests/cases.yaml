@@ -5,9 +5,9 @@ positive:
   - given: >
       the Group IA duct heater family copy, whose materials CREATE_MATERIAL
       made with shading colours and no appearance asset; materialsNamed
-      "TRG_*", matchShading true
+      "ABC_*", matchShading true
     expect: >
-      every TRG material holds an appearance asset named after it, assetsMade
+      every ABC material holds an appearance asset named after it, assetsMade
       one per material, each asset's Generic colour equal to that material's
       shading colour; a Realistic view (EXPORT_VIEW_IMAGE) draws the family in
       those colours, not flat dark grey

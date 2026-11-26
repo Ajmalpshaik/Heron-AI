@@ -147,7 +147,7 @@ Func<Parameter, bool> isYesNo = p =>
 //
 // A parameter that holds another element - a Material, a Level, a type - was
 // refused or handed to SetValueString, which takes no name: on Revit 2020 a
-// column type's Material was refused 'TRG_Material_Teak_Wood' that way, and a
+// column type's Material was refused 'ABC_Material_Teak_Wood' that way, and a
 // mullion type's Material before it. So a NAME is now looked up, exactly:
 // a material and a level by Name, a family type as "Family: Type", the way
 // Properties shows it. Matching none, or two, is refused by name - never

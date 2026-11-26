@@ -91,7 +91,7 @@ purpose: >
 # words above are kept short on purpose - a purpose's words move routing.
 #
 # VERSION 3 - FRAGMENT-ISSUES 5b-1335. Seen 2026-10-24 on Revit 2020: the
-# work-plane-based nested family 'TRG_Duct Accessory_Damper Quadrant Handle',
+# work-plane-based nested family 'ABC_Duct Accessory_Damper Quadrant Handle',
 # placed by PLACE_NESTED_FAMILY on a front reference plane made by
 # CREATE_REFERENCE_PLANES - every plane it makes has normal +Y - came in on
 # the front (-Y) side facing inward and upside down. ROTATE_ELEMENTS_ABOUT_AXIS
