@@ -852,6 +852,12 @@ def write_snapshot(path):
 
 
 def main(argv):
+    # Row 5b-2044: print safely on a cp1252 console. A stream
+    # that cannot be reconfigured - a test's StringIO - is left as it is.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
     check_only = "--check" in argv
     if "-h" in argv or "--help" in argv:
         print(__doc__)
