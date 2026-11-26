@@ -6,7 +6,7 @@
 
 **Every tool Heron has for Revit, by job** - what each one does, how you reach it, what it needs, what you get, and on which Revit releases it is built and proved. It is written by a script from Heron's own tool cards, so no count or status on these pages is typed by a person.
 
-Heron holds **619 live tools**: **492 are usable in a chat**, 43 are not proved yet but run because they change nothing in the model, and 84 are refused until they are proved. 135 retired tools are left out - each one's card names the tool that replaced it.
+Heron holds **619 live tools**: **497 are usable in a chat**, 42 are not proved yet but run because they change nothing in the model, and 80 are refused until they are proved. 135 retired tools are left out - each one's card names the tool that replaced it.
 
 ## How you reach a tool
 
@@ -62,16 +62,16 @@ Heron starts with every switch off, so it only reads until you turn **Changes** 
 |---|---|---|---|---|
 | [Annotation - tags, dimensions and text](tool-catalogue/annotation.md) | 35 | 27 | 1 | 7 |
 | [Export and print](tool-catalogue/export.md) | 8 | 6 | 0 | 2 |
-| [Families](tool-catalogue/families.md) | 55 | 44 | 1 | 10 |
-| [Finding and selecting](tool-catalogue/selection.md) | 25 | 22 | 3 | 0 |
+| [Families](tool-catalogue/families.md) | 55 | 48 | 1 | 6 |
+| [Finding and selecting](tool-catalogue/selection.md) | 25 | 23 | 2 | 0 |
 | [Geometry and placement](tool-catalogue/geometry.md) | 34 | 27 | 4 | 3 |
 | [Levels and grids](tool-catalogue/datums.md) | 9 | 7 | 2 | 0 |
-| [MEP - ducts, pipes, systems and equipment](tool-catalogue/mep.md) | 84 | 58 | 9 | 17 |
+| [MEP - ducts, pipes, systems and equipment](tool-catalogue/mep.md) | 84 | 59 | 8 | 17 |
 | [Model checks](tool-catalogue/model-checks.md) | 32 | 26 | 6 | 0 |
 | [Model elements and types](tool-catalogue/elements.md) | 125 | 98 | 7 | 20 |
 | [Parameters](tool-catalogue/parameters.md) | 17 | 14 | 0 | 3 |
 | [Phases](tool-catalogue/phases.md) | 3 | 3 | 0 | 0 |
-| [Reports](tool-catalogue/reports.md) | 11 | 11 | 0 | 0 |
+| [Reports](tool-catalogue/reports.md) | 11 | 10 | 1 | 0 |
 | [Rooms, spaces and areas](tool-catalogue/rooms.md) | 9 | 8 | 0 | 1 |
 | [Schedules](tool-catalogue/schedules.md) | 12 | 12 | 0 | 0 |
 | [Sheets and title blocks](tool-catalogue/sheets.md) | 28 | 27 | 0 | 1 |

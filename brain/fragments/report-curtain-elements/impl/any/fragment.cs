@@ -1,7 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `elements` and `toleranceMm` are in scope;
-// leaves `findings`, `curtainWallsFound`, `panelCount`, `mullionCount`,
-// `emptyCells`, `notCurtain`, `differentPanelSizes`, `panelSizes` and
-// `sizesNotRead` behind.
+// leaves `findings`, `curtainWallsFound`, `curtainSystemsFound`, `panelCount`,
+// `mullionCount`, `emptyCells`, `notCurtain`, `differentPanelSizes`,
+// `panelSizes` and `sizesNotRead` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -67,9 +67,38 @@
 //   the last line groups every sized cell of every wall handed in together, so
 //   a size shared by two walls is ONE size there. `differentPanelSizes` and
 //   `panelSizes` are that across-the-walls answer.
+//
+// VERSION 3 (2026-11-26, row 5b-2028) - A CURTAIN SYSTEM IS READ TOO. A
+// curtain system made By Face on a mass is not a Wall, so version 2 put it in
+// notCurtain as "not a wall" - and a question about its panels reached tools
+// that CHANGE curtain panels instead, for want of a read that knew it.
+//
+//   ONE GRID PER FACE. A curtain system holds one CurtainGrid for each face it
+//   was made on (`CurtainSystem.CurtainGrids`), and each is read exactly as a
+//   curtain wall's one grid is - panels, basic-wall cells, empty cells,
+//   mullions by type, grid lines, panel sizes - under its own heading,
+//   "'<name>' (id N), curtain system face 1 of 3:". The counts and sizes join
+//   the walls' in the same totals.
+//
+//   A WALL READS AS IT DID. Every line version 2 wrote for a curtain wall is
+//   written in the same words and order; the opening line and the last line
+//   name curtain systems only when one was handed in, so a run on walls alone
+//   answers exactly as version 2 did. An element that is neither a wall nor a
+//   curtain system is still named in notCurtain, now "is not a wall or a
+//   curtain system".
+//
+//   ASSUMPTION for the proof (NEEDS-CHECKING Group QU): that
+//   `CurtainSystem.CurtainGrids` gives one grid per face on Revit 2020 to the
+//   latest, and that a grid's GetPanelIds and GetMullionIds behave as a
+//   curtain wall's do. A system whose grids Revit will not give is said so in
+//   findings, never counted as empty.
 
 var findings = new List<string>();
 var curtainWallsFound = 0;
+// VERSION 3 - curtain systems read, and their face grids. The size of the
+// sweep, never a panel found (D-52).
+var curtainSystemsFound = 0;
+var systemGrids = 0;
 var panelCount = 0;
 var mullionCount = 0;
 var emptyCells = 0;
@@ -178,29 +207,12 @@ Func<List<Tuple<double, double, string>>, List<string>> groupSizes = measured =>
 var allSized = new List<Tuple<double, double, string>>();
 var allUnsized = 0;
 
-foreach (var element in elements)
+// VERSION 3 - ONE CURTAIN GRID, read the way version 2 read a curtain wall's:
+// a curtain wall's one grid, or one face's grid of a curtain system. `heading`
+// is the block's first line; `owner` and `ownerId` name it in sizesNotRead.
+Action<string, string, ElementId, CurtainGrid> readGrid = (heading, owner, ownerId, grid) =>
 {
-    var wall = element as Wall;
-    if (wall == null)
-    {
-        notCurtain.Add(string.Format("'{0}' is not a wall",
-            element == null ? "(nothing)" : element.Name));
-        continue;
-    }
-
-    CurtainGrid grid = null;
-    try { grid = wall.CurtainGrid; }
-    catch (Exception) { grid = null; }
-
-    if (grid == null)
-    {
-        notCurtain.Add(string.Format("'{0}' is a wall but not a CURTAIN wall - its build-up is "
-            + "layers, not panels", wall.Name));
-        continue;
-    }
-
-    curtainWallsFound++;
-    findings.Add(string.Format("'{0}' (id {1}):", wall.Name, wall.Id));
+    findings.Add(heading);
 
     // Panels. Both curtain panels and basic walls used as infill.
     var realPanels = 0;
@@ -238,7 +250,7 @@ foreach (var element in elements)
             try { cellName = cell.Name; } catch (Exception) { cellName = ""; }
             sizesNotRead.Add(string.Format("'{0}' (id {1}): cell {2}{3}{4} - Revit gives it no {5}, "
                 + "so it is in no size",
-                wall.Name, wall.Id, cell.Id,
+                owner, ownerId, cell.Id,
                 string.IsNullOrEmpty(kind) ? "" : ", " + kind,
                 string.IsNullOrEmpty(cellName) ? "" : " '" + cellName + "'",
                 !width.HasValue && !height.HasValue ? "panel Width or Height"
@@ -317,7 +329,7 @@ foreach (var element in elements)
     catch (Exception) { }
 
     // VERSION 2 - this wall's panel sizes, the last line of its block.
-    if (!toleranceUsable) continue;
+    if (!toleranceUsable) return;
     allSized.AddRange(thisSized);
     allUnsized += thisUnsized;
 
@@ -343,16 +355,84 @@ foreach (var element in elements)
         findings.Add(string.Format("    panel sizes, width x height within {0} mm: {1} - {2}{3}",
             sayMm(tolerance), sizes.Count, string.Join(", ", sizes), leftOutText));
     }
+};
+
+foreach (var element in elements)
+{
+    // VERSION 3 - a curtain system: each face's grid, read as a wall's grid is.
+    var system = element as CurtainSystem;
+    if (system != null)
+    {
+        var grids = new List<CurtainGrid>();
+        string gridsWhy = null;
+        try
+        {
+            var set = system.CurtainGrids;
+            if (set != null)
+                foreach (CurtainGrid one in set)
+                    if (one != null) grids.Add(one);
+        }
+        catch (Exception ex) { gridsWhy = ex.Message; }
+
+        curtainSystemsFound++;
+        if (gridsWhy != null || grids.Count == 0)
+        {
+            findings.Add(string.Format("'{0}' (id {1}), a curtain system: its grids could not be read - {2}",
+                system.Name, system.Id, gridsWhy ?? "Revit gave none"));
+            continue;
+        }
+        for (var face = 0; face < grids.Count; face++)
+        {
+            systemGrids++;
+            readGrid(string.Format("'{0}' (id {1}), curtain system face {2} of {3}:",
+                system.Name, system.Id, face + 1, grids.Count),
+                system.Name, system.Id, grids[face]);
+        }
+        continue;
+    }
+
+    var wall = element as Wall;
+    if (wall == null)
+    {
+        notCurtain.Add(string.Format("'{0}' is not a wall or a curtain system",
+            element == null ? "(nothing)" : element.Name));
+        continue;
+    }
+
+    CurtainGrid grid = null;
+    try { grid = wall.CurtainGrid; }
+    catch (Exception) { grid = null; }
+
+    if (grid == null)
+    {
+        notCurtain.Add(string.Format("'{0}' is a wall but not a CURTAIN wall - its build-up is "
+            + "layers, not panels", wall.Name));
+        continue;
+    }
+
+    curtainWallsFound++;
+    readGrid(string.Format("'{0}' (id {1}):", wall.Name, wall.Id), wall.Name, wall.Id, grid);
 }
 
-findings.Insert(0, string.Format("{0} curtain wall(s): {1} panel cell(s), {2} mullion(s), {3} empty "
-    + "cell(s). {4} of what was handed in was not a curtain wall",
-    curtainWallsFound, panelCount, mullionCount, emptyCells, notCurtain.Count));
+// VERSION 3 - curtain systems are named only when one was handed in, so a run
+// on walls alone opens exactly as version 2 did.
+var readWhat = curtainSystemsFound == 0
+    ? string.Format("{0} curtain wall(s)", curtainWallsFound)
+    : string.Format("{0} curtain wall(s) and {1} curtain system(s) ({2} face grid(s))",
+        curtainWallsFound, curtainSystemsFound, systemGrids);
+findings.Insert(0, string.Format("{0}: {1} panel cell(s), {2} mullion(s), {3} empty "
+    + "cell(s). {4} of what was handed in was not a curtain wall{5}",
+    readWhat, panelCount, mullionCount, emptyCells, notCurtain.Count,
+    curtainSystemsFound == 0 ? "" : " or a curtain system"));
 
 // VERSION 2 - every wall together, the last line. Said only when a curtain
 // wall was read, so a run on no curtain wall answers exactly as version 1 did.
-if (curtainWallsFound > 0)
+if (curtainWallsFound > 0 || systemGrids > 0)
 {
+    var acrossWhat = curtainSystemsFound == 0
+        ? string.Format("{0} curtain wall(s)", curtainWallsFound)
+        : string.Format("{0} curtain wall(s) and {1} curtain system(s)", curtainWallsFound,
+            curtainSystemsFound);
     if (!toleranceUsable)
     {
         var why = string.Format("a tolerance of {0} mm is not a size - give 0 mm or more",
@@ -368,11 +448,11 @@ if (curtainWallsFound > 0)
             : string.Format(" Not in any size: {0} panel(s) Revit gave no size for, {1} empty cell(s).",
                 allUnsized, emptyCells);
         findings.Add(allSized.Count == 0
-            ? string.Format("Across the {0} curtain wall(s): no panel size measured.{1}",
-                curtainWallsFound, notSized)
-            : string.Format("Across the {0} curtain wall(s): {1} different panel size(s), width x height "
+            ? string.Format("Across the {0}: no panel size measured.{1}",
+                acrossWhat, notSized)
+            : string.Format("Across the {0}: {1} different panel size(s), width x height "
                 + "within {2} mm - {3}.{4}",
-                curtainWallsFound, differentPanelSizes, sayMm(tolerance),
+                acrossWhat, differentPanelSizes, sayMm(tolerance),
                 string.Join(", ", panelSizes), notSized));
     }
 }
