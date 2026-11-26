@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -92,6 +92,38 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-26'
+  by: Ajmal PS
+  model: Night Rig 1126 (21,446 elements), Revit 2020, session 50628
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase's own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    findings 2 item(s) [10 run(s) set to horizontal left and vertical bottom. 0 were..., This
+    sets each run's Justification as Properties does. Wheth...], hWords 3 item(s) [center,
+    left, right], norm Func`2, set 10, unchanged 0, vWords 3 item(s) [middle, bottom, top],
+    wantH left, wantV bottom, withoutJustification 0. inputs came elements from the selection
+    (10); horizontal as given; vertical as given. on Night Rig 1126
+  negative_case: run with category=Air Terminals, horizontal=Left, inViewOnly=Callout of Level
+    1 HVAC WSHP TYP, vertical=Bottom instead - chosen because it should not contain what this
+    fragment reports - the arrangement was re-made first by running filter-elements-by-category,
+    set-selection with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned findings 2 item(s) [0 run(s) set
+    to horizontal left and vertical bottom. 0 were ..., This sets each run's Justification
+    as Properties does. Wheth...], hWords 3 item(s) [center, left, right], norm Func`2, set
+    0, unchanged 0, vWords 3 item(s) [middle, bottom, top], wantH left, wantV bottom, withoutJustification
+    0. inputs came elements from the selection (2); horizontal as given; vertical as given.
+    on Night Rig 1126
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: c039964d14462318
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

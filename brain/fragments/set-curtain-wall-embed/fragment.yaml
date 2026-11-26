@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -88,6 +88,44 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-26'
+  by: Ajmal PS
+  model: Night Rig 1126 (21,448 elements), Revit 2020, session 50628
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    create-wall with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyThat 0 item(s), boxes 1
+    item(s) [Autodesk.Revit.DB.Parameter], cuts Func`2, findings 4 item(s) [Automatically
+    Embed turned off on 1 type(s); 0 already that ..., A type''s box changes every wall of
+    that type - see readBack ..., curtain wall 1021514 cut no wall before, no wall now, ...],
+    fullName Func`2, notCurtain 0 item(s), plain Func`2, readBack Automatically Embed, read
+    back off each type: ''Curtain Wall: Standard'' now off - 34 wall(s) of this type in the
+    model, every one of them with it. What each curtain wall cuts, asked of the walls it meets:
+    curtain wall 1021514 cut no wall before, no wall now, refused , said no, sayCuts Func`2,
+    types 1 item(s) [Standard], typesChanged 1, walls 1 item(s) [Wall], wanted 0. inputs came
+    elements from create-wall as ''created'' (1); embed as given. on Night Rig 1126'
+  negative_case: 'run with embed=no, height=3000, level=Level 1, points=0,-60000,0; 9000,-60000,0,
+    structural=false, wallType=Basic Wall: MW 17.5 instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running create-wall
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyThat 0 item(s), boxes 0 item(s), cuts Func`2,
+    findings 1 item(s) [Nothing given is a curtain wall - ''MW 17.5'' (id 1021528) is ...],
+    fullName Func`2, notCurtain 1 item(s) [''MW 17.5'' (id 1021528) is a basic wall, not a
+    curtain wall -...], plain Func`2, readBack , refused Nothing given is a curtain wall -
+    ''MW 17.5'' (id 1021528) is a basic wall, not a curtain wall - left alone. Select the
+    curtain wall, not the wall it sits in. Nothing was changed, said no, sayCuts Func`2, types
+    0 item(s), typesChanged 0, walls 0 item(s), wanted 0. inputs came elements from create-wall
+    as ''created'' (1); embed as given. on Night Rig 1126'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 5e2df728273b8fda
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

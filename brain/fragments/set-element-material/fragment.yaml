@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -102,34 +102,74 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-20'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: Materials IA Test (3,779 elements), Revit 2020, session 29012
-  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
-    on 2026-10-20; the modeller saw the result in Revit and pressed Keep, and Revit kept it
-    as one undo step. returned alreadyAsAsked 0, findings 2 item(s) [1 parameter(s) given
-    TRG_Concrete Smooth; 0 already held it;..., A type or system type was written, so elements
-    that were not...], materialAssignReport Columns type ''M_Rectangular Column: 457 x 475mm''
-    ''Material'' <By Category> -> TRG_Concrete Smooth - a type change: all 2 placed element(s)
-    of this type changed, 2 of them handed in, refused , skippedElements 0 item(s), writtenIds
-    1 item(s) [1328933]. inputs came elements from the selection (2); material as given; materialParameter
-    not given - "any", the card''s own default (optional). on Materials IA Test'
-  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: 1 - Mech, material=TRG_Concrete
-    Smooth instead - chosen because it should not contain what this fragment reports - the
-    arrangement was re-made first by running select-by-category-name, set-selection with this
-    phase''s own values - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned alreadyAsAsked 0, findings 2 item(s) [0 parameter(s)
-    given TRG_Concrete Smooth; 0 already held it;..., Skipped: Walls 1330316: a Walls type
-    ''Basic Wall: Exterior -...], materialAssignReport , refused , skippedElements 2 item(s)
-    [Walls 1330316: a Walls type ''Basic Wall: Exterior - Brick on..., Walls 1330317: a Walls
-    type ''Basic Wall: Exterior - Brick on...], writtenIds 0 item(s). inputs came elements
-    from the selection (2); material as given; materialParameter not given - "any", the card''s
-    own default (optional). on Materials IA Test'
+  model: Night Rig 1126 (21,446 elements), Revit 2020, session 50628
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase's own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    alreadyAsAsked 0, findings 1 item(s) [46 parameter(s) given Glass; 0 already held it;
+    0 element(s)...], materialAssignReport Structural Columns 573295 'Structural Material'
+    <By Category> -> Glass  ||  Structural Columns 573327 'Structural Material' <By Category>
+    -> Glass  ||  Structural Columns 573328 'Structural Material' <By Category> -> Glass  ||  Structural
+    Columns 573329 'Structural Material' <By Category> -> Glass  ||  Structural Columns 573330
+    'Structural Material' <By Category> -> Glass  ||  Structural Columns 573333 'Structural
+    Material' <By Category> -> Glass  ||  Structural Columns 573334 'Structural Material'
+    <By Category> -> Glass  ||  Structural Columns 573335 'Structural Material' <By Category>
+    -> Glass  ||  Structural Columns 573336 'Structural Material' <By Category> -> Glass  ||  Structural
+    Columns 573339 'Structural Material' <By Category> -> Glass  ||  Structural Columns 573340
+    'Structural Material' <By Category> -> Glass  ||  Structural Columns 573341 'Structural
+    Material' <By Category> -> Glass  ||  Structural Columns 573342 'Structural Material'
+    <By Category> -> Glass  ||  Structural Columns 573345 'Structural Material' <By Category>
+    -> Glass  ||  Structural Columns 573346 'Structural Material' <By Category> -> Glass  ||  Structural
+    Columns 573347 'Structural Material' <By Category> -> Glass  ||  Structural Columns 573348
+    'Structural Material' <By Category> -> Glass  ||  Structural Columns 573351 'Structural
+    Material' <By Category> -> Glass  ||  Structural Columns 573352 'Structural Material'
+    <By Category> -> Glass  ||  Structural Columns 573353 'Structural Material' <By Category>
+    -> Glass  ||  Structural Columns 573354 'Structural Material' <By Category> -> Glass  ||  Structural
+    Columns 573357 'Structural Material' <By Category> -> Glass  ||  Structural Columns 573358
+    'Structural Material' <By Category> -> Glass  ||  Structural Columns 573359 'Structural
+    Material' <By Category> -> Glass  ||  Structural Columns 573360 'Structural Material'
+    <By Category> -> Glass  ||  Structural Columns 573361 'Structural Material' <By Category>
+    -> Glass  ||  Structural Columns 573362 'Structural Material' <By Category> -> Glass  ||  Structural
+    Columns 573363 'Structural Material' <By Category> -> Glass  ||  Structural Columns 573364
+    'Structural Material' <By Category> -> Glass  ||  Structural Columns 573365 'Structural
+    Material' <By Category> -> Glass  ||  Structural Columns 573366 'Structural Material'
+    <By Category> -> Glass  ||  Structural Columns 573367 'Structural Material' <By Category>
+    -> Glass  ||  Structural Columns 573368 'Structural Material' <By Category> -> Glass  ||  Structural
+    Columns 573369 'Structural Material' <By Category> -> Glass  ||  Structural Columns 573370
+    'Structural Material' <By Category> -> Glass  ||  Structural Columns 573371 'Structural
+    Material' <By Category> -> Glass  ||  Structural Columns 573372 'Structural Material'
+    <By Category> -> Glass  ||  Structural Columns 573373 'Structural Material' <By Category>
+    -> Glass  ||  Structural Columns 573374 'Structural Material' <By Category> -> Glass  ||  Structural
+    Columns 573375 'Structural Material' <By Category> -> Glass  ||  Structural Columns 573376
+    'Structural Material' <By Category> -> Glass  ||  Structural Columns 573377 'Structural
+    Material' <By Category> -> Glass  ||  Structural Columns 574557 'Structural Material'
+    <By Category> -> Glass  ||  Structural Columns 577494 'Structural Material' <By Category>
+    -> Glass  ||  Structural Columns 577495 'Structural Material' <By Category> -> Glass  ||  Structural
+    Columns 577496 'Structural Material' <By Category> -> Glass, refused , skippedElements
+    0 item(s), writtenIds 46 item(s) [573295, 573327, 573328, ...]. inputs came elements from
+    the selection (46); material as given; materialParameter as given. on Night Rig 1126
+  negative_case: 'run with category=Walls, levelId=Level 1, material=Glass, materialParameter=Structural
+    Material instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running filter-elements-by-category, set-selection with
+    this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyAsAsked 0, findings 2 item(s) [0 parameter(s)
+    given Glass; 0 already held it; 70 element(s)..., Skipped: Walls 573298: no material parameter
+    called ''Structu...], materialAssignReport , refused , skippedElements 70 item(s) [Walls
+    573298: no material parameter called ''Structural Mater..., Walls 573299: no material
+    parameter called ''Structural Mater..., Walls 573316: no material parameter called ''Structural
+    Mater..., ...], writtenIds 0 item(s). inputs came elements from the selection (70); material
+    as given; materialParameter as given. on Night Rig 1126'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 330f01f3a3fbd93d
-
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: f978d27261fbaca2
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

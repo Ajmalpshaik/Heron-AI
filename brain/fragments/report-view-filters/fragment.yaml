@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -185,192 +185,193 @@ contract:
       type: int
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 MEP, P1102 Family - active was P1102
-    MEP, Revit 2020, session 59096'
-  positive_case: "run as it would normally be run. returned asked 1 item(s) [*], blankOverride\
-    \ 5 item(s) [638892, 638893, 638898, ...], byTemplateOnly 0, defaultTemplates HashSet`1,\
-    \ disabled 0 item(s), filterCount 21, filterSettings View 'North - Mech' (Elevation):\
-    \ 5 filter(s), in the order Revit returns them - this release cannot give the dialog's\
-    \ order. Where two filters set the same thing on the same element, the one HIGHER in this\
-    \ list wins. 'catches' counts host elements this view draws - a filter also acts on linked\
-    \ models drawn By Host View, which are not counted. Revit 2020 has no Enable Filter tick;\
-    \ every filter here is in effect.\n  1. 'Mechanical - Supply' - categories (7): Air Terminals,\
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Night Rig 1126, Night Family - active was
+    Night Rig 1126, Revit 2020, session 50628'
+  positive_case: "run as it would normally be run. returned FullUpTo 25, asked 1 item(s) [*],\
+    \ blankOverride 5 item(s) [638892, 638893, 638898, ...], byTemplateOnly 0, categoryAsked\
+    \ false, defaultTemplates HashSet`1, detailWord auto, disabled 0 item(s), filterCount\
+    \ 21, filterSettings View 'North - Mech' (Elevation): 5 filter(s), in the order Revit\
+    \ returns them - this release cannot give the dialog's order. Where two filters set the\
+    \ same thing on the same element, the one HIGHER in this list wins. 'catches' counts host\
+    \ elements this view draws - a filter also acts on linked models drawn By Host View, which\
+    \ are not counted. Revit 2020 has no Enable Filter tick; every filter here is in effect.\n\
+    \  1. 'Mechanical - Supply' - categories (7): Air Terminals, Duct Accessories, Duct Fittings,\
+    \ Duct Insulations, Duct Linings, Ducts, Flex Ducts; rule: System Classification contains\
+    \ 'Supply'; catches 878 host element(s) drawn here; Visibility ON; Projection/Surface\
+    \ Lines: colour 0,0,255; Surface Patterns: foreground no override / background no override;\
+    \ Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override / background\
+    \ no override; Halftone off; cut not applicable - none of Duct Linings, Duct Insulations,\
+    \ Flex Ducts, Duct Accessories, Air Terminals, Duct Fittings, Ducts can be cut, so the\
+    \ Cut columns are greyed out.\n  2. 'Mechanical - Return' - categories (7): Air Terminals,\
     \ Duct Accessories, Duct Fittings, Duct Insulations, Duct Linings, Ducts, Flex Ducts;\
-    \ rule: System Classification contains 'Supply'; catches 878 host element(s) drawn here;\
-    \ Visibility ON; Projection/Surface Lines: colour 0,0,255; Surface Patterns: foreground\
+    \ rule: System Classification contains 'Return'; catches 299 host element(s) drawn here;\
+    \ Visibility ON; Projection/Surface Lines: colour 255,0,255; Surface Patterns: foreground\
     \ no override / background no override; Transparency 0; Cut Lines: no override; Cut Patterns:\
     \ foreground no override / background no override; Halftone off; cut not applicable -\
     \ none of Duct Linings, Duct Insulations, Flex Ducts, Duct Accessories, Air Terminals,\
-    \ Duct Fittings, Ducts can be cut, so the Cut columns are greyed out.\n  2. 'Mechanical\
-    \ - Return' - categories (7): Air Terminals, Duct Accessories, Duct Fittings, Duct Insulations,\
-    \ Duct Linings, Ducts, Flex Ducts; rule: System Classification contains 'Return'; catches\
-    \ 299 host element(s) drawn here; Visibility ON; Projection/Surface Lines: colour 255,0,255;\
+    \ Duct Fittings, Ducts can be cut, so the Cut columns are greyed out.\n  3. 'Mechanical\
+    \ - Exhaust' - categories (7): Air Terminals, Duct Accessories, Duct Fittings, Duct Insulations,\
+    \ Duct Linings, Ducts, Flex Ducts; rule: System Classification contains 'Exhaust'; catches\
+    \ 77 host element(s) drawn here; Visibility ON; Projection/Surface Lines: colour 0,255,0;\
     \ Surface Patterns: foreground no override / background no override; Transparency 0; Cut\
     \ Lines: no override; Cut Patterns: foreground no override / background no override; Halftone\
     \ off; cut not applicable - none of Duct Linings, Duct Insulations, Flex Ducts, Duct Accessories,\
     \ Air Terminals, Duct Fittings, Ducts can be cut, so the Cut columns are greyed out.\n\
-    \  3. 'Mechanical - Exhaust' - categories (7): Air Terminals, Duct Accessories, Duct Fittings,\
+    \  4. 'Domestic' - categories (4): Pipe Accessories, Pipe Fittings, Pipe Insulations,\
+    \ Pipes; rule: System Classification contains 'Domestic'; catches 0 host element(s) drawn\
+    \ here; Visibility OFF (what it matches is HIDDEN); Projection/Surface Lines: no override;\
+    \ Surface Patterns: foreground no override / background no override; Transparency 0; Cut\
+    \ Lines: no override; Cut Patterns: foreground no override / background no override; Halftone\
+    \ off; cut not applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings,\
+    \ Pipes can be cut, so the Cut columns are greyed out.\n  5. 'Sanitary' - categories (4):\
+    \ Pipe Accessories, Pipe Fittings, Pipe Insulations, Pipes; rule: System Classification\
+    \ contains 'Sanitary'; catches 0 host element(s) drawn here; Visibility OFF (what it matches\
+    \ is HIDDEN); Projection/Surface Lines: no override; Surface Patterns: foreground no override\
+    \ / background no override; Transparency 0; Cut Lines: no override; Cut Patterns: foreground\
+    \ no override / background no override; Halftone off; cut not applicable - none of Pipe\
+    \ Insulations, Pipe Accessories, Pipe Fittings, Pipes can be cut, so the Cut columns are\
+    \ greyed out.\nView 'East - Mech' (Elevation): 5 filter(s), in the order Revit returns\
+    \ them - this release cannot give the dialog's order. Where two filters set the same thing\
+    \ on the same element, the one HIGHER in this list wins. 'catches' counts host elements\
+    \ this view draws - a filter also acts on linked models drawn By Host View, which are\
+    \ not counted. Revit 2020 has no Enable Filter tick; every filter here is in effect.\n\
+    \  1. 'Mechanical - Supply' - categories (7): Air Terminals, Duct Accessories, Duct Fittings,\
     \ Duct Insulations, Duct Linings, Ducts, Flex Ducts; rule: System Classification contains\
-    \ 'Exhaust'; catches 77 host element(s) drawn here; Visibility ON; Projection/Surface\
-    \ Lines: colour 0,255,0; Surface Patterns: foreground no override / background no override;\
+    \ 'Supply'; catches 1040 host element(s) drawn here; Visibility ON; Projection/Surface\
+    \ Lines: colour 0,0,255; Surface Patterns: foreground no override / background no override;\
     \ Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override / background\
     \ no override; Halftone off; cut not applicable - none of Duct Linings, Duct Insulations,\
     \ Flex Ducts, Duct Accessories, Air Terminals, Duct Fittings, Ducts can be cut, so the\
-    \ Cut columns are greyed out.\n  4. 'Domestic' - categories (4): Pipe Accessories, Pipe\
-    \ Fittings, Pipe Insulations, Pipes; rule: System Classification contains 'Domestic';\
-    \ catches 0 host element(s) drawn here; Visibility OFF (what it matches is HIDDEN); Projection/Surface\
-    \ Lines: no override; Surface Patterns: foreground no override / background no override;\
-    \ Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override / background\
-    \ no override; Halftone off; cut not applicable - none of Pipe Insulations, Pipe Accessories,\
-    \ Pipe Fittings, Pipes can be cut, so the Cut columns are greyed out.\n  5. 'Sanitary'\
-    \ - categories (4): Pipe Accessories, Pipe Fittings, Pipe Insulations, Pipes; rule: System\
-    \ Classification contains 'Sanitary'; catches 0 host element(s) drawn here; Visibility\
-    \ OFF (what it matches is HIDDEN); Projection/Surface Lines: no override; Surface Patterns:\
-    \ foreground no override / background no override; Transparency 0; Cut Lines: no override;\
-    \ Cut Patterns: foreground no override / background no override; Halftone off; cut not\
-    \ applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes can be\
-    \ cut, so the Cut columns are greyed out.\nView 'East - Mech' (Elevation): 5 filter(s),\
-    \ in the order Revit returns them - this release cannot give the dialog's order. Where\
-    \ two filters set the same thing on the same element, the one HIGHER in this list wins.\
-    \ 'catches' counts host elements this view draws - a filter also acts on linked models\
-    \ drawn By Host View, which are not counted. Revit 2020 has no Enable Filter tick; every\
-    \ filter here is in effect.\n  1. 'Mechanical - Supply' - categories (7): Air Terminals,\
+    \ Cut columns are greyed out.\n  2. 'Mechanical - Return' - categories (7): Air Terminals,\
     \ Duct Accessories, Duct Fittings, Duct Insulations, Duct Linings, Ducts, Flex Ducts;\
-    \ rule: System Classification contains 'Supply'; catches 1040 host element(s) drawn here;\
-    \ Visibility ON; Projection/Surface Lines: colour 0,0,255; Surface Patterns: foreground\
+    \ rule: System Classification contains 'Return'; catches 325 host element(s) drawn here;\
+    \ Visibility ON; Projection/Surface Lines: colour 255,0,255; Surface Patterns: foreground\
     \ no override / background no override; Transparency 0; Cut Lines: no override; Cut Patterns:\
     \ foreground no override / background no override; Halftone off; cut not applicable -\
     \ none of Duct Linings, Duct Insulations, Flex Ducts, Duct Accessories, Air Terminals,\
-    \ Duct Fittings, Ducts can be cut, so the Cut columns are greyed out.\n  2. 'Mechanical\
-    \ - Return' - categories (7): Air Terminals, Duct Accessories, Duct Fittings, Duct Insulations,\
-    \ Duct Linings, Ducts, Flex Ducts; rule: System Classification contains 'Return'; catches\
-    \ 325 host element(s) drawn here; Visibility ON; Projection/Surface Lines: colour 255,0,255;\
+    \ Duct Fittings, Ducts can be cut, so the Cut columns are greyed out.\n  3. 'Mechanical\
+    \ - Exhaust' - categories (7): Air Terminals, Duct Accessories, Duct Fittings, Duct Insulations,\
+    \ Duct Linings, Ducts, Flex Ducts; rule: System Classification contains 'Exhaust'; catches\
+    \ 117 host element(s) drawn here; Visibility ON; Projection/Surface Lines: colour 0,255,0;\
     \ Surface Patterns: foreground no override / background no override; Transparency 0; Cut\
     \ Lines: no override; Cut Patterns: foreground no override / background no override; Halftone\
     \ off; cut not applicable - none of Duct Linings, Duct Insulations, Flex Ducts, Duct Accessories,\
     \ Air Terminals, Duct Fittings, Ducts can be cut, so the Cut columns are greyed out.\n\
-    \  3. 'Mechanical - Exhaust' - categories (7): Air Terminals, Duct Accessories, Duct Fittings,\
+    \  4. 'Domestic' - categories (4): Pipe Accessories, Pipe Fittings, Pipe Insulations,\
+    \ Pipes; rule: System Classification contains 'Domestic'; catches 0 host element(s) drawn\
+    \ here; Visibility OFF (what it matches is HIDDEN); Projection/Surface Lines: no override;\
+    \ Surface Patterns: foreground no override / background no override; Transparency 0; Cut\
+    \ Lines: no override; Cut Patterns: foreground no override / background no override; Halftone\
+    \ off; cut not applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings,\
+    \ Pipes can be cut, so the Cut columns are greyed out.\n  5. 'Sanitary' - categories (4):\
+    \ Pipe Accessories, Pipe Fittings, Pipe Insulations, Pipes; rule: System Classification\
+    \ contains 'Sanitary'; catches 0 host element(s) drawn here; Visibility OFF (what it matches\
+    \ is HIDDEN); Projection/Surface Lines: no override; Surface Patterns: foreground no override\
+    \ / background no override; Transparency 0; Cut Lines: no override; Cut Patterns: foreground\
+    \ no override / background no override; Halftone off; cut not applicable - none of Pipe\
+    \ Insulations, Pipe Accessories, Pipe Fittings, Pipes can be cut, so the Cut columns are\
+    \ greyed out.\nView 'West - Mech' (Elevation): 5 filter(s), in the order Revit returns\
+    \ them - this release cannot give the dialog's order. Where two filters set the same thing\
+    \ on the same element, the one HIGHER in this list wins. 'catches' counts host elements\
+    \ this view draws - a filter also acts on linked models drawn By Host View, which are\
+    \ not counted. Revit 2020 has no Enable Filter tick; every filter here is in effect.\n\
+    \  1. 'Mechanical - Supply' - categories (7): Air Terminals, Duct Accessories, Duct Fittings,\
     \ Duct Insulations, Duct Linings, Ducts, Flex Ducts; rule: System Classification contains\
-    \ 'Exhaust'; catches 117 host element(s) drawn here; Visibility ON; Projection/Surface\
-    \ Lines: colour 0,255,0; Surface Patterns: foreground no override / background no override;\
+    \ 'Supply'; catches 1258 host element(s) drawn here; Visibility ON; Projection/Surface\
+    \ Lines: colour 0,0,255; Surface Patterns: foreground no override / background no override;\
     \ Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override / background\
     \ no override; Halftone off; cut not applicable - none of Duct Linings, Duct Insulations,\
     \ Flex Ducts, Duct Accessories, Air Terminals, Duct Fittings, Ducts can be cut, so the\
-    \ Cut columns are greyed out.\n  4. 'Domestic' - categories (4): Pipe Accessories, Pipe\
-    \ Fittings, Pipe Insulations, Pipes; rule: System Classification contains 'Domestic';\
-    \ catches 0 host element(s) drawn here; Visibility OFF (what it matches is HIDDEN); Projection/Surface\
-    \ Lines: no override; Surface Patterns: foreground no override / background no override;\
-    \ Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override / background\
-    \ no override; Halftone off; cut not applicable - none of Pipe Insulations, Pipe Accessories,\
-    \ Pipe Fittings, Pipes can be cut, so the Cut columns are greyed out.\n  5. 'Sanitary'\
-    \ - categories (4): Pipe Accessories, Pipe Fittings, Pipe Insulations, Pipes; rule: System\
-    \ Classification contains 'Sanitary'; catches 0 host element(s) drawn here; Visibility\
-    \ OFF (what it matches is HIDDEN); Projection/Surface Lines: no override; Surface Patterns:\
-    \ foreground no override / background no override; Transparency 0; Cut Lines: no override;\
-    \ Cut Patterns: foreground no override / background no override; Halftone off; cut not\
-    \ applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes can be\
-    \ cut, so the Cut columns are greyed out.\nView 'West - Mech' (Elevation): 5 filter(s),\
-    \ in the order Revit returns them - this release cannot give the dialog's order. Where\
-    \ two filters set the same thing on the same element, the one HIGHER in this list wins.\
-    \ 'catches' counts host elements this view draws - a filter also acts on linked models\
-    \ drawn By Host View, which are not counted. Revit 2020 has no Enable Filter tick; every\
-    \ filter here is in effect.\n  1. 'Mechanical - Supply' - categories (7): Air Terminals,\
+    \ Cut columns are greyed out.\n  2. 'Mechanical - Return' - categories (7): Air Terminals,\
     \ Duct Accessories, Duct Fittings, Duct Insulations, Duct Linings, Ducts, Flex Ducts;\
-    \ rule: System Classification contains 'Supply'; catches 1258 host element(s) drawn here;\
-    \ Visibility ON; Projection/Surface Lines: colour 0,0,255; Surface Patterns: foreground\
+    \ rule: System Classification contains 'Return'; catches 417 host element(s) drawn here;\
+    \ Visibility ON; Projection/Surface Lines: colour 255,0,255; Surface Patterns: foreground\
     \ no override / background no override; Transparency 0; Cut Lines: no override; Cut Patterns:\
     \ foreground no override / background no override; Halftone off; cut not applicable -\
     \ none of Duct Linings, Duct Insulations, Flex Ducts, Duct Accessories, Air Terminals,\
-    \ Duct Fittings, Ducts can be cut, so the Cut columns are greyed out.\n  2. 'Mechanical\
-    \ - Return' - categories (7): Air Terminals, Duct Accessories, Duct Fittings, Duct Insulations,\
-    \ Duct Linings, Ducts, Flex Ducts; rule: System Classification contains 'Return'; catches\
-    \ 417 host element(s) drawn here; Visibility ON; Projection/Surface Lines: colour 255,0,255;\
+    \ Duct Fittings, Ducts can be cut, so the Cut columns are greyed out.\n  3. 'Mechanical\
+    \ - Exhaust' - categories (7): Air Terminals, Duct Accessories, Duct Fittings, Duct Insulations,\
+    \ Duct Linings, Ducts, Flex Ducts; rule: System Classification contains 'Exhaust'; catches\
+    \ 117 host element(s) drawn here; Visibility ON; Projection/Surface Lines: colour 0,255,0;\
     \ Surface Patterns: foreground no override / background no override; Transparency 0; Cut\
     \ Lines: no override; Cut Patterns: foreground no override / background no override; Halftone\
     \ off; cut not applicable - none of Duct Linings, Duct Insulations, Flex Ducts, Duct Accessories,\
     \ Air Terminals, Duct Fittings, Ducts can be cut, so the Cut columns are greyed out.\n\
-    \  3. 'Mechanical - Exhaust' - categories (7): Air Terminals, Duct Accessories, Duct Fittings,\
+    \  4. 'Domestic' - categories (4): Pipe Accessories, Pipe Fittings, Pipe Insulations,\
+    \ Pipes; rule: System Classification contains 'Domestic'; catches 0 host element(s) drawn\
+    \ here; Visibility OFF (what it matches is HIDDEN); Projection/Surface Lines: no override;\
+    \ Surface Patterns: foreground no override / background no override; Transparency 0; Cut\
+    \ Lines: no override; Cut Patterns: foreground no override / background no override; Halftone\
+    \ off; cut not applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings,\
+    \ Pipes can be cut, so the Cut columns are greyed out.\n  5. 'Sanitary' - categories (4):\
+    \ Pipe Accessories, Pipe Fittings, Pipe Insulations, Pipes; rule: System Classification\
+    \ contains 'Sanitary'; catches 0 host element(s) drawn here; Visibility OFF (what it matches\
+    \ is HIDDEN); Projection/Surface Lines: no override; Surface Patterns: foreground no override\
+    \ / background no override; Transparency 0; Cut Lines: no override; Cut Patterns: foreground\
+    \ no override / background no override; Halftone off; cut not applicable - none of Pipe\
+    \ Insulations, Pipe Accessories, Pipe Fittings, Pipes can be cut, so the Cut columns are\
+    \ greyed out.\nView 'South - Mech' (Elevation): 5 filter(s), in the order Revit returns\
+    \ them - this release cannot give the dialog's order. Where two filters set the same thing\
+    \ on the same element, the one HIGHER in this list wins. 'catches' counts host elements\
+    \ this view draws - a filter also acts on linked models drawn By Host View, which are\
+    \ not counted. Revit 2020 has no Enable Filter tick; every filter here is in effect.\n\
+    \  1. 'Mechanical - Supply' - categories (7): Air Terminals, Duct Accessories, Duct Fittings,\
     \ Duct Insulations, Duct Linings, Ducts, Flex Ducts; rule: System Classification contains\
-    \ 'Exhaust'; catches 117 host element(s) drawn here; Visibility ON; Projection/Surface\
-    \ Lines: colour 0,255,0; Surface Patterns: foreground no override / background no override;\
+    \ 'Supply'; catches 1258 host element(s) drawn here; Visibility ON; Projection/Surface\
+    \ Lines: colour 0,0,255; Surface Patterns: foreground no override / background no override;\
     \ Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override / background\
     \ no override; Halftone off; cut not applicable - none of Duct Linings, Duct Insulations,\
     \ Flex Ducts, Duct Accessories, Air Terminals, Duct Fittings, Ducts can be cut, so the\
-    \ Cut columns are greyed out.\n  4. 'Domestic' - categories (4): Pipe Accessories, Pipe\
-    \ Fittings, Pipe Insulations, Pipes; rule: System Classification contains 'Domestic';\
-    \ catches 0 host element(s) drawn here; Visibility OFF (what it matches is HIDDEN); Projection/Surface\
-    \ Lines: no override; Surface Patterns: foreground no override / background no override;\
-    \ Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override / background\
-    \ no override; Halftone off; cut not applicable - none of Pipe Insulations, Pipe Accessories,\
-    \ Pipe Fittings, Pipes can be cut, so the Cut columns are greyed out.\n  5. 'Sanitary'\
-    \ - categories (4): Pipe Accessories, Pipe Fittings, Pipe Insulations, Pipes; rule: System\
-    \ Classification contains 'Sanitary'; catches 0 host element(s) drawn here; Visibility\
-    \ OFF (what it matches is HIDDEN); Projection/Surface Lines: no override; Surface Patterns:\
-    \ foreground no override / background no override; Transparency 0; Cut Lines: no override;\
-    \ Cut Patterns: foreground no override / background no override; Halftone off; cut not\
-    \ applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes can be\
-    \ cut, so the Cut columns are greyed out.\nView 'South - Mech' (Elevation): 5 filter(s),\
-    \ in the order Revit returns them - this release cannot give the dialog's order. Where\
-    \ two filters set the same thing on the same element, the one HIGHER in this list wins.\
-    \ 'catches' counts host elements this view draws - a filter also acts on linked models\
-    \ drawn By Host View, which are not counted. Revit 2020 has no Enable Filter tick; every\
-    \ filter here is in effect.\n  1. 'Mechanical - Supply' - categories (7): Air Terminals,\
+    \ Cut columns are greyed out.\n  2. 'Mechanical - Return' - categories (7): Air Terminals,\
     \ Duct Accessories, Duct Fittings, Duct Insulations, Duct Linings, Ducts, Flex Ducts;\
-    \ rule: System Classification contains 'Supply'; catches 1258 host element(s) drawn here;\
-    \ Visibility ON; Projection/Surface Lines: colour 0,0,255; Surface Patterns: foreground\
+    \ rule: System Classification contains 'Return'; catches 417 host element(s) drawn here;\
+    \ Visibility ON; Projection/Surface Lines: colour 255,0,255; Surface Patterns: foreground\
     \ no override / background no override; Transparency 0; Cut Lines: no override; Cut Patterns:\
     \ foreground no override / background no override; Halftone off; cut not applicable -\
     \ none of Duct Linings, Duct Insulations, Flex Ducts, Duct Accessories, Air Terminals,\
-    \ Duct Fittings, Ducts can be cut, so the Cut columns are greyed out.\n  2. 'Mechanical\
-    \ - Return' - categories (7): Air Terminals, Duct Accessories, Duct Fittings, Duct Insulations,\
-    \ Duct Linings, Ducts, Flex Ducts; rule: System Classification contains 'Return'; catches\
-    \ 417 host element(s) drawn here; Visibility ON; Projection/Surface Lines: colour 255,0,255;\
+    \ Duct Fittings, Ducts can be cut, so the Cut columns are greyed out.\n  3. 'Mechanical\
+    \ - Exhaust' - categories (7): Air Terminals, Duct Accessories, Duct Fittings, Duct Insulations,\
+    \ Duct Linings, Ducts, Flex Ducts; rule: System Classification contains 'Exhaust'; catches\
+    \ 117 host element(s) drawn here; Visibility ON; Projection/Surface Lines: colour 0,255,0;\
     \ Surface Patterns: foreground no override / background no override; Transparency 0; Cut\
     \ Lines: no override; Cut Patterns: foreground no override / background no override; Halftone\
     \ off; cut not applicable - none of Duct Linings, Duct Insulations, Flex Ducts, Duct Accessories,\
     \ Air Terminals, Duct Fittings, Ducts can be cut, so the Cut columns are greyed out.\n\
-    \  3. 'Mechanical - Exhaust' - categories (7): Air Terminals, Duct Accessories, Duct Fittings,\
-    \ Duct Insulations, Duct Linings, Ducts, Flex Ducts; rule: System Classification contains\
-    \ 'Exhaust'; catches 117 host element(s) drawn here; Visibility ON; Projection/Surface\
-    \ Lines: colour 0,255,0; Surface Patterns: foreground no override / background no override;\
-    \ Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override / background\
-    \ no override; Halftone off; cut not applicable - none of Duct Linings, Duct Insulations,\
-    \ Flex Ducts, Duct Accessories, Air Terminals, Duct Fittings, Ducts can be cut, so the\
-    \ Cut columns are greyed out.\n  4. 'Domestic' - categories (4): Pipe Accessories, Pipe\
-    \ Fittings, Pipe Insulations, Pipes; rule: System Classification contains 'Domestic';\
-    \ catches 0 host element(s) drawn here; Visibility OFF (what it matches is HIDDEN); Projection/Surface\
-    \ Lines: no override; Surface Patterns: foreground no override / background no override;\
-    \ Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override / background\
-    \ no override; Halftone off; cut not applicable - none of Pipe Insulations, Pipe Accessories,\
-    \ Pipe Fittings, Pipes can be cut, so the Cut columns are greyed out.\n  5. 'Sanitary'\
-    \ - categories (4): Pipe Accessories, Pipe Fittings, Pipe Insulations, Pipes; rule: System\
-    \ Classification contains 'Sanitary'; catches 0 host element(s) drawn here; Visibility\
-    \ OFF (what it matches is HIDDEN); Projection/Surface Lines: no override; Surface Patterns:\
-    \ foreground no override / background no override; Transparency 0; Cut Lines: no override;\
+    \  4. 'Domestic' - categories (4): Pipe Accessories, Pipe Fittings, Pipe Insulations,\
+    \ Pipes; rule: System Classification contains 'Domestic'; catches 0 host element(s) drawn\
+    \ here; Visibility OFF (what it matches is HIDDEN); Projection/Surface Lines: no override;\
+    \ Surface Patterns: foreground no override / background no override; Transparency 0; Cut\
+    \ Lines: no override; Cut Patterns: foreground no override / background no override; Halftone\
+    \ off; cut not applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings,\
+    \ Pipes can be cut, so the Cut columns are greyed out.\n  5. 'Sanitary' - categories (4):\
+    \ Pipe Accessories, Pipe Fittings, Pipe Insulations, Pipes; rule: System Classification\
+    \ contains 'Sanitary'; catches 0 host element(s) drawn here; Visibility OFF (what it matches\
+    \ is HIDDEN); Projection/Surface Lines: no override; Surface Patterns: foreground no override\
+    \ / background no override; Transparency 0; Cut Lines: no override; Cut Patterns: foreground\
+    \ no override / background no override; Halftone off; cut not applicable - none of Pipe\
+    \ Insulations, Pipe Accessories, Pipe Fittings, Pipes can be cut, so the Cut columns are\
+    \ greyed out.\nView 'Main Electrical Distribution' (ThreeD): 5 filter(s), in the order\
+    \ Revit returns them - this release cannot give the dialog's order. Where two filters\
+    \ set the same thing on the same element, the one HIGHER in this list wins. 'catches'\
+    \ counts host elements this view draws - a filter also acts on linked models drawn By\
+    \ Host View, which are not counted. Revit 2020 has no Enable Filter tick; every filter\
+    \ here is in effect.\n  1. 'Sanitary' - categories (4): Pipe Accessories, Pipe Fittings,\
+    \ Pipe Insulations, Pipes; rule: System Classification contains 'Sanitary'; catches 0\
+    \ host element(s) drawn here; Visibility ON; Projection/Surface Lines: no override; Surface\
+    \ Patterns: foreground <Solid fill>, colour 128,128,64 / background no override; Transparency\
+    \ 0; Cut Lines: no override; Cut Patterns: foreground no override / background no override;\
+    \ Halftone off; cut not applicable - none of Pipe Insulations, Pipe Accessories, Pipe\
+    \ Fittings, Pipes can be cut, so the Cut columns are greyed out.\n  2. 'Domestic Cold\
+    \ Water' - categories (4): Pipe Accessories, Pipe Fittings, Pipe Insulations, Pipes; rule:\
+    \ System Classification contains 'Domestic Cold'; catches 0 host element(s) drawn here;\
+    \ Visibility ON; Projection/Surface Lines: no override; Surface Patterns: foreground <Solid\
+    \ fill>, colour 0,0,255 / background no override; Transparency 0; Cut Lines: no override;\
     \ Cut Patterns: foreground no override / background no override; Halftone off; cut not\
     \ applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes can be\
-    \ cut, so the Cut columns are greyed out.\nView 'Main Electrical Distribution' (ThreeD):\
-    \ 5 filter(s), in the order Revit returns them - this release cannot give the dialog's\
-    \ order. Where two filters set the same thing on the same element, the one HIGHER in this\
-    \ list wins. 'catches' counts host elements this view draws - a filter also acts on linked\
-    \ models drawn By Host View, which are not counted. Revit 2020 has no Enable Filter tick;\
-    \ every filter here is in effect.\n  1. 'Sanitary' - categories (4): Pipe Accessories,\
-    \ Pipe Fittings, Pipe Insulations, Pipes; rule: System Classification contains 'Sanitary';\
-    \ catches 0 host element(s) drawn here; Visibility ON; Projection/Surface Lines: no override;\
-    \ Surface Patterns: foreground <Solid fill>, colour 128,128,64 / background no override;\
-    \ Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override / background\
-    \ no override; Halftone off; cut not applicable - none of Pipe Insulations, Pipe Accessories,\
-    \ Pipe Fittings, Pipes can be cut, so the Cut columns are greyed out.\n  2. 'Domestic\
-    \ Cold Water' - categories (4): Pipe Accessories, Pipe Fittings, Pipe Insulations, Pipes;\
-    \ rule: System Classification contains 'Domestic Cold'; catches 0 host element(s) drawn\
-    \ here; Visibility ON; Projection/Surface Lines: no override; Surface Patterns: foreground\
-    \ <Solid fill>, colour 0,0,255 / background no override; Transparency 0; Cut Lines: no\
-    \ override; Cut Patterns: foreground no override / background no override; Halftone off;\
-    \ cut not applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes\
-    \ can be cut, so the Cut columns are greyed out.\n  3. 'Domestic Hot Water' - categories\
-    \ (4): Pipe Accessories, Pipe Fittings, Pipe Insulations, Pipes; rule: System Classification\
+    \ cut, so the Cut columns are greyed out.\n  3. 'Domestic Hot Water' - categories (4):\
+    \ Pipe Accessories, Pipe Fittings, Pipe Insulations, Pipes; rule: System Classification\
     \ contains 'Domestic Hot'; catches 0 host element(s) drawn here; Visibility ON; Projection/Surface\
     \ Lines: no override; Surface Patterns: foreground <Solid fill>, colour 255,0,0 / background\
     \ no override; Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override\
@@ -2417,24 +2418,39 @@ proof:
     \ greyed out., filters 21 item(s) [Domestic, Domestic Cold Water, Domestic Hot Water,\
     \ ...], findings 333 item(s) [21 filter(s) in this project, checked against 122 view(s)\
     \ an..., 'Domestic'  - a RULE, which keeps working as the model grows..., 'Domestic Cold\
-    \ Water'  - a RULE, which keeps working as the ..., ...], followers 0 entry(ies), hidden\
-    \ 9 item(s) [638892, 638893, 638898, ...], nothingToActOn 9 item(s) [638893, 638895, 638896,\
-    \ ...], templateOwned false, templates 46 item(s) [Architectural Plan, Architectural Reflected\
-    \ Ceiling Plan, Architectural Elevation, ...], unusedFilters 8 item(s) [638900, 690495,\
-    \ 638901, ...], views 122 item(s) [Project View, North - Mech, East - Mech, ...]. inputs\
-    \ came viewName as given. on P1102 MEP"
-  negative_case: run against 'P1102 Family' with viewName=* instead - chosen because it should
-    not contain what this fragment reports. returned asked 1 item(s) [*], blankOverride 0
-    item(s), byTemplateOnly 0, defaultTemplates HashSet`1, disabled 0 item(s), filterCount
-    0, filterSettings , filters 0 item(s), findings 2 item(s) [No view in this model has a
-    filter on it., 0 filter(s) in this project, checked against 10 view(s) and ...], followers
-    0 entry(ies), hidden 0 item(s), nothingToActOn 0 item(s), templateOwned false, templates
-    0 item(s), unusedFilters 0 item(s), views 10 item(s) [Ref. Level, Ref. Level, Back, ...].
-    inputs came viewName as given. on P1102 Family
+    \ Water'  - a RULE, which keeps working as the ..., ...], followers 0 entry(ies), given\
+    \ Func`2, hidden 9 item(s) [638892, 638893, 638898, ...], kept Func`2, listed 21 item(s)\
+    \ [Domestic, Domestic Cold Water, Domestic Hot Water, ...], nameWords 0 item(s), narrowNotes\
+    \ 0 item(s), narrowText , narrowing 0 item(s), nothingToActOn 9 item(s) [638893, 638895,\
+    \ 638896, ...], projectBrief false, skippedViews 0, templateOwned false, templates 46\
+    \ item(s) [Architectural Plan, Architectural Reflected Ceiling Plan, Architectural Elevation,\
+    \ ...], unusedFilters 8 item(s) [638900, 690495, 638901, ...], usedNotListed 0, views\
+    \ 122 item(s) [Project View, North - Mech, East - Mech, ...], wantedCategory (null). inputs\
+    \ came viewName as given; onlyCategory not given - \"none\", the card's own default (optional);\
+    \ nameContains not given - \"none\", the card's own default (optional); detail not given\
+    \ - \"auto\", the card's own default (optional). on Night Rig 1126"
+  negative_case: run against 'Night Family' with viewName=* instead - chosen because it should
+    not contain what this fragment reports. returned FullUpTo 25, asked 1 item(s) [*], blankOverride
+    0 item(s), byTemplateOnly 0, categoryAsked false, defaultTemplates HashSet`1, detailWord
+    auto, disabled 0 item(s), filterCount 0, filterSettings , filters 0 item(s), findings
+    2 item(s) [No view read has a filter on it - and 9 view(s) were passed ..., 0 filter(s)
+    in this project, checked against 10 view(s) and ...], followers 0 entry(ies), given Func`2,
+    hidden 0 item(s), kept Func`2, listed 0 item(s), nameWords 0 item(s), narrowNotes 0 item(s),
+    narrowText , narrowing 0 item(s), nothingToActOn 0 item(s), projectBrief false, skippedViews
+    9, templateOwned false, templates 0 item(s), unusedFilters 0 item(s), usedNotListed 0,
+    views 10 item(s) [Ref. Level, Ref. Level, Back, ...], wantedCategory (null). inputs came
+    viewName as given; onlyCategory not given - "none", the card's own default (optional);
+    nameContains not given - "none", the card's own default (optional); detail not given -
+    "auto", the card's own default (optional). on Night Family
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 449065051c12be40
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 93a7cc0800bf7b2f
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

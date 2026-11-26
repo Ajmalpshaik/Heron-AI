@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -87,6 +87,35 @@ contract:
       type: double
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-26'
+  by: Ajmal PS
+  model: Night Rig 1126 (21,446 elements), Revit 2020, session 50628
+  positive_case: 'run as it would normally be run. returned MillimetresPerFoot 304.8, findings
+    3 item(s) [The 3 element(s) selected were NOT used - ids were typed, an..., 4795.2 mm
+    apart in a straight line: 4795.2 mm horizontally a..., A bounding box is axis-aligned
+    and is larger than a sloped o...], first Element, handedIn 3 item(s) [WC Trennwand 5.0,
+    WC Trennwand 5.0, MW 17.5], horizontalMm 4795.22499999991, idsTyped true, notTwo (null),
+    sameWord Func`3, second Element, straightMm 4795.22499999991, typedText 802669, 802670,
+    verticalMm 0. inputs came elements from the selection (3); elementIds as given. on Night
+    Rig 1126'
+  negative_case: run with elementIds=802669, 802669 instead - chosen because it should not
+    contain what this fragment reports. returned MillimetresPerFoot 304.8, findings 2 item(s)
+    [The 3 element(s) selected were NOT used - ids were typed, an..., Both sides are the same
+    element, so the distance is zero by ...], first Element, handedIn 3 item(s) [WC Trennwand
+    5.0, WC Trennwand 5.0, MW 17.5], horizontalMm 0, idsTyped true, notTwo (null), sameWord
+    Func`3, second Element, straightMm 0, typedText 802669, 802669, verticalMm 0. inputs came
+    elements from the selection (3); elementIds as given. on Night Rig 1126
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 5df6506153ba97a7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

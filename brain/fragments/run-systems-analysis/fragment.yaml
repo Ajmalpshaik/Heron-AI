@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -138,6 +138,48 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-26'
+  by: Ajmal PS
+  model: Night Rig 1126 (21,448 elements), Revit 2020, session 50628
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    create-energy-model with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned analysisCompleted false,
+    findings 3 item(s) [The model has 89 space(s) and an energy analytical model., Weather
+    file: C:\Users\ajmal\AppData\Local\Temp\109cfa3a-a0e..., THE ANALYSIS RUNS IN THE BACKGROUND
+    and had not finished whe...], outputFolder C:\Users\ajmal\AppData\Local\Temp\109cfa3a-a0ec-40a1-94ac-337ef7eb4561\HVAC
+    Systems Loads and Sizing, refused (null), report Made the systems analysis report view
+    "N1126 Systems Report" and started the analysis; it runs in the background - read the
+    result in that view., reportContent Calculating..., reportView 1 item(s) [id 1024051],
+    requested true, viewName N1126 Systems Report, wantedName N1126 Systems Report, weather
+    , weatherFileUsed C:\Users\ajmal\AppData\Local\Temp\109cfa3a-a0ec-40a1-94ac-337ef7eb4561\RevitWeatherFilesCache\158383_2006\DEU_BY_Munich.AP.108700_TMYx.2009-2023.epw,
+    workflow , workflowFileUsed C:\Program Files\NREL\OpenStudio CLI For Revit 2020\workflows\HVAC
+    Systems Loads and Sizing.osw. inputs came reportName as given; weatherFile given empty
+    - "none", the card''s own default (optional); workflowFile given empty - "none", the card''s
+    own default (optional). on Night Rig 1126'
+  negative_case: run with reportName=Level 1 HVAC Plan, weatherFile=, workflowFile= instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running create-energy-model with this phase's own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    analysisCompleted false, findings 1 item(s) [A view is already named "Level 1 HVAC Plan".
+    Name the report...], outputFolder , refused A view is already named "Level 1 HVAC Plan".
+    Name the report something no view has, or leave the name out. NOTHING WAS MADE., report
+    A view is already named "Level 1 HVAC Plan". Name the report something no view has, or
+    leave the name out. NOTHING WAS MADE., reportContent , reportView (null), requested false,
+    viewName (null), wantedName Level 1 HVAC Plan, weather , weatherFileUsed , workflow ,
+    workflowFileUsed . inputs came reportName as given; weatherFile given empty - "none",
+    the card's own default (optional); workflowFile given empty - "none", the card's own default
+    (optional). on Night Rig 1126
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 5a95ad4f8c9dbb72
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

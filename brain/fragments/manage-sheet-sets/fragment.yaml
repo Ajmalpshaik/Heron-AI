@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -285,39 +285,44 @@ contract:
       type: IList<ElementId>
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
+  model: Night Rig 1126 (21,448 elements), Revit 2020, session 50628
   positive_case: run as it would normally be run - the arrangement was re-made first by running
     find-sheets with this phase's own values - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned byValue 0 entry(ies), changed 0,
-    created , done true, findSet Func`2, givenName Func`2, memberCount 1, notASheet 0 item(s),
-    onlyText , onlyValues HashSet`1, operation create, parameterWanted , printRange Print
-    range put back to Current window, as it was before., refused , setsUnchanged , skipped
-    , unchanged 0 item(s), updateExisting false, updated , valuePrefix , wanted HERON SET
-    Z1. inputs came elements from find-sheets (1); setName as given; mode as given; newName
-    not given - "none", the card's own default (optional); parameterName not given - "none",
-    the card's own default (optional); setPrefix not given - "none", the card's own default
-    (optional); values not given - "all", the card's own default (optional); updateExisting
-    not given - "false", the card's own default (optional). on P1102 MEP
-  negative_case: run with mode=create, setName=HERON SET Z1 arranged with numberOrNameContains=ZZZ
+    the transaction group ROLLED BACK afterwards. returned ambiguous 0 item(s), byValue 0
+    entry(ies), changed 0, created , done true, findSet Func`2, givenName Func`2, memberCount
+    7, notASheet 0 item(s), onlyText , onlyValues HashSet`1, operation create, parameterWanted
+    , printRange Print range put back to Current window, as it was before., refused , setsUnchanged
+    , skipped , unchanged 0 item(s), updateExisting false, updated , valuePrefix , wanted
+    N1126 SET. inputs came elements from find-sheets (7); setName as given; mode as given;
+    newName given empty - "none", the card's own default (optional); parameterName not given
+    - "none", the card's own default (optional); setPrefix not given - "none", the card's
+    own default (optional); values not given - "all", the card's own default (optional); updateExisting
+    not given - "false", the card's own default (optional). on Night Rig 1126
+  negative_case: run with mode=create, newName=, setName=N1126 SET arranged with numberOrNameContains=ZZZ
     instead - chosen because it should not contain what this fragment reports - the arrangement
     was re-made first by running find-sheets with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned byValue 0 entry(ies),
-    changed 0, created , done false, findSet Func`2, givenName Func`2, memberCount 0, notASheet
-    0 item(s), onlyText , onlyValues HashSet`1, operation create, parameterWanted , printRange
-    Print range put back to Current window, as it was before., refused No views or sheets
-    to put in the set., setsUnchanged , skipped , unchanged 0 item(s), updateExisting false,
-    updated , valuePrefix , wanted HERON SET Z1. inputs came elements from find-sheets (0);
-    setName as given; mode as given; newName not given - "none", the card's own default (optional);
-    parameterName not given - "none", the card's own default (optional); setPrefix not given
-    - "none", the card's own default (optional); values not given - "all", the card's own
-    default (optional); updateExisting not given - "false", the card's own default (optional).
-    on P1102 MEP
+    and Revit reported the transaction group ROLLED BACK afterwards. returned ambiguous 0
+    item(s), byValue 0 entry(ies), changed 0, created , done false, findSet Func`2, givenName
+    Func`2, memberCount 0, notASheet 0 item(s), onlyText , onlyValues HashSet`1, operation
+    create, parameterWanted , printRange Print range put back to Current window, as it was
+    before., refused No views or sheets to put in the set., setsUnchanged , skipped , unchanged
+    0 item(s), updateExisting false, updated , valuePrefix , wanted N1126 SET. inputs came
+    elements from find-sheets (0); setName as given; mode as given; newName given empty -
+    "none", the card's own default (optional); parameterName not given - "none", the card's
+    own default (optional); setPrefix not given - "none", the card's own default (optional);
+    values not given - "all", the card's own default (optional); updateExisting not given
+    - "false", the card's own default (optional). on Night Rig 1126
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: e36134e01dfe18ba
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 947fe9d4fb101feb
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

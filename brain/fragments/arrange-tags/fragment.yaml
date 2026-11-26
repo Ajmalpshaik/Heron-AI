@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -176,46 +176,56 @@ contract:
       type: IList<ElementId>
 
 proof:
-  date: '2026-11-16'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: Heron OC Tags (3,232 elements), Revit 2024, session 18772
+  model: Night Rig 1126 (21,448 elements), Revit 2020, session 50628
   positive_case: run as it would normally be run - the arrangement was re-made first by running
     filter-elements-by-category, set-selection with this phase's own values - run inside a
     transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    MmToFeet 0.00328083989501312, anyLeft false, atX 5 entry(ies), atY 5 entry(ies), bothHadToMove
-    0 item(s), fallbackTagHeightMm 500, fallbackTagWidthMm 1500, fixedTag 5 entry(ies), freeEnds
-    0 entry(ies), gap 0.656167979002625, halfHeight 0.984251968503941, halfWidth 1.96850393700787,
-    headOf Func`2, heads 5 entry(ies), keptInPlace 0 item(s), maxPasses 10, measuredFrom 5,
-    measuredHeights 5 item(s) [1.96850393700788, 1.96850393700788, 1.96850393700788, ...],
-    measuredWidths 5 item(s) [3.93700787401574, 3.93700787401574, 3.93700787401574, ...],
-    medianOf Func`2, minGapMm 200, moved 2, needX 4.59317585301836, needY 2.62467191601051,
-    notTags 0 item(s), refused 0 item(s), right XYZ, roomTagsStayPut false, separate Func`2,
-    stillOverlapping 0 item(s), straight 5 entry(ies), tags 5 item(s) [M_Door Tag, M_Door
-    Tag, M_Door Tag, ...], up XYZ, working 5 item(s) [352527, 352528, 352529, ...]. inputs
-    came view as given; elements from the selection (5); minGapMm as given; maxPasses as given;
+    MmToFeet 0.00328083989501312, anyLeft false, atX 6 entry(ies), atY 6 entry(ies), bothHadToMove
+    0 item(s), fallbackTagHeightMm 5, fallbackTagWidthMm 15, fixedTag 6 entry(ies), freeEnds
+    0 entry(ies), gap 0.984251968503937, halfH 6 entry(ies), halfHeight 0.667363601371537,
+    halfW 6 entry(ies), halfWidth 2.18011811023622, headOf Func`2, heads 6 entry(ies), keptInPlace
+    0 item(s), maxPasses 10, measuredFrom 6, measuredHeights 6 item(s) [1.30249343832021,
+    1.30249343832021, 1.30249343832021, ...], measuredWidths 6 item(s) [4.36023622047244,
+    4.36023622047244, 2.60498687664042, ...], medianOf Func`2, minGapMm 3, moved 2, needXOf
+    Func`3, needYOf Func`3, notTags 0 item(s), ownHeight 6 entry(ies), ownWidth 6 entry(ies),
+    refused 0 item(s), right XYZ, roomTagsStayPut false, scale 100, separate Func`2, sizedByType
+    0, stillOverlapping 0 item(s), straight 6 entry(ies), tags 6 item(s) [M_Duct Size Tag,
+    M_Duct Size Tag, M_Duct Size Tag, ...], typeHeights 2 entry(ies), typeOfTag 6 entry(ies),
+    typeWidths 2 entry(ies), up XYZ, working 6 item(s) [606926, 606927, 607117, ...]. inputs
+    came view as given; elements from the selection (6); minGapMm as given; maxPasses as given;
     fallbackTagWidthMm as given; fallbackTagHeightMm as given; roomTagsStayPut not given -
-    false (optional). on Heron OC Tags
-  negative_case: 'run with fallbackTagHeightMm=500, fallbackTagWidthMm=1500, maxPasses=10,
-    minGapMm=200, view=FloorPlan: Level 1 arranged with categories=Room Tags, inViewOnly=FloorPlan:
-    Level 1 instead - chosen because it should not contain what this fragment reports - the
-    arrangement was re-made first by running filter-elements-by-category, set-selection with
-    this phase''s own values - run inside a transaction, and Revit reported the transaction
+    false (optional). on Night Rig 1126
+  negative_case: 'run with category=Duct Tags, fallbackTagHeightMm=5, fallbackTagWidthMm=15,
+    inViewOnly=Level 2 HVAC Duct Plan, maxPasses=10, minGapMm=0, view=FloorPlan: Level 2 HVAC
+    Duct Plan instead - chosen because it should not contain what this fragment reports -
+    the arrangement was re-made first by running filter-elements-by-category, set-selection
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
     group ROLLED BACK afterwards. returned MmToFeet 0.00328083989501312, anyLeft false, atX
-    2 entry(ies), atY 2 entry(ies), bothHadToMove 0 item(s), fallbackTagHeightMm 500, fallbackTagWidthMm
-    1500, fixedTag 2 entry(ies), freeEnds 0 entry(ies), gap 0.656167979002625, halfHeight
-    2.16473400739881, halfWidth 2.6246719160105, headOf Func`2, heads 2 entry(ies), keptInPlace
-    0 item(s), maxPasses 10, measuredFrom 2, measuredHeights 2 item(s) [4.32946801479761,
-    4.32946801479761], measuredWidths 2 item(s) [5.24934383202099, 5.24934383202099], medianOf
-    Func`2, minGapMm 200, moved 0, needX 5.90551181102362, needY 4.98563599380024, notTags
-    0 item(s), refused 0 item(s), right XYZ, roomTagsStayPut false, separate Func`2, stillOverlapping
-    0 item(s), straight 2 entry(ies), tags 2 item(s) [Room Tag, Room Tag], up XYZ, working
-    2 item(s) [352530, 352531]. inputs came view as given; elements from the selection (2);
-    minGapMm as given; maxPasses as given; fallbackTagWidthMm as given; fallbackTagHeightMm
-    as given; roomTagsStayPut not given - false (optional). on Heron OC Tags'
+    6 entry(ies), atY 6 entry(ies), bothHadToMove 0 item(s), fallbackTagHeightMm 5, fallbackTagWidthMm
+    15, fixedTag 6 entry(ies), freeEnds 0 entry(ies), gap 0, halfH 6 entry(ies), halfHeight
+    0.667363601371537, halfW 6 entry(ies), halfWidth 2.18011811023622, headOf Func`2, heads
+    6 entry(ies), keptInPlace 0 item(s), maxPasses 10, measuredFrom 6, measuredHeights 6 item(s)
+    [1.30249343832021, 1.30249343832021, 1.30249343832021, ...], measuredWidths 6 item(s)
+    [4.36023622047244, 4.36023622047244, 2.60498687664042, ...], medianOf Func`2, minGapMm
+    0, moved 0, needXOf Func`3, needYOf Func`3, notTags 0 item(s), ownHeight 6 entry(ies),
+    ownWidth 6 entry(ies), refused 0 item(s), right XYZ, roomTagsStayPut false, scale 100,
+    separate Func`2, sizedByType 0, stillOverlapping 0 item(s), straight 6 entry(ies), tags
+    6 item(s) [M_Duct Size Tag, M_Duct Size Tag, M_Duct Size Tag, ...], typeHeights 2 entry(ies),
+    typeOfTag 6 entry(ies), typeWidths 2 entry(ies), up XYZ, working 6 item(s) [606926, 606927,
+    607117, ...]. inputs came view as given; elements from the selection (6); minGapMm as
+    given; maxPasses as given; fallbackTagWidthMm as given; fallbackTagHeightMm as given;
+    roomTagsStayPut not given - false (optional). on Night Rig 1126'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 3f2878c330fb0f4a
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: fbdef5585a80f176
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

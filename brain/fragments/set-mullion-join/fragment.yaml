@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -78,6 +78,84 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-26'
+  by: Ajmal PS
+  model: Night Rig 1126 (21,448 elements), Revit 2020, session 50628
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    ChangedMm 1, MillimetresPerFoot 304.8, MostMullions 500, changed 3, findings 3 item(s)
+    [3 of 42 mullion(s) now run through the crossing - longer alo..., 39 did not change length
+    the way asked - see unchanged. Revi..., Read back from Revit - see readBack], invariant
+    CultureInfo, lengthOf Func`2, mullions 42 item(s) [6 x 12, 6 x 12, 6 x 12, ...], nameOf
+    Func`2, notMullion 0 item(s), options Options, plain Func`2, readBack Make Continuous
+    for 42 mullion(s), each measured off its solid along its own run after Revit rebuilt the
+    wall: ''6 x 12'' (id 576775): 166.7 mm long along its run before, 166.7 mm now; ''6 x
+    12'' (id 576776): 1115 mm long along its run before, 1115 mm now; ''6 x 12'' (id 576777):
+    2100 mm long along its run before, 2100 mm now; ''6 x 12'' (id 576778): 1085 mm long along
+    its run before, 1085 mm now; ''6 x 12'' (id 576779): 1085 mm long along its run before,
+    1085 mm now; ''6 x 12'' (id 576780): 2130 mm long along its run before, 2070 mm now; ''6
+    x 12'' (id 576781): 1115 mm long along its run before, 1115 mm now; ''6 x 12'' (id 576782):
+    1115 mm long along its run before, 1115 mm now; ''6 x 12'' (id 576783): 1085 mm long along
+    its run before, 1145 mm now; ''6 x 12'' (id 576784): 883.3 mm long along its run before,
+    883.3 mm now; ''6 x 12'' (id 576785): 166.7 mm long along its run before, 166.7 mm now;
+    ''6 x 12'' (id 576786): 1115 mm long along its run before, 1115 mm now; ''6 x 12'' (id
+    576787): 2100 mm long along its run before, 2100 mm now; ''6 x 12'' (id 576788): 883.3
+    mm long along its run before, 883.3 mm now; ''6 x 12'' (id 576823): 166.7 mm long along
+    its run before, 166.7 mm now; ''6 x 12'' (id 576824): 1465 mm long along its run before,
+    1465 mm now; ''6 x 12'' (id 576825): 2100 mm long along its run before, 2100 mm now; ''6
+    x 12'' (id 576826): 1085 mm long along its run before, 1085 mm now; ''6 x 12'' (id 576827):
+    1435 mm long along its run before, 1435 mm now; ''6 x 12'' (id 576828): 2130 mm long along
+    its run before, 2070 mm now; ''6 x 12'' (id 576829): 1115 mm long along its run before,
+    1115 mm now; ''6 x 12'' (id 576830): 1465 mm long along its run before, 1465 mm now; ''6
+    x 12'' (id 576831): 1435 mm long along its run before, 1495 mm now; ''6 x 12'' (id 576832):
+    883.3 mm long along its run before, 883.3 mm now; ''6 x 12'' (id 576833): 166.7 mm long
+    along its run before, 166.7 mm now; ''6 x 12'' (id 576834): 1115 mm long along its run
+    before, 1115 mm now; ''6 x 12'' (id 576835): 2100 mm long along its run before, 2100 mm
+    now; ''6 x 12'' (id 576836): 883.3 mm long along its run before, 883.3 mm now; ''6 x 12''
+    (id 576871): 166.7 mm long along its run before, 166.7 mm now; ''6 x 12'' (id 576872):
+    1465 mm long along its run before, 1465 mm now; ''6 x 12'' (id 576873): 2100 mm long along
+    its run before, 2100 mm now; ''6 x 12'' (id 576874): 1085 mm long along its run before,
+    1085 mm now; ''6 x 12'' (id 576875): 1435 mm long along its run before, 1435 mm now; ''6
+    x 12'' (id 576876): 2130 mm long along its run before, 2070 mm now; ''6 x 12'' (id 576877):
+    1115 mm long along its run before, 1115 mm now; ''6 x 12'' (id 576878): 1465 mm long along
+    its run before, 1465 mm now; ''6 x 12'' (id 576879): 1435 mm long along its run before,
+    1495 mm now; ''6 x 12'' (id 576880): 883.3 mm long along its run before, 883.3 mm now;
+    ''6 x 12'' (id 576881): 166.7 mm long along its run before, 166.7 mm now; ''6 x 12'' (id
+    576882): 1115 mm long along its run before, 1115 mm now; ''6 x 12'' (id 576883): 2100
+    mm long along its run before, 2100 mm now; ''6 x 12'' (id 576884): 883.3 mm long along
+    its run before, 883.3 mm now, refused , said continuous, sayMm Func`2, spread Func`4,
+    unchanged 39 item(s) [''6 x 12'' (id 576775): 166.7 mm long along its run before, 16...,
+    ''6 x 12'' (id 576776): 1115 mm long along its run before, 111..., ''6 x 12'' (id 576777):
+    2100 mm long along its run before, 210..., ...], wanted 1. inputs came elements from the
+    selection (42); join as given. on Night Rig 1126'
+  negative_case: run with category=Sprinklers, join=continuous, levelId=Level 2 instead -
+    chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running filter-elements-by-category, set-selection with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned ChangedMm 1, MillimetresPerFoot 304.8, MostMullions 500, changed
+    0, findings 1 item(s) [Nothing given is a mullion - '15 mm Pendent on Drop with Gua...],
+    invariant CultureInfo, lengthOf Func`2, mullions 0 item(s), nameOf Func`2, notMullion
+    6 item(s) ['15 mm Pendent on Drop with Guard' (id 545673) (Sprinklers) ..., '15 mm Pendent
+    on Drop with Guard' (id 545696) (Sprinklers) ..., '15 mm Pendent on Drop with Guard' (id
+    545726) (Sprinklers) ..., ...], options Options, plain Func`2, readBack , refused Nothing
+    given is a mullion - '15 mm Pendent on Drop with Guard' (id 545673) (Sprinklers) is not
+    a mullion - left alone; '15 mm Pendent on Drop with Guard' (id 545696) (Sprinklers) is
+    not a mullion - left alone; '15 mm Pendent on Drop with Guard' (id 545726) (Sprinklers)
+    is not a mullion - left alone. Select the mullions themselves - Tab to one in Revit. Nothing
+    was changed, said continuous, sayMm Func`2, spread Func`4, unchanged 0 item(s), wanted
+    1. inputs came elements from the selection (6); join as given. on Night Rig 1126
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 1e87089b24d418b7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -140,42 +140,50 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  model: Night Rig 1126 (21,446 elements), Revit 2020, session 50628
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
     filter-elements-by-category, set-selection with this phase''s own values. returned MillimetresPerFoot
-    304.8, SameMm 0.001, allSized 115 item(s) [(3060.06434845539, 144.999999999854, ), (3060.06434845539,
-    144.999999999854, ), (3060.06434845539, 144.999999999854, ), ...], allUnsized 29, curtainWallsFound
-    1, differentPanelSizes 14, doorsCategory 1 item(s) [id -2000023], emptyCells 0, findings
-    7 item(s) [1 curtain wall(s): 144 panel cell(s), 173 mullion(s), 0 empt..., ''Standard''
-    (id 573610):,     144 curtain panel(s), ...], groupSizes Func`2, invariant CultureInfo,
-    kindOf Func`2, lengthOf Func`3, mullionCount 173, notCurtain 1 item(s) [''Lamelle 11.5''
-    is a wall but not a CURTAIN wall - its build-...], panelCount 144, panelSizes 14 item(s)
-    [3 at 1010 x 1990 mm (1 of them a door), 15 at 3050.1-3055.1 x 2940 mm, 14 at 3050.1-3055.1
-    x 2990 mm, ...], panelsCategory 1 item(s) [id -2000170], sayMm Func`2, sizesNotRead 29
-    item(s) [''Standard'' (id 573610): cell 577858 ''Metallpanel'' - Revit gi..., ''Standard''
-    (id 573610): cell 577873 ''Metallpanel'' - Revit gi..., ''Standard'' (id 573610): cell
-    577859 ''Verglasung'' - Revit giv..., ...], span Func`3, tolerance 5, toleranceMm 5, toleranceUsable
-    true. inputs came elements from the selection (2); toleranceMm not given - "5", the card''s
-    own default (optional). on P1102 MEP'
+    304.8, SameMm 0.001, allSized 591 item(s) [(29274.0472609947, 145.000000000001, ), (1569.04725935326,
+    3040, ), (1990.00000000001, 3040, ), ...], allUnsized 341, curtainSystemsFound 0, curtainWallsFound
+    22, differentPanelSizes 139, doorsCategory 1 item(s) [id -2000023], emptyCells 0, findings
+    113 item(s) [22 curtain wall(s): 932 panel cell(s), 1297 mullion(s), 0 em..., ''Standard''
+    (id 573596):,     189 curtain panel(s), ...], groupSizes Func`2, invariant CultureInfo,
+    kindOf Func`2, lengthOf Func`3, mullionCount 1297, notCurtain 48 item(s) [''STB 30.0 Rot''
+    is a wall but not a CURTAIN wall - its build-..., ''STB 30.0'' is a wall but not a CURTAIN
+    wall - its build-up i..., ''STB 30.0 Rot'' is a wall but not a CURTAIN wall - its build-...,
+    ...], panelCount 932, panelSizes 139 item(s) [2 at 621.1 x 2840 mm, 1 at 621.1 x 3040
+    mm, 2 at 636 x 2840 mm, ...], panelsCategory 1 item(s) [id -2000170], readGrid Action`4,
+    readWhat 22 curtain wall(s), sayMm Func`2, sizesNotRead 341 item(s) [''Standard'' (id
+    573596): cell 573944 ''Verglasung'' - Revit giv..., ''Standard'' (id 573596): cell 573937
+    ''Verglasung'' - Revit giv..., ''Standard'' (id 573596): cell 573930 ''Verglasung'' -
+    Revit giv..., ...], span Func`3, systemGrids 0, tolerance 5, toleranceMm 5, toleranceUsable
+    true. inputs came elements from the selection (70); toleranceMm not given - "5", the card''s
+    own default (optional). on Night Rig 1126'
   negative_case: 'run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP instead
     - chosen because it should not contain what this fragment reports - the arrangement was
     re-made first by running filter-elements-by-category, set-selection with this phase''s
     own values. returned MillimetresPerFoot 304.8, SameMm 0.001, allSized 0 item(s), allUnsized
-    0, curtainWallsFound 0, differentPanelSizes 0, doorsCategory 1 item(s) [id -2000023],
-    emptyCells 0, findings 1 item(s) [0 curtain wall(s): 0 panel cell(s), 0 mullion(s), 0
-    empty ce...], groupSizes Func`2, invariant CultureInfo, kindOf Func`2, lengthOf Func`3,
-    mullionCount 0, notCurtain 10 item(s) [''Mitered Elbows / Taps'' is not a wall, ''Mitered
-    Elbows / Taps'' is not a wall, ''Mitered Elbows / Taps'' is not a wall, ...], panelCount
-    0, panelSizes 0 item(s), panelsCategory 1 item(s) [id -2000170], sayMm Func`2, sizesNotRead
-    0 item(s), span Func`3, tolerance 5, toleranceMm 5, toleranceUsable true. inputs came
-    elements from the selection (10); toleranceMm not given - "5", the card''s own default
-    (optional). on P1102 MEP'
+    0, curtainSystemsFound 0, curtainWallsFound 0, differentPanelSizes 0, doorsCategory 1
+    item(s) [id -2000023], emptyCells 0, findings 1 item(s) [0 curtain wall(s): 0 panel cell(s),
+    0 mullion(s), 0 empty ce...], groupSizes Func`2, invariant CultureInfo, kindOf Func`2,
+    lengthOf Func`3, mullionCount 0, notCurtain 10 item(s) [''Mitered Elbows / Taps'' is not
+    a wall or a curtain system, ''Mitered Elbows / Taps'' is not a wall or a curtain system,
+    ''Mitered Elbows / Taps'' is not a wall or a curtain system, ...], panelCount 0, panelSizes
+    0 item(s), panelsCategory 1 item(s) [id -2000170], readGrid Action`4, readWhat 0 curtain
+    wall(s), sayMm Func`2, sizesNotRead 0 item(s), span Func`3, systemGrids 0, tolerance 5,
+    toleranceMm 5, toleranceUsable true. inputs came elements from the selection (10); toleranceMm
+    not given - "5", the card''s own default (optional). on Night Rig 1126'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 2ecb617c47edefdf
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 6ca5fb50a31ea4fe
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -141,33 +141,40 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-20'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: Materials IA Test (3,804 elements), Revit 2020, session 29012
-  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned appearanceReport IA Probe Steel:
-    ''Steel - Satin'' (PrismMetalSchema) -> ''IA Probe Steel'' (PrismTransparentSchema), assetsMade
-    1 item(s) [IA Probe Steel], changedMaterialIds 1 item(s) [1330329], findings 4 item(s)
-    [1 material(s) given their appearance; 1 new appearance asset..., ''Glass (Clear)'' was
-    taken to mean Revit''s ''Glass - clear'' (P..., A Realistic view and a rendering draw
-    this appearance. A Sha..., ...], matchShading false, refused , sharedBefore . inputs came
-    materialsNamed as given; appearance as given; appearanceValues not given - "none", the
-    card''s own default (optional); matchShading not given - false (optional). on Materials
-    IA Test'
-  negative_case: 'run with materialsNamed=IA Probe Steel, appearance=No Such Look instead
-    - chosen because it should not contain what this fragment reports - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned appearanceReport
-    , assetsMade 0 item(s), changedMaterialIds 0 item(s), findings 1 item(s) [no appearance
-    asset is called ''No Such Look'' - in this docum...], matchShading false, refused no appearance
-    asset is called ''No Such Look'' - in this document closest: nothing close; in Revit''s
-    appearance library (3088 assets) closest: ''Brass - old look'', ''Brass - old matte look''.
-    Nothing was changed, sharedBefore . inputs came materialsNamed as given; appearance as
-    given; appearanceValues not given - "none", the card''s own default (optional); matchShading
-    not given - false (optional). on Materials IA Test'
+  model: Night Rig 1126 (21,446 elements), Revit 2020, session 50628
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    create-starter-materials with this phase''s own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned appearanceReport
+    N1126_Glass Clear: ''N1126_Glass Clear'' (Colour 176,205,214) -> ''N1126_Glass Clear 2''
+    (Colour 171,128,82), assetsMade 1 item(s) [N1126_Glass Clear 2], changedMaterialIds 1
+    item(s) [1020286], findings 3 item(s) [1 material(s) given their appearance; 1 new appearance
+    asset..., A Realistic view and a rendering draw this appearance. A Sha..., An appearance
+    asset no material uses any more stays in the d...], matchShading false, refused , sharedBefore
+    . inputs came materialsNamed as given; appearance as given; appearanceValues as given;
+    matchShading as given. on Night Rig 1126'
+  negative_case: 'run with appearance=No Such Look, appearanceValues=, matchShading=False,
+    materialsNamed=N1126_Glass Clear, namePrefix=N1126_, starterPick=glass instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running create-starter-materials with this phase''s own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    appearanceReport , assetsMade 0 item(s), changedMaterialIds 0 item(s), findings 1 item(s)
+    [no appearance asset is called ''No Such Look'' - in this docum...], matchShading false,
+    refused no appearance asset is called ''No Such Look'' - in this document closest: nothing
+    close; in Revit''s appearance library (3088 assets) closest: ''Brass - old look'', ''Brass
+    - old matte look''. Nothing was changed, sharedBefore . inputs came materialsNamed as
+    given; appearance as given; appearanceValues given empty - "none", the card''s own default
+    (optional); matchShading as given. on Night Rig 1126'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: e0bb45a7f36cdb42
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: e2f55f53a87adca8
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
