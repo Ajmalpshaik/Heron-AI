@@ -1574,6 +1574,10 @@ def usable(fragments):
 
 
 def main(argv):
+    # Rows 5b-2041 to 5b-2044: print safely on a cp1252 console.
+    import heron_console
+    heron_console.safe_streams()
+
     if "--fragments" in argv:
         import heron_fragment as FRAGMENT
         loaded, _problems = FRAGMENT.load_all()

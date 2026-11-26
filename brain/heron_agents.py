@@ -321,6 +321,10 @@ def without_contract(agents=None, claims=None, deals=None):
 
 
 def main(argv):
+    # Rows 5b-2041 to 5b-2044: print safely on a cp1252 console.
+    import heron_console
+    heron_console.safe_streams()
+
     agents, claims, host = _agent_count()
     deals = contracts()
 

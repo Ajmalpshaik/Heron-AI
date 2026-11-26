@@ -498,6 +498,10 @@ def _decide(project_key, earlier_key, answer, by, made):
 
 
 def main(argv):
+    # Rows 5b-2041 to 5b-2044: print safely on a cp1252 console.
+    import heron_console
+    heron_console.safe_streams()
+
     if len(argv) < 2:
         print("usage: python brain/heron_earlier.py <shared Project Information id>")
         return 2
