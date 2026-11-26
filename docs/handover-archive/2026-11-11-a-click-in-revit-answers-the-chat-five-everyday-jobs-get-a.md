@@ -1,7 +1,7 @@
 # Session note — A CLICK IN REVIT ANSWERS THE CHAT, FIVE EVERYDAY JOBS GET A METHOD, AND A CLOUD CHAT NOBODY SET UP GETS A LIBRARY
 
 > **Archived session note** from 2026-11-11. It was moved out of [`HANDOVER.md`](../HANDOVER.md) on
-> 2026-11-11 by [`tools/archive-handover.py`](../../tools/archive-handover.py), so that file could go back to
+> 2026-11-11 by `tools/archive-handover.py`, so that file could go back to
 > being the short live entry point it is supposed to be. **Its words are unchanged; only its links were
 > re-pointed.** Nothing here is specification: where it disagrees with [DECISIONS.md](../DECISIONS.md),
 > the [Golden Rules](../14-golden-rules.md) or the [Constitution](../../HERON_CONSTITUTION.md), **those

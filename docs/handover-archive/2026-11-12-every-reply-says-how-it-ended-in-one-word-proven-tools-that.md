@@ -1,7 +1,7 @@
 # Session note — EVERY REPLY SAYS HOW IT ENDED IN ONE WORD, PROVEN TOOLS THAT ANSWERED WRONGLY ARE REPAIRED AND DRAFT AGAIN, AND A DEFECT ROW GETS A FILE OF ITS OWN
 
 > **Archived session note** from 2026-11-12. It was moved out of [`HANDOVER.md`](../HANDOVER.md) on
-> 2026-11-12 by [`tools/archive-handover.py`](../../tools/archive-handover.py), so that file could go back to
+> 2026-11-12 by `tools/archive-handover.py`, so that file could go back to
 > being the short live entry point it is supposed to be. **Its words are unchanged; only its links were
 > re-pointed.** Nothing here is specification: where it disagrees with [DECISIONS.md](../DECISIONS.md),
 > the [Golden Rules](../14-golden-rules.md) or the [Constitution](../../HERON_CONSTITUTION.md), **those

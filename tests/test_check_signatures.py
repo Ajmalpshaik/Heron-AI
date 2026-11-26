@@ -31,13 +31,14 @@ and mutating the copies:
 
   * a proof signed `Claude Opus 5, at Ajmal PS's PC` is COUNTED as a
     signature and listed like any other. D-30 says the machine gathers
-    evidence and a PERSON signs, and `resign-machine-proofs.py` exists
+    evidence and a PERSON signs, and a one-off tool (resign-machine-proofs,
+    since removed - it had nothing left to do) existed
     because sixteen fragments carried that exact string - "it is not a
     signature, it is the thing the rule exists to forbid, written into the
     field meant to prevent it". That one is MEASURED HERE AND NOT GUARDED:
     row 5b-131 is open on where the answer to "is this a person's name?"
-    should live, since both tools need it and neither should hold a second
-    copy of the other's word list, and asserting today's behaviour would
+    should live, since that tool and this gate both needed it and neither
+    should hold a second copy of the other's word list, and asserting today's behaviour would
     lock in the thing the row asks about.
 
 EVERY CASE BUILDS ITS OWN LIBRARY, by copying real fragments into a temp
@@ -245,16 +246,17 @@ def main():
         print()
         print("5. A machine's name in `by:` - MEASURED, NOT GUARDED")
         # D-30: the machine gathers evidence and a PERSON signs, and
-        # resign-machine-proofs.py exists because sixteen fragments carried
-        # exactly this string in exactly this field - "not a signature, it is
-        # the thing the rule exists to forbid, written into the field meant
-        # to prevent it". This tool counts it as one.
+        # A one-off tool, resign-machine-proofs (since removed), existed
+        # because sixteen fragments carried exactly this string in exactly
+        # this field - "not a signature, it is the thing the rule exists to
+        # forbid, written into the field meant to prevent it". This tool
+        # counts it as one.
         #
         # NOT ASSERTED EITHER WAY, on purpose. Row 5b-131 records the
         # measurement and the question it turns on: WHERE the answer to
-        # "is this a person's name?" should live, since both this gate and
-        # resign-machine-proofs need it and neither should hold a second
-        # copy of the other's word list. Asserting today's behaviour here
+        # "is this a person's name?" should live, since this gate and that
+        # tool both needed it and neither should hold a second copy of the
+        # other's word list. Asserting today's behaviour here
         # would lock in the thing the row is open about.
         code, spoke = run(build(lambda p, s: edit(
             p, s[0], "  by: ", "  by: Claude Opus 5, at ")))

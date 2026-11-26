@@ -155,9 +155,9 @@ def _anchors(lines):
     fenced = NCR.fenced_lines(lines)
     out = set()
     for k, line in enumerate(lines):
-        h = SPLIT.AH.HEADING.match(line)
+        h = SPLIT.AF.HEADING.match(line)
         if h and k not in fenced:
-            out.add(SPLIT.AH.anchor_of(h.group(1)))
+            out.add(SPLIT.AF.anchor_of(h.group(1)))
     return out
 
 
