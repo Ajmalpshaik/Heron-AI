@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -14,7 +14,13 @@ capability: CREATE_SHEETS
 # (ViewSheet.CreatePlaceholder) - a number and a name for the sheet list, no
 # title block and no views. Nothing else changes. Still DRAFT: version 4's
 # Group OZ and this version's NEEDS-CHECKING Group PE (D-30).
-version: 5
+# VERSION 6 (2026-11-26, FRAGMENT-ISSUES row 5b-1935, issue #1156): the copy
+# job takes a bad copy back - the owner's "Take the bad copy back". Each copy
+# is made in a SubTransaction of its own, by the helper typed numbers use; a
+# copy whose number or name Revit refuses is taken back and listed, as D-193
+# rule 1 already did for a table and typed numbers. Was PROVEN at version 5
+# (signed 2026-11-24); DRAFT until NEEDS-CHECKING Group RC runs (D-30).
+version: 6
 source: OFFICIAL
 risk: MODIFY
 
@@ -72,6 +78,12 @@ purpose: >
   or name Revit refuses is taken back and given back with Revit's words; one
   number given twice makes neither; at most 1,000 in one call. previewOnly
   does the whole job and takes it back.
+
+  **VERSION 6 takes a bad copy back.** The copy job makes each copy in a
+  sub-transaction of its own too, and a copy whose number or name Revit
+  refuses is taken back - nothing of it kept, its source given back with
+  Revit's words - so no copy is left under a number or a name Revit chose by
+  itself. Every way of making sheets now keeps that one rule.
 
 contract:
   needs:
@@ -135,6 +147,7 @@ contract:
     - name: namePrefix
       # Version 3. Put before each source's name - "DRAFT " - kept with its
       # space. Left out it is "none": the copy takes the source's name.
+      # Version 6: a name Revit refuses takes that copy back (notCreated).
       type: string
       source: request
       optional: true
@@ -163,8 +176,9 @@ contract:
       # numbers - every sheet is made in its own sub-transaction and TAKEN
       # BACK after its read-back; nothing is kept, and `preview` lists every
       # one as it would be made or not, with its title block and (a table)
-      # the values it would get. Refused with the copy job, which cannot take
-      # its copies back one by one: nothing is made. Absent binds false.
+      # the values it would get. Refused with the copy job: nothing is made
+      # (version 6 takes a refused copy back alone, but a copy run is still
+      # not previewed). Absent binds false.
       type: bool
       source: request
       optional: true
@@ -172,6 +186,7 @@ contract:
     - name: created
       # The sheets made and kept. Version 4: empty on a preview, and a sheet
       # whose number or name Revit refused is never here - it was taken back.
+      # Version 6: a copy too.
       role: result
       type: IList<ElementId>
     - name: numberedAs
@@ -206,19 +221,20 @@ contract:
     - name: notDuplicated
       # Version 3, from DUPLICATE_SHEETS. Sources no copy came back for - not
       # a sheet, a placeholder or a sheet with no title block to copy, a
-      # number already used, Revit declining, or a copy whose number did not
-      # take (that copy is in `created` and `refused`, with its real number in
-      # numberedAs). Each reason is a line in notCreated. Never a sheet it
-      # made (D-52).
+      # number already used, Revit declining, or - version 6 - a copy whose
+      # number or name Revit refused, TAKEN BACK, nothing of it kept (version
+      # 5 kept that copy, in `created` and `refused`). Each reason is a line
+      # in notCreated. Never a sheet it made (D-52).
       role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
-      # "did this come back empty" (D-52). Version 4: only the copy job fills
-      # it - a copy whose number did not take, which exists. A table's rows
-      # and typed numbers take such a sheet back instead (D-193), so it is a
-      # line in notCreated. CREATE_SHEETS_FROM_TABLE's own `refused` was a
+      # "did this come back empty" (D-52). Version 4: only the copy job filled
+      # it - a copy whose number did not take, which existed. Version 6: NO
+      # route fills it - the copy job takes such a copy back too (D-193 rule
+      # 1, row 5b-1935), a line in notCreated; it stays, always empty, so a
+      # caller that reads it is not broken. CREATE_SHEETS_FROM_TABLE's own `refused` was a
       # SENTENCE - why nothing was made; that sentence is a line in
       # notCreated here (titleBlockProblem for a title block), and the first
       # of `findings`.
@@ -256,7 +272,9 @@ contract:
       # Revit's words; a number given twice, a line for each entry, neither
       # made; and a refusal of the whole call - more than 1,000, a table that
       # cannot be read safely, a table and numbers both given, previewOnly
-      # with the copy job.
+      # with the copy job. Version 6: a copy whose number or name Revit
+      # refused, taken back, with Revit's words - "<number>: Revit refused the
+      # name ..., so the sheet was taken back. Revit said: ...".
       role: accounting
       type: IList<string>
     - name: columnsMatched
@@ -294,11 +312,11 @@ contract:
       # PREVIEW line on a preview, else empty.
       type: IList<string>
 
-# VERSION 3'S PROOF, KEPT AS A RECORD (2026-11-21). Version 4 changed impl/
-# (CREATE_SHEETS_FROM_TABLE merged in, D-193), so the fingerprint below no
-# longer describes the code and the card is DRAFT until NEEDS-CHECKING Group OZ
-# proves version 4 on a real model (D-30). The typed-numbers route this proof
-# ran is still there, with version 4's three rules added.
+# VERSION 5'S PROOF, KEPT AS A RECORD (2026-11-26). Signed 2026-11-24 on the
+# table route. Version 6 changed impl/ (the copy job takes a bad copy back,
+# row 5b-1935), so the fingerprint below no longer describes the code and the
+# card is DRAFT until NEEDS-CHECKING Group RC runs version 6 on a real model
+# (D-30). The table route this proof ran is unchanged in version 6.
 proof:
   date: '2026-11-24'
   by: Ajmal PS
@@ -426,7 +444,8 @@ compatibility-note: >
 # - and copying runs only when no numbers are given, so a selection can never
 # turn "make a new sheet" into copies. That card reported a copy whose number
 # did not take as not duplicated and said nothing of the sheet; here that
-# sheet is in `created`, `refused` and numberedAs, because it exists. A name
+# sheet is in `created`, `refused` and numberedAs, because it exists (until
+# version 6, which takes that copy back and lists it in notCreated). A name
 # prefix keeps its trailing space here, where that card trimmed it.
 #
 # WHERE ITS OUTPUTS ARE NOW: newSheetIds -> created, notDuplicated ->
@@ -458,8 +477,9 @@ compatibility-note: >
 #   2. the same number twice in one request makes NEITHER, each listed. This
 #      card made the first;
 #   3. at most 1,000 sheets in one call, typed numbers too.
-# The copy job (version 3) keeps its own rules; whether rule 1 reaches it too
-# is FRAGMENT-ISSUES row 5b-1935, the owner's. previewOnly is refused with it.
+# The copy job (version 3) kept its own rules; whether rule 1 reached it too
+# was FRAGMENT-ISSUES row 5b-1935, the owner's - answered "Take the bad copy
+# back" on 2026-11-26 and done in version 6. previewOnly is refused with it.
 #
 # WHERE ITS OUTPUTS ARE NOW: created, numberedAs, namedAs, numberTaken,
 # notCreated, titleBlockNotFound, noTitleblock, titleBlockProblem, valuesSet,
