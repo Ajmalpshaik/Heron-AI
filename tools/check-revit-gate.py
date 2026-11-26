@@ -759,6 +759,12 @@ KEYS = {
 
 
 def main(argv):
+    # Rows 5b-2043 and 5b-2044: print safely on a cp1252 console. A stream
+    # that cannot be reconfigured - a test's StringIO - is left as it is.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
     entries, problems = library()
     if problems:
         print("FRAGMENTS THAT COULD NOT BE READ  (%d)" % len(problems))
