@@ -1,0 +1,23 @@
+# Issue #1372, row 5b-2029 - SET_FAMILY_TYPE_VALUES version 6 writes a Number of Poles.
+# Revit 2020, 2026-11-26. Model: pt-ahu - a scratch COPY of Ajmal PS's AHU family
+# (TRG_..._SKM MAH-0202S2M.rfa) saved in %TEMP%\heron-work\pt, never the library file.
+# Its shared Number_of_Poles (spec Number of Poles) reads 1 before the run.
+# Positive: 3, read back as an integer. Negative: 7, refused with nothing written.
+model: pt-ahu (scratch copy of the MAH-0202S2M AHU family), Revit 2020
+
+defaults:
+  set:
+    typeName: TRG_Air Handling Unit_DX_MAH-0202S2M
+  negative-set:
+    typeName: TRG_Air Handling Unit_DX_MAH-0202S2M
+
+jobs:
+  - fragment: set-family-type-values
+    write: true
+    expect: written
+    set:
+      values: Number_of_Poles=3
+      deleteType: false
+    negative-set:
+      values: Number_of_Poles=7
+      deleteType: false

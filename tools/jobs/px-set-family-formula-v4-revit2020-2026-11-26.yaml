@@ -1,0 +1,17 @@
+# Group PX (issue #1297), PX7 - SET_FAMILY_FORMULA version 4: the set path signs on formulaSet.
+# Revit 2020, 2026-11-26. Model: pt-ahu - a scratch COPY of Ajmal PS's AHU family
+# (TRG_..._SKM MAH-0202S2M.rfa) in %TEMP%\heron-work\pt, never the library file.
+# Positive: Control_Box_Depth = Unit_Height / 5 (900 / 5 = 180). Negative: a parameter the family
+# does not have - refused, formulaSet 0. Rolled back.
+model: pt-ahu (scratch copy of the MAH-0202S2M AHU family), Revit 2020
+
+jobs:
+  - fragment: set-family-formula
+    write: true
+    expect: formulaSet
+    set:
+      parameterName: Control_Box_Depth
+      formula: Unit_Height / 5
+    negative-set:
+      parameterName: Heron No Such Parameter 1124
+      formula: Unit_Height / 5
