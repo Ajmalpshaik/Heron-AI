@@ -226,7 +226,12 @@ contract:
       # built round and the edges it did not line - "101 Office: 9 finish
       # walls, a gap at 1 door or opening to the floor, built round 2 windows
       # or openings, 1 edge not lined". Empty when no wall type was given.
-      role: result
+      # ACCOUNTING (row 5b-1968, #1242): it reads back `finishWalls` and
+      # `skippedEdges` in words, and it is a line per room whatever was built
+      # - "0 finish walls, 4 edges not lined" is its answer for a room that got
+      # nothing - so it can never come back empty beside a wall type. What the
+      # card made is `finishWalls`, a list that IS empty on that room.
+      role: accounting
       type: string
     - name: skippedEdges
       # VERSION 2. How many room edges were NOT lined - a curtain wall, a

@@ -69,6 +69,11 @@ contract:
       source: request
   provides:
     - name: placed
+      # STAYS A RESULT (row 5b-1968, #1242): it is the card's real answer - the
+      # accessories now on a run - and it lists one placed but not fully joined
+      # too, with its run in `leftSevered`. So a case where Revit places the
+      # accessory is not an empty D-30 leg; the negative is a set of things
+      # that are not runs (tests/cases.yaml), where `placed` is empty.
       role: result
       type: IList<ElementId>
     - name: leftSevered
