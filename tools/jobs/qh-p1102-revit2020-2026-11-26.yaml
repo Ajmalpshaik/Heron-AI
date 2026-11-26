@@ -1,0 +1,24 @@
+# Group QH (issue #1346), QH3, QH7, QH9 - three reading tools count what they pass over (D-64).
+# Revit 2020, 2026-11-26. Model: "P1102 MEP" - a fresh scratch copy of Revit 2020's
+# rme_advanced_sample_project.rvt in %TEMP%/heron-work/p1102 (the installed sample untouched).
+model: P1102 MEP (copy of Revit 2020 rme_advanced_sample_project), Revit 2020
+
+defaults:
+  in: P1102 MEP
+  negative-in: P1102 MEP
+
+jobs:
+  - fragment: report-masses
+    expect: massCount
+    set: {masses: "", siteArea: "", withOutlines: false}
+    negative-set: {masses: NoSuchFamily, siteArea: "", withOutlines: false}
+
+  - fragment: report-panel-circuits
+    expect: circuitCount
+    set: {panelName: ""}
+    negative-set: {panelName: NO-SUCH-PANEL}
+
+  - fragment: report-sprinkler-network
+    expect: elementCount
+    set: {systemName: Fire Protection Wet 1}
+    negative-set: {systemName: ZZZ No Such System}

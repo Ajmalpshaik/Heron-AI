@@ -45,3 +45,21 @@ Settings. Every run that keeps a change is Undone after.
 
 **Signing, once QV1 to QV6 pass:** the card's proof is written by `tools/batch-prove.py` with the owner, and
 `heron-status` set to PROVEN in the same change - never by a session, and never on a working model.
+
+### Results, 2026-11-26 - Revit 2020, session 27788, add-in 0.3.0.0 (file `df0d401c52ca05f4`), card version 4 from main
+
+**Model:** *on-mep* - a scratch copy of Revit 2020's `rme_advanced_sample_project.rvt` in `%TEMP%\heron-work\on`,
+not this group's `qv.rvt` rig (no boxes, tag or dimension): its **78 Rooms** were the target, because Group ON needed
+them gone. Every run rolled back. `REPORT_ELEMENT_DEPENDENCIES` on the 78: `goesTotal` **78**, all standalone.
+
+| Row | Result |
+|---|---|
+| QV1, run 2026-11-26, on rooms | **PASS in shape** - `expectedCount=81` (Revit's real count): `countChecked` *"Revit's own trial of this delete takes 81 element(s) - the count the yes named - checked before anything was deleted."*, `deleted` 81, *"Asked for 78: Rooms 78. Also went 3: (no category) Element 3."* No tag or dimension here, so not the row's A-tag-dimension case. |
+| QV2, run 2026-11-26, on rooms | **FAILED in shape** - `expectedCount=80`: the right words and outcome - *"STOPPED BEFORE THE DELETE - NOTHING HAS BEEN DELETED ... takes 81 - by category: Rooms 78, (no category) Element 3. 3 more than the 78 asked for would go: 580983, 580984, 580982"* - but as **`fragment_threw`**, not a refusal; a thrown negative cannot sign the card. Row [5b-2060](../fragment-issues/row-5b-2060.md), issue [#1462](https://github.com/Ajmalpshaik/Heron-AI/issues/1462). Ask to Delete was OFF in this Revit, so no box was expected either way. |
+| QV3b, run 2026-11-26 | Same as QV2 - `expectedCount=0`: stopped, nothing deleted, **thrown**. |
+| Count from the yes | **`REPORT_ELEMENT_DEPENDENCIES` said 78; Revit's delete takes 81** - three elements with no category (580982-580984) are not in `goesTotal`, so the method's yes would name 78 and the delete would stop every time. Row [5b-2061](../fragment-issues/row-5b-2061.md), issue [#1463](https://github.com/Ajmalpshaik/Heron-AI/issues/1463) - Group QT's question. |
+| QV3, QV4, QV5, QV6, QV7 | **NOT RUN.** |
+
+Proof job [`qv-delete-elements-v4-on-mep-...`](../../tools/jobs/qv-delete-elements-v4-on-mep-revit2020-2026-11-26.yaml) came
+back **DID NOT RUN** (its positive used 78, the dependency count, and the stop threw). Re-run it with 81 once row
+5b-2060 is fixed.

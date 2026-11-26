@@ -36,7 +36,7 @@ with its top face not yet divided. For PY3 and PY4 a scratch copy of the `PIPE` 
 | ~~**PY1**~~ | *Negative - a pattern Revit does not offer.* `divide-family-surface` with the box's form id, `face=top`, `uGrid=20`, `vGrid=4`, `pattern=Not A Pattern` - the negative OT17's job already asks for. | **A refusal, NOT `fragment_threw`.** `refused` begins *"Nothing was divided. No pattern or panel called "Not A Pattern" is offered for this surface - Revit offers ..."* and names what Revit offers; `surfaceId` and `divided` are empty. **LOOKED AT:** the top face is not divided. A FAIL is a throw, a divided face left behind, or a list of offered types that is empty when the Type Selector shows some - each a new row. |
 | **PY2** | *Positive, straight after PY1 on the same form.* The same call with `pattern=` empty, then once more on another face with a pattern from PY1's list. | The top face divided as version 2 did - *"U rule: Number 20; V rule: Number 4; Revit counts ... U-gridlines and ... V-gridlines"* - and NOT refused as *"already divided"* (PY1's rollback left nothing). The second call's pattern is read back by name. **RECORD** whether the face reference still worked after PY1's rolled-back `SubTransaction`. |
 | **PY3** | *Positive, as version 1 was proved.* `report-pipe-segments` with `nameContains=Copper`, then `ZZZNOTASEGMENT`. | The same rows and counts as version 1's proof (6 of 19, each with its OD range); the first finding ends *"0 whose sizes could not be read"*; `unreadable` empty. The negative is as before: 0 reported of a non-zero `scanned`. |
-| **PY4** | *Measure - does `GetSizes` ever throw?* `report-pipe-segments` with `nameContains` empty on every model to hand. | **RECORD** `unreadable`'s count on each. Zero everywhere means the new branch has never been seen run - say so, never call it proved. One that is not zero: its row says *"sizes NOT READ - Revit says: ..."*, it is not in `noSizes`, and Revit's words are written here. |
+| ~~**PY4**~~ | *Measure - does `GetSizes` ever throw?* `report-pipe-segments` with `nameContains` empty on every model to hand. | **RECORD** `unreadable`'s count on each. Zero everywhere means the new branch has never been seen run - say so, never call it proved. One that is not zero: its row says *"sizes NOT READ - Revit says: ..."*, it is not in `noSizes`, and Revit's words are written here. |
 
 ### Results, 2026-11-26 - Revit 2020, session 32484, add-in 0.3.0.0 (file `df0d401c52ca05f4`, built from main `e8c3be150`)
 
@@ -56,3 +56,8 @@ and [`py-report-pipe-segments-v2-...`](../../tools/jobs/py-report-pipe-segments-
 | PY4, run 2026-11-26 | **RECORDED, not proved** - `nameContains` empty on Project1: `unreadable` **0** of 17. The family models open have no pipe segments. The new *"sizes NOT READ"* branch has still never been seen run. |
 
 **Signed 2026-11-26 by Ajmal PS** (his word in chat, "6 sing"; signature put on by the session): `divide-family-surface` version 3 and `report-pipe-segments` version 2, both cards PROVEN.
+
+**PY4, recorded again 2026-11-26 (Revit 2020, session 27788):** `nameContains` empty on *on-mep* (a second fresh
+copy of `rme_advanced_sample_project.rvt`): *"13 pipe segment(s) reported of 13 scanned; 0 carry no sizes; 0 whose
+sizes could not be read"*, `unreadable` 0. With Project1's 0 of 17, **zero on every model to hand** - so the
+*"sizes NOT READ"* branch has never been seen run. Recorded, as the row asks; not a proof of that branch.

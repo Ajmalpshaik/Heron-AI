@@ -1,0 +1,23 @@
+# Group ON (issue #1059), ON1 - ASSIGN_LOCATION_DATA version 4 on spaces: name and number apart.
+# Revit 2020, 2026-11-26. Model: "P1102 MEP" - a FRESH scratch copy of Revit 2020's
+# rme_advanced_sample_project.rvt in %TEMP%/heron-work/p1102, standing in for on-mep (the same sample),
+# with ID_Room Name and ID_Room Number (text, instance, Air Terminals + Duct Accessories) added and kept
+# from a scratch shared parameter file (%TEMP%/heron-work/on/on-shared.txt).
+# Positive (ON1): the 98 Level 1 air terminals, useSpaces=true - 98 written.
+# Negative: the same 98, roomParameter a parameter they do not carry - nothing written. ON2's own
+# negative (useSpaces=false) cannot be empty on this sample: it holds 76 placed rooms. Rolled back.
+model: P1102 MEP (copy of Revit 2020 rme_advanced_sample_project, ID_Room parameters added), Revit 2020
+
+defaults:
+  in: P1102 MEP
+  negative-in: P1102 MEP
+  setup: [filter-elements-by-category, set-selection]
+
+jobs:
+  - fragment: assign-location-data
+    write: true
+    expect: written
+    set: {category: "Air Terminals", levelId: "Level 1", useSpaces: true,
+          roomParameter: "ID_Room Name", numberParameter: "ID_Room Number", levelParameter: "none"}
+    negative-set: {category: "Air Terminals", levelId: "Level 1", useSpaces: true,
+                   roomParameter: "Heron No Such Parameter 1126", numberParameter: "none", levelParameter: "none"}

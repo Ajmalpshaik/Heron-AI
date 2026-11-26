@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -188,62 +188,70 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-24'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: Night Rig 1124, Revit 2024, session 26904 - the count is NOT recorded because 2,021
-    elements was measured on M_Desk, the document in front, and this ran against another one
-    (row 15)
+  model: on-mep, Revit 2020, session 27788 - the count is NOT recorded because 1,560 elements
+    was measured on qs-scratch, the document in front, and this ran against another one (row
+    15)
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    filter-elements-by-category, set-selection with this phase''s own values - run inside
-    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    ambiguousLevelParameter 0, ambiguousNumberParameter 0, ambiguousRoomParameter 0, containerWithoutValue
-    0, fill Func`4, hostLevels 2 item(s) [Level 1, Level 2], hostOverLink 0, includeLinks
-    false, label ROOM, landedInHost 1, landedInLink 0, landedPerLink 0 entry(ies), levelTarget
-    Mark, levelWritten 1, linkedMatches 1 item(s) [Host model only - links not read], linkedSkipped
-    0, linksSearched 0, missingLevelParameter 0, missingNumberParameter 0, missingRoomParameter
-    0, nameTarget Comments, nameWritten 1, named Func`2, nestedLinks 0, noLevelFound 0, noRoomFound
-    0 item(s), notKept 0, notOnItsStorey 0 item(s), notOnItsStoreyCount 0, numberTarget ,
-    numberWritten 0, overlapping 0 item(s), pick Func`4, refused 1 item(s) [1 element(s) written,
-    using ROOMS - name 1, number 0, level ...], samples 1 item(s) [353594: name "Room" | number
-    "(not written)"], settledByStorey 0, skippedContainers 0, spatial 1 item(s) [Room 1],
-    spatialBox 1 item(s) [Autodesk.Revit.DB.BoundingBoxXYZ], spatialFrom 1 item(s) [], spatialStorey
-    1 item(s) [(13.1233595800525, Level 2)], spatialTo 1 item(s) [(null)], storeyLevelsIn
-    Func`2, storeyOf Func`3, testFailed 0, tolerance 0.00328083989501312, useSpaces false,
-    wantedCategory BuiltInCategory, written 1. inputs came elements from the selection (1);
-    roomParameter as given; numberParameter not given - "none", the card''s own default (optional);
-    levelParameter as given; useSpaces as given; includeLinks not given - false (optional).
-    on Night Rig 1124'
-  negative_case: 'run with categories=Generic Models, inViewOnly=FloorPlan: Level 1, levelParameter=ZZZNOTHINGHERE,
-    roomParameter=ZZZNOTHINGHERE, useSpaces=False instead - chosen because it should not contain
-    what this fragment reports - the arrangement was re-made first by running filter-elements-by-category,
-    set-selection with this phase''s own values - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned ambiguousLevelParameter 0, ambiguousNumberParameter
-    0, ambiguousRoomParameter 0, containerWithoutValue 0, fill Func`4, hostLevels 2 item(s)
-    [Level 1, Level 2], hostOverLink 0, includeLinks false, label ROOM, landedInHost 1, landedInLink
-    0, landedPerLink 0 entry(ies), levelTarget ZZZNOTHINGHERE, levelWritten 0, linkedMatches
-    1 item(s) [Host model only - links not read], linkedSkipped 0, linksSearched 0, missingLevelParameter
-    1, missingNumberParameter 0, missingRoomParameter 1, nameTarget ZZZNOTHINGHERE, nameWritten
-    0, named Func`2, nestedLinks 0, noLevelFound 0, noRoomFound 0 item(s), notKept 0, notOnItsStorey
-    0 item(s), notOnItsStoreyCount 0, numberTarget , numberWritten 0, overlapping 0 item(s),
-    pick Func`4, refused 3 item(s) [1 element(s) have no writable text parameter ''ZZZNOTHINGHERE...,
-    1 element(s) have no writable text parameter ''ZZZNOTHINGHERE..., 0 element(s) written,
-    using ROOMS - name 0, number 0, level ...], samples 0 item(s), settledByStorey 0, skippedContainers
-    0, spatial 1 item(s) [Room 1], spatialBox 1 item(s) [Autodesk.Revit.DB.BoundingBoxXYZ],
-    spatialFrom 1 item(s) [], spatialStorey 1 item(s) [(13.1233595800525, Level 2)], spatialTo
-    1 item(s) [(null)], storeyLevelsIn Func`2, storeyOf Func`3, testFailed 0, tolerance 0.00328083989501312,
+    filter-elements-by-category, set-selection, link-files with this phase''s own values -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned ambiguousLevelParameter 0, ambiguousNumberParameter 0, ambiguousRoomParameter
+    0, containerWithoutValue 0, fill Func`4, findings 1 item(s) [97 element(s) written, using
+    ROOMS - name 97, number 97, lev...], hostLevels 4 item(s) [Level 1, Level 2, Level 3,
+    ...], hostOverLink 0, includeLinks true, label ROOM, landedInHost 0, landedInLink 97,
+    landedPerLink 1 entry(ies), levelTarget , levelWritten 0, linkedMatches 5 item(s) [1 link(s)
+    read: 97 element(s) found in a linked ROOM, 0 in o..., on-arch: 76 placed and enclosed
+    ROOM(s) asked, on-arch: 97 element(s) found in a ROOM of it, ...], linkedSkipped 2, linksSearched
+    1, missingLevelParameter 0, missingNumberParameter 0, missingRoomParameter 0, nameTarget
+    ID_Room Name, nameWritten 97, named Func`2, nestedLinks 0, noLevelFound 0, noRoomFound
+    1 item(s) [408625], notKept 0, notOnItsStorey 0 item(s), notOnItsStoreyCount 0, numberTarget
+    ID_Room Number, numberWritten 97, overlapping 0 item(s), pick Func`4, refused 2 item(s)
+    [1 element(s) were given no ROOM and were not written - 0 of ..., 78 element(s) were in
+    plan of more than one ROOM - another s...], samples 10 item(s) [383543: name "Archive"
+    | number "21" - from the link on-arch, 386293: name "Washing Room" | number "25" - from
+    the link on..., 386336: name "Washing Room" | number "25" - from the link on..., ...],
+    settledByStorey 78, skippedContainers 0, spatial 76 item(s) [Room, Room, Room, ...], spatialBox
+    76 item(s) [Autodesk.Revit.DB.BoundingBoxXYZ, Autodesk.Revit.DB.BoundingBoxXYZ, Autodesk.Revit.DB.BoundingBoxXYZ,
+    ...], spatialFrom 76 item(s) [on-arch, on-arch, on-arch, ...], spatialStorey 76 item(s)
+    [(12.1582292097164, Level 2), (12.1582292097164, Level 2), (12.1582292097164, Level 2),
+    ...], spatialTo 76 item(s) [Autodesk.Revit.DB.Transform, Autodesk.Revit.DB.Transform,
+    Autodesk.Revit.DB.Transform, ...], storeyLevelsIn Func`2, storeyOf Func`3, testFailed
+    0, tolerance 0.00328083989501312, useSpaces false, wantedCategory BuiltInCategory, written
+    97. inputs came elements from the selection (98); roomParameter as given; numberParameter
+    as given; levelParameter as given; useSpaces as given; includeLinks as given. on on-mep'
+  negative_case: run with category=Air Terminals, levelId=Level 1, paths=C:\Users\ajmal\AppData\Local\Temp\heron-work\on\on-arch.rvt,
+    placement=origin, viewName=, useSpaces=false, includeLinks=false, roomParameter=ID_Room
+    Name, numberParameter=ID_Room Number, levelParameter=none instead - chosen because it
+    should not contain what this fragment reports - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection, link-files with this phase's own values -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned ambiguousLevelParameter 0, ambiguousNumberParameter 0, ambiguousRoomParameter
+    0, containerWithoutValue 0, fill Func`4, findings 1 item(s) [0 element(s) written, using
+    ROOMS - name 0, number 0, level ...], hostLevels 4 item(s) [Level 1, Level 2, Level 3,
+    ...], hostOverLink 0, includeLinks false, label ROOM, landedInHost 0, landedInLink 0,
+    landedPerLink 0 entry(ies), levelTarget , levelWritten 0, linkedMatches 1 item(s) [Host
+    model only - links not read], linkedSkipped 0, linksSearched 0, missingLevelParameter
+    0, missingNumberParameter 0, missingRoomParameter 0, nameTarget ID_Room Name, nameWritten
+    0, named Func`2, nestedLinks 0, noLevelFound 0, noRoomFound 98 item(s) [383543, 386293,
+    386336, ...], notKept 0, notOnItsStorey 0 item(s), notOnItsStoreyCount 0, numberTarget
+    ID_Room Number, numberWritten 0, overlapping 0 item(s), pick Func`4, refused 2 item(s)
+    [this model has no placed and enclosed ROOMS of its own. If t..., 98 element(s) were given
+    no ROOM and were not written - 0 of...], samples 0 item(s), settledByStorey 0, skippedContainers
+    0, spatial 0 item(s), spatialBox 0 item(s), spatialFrom 0 item(s), spatialStorey 0 item(s),
+    spatialTo 0 item(s), storeyLevelsIn Func`2, storeyOf Func`3, testFailed 0, tolerance 0.00328083989501312,
     useSpaces false, wantedCategory BuiltInCategory, written 0. inputs came elements from
-    the selection (1); roomParameter as given; numberParameter not given - "none", the card''s
-    own default (optional); levelParameter as given; useSpaces as given; includeLinks not
-    given - false (optional). on Night Rig 1124'
+    the selection (98); roomParameter as given; numberParameter as given; levelParameter as
+    given; useSpaces as given; includeLinks as given. on on-mep
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
   built_on:
-    revit_release: '2024'
-    revit_build: 24.3.60.12
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
     addin_version: 0.3.0.0
-    addin_hash: b5c1b9426090689f
-  fingerprint: 556b8e9d5afa7d42
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 63fa4222d887edbb
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

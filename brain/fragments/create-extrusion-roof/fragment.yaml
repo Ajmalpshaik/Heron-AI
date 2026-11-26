@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,6 +62,9 @@ capability: CREATE_EXTRUSION_ROOF
 # Revit 2020 on P1102 MEP - the release version 2 exists to repair. No C#
 # changed, so the version stays 2: the proof below is version 2's, its
 # fingerprint still matches impl/, and `proof-held:` says why it is not used.
+# PROVEN AGAIN 2026-11-26: OU22 run as written on Revit 2020 (a fresh copy of the
+# MEP sample P1102 MEP is), (a) and (b), and the new proof signed by Ajmal PS on his
+# word; `proof-held` lifted. The proof below is that run's.
 version: 2
 source: OFFICIAL
 risk: MODIFY
@@ -158,65 +161,56 @@ contract:
     - name: findings
       type: IList<string>
 
-proof-held: >
-  Back to DRAFT on 2026-11-26, on the owner's answer to row 5b-1967 ("Re-run,
-  then sign"): the 2026-11-21 proof ran on Revit 2024 and roofjoin-oy, and
-  NEEDS-CHECKING Group OU's OU22 is written for Revit 2020 on the scratch copy
-  P1102 MEP, where every run of version 1 threw. OU22's (a) and (b) run there
-  as written, then a new proof signed, before it is PROVEN again. impl/ is
-  unchanged since this proof.
-
 proof:
-  date: '2026-11-21'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: roofjoin-oy (3,273 elements), Revit 2024, session 35160
-  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
-    on 2026-11-21; the modeller saw the result in Revit and pressed Keep, and Revit kept it
-    as one undo step. returned MillimetresPerFoot 304.8, along XYZ, apart Func`3, arcs 0,
-    culture CultureInfo, extrusionEndMm 3000, extrusionStartMm 0, findings 2 item(s) [Roof
-    by extrusion made (id 352563), type "Basic Roof: Generi..., The reference plane drawn
-    along grid Wing is the one the roo...], grid Grid, grids 1 item(s) [Wing], halfMillimetre
-    0.00164041994750656, host Level, levelList Func`1, levels 2 item(s) [Level 1, Level 2],
-    listOf Func`2, mm Func`2, namedPlanes 0 item(s), origin XYZ, ownName Func`2, pairOf Func`2,
-    planeDrawn 1 item(s) [id 352560], planeList Func`1, planeWords a reference plane drawn
-    along grid Wing in "Level 2" (id 352560), points 3 item(s) [System.Double[], System.Double[],
-    System.Double[]], problem (null), refused (null), report Roof by extrusion made (id 352563),
-    type "Basic Roof: Generic - 400mm", level "Level 2", sketched on a reference plane drawn
-    along grid Wing in "Level 2" (id 352560): 2 edge(s), extruded from 0 to 3000 mm north
-    of the plane - read back as Extrusion Start 0 and End 3000 mm in Properties - its top
-    1655 mm above "Level 2"., roof 1 item(s) [id 352563], roofTypes 8 item(s) [Generic - 400mm,
-    Steel Bar Joist - Steel Deck - EPDM Membrane, Generic - 125mm, ...], said Func`2, shortest
-    0.00256026455729167, sketchOn ReferencePlane, through 2 item(s) [(null), (null)], type
-    RoofType, typeLabel Func`2, typeList Func`1. inputs came level as given; roofType as given;
-    plane as given; profile as given; extrusionStartMm as given; extrusionEndMm as given.
-    on roofjoin-oy'
-  negative_case: 'run with level=Level 9, roofType=Generic - 400mm, plane=Wing, profile=0,500;
-    2000,1655; 4000,500, extrusionStartMm=0, extrusionEndMm=3000 instead - chosen because
-    it should not contain what this fragment reports - run inside a transaction, and Revit
-    reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8,
-    along (null), apart Func`3, arcs 0, culture CultureInfo, extrusionEndMm 3000, extrusionStartMm
+  model: on-mep, Revit 2020, session 27788 - the count is NOT recorded because 5,188 elements
+    was measured on pj-rac-basic, the document in front, and this ran against another one
+    (row 15)
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, along
+    XYZ, apart Func`3, arcs 0, culture CultureInfo, extrusionEndMm 6000, extrusionStartMm
+    0, findings 2 item(s) [Roof by extrusion made (id 1020224), type "Basic Roof: Gener...,
+    The reference plane drawn along grid 1 is the one the roof''s...], grid Grid, grids 22
+    item(s) [A, B, D, ...], halfMillimetre 0.00164041994750656, host Level, levelList Func`1,
+    levels 4 item(s) [Level 1, Level 2, Level 3, ...], listOf Func`2, mm Func`2, namedPlanes
+    0 item(s), origin XYZ, ownName Func`2, pairOf Func`2, planeDrawn 1 item(s) [id 1020221],
+    planeList Func`1, planeWords a reference plane drawn along grid 1 in "Roof Level HVAC
+    Plan" (id 1020221), points 3 item(s) [System.Double[], System.Double[], System.Double[]],
+    problem (null), refused (null), report Roof by extrusion made (id 1020224), type "Basic
+    Roof: Generic - 400mm", level "Roof Level", sketched on a reference plane drawn along
+    grid 1 in "Roof Level HVAC Plan" (id 1020221): 2 edge(s), extruded from 0 to 6000 mm east
+    of the plane - read back as Extrusion Start -6000 and End 0 mm in Properties - its top
+    2000 mm above "Roof Level"., roof 1 item(s) [id 1020224], roofTypes 2 item(s) [Generic
+    - 400mm, Sloped Glazing], said Func`2, shortest 0.00256026455729167, sketchOn ReferencePlane,
+    through 2 item(s) [(null), (null)], type RoofType, typeLabel Func`2, typeList Func`1.
+    inputs came level as given; roofType as given; plane as given; profile as given; extrusionStartMm
+    as given; extrusionEndMm as given. on on-mep'
+  negative_case: 'run against ''on-mep'' with extrusionEndMm=6000, extrusionStartMm=0, level=Level
+    9, plane=1, profile=0,0; 6000,2000; 12000,0, roofType=Generic - 400mm instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, along (null), apart Func`3, arcs 0, culture CultureInfo, extrusionEndMm 6000, extrusionStartMm
     0, findings 1 item(s) [No level in this project is named "Level 9". NOTHING WAS MAD...],
-    grid (null), grids 1 item(s) [Wing], halfMillimetre 0.00164041994750656, host (null),
-    levelList Func`1, levels 2 item(s) [Level 1, Level 2], listOf Func`2, mm Func`2, namedPlanes
-    0 item(s), origin (null), ownName Func`2, pairOf Func`2, planeDrawn (null), planeList
-    Func`1, planeWords (null), points 3 item(s) [System.Double[], System.Double[], System.Double[]],
-    problem (null), refused No level in this project is named "Level 9". NOTHING WAS MADE.
-    Levels in this project: Level 1, Level 2., report , roof (null), roofTypes 8 item(s) [Generic
-    - 400mm, Steel Bar Joist - Steel Deck - EPDM Membrane, Generic - 125mm, ...], said Func`2,
-    shortest 0.00256026455729167, sketchOn (null), through 2 item(s) [(null), (null)], type
-    (null), typeLabel Func`2, typeList Func`1. inputs came level as given; roofType as given;
-    plane as given; profile as given; extrusionStartMm as given; extrusionEndMm as given.
-    on roofjoin-oy'
+    grid (null), grids 22 item(s) [A, B, D, ...], halfMillimetre 0.00164041994750656, host
+    (null), levelList Func`1, levels 4 item(s) [Level 1, Level 2, Level 3, ...], listOf Func`2,
+    mm Func`2, namedPlanes 0 item(s), origin (null), ownName Func`2, pairOf Func`2, planeDrawn
+    (null), planeList Func`1, planeWords (null), points 3 item(s) [System.Double[], System.Double[],
+    System.Double[]], problem (null), refused No level in this project is named "Level 9".
+    NOTHING WAS MADE. Levels in this project: Level 1, Level 2, Level 3, Roof Level., report
+    , roof (null), roofTypes 2 item(s) [Generic - 400mm, Sloped Glazing], said Func`2, shortest
+    0.00256026455729167, sketchOn (null), through 2 item(s) [(null), (null)], type (null),
+    typeLabel Func`2, typeList Func`1. inputs came level as given; roofType as given; plane
+    as given; profile as given; extrusionStartMm as given; extrusionEndMm as given. on on-mep'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
   built_on:
-    revit_release: '2024'
-    revit_build: 24.3.60.12
-    addin_version: 0.2.0.0
-    addin_hash: f85f7efbcfd21434
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
   fingerprint: 8b15e3842c383328
-
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

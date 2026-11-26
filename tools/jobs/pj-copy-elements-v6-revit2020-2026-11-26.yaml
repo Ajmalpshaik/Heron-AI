@@ -1,0 +1,26 @@
+# Group PJ (issue #1201) - COPY_ELEMENTS version 6: a copy by an offset asked with the offset alone.
+# Revit 2020, 2026-11-26. Model: pj-rac-basic - a copy of Revit 2020's rac_basic_sample_project.rvt in
+# %TEMP%/heron-work/pj (the installed sample untouched). Roof 724430 ("Warm Roof - Timber"; the other roof,
+# 243274, carries skylights Revit will not cut into a copy, so it is left out).
+# Positive (PJ1): offset 0,30000,0 and nothing else - one copy. Negative (PJ4): toLevels "Level 99" -
+# refused naming the model's levels. Rolled back.
+model: pj-rac-basic (copy of Revit 2020 rac_basic_sample_project), Revit 2020
+
+jobs:
+  - fragment: copy-elements
+    write: true
+    in: pj-rac-basic
+    negative-in: pj-rac-basic
+    setup:
+      - filter-elements-by-id
+    keep-chain: true
+    expect: copies
+    setup-set:
+      elementIds: "724430"
+    negative-setup-set:
+      elementIds: "724430"
+    set:
+      offset: "0,30000,0"
+    negative-set:
+      offset: "0,0,0"
+      toLevels: Level 99
