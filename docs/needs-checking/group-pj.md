@@ -39,10 +39,26 @@ ROLLED BACK unless its row says KEPT. While the card is DRAFT, `revit_change` re
 | ID | Do this | Pass looks like |
 |---|---|---|
 | **PJ1** | *Positive - the call refused on 2026-11-21.* The roof selected, `offset=0,30000,0` and **no other value** | Not refused: one copy, `copies` 1 id, `notCopied` 0, `copiedTo` empty; the reply's inputs line reads *toLevels not given - "", the card's own default (optional)*, and the same for `turnDegrees` and `turnCentreMm`. Version 5 refused it `needs_request_values` naming the three - if that comes back, this FAILS. **KEPT once, on Revit 2024 only** (`try-once` keeps a version once, D-119), then read with `REPORT_BOUNDING_BOX` beside the original: the copy's box 30000 mm further along y than the original's, the same in x and z. On Revit 2020 it is rolled back |
-| **PJ2** | *Positive, the same copy typed blank.* The same roof, `offset=0,30000,0`, `toLevels=`, `turnDegrees=`, `turnCentreMm=` | The same answer as PJ1 - one copy, the same `copies` count, `copiedTo` empty - so leaving the three out and typing them blank are one call. The inputs line reads *given empty* for the three |
-| **PJ3** | *Negative - a turn with no levels.* The roof, `offset=0,30000,0`, `turnDegrees=15`, `toLevels` left out | Refused as version 5 refused it - *"A turn is applied only when copying onto levels - name them in toLevels ..."*, ending *"Nothing was copied."*; `copies` 0 items; the roof count unchanged. Leaving `toLevels` out reads as blank, never as a level |
-| **PJ4** | *Negative - a value given still does what it did.* The roof, `offset=0,0,0`, `toLevels=Level 99` | Refused naming *"Level 99"* and the model's levels, lowest first, *"Nothing was copied."* - the proof's own negative, unchanged |
+| ~~**PJ2**~~ | *Positive, the same copy typed blank.* The same roof, `offset=0,30000,0`, `toLevels=`, `turnDegrees=`, `turnCentreMm=` | The same answer as PJ1 - one copy, the same `copies` count, `copiedTo` empty - so leaving the three out and typing them blank are one call. The inputs line reads *given empty* for the three |
+| ~~**PJ3**~~ | *Negative - a turn with no levels.* The roof, `offset=0,30000,0`, `turnDegrees=15`, `toLevels` left out | Refused as version 5 refused it - *"A turn is applied only when copying onto levels - name them in toLevels ..."*, ending *"Nothing was copied."*; `copies` 0 items; the roof count unchanged. Leaving `toLevels` out reads as blank, never as a level |
+| ~~**PJ4**~~ | *Negative - a value given still does what it did.* The roof, `offset=0,0,0`, `toLevels=Level 99` | Refused naming *"Level 99"* and the model's levels, lowest first, *"Nothing was copied."* - the proof's own negative, unchanged |
 
 **Releasing the hold, once PJ1 to PJ4 pass:** the owner removes `proof-held` and sets `heron-status` back
 to PROVEN in the same change, or has `tools/batch-prove.py` write a new proof - never a session, and never
 on a working model.
+
+### Results, 2026-11-26 - Revit 2020, session 32484, add-in 0.3.0.0 (file `df0d401c52ca05f4`), card version 6 from main `02780d9a4`
+
+**Arranged:** `pj-rac-basic` - a copy of Revit 2020's own `rac_basic_sample_project.rvt` in `%TEMP%\heron-work\pj`
+(the installed sample untouched), not a new project with one roof. It has two roofs: **724430** (*Warm Roof -
+Timber*) and **243274** (*SG Metal Panels roof*), which carries skylights. Every run rolled back; the roof carried by
+`filter-elements-by-category` or `filter-elements-by-id` into `copy-elements --expect-from`. Proof job
+[`pj-copy-elements-v6-...`](../../tools/jobs/pj-copy-elements-v6-revit2020-2026-11-26.yaml) - **PASS** (positive
+PJ1, negative PJ4), a draft waiting for the owner; the card's `proof-held` is his to lift.
+
+| Row | Result |
+|---|---|
+| PJ1, run 2026-11-26, Revit 2020 | **PASS on 2020** - roof 724430, `offset=0,30000,0` and nothing else: NOT refused `needs_request_values` - `copies` 1, `notCopied` 0, `copiedTo` empty. Both roofs together ran too, and Revit would not keep the copy - *"Can't cut instance(s) of 1180 x 1170mm out of its host"*, the skylights in roof 243274 - so Heron rolled it back: the binder took the call, Revit refused the model. **Still owed:** the KEPT run on Revit 2024 with `REPORT_BOUNDING_BOX`. The reply's inputs line was not printed by the command-line client, so its wording was not seen. |
+| PJ2, run 2026-11-26 | **PASS** - the same roof with `toLevels=`, `turnDegrees=`, `turnCentreMm=` typed blank: `copies` 1, `notCopied` 0, `copiedTo` empty - the same answer as PJ1. |
+| PJ3, run 2026-11-26 | **PASS** - both roofs, `turnDegrees=15`, `toLevels` left out: *"A turn is applied only when copying onto levels - name them in toLevels. ... Nothing was copied."*, `copies` 0. |
+| PJ4, run 2026-11-26 | **PASS** - `offset=0,0,0`, `toLevels=Level 99`: *"This model has no level named "Level 99". Its levels, lowest first: Foundation, Level 1 Living Rm., Level 1, Ceiling, Level 2, Roof Line. Nothing was copied."* |
