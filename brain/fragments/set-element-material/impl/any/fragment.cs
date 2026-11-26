@@ -3,6 +3,10 @@
 // `materialAssignReport`, `alreadyAsAsked`, `skippedElements`, `refused` and
 // `findings` behind.
 //
+// VERSION 2 (2026-11-26, row 5b-2035) - the refusal in a family named
+// SET_FAMILY_FORM_MATERIAL, merged into LINK_FAMILY_PARAMETER on 2026-11-01
+// and refused since. It now names LINK_FAMILY_PARAMETER. Nothing else changed.
+//
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
 // "MAKE THESE COLUMNS CONCRETE" - THE MATERIAL IS WRITTEN WHERE IT LIVES, found
@@ -35,7 +39,7 @@
 // handed in themselves - SELECT_TYPES - are written directly.
 //
 // IN A PROJECT. In the Family Editor a form's material is
-// SET_FAMILY_FORM_MATERIAL's and a family type's Material parameter
+// LINK_FAMILY_PARAMETER's (SET_FAMILY_FORM_MATERIAL's until 2026-11-01) and a family type's Material parameter
 // SET_FAMILY_TYPE_VALUES', and a family document is refused naming them.
 //
 // THE MATERIAL IS BY ITS NAME and must already be there: the exact name, or the
@@ -67,7 +71,7 @@ var findings = new List<string>();
     var all = new FilteredElementCollector(doc).OfClass(typeof(Material)).Cast<Material>().ToList();
 
     if (doc.IsFamilyDocument)
-        refused = "This is a family. In the Family Editor a form's material is SET_FAMILY_FORM_MATERIAL and a family type's Material "
+        refused = "This is a family. In the Family Editor a form's material is LINK_FAMILY_PARAMETER and a family type's Material "
             + "parameter is SET_FAMILY_TYPE_VALUES - nothing was changed";
     else if (elements == null || elements.Count == 0)
         refused = "No elements were handed in - select them, or pick them with SELECT_BY_CATEGORY_NAME or SELECT_TYPES first. Nothing was changed";
