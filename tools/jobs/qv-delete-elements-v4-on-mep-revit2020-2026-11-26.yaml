@@ -1,0 +1,19 @@
+# Group QV (issue #1432) - DELETE_ELEMENTS version 4: the count the yes named is checked before anything goes.
+# Revit 2020, 2026-11-26. Model: on-mep - a scratch copy of Revit 2020's rme_advanced_sample_project.rvt in
+# %TEMP%/heron-work/on (not the qv.rvt rig the group names: the rooms of this copy were to be deleted anyway,
+# for Group ON). REPORT_ELEMENT_DEPENDENCIES on the 78 rooms: goesTotal 78, all standalone.
+# Positive (QV1's shape): the 78 rooms, expectedCount=78 - deleted. Negative (QV2): expectedCount=77 -
+# stopped before the delete, nothing deleted. Rolled back.
+model: on-mep (copy of Revit 2020 rme_advanced_sample_project), Revit 2020
+
+defaults:
+  in: on-mep
+  negative-in: on-mep
+  setup: [filter-elements-by-category, set-selection]
+
+jobs:
+  - fragment: delete-elements
+    write: true
+    expect: deleted
+    set: {category: Rooms, expectedCount: "78"}
+    negative-set: {category: Rooms, expectedCount: "77"}

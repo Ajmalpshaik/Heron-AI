@@ -1,0 +1,27 @@
+# Group QS (issue #1413) - MOVE_ELEMENTS version 4: a family's own forms move in the Family Editor,
+# a type is still refused. Revit 2020, 2026-11-26.
+# Model: qs-scratch - a new family from Metric Generic Model.rft, made by Heron in %TEMP%/heron-work/qs:
+# free extrusions 2684 and 2691 on Ref. Level, locked boxes 2705 and 2717, a symbolic line 2729,
+# and the template's own "Model Text 1" type (414). Never the owner's fan family.
+# Positive (QS2, sideways): the two free extrusions, offset 100,0,0 - moved 2.
+# Negative (QS1): a free extrusion and the Model Text type - refused, nothing moved, 414 alone in
+# notModelElements. Every run rolled back.
+model: qs-scratch (new Generic Model family in %TEMP%/heron-work/qs), Revit 2020
+
+jobs:
+  - fragment: move-elements
+    write: true
+    in: qs-scratch
+    negative-in: qs-scratch
+    setup:
+      - filter-elements-by-id
+    keep-chain: true
+    expect: moved
+    setup-set:
+      elementIds: "2684,2691"
+    negative-setup-set:
+      elementIds: "2684,414"
+    set:
+      offset: "100,0,0"
+    negative-set:
+      offset: "100,0,0"

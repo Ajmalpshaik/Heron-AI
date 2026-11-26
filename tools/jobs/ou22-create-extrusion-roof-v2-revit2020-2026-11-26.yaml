@@ -1,0 +1,15 @@
+# Group OU (issue #1128), OU22 - CREATE_EXTRUSION_ROOF version 2 on Revit 2020, as written: the MEP sample.
+# Revit 2020, 2026-11-26. Model: on-mep - a fresh scratch copy of Revit 2020's rme_advanced_sample_project.rvt
+# (the sample P1102 MEP is a copy of) in %TEMP%/heron-work/on. Positive (a): Roof Level, Generic - 400mm,
+# plane along grid 1, profile 0,0; 6000,2000; 12000,0, 0 to 6000 mm. Negative (b): level Level 9 - refused,
+# nothing made. Rolled back.
+model: on-mep (copy of Revit 2020 rme_advanced_sample_project), Revit 2020
+
+jobs:
+  - fragment: create-extrusion-roof
+    write: true
+    in: on-mep
+    negative-in: on-mep
+    expect: roof
+    set: {level: Roof Level, roofType: "Generic - 400mm", plane: "1", profile: "0,0; 6000,2000; 12000,0", extrusionStartMm: "0", extrusionEndMm: "6000"}
+    negative-set: {level: Level 9, roofType: "Generic - 400mm", plane: "1", profile: "0,0; 6000,2000; 12000,0", extrusionStartMm: "0", extrusionEndMm: "6000"}

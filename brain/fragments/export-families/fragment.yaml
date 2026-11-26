@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -89,6 +89,37 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-11-26'
+  by: Ajmal PS
+  model: P1102 MEP (21,446 elements), Revit 2020, session 32484
+  positive_case: run as it would normally be run - run with NO transaction group open in the
+    model it was aimed at (noGroupOpen, D-192); Heron counted that model before and after
+    it and found it unchanged, and what it did outside the model stands. returned cleanName
+    Func`2, nameCollisions 0 item(s), noGroupOpen true, refused 0 item(s), saved 2, savedAs
+    2 entry(ies), target C:\Users\ajmal\AppData\Local\Temp\heron-work\ox3-export, wanted M_Rectangular
+    Elbow. inputs came noGroupOpen - run with no transaction group open in the model it is
+    aimed at, which it changes nothing in (D-192); folder as given; nameContains as given.
+    on P1102 MEP
+  negative_case: run with folder=C:\Users\ajmal\AppData\Local\Temp\heron-work\ox3-export,
+    nameContains=ZZZNOTHINGHERE instead - chosen because it should not contain what this fragment
+    reports - run with NO transaction group open in the model it was aimed at (noGroupOpen,
+    D-192); Heron counted that model before and after it and found it unchanged, and what
+    it did outside the model stands. returned cleanName Func`2, nameCollisions 0 item(s),
+    noGroupOpen true, refused 0 item(s), saved 0, savedAs 0 entry(ies), target C:\Users\ajmal\AppData\Local\Temp\heron-work\ox3-export,
+    wanted ZZZNOTHINGHERE. inputs came noGroupOpen - run with no transaction group open in
+    the model it is aimed at, which it changes nothing in (D-192); folder as given; nameContains
+    as given. on P1102 MEP
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 67be5bfa910d2a07
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

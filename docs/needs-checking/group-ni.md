@@ -83,3 +83,11 @@ Revit 2024, add-in 0.2.0.0, `HERON_CLIENT_ID=heron-batch-prove`, stdin closed. `
 | NI5 | **NOT RUN - memory** | Revit 2024 at 6.5 GB private with 0.7 GB of the PC's memory available; *Snowdon HVAC - schematic proof* opens with its six Snowdon links beside it in `%TEMP%\heron-work\draw-mep-schematic` (about 300 MB of files), which this PC cannot take tonight. Owed on a Revit with only that model open |
 | NI6 | **PASS** | `try-once draw-mep-schematic --in "Snowdon HVAC - schematic proof"`: *"draw-mep-schematic is PROVEN, not DRAFT. A tool that has been proved has nothing to try - it runs through revit_change like any other. Nothing was sent to Revit."* - not *"Which DRAFT fragment?"*; exit 2. `try-once draw-mep-schematic --in`: *"--in needs the title of an open document after it"*, exit 2. The add-in log took no line from either |
 | NI4, newer half | **NOT RUN** | still needs a Revit 2023 or newer connected beside Revit 2020 |
+
+### Results, 2026-11-26 - Revit 2020, session 32484, add-in 0.3.0.0 (file `df0d401c52ca05f4`), main `02780d9a4`
+
+**Model:** *P1102 MEP* - a FRESH scratch copy of Revit 2020's `rme_advanced_sample_project.rvt` in `%TEMP%\heron-work\p1102` (the installed sample untouched; not the 11-02 copy). Every run rolled back or read-only, through `heron_bridge_client.py`.
+
+| Row | Result |
+|---|---|
+| NI4, run 2026-11-26, Revit 2020 leg only | **PASS on 2020** - `validate --in "P1102 MEP" --out "%TEMP%\heron-work\ni\levels.json" --negative-set categoryName=Sheets --session 32484 report-level-elevations`: printed *"active: P1102 MEP (21,446 elements), Revit 2020, session 32484"*, `positive ok`, `negative ok`, nothing about releases; the record landed in the scratch folder. (The card no longer takes `categoryName` - the client said so and dropped it - so the negative ran as a plain second phase.) The Revit 2023-or-newer leg is still owed; no such Revit was open. |
