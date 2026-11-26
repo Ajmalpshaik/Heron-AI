@@ -5,8 +5,7 @@
 # In plain words - what every PC needs for Heron, and what is optional:
 #     docs/WHAT-TO-INSTALL.md
 #
-# INSTALLING ALL OF THESE IS NOT RECOMMENDED AS ONE COMMAND. One of them
-# is 500 MB to 2 GB. Read what each buys first:
+# Read what each buys before installing it:
 #
 #     python tools/check-dependencies.py
 #
@@ -18,21 +17,22 @@
 #     # <import name> | <what Heron uses it for> | <what happens without it>
 #
 # NO SIZES ARE WRITTEN HERE. Where the size is known it is stated by the
-# code that owns the download - heron_rerank.announcement() prints it
+# code that owns the download - heron_embed.announcement() prints it
 # before any network call, and heron_ingest says it in the error a reader
 # actually hits. A number repeated here is a number that goes stale there.
 
 # model2vec | the trained embedding backend, so retrieval matches on meaning | retrieval falls back to character n-grams, which heron_embed's own docstring calls NOT MEANING
 model2vec
 
-# huggingface_hub | finding the embedding model already downloaded to this PC, so a start loads it from disk with no request (heron_embed._on_disk) | the model is loaded by name, which asks huggingface.co for the latest revision on every start - 13.8-14.0 s when that request waited out its timeout. model2vec and sentence-transformers both pull it in; it is listed because heron_embed imports it by name
+# huggingface_hub | finding the embedding model already downloaded to this PC, so a start loads it from disk with no request (heron_embed._on_disk) | the model is loaded by name, which asks huggingface.co for the latest revision on every start - 13.8-14.0 s when that request waited out its timeout. model2vec pulls it in; it is listed because heron_embed imports it by name
 huggingface-hub
 
 # sqlite-vec is NOT listed: every stored vector is compared in plain Python
 # and nothing in Heron loads it (D-194, 2026-11-21). It was here until then.
 
-# sentence_transformers | the cross-encoder re-ranker, re-reading the top 20 pairs | the shortlist keeps the order fusion gave it, and every answer says the re-ranker did not run
-sentence-transformers
+# A second optional reader of the shortlist was listed here until D-201
+# (2026-11-26) removed it: no clear gain over model2vec alone, and the
+# largest download on this list. docs/WHAT-TO-INSTALL.md says what to remove.
 
 # pypdf | reading PDF documents into the knowledge store | PDFs cannot be ingested. .md, .txt and .docx need nothing
 pypdf

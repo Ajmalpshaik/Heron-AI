@@ -7,10 +7,11 @@
 #
 # Read by tools/score-routing.py --sentences. Measured in a cloud container,
 # origin/main against the branch. OWED ON THE OWNER'S PC, which ranks
-# model+rerank:
+# model since D-201 removed the re-ranker
+# (2026-11-26; it was model+rerank when this was frozen):
 #
 #   python tools/score-routing.py --sentences tests/data/routing-sentences-2026-11-21-round4.yaml \
-#       --backend model+rerank
+#       --backend model
 #
 # Each row's own sentence is quoted from its row; a group marked HELD OUT is
 # this session's words, never declared on a card. A sentence of
