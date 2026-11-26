@@ -1727,6 +1727,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qt.md`](needs-checking/group-qt.md)
 
+## Group QV - a delete whose count is not the one the yes named stops before anything goes: `DELETE_ELEMENTS` version 4 - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qv.md`](needs-checking/group-qv.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

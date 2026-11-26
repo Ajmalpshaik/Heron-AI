@@ -285,14 +285,19 @@ purpose: >
      every dimension DELETED and every dimension CUT from `dimensionLines`,
      each with its view - and `goesTotal`, the number Revit's Delete box
      should show. Any `dimensionsUnread` is said too: those were not
-     checked. REVIT'S DELETE BOX NAMES HOW MANY IT WILL DELETE: when that
-     number is not `goesTotal`, the modeller presses Cancel - nothing is
-     deleted - and the chat reads again and says what differs before asking
-     again. (Heron stopping by itself on a different count is still owed,
-     issue #1278.) DELETE_ELEMENTS with
+     checked. Then DELETE_ELEMENTS with expectedCount= that `goesTotal` and
      expect_from="select-by-parameter-value where matchText=<old family>" from a
      fresh SELECT_BY_PARAMETER_VALUE of the OLD name, in step 0's categories: never without the expect_from,
-     which deletes whatever is selected in the window. Then set `deleted`
+     which deletes whatever is selected in the window. HERON STOPS BEFORE
+     ANYTHING GOES WHEN THE COUNT DIFFERS (DELETE_ELEMENTS version 4, row
+     5b-1990): it tries the whole delete and rolls it back first, and when
+     Revit's own count is not `goesTotal` it deletes NOTHING and answers with
+     Revit's list - by category, and every id beyond the old ones. Then name
+     that list, ask the yes again with Revit's count, and send DELETE_ELEMENTS
+     with expectedCount= that count; never leave expectedCount out to get
+     past the stop. REVIT'S DELETE BOX STILL NAMES HOW MANY IT WILL DELETE:
+     when that number is not the count the yes named, the modeller presses
+     Cancel - nothing is deleted. Then set `deleted`
      against the list named: anything gone that the question did not name is
      said at once - Revit's Undo still brings it back. For in-place
      equipment, run step 3's SELECT_IN_REGION and REPORT_BOUNDING_BOX again:
@@ -364,7 +369,7 @@ preconditions:
   - the modeller has agreed the map - what is carried and from what, the size map, what a new one may keep from its copy source or family, the workset, and whether Mark is copied
   - the modeller has said whether the tags are copied by Heron or re-tagged by the modeller
   - one new one has been placed, read back and shown to the modeller before the rest
-  - the modeller has said yes to deleting the old families, by name and count with every dependent named and every dimension that will be deleted or cut named by view, for that one delete
+  - the modeller has said yes to deleting the old families, by name and count with every dependent named and every dimension that will be deleted or cut named by view, for that one delete, and DELETE_ELEMENTS is given that count as expectedCount
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
