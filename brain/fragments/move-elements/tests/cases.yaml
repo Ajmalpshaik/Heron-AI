@@ -17,7 +17,51 @@ positive:
       before and after. Version 2 answered "0 moved the whole offset ... 2
       could not be read back" (row 5b-1733)
 
+  # VERSION 4 (2026-11-26) - row 5b-2046. Each FAILS on version 3. NOT RUN.
+  # Arranged in a SCRATCH family on Revit 2020 (NEEDS-CHECKING Group QS) - a
+  # new family from Metric Generic Model.rft, never the owner's fan family.
+  - given: >
+      a scratch family with two UNCONSTRAINED extrusions (not locked to any
+      reference plane, no labelled dimension), their ids from
+      REPORT_FAMILY_FORMS which=solid, offset 0,0,100
+    expect: >
+      moved 2, movedIds both, `notModelElements` empty, `unverified` empty.
+      THEN READ THE EXTENTS BACK with REPORT_FAMILY_FORMS: each form 100 mm
+      higher than before, X and Y unchanged - the count alone is not the
+      proof. Version 3 answered NOTHING CHANGED with both in
+      `notModelElements`. If the forms land in `unverified`, the model box
+      does not read back in a family and the probe needs widening - a row,
+      not a pass
+  - given: >
+      one extrusion whose top and bottom are LOCKED to reference planes (or
+      held by a labelled dimension), offset 0,0,100 - the state the owner's
+      fan body is most likely in
+    expect: >
+      write down which it is - `blocked`, `partly`, or Revit refusing for the
+      constraint - and that it is NOT in `movedIds`. Either is an honest
+      answer; a clean `moved` with the extrusion where it was is the defect
+  - given: >
+      one model line (offset 0,0,100) and one symbolic line in a plan view
+      (offset 100,0,0) in the scratch family
+    expect: >
+      both moved, not refused. Write down what Category reads on each - only
+      forms were seen refused in the field; lines are let through by the same
+      rule without having been seen
+
 negative:
+  # VERSION 4 (2026-11-26) - row 5b-2046. NOT RUN. Load any small family into
+  # the scratch family first (Insert > Load Family) so a FamilySymbol exists
+  # to hand in; the scratch family has none of its own.
+  - given: >
+      one extrusion's id AND the loaded family's FamilySymbol (type) id in one
+      call, offset 0,0,100
+    expect: >
+      REFUSED before anything moves - moved 0, the symbol's id alone in
+      `notModelElements`, and the extrusion's extents unchanged when read
+      back. The version 4 widening is for forms and lines in a family, never
+      for types. The version 3 wall-and-wall-type case below still holds in a
+      project, where the family exception does not apply
+
   - given: >
       2 of the 4 ducts put inside a REVIT GROUP, the same 200 mm up
     expect: >

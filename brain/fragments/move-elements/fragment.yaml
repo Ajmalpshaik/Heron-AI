@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,27 @@ semantic-identity: "shift these elements by one offset, and check that they actu
 kind: action
 domain: revit.geometry
 capability: MOVE_ELEMENTS
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 4 (2026-11-26) - FAMILY FORMS WERE REFUSED AS MISTYPED IDS, and back
+# to DRAFT. FRAGMENT-ISSUES row 5b-2046: on Revit 2020, session 21400, in the
+# owner's family `TRG_Mechanical Equipment_Axial Fan_Short Case`,
+# REPORT_FAMILY_FORMS which=solid handed on 31 extrusions and blends and this
+# card, asked for 0,0,240, answered NOTHING CHANGED with all 31 in
+# `notModelElements` - version 3's row 5b-1707 guard refuses anything with no
+# category, and those forms read Category null in the Family Editor. Version 4
+# lets a GenericForm or a CurveElement (model or symbolic line) with no
+# category through WHEN THE DOCUMENT IS A FAMILY, and nowhere else; a type and
+# a family are refused in every document, and any other element with no
+# category is still refused as a wrong id. A form has no location point or
+# curve, so it is read before and after by its model box - whether that reads
+# back in a family is part of the proof owed. The proof block below is VERSION
+# 3's (Heron OC Tags, Revit 2024, 2026-11-16), kept as the record; its C#
+# moved, so the card is DRAFT until NEEDS-CHECKING Group QS is run and signed
+# (D-30), on the owner's word of 2026-11-20 that a real defect in a proven
+# tool is fixed though the proof goes stale.
 
 # VERSION 3 (2026-11-16) - TWO FIELD DEFECTS, and back to DRAFT. Both from
 # Sruthina's report on Revit 2024, model `villa 2` (Ajmalpshaik/Heron-AI#853,
@@ -86,6 +104,9 @@ purpose: >
   mistyped id - before anything moves, and reads a tag by its head, so a moved
   tag is checked rather than left "could not be read back".
 
+  Version 4 moves a family's own forms and lines in the Family Editor, which
+  can have no category there; a type or a family is still refused.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a bulk
   move is one undo entry.
 
@@ -158,7 +179,9 @@ contract:
       # VERSION 3 (row 5b-1707). What was handed in that is not an element of
       # the model - a type, a family, or something with no category. Any one
       # refuses the whole call before anything moves; evidence of a wrong id,
-      # never a thing it moved (D-52).
+      # never a thing it moved (D-52). VERSION 4 (row 5b-2046): in a FAMILY
+      # document a form (GenericForm) or a model or symbolic line
+      # (CurveElement) with no category is NOT counted here - it is moved.
       role: accounting
       type: IList<ElementId>
     - name: findings
