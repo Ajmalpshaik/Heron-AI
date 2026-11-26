@@ -587,7 +587,7 @@ jobs:
           #                            on every PC and on this runner. It asks
           #                            every guard and exits 3 - WAITING on the
           #                            owner, not a pass - while every failure
-          #                            is one of the seven guards recorded open
+          #                            is one of the five guards recorded open
           #                            on that search (OPEN_ON_THE_ONE_SEARCH,
           #                            row 5b-2053, issue #1440). Any other
           #                            failure exits 1 and turns this job red,

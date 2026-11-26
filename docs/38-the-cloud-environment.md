@@ -217,7 +217,7 @@ real edit does.
 So a cloud session goes **further than CI does**. Since 2026-11-21 `gates.yml` builds the .NET host and
 runs the suites that need the MCP SDK on a venv holding the pinned lock, but it leaves
 `test_routing_phrases.py` on its not-runnable list: since D-203 it runs on the one built-in search
-everywhere and exits 3 - waiting on the owner - while seven of its guards are recorded open
+everywhere and exits 3 - waiting on the owner - while five of its guards are recorded open
 ([row 5b-2053](fragment-issues/row-5b-2053.md)). It answers the same here, in CI and on the owner's PC,
 so **nothing in `tests/` is out of this environment's reach**.
 

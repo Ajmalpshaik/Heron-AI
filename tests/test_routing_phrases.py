@@ -71,13 +71,14 @@ character n-grams, which heron_embed's own docstring calls NOT MEANING - and
 this asks it on every machine. Section 1 checks every card's vector came
 from it.
 
-SEVEN GUARDS ARE OPEN ON IT, AND THE SUITE WAITS ON THE OWNER FOR THEM
-------------------------------------------------------------------------
+FIVE GUARDS ARE OPEN ON IT, AND THE SUITE WAITS ON THE OWNER FOR THEM
+-----------------------------------------------------------------------
 Asked on the built-in search for the first time on 2026-11-26, nine of its
 guards failed - the same nine on main before D-203 with the model turned off,
-so not that change. Card wording repaired two (OFFSET_TAGS_FROM_HOST and
-SELECT_BY_HOST). The seven left are OPEN_ON_THE_ONE_SEARCH below, each named
-in row 5b-2053: wording a guard back by pasting its sentence, or one near it,
+so not that change. Card wording repaired four - OFFSET_TAGS_FROM_HOST and
+SELECT_BY_HOST in the change that made it run here, and EDIT_TEXT_VALUES and
+REPORT_AREA_VOLUME_COMPUTATIONS with #1424's wording, merged the same day. The
+five left are OPEN_ON_THE_ONE_SEARCH below, each named in row 5b-2053: wording a guard back by pasting its sentence, or one near it,
 into a card would make the guard test nothing, and closing one is the owner's
 decision. Each is still ASKED and printed as OPEN, never as a pass. While
 every failure is one of them the suite exits 3 - WAITING on the owner, NOT a
@@ -324,10 +325,6 @@ OPEN_ON_THE_ONE_SEARCH = {
         "5b-2053: PLACE_HOSTED_FAMILY is not in the nearness shortlist",
     "change the area scheme name from rentable to lettable":
         "5b-2053: REPORT_AREAS ties SET_AREA_VOLUME_COMPUTATIONS",
-    "rename the schedule":
-        "5b-2053: REPORT_SCHEDULE_DEFINITION, a read, takes it",
-    "check if volume calculation is enabled":
-        "5b-2053: APPLY_VIEW_FILTER; #1424's wording repairs it on its branch",
     "select all elements of type Curtain Wall":
         "5b-2053: SET_CURTAIN_PANEL_TYPE - row 5b-329's residue",
     "is the legend going off the sheet":
