@@ -58,6 +58,8 @@ import tempfile
 import threading
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+import heron_tools as SERVER_TOOLS                          # noqa: E402
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_checklists as Q                                  # noqa: E402
@@ -739,8 +741,7 @@ def labels_and_history(home):
           % (Q.RUNS_KEPT, len(kept)))
     check(not any(c.get("name") == "History" for c in Q.all_checklists(home)[0]),
           "a kept run is never listed as a checklist")
-    server = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
-                     encoding="utf-8").read()
+    server = SERVER_TOOLS.server_text()
     check('    if not answer.get("failed"):\n        store.history(answer)' in server,
           "the server compares and keeps a run only when it finished")
     real = Q.keep_run
@@ -957,8 +958,7 @@ def whole_ids():
           "at most IdsSentPerList ids a list, its total always beside them")
     check("item as ElementId" in ids and "if (id == null) { notIds = true; break; }" in ids,
           "a list of ids (or elements, by their Id) - anything else named is left out")
-    server = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
-                     encoding="utf-8").read()
+    server = SERVER_TOOLS.server_text()
     signature = re.search(r"def revit_read\(([^)]*)\)", server)
     check(signature is not None and "send" not in signature.group(1),
           "revit_read's schema is unchanged - the names travel through the side channel only")
