@@ -2693,6 +2693,9 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
                 state = "ROLLED BACK"
             else:
                 state = "NOT ROLLED BACK"
+            # Row 5b-1992: a preview that deletes says the Delete box is coming.
+            if reply.get("deleteAheadSays"):
+                print("    AHEAD  %s" % reply.get("deleteAheadSays"))
             # D-142: the delete box was asked first, and what the modeller chose.
             if reply.get("deleteAsking"):
                 print("    %s  %s" % ("ASKED" if reply.get("deleteAsked") is not False
