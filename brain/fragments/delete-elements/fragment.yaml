@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,10 +9,24 @@ semantic-identity: "delete these elements from the model"
 kind: action
 domain: revit.elements
 capability: DELETE_ELEMENTS
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 4 (2026-11-26) - A COUNT THE YES NAMED IS CHECKED BEFORE ANYTHING
+# GOES, and back to DRAFT. FRAGMENT-ISSUES row 5b-1990 (issue #1278), Revit
+# 2020, a real job: the yes named 36 elements and Revit's delete took 62, and
+# the method compared `deleted` only AFTER the delete. With `expectedCount`
+# given, the whole request is first deleted inside one SubTransaction and
+# rolled back - Revit's own count of what goes - and when that count is not
+# the one the yes named, NOTHING is deleted: the call stops with Revit's list
+# by category and every id, so the modeller can be asked again for what
+# really goes. Left out (-1), nothing changes from version 3; a given 0 is
+# checked like any other count. Version 3 was
+# PROVEN on 2026-11-24 (the proof block below, kept as the record of what it
+# proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group QV
+# is run (D-30).
+#
 # VERSION 3 (2026-11-23) - WHAT WENT IS NAMED, READ BEFORE IT WENT, and back
 # to DRAFT. FRAGMENT-ISSUES row 5b-1996 (issue in the row), Revit 2020, family
 # documents: one unused family type asked for and `deleted 2 item(s) [5931,
@@ -77,6 +91,15 @@ purpose: >
   sketch plane and sketch lines are counted together, so 241 reads as "21
   form(s) + their sketches". An id it could not read is NOT READ.
 
+  **A COUNT THE YES NAMED IS CHECKED BEFORE ANYTHING GOES** (version 4).
+  With `expectedCount` given - the number the modeller said yes to, which
+  REPORT_ELEMENT_DEPENDENCIES gives as `goesTotal` - the whole request is
+  first deleted in one SubTransaction and rolled back. When Revit's own count
+  differs, NOTHING is deleted: the call stops and says the two numbers,
+  Revit's list by category and every id that would go, so the question can be
+  asked again with what really goes. `countChecked` says the count was met.
+  Left out, the delete runs as version 3 did.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -85,6 +108,17 @@ contract:
       type: Document
     - name: elements
       type: IList<Element>
+    - name: expectedCount
+      # Version 4. How many elements the modeller's yes named - asked for and
+      # everything that goes with them. Given, the whole delete is tried and
+      # rolled back first, and a different count from Revit deletes NOTHING.
+      # Left out (-1), no check: the delete runs as version 3 did. A given 0
+      # is a count like any other - the yes named nothing - and stops the
+      # delete if Revit would take anything.
+      type: int
+      source: request
+      optional: true
+      absent: "-1"
   provides:
     - name: deleted
       role: result
@@ -145,6 +179,13 @@ contract:
       # (D-52). Empty when nothing was deleted.
       role: accounting
       type: string
+    - name: countChecked
+      # Version 4. With expectedCount given: the sentence that Revit's own
+      # trial took that same count before anything was deleted. Empty when no
+      # count was given. A different count never reaches here - the call
+      # stops and deletes nothing (D-52).
+      role: accounting
+      type: string
 
 proof:
   date: '2026-11-24'
@@ -195,7 +236,9 @@ compatibility-note: >
   `Document.GetElement`, `Element.Category`, `Element.Name`, `Sketch`,
   `Sketch.SketchPlane`, `SketchPlane`, `CurveElement.SketchPlane` and
   `GenericForm` are on every release 2020 to 2027, and an id is only ever
-  printed with `ElementId.ToString()`.
+  printed with `ElementId.ToString()`. Version 4 adds no API member: the
+  same `SubTransaction`, `Document.Delete(ElementId)`,
+  `Document.GetElement` and `Element.Category` on every release.
 
 # ROUTING - repeated in HIDE_ELEMENTS, which is what is usually meant.
 #

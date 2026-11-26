@@ -185,3 +185,9 @@ utterances:
   # read answers it, so it is declared here and answered by identity (rows
   # 116 and 146).
   - which ducts are not connected
+  # ADDED 2026-11-26, row 5b-2049: everything disconnected reached
+  # TRACE_CONNECTIVITY.
+  - show me everything that is disconnected
+  - select the unconnected elements
+  # ADDED 2026-11-26, row 5b-2049: the same, said of any element.
+  - list every item that is not connected

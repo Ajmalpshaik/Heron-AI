@@ -238,3 +238,10 @@ utterances:
   - color code the ducts by system type
   - colour by type
   - show each system in a different colour
+  # ADDED 2026-11-26, row 5b-2049: colour by size, or a colour for each
+  # element, reached APPLY_COLOR_FILL_SCHEME, a colour scheme for rooms and
+  # areas.
+  - colour the ducts by size
+  - give each one a different colour
+  - colour every size differently
+  - colour these by the value of a parameter

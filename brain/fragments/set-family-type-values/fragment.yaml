@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -29,7 +29,22 @@ capability: SET_FAMILY_TYPE_VALUES
 # wrote it. Version 5 was PROVEN (the proof block below, kept as the record of
 # what it proved); its C# moved, so it is DRAFT again until version 6 is proved
 # on a real model - tests/cases.yaml, positive_poles and negative_poles (D-30).
-version: 6
+#
+# VERSION 7 (2026-11-26, row 5b-2050) - A QUOTED TEXT VALUE KEEPS ITS SPACES.
+# Found 2026-11-26 on Revit 2020, NEEDS-CHECKING Group PT check PT4:
+# Keynote=" G4 - \"bag\" " read back "G4 - "bag"" - the inner quote marks kept,
+# the space at each end gone, because impl/ trimmed every value. The binder
+# (HeronBindingNote.NamedEntries) already trims an unquoted value and keeps a
+# quoted one whole, so impl/ now writes TEXT exactly as it is handed over: a
+# quoted value keeps its spaces, an unquoted one is trimmed as before (by the
+# binder). Numbers, lengths, angles, yes/no, Number of Poles, measured kinds and
+# material names are still read from the trimmed text, line for line as
+# version 6; "Type Name=" is still trimmed. Still DRAFT: version 6 was never
+# proved, and version 7 owes the Revit run - tests/cases.yaml, positive_spaces
+# and negative_spaces, as well as positive_poles and negative_poles (D-30).
+# If Revit itself drops the spaces, the read-back no longer matches and the
+# call fails with nothing kept - it is never written as something else unseen.
+version: 7
 source: OFFICIAL
 risk: MODIFY
 
@@ -143,7 +158,10 @@ contract:
     # "Type Name=New name" renames the type (version 3). Empty when deleting.
     # A text value that holds a semicolon goes in double quotes, kept exactly -
     # Note="70 % ASHRAE; design 81 %"; Width=600 - and \" inside is a quote
-    # (row 5b-1994, the binder's rule for every such list).
+    # (row 5b-1994, the binder's rule for every such list). A TEXT value in
+    # quotes also keeps a space at either end - Keynote=" G4 " - and an
+    # unquoted one is trimmed (version 7, row 5b-2050). So Keynote="   " is
+    # three spaces, no longer a blank: a blank is Keynote= or Keynote="".
     - name: values
       type: IDictionary<string, string>
       source: request
@@ -208,54 +226,49 @@ contract:
 # into a list with a labelled dimension, values already held, an air flow into
 # every type, a rename refused, one type as before - are Group NG's table.
 proof:
-  date: '2026-11-12'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: Heron Many Types Test (1,739 elements), Revit 2024, session 13164
-  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+  model: pt-ahu (7,750 elements), Revit 2020, session 32484
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned alreadyHeld 0 item(s), askedMany
-    true, badCharacters 0 item(s), dbNamespace Autodesk.Revit.DB, deleteType false, drives
-    0, editsApart Func`3, findings 3 item(s) [Wrote into 7 of the 7 type(s) asked for, in
-    ONE change - one..., Revit gives "URL" no formula, so the way with no type made c...,
-    Nothing in the family is labelled with or associated to thes...], flags BindingFlags,
+    false, badCharacters 0 item(s), dbNamespace Autodesk.Revit.DB, deleteType false, drives
+    0, editsApart Func`3, findings 2 item(s) [Wrote into the type "TRG_Air Handling Unit_DX_MAH-0202S2M",
+    ..., Nothing in the family is labelled with or associated to thes...], flags BindingFlags,
     forbidden \:{}[]|;<>?`~, formatInUnits Func`3, invariant CultureInfo, kindOf Func`2, kindsNew
-    9 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId], [angle, Autodesk.Revit.DB.ForgeTypeId],
-    [number, Autodesk.Revit.DB.ForgeTypeId], ...], kindsOld 9 entry(ies), manyTypes 7 item(s)
-    [900 x 900, 300 x 300, 500 x 500, ...], materialShown Func`3, mm Func`2, notAFamily false,
-    parameterValues 3 entry(ies), parseInUnits Func`3, planned 3 item(s) [(Autodesk.Revit.DB.FamilyParameter,
-    text, ), (Autodesk.Revit.DB.FamilyParameter, text, ), (Autodesk.Revit.DB.FamilyParameter,
-    text, )], problems 0 item(s), refused (null), renameTo (null), revitAssembly RuntimeAssembly,
-    route each type made current in turn, sameKind Func`3, shown Func`4, specNamed Func`3,
-    typeCreated false, typeList Func`1, typeNameRow Type Name, typeUsed 600 x 600, typesNow
-    "300 x 300", "600 x 600", "500 x 500", "450 x 450", "750 x 750", "900 x 900", "625 x 625",
-    typesWritten 7 item(s) [900 x 900, 300 x 300, 500 x 500, ...], wantedType all, written
-    21 item(s) ["900 x 900": Manufacturer = "" (was "Acme"), "900 x 900": URL = "" (was "https://example.com"),
-    "900 x 900": Model_Number = "" (was "M-1"), ...]. inputs came typeName as given; values
-    as given (3); deleteType not given - false (optional). on Heron Many Types Test'
-  negative_case: run with typeName=600 x 600, No Such Type, values=Manufacturer=Changed instead
-    - chosen because it should not contain what this fragment reports - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyHeld
-    0 item(s), askedMany true, badCharacters 0 item(s), dbNamespace Autodesk.Revit.DB, deleteType
-    false, drives 0, editsApart Func`3, findings 1 item(s) [Nothing was written. This family
-    has no type "No Such Type",...], flags BindingFlags, forbidden \:{}[]|;<>?`~, formatInUnits
-    Func`3, invariant CultureInfo, kindOf Func`2, kindsNew 9 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId],
-    [angle, Autodesk.Revit.DB.ForgeTypeId], [number, Autodesk.Revit.DB.ForgeTypeId], ...],
-    kindsOld 9 entry(ies), manyTypes 1 item(s) [600 x 600], materialShown Func`3, mm Func`2,
-    notAFamily false, parameterValues 1 entry(ies), parseInUnits Func`3, planned 1 item(s)
-    [(Autodesk.Revit.DB.FamilyParameter, text, Changed)], problems 1 item(s) [This family
-    has no type "No Such Type", so NO type in the li...], refused Nothing was written. This
-    family has no type "No Such Type", so NO type in the list was written - a list writes
-    only types that exist and never makes one. The family's types are "500 x 500", "600 x
-    600", "450 x 450", "900 x 900", "750 x 750", "625 x 625", "300 x 300"., renameTo (null),
-    revitAssembly RuntimeAssembly, route , sameKind Func`3, shown Func`4, specNamed Func`3,
-    typeCreated false, typeList Func`1, typeNameRow Type Name, typeUsed , typesNow "450 x
-    450", "750 x 750", "600 x 600", "900 x 900", "625 x 625", "300 x 300", "500 x 500", typesWritten
-    0 item(s), wantedType 600 x 600, No Such Type, written 0 item(s). inputs came typeName
-    as given; values as given (1); deleteType not given - false (optional). on Heron Many
-    Types Test
+    9 item(s) [[length, ], [angle, ], [number, ], ...], kindsOld 10 entry(ies), manyTypes
+    0 item(s), materialShown Func`3, mm Func`2, notAFamily false, parameterValues 1 entry(ies),
+    parseInUnits Func`3, planned 1 item(s) [(Autodesk.Revit.DB.FamilyParameter, poles, 3)],
+    problems 0 item(s), refused (null), renameTo (null), revitAssembly RuntimeAssembly, route
+    , sameKind Func`3, shown Func`4, specNamed Func`3, typeCreated false, typeList Func`1,
+    typeNameRow Type Name, typeUsed TRG_Air Handling Unit_DX_MAH-0202S2M, typesNow "TRG_Air
+    Handling Unit_DX_MAH-0202S2M", typesWritten 0 item(s), wantedType TRG_Air Handling Unit_DX_MAH-0202S2M,
+    written 1 item(s) [Number_of_Poles = 3 (was 1)]. inputs came typeName as given; values
+    as given (1); deleteType as given. on pt-ahu
+  negative_case: run against 'pt-ahu' with deleteType=False, typeName=TRG_Air Handling Unit_DX_MAH-0202S2M,
+    values=Number_of_Poles=7 instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned alreadyHeld 0 item(s), askedMany false, badCharacters 0 item(s),
+    dbNamespace Autodesk.Revit.DB, deleteType false, drives 0, editsApart Func`3, findings
+    1 item(s) [Nothing was written. "7" is not a number of poles for "Numbe...], flags BindingFlags,
+    forbidden \:{}[]|;<>?`~, formatInUnits Func`3, invariant CultureInfo, kindOf Func`2, kindsNew
+    9 item(s) [[length, ], [angle, ], [number, ], ...], kindsOld 10 entry(ies), manyTypes
+    0 item(s), materialShown Func`3, mm Func`2, notAFamily false, parameterValues 1 entry(ies),
+    parseInUnits Func`3, planned 0 item(s), problems 1 item(s) ["7" is not a number of poles
+    for "Number_of_Poles" - a whole...], refused Nothing was written. "7" is not a number
+    of poles for "Number_of_Poles" - a whole number, 1, 2 or 3., renameTo (null), revitAssembly
+    RuntimeAssembly, route , sameKind Func`3, shown Func`4, specNamed Func`3, typeCreated
+    false, typeList Func`1, typeNameRow Type Name, typeUsed , typesNow "TRG_Air Handling Unit_DX_MAH-0202S2M",
+    typesWritten 0 item(s), wantedType TRG_Air Handling Unit_DX_MAH-0202S2M, written 0 item(s).
+    inputs came typeName as given; values as given (1); deleteType as given. on pt-ahu
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: eea4cda064dcfca9
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 89df955affb484df
   releases:
   - release: '2024'
     date: '2026-11-12'

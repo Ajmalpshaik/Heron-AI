@@ -95,7 +95,7 @@ purpose: >
      On a model with more than one phase in use, or with design options,
      the modeller says which extras really are duplicates; the rest stay.
      Then their yes for THIS delete, naming what goes. All of them:
-     step 3 again, then DELETE_ELEMENTS (DRAFT since its version 3 of 2026-11-23, which names every
+     step 3 again, then DELETE_ELEMENTS (DRAFT since its version 4 of 2026-11-26; it names every
      element a delete takes by category and name) through revit_change with
      expect_from="find-duplicate-elements". Only some: FILTER_ELEMENTS_BY_ID
      (PROVEN) with elementIds the ones agreed, then DELETE_ELEMENTS with
