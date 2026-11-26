@@ -212,7 +212,8 @@ def main():
         return 1
     print("PASSED - CREATE_GRIDS says what it made in findings and refuses only in")
     print("refused; COPY_ELEMENTS copies by an offset asked with the offset alone.")
-    print("Neither has run in Revit: NEEDS-CHECKING groups PI and PJ.")
+    print("COPY_ELEMENTS ran in Revit 2020 (NEEDS-CHECKING Group PJ, 2026-11-26);")
+    print("CREATE_GRIDS' Group PI is still owed.")
     return 0
 
 
