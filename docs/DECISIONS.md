@@ -6,7 +6,7 @@
 > | **For** | Anyone asking **what was decided, and why** |
 > | **Authority** | The [Constitution](../HERON_CONSTITUTION.md) and [Golden Rules](14-golden-rules.md) win over this file. This file wins over every work note |
 > | **Waiting on you?** | `python tools/owner-queue.py` — **never a list typed on this page** |
-> | **Adding to it** | A settled answer is **promoted here from [OPEN-QUESTIONS](OPEN-QUESTIONS.md)**. A reversal gets a **new entry** that supersedes the old — the original stays, so the reasoning is never lost |
+> | **Adding to it** | A settled answer is **promoted here from [OPEN-QUESTIONS](OPEN-QUESTIONS.md)**. A reversal gets a **new entry** that supersedes the old — the original stays, so the reasoning is never lost. **An Accepted decision's `**Accepted:**` line links where the owner's words can be read** — a pull request or issue of this repository by its full URL, or a claude.ai session he can open; a yes heard only in a session's own chat is written **Proposed**, for him or the coordinator to confirm. `tools/check-decision-sources.py` refuses one that does neither, in CI ([D-206](decisions/D-206.md)) |
 > | **Its numbers** | Derive the highest decision: `grep -oE '^#+ *D-[0-9]+' docs/DECISIONS.md | grep -oE '[0-9]+' | sort -n | tail -1` |
 > | **Where each decision lives** | Since 2026-09-23 **each decision is its own file**, `decisions/D-NN.md`, and this page is the index: the heading, the metadata lines, and a link to the full record. To add one, write it here in full as below and run `python tools/split-decisions.py --write` |
 
@@ -243,6 +243,7 @@
 | [D-199](#d-199--thirteen-more-idle-modules-are-retired-update-trust-release-tagging-versioning-the-import-pipeline-and-the-workflow-engine) | Thirteen more idle modules are retired: update, trust, release, tagging, versioning, the import pipeline and the workflow engine | ✅ Accepted · 2026-11-24 |
 | [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
 | [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 |
+| [D-206](#d-206--a-decision-accepted-on-the-owners-word-links-where-that-word-can-be-read-or-is-written-proposed-and-a-check-refuses-one-that-does-neither) | A decision accepted on the owner's word links where that word can be read, or is written Proposed, and a check refuses one that does neither | ✅ Accepted · 2026-11-26 |
 
 ## Format
 
@@ -256,6 +257,7 @@ Decisions already split are left alone. **A number is used once**: D-45 to D-49 
 
 **Status:** Proposed | Accepted | Superseded by D-NN | Rejected
 **Date:** YYYY-MM-DD
+**Accepted:** who, the date, and a link to where the words can be read - a pull request or issue URL, or https://claude.ai/code/session_... (D-206)
 **Question:** Q-NN
 **Affects:** which documents / components
 
@@ -1819,3 +1821,17 @@ his PC ever had it, since Setup installs neither add-on. It is removed. model2ve
 clearly better than the built-in search on his questions, and needs huggingface.co once.
 
 **Full record:** [`decisions/D-201.md`](decisions/D-201.md)
+
+## D-206 — A decision accepted on the owner's word links where that word can be read, or is written Proposed, and a check refuses one that does neither
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), asked *"When a session writes 'the owner said yes', must it link to where you said it?"* and choosing *"Yes, and a checker blocks it"* ([#1262](https://github.com/Ajmalpshaik/Heron-AI/issues/1262) items 2 and 3).
+**Numbering:** D-206 - `tools/next-id.py` printed D-205 free on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201; D-205 was given to a sibling session the same day, so this took the next.
+**Affects:** [`tools/check-decision-sources.py`](../tools/check-decision-sources.py), new · CI's *The gates that must pass*, thirteen commands · the *Adding to it* line and the Format above
+
+An Accepted decision's **Accepted:** line links where the owner's words can be read - a pull request or issue of this
+repository by its full URL, or a claude.ai session he can open; a bare `#N` or a commit's sha does not count. A
+session that heard his yes only in its own chat writes the decision Proposed, for him or the coordinator to confirm.
+`tools/check-decision-sources.py` refuses, in CI, an Accepted decision from D-206 on with no such link; D-00 to D-205
+are grandfathered by number, and `--all` reports them.
+
+**Full record:** [`decisions/D-206.md`](decisions/D-206.md)

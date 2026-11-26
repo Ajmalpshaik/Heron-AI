@@ -13,7 +13,7 @@ The routing checker's own command line - the two ways it could not answer.
 
 WHY THIS EXISTS
 ---------------
-`tools/check-routing.py` is one of the twelve runs `.github/workflows/gates.yml`
+`tools/check-routing.py` is one of the thirteen runs `.github/workflows/gates.yml`
 makes, and it had no suite at all. Both things checked here are cases where the
 tool is supposed to REFUSE, and a refusal is the one behaviour nobody notices
 is broken: the happy path is exercised on every pull request, and neither of
