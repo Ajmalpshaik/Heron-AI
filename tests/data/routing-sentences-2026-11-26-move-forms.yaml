@@ -1,0 +1,45 @@
+# ROUTING SENTENCES FROZEN 2026-11-26, BEFORE ANY CARD WAS EDITED - for the
+# routing miss met in the owner's family build (Revit 2020, session 21400): a
+# plain move request reached CREATE_FAMILY_FORMS or OFFSET_TAGS_FROM_HOST
+# before MOVE_ELEMENTS.
+#
+# Read by tools/score-routing.py --sentences, origin/main against the branch.
+# The first two sentences are the owner's chat's own, as heron_lookup was asked
+# them; every other is this session's own, written before the change and
+# declared on no card. Never reworded to buy back a rank: a sentence here is the
+# instrument.
+groups:
+- group: 'a plain move request, in a family or a project'
+  sentences:
+  - say: move all the solid forms in this family up by 360 mm
+    expect: want MOVE_ELEMENTS
+  - say: move selected elements by a distance in Z (copy/move elements)
+    expect: want MOVE_ELEMENTS
+  - say: move the extrusions up 240 mm
+    expect: want MOVE_ELEMENTS
+  - say: lift the fan body 240 mm
+    expect: want MOVE_ELEMENTS
+  - say: shift the blends in this family down 50
+    expect: want MOVE_ELEMENTS
+  - say: move the selected elements 500 in Z
+    expect: want MOVE_ELEMENTS
+  - say: move the selection up by 300 mm
+    expect: want MOVE_ELEMENTS
+  - say: raise these family solids by 200
+    expect: want MOVE_ELEMENTS
+- group: 'neighbours that must keep their own requests'
+  sentences:
+  - say: create an extrusion in this family
+    expect: want CREATE_FAMILY_FORMS
+  - say: list the solid forms in this family
+    expect: want REPORT_FAMILY_FORMS
+  - say: select all the solid forms in this family
+    expect: want SELECT_FAMILY_FORMS
+  - say: offset the tags from their hosts by 500
+    expect: want OFFSET_TAGS_FROM_HOST
+  - say: copy these elements 3000 to the right
+    expect: want COPY_ELEMENTS
+  - say: move this tag next to its door
+    expect: want MOVE_ANNOTATION
+  - say: where is this element now
+    expect: not-a-write
