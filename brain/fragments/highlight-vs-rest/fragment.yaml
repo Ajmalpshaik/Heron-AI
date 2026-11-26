@@ -134,3 +134,10 @@ utterances:
   - bring these forward and dim the rest
   - highlight these against the rest
   - grey the background and show these
+  # ADDED 2026-11-26, row 5b-2049: a set in one colour and everything else grey
+  # reached OVERRIDE_GRAPHICS_IN_VIEW, SET_CATEGORY_GRAPHICS and
+  # APPLY_COLOR_FILL_SCHEME; nothing here named a colour.
+  - colour these red and grey everything else
+  - show only these in colour and the rest grey
+  - make these stand out in red against a grey model
+  - these in colour, everything else halftone
