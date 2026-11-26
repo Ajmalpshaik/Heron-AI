@@ -176,3 +176,7 @@ utterances:
   - is this owned by someone else
   - why can I not change this
   - is anyone else working on these
+  # ADDED 2026-11-26, row 5b-2049: an element that cannot be deleted or moved
+  # in a synchronised cloud model reached DELETE_ELEMENTS, a write.
+  - why can I not delete this element
+  - this will not move in the central model, who has it

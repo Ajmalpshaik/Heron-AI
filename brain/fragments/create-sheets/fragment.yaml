@@ -517,3 +517,7 @@ utterances:
   - Sheets from Excel
   - read the sheet list from a spreadsheet, preview, create
   - make the sheets from this Excel
+  # ADDED 2026-11-26, row 5b-2049: a run of numbered sheets reached
+  # SET_REVISION_SETTINGS.
+  - create ten sheets numbered in order
+  - make a set of sheets numbered 01 upwards
