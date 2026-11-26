@@ -39,6 +39,27 @@ positive:
       linked wall's type, id in the link, Fire Rating, hole size and a centre
       that lands on the wall in a section of THIS model
 
+  # VERSION 3, added 2026-11-26 - row 5b-1879 item 2, issue #1088, D-208. NOT
+  # RUN - NEEDS-CHECKING Group QY. Each FAILS on version 2, which had no
+  # insulation term.
+  - given: >
+      a 150 mm pipe carrying 25 mm of pipe insulation, crossing one wall,
+      allowanceMm 25
+    expect: >
+      one proposal of 250 x 250 mm - 150 + 2 x 25 insulation + 2 x 25 - its line
+      saying "+ 25 mm insulation". Version 2 proposed 200 x 200. Then
+      CHECK_SLEEVE_SIZE on a sleeve that size, annularClearance 25, reads "ok"
+      for the jacket rather than UNDERSIZED by 50 (row 5b-1879 item 2) - any
+      gap left is the nominal against outside diameter, row 5b-2055
+
+  - given: >
+      a 400 x 250 duct carrying 50 mm of duct insulation, crossing one wall,
+      allowanceMm 50
+    expect: >
+      one proposal of 600 x 450 mm, "+ 50 mm insulation" on its line, and the
+      findings line counting 1 service with insulation. Ducts are asked the
+      same way as pipes - the owner's "duct also"
+
 negative:
   - given: a model where no service crosses any host
     expect: >
@@ -105,6 +126,22 @@ negative:
       parameters share that name", never either rating - fire-stopping chosen
       from a rating Revit picked at random is what this case guards (row
       5b-203)
+
+  # VERSION 3, added 2026-11-26 (D-208). NOT RUN - Group QY.
+  - given: >
+      the 400 x 250 duct of the first positive case, NO insulation on it and
+      a 50 mm lining inside it, allowanceMm 50
+    expect: >
+      500 x 350 mm exactly as version 2, its line saying "(no insulation)",
+      and the findings line counting 0 services with insulation. Nothing is
+      added for a run that carries none, and lining is not insulation. THE
+      FIRST VERSION 3 CASE TO RUN
+
+  - given: a cable tray crossing a wall beside an insulated pipe
+    expect: >
+      the tray's proposal says "(no insulation)" and completes - asking a tray
+      for insulation throws, and that throw IS the answer none; it must not
+      end the run or lose the pipe's proposal
 
 second_route:
   - >

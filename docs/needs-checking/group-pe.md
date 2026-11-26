@@ -96,9 +96,9 @@ python mcp/client/heron_bridge_client.py fragment create-sheets --write --set "n
 python mcp/client/heron_bridge_client.py fragment apply-view-filter --write --set "view=<a floor plan>"
 ```
 
-**PE5** - touching, then apart. **CANNOT BE ARRANGED AS TYPED (row 5b-1970):** `first` and `second` are single-element needs, the only word that binds one is `selected`, and it means exactly one element - so two different ducts cannot be handed over yet, and `--set "first=<duct A>"` is refused. Following `selected` for both measures a duct against itself (0 mm), an answer and not a refusal. Do not run these two lines until a way to name two elements exists:
+**PE5** - touching, then apart. **Version 2 could not be arranged (row 5b-1970):** `first` and `second` were single-element needs, and the only word that bound one, `selected`, bound one duct to both. **Version 3 (2026-11-26, [row 5b-2006](../fragment-issues/row-5b-2006.md)) takes the two selected in Revit, or two ids typed in `elementIds`**, and keeps this sentence - so PE5 is now asked of version 3 by [Group QX](group-qx.md)'s QX3, and settled there. The two lines, as version 3 takes them:
 
 ```text
-python mcp/client/heron_bridge_client.py fragment measure-distance --set "first=<duct A>" --set "second=<duct B touching A>"
-python mcp/client/heron_bridge_client.py fragment measure-distance --set "first=<duct A>" --set "second=<duct C 500 mm away>"
+python mcp/client/heron_bridge_client.py fragment measure-distance --set "elementIds=<duct A>, <duct B touching A>"
+python mcp/client/heron_bridge_client.py fragment measure-distance --set "elementIds=<duct A>, <duct C 500 mm away>"
 ```

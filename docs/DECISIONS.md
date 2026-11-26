@@ -6,7 +6,7 @@
 > | **For** | Anyone asking **what was decided, and why** |
 > | **Authority** | The [Constitution](../HERON_CONSTITUTION.md) and [Golden Rules](14-golden-rules.md) win over this file. This file wins over every work note |
 > | **Waiting on you?** | `python tools/owner-queue.py` — **never a list typed on this page** |
-> | **Adding to it** | A settled answer is **promoted here from [OPEN-QUESTIONS](OPEN-QUESTIONS.md)**. A reversal gets a **new entry** that supersedes the old — the original stays, so the reasoning is never lost |
+> | **Adding to it** | A settled answer is **promoted here from [OPEN-QUESTIONS](OPEN-QUESTIONS.md)**. A reversal gets a **new entry** that supersedes the old — the original stays, so the reasoning is never lost. **An Accepted decision's `**Accepted:**` line links where the owner's words can be read** — a pull request or issue of this repository by its full URL, or a claude.ai session he can open; a yes heard only in a session's own chat is written **Proposed**, for him or the coordinator to confirm. `tools/check-decision-sources.py` refuses one that does neither, in CI ([D-206](decisions/D-206.md)) |
 > | **Its numbers** | Derive the highest decision: `grep -oE '^#+ *D-[0-9]+' docs/DECISIONS.md | grep -oE '[0-9]+' | sort -n | tail -1` |
 > | **Where each decision lives** | Since 2026-09-23 **each decision is its own file**, `decisions/D-NN.md`, and this page is the index: the heading, the metadata lines, and a link to the full record. To add one, write it here in full as below and run `python tools/split-decisions.py --write` |
 
@@ -244,6 +244,8 @@
 | [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
 | [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 |
 | [D-204](#d-204--a-tool-that-can-never-come-back-empty-is-signed-on-a-by-hand-reading-and-a-tool-with-two-runs-waiting-is-signed-on-the-run-revit-checked) | A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked | ✅ Accepted · 2026-11-26 |
+| [D-206](#d-206--a-decision-accepted-on-the-owners-word-links-where-that-word-can-be-read-or-is-written-proposed-and-a-check-refuses-one-that-does-neither) | A decision accepted on the owner's word links where that word can be read, or is written Proposed, and a check refuses one that does neither | ✅ Accepted · 2026-11-26 |
+| [D-208](#d-208--an-overlap-in-a-clearance-check-is-reported-as-the-modeller-asks-clash-with-its-depth-unless-0-mm-is-asked-for-and-a-hole-is-sized-round-a-services-insulation-only-when-the-model-says-it-carries-some) | An overlap in a clearance check is reported as the modeller asks, CLASH with its depth unless 0 mm is asked for, and a hole is sized round a service's insulation only when the model says it carries some | ✅ Accepted · 2026-11-26 |
 | [D-207](#d-207--a-name-rule-is-one-rule-across-the-tools-that-share-it-a-name-pattern-is-a--wildcard-a-datum-maker-skips-a-name-already-taken-and-says-so-and-a-link-placed-twice-is-never-measured-until-one-copy-is-named) | A name rule is one rule across the tools that share it: a name pattern is a * wildcard, a datum maker skips a name already taken and says so, and a link placed twice is never measured until one copy is named | ✅ Accepted · 2026-11-26 |
 
 ## Format
@@ -258,6 +260,7 @@ Decisions already split are left alone. **A number is used once**: D-45 to D-49 
 
 **Status:** Proposed | Accepted | Superseded by D-NN | Rejected
 **Date:** YYYY-MM-DD
+**Accepted:** who, the date, and a link to where the words can be read - a pull request or issue URL, or https://claude.ai/code/session_... (D-206)
 **Question:** Q-NN
 **Affects:** which documents / components
 
@@ -1833,6 +1836,34 @@ written on the proof, with release, model and date. A tool with more than one ru
 checked in Revit for the tool as it stands, one run at a time. The owner signs; nothing in code changes.
 
 **Full record:** [`decisions/D-204.md`](decisions/D-204.md)
+
+## D-206 — A decision accepted on the owner's word links where that word can be read, or is written Proposed, and a check refuses one that does neither
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), asked *"When a session writes 'the owner said yes', must it link to where you said it?"* and choosing *"Yes, and a checker blocks it"* ([#1262](https://github.com/Ajmalpshaik/Heron-AI/issues/1262) items 2 and 3).
+**Numbering:** D-206 - `tools/next-id.py` printed D-205 free on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201; D-205 was given to a sibling session the same day, so this took the next.
+**Affects:** [`tools/check-decision-sources.py`](../tools/check-decision-sources.py), new · CI's *The gates that must pass*, thirteen commands · the *Adding to it* line and the Format above
+
+An Accepted decision's **Accepted:** line links where the owner's words can be read - a pull request or issue of this
+repository by its full URL, or a claude.ai session he can open; a bare `#N` or a commit's sha does not count. A
+session that heard his yes only in its own chat writes the decision Proposed, for him or the coordinator to confirm.
+`tools/check-decision-sources.py` refuses, in CI, an Accepted decision from D-206 on with no such link; D-00 to D-205
+are grandfathered by number, and `--all` reports them.
+
+**Full record:** [`decisions/D-206.md`](decisions/D-206.md)
+
+## D-208 — An overlap in a clearance check is reported as the modeller asks, CLASH with its depth unless 0 mm is asked for, and a hole is sized round a service's insulation only when the model says it carries some
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), answering issue #1088: *"depending on the user it will be ask depth or just 0, both option maybe needed"*, and *"include insulation if the pipe has insulation - not only pipe, duct also ... before that need to check the pipe or duct has insulation or not"*.
+**Numbering:** D-208 is the id the coordinating session named; `tools/next-id.py` on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201, printed D-207 as the next free and nothing read held D-208.
+**Keeps:** [D-33](decisions/D-33.md) - a clearance or an allowance is still a number the request gives · [D-30](decisions/D-30.md)
+
+Where two boxes overlap, a clearance check reports CLASH with the depth of the overlap unless the request asks for
+0 mm; both are kept, the overlapping pairs are counted either way, and a gap is never a negative number
+(`CHECK_MINIMUM_CLEARANCE` version 5, `overlapAs`). A hole or sleeve is sized round a pipe's or duct's insulation
+only when the model says it carries some - read first, never assumed, lining not counted (`PROPOSE_MEP_OPENINGS`
+version 3, as `CHECK_SLEEVE_SIZE` reads it).
+
+**Full record:** [`decisions/D-208.md`](decisions/D-208.md)
 
 ## D-207 — A name rule is one rule across the tools that share it: a name pattern is a * wildcard, a datum maker skips a name already taken and says so, and a link placed twice is never measured until one copy is named
 
