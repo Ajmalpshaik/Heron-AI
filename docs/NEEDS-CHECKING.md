@@ -1731,6 +1731,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qv.md`](needs-checking/group-qv.md)
 
+## Group QX - MEASURE_DISTANCE version 3 and MEASURE_AVAILABLE_FALL version 2: the two elements selected in Revit, or two ids typed - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qx.md`](needs-checking/group-qx.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
