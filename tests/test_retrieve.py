@@ -23,9 +23,6 @@ WHAT IT PROVES
   9. A question's risk ceiling is a wall as well (D-128): a write that
      declares the question's exact words is not offered under it, a view
      change is, and with only writes matching the answer is nothing.
- 10. On a near-tie with a write, a card that changes nothing goes first
-     (D-205) - only inside the status nudge's span, never past it, and never
-     when the caller gives no write line.
 """
 
 import os
@@ -164,57 +161,6 @@ def say_backend():
     print("Asked on the %s embedding - fusion's order is what this suite "
           "checks" % EMBED.backend()[0])
     print()
-
-
-def near_tie_prefers_unchanging():
-    """Section 10 - D-205. The rule on its own, on candidates whose scores are
-    set by hand, so the margin is tested exactly where it sits."""
-    print("10. A NEAR-TIE WITH A WRITE GOES TO THE CARD THAT CHANGES NOTHING - D-205")
-    import heron_retrieve as R
-
-    rule = getattr(R, "prefer_unchanging", None)
-    check(callable(rule), "retrieval has a word for the near-tie rule at all")
-    if not callable(rule):
-        return
-
-    def card(fid, risk, below):
-        got = R.Candidate(fid, {"risk": risk, "capability": fid, "status": "DRAFT"})
-        got.fused = 0.03 - below
-        return got
-
-    inside = R.QUALITY_SPAN * 0.9
-    outside = R.QUALITY_SPAN * 1.1
-    check(R.QUALITY_SPAN < R.ONE_RANK,
-          "the margin is the status nudge's span, less than one rank - the "
-          "owner's choice over a whole rank (%.2f rank)"
-          % (R.QUALITY_SPAN / R.ONE_RANK))
-
-    ranked = [card("W", "MODIFY", 0), card("V", "PUBLISH", inside / 2),
-              card("R", "READ", inside), card("Q", "READ", inside)]
-    got = rule(ranked, "EXECUTE")
-    check([c.id for c in got] == ["R", "W", "V", "Q"],
-          "a read inside the span of a write that won goes first, and the "
-          "rest keep their order (%s)" % [c.id for c in got])
-    check(got[0].put_ahead_of == "W" and got[1].put_ahead_of is None,
-          "and the card moved says which write it was put ahead of")
-
-    ranked = [card("W", "MODIFY", 0), card("R", "READ", outside)]
-    check([c.id for c in rule(ranked, "EXECUTE")] == ["W", "R"],
-          "a read just outside the span is left where the routes put it")
-
-    ranked = [card("W", "MODIFY", 0), card("R", "READ", inside)]
-    check([c.id for c in rule(ranked, None)] == ["W", "R"],
-          "with no write line given nothing moves - the lookup as it was")
-
-    ranked = [card("R", "READ", 0), card("W", "MODIFY", inside / 2)]
-    check([c.id for c in rule(ranked, "EXECUTE")] == ["R", "W"],
-          "a winner that changes nothing is never moved")
-
-    ranked = [card("W", "MODIFY", 0), card("U", None, inside / 2),
-              card("S", "EXECUTE", inside)]
-    check([c.id for c in rule(ranked, "EXECUTE")] == ["S", "W", "U"],
-          "a card whose risk cannot be read is never put first as safe, and "
-          "a view change at the line is")
 
 
 def main():
@@ -586,8 +532,6 @@ def main():
     print()
 
     question_ceiling()
-    print()
-    near_tie_prefers_unchanging()
 
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))

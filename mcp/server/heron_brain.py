@@ -1023,12 +1023,7 @@ def lookup(request, revit=None, question=False, ceiling=None):
         ceiling = question_ceiling() if question else None
     opened = _Open()
     with opened as store:
-        # D-205: on a near-tie a card that changes nothing goes ahead of a
-        # write - the line is the question ceiling's, read from the registry.
-        # It reads no words of the request; with `question` true every write
-        # is already left out and it has nothing to move.
-        answer = RETRIEVE.find(store, request, revit=revit, ceiling=ceiling,
-                               safe=question_ceiling())
+        answer = RETRIEVE.find(store, request, revit=revit, ceiling=ceiling)
         capability = (_capability_of(store, answer.fragment_id)
                       if answer.fragment_id else None)
         # WHETHER THE STORE HOLDS THIS CHECKOUT'S CARDS - row 5b-233. From the
@@ -1048,9 +1043,10 @@ def lookup(request, revit=None, question=False, ceiling=None):
         # leave out the condensate drain" resolved to SET_MEP_SLOPE - a write
         # that re-slopes pipework - 2.4 ranks clear. FRAGMENT-ISSUES row 109.
         #
-        # IT DOES NOT CHANGE THE ORDER. This only lets the crossing be SEEN.
-        # The one place risk moves a card is D-205's near-tie above, which the
-        # owner chose inside the status nudge's span and no wider.
+        # IT DOES NOT CHANGE THE ORDER. Ranking on risk would be a rule about
+        # which route to prefer, and this module's own docstring says no such
+        # rule survives contact with the next example. This only lets the
+        # crossing be SEEN.
         #
         # AND A FAILURE HERE IS SAID OUT LOUD. This used to be `except
         # Exception: risks = {}` and nothing else, which made the crossing

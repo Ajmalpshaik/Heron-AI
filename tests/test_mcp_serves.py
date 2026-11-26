@@ -614,33 +614,6 @@ async def exercise(server):
           "with it, the write is not the answer and the reply says what was "
           "not offered")
 
-    # D-205, ON THIS LIBRARY. Without the flag a near-tied card that changes
-    # nothing goes ahead of a write - inside the status nudge's span, the
-    # margin the owner chose because one whole rank cost his change request
-    # below its first place. That request must still get a write first.
-    print()
-    print("  a near-tie with a write, without the flag - D-205")
-    door = BRAIN.lookup("Place a door in every room, like the one I placed.")
-    level = TOOLS.level_named(door.get("risk"))
-    check(level is not None and level >= TOOLS.risk_of("revit_change")
-          and "D-205" not in (door.get("note") or ""),
-          "his change request keeps a change first, unmoved (%s, %s)"
-          % (door.get("capability"), door.get("risk")))
-    setups = BRAIN.lookup("what export settings are there")
-    near = (setups.get("backends") or {}).get("nearness")
-    if near == "lexical":
-        level = TOOLS.level_named(setups.get("risk"))
-        check(level is not None and level < TOOLS.risk_of("revit_change")
-              and "D-205" in (setups.get("note") or ""),
-              "on the built-in backend the read near-tied with "
-              "MANAGE_EXPORT_SETUPS goes first and says so (%s, %s)"
-              % (setups.get("capability"), setups.get("risk")))
-    asked = BRAIN.lookup("what export settings are there", question=True)
-    check("D-205" not in (asked.get("note") or "")
-          and asked.get("left_out", 0) > 0,
-          "with the flag every write is already left out, so the near-tie "
-          "rule has nothing to move (%s)" % asked.get("capability"))
-
     # THE TOOL FOR ANOTHER RELEASE IS NAMED, NEVER OFFERED (issue #799 item
     # 2). On Villa 1, Revit 2024, "attach wall tops to roof" was offered
     # ATTACH_COLUMNS and nothing said ATTACH_WALLS exists from 2025. Asked in
