@@ -589,56 +589,31 @@ def main():
                 asker.join(120)
                 check(done, "and is answered the moment the preparation ends")
 
-            # ROW 5b-1522: AND A QUESTION THAT ARRIVES WHILE THE WARM-UP IS
-            # STILL WAITING FOR THE TRAINED ENCODER WAITS TOO. The lock was
-            # taken only after that wait, so a first lookup slipped in, indexed
-            # with the fallback encoder and was labelled "a trained model". The
-            # encoder's wait is stood in for by one that takes a second; the
-            # warm-up is run again on the store already built.
-            embed = sys.modules.get("heron_embed")
-            check(embed is not None, "the warm-up loaded the encoder's module")
-            if warm is not None and embed is not None:
-                real_warmed, waited, free = embed.warmed, [], []
-
-                def slow_warmed(_timeout=None):
-                    # WHILE THE ENCODER IS AWAITED, may anybody else prepare
-                    # the store? Asked of the lock itself from another thread,
-                    # so the answer does not hang on how long a lookup takes.
-                    def probe():
-                        got = BRAIN._PREPARING.acquire(blocking=False)
-                        if got:
-                            BRAIN._PREPARING.release()
-                        free.append(got)
-                    prober = threading.Thread(target=probe)
-                    prober.start()
-                    prober.join(10)
-                    time.sleep(1.0)
-                    waited.append(time.time())
-
-                embed.warmed = slow_warmed
+            # ROW 5b-1522: THE WARM-UP TAKES THE LOCK BEFORE THE SERVER SERVES.
+            # Until D-203 the warm-up first waited for a trained encoder, and a
+            # lookup that slipped in during that wait prepared the store with
+            # the other encoder; this section stood in for that wait. There is
+            # one encoder now and no wait, and what is left of the finding is
+            # the order: warm_store() returns only once its thread holds the
+            # store's lock, so no lookup can arrive between the thread
+            # starting and the lock being taken. Run again on the store
+            # already built.
+            holding = getattr(BRAIN, "_STORE_HOLDING", None)
+            check(holding is not None,
+                  "the warm-up says when its thread holds the lock (row 5b-1522)")
+            if warm is not None and holding is not None:
                 BRAIN._STORE_WARM[0] = None
-                holding = getattr(BRAIN, "_STORE_HOLDING", None)
-                if holding is not None:
-                    holding.clear()
-                answered = []
-                try:
-                    warm()
-                    asker = threading.Thread(
-                        target=lambda: (BRAIN.catalogue(), answered.append(time.time())))
-                    asker.start()
-                    asker.join(120)
-                    thread = BRAIN._STORE_WARM[0]
-                    if thread is not None:
-                        thread.join(120)
-                finally:
-                    embed.warmed = real_warmed
-                check(free == [False],
-                      "while the warm-up waits for the trained encoder it holds the "
-                      "store's lock, so nothing else can prepare the store meanwhile "
-                      "(row 5b-1522) - lock free to another thread: %r" % (free,))
-                check(waited and answered and answered[0] >= waited[0],
-                      "a question asked while the warm-up waits for the trained encoder "
-                      "waits for it, and is answered only after (row 5b-1522)")
+                holding.clear()
+                warm()
+                check(holding.is_set(),
+                      "and warm_store() returns only once it does - a lookup "
+                      "arriving next is sure to wait (row 5b-1522)")
+                thread = BRAIN._STORE_WARM[0]
+                if thread is not None:
+                    thread.join(120)
+            check(not hasattr(BRAIN, "ENCODER_WAIT_S")
+                  and "warmed(" not in io.open(BRAIN.__file__, encoding="utf-8").read(),
+                  "and nothing waits for an encoder any more (D-203)")
 
             on_main = getattr(BRAIN, "_on_main_branch", None)
             check(on_main is not None, "the branch is read without running git")

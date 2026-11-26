@@ -242,7 +242,8 @@
 | [D-198](#d-198--agents-that-were-built-but-that-nothing-in-heron-called-are-retired-and-their-code-and-tests-removed) | Agents that were built but that nothing in Heron called are retired, and their code and tests removed | ✅ Accepted · 2026-11-24 |
 | [D-199](#d-199--thirteen-more-idle-modules-are-retired-update-trust-release-tagging-versioning-the-import-pipeline-and-the-workflow-engine) | Thirteen more idle modules are retired: update, trust, release, tagging, versioning, the import pipeline and the workflow engine | ✅ Accepted · 2026-11-24 |
 | [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
-| [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 |
+| [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 · *model2vec half superseded by D-203 · 2026-11-26* |
+| [D-203](#d-203--the-trained-embedding-model2vec-is-removed-heron-has-one-search-built-in-the-same-on-every-pc) | The trained embedding (model2vec) is removed: Heron has one search, built in, the same on every PC | ✅ Accepted · 2026-11-26 |
 
 ## Format
 
@@ -1818,4 +1819,23 @@ a question, was the largest optional download, and held about 2 GB a chat on the
 his PC ever had it, since Setup installs neither add-on. It is removed. model2vec stays optional: it is not
 clearly better than the built-in search on his questions, and needs huggingface.co once.
 
+**Superseded in part by:** [D-203](#d-203--the-trained-embedding-model2vec-is-removed-heron-has-one-search-built-in-the-same-on-every-pc), accepted by the owner 2026-11-26 - decision 2, *"model2vec stays, and stays optional"*: model2vec is removed, and Heron has one built-in search
+
 **Full record:** [`decisions/D-201.md`](decisions/D-201.md)
+
+## D-203 — The trained embedding (model2vec) is removed: Heron has one search, built in, the same on every PC
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in conversation, after being shown the measurements: *"ok remove model2vec also"*.
+**Numbering:** D-203 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `2ee4d03f` ending at D-201 and D-202 taken by an unmerged branch.
+**Supersedes in part:** [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) - decision 2, *"model2vec stays, and stays optional"*; the re-ranker's removal stands
+**Keeps:** the built-in n-gram backend in [`brain/heron_embed.py`](../brain/heron_embed.py), unchanged, and its fusion weight · [D-49](#d-49--a-heavy-optional-import-never-happens-on-a-request-thread) as a rule · [D-100](decisions/D-100.md)
+**Affects:** [`brain/heron_embed.py`](../brain/heron_embed.py) · [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) · [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) · [`tools/score-routing.py`](../tools/score-routing.py) (`model` backend) · [`tools/heron-ready.py`](../tools/heron-ready.py) · `requirements-optional.txt` · [`tests/test_routing_phrases.py`](../tests/test_routing_phrases.py) · [WHAT-TO-INSTALL](WHAT-TO-INSTALL.md)
+
+After D-201, Heron still had two nearness searches: the built-in n-grams on every PC, and model2vec where
+installed - which, since Setup installs neither add-on, was the owner's PC alone. Measured on 753
+fragments with the card wording of #1424, the built-in search put more of his 79 first (34 against 30)
+and in the top three (43 against 37), sent fewer plain questions to a change (9 against 15) and answered a
+lookup faster (109 ms median against 147). model2vec is removed; one search is one thing to test, and every
+modeller has it. Answers on a PC without the model are unchanged, measured before and after.
+
+**Full record:** [`decisions/D-203.md`](decisions/D-203.md)

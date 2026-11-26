@@ -19,10 +19,10 @@ site visit, a locked-down network and a laptop on a plane all have to work, and
 re-indexing has to be FREE or it stops happening - an index nobody rebuilds
 quietly stops matching what is on disk.
 
-TWO BACKENDS, AND THE DIFFERENCE IS NOT A DETAIL
-------------------------------------------------
-  lexical   BUILT IN. Hashed character n-grams. No download, no dependency, no
-            network - it works the second Heron is installed.
+ONE BACKEND, BUILT IN, THE SAME ON EVERY PC (D-203)
+---------------------------------------------------
+  lexical   Hashed character n-grams. No download, no dependency, no network -
+            it works the second Heron is installed.
 
             MEASURED 2026-08-28, not asserted (cosine, this exact code):
 
@@ -48,27 +48,19 @@ TWO BACKENDS, AND THE DIFFERENCE IS NOT A DETAIL
             first draft of this docstring claimed it caught "dcut", which the
             measurement above disproved.
 
-  model     A TRAINED sentence model, used when one is present. This is the one
-            that actually understands that a grille and a diffuser are cousins.
-
-WHY BOTH, RATHER THAN JUST THE GOOD ONE. Heron installs per-user with NO
-ADMINISTRATOR RIGHTS (D-01, proven end to end in Phase 0), and a trained model
-means a download that a locked-down corporate machine may refuse. A Heron that
-cannot search until somebody wins an argument with IT is a Heron that does not
-get used. So the weak backend is always there and always works, the good one is
-used when it can be, and `backend()` says out loud which one answered.
-
-**Measured 2026-08-28: the trained backend could not be tested in the container
-this was written in** - huggingface.co is refused by that network's policy
-(`connect_rejected`), so no weights could be fetched. That is a fact about ONE
-CONTAINER and it is written here with its environment attached, because the
-same sentence written without one has already cost this project three sessions.
-`A7` in NEEDS-CHECKING.md is the run on a machine that can reach a model.
+WHY THERE IS NO SECOND, TRAINED BACKEND ANY MORE. Until 2026-11-26 an optional
+trained sentence model was used where one was installed. Setup never installed
+it, so only the owner's PC ranked on it - a second search no other PC and no CI
+run shared. Measured on 753 fragments that day it was not better on his own
+questions (first place 30 against lexical's 34, top three 37 against 43) and
+sent more plain questions to a change (15 against 9), so the owner removed it
+(D-203, superseding D-201's "it stays optional"). One search is one thing to
+test, and every modeller has it. `backend()` still says which one answered,
+because a reporter that stopped saying it would be trusted to mean the same
+thing after the next change too.
 """
 
-import io
 import os
-import threading
 import re
 import sys
 import math
@@ -85,7 +77,6 @@ import heron_fragment as FRAG                                 # noqa: E402
 DIMS = 256
 
 LEXICAL = "lexical"
-MODEL = "model"
 
 
 # ---------------------------------------------------------------------------
@@ -133,299 +124,27 @@ def lexical_vector(text, dims=DIMS):
     return [x / length for x in vec]
 
 
-def model_vector(text, dims=DIMS):
-    """A trained model's embedding, when one is installed. None when not."""
-    encoder = _load_model()
-    if encoder is None:
-        return None
-    got = encoder(text)
-    length = math.sqrt(sum(x * x for x in got))
-    return [x / length for x in got] if length else got
-
-
-_MODEL_CACHE = []
-
-# Set while a background warm-up is importing the trained encoder. While it is
-# set, _load_model() returns None IMMEDIATELY rather than importing on the
-# calling thread - see warm() for why that matters.
-_WARMING = threading.Event()
-
-# The warm-up thread itself, so _load_model() can tell it apart from a caller.
-_WARM_THREAD = [None]
-
-
-def warm():
-    """Import the trained encoder on a BACKGROUND thread, and return at once.
-
-    WHY THIS EXISTS, measured rather than reasoned about, 2026-09-06.
-
-    `import model2vec` costs about 1.0 s in a fresh process. Called for the
-    first time from INSIDE an MCP request handler - which runs on the asyncio
-    event loop - it was still inside `create_module`, loading a native
-    extension, 40 seconds later, and past 170 seconds in another run. The
-    handler never replied, the host waited forever, and a real Claude Code tool
-    call sat there for thirty minutes. The tool itself is fine: the same
-    function answers in 6.2 s in-process and through the SDK's own dispatch.
-
-    The failure needed BOTH halves and neither is wrong alone. Before
-    model2vec was installed, this import raised ImportError instantly and Heron
-    degraded to `lexical`, so the handler always answered. Installing it to
-    prove the search understands meaning (`A7`) is what made `A8` hang.
-
-    So: a heavy optional import never happens on a request thread. It happens
-    here, once, at startup, off the loop - and until it finishes, every caller
-    gets `lexical`, which is exactly the degradation this module already
-    describes and reports on its first line. A slower answer that arrives beats
-    a better one that does not.
-    """
-    if _MODEL_CACHE or _WARMING.is_set():
-        return
-    _WARMING.set()
-
-    # NUMPY'S NATIVE CORE IS LOADED HERE, ON THE CALLING THREAD, BEFORE THE
-    # BACKGROUND ONE STARTS. Measured 2026-10-01 in the MCP server on the owner's
-    # PC: on the warm-up thread, `numpy._core.multiarray` sat inside
-    # create_module - Windows loading the DLL - for 9 to 14 s while the server's
-    # other threads started and blocked on the stdin pipe; the same load in a
-    # plain process takes 1.5 s. Loaded here first (0.24-0.36 s, measured), the
-    # whole encoder then loads in 0.7-0.8 s on the thread. This is very likely
-    # the slow half of the 2026-09-06 "still inside create_module" hang above.
-    # Only numpy, which is small; the heavy rest stays off this thread.
-    try:
-        import numpy                                   # noqa: F401 - loaded for its DLL
-    except ImportError:
-        pass
-
-    def run():
-        try:
-            _load_model()
-        finally:
-            _WARMING.clear()
-
-    t = threading.Thread(target=run, name="heron-embed-warm", daemon=True)
-    _WARM_THREAD[0] = t
-    t.start()
-
-
-def warmed(timeout=None):
-    """Wait for warm() to finish, up to `timeout` seconds. Never raises.
-
-    For another BACKGROUND thread only - heron_brain.warm_store(), which wants
-    the trained vectors written the first time rather than lexical ones written
-    and then replaced. Never call it on a request thread: waiting there is the
-    hang warm() exists to prevent.
-    """
-    t = _WARM_THREAD[0]
-    if t is not None and t is not threading.current_thread():
-        t.join(timeout)
-
-
-def _load_model():
-    """Whatever trained encoder this machine has, or None.
-
-    Tried in order of how little they cost to install. Each is optional by
-    construction: an ImportError here is a normal condition, not a fault, and
-    it must never stop Heron starting.
-    """
-    if _MODEL_CACHE:
-        return _MODEL_CACHE[0]
-
-    if _WARMING.is_set() and threading.current_thread() is not _WARM_THREAD[0]:
-        # A warm-up is already importing this on its own thread. Do NOT import
-        # it here as well: this call may be on an event loop, and that is the
-        # 30-minute hang warm() exists to prevent. Answer lexically for now.
-        #
-        # The thread check is not decoration. Without it the WARM-UP THREAD
-        # hits this guard itself, returns None, clears the flag, and loads
-        # nothing at all - after which the next request imports on the event
-        # loop exactly as before. That was this fix's first version, and the
-        # stack dump that caught it looked identical to the stack it was
-        # meant to remove.
-        return None
-
-    name = os.environ.get(MODEL_ENV)
-
-    try:
-        from model2vec import StaticModel
-        which = name or DEFAULT_MODEL
-        folder = _on_disk(which)
-        try:
-            model = StaticModel.from_pretrained(folder or which)
-        except Exception:                              # noqa: BLE001 - a half-downloaded copy
-            # A first download cut off part-way leaves the folder with files
-            # missing, and loading it fails. By NAME fetches what is missing,
-            # as before - review on PR #379.
-            if not folder:
-                raise
-            model = StaticModel.from_pretrained(which)
-        _WHICH_MODEL[0] = "model2vec:%s" % which
-        # THE CUT IS SAID HERE, NOT LEFT TO THE LIBRARY'S DEFAULT (row
-        # 5b-320): model2vec reads MODEL_READS word-pieces of a text and
-        # drops the rest, and a default is a number nothing in Heron states.
-        _MODEL_CACHE.append(
-            lambda t: list(model.encode([t], max_length=MODEL_READS)[0]))
-        _PIECES[:] = [model.tokenizer]
-        return _MODEL_CACHE[0]
-    except Exception:
-        pass
-
-    # ONE TRAINED ENCODER, model2vec. A second library was tried here as a
-    # stand-in until D-201 removed it: nothing installs it any more, and an
-    # encoder nobody measured is not a fallback.
-
-    _MODEL_CACHE.append(None)
-    return None
-
-
-def _on_disk(which):
-    """The folder this machine already holds the model in, or None.
-
-    Loaded by NAME, model2vec asks the Hugging Face hub for the latest revision
-    on every start - one request, even when every file is on disk. Measured
-    2026-10-01 in the MCP server on the owner's PC: the load took 1.7 s in one
-    start and 13.8-14.0 s in four of the next five, the request waiting out its
-    timeout. A chat's first lookup then found no encoder and answered lexically.
-    A FOLDER is loaded with no request at all.
-
-    PER CALL, NEVER PROCESS-WIDE: `local_files_only` on this one lookup, not
-    HF_HUB_OFFLINE, which reaches across into any other loader on another
-    thread. A name already pointing at a folder is that
-    folder; a model not on disk returns None, and the caller loads by name as
-    before - the first start on a new machine still downloads. Pinning to the
-    copy on disk also keeps a vector's stamp honest: the stamp names the model,
-    not its revision, so a silent upstream update would wear the same label.
-    """
-    if os.path.isdir(which):
-        return which
-    try:
-        from huggingface_hub import snapshot_download
-        return snapshot_download(which, local_files_only=True)
-    except Exception:                                  # noqa: BLE001 - not on disk: load by name
-        return None
-
-
-# WHICH trained model, not just THAT one is trained - and the difference is a
-# corrupted index. A vector was stamped `backend = "model"`, so changing
-# HERON_EMBED_MODEL produced a DIFFERENT encoder wearing the same label. Every unchanged chunk
-# then satisfied the cache check and kept vectors from the old model: at a
-# different dimension nearest() silently discards them all, and at the same
-# dimension it computes meaningless cross-model dot products. Either way the
-# semantic route quietly stops working and nothing says so. Found by a review
-# 2026-09-11.
-_WHICH_MODEL = [None]
-
-# HOW MUCH OF A CARD THE TRAINED MODEL READS - FRAGMENT-ISSUES row 5b-320.
-#
-# model2vec averages the word-pieces of a text, and reads the first
-# MODEL_READS of them: everything after is dropped. Measured 2026-11-21
-# (model2vec 0.10.0, potion-base-8M, main 4ae650e6): 178 of the 610 live
-# cards are longer than that, so the model never reads their ends, and
-# whatever opens a long card is what nearness thinks the card is.
-#
-# WHAT IS EMBEDDED WAS NOT CHANGED, AND THAT WAS MEASURED, NOT ASSUMED. The
-# same day, `tools/score-routing.py --sentences` on 281 frozen sentences (the
-# owner's 79, the 124 plain questions, tests/test_routing_phrases.py's own),
-# main against a tree embedding only identity, utterances and the purpose's
-# first paragraph: on the model 9 answers better and 8 worse, on lexical 7
-# better and 17 worse; against a tree reading every word-piece (no cut): on
-# the model 4 better and 6 worse. Neither is a repair. So the rule stays the
-# one in PLACE_HOSTED_FAMILY's card - A PURPOSE OPENS WITH WHAT A MODELLER
-# ASKS THE TOOL FOR - and `cut_before_opening()` below names any card whose
-# opening the model does not read in full, which tests/test_routing_phrases.py
-# asks of every live card.
-MODEL_READS = 512
-
-# The trained model's own tokenizer, set when model2vec loads - the one thing
-# that can count its word-pieces. Empty for any other encoder, whose limit and
-# tokenizer are its own: reach() then answers None rather than a guess.
-_PIECES = []
-
-
 def stamp():
     """What to record beside a vector so a changed encoder invalidates it.
 
-    The backend name for `lexical`, which is one built-in implementation and
-    cannot change under a caller. The backend name AND the model for `model`,
-    which can.
+    The backend's name. There is one encoder, built in, so the name is all a
+    stamp needs - and a row a removed encoder wrote (stamped `model...`) no
+    longer matches it, so `index()` re-embeds that row lexically the first
+    time it opens a store written before D-203.
     """
-    name, _why = backend()
-    if name == MODEL and _WHICH_MODEL[0]:
-        return "%s:%s" % (name, _WHICH_MODEL[0])
-    return name
-
-
-# What would lift `lexical` to `model`, said at the point the degradation is
-# REPORTED rather than in a README nobody has open. R-73.
-#
-# It is appended to `why` rather than offered as a separate call because every
-# reporter already prints `why` - heron_retrieve stores it on the candidate,
-# the CLI prints it, the measuring tools read it. A remedy behind a function
-# nobody calls is how this stayed PART.
-#
-# THE SECOND CLAUSE MATTERS AS MUCH AS THE FIRST. `pip install --user
-# model2vec` succeeds - pypi.org answers 200 - and then StaticModel.from_
-# pretrained has to reach huggingface.co for the weights, which is refused
-# from this container (403, recorded 2026-08-28 and re-checked 2026-09-11).
-# Naming the package without naming that condition sends somebody into exactly
-# the failure this repository has already written down twice.
-IMPROVED_BY = ("to fix it: pip install --user model2vec, which also needs "
-               "huggingface.co reachable once to fetch the weights")
-
-# The trained model used when nothing else is named, and the variable that
-# names another.
-DEFAULT_MODEL = "minishlab/potion-base-8M"
-MODEL_ENV = "HERON_EMBED_MODEL"
-
-# WHAT THE TRAINED BACKEND COSTS ON DISK - MEASURED, NOT ESTIMATED (R-77, R-79).
-# 2026-11-20, a Linux container, model2vec 0.10.0: the package and everything it
-# pulls in measured 102 MB installed (numpy alone 56 MB), and DEFAULT_MODEL's
-# weights 29 MB in the Hugging Face cache. NOT measured on Windows, where
-# numpy's wheel is a different size - so it is stated as "about", and the
-# Windows figure is NEEDS-CHECKING rather than a guess. Re-measure on a machine
-# that has it with importlib.metadata over model2vec's requirements, and du on
-# the cache folder. tools/check-dependencies.py reads it rather than typing it.
-SIZE = "about 130 MB on disk - the package with what it pulls in, and the weights"
-
-
-def announcement():
-    """What installing the trained backend means, and how big - before any download.
-
-    R-77: each package named, with what it is for and how large it is, before
-    the download starts - the only moment at which saying no is any use. Needs
-    no network to produce.
-    """
-    return "\n".join([
-        "THE TRAINED EMBEDDING IS OPTIONAL.",
-        "",
-        "  package   model2vec",
-        "  model     %s" % (os.environ.get(MODEL_ENV) or DEFAULT_MODEL),
-        "  size      %s" % SIZE,
-        "  for       matching a question on what it MEANS - a grille and a",
-        "            diffuser - not only on how it is spelled",
-        "  needs     huggingface.co reachable, once, to fetch the weights",
-        "",
-        "  install   pip install --user model2vec",
-        "",
-        "Per-user, no administrator rights (D-01, R-42).",
-        "",
-        "WITHOUT IT HERON STILL ANSWERS, on its built-in character n-grams:",
-        "tolerant of spelling and word order, not of meaning.",
-    ])
+    return LEXICAL
 
 
 def backend():
     """Which backend is in use, and what that means. Reported, never assumed.
 
-    When it is the fallback, `why` also names what would improve it (R-73).
-    Nothing here promises a better ANSWER - it names the one difference that
-    was measured: A7 scored a flow-direction question with no shared words and
-    the trained backend ranked the right fragment FIRST where `lexical` ranked
-    it LAST.
+    Always the built-in one since D-203 - said anyway, because every reporter
+    prints it (heron_retrieve stores it on the candidate, the CLI prints it,
+    the measuring tools read it) and a line saying what answered is how a
+    reader knows the answer was not meaning.
     """
-    if _load_model() is not None:
-        return MODEL, "a trained model - this one understands meaning"
     return LEXICAL, ("built-in character n-grams - tolerant of spelling and "
-                     "word order, but NOT meaning. " + IMPROVED_BY)
+                     "word order, but NOT meaning")
 
 
 PYTHON_COMPARISON = "python"
@@ -452,45 +171,20 @@ def comparison():
 
 
 def vector(text):
-    got = model_vector(text)
-    return got if got is not None else lexical_vector(text)
+    return lexical_vector(text)
 
 
 def encoder():
     """(stamp, a function from text to a vector) - TAKEN TOGETHER, once.
 
-    THE STAMP AND THE ENCODER HAVE TO BE ONE DECISION, and an indexing pass
-    that asked for them separately could store two encoders' work under one
-    name. stamp() is read once at the top of a pass and vector() consults the
-    loaded model on every row, so a warm-up finishing mid-pass meant:
-
-        row 1..k     lexical vectors, stamped "lexical"
-        row k+1..n   MODEL vectors, stamped "lexical"
-
-    in one table, under one backend name. At a different dimension nearest()
-    then discards the lot; at the same dimension it computes cross-model dot
-    products that mean nothing - and either way the semantic route quietly
-    stops working, which is exactly the failure the stamp was added to
-    prevent. Only a later pass repairs it, and only if something notices.
-    Found by a review 2026-09-11, against the fix for the first half of this.
-
-    So the model is resolved ONCE and closed over. A warm-up that finishes
-    half way through a pass now changes nothing until the next pass, which is
-    the honest behaviour: one pass, one encoder, one name.
+    THE STAMP AND THE ENCODER ARE ONE DECISION, and an indexing pass asks for
+    them together so it can never store two encoders' work under one name. A
+    review found that on 2026-09-11, when a second encoder could finish
+    loading half way through a pass; there is one encoder now (D-203), and the
+    pair is still taken together so a pass, its rows and its stamp cannot
+    disagree.
     """
-    model = _load_model()
-    if model is None:
-        return LEXICAL, lexical_vector
-
-    which = _WHICH_MODEL[0]
-    tag = "%s:%s" % (MODEL, which) if which else MODEL
-
-    def fixed(text):
-        got = model(text)
-        length = math.sqrt(sum(x * x for x in got))
-        return [x / length for x in got] if length else got
-
-    return tag, fixed
+    return LEXICAL, lexical_vector
 
 
 # ---------------------------------------------------------------------------
@@ -562,61 +256,6 @@ def _text_for(row, frag):
     return " ".join([row["semantic_identity"], row["capability"],
                      row["domain"]] + said +
                     ([frag.data.get("purpose", "")] if frag else []))
-
-
-def opening(frag):
-    """What a card OPENS with, as `_text_for` lays it out: the identity, the
-    capability, the domain, every utterance, and the purpose's first paragraph.
-
-    A folded purpose keeps a blank line as a line break, so the first line of
-    the loaded purpose is its first paragraph - the place a card says what a
-    modeller asks the tool for (row 5b-320).
-    """
-    data = getattr(frag, "data", None) or {}
-    purpose = (data.get("purpose") or "").strip()
-    return " ".join([data.get("semantic-identity") or "",
-                     data.get("capability") or "", data.get("domain") or ""]
-                    + list(frag.utterances()) + [purpose.split("\n")[0]])
-
-
-def reach(frag):
-    """(read in full, word-pieces counted) for a card's opening, or None.
-
-    True when the trained model reads the whole of `opening(frag)` - fewer
-    word-pieces than MODEL_READS. Counted with the model's own tokenizer,
-    which may itself cut at MODEL_READS: a count that reaches the cut is
-    read as cut, so the answer is right either way. None when the encoder is
-    not model2vec - nothing here can count another encoder's pieces.
-    """
-    if _load_model() is None or not _PIECES:
-        return None
-    pieces = len(_PIECES[0].encode(opening(frag), add_special_tokens=False).ids)
-    return pieces < MODEL_READS, pieces
-
-
-# The statuses search never offers - the same slice heron_search's
-# RETIRED_FRAGMENTS takes, from the one list of statuses (never typed here).
-RETIRED = FRAG.STATUSES[FRAG.STATUSES.index("DEPRECATED"):]
-
-
-def cut_before_opening(frags):
-    """[(capability, pieces)] for every card whose opening the model cuts.
-
-    `frags` is any iterable of cards; a retired one is skipped, since search
-    never offers it. None when reach() cannot count (another encoder, or no
-    trained model) - an empty list would read as "every card is fine".
-    """
-    out = []
-    for frag in frags:
-        if getattr(frag, "status", None) in RETIRED:
-            continue
-        got = reach(frag)
-        if got is None:
-            return None
-        if not got[0]:
-            out.append(((getattr(frag, "data", None) or {}).get("capability"),
-                        got[1]))
-    return out
 
 
 def index(store, force=False, source=SCOPE.ASK):
@@ -777,11 +416,6 @@ def main(argv):
     try:
         name, why = backend()
         did, skipped = index(store)
-        if name == LEXICAL:
-            # The fallback names its remedy in `why`; what that remedy costs is
-            # said here too, before anybody runs it (R-77).
-            print(announcement())
-            print()
         print("Backend: %s - %s" % (name, why))
         print("Indexed: %d embedded, %d unchanged" % (did, skipped))
         if not argv:

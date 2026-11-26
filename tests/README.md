@@ -39,9 +39,9 @@ This is the part that is easy to get wrong, and it is written down nowhere else.
 | **1** | A check failed | **FAIL** — investigate it |
 | **3** | The suite **could not run** for want of an optional dependency, and says so | **NOT RUN** — it proves nothing either way |
 
-**Exit 3 is deliberate and is not a pass.** `test_mcp_serves.py` uses it when the MCP SDK is absent,
-and `test_routing_phrases.py` when the trained embedding is - its sentences are measured on the search
-the owner's Heron uses, which spelling alone disagrees with ([row 5b-319](../docs/FRAGMENT-ISSUES.md)).
+**Exit 3 is deliberate and is not a pass.** `test_mcp_serves.py` uses it when the MCP SDK is absent.
+(`test_routing_phrases.py` used it when the trained embedding was absent, until D-203 removed that
+embedding on 2026-11-26; it runs on the one built-in search everywhere now.)
 `tools/check-gaps.py` reads 3 as *waiting for a machine* rather than counting it green. A suite
 that cannot run must never be allowed to look like one that ran.
 

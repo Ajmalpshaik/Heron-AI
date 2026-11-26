@@ -147,26 +147,6 @@ def _audit():
         return _NoAudit()
 
 
-def warm():
-    """Start loading the trained encoder, off the request path. Never raises.
-
-    Called once at server startup. If the brain is unavailable - no PyYAML, no
-    model2vec - there is simply nothing to warm and the Revit tools are
-    unaffected, which is the same rule _brain() already follows.
-    """
-    try:
-        _S, _C, _SK, _SE, EMBED, _R = _brain()
-    except BrainUnavailable:
-        return
-    try:
-        EMBED.warm()
-    except Exception:
-        # A warm-up that cannot start must never stop the server starting. The
-        # cost of failing here is a lexical backend, which is a documented
-        # degradation rather than an outage.
-        pass
-
-
 # THE FIRST LOOKUP OF A CHAT PAID FOR THE WHOLE STORE, AND NOW NOBODY WAITS FOR IT.
 #
 # Measured 2026-10-01 on the owner's PC, fresh process, store already built:
@@ -177,8 +157,7 @@ def warm():
 # the first-time checks as soon as possible".
 #
 # So the same _Open runs once on a background thread when the server starts,
-# behind the encoder's own warm-up so the vectors it writes are the trained
-# ones, and _PREPARING makes a lookup that arrives early wait for it rather
+# and _PREPARING makes a lookup that arrives early wait for it rather
 # than do the same work a second time beside it. Nothing is skipped: every
 # later _Open still checks the files, exactly as before.
 #
@@ -198,10 +177,6 @@ _STORE_HOLDING = threading.Event()
 
 #: How long warm_store() waits, at server start, for its thread to take the lock.
 STORE_HOLD_WAIT_S = 5
-
-#: How long the store warm-up waits for the encoder before going on without it.
-#: The encoder loads in about 1.5 s here; a minute means "something is wrong".
-ENCODER_WAIT_S = 60
 
 
 def _on_main_branch(root):
@@ -351,7 +326,7 @@ def library_store(system=None):
 def warm_store():
     """Prepare the knowledge store on a background thread, and return at once.
 
-    Called once at server start-up, after warm(). Never raises, and a failure
+    Called once at server start-up. Never raises, and a failure
     costs nothing but the head start: the first lookup prepares the store
     itself and says why it could not, as before.
     """
@@ -363,25 +338,16 @@ def warm_store():
     except Exception:                                  # noqa: BLE001 - a head start, not a gate
         return
 
-    # THE LOCK IS HELD FROM BEFORE THE ENCODER WAIT, NOT FROM AFTER IT (row
-    # 5b-1522). Until 2026-11-19 it was taken only by the `_Open` below, so a
-    # first lookup that arrived while the encoder was still loading took the
-    # lock first and prepared the store itself - indexing with the fallback
-    # encoder, because heron_embed answers lexically on any thread but its own
-    # warm-up's - and then compared the trained encoder's question with those
-    # rows and called the answer "a trained model". Measured 2026-11-11: six
-    # fresh starts of seven ranked the runners-up as noise on the first lookup
-    # and properly on the second. Holding the lock across the wait makes that
-    # lookup wait, as the comment above _PREPARING always said it would - the
-    # lock is the wait; nothing new waits on a request thread.
+    # THE LOCK IS HELD FOR THE WHOLE PREPARATION, taken the moment the thread
+    # starts (row 5b-1522), so a first lookup that arrives early waits for it
+    # rather than preparing the store beside it, as the comment above
+    # _PREPARING says - the lock is the wait; nothing new waits on a request
+    # thread. (Until D-203 the thread first waited for a trained encoder to
+    # load, and a lookup slipping in during that wait indexed with the other
+    # encoder; there is one encoder now, so there is no wait.)
     def run():
         with _PREPARING:
             _STORE_HOLDING.set()
-            try:
-                import heron_embed as EMBED
-                EMBED.warmed(ENCODER_WAIT_S)
-            except Exception:                          # noqa: BLE001 - go on lexically
-                pass
             try:
                 with _Open():
                     pass
@@ -1295,8 +1261,7 @@ UNSEARCHED = ("identity", "cache", "nothing", "empty", "unindexed")
 def _backends(answer=None):
     """Which optional backends answered THIS request. Never raises.
 
-    The trained encoder is optional by construction and reports absence
-    rather than failing, so asking about it cannot be allowed to fail either.
+    Reporting what answered must never fail the answer it reports on.
 
     THE RUN RECORDS IT, THIS ONLY READS IT BACK. Two earlier versions asked
     the backends themselves, after the search, and each time the answer was a

@@ -38,8 +38,8 @@ it. Every PC that runs this starts from the same place.
 
 WHAT IT CHANGES, AND WHAT IT NEVER DOES
 ---------------------------------------
-It builds the knowledge store under Heron's home (D-135), downloads the search
-model once when `model2vec` is installed, and compiles Heron's Python. It
+It builds the knowledge store under Heron's home (D-135) and compiles Heron's
+Python. It
 INSTALLS NOTHING - pulling a runtime onto a machine unasked is what a careful
 user and a corporate laptop are both right to refuse (Q-39) - so a missing
 package is named with its command. It never touches a Revit setting: Changes,
@@ -73,6 +73,7 @@ An optional extra being absent is not a failure - Heron degrades and says so.
 import compileall
 import glob
 import importlib
+import importlib.util
 import os
 import re
 import shutil
@@ -367,33 +368,24 @@ def server_starts():
 # ---------------------------------------------------------------------------
 
 def search_model(check_only):
-    head("4. The search model")
-    try:
-        importlib.import_module("model2vec")
-    except ImportError:
-        say(NOTE, "not installed - Heron uses its basic search, which matches "
-                  "words and not meaning",
-            ["Optional. docs/WHAT-TO-INSTALL.md section 2 says what it buys.",
-             "pip install --user model2vec, then run this again to download it."])
-        return
-    if check_only:
-        say(NOTE, "model2vec is installed; --check does not load or download it")
-        return
-    if not HAVE_YAML[0]:
-        # heron_embed needs PyYAML on import: without this the run died here
-        # with a traceback, before the summary the installer reads (5b-1008).
-        say(NOTE, "model2vec is installed; not loaded - it needs PyYAML, above")
-        return
-    import heron_embed as EMBED
-    started = time.time()
-    name, why = EMBED.backend()
-    if name == EMBED.MODEL:
-        say(OK, "loaded in %.1f s - %s" % (time.time() - started, EMBED.stamp()),
-            "It is on this PC now, so no chat waits for a download.")
-    else:
-        say(NOTE, "model2vec is installed but the model did not load - %s" % why,
-            "huggingface.co has to be reachable ONCE to fetch it. Heron works "
-            "meanwhile with its basic search.")
+    """Heron's search, and a leftover trained model the owner's PC may hold.
+
+    ONE SEARCH SINCE D-203, built in, the same on every PC: nothing to load or
+    download. A PC that installed model2vec before it was removed still has it
+    on disk, and nothing in Heron uses it - so it is NAMED, with the command
+    that frees the space, and never imported: asking whether it is there is
+    find_spec's job (importing it is what needed PyYAML first, row 5b-1008,
+    and is no business of this tool any more).
+    """
+    head("4. Search")
+    say(OK, "built in - matches spelling and word order, not meaning; the same "
+            "search on every PC (D-203)")
+    leftover = [name for name in ("model2vec",)
+                if importlib.util.find_spec(name) is not None]
+    if leftover:
+        say(NOTE, "%s is installed and nothing in Heron uses it any more"
+                  % ", ".join(leftover),
+            "Optional, to free the space: pip uninstall -y model2vec")
 
 
 def knowledge_store(check_only):
@@ -637,9 +629,9 @@ def claude_side():
 
 #: The packages whose presence or version can change how fast Heron answers.
 #: sqlite-vec left this list on 2026-11-21: nothing in Heron uses it (D-194).
-#: Two more left it on 2026-11-26, with the optional second reader (D-201).
-SNAPSHOT_PACKAGES = ("PyYAML", "mcp", "model2vec", "numpy", "pypdf",
-                     "huggingface_hub")
+#: Two more left it on 2026-11-26, with the optional second reader (D-201),
+#: and two more the same day with the trained search model (D-203).
+SNAPSHOT_PACKAGES = ("PyYAML", "mcp", "numpy", "pypdf")
 
 #: The only keys ever copied out of a Claude Code settings file.
 SETTINGS_KEYS = ("enableAllProjectMcpServers", "enabledMcpjsonServers",
@@ -670,17 +662,6 @@ def _files(folder, pattern="*"):
                       "modified": time.strftime("%Y-%m-%d %H:%M",
                                                 time.localtime(stat.st_mtime))})
     return found
-
-
-def _tree_bytes(folder):
-    total = 0
-    for here, _dirs, names in os.walk(folder):
-        for name in names:
-            try:
-                total += os.path.getsize(os.path.join(here, name))
-            except OSError:
-                continue
-    return total
 
 
 def _json_file(path):
@@ -790,8 +771,6 @@ def write_snapshot(path):
     """
     import json
     print("Heron - writing what this PC has to %s" % path)
-    hub = os.path.join(os.environ.get("HF_HOME") or os.path.join(
-        os.path.expanduser("~"), ".cache", "huggingface"), "hub")
     facts = {
         "what_this_is": "heron-ready --snapshot: names, sizes, versions and "
                         "yes/no only. No file contents, no keys, no tokens.",
@@ -807,8 +786,6 @@ def write_snapshot(path):
             "plain_python": shutil.which("python"),
         },
         "packages": dict((name, _version(name)) for name in SNAPSHOT_PACKAGES),
-        "search_model": [{"name": os.path.basename(m), "bytes": _tree_bytes(m)}
-                         for m in sorted(glob.glob(os.path.join(hub, "models--*")))],
         "knowledge_store": None,
         "revit": {"addin_releases": [], "switches": {}},
         "claude_code": _claude_side_facts(),

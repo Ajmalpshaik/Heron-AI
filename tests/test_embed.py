@@ -84,41 +84,26 @@ def main():
               "and tools/heron-ready.py prints it")
 
         print()
-        print("0a. The trained backend is announced, with its size, before any download (R-77)")
-        speak = getattr(E, "announcement", None)
-        check(callable(speak), "heron_embed.announcement() exists")
-        words = speak() if callable(speak) else ""
-        size = getattr(E, "SIZE", None)
-        check(bool(size) and size in words, "the size is stated: %r" % (size,))
-        check("model2vec" in words and "pip install --user model2vec" in words,
-              "the package is named, with a per-user install (D-01)")
-        check("huggingface.co" in words,
-              "and the one condition that install needs is said with it")
-        check("OPTIONAL" in words and "STILL ANSWERS" in words,
-              "and it says out loud the piece is optional and Heron answers without it")
-
         print()
-        print("0b. With no trained model, the cut is NOT MEASURED - never 'no card is cut' (row 5b-320)")
-        check(getattr(E, "MODEL_READS", None) == 512,
-              "heron_embed states how many word-pieces the model reads: %r"
-              % (getattr(E, "MODEL_READS", None),))
-        reach = getattr(E, "reach", None)
-        cutter = getattr(E, "cut_before_opening", None)
-        check(callable(reach) and callable(cutter),
-              "heron_embed.reach() and cut_before_opening() exist")
-        if callable(reach) and callable(cutter):
-            held = list(E._MODEL_CACHE)
-            E._MODEL_CACHE[:] = [None]          # no trained model, for these two asks
-            try:
-                import heron_fragment as FRAG
-                cards, _ = FRAG.load_all()
-                some = list(cards.values())[:3]
-                check(reach(some[0]) is None,
-                      "reach() answers None, not a count it cannot make")
-                check(cutter(some) is None,
-                      "cut_before_opening() answers None, never an empty list")
-            finally:
-                E._MODEL_CACHE[:] = held
+        print("0a. One search, built in, on every PC - nothing trained is loaded (D-203)")
+        check(name == E.LEXICAL and E.stamp() == E.LEXICAL
+              and E.encoder()[0] == E.LEXICAL,
+              "backend(), stamp() and encoder() all say lexical: %s, %s, %s"
+              % (name, E.stamp(), E.encoder()[0]))
+        gone = [n for n in ("MODEL", "announcement", "warm", "warmed",
+                            "_load_model", "_MODEL_CACHE", "MODEL_READS",
+                            "cut_before_opening") if hasattr(E, n)]
+        check(gone == [], "and the trained model's parts are gone: %s"
+              % (", ".join(gone) or "none left"))
+        source = io.open(os.path.join(ROOT, "brain", "heron_embed.py"),
+                         encoding="utf-8").read()
+        check("import model2vec" not in source
+              and "from model2vec" not in source
+              and "huggingface_hub" not in source,
+              "and heron_embed imports neither model2vec nor huggingface_hub")
+        check(E.vector("select all ducts") == E.lexical_vector("select all ducts"),
+              "a question is embedded by the built-in n-grams, whatever this "
+              "machine has installed")
 
         print()
         print("1. The same text embeds the same way in a DIFFERENT process")
@@ -199,19 +184,12 @@ def main():
             # the assertion is widened to top-2 WITH THAT REASON rather than
             # deleted. A sentence a modeller could mean two ways should not be
             # the thing a backend is judged on - and if set-selection ever
-            # leaves the top two, that is a real regression.
-            name_now, _why_now = E.backend()
-            if name_now == E.MODEL:
-                top2 = [i for i, _s in hits[:2]]
-                check("FRG-SEL-001" in top2,
-                      "'put them on the screen' -> selection is top-2 (%s at "
-                      "%.3f); #1 is %s, which is a fair reading of 'put ON'"
-                      % ("FRG-SEL-001", dict(hits).get("FRG-SEL-001", 0.0),
-                         top2[0]))
-            else:
-                check(hits and hits[0][0] == "FRG-SEL-001",
-                      "'put them on the screen' -> the selection fragment (%.3f)"
-                      % hits[0][1])
+            # leaves the top two, that is a real regression. The trained
+            # backend's top-2 branch went with it (D-203); the built-in one is
+            # held to first place, as it always was.
+            check(hits and hits[0][0] == "FRG-SEL-001",
+                  "'put them on the screen' -> the selection fragment (%.3f)"
+                  % hits[0][1])
             check(all(-1.01 <= s <= 1.01 for _i, s in hits),
                   "scores are similarities in [-1, 1], not distances")
             check(hits == sorted(hits, key=lambda p: -p[1]), "best first")
@@ -242,9 +220,9 @@ def main():
             # at what it actually is, with the number in the message so the next
             # person sees movement rather than a pass.
             #
-            # A7 is the fix and it has never run. When it does, re-measure this
-            # line - if a trained backend does not put the duct filter back in
-            # the top 3, that is worth knowing about the backend.
+            # A7 was meant to be the fix. Its trained backend was removed by
+            # D-203 (2026-11-26) without beating this one on the owner's
+            # questions, so this line stays the built-in backend's number.
             # THE WORDS ROUTE MOVED FOR THE FIRST TIME, at 28 fragments, and
             # the cause is NOT corpus size - it is vocabulary collision.
             #
@@ -357,13 +335,14 @@ def main():
             # question about ducts. That is character n-grams having no idea
             # what the words mean, exactly as this file measures further up.
             #
-            # So the assertion is that it does NOT find it. When A7 puts a
-            # trained backend in front of this, THIS CHECK SHOULD FAIL - and
-            # that failure is the thing worth being told about.
+            # So the assertion is that it does NOT find it. A7's trained
+            # backend was what would have broken this; D-203 removed it, so a
+            # change that breaks it now is a change to the n-grams - re-read it
+            # rather than repairing it.
             check("FRG-ELE-001" not in by_vector[:3],
                   "the NEARNESS route does NOT have it in the top 3 - it is "
-                  "%s. A7 is what should break this check, and when it does, "
-                  "re-read it rather than repairing it"
+                  "%s. A change that breaks this check is a change to the "
+                  "n-grams: re-read it rather than repairing it"
                   % (("rank %d" % (by_vector.index("FRG-ELE-001") + 1))
                      if "FRG-ELE-001" in by_vector else "not in the shortlist at all"))
 
@@ -424,20 +403,15 @@ def main():
     # So it says which backend actually answered THIS run. Recorded as W-3 in
     # a RAG working note, and closed here. That note was retired 2026-09-12;
     # this comment is the surviving record of why the sentence is shaped so.
+    #
+    # Since D-203 (2026-11-26) there is one backend on every machine, so the
+    # sentence no longer depends on the machine at all.
     name, _why = E.backend()
-    print("It is NOT meaning, and check 3 says so in numbers. A trained model")
-    print("is the backend that would be.")
+    print("It is NOT meaning, and check 3 says so in numbers.")
     print()
-    if name == E.MODEL:
-        print("This run used the TRAINED backend, so the numbers above are its")
-        print("numbers - read them as such, and record them in")
-        print("brain/retrieval-history.md with the library size beside them.")
-    else:
-        print("This run used the BUILT-IN backend (%s), so every number above" % name)
-        print("is a number about character n-grams. No trained weights could be")
-        print("loaded here. That is a fact about THIS MACHINE and not about")
-        print("Heron - measured 2026-09-11, huggingface.co answered 403 to")
-        print("CONNECT through this container's proxy, as it did on 2026-08-28.")
+    print("This run used the BUILT-IN backend (%s), the only one Heron has" % name)
+    print("since D-203, so every number above is a number about character")
+    print("n-grams - the same on every PC.")
     return 0
 
 
