@@ -184,14 +184,21 @@ def copies():
     check(HF.need_absent_text(worksets) == "active",
           "and `toWorkset` left out is still \"active\", as version 3 wrote it")
 
-    check(frag.status == "DRAFT" and int(frag.data.get("version") or 0) >= 6,
-          "its contract changed, so it is DRAFT at version 6 or later until a run "
-          "with the three left out is proved (it reads %s, version %s)"
-          % (frag.status, frag.data.get("version")))
+    # PROVEN AGAIN ON 2026-11-26 (Revit 2020, a copy of rac_basic_sample_project):
+    # Group PJ ran the copy with the three left out, and Ajmal PS signed it. Before
+    # that the card was DRAFT with the hold declared; either state is right, and
+    # PROVEN on a proof of other code - or PROVEN with the hold still on - is not.
     held = str(frag.data.get("proof-held") or "")
-    check("PJ" in held,
-          "its code is the code its proof ran, so the hold is DECLARED, naming the "
-          "run it waits for (proof-held: %r)" % held[:80])
+    proved_now = (frag.proof or {}).get("fingerprint") == frag.fingerprint()
+    signed_after_pj = str((frag.proof or {}).get("date") or "") >= "2026-11-26"
+    check(int(frag.data.get("version") or 0) >= 6
+          and ((frag.status == "DRAFT" and "PJ" in held)
+               or (frag.status == "PROVEN" and proved_now and signed_after_pj
+                   and not held)),
+          "its contract changed, so at version 6 or later it is DRAFT with the hold "
+          "DECLARED naming the PJ run it waits for, or PROVEN on that run's proof of "
+          "this code with the hold lifted (it reads %s, version %s, proof-held %r)"
+          % (frag.status, frag.data.get("version"), held[:80]))
 
 
 def main():
