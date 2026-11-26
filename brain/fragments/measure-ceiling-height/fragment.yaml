@@ -240,7 +240,9 @@ compatibility-note: >
 #                                      MEASURES a ceiling that exists
 
 #   "how much room is there between the duct and the pipe above it" ->
-#                                        CHECK_VERTICAL_CLEARANCE - service to
+#                                        CHECK_MINIMUM_CLEARANCE with
+#                                        stackedOnly (CHECK_VERTICAL_CLEARANCE
+#                                        until 2026-11-26) - service to
 #                                        service. This one is floor to ceiling
 utterances:
   - what is the ceiling height in this room

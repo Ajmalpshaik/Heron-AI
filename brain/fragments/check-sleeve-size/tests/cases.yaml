@@ -24,6 +24,32 @@ positive:
       '<type>' (id N in the link), Fire Rating 2 hr", checked by picking the
       wall in the link with Tab
 
+  # VERSION 3, added 2026-11-26 - row 5b-1879 item 1, issue #1088. NOT RUN -
+  # NEEDS-CHECKING Group QY. Each FAILS on version 2, which stopped at the
+  # first service its box test found.
+  - given: >
+      one 200 mm sleeve with TWO pipes through it - a 100 mm pipe and a 160 mm
+      pipe - annularClearance 25
+    expect: >
+      the sleeve in `undersized` and in `combined`, a COMBINED line naming both
+      pipes, and one row per pipe: the 100 mm "ok", the 160 mm "UNDERSIZED by
+      10 mm". Version 2 judged one of them, whichever the collector met first,
+      and could call this sleeve ok
+
+  - given: >
+      the same sleeve with two 100 mm pipes, annularClearance 25, maxOversize 20
+    expect: >
+      both rows "ok" - never OVERSIZED, because oversize is not judged for a
+      sleeve with more than one service - and the COMBINED line saying that
+      whether they fit side by side is not measured
+
+  - given: >
+      two pipes through one sleeve, only the second carrying 25 mm insulation
+    expect: >
+      each row reads its own pipe's insulation - "(no insulation)" on one,
+      "+ 25 mm insulation" on the other. A jacket is never borrowed from the
+      pipe beside it
+
 negative:
   - given: a sleeve with no service passing through it
     expect: >
@@ -91,6 +117,12 @@ negative:
     expect: >
       "Fire Rating NOT READ - 2 parameters share that name" on its line,
       never either rating (row 5b-203)
+
+  # VERSION 3, added 2026-11-26 (row 5b-1879 item 1). NOT RUN - Group QY.
+  - given: a sleeve with ONE pipe through it, the first positive case again
+    expect: >
+      exactly version 2's row, `combined` empty, and "0 with more than one
+      service through them" on the first line. THE FIRST VERSION 3 CASE TO RUN
 
 second_route:
   - Cut a section through one sleeve and dimension the annular gap by hand

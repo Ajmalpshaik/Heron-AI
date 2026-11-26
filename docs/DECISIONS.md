@@ -245,6 +245,7 @@
 | [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 |
 | [D-204](#d-204--a-tool-that-can-never-come-back-empty-is-signed-on-a-by-hand-reading-and-a-tool-with-two-runs-waiting-is-signed-on-the-run-revit-checked) | A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked | ✅ Accepted · 2026-11-26 |
 | [D-206](#d-206--a-decision-accepted-on-the-owners-word-links-where-that-word-can-be-read-or-is-written-proposed-and-a-check-refuses-one-that-does-neither) | A decision accepted on the owner's word links where that word can be read, or is written Proposed, and a check refuses one that does neither | ✅ Accepted · 2026-11-26 |
+| [D-208](#d-208--an-overlap-in-a-clearance-check-is-reported-as-the-modeller-asks-clash-with-its-depth-unless-0-mm-is-asked-for-and-a-hole-is-sized-round-a-services-insulation-only-when-the-model-says-it-carries-some) | An overlap in a clearance check is reported as the modeller asks, CLASH with its depth unless 0 mm is asked for, and a hole is sized round a service's insulation only when the model says it carries some | ✅ Accepted · 2026-11-26 |
 
 ## Format
 
@@ -1848,3 +1849,17 @@ session that heard his yes only in its own chat writes the decision Proposed, fo
 are grandfathered by number, and `--all` reports them.
 
 **Full record:** [`decisions/D-206.md`](decisions/D-206.md)
+
+## D-208 — An overlap in a clearance check is reported as the modeller asks, CLASH with its depth unless 0 mm is asked for, and a hole is sized round a service's insulation only when the model says it carries some
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), answering issue #1088: *"depending on the user it will be ask depth or just 0, both option maybe needed"*, and *"include insulation if the pipe has insulation - not only pipe, duct also ... before that need to check the pipe or duct has insulation or not"*.
+**Numbering:** D-208 is the id the coordinating session named; `tools/next-id.py` on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201, printed D-207 as the next free and nothing read held D-208.
+**Keeps:** [D-33](decisions/D-33.md) - a clearance or an allowance is still a number the request gives · [D-30](decisions/D-30.md)
+
+Where two boxes overlap, a clearance check reports CLASH with the depth of the overlap unless the request asks for
+0 mm; both are kept, the overlapping pairs are counted either way, and a gap is never a negative number
+(`CHECK_MINIMUM_CLEARANCE` version 5, `overlapAs`). A hole or sleeve is sized round a pipe's or duct's insulation
+only when the model says it carries some - read first, never assumed, lining not counted (`PROPOSE_MEP_OPENINGS`
+version 3, as `CHECK_SLEEVE_SIZE` reads it).
+
+**Full record:** [`decisions/D-208.md`](decisions/D-208.md)

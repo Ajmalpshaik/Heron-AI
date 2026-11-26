@@ -1735,6 +1735,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qx.md`](needs-checking/group-qx.md)
 
+## Group QY - CHECK_MINIMUM_CLEARANCE version 5 (vertical clearance merged in), CHECK_SLEEVE_SIZE version 3 and PROPOSE_MEP_OPENINGS version 3 - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qy.md`](needs-checking/group-qy.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
