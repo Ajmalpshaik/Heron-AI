@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SHT-027
-semantic-identity: "what the sheets carry and where - each viewport and schedule with its box on the paper, every sheet one view or legend is on, and any box running off its title block or overlapping another"
+semantic-identity: "what is on each sheet and where - its viewports, legends and schedules, every sheet one view or legend is on, and any running off the sheet or overlapping another"
 kind: action
 domain: revit.sheets
 capability: LIST_VIEWS_ON_SHEET

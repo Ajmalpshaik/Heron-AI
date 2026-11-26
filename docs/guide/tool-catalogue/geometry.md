@@ -459,9 +459,9 @@ Other ways to ask: *"flip this layout across"* · *"the next room is a mirror of
 
 **DRAFT - not yet usable in a chat - refused until proved (D-117).**
 
-**What it does:** shift these elements by one offset, and check that they actually moved.
+**What it does:** move these elements up, down or sideways by a distance, or to a point, and check they really moved.
 
-Shifts every element by one offset and reports FOUR outcomes, because "it did not throw" is not the same as "it moved". Revit's move call returns normally and moves nothing when an element cannot be moved - a member of a group is the case that gets through, because it is not pinned and so passes every filter that looks for pinning. No exception, no warning. Counting a clean return as a move reports success for elements that have not shifted a millimetre, which is the "succeeded and did nothing" failure D-30 makes every fragment prove against. So the position is read before and after and compared. That comparison is the fragment; the move itself is one line. Version 2 also puts elements AT a point - `toPoint` - working each one's offset out from its own location point; one positioned by a curve is counted, never moved, and several to one point are refused unless the caller says so. Version 3 refuses a type, a family or an element with no category - a mistyped id - before anything moves, and reads a tag by its head, so a moved tag is checked rather than left "could not be read back". Version 4 moves a family's own forms and lines in the Family Editor, which can have no category there; a type or a family is still refused. ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a bulk move is one undo entry.
+Moves or shifts the elements given by one distance - up, down, left, right or any direction - or puts them at a point, and checks that each one really moved: a group member or anything else Revit quietly leaves where it was is named, never counted as moved. Works on equipment, fixtures, runs and tags in a project, and on a family's own forms and lines in the Family Editor. A type or a family is refused.
 
 | | |
 |---|---|

@@ -327,8 +327,9 @@ OPEN_ON_THE_ONE_SEARCH = {
         "5b-2053: REPORT_AREAS ties SET_AREA_VOLUME_COMPUTATIONS",
     "select all elements of type Curtain Wall":
         "5b-2053: SET_CURTAIN_PANEL_TYPE - row 5b-329's residue",
-    "is the legend going off the sheet":
-        "5b-2053: PLACE_VIEW_ON_SHEET; LIST_VIEWS_ON_SHEET is 19th by nearness",
+    # NOT HERE since 2026-11-26 (row 5b-2063): "is the legend going off the
+    # sheet" passes - LIST_VIEWS_ON_SHEET's identity was made shorter and
+    # plainer, and it is asked as an ordinary guard again.
 }
 OPEN_FAILED = []
 OPEN_PASSED = []
