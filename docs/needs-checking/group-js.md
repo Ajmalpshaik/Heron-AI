@@ -57,7 +57,7 @@ Revit 2020, saved as `%TEMP%\heron-work\group-js\JS Phase Filters.rvt`. The job 
 row that fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-10-31 in a cloud container on its `model` backend, re-ranker absent** - the owner's
-PC ranks with `model+rerank`, which is **NOT RUN** here and, since D-201 (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on. Both cards' own sentences resolve to them by
+PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on. Both cards' own sentences resolve to them by
 identity. A paraphrase that puts a filter on a view - *"apply the new phase filter to level 1 plan"* - reached
 `CREATE_PHASE_FILTER` instead of `SET_VIEW_PHASE`; on main the same sentence already missed `SET_VIEW_PHASE`
 (it reached `SET_ELEMENT_PHASE`). The DRAFT card is offered, never run unasked. Row 5b-1350.

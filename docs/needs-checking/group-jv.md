@@ -70,7 +70,7 @@ change. A row that fails is recorded here and the card corrected; nothing in a r
 pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since D-201 (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on. The four sentences above reach this card
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on. The four sentences above reach this card
 by identity. *"remove this light from the circuit"*, *"change the panel of circuit 5 to LP-2"* and *"add
 this receptacle to the existing circuit"* reach it ranked; on the same tree without it they reached
 `SELECT_BY_ELECTRICAL_CIRCUIT` or `REPORT_PANEL_CIRCUITS`. **Two sentences it took when it was written**, each
