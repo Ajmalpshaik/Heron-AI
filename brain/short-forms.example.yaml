@@ -1,0 +1,37 @@
+# YOUR OFFICE'S SHORT FORMS - an example. Heron never reads this file.
+#
+# HOW TO ADD YOURS: copy this file to %USERPROFILE%\.heron\short-forms.yaml
+# (or HERON_DATA\short-forms.yaml), then add one entry per short form below.
+# `python brain/heron_short_forms.py` says where Heron looks and what it read.
+#
+# A request that holds a short form listed there is searched with its long form
+# added after the modeller's own words; nothing he typed is removed, and the
+# answer says which short form it read. Why the list is yours and not shipped:
+# D-34, and brain/heron_short_forms.py.
+#
+# Every entry names who recorded it and when (`by`, `at`). One whose `by` says it
+# was derived, guessed or inferred is refused. A short form given two meanings
+# is read as neither. Only the forms listed are matched, whole words, any case:
+# write the plural too if your office writes it ("VCD", "VCDs").
+#
+# The three below are the owner's, recorded by Ajmal PS on 2026-09-23 and
+# approved row by row that day (rows 7 to 9 of his site words).
+
+short-forms:
+  - forms: [VCD, VCDs]
+    means: volume control damper
+    by: Ajmal PS
+    at: "2026-09-23"
+    source: "docs/work-notes/plans/earlier-brain/03-owner-data.md row 7 - 'Volume Control Damper — a Duct Accessory family'"
+  - forms: [AHU]
+    means: air handling unit
+    by: Ajmal PS
+    at: "2026-09-23"
+    source: "docs/work-notes/plans/earlier-brain/03-owner-data.md row 8 - 'Air Handling Unit — Mechanical Equipment'"
+  - forms: [FCU]
+    means: fan coil unit
+    by: Ajmal PS
+    at: "2026-09-23"
+    source: "docs/work-notes/plans/earlier-brain/03-owner-data.md row 9 - 'Fan Coil Unit — Mechanical Equipment'"
+
+  # YOUR OFFICE'S LIST GOES HERE - one entry per short form, the same five fields.

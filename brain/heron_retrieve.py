@@ -64,6 +64,7 @@ import heron_embed as EMBED                                   # noqa: E402
 import heron_usage as USAGE                                   # noqa: E402
 import heron_fragment as FRAG                                 # noqa: E402
 import heron_capability as CAP                                # noqa: E402
+import heron_short_forms as SHORT                             # noqa: E402
 
 # The constant in reciprocal rank fusion. 60 is the value the technique is
 # normally used with; what it does is stop rank 1 from dwarfing everything
@@ -1105,11 +1106,17 @@ def find(store, text, revit=None, limit=5, ceiling=None):
                              note="seen %d time(s) before; a candidate, never "
                                   "a decision" % hits)
 
+    # THE MODELLER'S OWN SHORT FORMS, ONLY ONCE HIS EXACT WORDS HAVE MISSED.
+    # Both routes below are handed his words with each recorded long form
+    # added after them - never in place of them - and the note says so.
+    text, short_forms = SHORT.expand(text)
+    read_as = SHORT.sentence(short_forms)
+
     pool = 20
     ranked, excluded = retrieve(store, text, revit=revit, limit=limit, pool=pool,
                                 ceiling=ceiling)
     if not ranked:
-        note = "nothing matched"
+        note = "nothing matched" + ("; " + read_as if read_as else "")
         blocked = [e for e in excluded if "Revit" in e.reason]
         if blocked:
             note += (". %d fragment(s) were excluded by the Revit version "
@@ -1123,6 +1130,8 @@ def find(store, text, revit=None, limit=5, ceiling=None):
 
     best = ranked[0]
     note = "%d candidate(s); best found by %s" % (len(ranked), best.why())
+    if read_as:
+        note += "; " + read_as
 
     # A candidate no route agreed on is a WEAK match, and saying so costs
     # nothing while staying silent costs the user a wrong turn.
