@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,14 @@ semantic-identity: "are the sleeves the right size for what passes through them"
 kind: filter
 domain: revit.qa
 capability: CHECK_SLEEVE_SIZE
-version: 2
+# VERSION 3 (2026-11-26): row 5b-1879 item 1, issue #1088 - every service
+# through a sleeve is checked, not the first the box test found; a sleeve with
+# two or more is in `combined`. The owner kept this card and AUDIT_MEP_OPENINGS
+# apart ("Keep two", row 5b-1878 (B)). Version 2's proof below - PROVEN
+# 2026-10-22 on Heron Capture Test - is kept as the record; its C# moved, so
+# the card is DRAFT until version 3 is proved on a real model (D-30),
+# NEEDS-CHECKING Group QY.
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -67,6 +74,13 @@ purpose: >
   1's proof no longer describes the code, and the fragment is DRAFT until
   it is proved again.
 
+  **EVERY SERVICE THROUGH A SLEEVE IS CHECKED (version 3).** Two pipes
+  through one sleeve are each judged on their own - size, insulation and the
+  annular gap - and the sleeve is undersized when either does not fit. Such a
+  sleeve is said COMBINED and listed in `combined`; whether they fit side by
+  side is not measured, so oversize is not judged for it. Version 3 is DRAFT
+  until proved.
+
 # A NAME TWO PARAMETERS SHARE IS NEVER READ: a sleeve whose size name, or whose
 # service's, is carried twice is `unreadable` with the name said - never read
 # from the next name in the list instead - and a linked wall's Fire Rating
@@ -103,6 +117,13 @@ contract:
       type: IList<ElementId>
     - name: orphaned
       role: result
+      type: IList<ElementId>
+    - name: combined
+      # VERSION 3, row 5b-1879 item 1: the sleeves two or more services pass
+      # through, each service judged on its own. Sometimes intended, so the
+      # evidence of what it read, never a sleeve it failed (D-52) - a sleeve
+      # one of them does not fit is in `undersized`.
+      role: accounting
       type: IList<ElementId>
     - name: unreadable
       # What it was handed and could NOT read. The evidence it tried,
@@ -182,6 +203,10 @@ compatibility-note: >
   0.164 feet used - said millimetres.)
 
 # ROUTING - repeated in CHECK_MINIMUM_CLEARANCE and AUDIT_MEP_OPENINGS.
+#
+# KEPT APART FROM AUDIT_MEP_OPENINGS, the owner's answer to row 5b-1878 (B) on
+# 2026-11-26: "Keep two". Both pair a hole with what passes through it by box;
+# this one judges its SIZE, that one its PLACE and whether it is still needed.
 #
 #   "are the sleeves big enough for the pipes going through" -> here
 #   "check the sleeves against what goes through them"       -> here

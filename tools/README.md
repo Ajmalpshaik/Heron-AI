@@ -54,6 +54,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 | [`check-secrets.py`](check-secrets.py) | a credential in a tracked file, or a tracked file named like one | CI; before pushing anything that holds a key, a token or a config |
 | [`check-products.py`](check-products.py) | the product manifest: a duplicate `addInId`, a `partOf` typo, a release the repository does not build | CI; after editing `platform/heron-products.json` |
 | [`check-decision-titles.py`](check-decision-titles.py) | a decision number keeps the title it was first written with | CI, on the whole history; before merging a new `D-nnn` |
+| [`check-decision-sources.py`](check-decision-sources.py) | an Accepted decision from D-206 on links where the owner's yes can be read ([D-206](../docs/decisions/D-206.md)) | CI; after writing a decision Accepted |
 | [`check-supersessions.py`](check-supersessions.py) | a decision another one supersedes says so under its own heading, and names only a successor that says so too | `check-docs.py` §13 runs it, so before every push and in CI; after writing a `**Supersedes:**` field |
 | [`check-routing.py`](check-routing.py) | every fragment still wins its own sentences; a routing row naming no capability fails | CI; after any change to a card's words |
 | [`check-intrusion.py`](check-intrusion.py) | who turns up in shortlists they have no claim on - exits 0 on a finding | CI, beside `check-routing.py` |
@@ -2704,6 +2705,32 @@ shrinks.
 it cannot see. `git fetch --unshallow` first; the gates job fetches the whole history for it.
 [`tests/test_check_decision_titles.py`](../tests/test_check_decision_titles.py) builds its own repositories, so
 it runs anywhere.
+
+---
+
+## `check-decision-sources.py` - an owner's yes is linked where it can be read
+
+```bash
+python tools/check-decision-sources.py          # D-206 and later - the gate
+python tools/check-decision-sources.py --all    # every decision; the older ones only reported
+```
+
+**A gate: CI's gates job runs it ([D-206](../docs/decisions/D-206.md)).** On 2026-11-21 a session wrote D-196
+Accepted on words the owner had not said, and its one source was that session's own chat
+([row 5b-1986](../docs/fragment-issues/row-5b-1986.md), issue #1262). Asked on 2026-11-26 whether a decision that
+says *"the owner said yes"* must link where he said it, he chose *"Yes, and a checker blocks it"*.
+
+It reads every decision numbered D-206 or later whose Status starts with *Accepted* - its full record and its index
+entry, with `check-supersessions.py`'s own header reader - and exits **1** when the header has no `**Accepted:**`
+line, or one that links neither a pull request or issue of this repository (`https://github.com/Ajmalpshaik/Heron-AI/pull/N`,
+`.../issues/N`) nor a claude.ai session (`https://claude.ai/code/session_...`). A bare `#N`, a commit's sha and a link
+in another field do not count. A Proposed decision owes nothing - that is where a yes heard only in a session's own
+chat goes. **D-00 to D-205 are grandfathered by number**; `--all` prints how each would fare and never changes the
+exit code. It exits **2** when there is no decision to read.
+
+**It reads a link's shape, not what is at the other end** - whether the words are there, and whether a comment under
+the owner's login was typed by him, are a reviewer's. [`tests/test_check_decision_sources.py`](../tests/test_check_decision_sources.py)
+builds its own logs, so it runs anywhere.
 
 ---
 

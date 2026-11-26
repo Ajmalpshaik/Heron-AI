@@ -191,6 +191,16 @@ jobs:
       - name: check-decision-titles
         run: python tools/check-decision-titles.py --published HEAD
 
+      # AN OWNER'S YES IS LINKED WHERE IT CAN BE READ (D-206). On 2026-11-21
+      # a session wrote D-196 Accepted on words the owner had not said, and
+      # its only source was that session's own chat. From D-206 on, an
+      # Accepted decision's Accepted line links a pull request or issue of
+      # this repository, or a claude.ai session - or the decision is written
+      # Proposed. Earlier decisions are grandfathered by number. It reads
+      # the files, never history (row 5b-1986, issue #1262).
+      - name: check-decision-sources
+        run: python tools/check-decision-sources.py
+
       # These two need somewhere to put a knowledge store. An empty
       # directory is enough for them to run, so CI gives them one.
       #

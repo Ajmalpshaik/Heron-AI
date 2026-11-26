@@ -1407,11 +1407,6 @@ def context(request, path=None, revit=None, full=False, depth=None,
         _audit().context(path=ctx.path,
                          depth=CONTEXT.DEPTH_NAMES[ctx.depth],
                          parts=len(ctx.parts), characters=ctx.size)
-        # D-191: each clause this packet shows the chat counts once as
-        # offered, in the counter beside the store it came from.
-        _count_offered(getattr(store, "path", None),
-                       [p.citation.get("chunk") for p in ctx.parts
-                        if getattr(p, "citation", None)])
         return {
             "request": ctx.request,
             "path": ctx.path,
@@ -2696,67 +2691,6 @@ def _with_text(asked, project=None):
     return out
 
 
-def _count_offered(store_path, chunk_ids):
-    """Count each clause shown to the chat once as OFFERED (D-70, D-191).
-
-    Never fails the answer it counts: a counter that could break a reply is
-    worse than none, so an unwritable counter is left as it was. Nothing is
-    counted as HELPED here - only the modeller's own word does that, through
-    heron_helped.
-    """
-    ids = [one for one in (chunk_ids or []) if one]
-    if not store_path or not ids:
-        return
-    try:
-        import heron_usage as USAGE
-        USAGE.offered(USAGE.usage_path(store_path), ids)
-    except Exception:                                  # noqa: BLE001 - never fail an answer on a count
-        pass
-
-
-def helped(chunk, scope="global", project=None, project_name=None):
-    """The modeller said this clause helped: count it (D-191 clause 2).
-
-    Returns {chunk, scope, helped, offered, last_helped, said}. Raises
-    ValueError for a scope or a clause this PC does not hold - said, never
-    counted against nothing.
-    """
-    try:
-        import heron_scope as SCOPE
-        import heron_usage as USAGE
-    except ImportError as exc:
-        raise BrainUnavailable(
-            "Heron's knowledge layer needs PyYAML and it is not installed: %s\n"
-            "Install it, in the Heron folder, with:  %s" % (exc, INSTALL.install_line("pip install --user pyyaml")))
-    scope = (scope or SCOPE.GLOBAL).strip().lower()
-    if scope not in SCOPE.SCOPES:
-        raise ValueError("%r is not a knowledge scope. There are %s."
-                         % (scope, ", ".join(SCOPE.SCOPES)))
-    store = SCOPE.open_scope(scope, project if scope == SCOPE.PROJECT else None)
-    try:
-        try:
-            entry = USAGE.helped(store, chunk)
-        except USAGE.UnknownClause as why:
-            raise ValueError(str(why))
-    finally:
-        store.close()
-    # The folder index learns the project's name while both are in hand, as
-    # standards() does - the key names the file, the name says which building.
-    if scope == SCOPE.PROJECT and project and project_name:
-        try:
-            SCOPE.remember_label(project, project_name)
-        except Exception:                              # noqa: BLE001 - a label never fails a count
-            pass
-    _audit().record("knowledge.helped", True, fields={"scope": scope},
-                    numbers={"helped": entry["helped"], "offered": entry["offered"]})
-    return {"chunk": chunk, "scope": scope, "helped": entry["helped"],
-            "offered": entry["offered"], "last_helped": entry["last_helped"],
-            "said": "Counted on this PC: that clause has now helped %d of the %d "
-                    "times Heron showed it. Only the clause and the counts are kept "
-                    "- not your question - and nothing is sent anywhere."
-                    % (entry["helped"], entry["offered"])}
-
-
 def standards(request, scopes, project=None, limit=5,
               project_name=None):
     """Each named scope asked on its own, and where their numbers disagree.
@@ -2817,20 +2751,6 @@ def standards(request, scopes, project=None, limit=5,
     found = CONFLICT.disagreements(request, scopes=wanted, project=project,
                                    limit=limit, asked=asked,
                                    project_name=project_name)
-
-    # D-191: every clause shown counts once as offered, in its OWN scope's
-    # counter - never pooled, the same wall the Librarian keeps.
-    for one in asked:
-        shown = [c.get("id") for c in
-                 (getattr(one.answer, "candidates", None) or [])
-                 if c.get("kind") == "chunk"]
-        if shown:
-            try:
-                where = SCOPE.scope_path(one.scope,
-                                         one.project or (project if one.scope == SCOPE.PROJECT else None))
-            except ValueError:
-                continue
-            _count_offered(where, shown)
 
     # THE FOLDER INDEX LEARNS THE NAME WHILE BOTH ARE IN HAND. heron_scope
     # keeps projects/labels.json so that somebody opening the folder can tell

@@ -1,6 +1,6 @@
 ---
 name: heron-ship
-description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the twelve CI actually decides on, the reports whose findings are questions, how to measure what a card's routing words moved - main against the branch on a named backend, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, where a new 5b defect row is written (a file of its own, and its GitHub issue in the same change), and how to resolve a merge conflict in the NEEDS-CHECKING group index or between two branches that took the same id.
+description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the thirteen CI actually decides on, the reports whose findings are questions, how to measure what a card's routing words moved - main against the branch on a named backend, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, where a new 5b defect row is written (a file of its own, and its GitHub issue in the same change), and how to resolve a merge conflict in the NEEDS-CHECKING group index or between two branches that took the same id.
 allowed-tools:
   - Bash
   - Read
@@ -101,11 +101,11 @@ machine can run Heron at all. Run it after a fresh clone, after touching `requir
 missing **optional** package exits 0 on purpose: silent degradation is the designed behaviour, and a
 checker that failed on one would be arguing with the requirement that allows it.
 
-### THESE FOUR ARE NOT WHAT DECIDES THE PULL REQUEST. TWELVE DO.
+### THESE FOUR ARE NOT WHAT DECIDES THE PULL REQUEST. THIRTEEN DO.
 
-`.github/workflows/gates.yml` has a job named **"The gates that must pass"**, and it runs **twelve**
+`.github/workflows/gates.yml` has a job named **"The gates that must pass"**, and it runs **thirteen**
 commands under `bash -e` — so a non-zero exit from **any** of them turns the PR red. The four above
-are four of the twelve. The other eight are:
+are four of the thirteen. The other nine are:
 
 ```bash
 python tools/check-signatures.py       # a signature left unused - signed, still DRAFT (a stale proof is only reported)
@@ -114,6 +114,7 @@ python tools/check-narrow-errors.py    # an sqlite3.OperationalError handler tha
 python tools/check-secrets.py          # a credential shape in a tracked file, or a tracked file .gitignore's Secrets block refuses (D-143)
 python tools/check-products.py         # the manifest the installer reads, which nothing compiles
 python tools/check-decision-titles.py  # a decision number that stopped meaning its decision
+python tools/check-decision-sources.py # an Accepted decision from D-206 on whose yes links nowhere it can be read (D-206)
 HERON_KNOWLEDGE=$(mktemp -d) python tools/check-routing.py    # every capability still reachable, and every routing row names one
 HERON_KNOWLEDGE=$(mktemp -d) python tools/check-intrusion.py  # one fragment crowding out another
 ```
@@ -177,6 +178,13 @@ wrote, fails its own pull request until the `**Numbering:**` lines are there: th
 number it had (renumber.py writes that one), and the decision now under the old number quotes the branch's
 title if the branch wrote first. Run it with no flag on the branch, main merged in, and you see what CI
 sees. It was `HEAD^1` until then, which let such a branch pass and turned every pull request after it red.
+
+**`check-decision-sources` fails a decision you write Accepted with no link to where the owner said yes**
+(since 2026-11-26, [D-206](../../../docs/decisions/D-206.md)). From D-206 on, the `**Accepted:**` line links a pull
+request or issue of this repository by its full URL, or the claude.ai session he gave it in; a bare `#N` or a
+commit's sha does not count. A yes you heard only in your own chat, with no such link, is written
+`**Status:** Proposed` for him or the coordinator to confirm - that passes. D-00 to D-205 are grandfathered;
+`--all` reports them. It reads the files only, so it runs anywhere.
 
 ## 2. The tests
 
