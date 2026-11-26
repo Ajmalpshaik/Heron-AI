@@ -62,3 +62,5 @@ PJ1, negative PJ4), a draft waiting for the owner; the card's `proof-held` is hi
 | PJ2, run 2026-11-26 | **PASS** - the same roof with `toLevels=`, `turnDegrees=`, `turnCentreMm=` typed blank: `copies` 1, `notCopied` 0, `copiedTo` empty - the same answer as PJ1. |
 | PJ3, run 2026-11-26 | **PASS** - both roofs, `turnDegrees=15`, `toLevels` left out: *"A turn is applied only when copying onto levels - name them in toLevels. ... Nothing was copied."*, `copies` 0. |
 | PJ4, run 2026-11-26 | **PASS** - `offset=0,0,0`, `toLevels=Level 99`: *"This model has no level named "Level 99". Its levels, lowest first: Foundation, Level 1 Living Rm., Level 1, Ceiling, Level 2, Roof Line. Nothing was copied."* |
+
+**Signed 2026-11-26 by Ajmal PS** (his typed word in chat, "Yes, sign it"; signature put on by the session): `copy-elements` version 6 on the proof job above, `proof-held` lifted and the card PROVEN. PJ1's kept Revit 2024 run is still owed.
