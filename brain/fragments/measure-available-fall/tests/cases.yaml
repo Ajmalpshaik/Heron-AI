@@ -1,11 +1,28 @@
-# CANNOT BE ARRANGED YET (row 5b-1970). This card has two single-element needs
-# (`upstream` and `downstream`), and the only word that binds one is `selected`, which means exactly one
-# element and binds that one to BOTH - so no case below can be given two different
-# elements as written, and following `selected` measures an element against itself
-# (0 mm) as an answer, not a refusal. Do not run these cases until a way to name two
-# elements exists. See docs/fragment-issues/row-5b-1970.md.
+# VERSION 2 (row 5b-2006, issue #1308): the two points are the TWO elements
+# selected in Revit, or two ids typed in `elementIds` UPSTREAM FIRST - the
+# typed ids decide. Until version 2 no case below could be arranged: `upstream`
+# and `downstream` were single-element needs and `selected` bound one element
+# to both. The first two cases of each list are the two ways in; the rest are
+# the measuring itself, arranged either way - except the rise, which only typed
+# ids can show. Owed in Revit: NEEDS-CHECKING Group QX.
 
 positive:
+  - given: >
+      SELECTION - a gully and a manhole 24000 mm apart whose invert is 300 mm
+      lower, both selected in Revit, nothing typed
+    expect: >
+      1 in 80, with the finding that the selection has no order and the
+      higher one - the gully - was taken as upstream. Selected in either
+      order, the same answer
+
+  - given: >
+      TYPED IDS - the same two typed in elementIds, gully first ("<gully>,
+      <manhole>"), while a third element is selected
+    expect: >
+      1 in 80, no sentence about the selection's order, and the finding "The
+      1 element(s) selected were NOT used - ids were typed, and typed ids
+      decide"
+
   - given: >
       a gully at level 0 and a manhole 24000 mm away whose invert is 300 mm
       lower
@@ -24,7 +41,25 @@ positive:
       at each end
 
 negative:
-  - given: a downstream point 50 mm HIGHER than the upstream one
+  - given: >
+      SELECTION - three elements selected, nothing typed (and, the same case,
+      one element selected)
+    expect: >
+      nothing measured, every number 0, and the finding "3 element(s) are
+      selected ... and this measures between exactly TWO points" ("1
+      element(s)" for one). THE D-30 NEGATIVE FOR THE SELECTION WAY
+
+  - given: >
+      TYPED IDS - one id typed ("<gully>"), then two where the second names
+      nothing in the model ("<gully>, 999999999")
+    expect: >
+      nothing measured, every number 0: "1 element id(s) were typed, and this
+      measures between exactly TWO points", then "No element in '<model>' has
+      the id 999999999". THE D-30 NEGATIVE FOR THE TYPED WAY
+
+  - given: >
+      a downstream point 50 mm HIGHER than the upstream one - TYPED IDS,
+      upstream first; a selection would take the higher one as upstream
     expect: >
       reported as a RISE, with no gradient given. THIS IS THE FIRST CASE TO RUN.
       A negative fall carried into a calculation lays a drain uphill, and a
