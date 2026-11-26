@@ -54,7 +54,7 @@ purpose: >
   not new values to supply, so a request written for version 1 runs unchanged:
   `type=` checks type names written as *"Family: Type"* - no space before the
   colon - over the types of the categories in `requiredOn`, so
-  `type=*: TRG*` finds every type whose name does not start with the office
+  `type=*: ABC*` finds every type whose name does not start with the office
   prefix; `room=` checks room names; `value:<parameter>=` is the pattern a FILLED
   value of a required parameter must match, and a filled value that breaks it is
   counted apart from a blank one, because correcting data and entering it are

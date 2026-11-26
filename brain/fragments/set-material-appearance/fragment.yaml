@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,9 @@ semantic-identity: "give materials a render appearance - a library asset, anothe
 kind: action
 domain: revit.elements
 capability: SET_MATERIAL_APPEARANCE
-version: 3
+# VERSION 4 (2026-11-26, the owner's word - "Yes, remove it" - to take his company's name out of Heron):
+# a refusal message's example pattern no longer names the owner's company. Version 3's proof below is kept as the record; DRAFT until the Revit run is done and signed.
+version: 4
 # VERSION 3, 2026-10-20 - row 5b-1280. The owner saw Prism-152 in the Asset
 # Browser as "Glass (Clear)"; version 2 listed and matched it as "Glass -
 # clear" and refused the browser's spelling. With no exact match, a library
@@ -93,7 +95,7 @@ contract:
     - name: doc
       type: Document
     # One material's name, several with ';' between, or a pattern with * and
-    # ? - "TRG_*".
+    # ? - "ABC_*".
     - name: materialsNamed
       type: string
       source: request

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,9 @@ semantic-identity: "add the office starter set of twelve materials, each made re
 kind: action
 domain: revit.elements
 capability: CREATE_STARTER_MATERIALS
-version: 4
+# VERSION 5 (2026-11-26, the owner's word - "Yes, remove it" - to take his company's name out of Heron):
+# its namePrefix default changed from the owner's office prefix to no prefix - Heron is for every office. Version 4's proof below is kept as the record; DRAFT until the Revit run is done and signed.
+version: 5
 # VERSION 4, 2026-11-01 - CREATE_MATERIAL MERGED IN; see the block below.
 #
 # VERSION 3, 2026-10-20 - row 5b-1280. The owner saw Prism-152 in the Asset
@@ -70,7 +72,7 @@ risk: MODIFY
 # as it is; merged here 2026-11-01, above - made a material with a shading
 # colour alone, which draws flat dark grey in Realistic (row 5b-1263).
 #
-# THE TWELVE, named namePrefix + words, "TRG_" by the owner's naming rule with
+# THE TWELVE, named namePrefix + words - no prefix unless the modeller gives one - with
 # the words spelled out: Glass Clear, Steel Stainless Satin, Steel Galvanised,
 # Aluminium Brushed, Concrete Smooth, Plaster Paint White, Floor Tile Grey,
 # Wood Oak, Carpet Grey, Ceiling Tile White, Duct Galvanised, Pipe Copper.
@@ -112,12 +114,13 @@ contract:
   needs:
     - name: doc
       type: Document
-    # The office prefix in front of each name. Left out, the owner's "TRG_".
+    # The office prefix in front of each name, e.g. "ABC_". Left out, no prefix:
+    # Heron is for every office, so no office's prefix is its default (2026-11-26).
     - name: namePrefix
       type: string
       source: request
       optional: true
-      absent: TRG_
+      absent: ""
     # Which of the twelve, by their words with ';' between - "glass; copper",
     # "all" or "none". Left out ("auto", version 4): all twelve when no
     # materialNames are given, none of them when names are.
@@ -173,6 +176,12 @@ contract:
     - name: findings
       type: IList<string>
 
+proof-held: >
+  Back to DRAFT on 2026-11-26, on the owner's word ("Yes, remove it", row 5b-2062): version 5's
+  namePrefix has no default where version 4's was the owner's office prefix, so the 2026-11-02
+  proof no longer describes what a modeller gets when no prefix is given. impl/ did not change,
+  so the fingerprint still matches; NEEDS-CHECKING Group RB (RB1 to RB3) owes the run, then the
+  owner signs.
 proof:
   date: '2026-11-02'
   by: Ajmal PS
@@ -237,7 +246,7 @@ compatibility-note: >
 utterances:
   - add a starter set of materials
   - set up a library of good looking materials for rendering
-  - add the standard TRG materials to this project
+  - add the standard starter materials to this project
   # MOVED 2026-11-01 from CREATE_MATERIAL, merged into this card. Its note on
   # the last one, kept: declared 2026-10-09 (row 5b-375) - the sentence a
   # modeller typed, which had reached SELECT_BY_MATERIAL. Every other was
