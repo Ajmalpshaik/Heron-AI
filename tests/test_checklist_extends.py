@@ -47,12 +47,13 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+import heron_tools as SERVER_TOOLS                          # noqa: E402
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_checklists as Q                                  # noqa: E402
 import heron_checklist_report as R                            # noqa: E402
 
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 FAILURES = []
 
 _PROVIDES = [{"name": "failures", "type": "int"}, {"name": "offenders", "type": "IList<ElementId>"},
@@ -203,7 +204,7 @@ def hand_edited(home):
 
 def wiring():
     print("\n6. the wiring")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = SERVER_TOOLS.server_text()
     head = server[server.find("def heron_checklist("):]
     head = head[:head.find(")")]
     check('extends: str = ""' in head and 'overrides: str = ""' in head,

@@ -79,7 +79,6 @@ ADDIN = os.path.join(ROOT, "revit", "Heron.Revit.Addin")
 FRAGMENT_CS = os.path.join(ADDIN, "RevitFragment.cs")
 DISPATCHER_CS = os.path.join(ADDIN, "RevitDispatcher.cs")
 STACK_HOST = os.path.join(ROOT, "tests", "Heron.StackGuard.TestHost", "Program.cs")
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 CLIENT_PY = os.path.join(ROOT, "mcp", "client", "heron_bridge_client.py")
 
 sys.path.insert(0, os.path.join(ROOT, "brain"))
@@ -263,7 +262,7 @@ def client_section():
 def server_section():
     print()
     print("3. The server and the command line wait by the label, and say it is a click")
-    server = read(SERVER)
+    server = TOOLS.server_text()
     for door, op in (("revit_read", "run_fragment_read"), ("revit_show", "run_fragment_show")):
         body = py_body(server, door)
         sent = body.find('session.request("%s"' % op)

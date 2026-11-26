@@ -394,6 +394,50 @@ def undeclared_before_the_queue():
           "naming what IS declared from the table itself, never a typed list")
 
 
+# A suite that SEARCHES the server's source asks heron_tools.server_text(); one that
+# types the entry file's path reads one file of several and goes blind to whatever
+# moved out of it (FRAGMENT-ISSUES row 5b-2039). The only files allowed to name
+# that path are listed here, each with why - a NAME in a list, not a read.
+TYPED_PATH_EXCEPTIONS = {
+    os.path.join("tests", "golden", "cases.py"):
+        "names the entry file in the list of files a case depends on; reads nothing",
+    os.path.join("tests", "test_tool_registry.py"):
+        "this guard - it spells the pattern it looks for",
+}
+TYPED_PATH = re.compile(r"""["']server["']\s*,\s*["']heron_mcp_server\.py["']"""
+                        r"""|mcp[/\\]server[/\\]heron_mcp_server\.py""")
+
+
+def typed_path_readers(folder=None):
+    """Files under tests/ that type the entry file's path, minus the named exceptions."""
+    folder = folder or os.path.join(ROOT, "tests")
+    found = []
+    for here, _dirs, files in os.walk(folder):
+        for name in sorted(files):
+            if not name.endswith(".py"):
+                continue
+            path = os.path.join(here, name)
+            rel = os.path.relpath(path, os.path.dirname(folder))
+            if rel in TYPED_PATH_EXCEPTIONS:
+                continue
+            if TYPED_PATH.search(io.open(path, encoding="utf-8").read()):
+                found.append(rel)
+    return sorted(found)
+
+
+def suites_read_the_server_whole():
+    print()
+    print("No suite reads the server by the entry file's typed path (row 5b-2039)")
+    found = typed_path_readers()
+    check(not found,
+          "every suite asks heron_tools.server_text()%s"
+          % ("" if not found else "  <- types the path: %s" % ", ".join(found)))
+    stale = [name for name in TYPED_PATH_EXCEPTIONS
+             if not os.path.isfile(os.path.join(ROOT, name))]
+    check(not stale, "every named exception is a file that exists%s"
+          % ("" if not stale else "  <- %s" % ", ".join(stale)))
+
+
 def main():
     declared_cs = csharp_registry()
     handled = csharp_handlers()
@@ -713,6 +757,7 @@ def main():
 
     labels(declared_cs)
     source_list()
+    suites_read_the_server_whole()
     library()
 
     print()

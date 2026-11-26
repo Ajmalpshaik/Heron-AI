@@ -49,6 +49,8 @@ import zipfile
 from xml.dom import minidom
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+import heron_tools as SERVER_TOOLS                          # noqa: E402
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_checklists as Q                                  # noqa: E402
@@ -59,7 +61,6 @@ except ImportError as why:                                    # the module is wh
     R = None
     IMPORT_FAILURE = str(why)
 
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 FAILURES = []
 BANNED = re.compile(r"\b(compliant|compliance|healthy)\b", re.I)
 HOSTILE = "<script>alert(1)</script> every door is =HYPERLINK(\"x\")\x07 tagged"
@@ -195,7 +196,7 @@ def files(home):
 
 def wiring():
     print("\n4. the wiring")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = SERVER_TOOLS.server_text()
     head = server[server.find("def heron_checklist("):]
     head = head[:head.find(")")]
     check("report: bool = False" in head, "heron_checklist takes `report`, off unless asked")
