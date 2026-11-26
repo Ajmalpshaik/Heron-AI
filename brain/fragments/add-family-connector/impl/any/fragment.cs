@@ -11,8 +11,8 @@
 // read-back as before; one that does not is rolled back and its words - the
 // same words - come back through `refused`, nothing kept. The same refusal
 // covers a whole face whose port is not the face's own size. The other throws
-// after the connector is made are unchanged (row 5b-2051 lists which a
-// request can reach).
+// after the connector is made are unchanged (row 5b-2052 lists which a
+// request can reach, issue #1434).
 //
 // VERSION 8 (2026-11-24, rows 5b-2031 and 5b-2032) - A DUCT SIZE OR PIPE SIZE
 // PARAMETER SIZES A CONNECTOR, AND A PORT MAY BE SMALLER THAN A RING'S OPENING.
@@ -346,7 +346,7 @@ else
         {
             chosen = asked[0];
             findings.Add("\"" + system.Trim() + "\" is a duct and a pipe system both; a " + chosen.Item1 + " connector "
-                + "was made, " + (said.StartsWith(chosen.Item1) || said.EndsWith(chosen.Item1) ? "as the words say."
+                + "is the kind used, " + (said.StartsWith(chosen.Item1) || said.EndsWith(chosen.Item1) ? "as the words say."
                 : "from the family's category."));
         }
         else

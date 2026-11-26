@@ -1,4 +1,4 @@
-# Group QP (issue #1381) - ADD_FAMILY_CONNECTOR version 8: a Duct Size parameter sizes a duct
+# Group QP (issue #1381) - ADD_FAMILY_CONNECTOR version 8, re-run on version 9 (row 5b-2051): a Duct Size parameter sizes a duct
 # connector, and a port that will not fit the ring's opening is refused.
 # Revit 2020, 2026-11-26. Model: pt-ahu - a scratch COPY of Ajmal PS's AHU family
 # (TRG_..._SKM MAH-0202S2M.rfa) in %TEMP%\heron-work\pt, never the library file.

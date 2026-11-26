@@ -70,9 +70,9 @@ Owed, in the same scratch family `pt-ahu` on Revit 2020 - re-run [`qp-connector-
 
 | Check | Owed on version 9 | Pass looks like |
 |---|---|---|
-| QP1 | The positive again - the ring with 205 and 205 | Made, sized by both parameters, *"2 and 2 mm clear each side"* - the job's positive leg |
-| QP2 (i) | The ring with 215 and 205 | Verdict PASS, the negative leg answered through **`refused`** - *"... would not fit inside that opening either way round. NOTHING from this call was kept."* - never `fragment_threw`; no connector in the family |
+| QP1 | The positive again - the ring with 205 and 205 (the job's positive leg); the 32 mm Sanitary pipe connector on Condensate_Drain_Diameter; the flex of Supply_Air_Width to 200 | Made, sized by both parameters, *"2 and 2 mm clear each side"*; the pipe connector as on 2026-11-26; the connector reads 200 wide after the flex. **The job file holds only the duct leg** - the pipe leg needs one added, with the drain stub's full id read from the family (recorded above only as `...-00001b3e`) |
+| QP2 (i) | The ring with 215 and 205 - the job's negative leg; then the same values once by `revit_change` on `pt-ahu`, the owner pressing Discard | Verdict PASS, the negative leg answered through **`refused`** - *"... would not fit inside that opening either way round. NOTHING from this call was kept."* - never `fragment_threw`. The rolled-back job cannot show that version 9's own rollback left nothing (the host takes the whole run back anyway); the live call can - its answer says nothing changed, no element added |
 | QP2 (ii) | A whole 400 x 300 neck face with 390 and 290 | Still **NOT RUN** - `pt-ahu` has no whole-face neck; it needs a family that has one. Refused the same way, *"On a whole face the port must be the face's own size"* |
-| QP2 (iii) | A Duct Size parameter on the pipe stub | Owed again on version 9 (its refusal comes before the connector is made, so it should read as on 2026-11-26) |
+| QP2 (iii) | A Duct Size parameter on the pipe stub | Owed again on version 9 (its refusal comes before the connector is made, so it should read as on 2026-11-26). Not in the job file - it goes with the pipe leg above |
 
 Nothing above is struck: every check here is owed again on version 9.

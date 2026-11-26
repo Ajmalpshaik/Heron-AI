@@ -319,7 +319,8 @@ negative:
       inside the raised ring's bore
 
   # VERSION 8 (2026-11-24). NOT RUN. The scratch family of the version 8
-  # positives.
+  # positives. Version 8 THREW the first two (row 5b-2051); version 9's cases
+  # below are the ones a proof runs.
   - given: >
       facePlane "Supply Face", sizeParameters "Supply_Air_Width,
       Supply_Air_Height" set to 215 and 205 - wider than the 209 opening
@@ -356,8 +357,11 @@ negative:
       the `refused` output, NEVER fragment_threw: "The opening of the ring
       face on "Supply Air Face" is 209 x 209 mm ... would not fit inside
       that opening either way round. NOTHING from this call was kept.";
-      connector empty, sizedBy empty, and no connector in the family - the
-      one made to measure the ring rolled back in its SubTransaction
+      connector empty, sizedBy empty. A rolled-back batch-prove run cannot
+      show the SubTransaction's own rollback - the host takes everything
+      back anyway - so ALSO one live revit_change on the scratch family with
+      the same values: its answer says nothing changed, no element added,
+      before Discard
   - given: >
       a 400 x 300 neck face (a whole face, one loop), sizeParameters holding
       390 and 290
