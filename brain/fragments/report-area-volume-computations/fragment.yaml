@@ -220,3 +220,6 @@ utterances:
   - what area plans are there
   - list the area plans
   - which area plans do we have
+  # ADDED 2026-11-26, row 5b-2049: on lexical, a check of the volume setting
+  # reached APPLY_VIEW_FILTER, a write.
+  - check whether volumes are calculated in this project
