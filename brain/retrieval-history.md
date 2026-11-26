@@ -2043,6 +2043,13 @@ container (no Revit) on **`lexical` alone**, CI's backend, every run on a store 
 | `check-routing` own sentences first by words / by nearness | 3604 -> 3611 / 2459 -> 2433 of 4511 |
 | `check-risk-crossings` question to a write / nothing safe close | 5 -> 5 / 3 -> 3 |
 
+**Measured again on main `83c36ecb`** (D-203 merged: lexical is the only search) against the branch with
+it merged: his 79 the same (first 34 -> 38, top three 43 -> 45, not found 17 -> 15, handed a change 7 -> 5,
+a different change 14 -> 13); skill rows 4 -> 4 of 7, main having gained one; the 604 frozen sentences 8
+better, 0 worse, questions reaching a write 58 -> 56 of 130, held-out 16 -> 16 of 30 and 5 -> 4 of 8;
+`check-routing` claimed and not reached 73 -> 73, two cards want one sentence 908 -> 900, by words
+3616 -> 3624, by nearness 2458 -> 2434 of 4524; `check-risk-crossings` 6 -> 6 and 2 -> 2.
+
 The 604 were [`tests/data/routing-sentences-2026-11-26-card-audit.yaml`](../tests/data/routing-sentences-2026-11-26-card-audit.yaml),
 frozen before the first edit, and every other `tests/data/routing-sentences-*.yaml`;
 `tools/score-routing.py --sentences ... --tree <main> --compare`. The fall by nearness in `check-routing`
@@ -2062,9 +2069,11 @@ selected elements* - both reworded, and `tests/test_routing_phrases.py` on the m
 the three curtain-wall checks main fails (row 5b-329). On `lexical` that suite does not run (exit 3).
 
 **Row 5b-2053's five guards left open on the one search,** asked on `lexical` afterwards:
-`PLACE_HOSTED_FAMILY`'s identity, now naming each host, takes *place doors and windows hosted in walls at
-points* from `SELECT_BY_HOST`; `LIST_VIEWS_ON_SHEET`'s, shorter, lifts *is the legend going off the sheet*
-from fourth to second. The other three found no honest wording (the row says why). His 79, the plain
+`LIST_VIEWS_ON_SHEET`'s identity, shorter, takes *is the legend going off the sheet* from
+`PLACE_VIEW_ON_SHEET` once main's D-203 tree is merged, and the guard came off `OPEN_ON_THE_ONE_SEARCH`.
+`PLACE_HOSTED_FAMILY`'s, naming each host, took *place doors and windows hosted in walls at points* from
+`SELECT_BY_HOST` until row 5b-2053's `select-by-host` lines merged, and lost it again. The other three found
+no honest wording (the row says why). His 79, the plain
 questions and the 604 frozen sentences read exactly as in the table above with both in.
 
 ### What this does not establish
