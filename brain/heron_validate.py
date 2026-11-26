@@ -2426,6 +2426,17 @@ def main(argv=None):
         parser.print_help()
         return 2
 
+    # ROW 5B-2040. A draft holding a 'Δ' ended `review` half-way on the owner's
+    # PC, 2026-11-26: a Windows console or pipe is cp1252, which cannot encode
+    # it, so every draft after it went unread. Every command here prints text
+    # from a draft, a record or a card, so the streams are made UTF-8, with
+    # "replace" for anything left, before any of it. Only what is printed
+    # changes - files are written with their own encoding, below. A stream
+    # that cannot be reconfigured - a test's StringIO - is left as it is.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
     if args.command == "plan":
         library = load_library()
         entries = build_plan(library, include_all=args.all)
