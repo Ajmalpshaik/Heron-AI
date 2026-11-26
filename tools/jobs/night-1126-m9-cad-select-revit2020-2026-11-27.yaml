@@ -1,0 +1,16 @@
+# 2026-11-27, Revit 2020 - CONVERT_CAD_TO_DIRECTSHAPE. "Night Rig 1126" now holds ONE kept DWG import, id 1021762
+# ("Typical Room WSHP.dwg", exported from the model's own 3D view, imported with import-cad, PROVEN, and saved).
+# Positive: the import. Negative: a duct (392168) - not an import, nothing converted. ROLLED BACK.
+model: "Night Rig 1126 (scratch copy of the Revit 2020 MEP sample), Revit 2020"
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+jobs:
+  - fragment: convert-cad-to-directshape
+    write: true
+    setup: [filter-elements-by-id, set-selection]
+    expect: created
+    setup-set: {elementIds: "1021762"}
+    negative-setup-set: {elementIds: "392168"}
+    set: {category: "Generic Models"}
+    negative-set: {category: "Generic Models"}
