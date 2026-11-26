@@ -41,6 +41,16 @@ positive:
       deletedByCategory lists the sketch's parts by category under "Also went",
       and never says "form(s)"
 
+  # VERSION 4 - A COUNT THE YES NAMED IS CHECKED BEFORE ANYTHING GOES (row
+  # 5b-1990).
+  - given: >
+      VERSION 4. A door hosted in a wall, with one tag; the wall asked for and
+      expectedCount= the count REPORT_ELEMENT_DEPENDENCIES gave as goesTotal
+    expect: >
+      the trial's count is that number, countChecked says so, and the delete
+      runs exactly as version 3: deleted holds the wall, the door and the tag,
+      and deletedWhat names each. One undo entry puts all of it back
+
 negative:
   - given: 1 wall carrying 3 doors and 2 windows
     expect: >
@@ -115,6 +125,49 @@ negative:
       after the rollback every element is back, and the trial deletes inside
       the call left nothing behind: Revit's own Delete box lists exactly the
       count `deleted` reports, not double, and no extra warning appears
+
+  # VERSION 4 negatives (row 5b-1990).
+  - given: >
+      VERSION 4. The same wall, expectedCount one LESS than what Revit takes
+    expect: >
+      the call stops with "STOPPED BEFORE THE DELETE - NOTHING HAS BEEN
+      DELETED", both numbers, Revit's list by category and every id beyond
+      the wall; the wall, the door and the tag are all still in the model,
+      and Revit's Delete box never appears. Asked again with Revit's count,
+      it deletes
+
+  - given: >
+      VERSION 4. The same wall, expectedCount one MORE than what Revit takes
+    expect: >
+      stopped the same way, nothing deleted - too high is as wrong as too low
+
+  - given: >
+      VERSION 4. expectedCount=0 (the yes named nothing) and an element that
+      Revit will delete
+    expect: >
+      stopped, nothing deleted: 0 is a count like any other, never "no check".
+      Only a count left out (-1) skips the trial
+
+  - given: >
+      VERSION 4. Two asked for, one of them pinned or owned by another user so
+      Revit refuses it, and expectedCount= what the other one takes
+    expect: >
+      the count is met and the delete runs; on a different count the stop
+      message names the refused one as asked for and NOT going
+
+  - given: >
+      VERSION 4. No open transaction for the trial to nest in (the card run
+      bare), expectedCount given
+    expect: >
+      "STOPPED BEFORE THE DELETE ... could not start the trial ... Nothing has
+      been deleted" - a count that cannot be checked is never taken as met
+
+  - given: >
+      VERSION 4. expectedCount left out
+    expect: >
+      no trial of the whole request, countChecked empty, and the delete runs
+      exactly as version 3 - the same deleted, deletedWhat and
+      deletedByCategory for the same model
 
 second_route:
   - Revit's own undo stack: one Ctrl+Z must put back exactly what `deleted` listed

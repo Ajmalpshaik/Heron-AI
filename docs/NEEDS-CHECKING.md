@@ -1711,6 +1711,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qu.md`](needs-checking/group-qu.md)
 
+## Group QW - the Delete box announced: a preview that deletes says the box is coming and what goes by category, and a box that closed by itself says TIMED OUT with the time it had - NOT RUN (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qw.md`](needs-checking/group-qw.md)
+
 ## Group QK - CREATE_CURTAIN_SYSTEM version 2: a curtain system on chosen mass faces - sloped, by number, all but some - never over a face already glazed - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qk.md`](needs-checking/group-qk.md)
@@ -1722,6 +1726,10 @@ Step 6 is finished, and not before. At that point:
 ## Group QT - REPORT_ELEMENT_DEPENDENCIES version 2: every dimension in every view that a delete takes or cuts - DRAFT until proved (2026-11-26)
 
 **Its own file:** [`needs-checking/group-qt.md`](needs-checking/group-qt.md)
+
+## Group QV - a delete whose count is not the one the yes named stops before anything goes: `DELETE_ELEMENTS` version 4 - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qv.md`](needs-checking/group-qv.md)
 
 ## Group QX - MEASURE_DISTANCE version 3 and MEASURE_AVAILABLE_FALL version 2: the two elements selected in Revit, or two ids typed - DRAFT until proved (2026-11-26)
 
