@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "where the services go through, and how big the hole needs to
 kind: action
 domain: revit.qa
 capability: PROPOSE_MEP_OPENINGS
-version: 2
+# VERSION 3 (2026-11-26): row 5b-1879 item 2, issue #1088, D-208 - each pipe
+# and duct is asked whether it carries insulation, and only when it does is
+# twice its thickest wrap added to the hole before the allowance. Version 2's
+# proof below - PROVEN 2026-10-18 on Project2 - is kept as the record; its C#
+# moved, so the card is DRAFT until version 3 is proved on a real model
+# (D-30), NEEDS-CHECKING Group QY.
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -64,6 +70,14 @@ purpose: >
   that model by whoever owns it (FRAGMENT-ISSUES row 75). Only model
   elements are read from a link, never its views or sheets. Links nested
   inside a link are not read, and are counted in the answer.
+
+  **INSULATION ONLY WHERE THERE IS SOME (version 3).** Each pipe and duct is
+  first asked whether it carries insulation. When it does, the hole is the
+  service plus twice the thickest wrap plus the allowance all round, and the
+  proposal names the thickness; when it does not, nothing is added and it
+  says "(no insulation)" - the same reading CHECK_SLEEVE_SIZE makes, so the
+  two no longer disagree over the jacket. Lining is not counted. Version 3
+  is DRAFT until proved.
 
 # A NAME TWO PARAMETERS SHARE IS NEVER READ: a linked element whose Fire Rating
 # two parameters carry - a shared or project "Fire Rating" bound beside the
