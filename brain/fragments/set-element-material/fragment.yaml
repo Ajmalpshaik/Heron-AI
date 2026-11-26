@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,10 +9,18 @@ semantic-identity: "give these elements a material - on the element, its type or
 kind: action
 domain: revit.elements
 capability: SET_ELEMENT_MATERIAL
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 2 (2026-11-26, row 5b-2035, issue #1380) - ONE SENTENCE. Its refusal
+# in a family said a form's material is SET_FAMILY_FORM_MATERIAL - a card
+# merged into LINK_FAMILY_PARAMETER on 2026-11-01 and refused since. It now
+# names LINK_FAMILY_PARAMETER. Nothing else in the C# moved. Version 1 was
+# PROVEN (the proof block below, kept as the record of what it proved); its
+# implementation's fingerprint moved, so it is DRAFT until NEEDS-CHECKING Group
+# QP, QP8, is run (D-30).
+#
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.
 #
@@ -37,8 +45,8 @@ risk: MODIFY
 # A LAYERED WALL, FLOOR, ROOF OR CEILING is skipped naming
 # SET_COMPOUND_LAYER_WIDTH, which sets a layer's material. An element in a
 # group keeps its own parameters (REPLACE_MATERIAL's rule); its type's are
-# written. A family document is refused naming SET_FAMILY_FORM_MATERIAL and
-# SET_FAMILY_TYPE_VALUES.
+# written. A family document is refused naming LINK_FAMILY_PARAMETER (since
+# version 2; SET_FAMILY_FORM_MATERIAL before) and SET_FAMILY_TYPE_VALUES.
 #
 # THE MATERIAL IS A NAME THE PROJECT HOLDS, or <By Category>; none is made.
 # After one regeneration every parameter written must hold it, or the call

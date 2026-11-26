@@ -94,7 +94,6 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 | [`run-skill.py`](run-skill.py) | a skill's plan run whole on a real model - every step in order on one chain, changes rolled back, a positive and a negative leg - judged by `brain/heron_plan_proof.py` into a draft a person signs (row 141) | on the PC, Revit open; `--dry-run` first |
 | [`prove-agent.py`](prove-agent.py) | the proof path for an add-in agent, signed by a person | on the PC, Revit open |
 | [`prove-tracking.py`](prove-tracking.py) | [D-53](../docs/DECISIONS.md) tracking: a declared result following one input across several values | on the PC, Revit open; `--dry-run` first |
-| [`resign-machine-proofs.py`](resign-machine-proofs.py) | a machine's name in a proof replaced by a person's | when the owner signs |
 
 **Install and setup**
 
@@ -142,9 +141,8 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 | [`split-needs-checking.py`](split-needs-checking.py) | one file per NEEDS-CHECKING group | after a group is written in full on the index |
 | [`split-decisions.py`](split-decisions.py) | one file per decision | after writing a decision into DECISIONS.md |
 | [`generate-decision-summary.py`](generate-decision-summary.py) | the status table at the top of DECISIONS.md | after writing a decision - `check-docs.py` §8 fails on a stale table |
-| [`archive-fragment-issues.py`](archive-fragment-issues.py) | finished defect rows moved out of the live register | whenever rows close |
+| [`archive-fragment-issues.py`](archive-fragment-issues.py) | finished defect rows moved out of the live register. **Also holds the heading and link helpers** (`HEADING`, `anchor_of`, `fenced_lines`, `_repoint`) that `split-decisions.py`, `split-register.py`, `split-needs-checking.py` and `archive-needs-checking.py` use - they came from `archive-handover.py`, removed 2026-11-26 | whenever rows close |
 | [`archive-needs-checking.py`](archive-needs-checking.py) | struck checks moved out of NEEDS-CHECKING | whenever checks are struck |
-| [`archive-handover.py`](archive-handover.py) | session notes moved out of HANDOVER.md, one file per sitting. **Not run on HANDOVER.md since 2026-11-24:** that file is one page now, with nothing to move. Kept because `split-decisions.py`, `split-register.py`, `split-needs-checking.py` and `archive-fragment-issues.py` load its link handling | never on its own now |
 | [`agent-count.py`](agent-count.py) | each department built, host-provided, deferred and left; fails when the registry does not reconcile | before choosing an agent to build; CI's *reports* job prints it |
 | [`new-agent.py`](new-agent.py) | the contract, module and failing test of the next agent, from its registry row | when building an agent |
 
@@ -2372,33 +2370,7 @@ has closed since the first.
 each changed rows file back and refuses unless the files read back as the new register. `open-defects.py` and
 `review-ledger.py` read the register through the same reader.
 
----
-
-## `archive-handover.py` - one file per sitting, as the archive's own README asks
-
-```bash
-python tools/archive-handover.py            # what would move - writes nothing
-python tools/archive-handover.py --write    # move it
-```
-
-Moves every session note out of [`docs/HANDOVER.md`](../docs/HANDOVER.md) into
-[`docs/handover-archive/`](../docs/handover-archive/README.md), **one file per sitting**, and adds a row for each
-to that folder's README, newest first. What stays is what HANDOVER.md is for: the owner's quick start, the
-summary at the top of *Where this stands*, sections 1 to 10a, and a **Latest sittings** table linking the newest
-notes. Exits **0**, **1** when a check refused and nothing was written, **2** when the file could not be read.
-
-**The rule was written down twice and kept by neither.** The archive README says *"Do not write a new section
-into ../HANDOVER.md"*, and section 10a records the owner's own reason: *"if we keep everything by note that will
-be big."* On 2026-09-22 HANDOVER.md was 485,741 bytes, and that day alone had added 81 entries.
-
-A **sitting** is a dated `### YYYY-MM-DD` entry and the undated entries after it, so a note's parts travel
-together; below section 10a it runs to a `---` line. Words are unchanged. Every relative link is re-pointed one
-folder deeper and proved; a link to a heading that moved follows it to its new file; a link from another
-document into a moving heading **stops the run**, and so does a linked heading two sittings share. Lines inside a
-code block are never read as headings. The tool's own table is recognised and rewritten, never archived - the
-first version archived it on its second run, which the suite caught. [`tests/test_archive_handover.py`](../tests/test_archive_handover.py).
-
-**Run it whenever notes collect in HANDOVER.md.** A note written to the archive in the first place needs nothing.
+**It also holds four helpers the split tools borrow** - `HEADING`, `anchor_of()`, `fenced_lines()` and `_repoint()`, the last of which re-points a link and proves it still reaches the file it reached before. They came from `archive-handover.py`, which moved session notes out of HANDOVER.md until 2026-11-24, when that file became one page; the tool had nothing left to move, so it was removed and its helpers moved here word for word. `split-decisions.py`, `split-register.py`, `split-needs-checking.py` and `archive-needs-checking.py` load them from this file. [`tests/test_archive_fragment_issues.py`](../tests/test_archive_fragment_issues.py) holds the case that pins them (case 8).
 
 ---
 
@@ -2835,21 +2807,6 @@ When it was written, 146 agents could be built on a machine with no Revit
 ([docs/28 §10](../docs/28-agent-registry.md#the-order-the-agents-were-built-in---seams-first)) - by hand,
 146 chances to mistype a layer or invent a field. How many are left now is
 `python tools/agent-count.py`'s LEFT column.
-
-## `resign-machine-proofs.py` - replace a MACHINE's name in a proof with a person's
-
-```bash
-python tools/resign-machine-proofs.py --list
-python tools/resign-machine-proofs.py --by "Ajmal PS"
-```
-
-Sixteen fragments carried a proof signed `"Claude Opus 5, at Ajmal PS's PC"` with no date. **[D-30](../docs/DECISIONS.md)
-says the machine gathers evidence and a PERSON signs**, so that is not a signature - it is the thing
-the rule exists to forbid, written into the field meant to prevent it.
-
-`heron_validate.py accept` cannot fix them: it reads a draft from `brain/proof-drafts/` and none of the
-sixteen has one. **It changes the one field that is wrong and leaves every other line exactly as
-recorded, and it DOES NOT judge the evidence** - that was checked separately.
 
 ## `hook-report.py` - how often each hook decided something, and what it said
 

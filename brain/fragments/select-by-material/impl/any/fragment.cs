@@ -2,6 +2,11 @@
 // and `includeLinks` are in scope; leaves `elements`, `scanned`, `findings`,
 // `linksSearched` and `linkedMatches` behind.
 //
+// VERSION 5 (2026-11-26, row 5b-2035) - a family's finding named
+// SET_FAMILY_FORM_MATERIAL for setting a form's material, a card merged into
+// LINK_FAMILY_PARAMETER on 2026-11-01 and refused since. It now names
+// LINK_FAMILY_PARAMETER. Nothing else changed.
+//
 // THERE IS NO MATERIAL-TO-ELEMENTS LOOKUP IN REVIT, so this asks every element
 // in scope what it is made of. That is why the category bound matters more here
 // than in most filters, and why the scanned count is reported beside the answer
@@ -164,7 +169,7 @@ else
                 + "category would miss it.{1}", formsScanned,
                 formsByCategory > 0
                     ? string.Format(" {0} form(s) take their material <By Category> and report none - set one "
-                        + "with SET_FAMILY_FORM_MATERIAL to have it found", formsByCategory)
+                        + "with LINK_FAMILY_PARAMETER (Material=) to have it found", formsByCategory)
                     : ""));
     }
 }
