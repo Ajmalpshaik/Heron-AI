@@ -48,8 +48,14 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BRAIN = os.path.join(ROOT, "brain")
 sys.path.insert(0, BRAIN)
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
 
 import heron_console  # noqa: E402
+import scratch_audit  # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
 
 ARABIC = u"مخطط"          # an Arabic word
 DELTA = u"Δ"
@@ -65,6 +71,9 @@ BRAIN_MAINS = (
     "heron_hvac heron_contract heron_conflict heron_search heron_context "
     "heron_embed heron_earlier heron_agents heron_capability heron_graph "
     "heron_fragment heron_dotnet heron_instructions heron_matrix").split()
+# The two engines import the standard library and their own siblings only
+# (tests/test_hvac.py, tests/test_fire.py), so they reconfigure in place.
+STANDALONE = ("heron_fire", "heron_hvac")
 TOOL_MAINS = ("heron-ready check-revit-gate new-agent "
               "build-release-assets build-setup").split()
 
@@ -194,6 +203,10 @@ def test_every_main_named():
     print("row 5b-2044: every main named makes its streams safe first")
     for module in BRAIN_MAINS:
         found = first_statements(os.path.join(BRAIN, module + ".py"))
+        if module in STANDALONE:
+            check(found is not None and "reconfigure" in found[0],
+                  "brain/%s.py reconfigures its streams first" % module)
+            continue
         check(found is not None and "heron_console" in found[0]
               and "safe_streams" in found[1],
               "brain/%s.py calls heron_console.safe_streams() first" % module)

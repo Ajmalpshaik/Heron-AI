@@ -4243,9 +4243,12 @@ def describe_catalogue():
 
 
 def main(argv):
-    # Rows 5b-2041 to 5b-2044: print safely on a cp1252 console.
-    import heron_console
-    heron_console.safe_streams()
+    # Row 5b-2044: print safely on a cp1252 console. Written here rather
+    # than imported from heron_console: the engine imports the standard
+    # library and its own siblings only (tests/test_hvac.py, test_fire.py).
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
 
     if len(argv) < 2:
         print(describe_catalogue())
