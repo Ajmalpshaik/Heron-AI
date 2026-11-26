@@ -26,8 +26,8 @@ negative:
 
   - given: a needle that is the exact name of one schedule, where a longer one starts the same way
     expect: >
-      only the exact one. "TRG Refrigerant" must not also return
-      "TRG Refrigerant EN 12735"
+      only the exact one. "ABC Refrigerant" must not also return
+      "ABC Refrigerant EN 12735"
 
 second_route:
   - open Manage > MEP Settings > Mechanical Settings > Pipe Settings and count the Schedule/Type entries

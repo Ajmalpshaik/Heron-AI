@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,9 @@ semantic-identity: "fill in a material's identity, graphics patterns, physical a
 kind: action
 domain: revit.elements
 capability: SET_MATERIAL_PROPERTIES
-version: 3
+# VERSION 4 (2026-11-26, the owner's word - "Yes, remove it" - to take his company's name out of Heron):
+# a refusal message's example pattern no longer names the owner's company. Version 3's proof below is kept as the record; DRAFT until the Revit run is done and signed.
+version: 4
 source: OFFICIAL
 risk: MODIFY
 # A settings change: after it runs from the chat, the Companion page offers its
@@ -76,8 +78,8 @@ companion-subject: materialsNamed
 #   Thermal   "Thermal Asset=<name>", "Thermal: Thermal Conductivity=0.5"
 #
 # MANY AT ONCE BY NAME PATTERN: materialsNamed takes names with ';' between
-# (a material's name may hold a comma) and `*` / `?` patterns - "TRG_*" is
-# every TRG material, the bulk change by name.
+# (a material's name may hold a comma) and `*` / `?` patterns - "ABC_*" is
+# every ABC material, the bulk change by name.
 #
 # SHADING COLOUR IS HERE AS ONE GRAPHICS FIELD AMONG THE REST, and since
 # version 2 one material's colour alone is this card's too: SET_MATERIAL_COLOUR
@@ -110,7 +112,7 @@ contract:
     - name: doc
       type: Document
     # One material's name, several with ';' between, or a pattern with * and
-    # ? - "TRG_*". Each must match; nothing is made here.
+    # ? - "ABC_*". Each must match; nothing is made here.
     - name: materialsNamed
       type: string
       source: request
@@ -235,7 +237,7 @@ utterances:
   - give the material a cut pattern and a surface pattern
   - fill in the identity tab of these materials
   - set the density and thermal conductivity of the steel material
-  - change the class of every TRG material to metal
+  - change the class of every ABC material to metal
   # MOVED 2026-11-01 from SET_MATERIAL_COLOUR, merged into this card.
   - set the material colour
   - this material has no colour

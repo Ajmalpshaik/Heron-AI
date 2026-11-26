@@ -32,11 +32,11 @@ positive:
 
   # ---- version 2 ----
   - given: >
-      requiredOn Ducts, namePatterns "type=*: TRG*", over duct types
-      "Rectangular Duct: TRG-Supply" and "Rectangular Duct: Default"
+      requiredOn Ducts, namePatterns "type=*: ABC*", over duct types
+      "Rectangular Duct: ABC-Supply" and "Rectangular Duct: Default"
     expect: >
       the Default type reported as "Rectangular Duct: Default", with its id and
-      the pattern quoted; the TRG type passes. The name is written "Family:
+      the pattern quoted; the ABC type passes. The name is written "Family:
       Type" with no space before the colon
 
   - given: requiredOn Mechanical Equipment, requiredParameters "Comments",
@@ -125,7 +125,7 @@ negative:
       filled and not blank (row 5b-203)
 
   - given: >
-      namePatterns "type=*: TRG*" and NO requiredOn
+      namePatterns "type=*: ABC*" and NO requiredOn
     expect: >
       TYPE NAMES NOT CHECKED, saying the type pattern was given and could not
       be applied. Never a zero

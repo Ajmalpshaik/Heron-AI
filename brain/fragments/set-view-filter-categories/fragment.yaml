@@ -34,7 +34,7 @@ purpose: >
   its rule, changes which categories it applies to, or all three in one undo
   step - keeping every view it is on and its overrides there. *"Rename it
   OUTSEL_TRG_MECH_Level_Grid, add Grids, and make the rule Type Name does not
-  contain TRG_MEC."*
+  contain ABC_MEC."*
 
   **A BLANK KEEPS WHAT THE FILTER HAS** - the name, the rule or the categories.
 
@@ -43,7 +43,7 @@ purpose: >
   means giving the ones it has and the new one.
 
   **THE RULE IS WRITTEN WITH ITS OPERATOR IN FRONT** - "does not contain
-  TRG_MEC", "begins with M_"; none means equals. A parameter left blank keeps
+  ABC_MEC", "begins with M_"; none means equals. A parameter left blank keeps
   the one the rule tests now.
 
   **A CATEGORY THE RULE CANNOT APPLY TO IS LEFT OUT, NAMED WITH THE REASON, AND
@@ -97,7 +97,7 @@ contract:
       # CREATE_VIEW_FILTER takes it (CREATE_VIEW_FILTERS_BY_RULE version 2,
       # merged into it 2026-11-01, took it the same way): equals, does not
       # equal, contains, does not contain, begins with, does not begin with,
-      # ends with, does not end with ("does not contain TRG_MEC"). None means
+      # ends with, does not end with ("does not contain ABC_MEC"). None means
       # equals. BLANK keeps the rule as it is. VERSION 3: "has no value" or
       # "is blank" alone - no text after it - catches the elements whose
       # parameter holds no value.
@@ -235,7 +235,7 @@ compatibility-note: >
 #
 #   "rename this view filter"                -> here, with newName. EDIT_TEXT_VALUES renames what a finder hands it, never a filter
 #   "rename this view"                       -> EDIT_TEXT_VALUES field Name, on the views (5b-485) - a view is not a filter
-#   "change the filter rule to does not contain TRG_MEC" -> here, with matchValue - the parameter kept
+#   "change the filter rule to does not contain ABC_MEC" -> here, with matchValue - the parameter kept
 #   "add grids to this filter"               -> here, with the WHOLE list - the ones it has and Grids
 #   "take the Duct Systems category off      -> here
 #    these view filters"
@@ -259,6 +259,6 @@ utterances:
   - rename this view filter
   - rename this filter
   - rename the filter
-  - change the filter rule to does not contain TRG_MEC
+  - change the filter rule to does not contain ABC_MEC
   - change the rule of this view filter
   - add grids to this filter

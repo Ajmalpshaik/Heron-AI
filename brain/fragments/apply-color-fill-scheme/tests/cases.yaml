@@ -75,7 +75,7 @@ positive:
       changes and schemeSource says other views changed too
 
   - given: >
-      (v2) schemeToUse "TRG Rooms Presentation", a name no scheme has, with
+      (v2) schemeToUse "ABC Rooms Presentation", a name no scheme has, with
       parameterName Name
     expect: >
       a scheme of that name is made by copying, coloured by Name, and set;
