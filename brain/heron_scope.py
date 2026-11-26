@@ -1526,6 +1526,10 @@ def move_project_store(old_slug, project_key, stamp=None):
 
 
 def main(argv):
+    # Rows 5b-2041 to 5b-2044: print safely on a cp1252 console.
+    import heron_console
+    heron_console.safe_streams()
+
     base = knowledge_dir()
     if not base:
         print("No HERON_DATA, no Windows profile and no HERON_KNOWLEDGE set, so there is nowhere")
