@@ -69,4 +69,3 @@ its 78 Rooms (Revit's delete takes 81 - the rooms and 3 no-category elements), r
 `expectedCount=81`: `deleted` 81, nothing refused; `expectedCount=80`: `deleted` 0, the stop returned through `refused`,
 **not thrown**. **Signed by Ajmal PS** (his typed word in chat, "Yes, sign it"; signature put on by the session),
 card PROVEN. Still owed: the A-tag-dimension rig of QV1/QV2 itself, QV3 to QV7.
-
