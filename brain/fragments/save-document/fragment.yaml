@@ -98,10 +98,18 @@ contract:
     # is working in through saveWhenKept (version 3, D-171), another through
     # saveOtherWhenKept (row 5b-1824). Left out only for a Save As
     # (saveAsPath).
+    #
+    # ROW 5b-2065 (issue #1476, 2026-11-26): `absent: ""` on this need and on
+    # saveAsPath. Marked optional with no `absent:`, a string left out was
+    # refused as "a value the CALLER supplies" (HeronBindingNote.AbsentValue
+    # binds no string), so a plain save had to type saveAsPath= empty, and
+    # the word none reached the run as a path. The run already reads empty
+    # text as left out, so the card says so; its C# is unchanged.
     - name: documentPath
       type: string
       source: request
       optional: true
+      absent: ""
     # VERSION 3. The full .rvt (or .rfa for a family) path THE MODELLER TYPED,
     # for a Save As of the model Heron works in when it has NEVER been saved.
     # Never a path Heron makes up; refused for a model that has a file.
@@ -109,6 +117,7 @@ contract:
       type: string
       source: request
       optional: true
+      absent: ""
     # VERSION 3. Off unless typed: replace a file already at saveAsPath -
     # Revit's own SaveAsOptions default is not to. Say true only when the
     # modeller said to replace it.

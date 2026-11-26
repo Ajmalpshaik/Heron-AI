@@ -79,6 +79,24 @@ positive:
       block kind saveAs names it. Through a chat once proved: the chat's NEXT
       change goes into the same family with no "use this model"
 
+  # ROW 5b-2065 (issue #1476, 2026-11-26): a plain save with saveAsPath LEFT
+  # OUT, and a Save As with documentPath left out. Seen on Revit 2020 through a
+  # chat: only saveAsPath= (empty) ran. Both needs carry `absent: ""` since.
+  - given: >
+      the family-in-front case above through a chat (revit_change), with
+      documentPath its own .rfa and saveAsPath NOT GIVEN at all
+    expect: >
+      runs - never refused as a value the caller supplies; the binding note
+      says saveAsPath not given, the card's own default; saveAsked true,
+      saveAskedTo its .rfa
+
+  - given: >
+      the never-saved family case above through a chat, with saveAsPath the
+      new path and documentPath NOT GIVEN at all
+    expect: >
+      runs as the Save As - documentPath not given, the card's own default;
+      the .rfa exists at that path
+
   - given: the first case KEPT (revit_change once proved, Ask to Keep off - or Keep pressed)
     expect: >
       the save block done true, preview false; one Undo entry, and Ctrl+Z
