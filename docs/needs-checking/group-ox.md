@@ -57,3 +57,5 @@ of his open. Families saved to `%TEMP%\heron-work\ox\`.
 | Row | Result |
 |---|---|
 | OX3, run 2026-11-26 | **PASS** - `validate --write --allow-publish`, `nameContains=M_Rectangular Elbow`, folder `%TEMP%\heron-work\ox3-export` (empty before): `saved` **2**, `savedAs` 2, `refused` empty - *M_Rectangular Elbow - Mitered.rfa* and *M_Rectangular Elbow - Radius.rfa* written. The phase reads *"run with NO transaction group open in the model it was aimed at (noGroupOpen, D-192); Heron counted that model before and after it and found it unchanged"*, and the draft says so. Negative `ZZZNOTHINGHERE`: `saved` 0, nothing written. The proof draft for `export-families` v2 passes `accept`'s evidence check - waiting for the owner. |
+
+**Signed 2026-11-26 by Ajmal PS** (his typed word in chat, "Yes, sign four"; signature put on by the session): `export-families` v2, card(s) PROVEN.

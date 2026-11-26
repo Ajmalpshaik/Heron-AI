@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -72,11 +72,9 @@ contract:
       type: int
 
 proof:
-  date: '2026-10-21'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: MEP Night Test, Revit 2020, session 68704 - the count is NOT recorded because 5,262
-    elements was measured on Cinematic ID Test, the document in front, and this ran against
-    another one (row 15)
+  model: P1102 MEP (21,446 elements), Revit 2020, session 32484
   positive_case: "run as it would normally be run. returned byPanel 19 entry(ies), circuitCount\
     \ 155, findings 1 item(s) [19 panel(s), 155 circuit(s) on them, 34 circuit(s) on no pan...],\
     \ panelCount 19, panelOrder 19 item(s) [581483, 622027, 471596, ...], rows 175 item(s)\
@@ -265,18 +263,23 @@ proof:
     \ 473889, 474183, 474208, 474232, 474274, 474302, 474330, 474354, 474394, 474449, 474514,\
     \ 474541, 474606, 474984, 510933, 510959, 510985, 511011, 511037, 511063, 511089, 511115,\
     \ 511141, 511167, 511193, 511219, 511245, 511271, 511297, 512293, shown Func`3, unassigned\
-    \ 34 item(s) [473648, 473760, 473787, ...], wanted . inputs came panelName as given. on\
-    \ MEP Night Test"
-  negative_case: run with panelName=NO-SUCH-PANEL instead - chosen because it should not contain
-    what this fragment reports. returned byPanel 0 entry(ies), circuitCount 0, findings 1
-    item(s) [No circuit is fed from a panel named "NO-SUCH-PANEL". The pa...], panelCount
-    0, panelOrder 0 item(s), rows 0 item(s), schedule , shown Func`3, unassigned 0 item(s),
-    wanted NO-SUCH-PANEL. inputs came panelName as given. on MEP Night Test
+    \ 34 item(s) [473648, 473760, 473787, ...], unresolvedCircuits 0, wanted . inputs came\
+    \ panelName as given. on P1102 MEP"
+  negative_case: run against 'P1102 MEP' with panelName=NO-SUCH-PANEL instead - chosen because
+    it should not contain what this fragment reports. returned byPanel 0 entry(ies), circuitCount
+    0, findings 1 item(s) [No circuit is fed from a panel named "NO-SUCH-PANEL". The pa...],
+    panelCount 0, panelOrder 0 item(s), rows 0 item(s), schedule , shown Func`3, unassigned
+    0 item(s), unresolvedCircuits 0, wanted NO-SUCH-PANEL. inputs came panelName as given.
+    on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 8738c9955e37ed57
-
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 64736f321257eb9d
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
