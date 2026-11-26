@@ -1,0 +1,28 @@
+# Group PY (issue #1311), PY1 and PY2 - DIVIDE_FAMILY_SURFACE version 3: a pattern Revit does not offer
+# is refused naming what it offers, and the face is left undivided.
+# Revit 2020, 2026-11-26. Model: PY Box 2020 - a copy of Revit 2020's US Metric Mass\M_Box.rfa in
+# %TEMP%\heron-work\py (the library file untouched), one solid form bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e, nothing divided.
+# Positive (PY2): the top face 20 by 4, pattern empty - divided, read back.
+# Negative (PY1): the same with pattern "Not A Pattern" - refused, surfaceId empty. Every run rolled back.
+model: "PY Box 2020 (a copy of Revit 2020 US Metric Mass/M_Box.rfa in %TEMP%/heron-work/py), Revit 2020"
+
+defaults:
+  in: "PY Box 2020"
+  negative-in: "PY Box 2020"
+
+jobs:
+  - fragment: divide-family-surface
+    write: true
+    expect: surfaceId
+    set:
+      form: bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e
+      face: top
+      uGrid: "20"
+      vGrid: "4"
+      pattern: ""
+    negative-set:
+      form: bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e
+      face: top
+      uGrid: "20"
+      vGrid: "4"
+      pattern: Not A Pattern

@@ -1,0 +1,15 @@
+# Group PY (issue #1311), PY3 - REPORT_PIPE_SEGMENTS version 2: an unreadable size list is never "no sizes".
+# Revit 2020, 2026-11-26. Model: Project1 - a new, never-saved project from Revit 2020's default
+# template (17 pipe segments, 4 of them Copper), open behind the scratch family; never a working model.
+# Positive: nameContains Copper - 4 of 17, "0 whose sizes could not be read". Negative: ZZZNOTASEGMENT - 0 of 17.
+model: Project1 (new project, Revit 2020 default template), Revit 2020
+
+jobs:
+  - fragment: report-pipe-segments
+    in: Project1
+    negative-in: Project1
+    expect: segmentCount
+    set:
+      nameContains: Copper
+    negative-set:
+      nameContains: ZZZNOTASEGMENT
