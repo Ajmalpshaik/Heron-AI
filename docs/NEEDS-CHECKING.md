@@ -1703,6 +1703,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qr.md`](needs-checking/group-qr.md)
 
+## Group QS - MOVE_ELEMENTS version 4: a family's own forms and lines moved in the Family Editor, a type still refused - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qs.md`](needs-checking/group-qs.md)
+
 ## Group QK - CREATE_CURTAIN_SYSTEM version 2: a curtain system on chosen mass faces - sloped, by number, all but some - never over a face already glazed - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qk.md`](needs-checking/group-qk.md)

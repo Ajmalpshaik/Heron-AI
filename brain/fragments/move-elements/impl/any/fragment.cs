@@ -3,6 +3,14 @@
 // `unverified`, `movedIds`, `notAtPoint`, `noLocationPoint`,
 // `notModelElements` and `findings` behind.
 //
+// VERSION 4 (2026-11-26) - ROW 5b-2046, a family on Revit 2020. Version 3's
+// no-category refusal caught every FORM in a family document - an extrusion
+// or blend in the Family Editor can have no category of its own - so a fan
+// body could not be lifted at all. In a family document a GenericForm or a
+// CurveElement (model or symbolic line) is now accepted though it has no
+// category. Types and families are refused everywhere, as before. A form has
+// no location point or curve, so it is read before and after by its model box.
+//
 // VERSION 3 (2026-11-16) - TWO FIELD DEFECTS FROM ISSUE #853, villa 2,
 // Revit 2024:
 //
@@ -130,10 +138,22 @@ var findings = new List<string>();
 // VERSION 3 (row 5b-1707). What was handed in that is not an element of the
 // model - a type, a family, or anything with no category.
 var notModelElements = new List<ElementId>();
+// VERSION 4 (row 5b-2046): IN A FAMILY DOCUMENT A FORM OR A LINE IS AN
+// ELEMENT TO MOVE, EVEN WITH NO CATEGORY. In the Family Editor an extrusion,
+// blend, sweep, revolution or swept blend (a GenericForm) can read Category
+// null, and version 3 refused all 31 forms of a fan body as mistyped ids
+// (Revit 2020, 2026-11-26). A form or a model or symbolic line (a
+// CurveElement) is let through there and nowhere else; a type and a family
+// are still refused in every document, and any other element with no
+// category is still a wrong id.
+var inFamily = doc.IsFamilyDocument;
 foreach (var element in elements)
 {
     if (element == null) continue;
-    if (element is ElementType || element is Family || element.Category == null)
+    if (element is ElementType || element is Family)
+        notModelElements.Add(element.Id);
+    else if (element.Category == null
+             && !(inFamily && (element is GenericForm || element is CurveElement)))
         notModelElements.Add(element.Id);
 }
 
@@ -238,8 +258,8 @@ else if (stop != null || toAPoint)
 
         findings.Add(string.Format(
             "{0} are now at the point, {1} did not arrive ({2} of them Revit would not move at all - a "
-            + "constraint, a group or a pin holds them), {3} are positioned by a curve rather than a point "
-            + "and have no single answer to this",
+            + "constraint, a group or a pin holds them), {3} have no location point - positioned by a curve, "
+            + "or a family form, which has no location at all - and have no single answer to this",
             moved, notAtPoint.Count, blocked.Count, noLocationPoint.Count));
     }
 }
@@ -301,7 +321,15 @@ foreach (var element in attempted)
 
 findings.Add(string.Format("{0} moved the whole offset, {1} part of it, {2} did not move, {3} could not "
     + "be read back", moved, partly, blocked.Count, unverified.Count - overshot));
-if (overshot > 0)
+// VERSION 4: in a family the usual cause is not a tag but a CONSTRAINT -
+// two forms locked to one reference plane, so moving the first carried the
+// second before it was moved itself.
+if (overshot > 0 && doc.IsFamilyDocument)
+    findings.Add(string.Format("{0} moved FURTHER than the offset - in a family, usually a form or line "
+        + "carried by a constraint it shares with another one handed in (both locked to one reference "
+        + "plane), then moved again itself. Each is in `unverified`; move the reference plane they are "
+        + "locked to instead, or unlock them and move them again", overshot));
+else if (overshot > 0)
     findings.Add(string.Format("{0} moved FURTHER than the offset - usually a tag handed in with the element "
         + "it tags, which carried it as well. Each is in `unverified`; move the elements without their "
         + "tags, or the tags alone with MOVE_ANNOTATION", overshot));
