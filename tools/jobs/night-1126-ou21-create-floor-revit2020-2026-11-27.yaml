@@ -1,0 +1,14 @@
+# 2026-11-27, Revit 2020 - NEEDS-CHECKING Group OU, OU21: CREATE_FLOOR v4 in "Night OU21", a new project made
+# tonight from Revit 2020's US Metric\DefaultMetric.rte (it has "Foundation Slab : 150mm Foundation Slab").
+# (a) 10 x 6 m on Level 1, plain floor "Floor : Generic 150mm". Negative (b): the same with the Foundation
+# Slab type - refused, nothing created. ROLLED BACK.
+model: "Night OU21 (new project from Revit 2020's DefaultMetric.rte), Revit 2020"
+defaults:
+  in: "Night OU21"
+  setup: []
+jobs:
+  - fragment: create-floor
+    write: true
+    expect: created
+    set: {level: "Level 1", floorType: "Floor: Generic 150mm", boundary: "0,0,0; 10000,0,0; 10000,6000,0; 0,6000,0"}
+    negative-set: {level: "Level 1", floorType: "Foundation Slab: 150mm Foundation Slab", boundary: "0,0,0; 10000,0,0; 10000,6000,0; 0,6000,0"}

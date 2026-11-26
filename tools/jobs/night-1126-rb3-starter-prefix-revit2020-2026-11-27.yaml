@@ -1,0 +1,12 @@
+# 2026-11-27, Revit 2020 - NEEDS-CHECKING Group RB, RB3 only: CREATE_STARTER_MATERIALS with namePrefix=XYZ_.
+# Run on its own so its record is kept beside the RB1+RB2 proof (night-1126-rb12-...). ROLLED BACK.
+model: "Night Rig 1126 (scratch copy of the Revit 2020 MEP sample), Revit 2020"
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+jobs:
+  - fragment: create-starter-materials
+    write: true
+    expect: createdMaterialIds
+    set: {namePrefix: "XYZ_", starterPick: "glass; copper"}
+    negative-set: {namePrefix: "XYZ_", starterPick: "none"}

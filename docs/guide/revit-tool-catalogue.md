@@ -6,7 +6,7 @@
 
 **Every tool Heron has for Revit, by job** - what each one does, how you reach it, what it needs, what you get, and on which Revit releases it is built and proved. It is written by a script from Heron's own tool cards, so no count or status on these pages is typed by a person.
 
-Heron holds **617 live tools**: **532 are usable in a chat**, 28 are not proved yet but run because they change nothing in the model, and 57 are refused until they are proved. 137 retired tools are left out - each one's card names the tool that replaced it.
+Heron holds **617 live tools**: **535 are usable in a chat**, 28 are not proved yet but run because they change nothing in the model, and 54 are refused until they are proved. 137 retired tools are left out - each one's card names the tool that replaced it.
 
 ## How you reach a tool
 
@@ -62,13 +62,13 @@ Heron starts with every switch off, so it only reads until you turn **Changes** 
 |---|---|---|---|---|
 | [Annotation - tags, dimensions and text](tool-catalogue/annotation.md) | 35 | 30 | 0 | 5 |
 | [Export and print](tool-catalogue/export.md) | 8 | 7 | 0 | 1 |
-| [Families](tool-catalogue/families.md) | 55 | 52 | 0 | 3 |
+| [Families](tool-catalogue/families.md) | 55 | 53 | 0 | 2 |
 | [Finding and selecting](tool-catalogue/selection.md) | 25 | 24 | 1 | 0 |
 | [Geometry and placement](tool-catalogue/geometry.md) | 34 | 30 | 2 | 2 |
 | [Levels and grids](tool-catalogue/datums.md) | 9 | 7 | 2 | 0 |
 | [MEP - ducts, pipes, systems and equipment](tool-catalogue/mep.md) | 84 | 70 | 2 | 12 |
 | [Model checks](tool-catalogue/model-checks.md) | 30 | 22 | 8 | 0 |
-| [Model elements and types](tool-catalogue/elements.md) | 125 | 105 | 5 | 15 |
+| [Model elements and types](tool-catalogue/elements.md) | 125 | 107 | 5 | 13 |
 | [Parameters](tool-catalogue/parameters.md) | 17 | 15 | 0 | 2 |
 | [Phases](tool-catalogue/phases.md) | 3 | 3 | 0 | 0 |
 | [Reports](tool-catalogue/reports.md) | 11 | 11 | 0 | 0 |

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -183,37 +183,41 @@ proof-held: >
   so the fingerprint still matches; NEEDS-CHECKING Group RB (RB1 to RB3) owes the run, then the
   owner signs.
 proof:
-  date: '2026-11-02'
+  date: '2026-11-27'
   by: Ajmal PS
-  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  model: Night Rig 1126 (21,448 elements), Revit 2020, session 50628
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned alreadyThere 0 item(s), createdMaterialIds
-    2 item(s) [1020299, 1020301], findings 3 item(s) [2 starter material(s) made, 0 already
+    2 item(s) [1021679, 1021681], findings 3 item(s) [2 starter material(s) made, 0 already
     there and left as they..., Shaded views draw each shading colour; Realistic views and
     r..., Nothing uses them yet - SET_ELEMENT_MATERIAL gives elements ...], refused , starterReport
-    P1102_Glass Clear: made - Glass, shading 176,205,214 at 80% transparency, its own Generic
-    appearance - colour 176,205,214, glossiness 95, non-metallic, transparency 90, refraction
-    1.52 (''P1102_Glass Clear'')  ||  P1102_Pipe Copper: made - Metal, shading 184,115,51,
-    its own Generic appearance - colour 184,115,51, glossiness 65, metallic (''P1102_Pipe
-    Copper''). inputs came namePrefix as given; starterPick as given; libraryLooks not given
-    - "none", the card''s own default (optional); materialNames not given - "none", the card''s
-    own default (optional); colours not given - "none", the card''s own default (optional);
-    transparencies not given - "none", the card''s own default (optional). on P1102 MEP'
-  negative_case: run with namePrefix=P1102_, starterPick=granite instead - chosen because
-    it should not contain what this fragment reports - run inside a transaction, and Revit
-    reported the transaction group ROLLED BACK afterwards. returned alreadyThere 0 item(s),
-    createdMaterialIds 0 item(s), findings 1 item(s) ['granite' is none of the starter materials
-    - Glass Clear, St...], refused 'granite' is none of the starter materials - Glass Clear,
-    Steel Stainless Satin, Steel Galvanised, Aluminium Brushed, Concrete Smooth, Plaster Paint
-    White, Floor Tile Grey, Wood Oak, Carpet Grey, Ceiling Tile White, Duct Galvanised, Pipe
-    Copper. Nothing was made, starterReport . inputs came namePrefix as given; starterPick
-    as given; libraryLooks not given - "none", the card's own default (optional); materialNames
-    not given - "none", the card's own default (optional); colours not given - "none", the
-    card's own default (optional); transparencies not given - "none", the card's own default
-    (optional). on P1102 MEP
+    Glass Clear: made - Glass, shading 176,205,214 at 80% transparency, its own Generic appearance
+    - colour 176,205,214, glossiness 95, non-metallic, transparency 90, refraction 1.52 (''Glass
+    Clear'')  ||  Pipe Copper: made - Metal, shading 184,115,51, its own Generic appearance
+    - colour 184,115,51, glossiness 65, metallic (''Pipe Copper''). inputs came namePrefix
+    not given - "", the card''s own default (optional); starterPick as given; libraryLooks
+    not given - "none", the card''s own default (optional); materialNames not given - "none",
+    the card''s own default (optional); colours not given - "none", the card''s own default
+    (optional); transparencies not given - "none", the card''s own default (optional). on
+    Night Rig 1126'
+  negative_case: run with starterPick=none instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyThere 0 item(s), createdMaterialIds 0 item(s),
+    findings 3 item(s) [0 starter material(s) made, 0 already there and left as they..., Shaded
+    views draw each shading colour; Realistic views and r..., Nothing uses them yet - SET_ELEMENT_MATERIAL
+    gives elements ...], refused , starterReport . inputs came namePrefix not given - "",
+    the card's own default (optional); starterPick as given; libraryLooks not given - "none",
+    the card's own default (optional); materialNames not given - "none", the card's own default
+    (optional); colours not given - "none", the card's own default (optional); transparencies
+    not given - "none", the card's own default (optional). on Night Rig 1126
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
   fingerprint: b8d585fb720a7e1b
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
