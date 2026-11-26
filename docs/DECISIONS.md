@@ -114,7 +114,7 @@
 | [D-67](#d-67--a-point-crosses-as-three-millimetre-numbers) | A point crosses as three millimetre numbers | ✅ Accepted · 2026-09-09 |
 | [D-68](#d-68--a-significant-change-states-its-intent-before-it-is-made-and-is-judged-against-it-afterwards) | A significant change states its intent before it is made, and is judged against it afterwards | ✅ Accepted · 2026-09-12 |
 | [D-69](#d-69--a-script-in-tools-reads-the-code-it-checks-and-that-is-not-a-layering-violation) | A script in `tools/` reads the code it checks, and that is not a layering violation | ✅ Accepted · 2026-09-12 |
-| [D-70](#d-70--heron-keeps-a-usage-counter-on-the-machine-and-it-is-numbers-rather-than-a-diary) | Heron keeps a usage counter, on the machine, and it is numbers rather than a diary | ✅ Accepted · 2026-09-12 |
+| [D-70](#d-70--heron-keeps-a-usage-counter-on-the-machine-and-it-is-numbers-rather-than-a-diary) | Heron keeps a usage counter, on the machine, and it is numbers rather than a diary | ✅ Accepted · 2026-09-12 · *keeps a usage counter* superseded in part by D-205 · 2026-11-26 |
 | [D-71](#d-71--every-length-a-caller-types-is-millimetres-and-the-fragment-converts-it) | Every length a caller types is millimetres, and the fragment converts it | ✅ Accepted · 2026-09-13 |
 | [D-72](#d-72--four-values-a-caller-could-not-type-are-now-built-from-what-they-type-and-a-face-still-is-not) | Four values a caller could not type are now built from what they type, and a face still is not | • status not stated |
 | [D-73](#d-73--a-table-by-name-is-two-separators-and-the-key-is-the-models-word-not-ours) | A table by name is two separators, and the key is the model's word, not ours | ✅ Accepted · 2026-11-15 · read back to the owner |
@@ -232,7 +232,7 @@
 | [D-188](#d-188--a-chat-the-claude-app-resumes-after-a-restart-is-the-same-conversation-to-revit-and-takes-back-its-own-model) | A chat the Claude app resumes after a restart is the same conversation to Revit, and takes back its own model | ✅ Accepted · 2026-11-20 |
 | [D-189](#d-189--a-development-session-never-pulls-into-the-main-heron-folder) | A development session never pulls into the main Heron folder | ✅ Accepted · 2026-11-20 |
 | [D-190](#d-190--the-readme-stops-asking-modellers-not-to-install-before-a-release-is-signed-and-says-plainly-the-build-is-unsigned-and-what-was-checked) | The README stops asking modellers not to install before a release is signed, and says plainly the build is unsigned and what was checked | ✅ Accepted · 2026-11-20 |
-| [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) | The usage counter keeps offered, helped and the last date it helped; "helped" is only the modeller's word; it moves a clause less than one rank; and no question text is kept | ✅ Accepted · 2026-11-20 · *where a re-ranker is installed* superseded in part by D-201 · 2026-11-26 |
+| [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) | The usage counter keeps offered, helped and the last date it helped; "helped" is only the modeller's word; it moves a clause less than one rank; and no question text is kept | ✅ Accepted · 2026-11-20 · *where a re-ranker is installed* superseded in part by D-201 · 2026-11-26 · superseded by D-205 · 2026-11-26 |
 | [D-192](#d-192--a-job-that-works-only-outside-the-model-it-is-aimed-at-declares-nogroupopen-and-an-admin-or-publish-job-then-opens-no-transaction-group-in-that-model) | A job that works only outside the model it is aimed at declares noGroupOpen, and an Admin or Publish job then opens no transaction group in that model | ✅ Accepted · 2026-11-21 |
 | [D-193](#d-193--making-sheets-keeps-three-rules-for-a-table-and-typed-numbers-alike-a-sheet-whose-number-or-name-revit-refuses-is-taken-back-a-number-asked-for-twice-makes-neither-and-1000-is-the-most-in-one-call) | Making sheets keeps three rules for a table and typed numbers alike: a sheet whose number or name Revit refuses is taken back, a number asked for twice makes neither, and 1,000 is the most in one call | ✅ Accepted · 2026-11-21 |
 | [D-194](#d-194--every-stored-vector-is-compared-in-plain-python-sqlite-vec-is-not-used) | Every stored vector is compared in plain Python; sqlite-vec is not used | ✅ Accepted · 2026-11-21 |
@@ -243,6 +243,7 @@
 | [D-199](#d-199--thirteen-more-idle-modules-are-retired-update-trust-release-tagging-versioning-the-import-pipeline-and-the-workflow-engine) | Thirteen more idle modules are retired: update, trust, release, tagging, versioning, the import pipeline and the workflow engine | ✅ Accepted · 2026-11-24 |
 | [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
 | [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 |
+| [D-205](#d-205--the-usage-counter-is-removed-no-clause-is-counted-and-a-clauses-place-in-an-answer-is-fusions-alone) | The usage counter is removed: no clause is counted, and a clause's place in an answer is fusion's alone | ✅ Accepted · 2026-11-26 |
 
 ## Format
 
@@ -748,6 +749,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-70 — Heron keeps a usage counter, on the machine, and it is numbers rather than a diary
 
 **Status:** Accepted · **Date:** 2026-09-12 · **Found during:** Stage 8 of the RAG track, which could
+**Superseded in part by:** [D-205](#d-205--the-usage-counter-is-removed-no-clause-is-counted-and-a-clauses-place-in-an-answer-is-fusions-alone), accepted by the owner 2026-11-26 - its *"Yes - Heron keeps a usage counter"*: the counter is removed. Its three constraints stand for any counter proposed again
 
 **Full record:** [`decisions/D-70.md`](decisions/D-70.md)
 
@@ -1706,7 +1708,8 @@ What this makes easy. What this makes hard. What it locks in.
 **Numbering:** written as D-190; renumbered D-191 on 2026-11-20 with `tools/renumber.py`, because `main` had given D-190 to another decision first.
 **Settles:** the four parts [D-70](decisions/D-70.md) left open · R-16 and R-25 of [the RAG requirement note](work-notes/plans/rag/01-requirements.md) · WN-12 of [#1006](https://github.com/Ajmalpshaik/Heron-AI/issues/1006)
 **Extends:** [D-70](decisions/D-70.md) - Heron keeps a usage counter, on the machine, as numbers
-**Affects:** [`brain/heron_usage.py`](../brain/heron_usage.py) · [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) `USAGE_SPAN` · the `heron_helped` tool · [`tests/test_usage_counter.py`](../tests/test_usage_counter.py)
+**Affects:** `brain/heron_usage.py` · [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) `USAGE_SPAN` · the `heron_helped` tool · `tests/test_usage_counter.py` - the counter's files, deleted by D-205
+**Superseded by:** [D-205](#d-205--the-usage-counter-is-removed-no-clause-is-counted-and-a-clauses-place-in-an-answer-is-fusions-alone), accepted by the owner 2026-11-26 - the counter is removed whole: nothing is counted, `heron_helped` is gone, and a clause's place in an answer is fusion's alone
 **Superseded in part by:** [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional), accepted by the owner 2026-11-26 - *"where a re-ranker is installed, its score sets the order"*: no re-ranker is installed anywhere, so the usage nudge always sits in the fused score
 
 **Full record:** [`decisions/D-191.md`](decisions/D-191.md)
@@ -1819,3 +1822,19 @@ his PC ever had it, since Setup installs neither add-on. It is removed. model2ve
 clearly better than the built-in search on his questions, and needs huggingface.co once.
 
 **Full record:** [`decisions/D-201.md`](decisions/D-201.md)
+
+## D-205 — The usage counter is removed: no clause is counted, and a clause's place in an answer is fusion's alone
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), asked *"The usage counter only counts which standards clauses helped you and moves them up a tiny bit. Remove it?"*: he chose *"Remove it"*.
+**Numbering:** D-205 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201, and D-202, D-203 and D-204 held by unmerged branches.
+**Supersedes:** [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) - the counter it built is removed whole
+**Supersedes in part:** [D-70](#d-70--heron-keeps-a-usage-counter-on-the-machine-and-it-is-numbers-rather-than-a-diary) - its *"Yes - Heron keeps a usage counter"*. Its three constraints stand for any counter proposed again
+**Affects:** `brain/heron_usage.py` and `tests/test_usage_counter.py` deleted · the `heron_helped` tool · [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) · [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) · [`tests/test_console_streams.py`](../tests/test_console_streams.py)
+
+The usage counter counted each standards clause shown to the chat, counted it as helped on the modeller's word,
+and moved it up by at most half a rank next time. The owner chose to remove it: a modeller's jobs differ day to
+day, recording it costs time, and a count carried between jobs can push the wrong clause up. A clause's place is
+now fusion's alone. The `<scope>-usage.json` files it wrote are left on disk, unused; the release builder still
+refuses one.
+
+**Full record:** [`decisions/D-205.md`](decisions/D-205.md)
