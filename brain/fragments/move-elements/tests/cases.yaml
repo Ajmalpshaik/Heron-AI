@@ -7,8 +7,9 @@ positive:
       version returns too - the only thing that separates them is a tape measure
       on one duct reading 200 mm and not 200 feet
 
-  - given: the same 4, offset 0
-    expect: moved = 4 and nothing reported blocked - asking for nothing is not a failure
+  # The case "the same 4, offset 0 -> moved = 4 and nothing reported blocked"
+  # stood here until version 5. Its `moved = 4` WAS the defect of row 5b-2069;
+  # it is a negative case now, below.
 
   # VERSION 3 (2026-11-16) - row 5b-1733. FAILS on version 2. NOT RUN.
   - given: one door tag (IndependentTag) and one room tag in a plan, offset 1000,0,0
@@ -66,6 +67,22 @@ positive:
       stays unexercised - say so
 
 negative:
+  # VERSION 5 (2026-11-26) - row 5b-2069, issue #1479. FAILS on version 4,
+  # which answered `moved 6` and "6 moved the whole offset" with `movedIds`
+  # empty. NOT RUN. NEEDS-CHECKING QS10.
+  - given: 6 sprinklers (any free-standing family instances), offset 0,0,0, toPoint left out
+    expect: >
+      REFUSED before anything is attempted - moved 0, `movedIds` empty,
+      `blocked`, `partly` and `unverified` empty, and the one finding says the
+      offset is zero and nothing was moved. Asking for nothing is not a
+      failure of any element, so none is named in `blocked`. Never `moved 6`
+  - given: the same 6, offset and toPoint both left out
+    expect: the same refusal - the offset defaults to 0,0,0, and nothing says where
+  - given: the same 6, offset 0,0,200 (the positive beside it)
+    expect: >
+      moved 6, `movedIds` all six - the refusal is for a zero offset, not for
+      a small one. MEASURE ONE IN REVIT
+
   # VERSION 4 (2026-11-26) - row 5b-2046. NOT RUN. Load any small family into
   # the scratch family first (Insert > Load Family) so a FamilySymbol exists
   # to hand in; the scratch family has none of its own.

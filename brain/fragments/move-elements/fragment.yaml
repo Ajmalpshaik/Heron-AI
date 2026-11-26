@@ -9,9 +9,24 @@ semantic-identity: "move these elements up, down or sideways by a distance, or t
 kind: action
 domain: revit.geometry
 capability: MOVE_ELEMENTS
-version: 4
+version: 5
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 5 (2026-11-26) - A ZERO OFFSET WAS COUNTED AS A MOVE, still DRAFT.
+# FRAGMENT-ISSUES row 5b-2069, issue #1479: on Revit 2020, in a scratch copy of
+# the MEP sample, six sprinklers handed in with offset 0,0,0 answered `moved 6`
+# and "6 moved the whole offset, 0 part of it, 0 did not move" while
+# `movedIds` was empty - nothing moved, and nothing could. Version 5 REFUSES a
+# zero offset (under a millimetre) with no point before anything is
+# attempted: moved 0, `blocked` empty, and a plain sentence in `findings`
+# saying nothing was moved and how to ask. Refused rather than answered
+# "0 moved" because this card's `findings` is "the four outcomes, or why
+# nothing moved", and a move by nothing has no outcome to report - the same
+# rule as the add-in's own move and ROTATE_ELEMENTS' zero turn. Version 4's
+# proof run (job tools/jobs/qs-move-elements-v4-revit2020-2026-11-26.yaml,
+# NEEDS-CHECKING Group QS) was never signed and does not describe this C#;
+# QS10 is the re-run owed.
 
 # VERSION 4 (2026-11-26) - FAMILY FORMS WERE REFUSED AS MISTYPED IDS, and back
 # to DRAFT. FRAGMENT-ISSUES row 5b-2046: on Revit 2020, session 21400, in the
@@ -129,6 +144,8 @@ contract:
     - name: elements
       type: IList<Element>
     # Left out ("0,0,0") when `toPoint` says where instead. Both is refused.
+    # VERSION 5 (row 5b-2069): zero with no `toPoint` is refused too - a move
+    # by nothing - and nothing is attempted.
     - name: offset
       type: XYZ
       source: request

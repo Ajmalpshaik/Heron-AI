@@ -3,6 +3,14 @@
 // `unverified`, `movedIds`, `notAtPoint`, `noLocationPoint`,
 // `notModelElements` and `findings` behind.
 //
+// VERSION 5 (2026-11-26) - ROW 5b-2069 (issue #1479), Revit 2020. Six
+// sprinklers handed in with offset 0,0,0 came back `moved 6` and "6 moved the
+// whole offset" while `movedIds` was empty - version 4 counted every element
+// as moved when asked to move it by nothing. A zero offset with no point is
+// now REFUSED before anything is attempted, in a plain sentence, moved 0 -
+// the rule the add-in's own move already keeps ("Moving something by zero
+// would change nothing") and ROTATE_ELEMENTS keeps for a zero turn.
+//
 // VERSION 4 (2026-11-26) - ROW 5b-2046, a family on Revit 2020. Version 3's
 // no-category refusal caught every FORM in a family document - an extrusion
 // or blend in the Family Editor can have no category of its own - so a fan
@@ -191,10 +199,22 @@ else if (toAPoint)
     else
         target = new XYZ(values[0] / 304.8, values[1] / 304.8, values[2] / 304.8);
 }
+else if (offset == null || offset.GetLength() < tolerance)
+{
+    // VERSION 5 (row 5b-2069): a move by nothing is refused, never counted.
+    stop = "The offset is zero - under a millimetre in every direction - so there is nothing to move. "
+        + "Nothing was moved. Say how far and which way (\"0,0,200\" is 200 mm up), or give the point to put "
+        + "the elements at";
+}
 
 if (notModelElements.Count > 0)
 {
     // VERSION 3 (row 5b-1707): refused before anything moved.
+    findings.Add(stop);
+}
+else if (stop != null && !toAPoint)
+{
+    // VERSION 5 (row 5b-2069): a zero offset, refused before anything moved.
     findings.Add(stop);
 }
 else if (stop != null || toAPoint)
@@ -293,15 +313,13 @@ foreach (var element in elements)
 // before this would measure each element against itself and pass every time.
 doc.Regenerate();
 
-// A move of nothing is a move nobody can measure: asked for zero, every element
-// is already where it should be, and comparing would report them all blocked.
-var askedForNothing = offset.GetLength() < tolerance;
+// A zero offset never reaches here - it is refused above (version 5, row
+// 5b-2069). Version 4 counted every element as moved when asked for zero, so
+// `moved` said 6 while `movedIds` was empty.
 var overshot = 0;
 
 foreach (var element in attempted)
 {
-    if (askedForNothing) { moved++; continue; }
-
     XYZ was;
     var now = probe(element);
     if (now == null || !before.TryGetValue(element.Id, out was))
