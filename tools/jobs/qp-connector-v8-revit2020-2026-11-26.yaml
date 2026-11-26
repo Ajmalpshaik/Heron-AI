@@ -7,7 +7,11 @@
 # Positive (QP1): Supply_Air_Width / Supply_Air_Height (Duct Size, 205) - made, 2 mm clear each side.
 # Negative (QP2): the setup sets Supply_Air_Width to 215 first, inside the same rolled-back run -
 # expected refused "would not fit inside that opening", nothing made. CAME BACK 2026-11-26 as
-# fragment_threw with those words (NO NEGATIVE) - row 5b-2051, issue #1428. Re-run once that is fixed.
+# fragment_threw with those words (NO NEGATIVE) - row 5b-2051, issue #1428.
+# FIXED IN VERSION 9 (2026-11-26, not yet run): the making and the fit check run in a
+# SubTransaction, so this negative now answers through `refused`, nothing kept. RE-RUN THIS FILE
+# AS IT STANDS on version 9: the positive is QP1 again, the negative QP2 (i). The file keeps its
+# v8 name because Group QP's results link to it.
 model: pt-ahu (scratch copy of the MAH-0202S2M AHU family), Revit 2020
 
 defaults:

@@ -9,10 +9,22 @@ semantic-identity: "put a duct, pipe or electrical connector on this face of the
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_CONNECTOR
-version: 8
+version: 9
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 9 (2026-11-26) - A PORT THAT WILL NOT FIT IS REFUSED, NOT THROWN.
+# Row 5b-2051, seen on Revit 2020 running NEEDS-CHECKING Group QP check QP2
+# on a scratch copy of the owner's AHU family: a 215 x 205 port on a ring
+# whose opening is 209 x 209 came back with the right words but as
+# fragment_threw, so the negative could not count and version 8 was not
+# signed. The fit is measured on the connector once it is made, so the
+# making and the fit check now run in a SubTransaction: a port that fits is
+# committed and tied as before; one that does not is rolled back and the same
+# words come back through refused, nothing kept. The same refusal covers a
+# whole face whose port is not the face's own size. Compiled for 2020 to 2027,
+# never run in Revit; DRAFT until Group QP is run again (D-30).
+#
 # VERSION 8 (2026-11-24) - DUCT SIZE AND PIPE SIZE PARAMETERS SIZE A
 # CONNECTOR, AND A PORT MAY BE SMALLER THAN A RING'S OPENING. Rows 5b-2031 and
 # 5b-2032, seen on Revit 2020 building an air handling unit family: shared
@@ -429,6 +441,9 @@ compatibility-note: >
   `.PipeSize` - and from 2022 `Definition.GetDataType()` against
   `SpecTypeId.DuctSize` and `.PipeSize` (RevitAPI.xml 2020, 2021, 2022 and
   2027, read 2026-11-24); built against all eight releases the same day.
+  Version 9 adds `SubTransaction` - Start, Commit, RollBack, HasStarted and
+  HasEnded - on every release 2020 to 2027, as SET_FAMILY_FORMULA version 3
+  uses it; built against all eight releases on 2026-11-26.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #

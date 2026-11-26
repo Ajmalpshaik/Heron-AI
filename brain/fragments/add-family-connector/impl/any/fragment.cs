@@ -2,6 +2,18 @@
 // `form`, `facing` and `at` are in scope; leaves `connector`, `sizedBy`,
 // `notAFamily`, `refused` and `findings` behind.
 //
+// VERSION 9 (2026-11-26, row 5b-2051) - A PORT THAT WILL NOT FIT IS REFUSED,
+// NOT THROWN. Seen on Revit 2020 in Group QP's check QP2: a 215 x 205 port on a
+// ring whose opening is 209 x 209 came back with the right words but as
+// `fragment_threw`, because the fit is measured on the connector once it is
+// made and version 8 threw there. Now the making and the fit check run inside
+// a SubTransaction: a port that fits is committed and goes on to its ties and
+// read-back as before; one that does not is rolled back and its words - the
+// same words - come back through `refused`, nothing kept. The same refusal
+// covers a whole face whose port is not the face's own size. The other throws
+// after the connector is made are unchanged (row 5b-2051 lists which a
+// request can reach).
+//
 // VERSION 8 (2026-11-24, rows 5b-2031 and 5b-2032) - A DUCT SIZE OR PIPE SIZE
 // PARAMETER SIZES A CONNECTOR, AND A PORT MAY BE SMALLER THAN A RING'S OPENING.
 // Seen on Revit 2020 building an air handling unit family: (1) shared
@@ -88,7 +100,9 @@
 // release adds is offered there with no change here.
 //
 // A CONNECTOR THAT CANNOT BE TIED TO ITS SIZE IS NOT LEFT BEHIND AT ONE FOOT.
-// Any refusal after the checks THROWS, and the host rolls the call back.
+// Any other failure after the checks THROWS, and the host rolls the call back.
+// A port that will not fit its face is the one exception since version 9: it
+// is rolled back in a SubTransaction and comes back through `refused`.
 //
 // A FLANGE RING'S FACE IS MEASURED BY ITS OPENING (version 5, 2026-10-24, row
 // 5b-1334): one inner loop holding the connector's centre is the port, and the
@@ -876,65 +890,6 @@ if (refused == null)
     // reference named - the measurement a proof of version 3 records.
     var joinedNote = faceIn == null ? "" : " " + joinedFace;
 
-    try
-    {
-        if (chosen.Item1 == "duct")
-            made = ConnectorElement.CreateDuctConnector(doc, (DuctSystemType)chosen.Item3,
-                round ? ConnectorProfileType.Round : ConnectorProfileType.Rectangular, face.Reference);
-        else if (chosen.Item1 == "pipe")
-            made = ConnectorElement.CreatePipeConnector(doc, (PipeSystemType)chosen.Item3, face.Reference);
-        else if (chosen.Item1 == "cable tray")
-            made = ConnectorElement.CreateCableTrayConnector(doc, face.Reference);
-        else if (chosen.Item1 == "conduit")
-            made = ConnectorElement.CreateConduitConnector(doc, face.Reference);
-        else
-            made = ConnectorElement.CreateElectricalConnector(doc, (ElectricalSystemType)chosen.Item3, face.Reference);
-    }
-    catch (Exception ex)
-    {
-        throw new InvalidOperationException("Revit refused the " + spaced(chosen.Item2) + " connector on the "
-            + "face lying on \"" + faceName + "\": " + ex.Message + refusedHere);
-    }
-    if (made == null)
-        throw new InvalidOperationException("Revit made no " + spaced(chosen.Item2) + " connector on the face lying "
-            + "on \"" + faceName + "\", and gave no reason." + refusedHere);
-
-    Action<BuiltInParameter, FamilyParameter, string> tie = (own, driver, role) =>
-    {
-        var ownParameter = made.get_Parameter(own);
-        if (ownParameter == null || !fm.CanElementParameterBeAssociated(ownParameter))
-            throw new InvalidOperationException("The connector's " + role + " cannot be tied to \""
-                + driver.Definition.Name + "\" in this Revit, so it would have stayed at one foot. NOTHING "
-                + "from this call was kept." + joinedNote);
-        try
-        {
-            fm.AssociateElementParameterToFamilyParameter(ownParameter, driver);
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException("Revit would not tie the connector's " + role + " to \""
-                + driver.Definition.Name + "\": " + ex.Message + " NOTHING from this call was kept." + joinedNote);
-        }
-        sizedBy.Add("connector " + role + " <- " + driver.Definition.Name);
-    };
-
-    // WHICH WAY ROUND. Revit takes a connector's own width direction from the
-    // FACE, not from the family's X, so "Neck Width" tied to the connector's
-    // width can come out lying along the neck's depth. The face is therefore
-    // measured along the connector's own axes, and the two parameters are tied
-    // the way round the face is actually built - a 400 x 300 neck gets a
-    // 400 x 300 port whichever way its width runs. Parameters that match the
-    // face neither way round would size a port that does not fit the face it
-    // sits on, and are refused.
-    //
-    // A RING FACE IS MEASURED BY ITS OPENING (version 5, 2026-10-24). A flange's
-    // face - a ring round the duct opening - is the face a port belongs on, and
-    // its outline is the flange, not the port: a 600 x 400 duct's flange ring
-    // reads 640 x 440 outside. So when one inner loop of the face holds the
-    // connector's centre, that loop - the opening - is what is measured, and the
-    // connector must sit at its centre (measured on Revit 2020: a ring face takes
-    // the connector at its centre and the connector follows the plane the ring
-    // is sketched on). A face of one loop is measured whole, exactly as before.
     var swapped = false;
     var faceAlongX = 0.0;
     var faceAlongY = 0.0;
@@ -944,168 +899,258 @@ if (refused == null)
     var portAlongY = 0.0;
     var faceWord = "The face on \"" + faceName + "\" is ";
     var ringOpening = false;
-    if ((chosen.Item1 == "duct" || chosen.Item1 == "cable tray") && !round)
+
+    // VERSION 9 (2026-11-26, row 5b-2051): THE MAKING AND THE FIT CHECK RUN IN
+    // A SubTransaction. Whether the port fits its face - or a ring's opening -
+    // is known only once the connector is made, because the face is measured
+    // along the connector's own axes. So the connector is made inside a
+    // SubTransaction; when the port will not fit, it is rolled back and the
+    // words come back through `refused`, nothing kept and the call ending
+    // normally - version 8 threw them, and a thrown negative is no proof. Any
+    // other failure in this stretch rolls the SubTransaction back before it
+    // throws, so the host never unwinds over one still open.
+    var trial = new SubTransaction(doc);
+    trial.Start();
+    try
     {
-        var frame = made.CoordinateSystem;
-        var boxes = new List<double[]>();
-        foreach (EdgeArray loop in face.EdgeLoops)
+        try
         {
-            var points = new List<XYZ>();
-            foreach (Edge edge in loop)
-                points.AddRange(edge.Tessellate());
-            var acrossX = points.Select(q => q.DotProduct(frame.BasisX)).ToList();
-            var acrossY = points.Select(q => q.DotProduct(frame.BasisY)).ToList();
-            boxes.Add(new[] { acrossX.Min(), acrossX.Max(), acrossY.Min(), acrossY.Max() });
+            if (chosen.Item1 == "duct")
+                made = ConnectorElement.CreateDuctConnector(doc, (DuctSystemType)chosen.Item3,
+                    round ? ConnectorProfileType.Round : ConnectorProfileType.Rectangular, face.Reference);
+            else if (chosen.Item1 == "pipe")
+                made = ConnectorElement.CreatePipeConnector(doc, (PipeSystemType)chosen.Item3, face.Reference);
+            else if (chosen.Item1 == "cable tray")
+                made = ConnectorElement.CreateCableTrayConnector(doc, face.Reference);
+            else if (chosen.Item1 == "conduit")
+                made = ConnectorElement.CreateConduitConnector(doc, face.Reference);
+            else
+                made = ConnectorElement.CreateElectricalConnector(doc, (ElectricalSystemType)chosen.Item3, face.Reference);
         }
-        var outline = boxes.OrderByDescending(b => (b[1] - b[0]) * (b[3] - b[2])).First();
-        var centreX = made.Origin.DotProduct(frame.BasisX);
-        var centreY = made.Origin.DotProduct(frame.BasisY);
-        var openings = boxes.Where(b => b != outline && b[0] < centreX && centreX < b[1]
-            && b[2] < centreY && centreY < b[3]).ToList();
-        if (openings.Count > 1)
-            throw new InvalidOperationException("The face on \"" + faceName + "\" has " + openings.Count + " openings "
-                + "round the connector's centre, so which one is the port is not clear. NOTHING from this call "
-                + "was kept." + joinedNote);
-        var measured = outline;
-        if (openings.Count == 1)
+        catch (Exception ex)
         {
-            measured = openings[0];
-            ringOpening = true;
-            faceWord = "The opening of the ring face on \"" + faceName + "\" is ";
-            var offX = (measured[0] + measured[1]) / 2 - centreX;
-            var offY = (measured[2] + measured[3]) / 2 - centreY;
-            if (Math.Abs(offX) > halfMillimetre || Math.Abs(offY) > halfMillimetre)
-                throw new InvalidOperationException("Revit put the connector " + mm(Math.Sqrt(offX * offX + offY * offY))
-                    + " mm off the centre of the ring face's opening on \"" + faceName + "\" - a ring that is not "
-                    + "even round its opening. NOTHING from this call was kept." + joinedNote);
+            throw new InvalidOperationException("Revit refused the " + spaced(chosen.Item2) + " connector on the "
+                + "face lying on \"" + faceName + "\": " + ex.Message + refusedHere);
         }
-        faceAlongX = measured[1] - measured[0];
-        faceAlongY = measured[3] - measured[2];
+        if (made == null)
+            throw new InvalidOperationException("Revit made no " + spaced(chosen.Item2) + " connector on the face lying "
+                + "on \"" + faceName + "\", and gave no reason." + refusedHere);
 
-        var first = fm.CurrentType.AsDouble(sizes[0]);
-        var second = fm.CurrentType.AsDouble(sizes[1]);
-        var both = first.HasValue && second.HasValue;
-        var asGiven = both
-            && Math.Abs(first.Value - faceAlongX) <= halfMillimetre
-            && Math.Abs(second.Value - faceAlongY) <= halfMillimetre;
-        var turned = both
-            && Math.Abs(first.Value - faceAlongY) <= halfMillimetre
-            && Math.Abs(second.Value - faceAlongX) <= halfMillimetre;
-        // VERSION 8 (row 5b-2032): IN A RING'S OPENING, A PORT UP TO ITS SIZE.
-        // The opening is a bore - a flange is bored a little over its duct - so
-        // the port must fit inside it, not equal it. A whole face is still
-        // matched exactly: there the face is the port.
-        var fitsAsGiven = ringOpening && both
-            && first.Value <= faceAlongX + halfMillimetre && second.Value <= faceAlongY + halfMillimetre;
-        var fitsTurned = ringOpening && both
-            && first.Value <= faceAlongY + halfMillimetre && second.Value <= faceAlongX + halfMillimetre;
+        // WHICH WAY ROUND. Revit takes a connector's own width direction from the
+        // FACE, not from the family's X, so "Neck Width" tied to the connector's
+        // width can come out lying along the neck's depth. The face is therefore
+        // measured along the connector's own axes, and the two parameters are tied
+        // the way round the face is actually built - a 400 x 300 neck gets a
+        // 400 x 300 port whichever way its width runs. Parameters that match the
+        // face neither way round would size a port that does not fit the face it
+        // sits on, and are refused.
+        //
+        // A RING FACE IS MEASURED BY ITS OPENING (version 5, 2026-10-24). A flange's
+        // face - a ring round the duct opening - is the face a port belongs on, and
+        // its outline is the flange, not the port: a 600 x 400 duct's flange ring
+        // reads 640 x 440 outside. So when one inner loop of the face holds the
+        // connector's centre, that loop - the opening - is what is measured, and the
+        // connector must sit at its centre (measured on Revit 2020: a ring face takes
+        // the connector at its centre and the connector follows the plane the ring
+        // is sketched on). A face of one loop is measured whole, exactly as before.
+        if ((chosen.Item1 == "duct" || chosen.Item1 == "cable tray") && !round)
+        {
+            var frame = made.CoordinateSystem;
+            var boxes = new List<double[]>();
+            foreach (EdgeArray loop in face.EdgeLoops)
+            {
+                var points = new List<XYZ>();
+                foreach (Edge edge in loop)
+                    points.AddRange(edge.Tessellate());
+                var acrossX = points.Select(q => q.DotProduct(frame.BasisX)).ToList();
+                var acrossY = points.Select(q => q.DotProduct(frame.BasisY)).ToList();
+                boxes.Add(new[] { acrossX.Min(), acrossX.Max(), acrossY.Min(), acrossY.Max() });
+            }
+            var outline = boxes.OrderByDescending(b => (b[1] - b[0]) * (b[3] - b[2])).First();
+            var centreX = made.Origin.DotProduct(frame.BasisX);
+            var centreY = made.Origin.DotProduct(frame.BasisY);
+            var openings = boxes.Where(b => b != outline && b[0] < centreX && centreX < b[1]
+                && b[2] < centreY && centreY < b[3]).ToList();
+            if (openings.Count > 1)
+                throw new InvalidOperationException("The face on \"" + faceName + "\" has " + openings.Count + " openings "
+                    + "round the connector's centre, so which one is the port is not clear. NOTHING from this call "
+                    + "was kept." + joinedNote);
+            var measured = outline;
+            if (openings.Count == 1)
+            {
+                measured = openings[0];
+                ringOpening = true;
+                faceWord = "The opening of the ring face on \"" + faceName + "\" is ";
+                var offX = (measured[0] + measured[1]) / 2 - centreX;
+                var offY = (measured[2] + measured[3]) / 2 - centreY;
+                if (Math.Abs(offX) > halfMillimetre || Math.Abs(offY) > halfMillimetre)
+                    throw new InvalidOperationException("Revit put the connector " + mm(Math.Sqrt(offX * offX + offY * offY))
+                        + " mm off the centre of the ring face's opening on \"" + faceName + "\" - a ring that is not "
+                        + "even round its opening. NOTHING from this call was kept." + joinedNote);
+            }
+            faceAlongX = measured[1] - measured[0];
+            faceAlongY = measured[3] - measured[2];
 
-        if (!asGiven && !turned && !fitsAsGiven && !fitsTurned)
-            throw new InvalidOperationException(faceWord + mm(faceAlongX) + " x "
-                + mm(faceAlongY) + " mm, and \"" + sizes[0].Definition.Name + "\" and \"" + sizes[1].Definition.Name
-                + "\" hold " + (first.HasValue ? mm(first.Value) : "nothing") + " and "
-                + (second.HasValue ? mm(second.Value) : "nothing") + " mm - a port sized by them would not fit "
-                + (ringOpening ? "inside that opening either way round" : "the face it sits on") + ". "
-                + (ringOpening ? "" : "On a whole face the port must be the face's own size. ")
-                + "NOTHING from this call was kept." + joinedNote);
+            var first = fm.CurrentType.AsDouble(sizes[0]);
+            var second = fm.CurrentType.AsDouble(sizes[1]);
+            var both = first.HasValue && second.HasValue;
+            var asGiven = both
+                && Math.Abs(first.Value - faceAlongX) <= halfMillimetre
+                && Math.Abs(second.Value - faceAlongY) <= halfMillimetre;
+            var turned = both
+                && Math.Abs(first.Value - faceAlongY) <= halfMillimetre
+                && Math.Abs(second.Value - faceAlongX) <= halfMillimetre;
+            // VERSION 8 (row 5b-2032): IN A RING'S OPENING, A PORT UP TO ITS SIZE.
+            // The opening is a bore - a flange is bored a little over its duct - so
+            // the port must fit inside it, not equal it. A whole face is still
+            // matched exactly: there the face is the port.
+            var fitsAsGiven = ringOpening && both
+                && first.Value <= faceAlongX + halfMillimetre && second.Value <= faceAlongY + halfMillimetre;
+            var fitsTurned = ringOpening && both
+                && first.Value <= faceAlongY + halfMillimetre && second.Value <= faceAlongX + halfMillimetre;
 
-        if (asGiven) swapped = false;
-        else if (turned) swapped = true;
-        else if (fitsAsGiven && fitsTurned)
-            // Both ways fit: the way round whose shape is nearer the opening's,
-            // as given on a tie (a square port in a square opening).
-            swapped = Math.Abs(first.Value - faceAlongY) + Math.Abs(second.Value - faceAlongX)
-                < Math.Abs(first.Value - faceAlongX) + Math.Abs(second.Value - faceAlongY) - halfMillimetre;
-        else swapped = !fitsAsGiven;
+            // VERSION 9 (row 5b-2051): A PORT THAT WILL NOT FIT IS REFUSED, NOT
+            // THROWN - the connector made to measure it is rolled back below.
+            if (!asGiven && !turned && !fitsAsGiven && !fitsTurned)
+                refused = faceWord + mm(faceAlongX) + " x "
+                    + mm(faceAlongY) + " mm, and \"" + sizes[0].Definition.Name + "\" and \"" + sizes[1].Definition.Name
+                    + "\" hold " + (first.HasValue ? mm(first.Value) : "nothing") + " and "
+                    + (second.HasValue ? mm(second.Value) : "nothing") + " mm - a port sized by them would not fit "
+                    + (ringOpening ? "inside that opening either way round" : "the face it sits on") + ". "
+                    + (ringOpening ? "" : "On a whole face the port must be the face's own size. ")
+                    + "NOTHING from this call was kept." + joinedNote;
+            else
+            {
+                if (asGiven) swapped = false;
+                else if (turned) swapped = true;
+                else if (fitsAsGiven && fitsTurned)
+                    // Both ways fit: the way round whose shape is nearer the opening's,
+                    // as given on a tie (a square port in a square opening).
+                    swapped = Math.Abs(first.Value - faceAlongY) + Math.Abs(second.Value - faceAlongX)
+                        < Math.Abs(first.Value - faceAlongX) + Math.Abs(second.Value - faceAlongY) - halfMillimetre;
+                else swapped = !fitsAsGiven;
 
-        portAlongX = swapped ? second.Value : first.Value;
-        portAlongY = swapped ? first.Value : second.Value;
-        if (ringOpening && !asGiven && !turned)
-            findings.Add("The port, " + mm(portAlongX) + " x " + mm(portAlongY) + " mm from its parameters, sits "
-                + "centred in the ring face's opening of " + mm(faceAlongX) + " x " + mm(faceAlongY) + " mm - "
-                + mm((faceAlongX - portAlongX) / 2) + " and " + mm((faceAlongY - portAlongY) / 2) + " mm clear each "
-                + "side. The opening is not the port's size; the parameters are.");
+                portAlongX = swapped ? second.Value : first.Value;
+                portAlongY = swapped ? first.Value : second.Value;
+                if (ringOpening && !asGiven && !turned)
+                    findings.Add("The port, " + mm(portAlongX) + " x " + mm(portAlongY) + " mm from its parameters, sits "
+                        + "centred in the ring face's opening of " + mm(faceAlongX) + " x " + mm(faceAlongY) + " mm - "
+                        + mm((faceAlongX - portAlongX) / 2) + " and " + mm((faceAlongY - portAlongY) / 2) + " mm clear each "
+                        + "side. The opening is not the port's size; the parameters are.");
+            }
+        }
+
+        if (refused == null) trial.Commit();
+        else trial.RollBack();
+    }
+    catch (Exception)
+    {
+        try { if (trial.HasStarted() && !trial.HasEnded()) trial.RollBack(); } catch (Exception) { }
+        throw;
     }
 
-    if (chosen.Item1 != "electrical")
+    // The ties and the read-back run only for a port that fits (version 9).
+    if (refused == null)
     {
-        if (round) tie(BuiltInParameter.CONNECTOR_DIAMETER, sizes[0], "diameter");
+        Action<BuiltInParameter, FamilyParameter, string> tie = (own, driver, role) =>
+        {
+            var ownParameter = made.get_Parameter(own);
+            if (ownParameter == null || !fm.CanElementParameterBeAssociated(ownParameter))
+                throw new InvalidOperationException("The connector's " + role + " cannot be tied to \""
+                    + driver.Definition.Name + "\" in this Revit, so it would have stayed at one foot. NOTHING "
+                    + "from this call was kept." + joinedNote);
+            try
+            {
+                fm.AssociateElementParameterToFamilyParameter(ownParameter, driver);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Revit would not tie the connector's " + role + " to \""
+                    + driver.Definition.Name + "\": " + ex.Message + " NOTHING from this call was kept." + joinedNote);
+            }
+            sizedBy.Add("connector " + role + " <- " + driver.Definition.Name);
+        };
+
+        if (chosen.Item1 != "electrical")
+        {
+            if (round) tie(BuiltInParameter.CONNECTOR_DIAMETER, sizes[0], "diameter");
+            else
+            {
+                tie(BuiltInParameter.CONNECTOR_WIDTH, swapped ? sizes[1] : sizes[0], "width");
+                tie(BuiltInParameter.CONNECTOR_HEIGHT, swapped ? sizes[0] : sizes[1], "height");
+            }
+        }
+
+        doc.Regenerate();
+
+        // READ BACK - and a connector that does not read what it was tied to, or
+        // does not fit its face, is not kept at some other size: it THROWS.
+        Func<Func<double>, double?> read = get => { try { return get(); } catch (Exception) { return null; } };
+        var shape = "";
+
+        if (chosen.Item1 == "electrical") shape = "no size";
+        else if (round)
+        {
+            var diameter = read(() => made.Radius * 2);
+            var wanted = fm.CurrentType.AsDouble(sizes[0]);
+            shape = "round " + (diameter.HasValue ? mm(diameter.Value) : "?") + " mm";
+            if (!diameter.HasValue || !wanted.HasValue || Math.Abs(diameter.Value - wanted.Value) > halfMillimetre)
+                throw new InvalidOperationException("The connector's diameter reads "
+                    + (diameter.HasValue ? mm(diameter.Value) + " mm" : "nothing") + " and \"" + sizes[0].Definition.Name
+                    + "\" holds " + (wanted.HasValue ? mm(wanted.Value) + " mm" : "nothing")
+                    + ". NOTHING from this call was kept." + joinedNote);
+        }
         else
         {
-            tie(BuiltInParameter.CONNECTOR_WIDTH, swapped ? sizes[1] : sizes[0], "width");
-            tie(BuiltInParameter.CONNECTOR_HEIGHT, swapped ? sizes[0] : sizes[1], "height");
+            var width = read(() => made.Width);
+            var height = read(() => made.Height);
+            shape = "rectangular " + (width.HasValue ? mm(width.Value) : "?") + " x "
+                + (height.HasValue ? mm(height.Value) : "?") + " mm";
+            // VERSION 8: against the port its parameters size - the face's own size
+            // on a whole face, up to the opening's in a ring.
+            if (!width.HasValue || !height.HasValue
+                || Math.Abs(width.Value - portAlongX) > halfMillimetre || Math.Abs(height.Value - portAlongY) > halfMillimetre)
+                throw new InvalidOperationException("The connector reads " + shape + " where its parameters size a port "
+                    + mm(portAlongX) + " x " + mm(portAlongY) + " mm along the same axes, on a "
+                    + (ringOpening ? "ring face whose opening is " : "face ") + mm(faceAlongX) + " x " + mm(faceAlongY)
+                    + " mm - it does not fit. NOTHING from this call was kept." + joinedNote);
+
+            if (swapped)
+                findings.Add("Revit runs this connector's width along the face's other side, so \""
+                    + sizes[1].Definition.Name + "\" drives its width and \"" + sizes[0].Definition.Name
+                    + "\" its height - which makes the port match the face as it is built.");
         }
+
+        var origin = made.Origin;
+        // Said in the result itself, a string, because a reply cuts a list to its
+        // first three items and each to sixty characters.
+        connector = chosen.Item1 + " connector, " + spaced(chosen.Item2) + ", " + shape + ", at X " + mm(origin.X)
+            + ", Y " + mm(origin.Y) + ", Z " + mm(origin.Z) + ", pointing " + pointing(made.Direction)
+            + ", on the face lying on \"" + faceName + "\""
+            + (ringOpening ? ", centred in the ring face's opening and sized by its parameters" : "")
+            + (faceIn != null ? ". " + joinedFace : "")
+            + (alsoJoined > 0 ? ". It is a form's own face, which is used before a joined one; " + alsoJoined
+                + " face(s) of joined or cut forms lie on the same plane too - check it is the face meant" : "");
+
+        findings.Add("Made a " + connector + " - read back from the connector." + (sizedBy.Count > 0
+            ? " Its size follows the family: " + string.Join("; ", sizedBy) + "."
+            : ""));
+        // VERSION 6: what form= and facing= left out on the same plane.
+        if (facesLeftOut > 0)
+            findings.Add(facesLeftOut + " other face(s) lie on \"" + faceName + "\" and were left out by "
+                + (formSaid.Length > 0 && facingSaid.Length > 0 ? "form= and facing="
+                    : formSaid.Length > 0 ? "form=" : "facing=") + ".");
+        // VERSION 7: what at= and the body left out.
+        if (facesNotAt > 0)
+            findings.Add(facesNotAt + " other face(s) lie on \"" + faceName + "\" with their centre more than 1 mm "
+                + "from the point given in at=, and were left out.");
+        if (facesIntoBody > 0)
+            findings.Add(facesIntoBody + " other face(s) lie on \"" + faceName + "\" facing into another solid all "
+                + "over - inside the body, not a port - and were left out.");
+
+        findings.Add("Flow direction, description and electrical load are Revit's defaults - set them in "
+            + "Properties. FLEX_FAMILY checks the connector follows its parameters through a resize.");
     }
-
-    doc.Regenerate();
-
-    // READ BACK - and a connector that does not read what it was tied to, or
-    // does not fit its face, is not kept at some other size: it THROWS.
-    Func<Func<double>, double?> read = get => { try { return get(); } catch (Exception) { return null; } };
-    var shape = "";
-
-    if (chosen.Item1 == "electrical") shape = "no size";
-    else if (round)
-    {
-        var diameter = read(() => made.Radius * 2);
-        var wanted = fm.CurrentType.AsDouble(sizes[0]);
-        shape = "round " + (diameter.HasValue ? mm(diameter.Value) : "?") + " mm";
-        if (!diameter.HasValue || !wanted.HasValue || Math.Abs(diameter.Value - wanted.Value) > halfMillimetre)
-            throw new InvalidOperationException("The connector's diameter reads "
-                + (diameter.HasValue ? mm(diameter.Value) + " mm" : "nothing") + " and \"" + sizes[0].Definition.Name
-                + "\" holds " + (wanted.HasValue ? mm(wanted.Value) + " mm" : "nothing")
-                + ". NOTHING from this call was kept." + joinedNote);
-    }
-    else
-    {
-        var width = read(() => made.Width);
-        var height = read(() => made.Height);
-        shape = "rectangular " + (width.HasValue ? mm(width.Value) : "?") + " x "
-            + (height.HasValue ? mm(height.Value) : "?") + " mm";
-        // VERSION 8: against the port its parameters size - the face's own size
-        // on a whole face, up to the opening's in a ring.
-        if (!width.HasValue || !height.HasValue
-            || Math.Abs(width.Value - portAlongX) > halfMillimetre || Math.Abs(height.Value - portAlongY) > halfMillimetre)
-            throw new InvalidOperationException("The connector reads " + shape + " where its parameters size a port "
-                + mm(portAlongX) + " x " + mm(portAlongY) + " mm along the same axes, on a "
-                + (ringOpening ? "ring face whose opening is " : "face ") + mm(faceAlongX) + " x " + mm(faceAlongY)
-                + " mm - it does not fit. NOTHING from this call was kept." + joinedNote);
-
-        if (swapped)
-            findings.Add("Revit runs this connector's width along the face's other side, so \""
-                + sizes[1].Definition.Name + "\" drives its width and \"" + sizes[0].Definition.Name
-                + "\" its height - which makes the port match the face as it is built.");
-    }
-
-    var origin = made.Origin;
-    // Said in the result itself, a string, because a reply cuts a list to its
-    // first three items and each to sixty characters.
-    connector = chosen.Item1 + " connector, " + spaced(chosen.Item2) + ", " + shape + ", at X " + mm(origin.X)
-        + ", Y " + mm(origin.Y) + ", Z " + mm(origin.Z) + ", pointing " + pointing(made.Direction)
-        + ", on the face lying on \"" + faceName + "\""
-        + (ringOpening ? ", centred in the ring face's opening and sized by its parameters" : "")
-        + (faceIn != null ? ". " + joinedFace : "")
-        + (alsoJoined > 0 ? ". It is a form's own face, which is used before a joined one; " + alsoJoined
-            + " face(s) of joined or cut forms lie on the same plane too - check it is the face meant" : "");
-
-    findings.Add("Made a " + connector + " - read back from the connector." + (sizedBy.Count > 0
-        ? " Its size follows the family: " + string.Join("; ", sizedBy) + "."
-        : ""));
-    // VERSION 6: what form= and facing= left out on the same plane.
-    if (facesLeftOut > 0)
-        findings.Add(facesLeftOut + " other face(s) lie on \"" + faceName + "\" and were left out by "
-            + (formSaid.Length > 0 && facingSaid.Length > 0 ? "form= and facing="
-                : formSaid.Length > 0 ? "form=" : "facing=") + ".");
-    // VERSION 7: what at= and the body left out.
-    if (facesNotAt > 0)
-        findings.Add(facesNotAt + " other face(s) lie on \"" + faceName + "\" with their centre more than 1 mm "
-            + "from the point given in at=, and were left out.");
-    if (facesIntoBody > 0)
-        findings.Add(facesIntoBody + " other face(s) lie on \"" + faceName + "\" facing into another solid all "
-            + "over - inside the body, not a port - and were left out.");
-
-    findings.Add("Flow direction, description and electrical load are Revit's defaults - set them in "
-        + "Properties. FLEX_FAMILY checks the connector follows its parameters through a resize.");
 }
 
 if (refused != null) findings.Add(refused);
