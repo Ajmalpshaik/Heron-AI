@@ -34,12 +34,28 @@ positive:
       the accessory a quarter of the way along, and the two halves in that
       proportion
 
+# WHICH CASE IS THE D-30 LEG THAT READS EMPTY (row 5b-1968, #1242): `placed`
+# is this card's real answer, and it lists the accessory whether or not both
+# ends joined (a placed accessory that joined nothing is ALSO in
+# `leftSevered`). So a case where Revit does place the accessory - the riser
+# below - can never leave `placed` empty, and a batch reads it NEG NOT EMPTY.
+# The negative a batch can judge is the one where nothing is a run, so nothing
+# is broken and nothing placed: the fitting and the air terminal. The riser
+# and the cases that place something stay negatives for what they say in
+# words, judged by eye.
 negative:
+  - given: a fitting or an air terminal in the set
+    expect: >
+      THE D-30 NEGATIVE, the one a batch can judge: its id in `notARun`,
+      `placed` empty and `leftSevered` empty, nothing broken. Only a duct or a
+      pipe can be broken
+
   - given: a vertical duct (a riser) and a damper
     expect: >
-      its run named in notTurned - a vertical run is not turned in plan - and
-      whatever Revit did with the joins reported in placed or leftSevered,
-      never a silent success
+      NOT an empty leg - Revit may place the accessory on it, and then `placed`
+      names it. Its run named in notTurned - a vertical run is not turned in
+      plan - and whatever Revit did with the joins reported in placed or
+      leftSevered, never a silent success. Judged by eye
 
   - given: the accessory hosted on the run instead of breaking it first
     expect: >
@@ -57,10 +73,6 @@ negative:
     expect: >
       it in `placed` AND the run in `leftSevered`. Placed is not connected, and
       reporting only the placement would read as done
-
-  - given: a fitting or an air terminal in the set
-    expect: >
-      its id in `notARun`. Only a duct or a pipe can be broken
 
   - given: a symbol never used this session
     expect: >
