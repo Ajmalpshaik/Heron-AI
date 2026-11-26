@@ -194,9 +194,7 @@ stand-ins that fail the way that image did.
 stock Ubuntu 24.04 image ships `python3` only. A hook whose command is not found is read as no
 objection, so without it the boundary guard would let every edit through, and nothing would say why.
 
-**It does not install `sentence-transformers`.** That pulls torch — 500 MB to 2 GB — to re-order a
-shortlist it already has. [`requirements-optional.txt`](../requirements-optional.txt) gives the same
-reasoning in the same words.
+**It installs no re-ranker** — there is none since [D-201](decisions/D-201.md) (2026-11-26).
 
 **It does not build the bridge test host**, although the host builds and runs here perfectly well -
 [30 §5](30-compiling-away-from-windows.md). The environment is snapshotted after the script
@@ -246,7 +244,8 @@ real edit does.
 So a cloud session goes **further than CI does**. Since 2026-11-21 `gates.yml` builds the .NET host and
 runs the suites that need the MCP SDK on a venv holding the pinned lock, but it leaves
 `test_routing_phrases.py` unrun on its not-runnable list - the trained embedding is not there, and on
-the embedding alone, without the re-ranker the owner's PC ranks with, that suite fails; this environment
+the embedding - what the owner's PC ranks with since D-201 - that suite still fails 6 card-wording
+checks (row 5b-1882); this environment
 installs the embedding on request, so **nothing in `tests/` is out of its reach** once §2's check
 answers `model`.
 

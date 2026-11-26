@@ -61,7 +61,6 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_scope as SCOPE                                   # noqa: E402
 import heron_fragment as FRAG                                 # noqa: E402
-import heron_rerank as RERANK                                 # noqa: E402
 
 # Only these may be executed off an exact identity match without asking.
 RUNNABLE_UNASKED = ("PROVEN", "PRODUCTION")
@@ -127,17 +126,15 @@ class Answer(object):
         # HOW CONTESTED THIS ANSWER WAS - a heron_retrieve.Contest, or None on
         # the routes that do not rank anything (identity, cache, nothing).
         # Carried rather than folded into `note` because a number a caller can
-        # read is worth more than a sentence it has to parse back out, and
-        # because docs/05 s4.4's re-ranker will be judged against it later.
+        # read is worth more than a sentence it has to parse back out.
         self.contest = contest
 
         # WHICH OPTIONAL BACKENDS ACTUALLY RAN ON THIS ANSWER, recorded by the
         # route that ran them and never re-derived afterwards. Asking a
         # backend whether it is INSTALLED, after the search, answers a
         # different question: a warm-up finishing between the search and the
-        # question labels a lexically-answered query "model", and a re-ranker
-        # that was loaded but returned no scores reports as having answered.
-        # Both were live. Found by a review 2026-09-11.
+        # question labels a lexically-answered query "model". It was live.
+        # Found by a review 2026-09-11.
         #
         # None on the routes that record nothing, which a caller reads as "not
         # said" rather than as "not used".
@@ -171,10 +168,6 @@ def ensure_tables(store):
         CREATE TABLE IF NOT EXISTS identities (
             phrase      TEXT PRIMARY KEY,
             fragment_id TEXT NOT NULL
-        );
-        CREATE TABLE IF NOT EXISTS rerank_said (
-            id   TEXT PRIMARY KEY,
-            said TEXT NOT NULL
         );
         CREATE TABLE IF NOT EXISTS index_state (
             name   TEXT PRIMARY KEY,
@@ -213,7 +206,9 @@ ROW_SEP = chr(30)
 # review on PR #198.
 #
 # 3: `rerank_said`, the utterances a re-ranker reads beside a card's identity.
-INDEX_FORMAT = 3
+# 4: `rerank_said` is gone with the re-ranker (D-201) - dropped on the next
+#    re-index, so a store built at 3 is rebuilt once and sheds it.
+INDEX_FORMAT = 4
 
 
 def library_digest(store, cards=None):
@@ -384,17 +379,16 @@ def index(store, force=False, source=SCOPE.ASK):
         # declarations sat in the files, and even an explicit rebuild would not
         # have brought them back. Found by review on PR #198.
         if have and have["digest"] == want:
-            # `rerank_said` is a third independent output, for the same reason.
             rows = store.execute(
                 "SELECT (SELECT COUNT(*) FROM fragment_text) AS texts, "
-                "(SELECT COUNT(*) FROM identities) AS ids, "
-                "(SELECT COUNT(*) FROM rerank_said) AS said").fetchone()
-            if rows and rows["texts"] and rows["ids"] and rows["said"]:
+                "(SELECT COUNT(*) FROM identities) AS ids").fetchone()
+            if rows and rows["texts"] and rows["ids"]:
                 return 0, rows["texts"]
 
     store.execute("DELETE FROM fragment_text")
     store.execute("DELETE FROM identities")
-    store.execute("DELETE FROM rerank_said")
+    # A store indexed before D-201 holds the re-ranker's table; nothing reads it.
+    store.execute("DROP TABLE IF EXISTS rerank_said")
 
     on_disk, _ = FRAG.load_all(cards, checkout=checkout)
 
@@ -425,15 +419,6 @@ def index(store, force=False, source=SCOPE.ASK):
             "domain, purpose) VALUES (?,?,?,?,?)",
             (row["id"], " ".join([row["semantic_identity"]] + said),
              row["capability"], row["domain"], purpose))
-
-        # WHAT THE RE-RANKER READS BESIDE THE IDENTITY, written here so a
-        # question never loads the library to find it (heron_retrieve's
-        # _fragment_passage). Rows 5b-467 to 5b-510: a paraphrase of a
-        # declared sentence never reached its card while the re-ranker read
-        # the identity alone.
-        store.execute(
-            "INSERT OR REPLACE INTO rerank_said (id, said) VALUES (?, ?)",
-            (row["id"], RERANK.passage_said(said)))
 
         # A RETIRED CARD CLAIMS NO SENTENCE. A DEPRECATED or ARCHIVED card is
         # kept so its record is never destroyed, not so it can answer - and

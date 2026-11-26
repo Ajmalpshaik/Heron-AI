@@ -71,13 +71,13 @@ table per backend would be a list of excused failures. So with no trained
 model this exits 3 - COULD NOT RUN, which is not a pass - and
 .github/workflows/gates.yml lists it as not runnable there.
 
-ONE QUESTION IS ASKED ONLY WHERE THE RE-RANKER RUNS (row 5b-1293)
------------------------------------------------------------------
-"are room areas taken to the wall finish" reaches a write on the model with
-no re-ranker, and the owner closed that as by design on 2026-11-20. On a
-machine without the re-ranker it prints as NOT ASKED - never as a pass - and
-is asked where the owner's PC asks it. RERANKER_ONLY below says so; nothing
-else is excused there.
+ONE QUESTION IS NEVER ASKED: THE OWNER CLOSED IT AS BY DESIGN (row 5b-1293)
+--------------------------------------------------------------------------
+"are room areas taken to the wall finish" reaches a write on the model, and
+the owner closed that as by design on 2026-11-20. It was asked only where the
+cross-encoder re-ranker ran, as his PC did; D-201 removed the re-ranker on
+2026-11-26, so nowhere asks it now. It prints as NOT ASKED - never as a pass.
+CLOSED_BY_DESIGN below says so; nothing else is excused there.
 
 NOT A SCORE
 -----------
@@ -301,13 +301,14 @@ QUESTIONS = [
      "5b-560: answered ALIGN_VIEWPORTS_ACROSS_SHEETS"),
 ]
 
-# A QUESTION THE OWNER CLOSED AS BY DESIGN ON THE MODEL ALONE - asked only
-# where the re-ranker runs, as his PC does. Row 5b-1293, "Yes, close it",
-# 2026-11-20: on the model with no re-ranker it reaches
+# A QUESTION THE OWNER CLOSED AS BY DESIGN ON THE MODEL ALONE. Row 5b-1293,
+# "Yes, close it", 2026-11-20: on the model it reaches
 # CREATE_FROM_ROOM_BOUNDARIES, no card's words repair it, and D-128's question
-# flag from the host guards it. Asked there it is a check against a decision,
-# not against the code - so it is SAID as not asked, never counted as a pass.
-RERANKER_ONLY = {
+# flag from the host guards it. It was asked where the re-ranker ran, until
+# D-201 removed it (2026-11-26); now nothing asks it. Asked, it would be a
+# check against a decision, not against the code - so it is SAID as not
+# asked, never counted as a pass.
+CLOSED_BY_DESIGN = {
     "are room areas taken to the wall finish":
         "5b-1293: closed as by design on the model alone, the owner's word 2026-11-20",
 }
@@ -495,9 +496,9 @@ def main():
             check(SEARCH.normalise(text) not in declared,
                   "no card declares %r" % text)
         asked = set(t for t, _w in QUESTIONS)
-        for text in RERANKER_ONLY:
-            check(text in asked, "the re-ranker-only question %r is one of "
-                  "section 4's, so the exception names a live check" % text)
+        for text in CLOSED_BY_DESIGN:
+            check(text in asked, "the question closed as by design %r is one "
+                  "of section 4's, so the exception names a real row" % text)
 
         print("\n3. A CHANGE ASKED FOR REACHES THE TOOL THAT MAKES IT")
         for text, want, why in CHANGES:
@@ -507,12 +508,10 @@ def main():
                   "  and it was ranked, not matched word for word (%s)" % answer.route)
 
         print("\n4. A QUESTION OR A SELECTION IS NOT ANSWERED BY A CHANGE")
-        import heron_rerank as RERANK
-        reranked = RERANK.backend()[0] == RERANK.CROSS_ENCODER
         for text, why in QUESTIONS:
-            if text in RERANKER_ONLY and not reranked:
-                print("  %-5s %r - NOT ASKED on the model alone (%s)"
-                      % ("n/a", text, RERANKER_ONLY[text]))
+            if text in CLOSED_BY_DESIGN:
+                print("  %-5s %r - NOT ASKED, closed as by design (%s)"
+                      % ("n/a", text, CLOSED_BY_DESIGN[text]))
                 continue
             _answer, got, risk = ask(text)
             check(not writes(risk), "%r -> %s, %s (%s)" % (text, got, risk or "no risk", why))

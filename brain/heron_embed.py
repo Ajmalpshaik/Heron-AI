@@ -269,15 +269,9 @@ def _load_model():
     except Exception:
         pass
 
-    try:
-        from sentence_transformers import SentenceTransformer
-        which = name or "all-MiniLM-L6-v2"
-        model = SentenceTransformer(which)
-        _WHICH_MODEL[0] = "sentence-transformers:%s" % which
-        _MODEL_CACHE.append(lambda t: list(model.encode(t)))
-        return _MODEL_CACHE[0]
-    except Exception:
-        pass
+    # ONE TRAINED ENCODER, model2vec. A second library was tried here as a
+    # stand-in until D-201 removed it: nothing installs it any more, and an
+    # encoder nobody measured is not a fallback.
 
     _MODEL_CACHE.append(None)
     return None
@@ -294,8 +288,8 @@ def _on_disk(which):
     A FOLDER is loaded with no request at all.
 
     PER CALL, NEVER PROCESS-WIDE: `local_files_only` on this one lookup, not
-    HF_HUB_OFFLINE, which heron_rerank records reaching across into another
-    loader on another thread. A name already pointing at a folder is that
+    HF_HUB_OFFLINE, which reaches across into any other loader on another
+    thread. A name already pointing at a folder is that
     folder; a model not on disk returns None, and the caller loads by name as
     before - the first start on a new machine still downloads. Pinning to the
     copy on disk also keeps a vector's stamp honest: the stamp names the model,
@@ -312,8 +306,7 @@ def _on_disk(which):
 
 # WHICH trained model, not just THAT one is trained - and the difference is a
 # corrupted index. A vector was stamped `backend = "model"`, so changing
-# HERON_EMBED_MODEL, or installing model2vec beside sentence-transformers,
-# produced a DIFFERENT encoder wearing the same label. Every unchanged chunk
+# HERON_EMBED_MODEL produced a DIFFERENT encoder wearing the same label. Every unchanged chunk
 # then satisfied the cache check and kept vectors from the old model: at a
 # different dimension nearest() silently discards them all, and at the same
 # dimension it computes meaningless cross-model dot products. Either way the
@@ -379,7 +372,7 @@ IMPROVED_BY = ("to fix it: pip install --user model2vec, which also needs "
                "huggingface.co reachable once to fetch the weights")
 
 # The trained model used when nothing else is named, and the variable that
-# names another. heron_rerank keeps the same pair for its own model.
+# names another.
 DEFAULT_MODEL = "minishlab/potion-base-8M"
 MODEL_ENV = "HERON_EMBED_MODEL"
 
@@ -390,8 +383,7 @@ MODEL_ENV = "HERON_EMBED_MODEL"
 # numpy's wheel is a different size - so it is stated as "about", and the
 # Windows figure is NEEDS-CHECKING rather than a guess. Re-measure on a machine
 # that has it with importlib.metadata over model2vec's requirements, and du on
-# the cache folder. heron_rerank.SIZE is the same kind of statement for the
-# re-ranker, and tools/check-dependencies.py reads both rather than typing them.
+# the cache folder. tools/check-dependencies.py reads it rather than typing it.
 SIZE = "about 130 MB on disk - the package with what it pulls in, and the weights"
 
 
@@ -400,7 +392,7 @@ def announcement():
 
     R-77: each package named, with what it is for and how large it is, before
     the download starts - the only moment at which saying no is any use. Needs
-    no network to produce, the way heron_rerank.announcement() does not.
+    no network to produce.
     """
     return "\n".join([
         "THE TRAINED EMBEDDING IS OPTIONAL.",

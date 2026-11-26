@@ -4,10 +4,11 @@
 #
 # Read by tools/score-routing.py --sentences. Measured in a cloud container on
 # lexical and model only (origin/main 4ae650e6 against the branch, with and
-# without --revit 2024). OWED ON THE OWNER'S PC, which ranks model+rerank:
+# without --revit 2024). OWED ON THE OWNER'S PC, which ranks model since D-201 removed the re-ranker
+# (2026-11-26; it was model+rerank when this was frozen):
 #
 #   python tools/score-routing.py --sentences tests/data/routing-sentences-2026-11-21.yaml \
-#       --revit 2024 --backend model+rerank
+#       --revit 2024 --backend model
 #
 # The FIRST sentence of the new-a group and of the new-b group is the owner's own
 # sentence from his PC; the rest are a session's words, never declared on a

@@ -264,7 +264,7 @@ def main():
     if asked:
         out("\n")
         out("  These resolve by IDENTITY, which short-circuits before any\n")
-        out("  ranking runs - so no re-ranking repairs one, and neither\n")
+        out("  ranking runs - so no ranking repairs one, and neither\n")
         out("  check-routing.py nor check-risk-crossings.py can see them.\n")
         out("  The repair is to declare the sentence on the READ that should\n")
         out("  own it. Where no READ exists, this is a capability gap.\n")

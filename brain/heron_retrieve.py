@@ -22,10 +22,8 @@ THE ORDER MATTERS AND IT IS NOT NEGOTIABLE
   3. Reciprocal rank fusion, to make one list out of two.
   4. A small quality nudge, which may settle a near-tie and may not overturn a
      clearly better match.
-  4b. RE-READ THE TOP ~20, if a re-ranker is installed. It reads each question
-     and passage TOGETHER, which neither route above can do, so it is allowed
-     to overturn the order - and on a machine without one, nothing happens and
-     the answer says so. See heron_rerank.py.
+     Nothing re-orders the list after this: the optional second reader that
+     did was removed by D-201, measured as no clear gain over the model alone.
   5. SAY HOW CONTESTED THE RESULT WAS. Stages 1 to 4 already compute every
      number this needs and used to throw all of them away, so a coin toss and
      a clear winner came back wearing the same face. See Contest.
@@ -65,7 +63,6 @@ import heron_search as SEARCH                                 # noqa: E402
 import heron_embed as EMBED                                   # noqa: E402
 import heron_usage as USAGE                                   # noqa: E402
 import heron_fragment as FRAG                                 # noqa: E402
-import heron_rerank as RERANK                                 # noqa: E402
 import heron_capability as CAP                                # noqa: E402
 
 # The constant in reciprocal rank fusion. 60 is the value the technique is
@@ -153,13 +150,6 @@ class Candidate(object):
         self.vector_score = None       # cosine, higher is better
         self.fused = 0.0
         self.quality = 0.0
-        # THE RE-RANKER'S OPINION IS CARRIED, NOT ADDED IN. Both stay None on a
-        # machine with no re-ranker installed, which is most machines.
-        self.rerank_score = None       # the cross-encoder's, higher is better
-        self.rerank_rank = None        # its position in that order, 1-based
-        # HOW MANY THE RE-RANKER ACTUALLY READ. Carried on the candidate so a
-        # list cut down to `limit` still knows - see Contest.
-        self.rerank_pool = None
         # WHICH NEARNESS BACKEND PRODUCED vector_rank, written where the rank
         # is used rather than asked for afterwards. It is the same name the
         # FUSION WEIGHT was chosen from, so a report cannot name one backend
@@ -170,24 +160,14 @@ class Candidate(object):
         # D-191: the clause's counts from heron_usage, when the modeller has
         # ever said it helped - {offered, helped, last_helped}. None otherwise.
         self.usage = None
-        # THE UTTERANCES A RE-RANKER READS, from the store's `rerank_said`.
-        # Empty until _carry_said fills it, and on a store indexed before it.
-        self.said = ""
 
     @property
     def score(self):
-        """The FUSED score plus the quality nudge. The re-ranker is not in it.
+        """The FUSED score plus the quality nudge.
 
-        DELIBERATE, and it is the one arithmetic decision in Stage 7. Every
-        number on this page is measured in ONE_RANK, the quality nudge is
+        Every number on this page is measured in ONE_RANK, the quality nudge is
         bounded against ONE_RANK, and Contest reads every spread in ONE_RANK.
-        A cross-encoder's score is on an unrelated scale that differs by model,
-        so folding it in here would silently unbound the nudge and turn every
-        spread Contest reports into a mixture of two units.
-
-        So the re-ranker re-ORDERS the shortlist and leaves the score alone.
-        The fused score stays on record underneath it, which is also the only
-        reason a before-and-after measurement is possible at all.
+        Nothing on another scale is ever folded in here.
         """
         return self.fused + self.quality
 
@@ -201,8 +181,6 @@ class Candidate(object):
             parts.append("no route")
         agreed = self.keyword_rank is not None and self.vector_rank is not None
         said = "%s%s" % (" + ".join(parts), " - both agree" if agreed else "")
-        if self.rerank_rank is not None:
-            said += ", re-ranker #%d" % self.rerank_rank
         if self.usage:
             said += ", helped %d of %d times shown" % (
                 int(self.usage.get("helped", 0)), int(self.usage.get("offered", 0)))
@@ -315,26 +293,9 @@ class Contest(object):
         # mechanism that is not running.
         self.nudged = nudged
 
-        # WHETHER A RE-RANKER SET THIS ORDER. Derived from the candidates
-        # rather than passed in, so a caller cannot forget to say so - the
-        # same reason D-40 derives an edge instead of storing one.
-        self.reranked = any(getattr(c, "rerank_rank", None) is not None
-                            for c in ranked)
-        # AND HOW MANY IT READ, which is not the same as how many are here.
-        # find() builds this from the list AFTER the cut to `limit`, so with
-        # limit=5 the re-ranker had read twenty and this held five.
-        pools = [getattr(c, "rerank_pool", None) for c in ranked]
-        pools = [n for n in pools if n]
-        self.rerank_pool = max(pools) if pools else None
-
-        # SORTED DESCENDING, AND THAT IS NOT TIDINESS. Every number below is a
-        # fact about FUSION, and when a re-ranker has re-ordered the shortlist
-        # the list arrives in the re-ranker's order instead - at which point
-        # scores[0] - scores[1] is the gap between the re-ranker's first and
-        # second, which can be NEGATIVE. That would report a spread of -3.2
-        # ranks and call every re-ranked result a coin toss. Sorting recovers
-        # the fusion spread of the same set, and changes nothing at all when
-        # no re-ranker ran, because then the list is already in this order.
+        # SORTED DESCENDING. Every number below is a fact about FUSION, and the
+        # list already arrives in this order; sorting keeps the gap a fusion
+        # gap even if a caller ever hands it a list in some other order.
         scores = sorted([c.score for c in ranked], reverse=True)
         self.top_gap = ((scores[0] - scores[1]) / ONE_RANK
                         if len(scores) > 1 else None)
@@ -357,10 +318,9 @@ class Contest(object):
         without parsing a sentence back out - heron_context's packet confidence
         stands on it (R-43). Not a threshold: one is against what the status
         nudge can move, the other against one rank, the smallest difference
-        either route can express. A re-ranked order is never called one, for
-        the reason sentence() gives: the fusion gap did not set that order.
+        either route can express.
         """
-        if self.count < 2 or self.reranked or self.top_gap is None:
+        if self.count < 2 or self.top_gap is None:
             return False
         if self.top_gap * ONE_RANK < self.span and self.nudged:
             return True
@@ -399,31 +359,7 @@ class Contest(object):
             return ("one candidate, so nothing was contested - a shortlist of "
                     "one is not a ranking")
 
-        # A RE-RANKED ORDER IS NOT EXPLAINED BY THE FUSION GAP, and saying
-        # it was would be the most confident wrong sentence on this page. The
-        # gap describes the shortlist the re-ranker was HANDED; the order shown
-        # is the re-ranker's, set by reading each pair. Reporting "a coin toss"
-        # about an order something else decided would be describing a contest
-        # that did not settle anything.
-        if self.reranked:
-            said = ("the RE-RANKER set this order, reading each question-and-%s "
-                    "pair - so the fusion numbers here describe the shortlist "
-                    "it was given, not the order shown" % self.noun)
-            # WHAT THESE NUMBERS ARE ACTUALLY OVER. They are computed from the
-            # candidates in hand, and with a limit smaller than the re-rank
-            # pool that is a SUBSET of what the re-ranker read. Saying "the
-            # shortlist it was given" about five of twenty was a sentence
-            # describing a set it had never seen. Found by a review.
-            if self.rerank_pool and self.rerank_pool > self.count:
-                said += ("; it read %d, and these %d are the ones it put on "
-                         "top - the fusion numbers below are over THESE %d, "
-                         "not over all %d"
-                         % (self.rerank_pool, self.count, self.count,
-                            self.rerank_pool))
-            said += ("; they span %.1f fusion rank(s) and %d of %d were "
-                     "found by both routes"
-                     % (self.spread, self.agreed, self.count))
-        elif self.top_gap * ONE_RANK < self.span and self.nudged:
+        if self.top_gap * ONE_RANK < self.span and self.nudged:
             # THE COMPARISON IS AGAINST WHAT STATUS CAN ACTUALLY MOVE, not
             # against a whole rank. Across the statuses a fragment may be
             # OFFERED at, the nudge spans about six tenths of one rank - so a
@@ -447,9 +383,8 @@ class Contest(object):
             said = ("the winner is %.1f rank(s) clear of the runner-up"
                     % self.top_gap)
 
-        if not self.reranked:
-            said += ("; the shortlist spans %.1f rank(s); %d of %d found by "
-                     "both routes" % (self.spread, self.agreed, self.count))
+        said += ("; the shortlist spans %.1f rank(s); %d of %d found by "
+                 "both routes" % (self.spread, self.agreed, self.count))
 
         if not self.pool_is_evidence:
             said += (". Only %d %s(s) were eligible, no more than the pool "
@@ -583,23 +518,18 @@ def eligible(store, revit=None, domain=None, kind=None, statuses=OFFERABLE,
 
 
 # ---------------------------------------------------------------------------
-# Stage 4b - read the shortlist again, if there is anything to read it with
+# What ran - the backends that produced this answer
 # ---------------------------------------------------------------------------
 
 def ran(ranked):
     """Which optional backends ACTUALLY RAN, read off the candidates.
 
     NOT "WHAT IS INSTALLED", and the difference is a whole class of wrong
-    sentence. heron_brain asked EMBED.backend() and RERANK.backend() AFTER the
-    search and reported the answers as though they described the run, so:
-
-      * a warm-up finishing between find() and that question labelled a
-        lexically-answered query "model"
-      * a re-ranker that was loaded and returned NO scores - the shortlist too
-        short, the model declining - was reported as having answered
-
-    Both are a sentence about the machine wearing the words of a sentence
-    about the answer. Found by a review 2026-09-11, on a line written to fix
+    sentence. heron_brain asked EMBED.backend() AFTER the search and reported
+    the answer as though it described the run, so a warm-up finishing between
+    find() and that question labelled a lexically-answered query "model" - a
+    sentence about the machine wearing the words of a sentence about the
+    answer. Found by a review 2026-09-11, on a line written to fix
     the identity-route half of exactly this.
 
     A rank is the evidence, because a rank only exists if the route produced
@@ -609,7 +539,6 @@ def ran(ranked):
     another, and nothing finishing later can change it.
     """
     near = [c for c in ranked if c.vector_rank is not None]
-    rerank_ran = any(getattr(c, "rerank_rank", None) is not None for c in ranked)
     out = {}
     if near:
         out["nearness"] = near[0].vector_backend or "not said"
@@ -620,157 +549,7 @@ def ran(ranked):
         out["nearness_why"] = ("nothing in this answer carries a nearness "
                                "rank, so the meaning route contributed "
                                "nothing to it")
-    if rerank_ran:
-        # It scored this shortlist a moment ago, so there is nothing to ask.
-        out["rerank"] = RERANK.CROSS_ENCODER
-        out["rerank_why"] = ("it read each (question, passage) pair of this "
-                             "shortlist together and re-ordered it")
-    else:
-        out["rerank"] = "not used"
-        out["rerank_why"] = ("this shortlist was not re-read - either no "
-                             "re-ranker is installed, or the one installed "
-                             "returned no scores for it")
     return out
-
-
-def _fragment_passage(candidate):
-    """What a re-ranker is given about a fragment: its identity, its first
-    declared utterances, its capability and its domain.
-
-    THE UTTERANCES COME FROM THE STORE, NEVER FROM THE LIBRARY. They live in a
-    card's YAML, and reading them here would mean FRAG.load_all() - the whole
-    library, read to describe twenty rows - on every question. So
-    heron_search.index writes them into `rerank_said` once, capped by
-    heron_rerank.passage_said, and _carry_said copies them onto the shortlist.
-
-    UNTIL 2026-10 THIS READ THE IDENTITY, CAPABILITY AND DOMAIN ALONE, and its
-    own text said: if a measurement ever shows the utterances change a
-    re-ranked order, carry them into the store. Rows 5b-467, 5b-483, 5b-484,
-    5b-485 and 5b-510 measured it - a sentence a card declared reached it by
-    identity, and its paraphrases went elsewhere on the owner's PC, so PROVEN
-    identities were reworded to buy them back.
-
-    EVERY VALUE IS GUARDED, because this runs BEFORE anything knows whether a
-    re-ranker exists - so a null column here would raise on every query on
-    every machine, including the ones with nothing installed. That is the one
-    way this seam could break R-41 while appearing to honour it.
-    """
-    row = candidate.row
-    said = getattr(candidate, "said", "") or ""
-    identity = row["semantic_identity"] or ""
-    if said:
-        identity = "%s. %s." % (identity, said) if identity else said + "."
-    return " ".join([identity, row["capability"] or "",
-                     row["domain"] or ""]).strip()
-
-
-def _carry_said(store, ranked):
-    """Copy each shortlisted candidate's `rerank_said` onto it, from the store.
-
-    Only the shortlist the re-ranker will read, in one query. A store indexed
-    before `rerank_said` existed has no table, and then every passage is the
-    identity, capability and domain it always was - nothing raises.
-    """
-    head = ranked[:RERANK.SHORTLIST]
-    if not head:
-        return
-    try:
-        got = store.execute(
-            "SELECT id, said FROM rerank_said WHERE id IN (%s)"
-            % ",".join("?" * len(head)), [c.id for c in head]).fetchall()
-    except sqlite3.OperationalError as exc:
-        # Only the table not being there yet. Anything else is a broken store,
-        # and a passage quietly short of its sentences is D-52's plausible
-        # wrong answer.
-        if "no such table" not in str(exc):
-            raise
-        return
-    by_id = dict((r["id"], r["said"]) for r in got)
-    for candidate in head:
-        candidate.said = by_id.get(candidate.id) or ""
-
-
-def _chunk_passage(candidate):
-    """What a re-ranker is given about a clause - its heading path and its text.
-
-    THE TEXT IS UNTRUSTED AND THAT IS STILL FINE HERE (Golden Rule 19). An
-    ingested document is DATA, never instruction, and a cross-encoder cannot be
-    instructed: it consumes a pair and emits one number. There is no channel
-    through which a clause reading "ignore previous instructions" can do
-    anything but be scored. The screening in heron_context.py exists because
-    that text reaches a MODEL THAT WRITES; this one only ranks.
-    """
-    row = candidate.row
-    return " ".join([row["heading_path"] or "", row["text"] or ""]).strip()
-
-
-def _rerank(text, ranked, passage):
-    """Re-order the top ~20 by reading each pair. Returns the list, re-ordered.
-
-    THE SLICE HAPPENS HERE AND NOT AT THE CALLER, so the caller cannot ask for
-    the whole library to be re-ranked by passing a larger list. docs/05 s4.4
-    says top ~20; heron_rerank.SHORTLIST is that number and this is the only
-    place it is applied.
-
-    RE-RANKING RUNS BEFORE THE CUT TO `limit`, which is the entire point. With
-    limit=5 and a re-rank of the top five, fusion's 7th can never become the
-    answer - and fusion's 7th becoming the answer is the improvement a
-    cross-encoder is installed for.
-
-    WITH NO RE-RANKER THIS RETURNS THE LIST IT WAS GIVEN, unchanged and in the
-    same object order. Not a fallback ordering - the same ordering. R-41: the
-    absence makes Heron slower to be right, never different-but-worse.
-
-    THE PASSAGES ARE BUILT BEFORE ANYTHING KNOWS WHETHER A BACKEND EXISTS, so
-    on most machines twenty strings are built and thrown away. MEASURED rather
-    than tidied: 0.000004 s over twenty candidates against 0.0074 s for a whole
-    retrieve(), which is 0.05% of a query at 360 fragments. Asking backend()
-    first would save that and put a SECOND place in this file that decides
-    whether a re-ranker is present, which is the more expensive of the two.
-    """
-    if len(ranked) < 2:
-        return ranked
-
-    head = ranked[:RERANK.SHORTLIST]
-    tail = ranked[RERANK.SHORTLIST:]
-
-    got = RERANK.scores(text, [passage(c) for c in head])
-    if got is None:
-        return ranked
-
-    for candidate, value in zip(head, got):
-        candidate.rerank_score = value
-
-    scored = [c for c in head if c.rerank_score is not None]
-    if not scored:
-        return ranked
-    unscored = [c for c in head if c.rerank_score is None]
-
-    # The fused score is the tiebreak, then the id - the same shape the fusion
-    # sort uses. A cross-encoder returning the same score for two passages has
-    # no opinion about their order, and the route that did have one should keep
-    # the last word rather than handing it to the alphabet.
-    #
-    # THE USAGE NUDGE (D-191) IS IN THAT TIEBREAK, because c.score is the fused
-    # score plus it. So where a re-ranker sets the order, the nudge decides only
-    # between clauses the cross-encoder scored the same - "settles a tie, never
-    # beats a better match" on the order that is actually shown. It is NOT
-    # added to the cross-encoder's score: that score is on a model's own scale,
-    # and half a fusion rank means nothing there. Found on the owner's PC,
-    # where the re-ranker is installed, 2026-11-20.
-    scored.sort(key=lambda c: (-c.rerank_score, -c.score, c.id))
-    for position, candidate in enumerate(scored, 1):
-        candidate.rerank_rank = position
-        # THE SIZE OF WHAT IT READ, RECORDED ON EACH SURVIVOR. find() builds
-        # its Contest from the list AFTER the cut to `limit`, so a report that
-        # said "the shortlist it was given" was describing five candidates
-        # while the re-ranker had read twenty. Found by a review 2026-09-11.
-        candidate.rerank_pool = len(head)
-
-    # The tail keeps its fusion order and stays behind everything the re-ranker
-    # looked at. It was never scored, so promoting any of it would be inventing
-    # an opinion nothing expressed.
-    return scored + unscored + tail
 
 
 # ---------------------------------------------------------------------------
@@ -865,10 +644,6 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
                     key=lambda c: (-c.score,
                                    c.keyword_rank if c.keyword_rank else 999,
                                    c.id))
-
-    # -- stage 4b: read the shortlist again, if anything can ----------------
-    _carry_said(store, ranked)
-    ranked = _rerank(text, ranked, _fragment_passage)
 
     return ranked[:limit], excluded
 
@@ -1065,7 +840,6 @@ def documents(store, text, limit=5, pool=20):
                     key=lambda c: (-c.score,
                                    c.keyword_rank if c.keyword_rank else 999,
                                    c.id))
-    ranked = _rerank(text, ranked, _chunk_passage)
 
     return ranked[:limit], len(allowed)
 
@@ -1181,7 +955,6 @@ def find_documents(store, text, limit=5):
                      "score": c.score, "why": c.why(),
                      "words_score": c.keyword_score,
                      "nearness_score": c.vector_score,
-                     "rerank_score": c.rerank_score,
                      # D-191: only where the modeller has said it helped.
                      **({"usage": c.usage} if c.usage else {})}
                     for c in ranked],
@@ -1377,8 +1150,7 @@ def find(store, text, revit=None, limit=5, ceiling=None):
         candidates=[{"id": c.id, "capability": c.row["capability"],
                      "status": c.row["status"], "score": c.score,
                      "why": c.why(), "words_score": c.keyword_score,
-                     "nearness_score": c.vector_score,
-                     "rerank_score": c.rerank_score} for c in ranked],
+                     "nearness_score": c.vector_score} for c in ranked],
         note=note, contest=contest,
         backends=ran(ranked))
 
@@ -1444,15 +1216,6 @@ def main(argv):
         print("Asked:  %s%s" % (text, "   (Revit %s)" % revit if revit else ""))
         print("Route:  %s" % answer.route)
 
-        # WHICH RE-RANKER ANSWERED, AND ON MOST MACHINES THAT IS "absent".
-        #
-        # Stage 7's done-when, word for word: a run with the package
-        # uninstalled still answers AND SAYS IT IS NOT USING IT. An optional
-        # quality step that degrades in silence is indistinguishable from one
-        # that is working, and the person who most needs to know is the one
-        # comparing two machines' answers.
-        rerank_name, rerank_why = RERANK.backend()
-        print("Re-rank: %s - %s" % (rerank_name, rerank_why))
         print("Best:   %s" % (answer.fragment_id or "nothing"))
         print("        %s" % answer.note)
         for c in answer.candidates:
