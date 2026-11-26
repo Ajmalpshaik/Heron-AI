@@ -177,9 +177,10 @@ purpose: >
      which also names every dimension in every view that a delete takes or
      cuts) on exactly what will go, then name to the modeller every tag and
      dimension that goes with it, every dimension cut, and the count,
-     and wait for their yes for that one delete (Article 7). Then
-     DELETE_ELEMENTS (DRAFT since its version 3 of 2026-11-23, which names every
-     element a delete takes by category and name) with expect_from naming the select that found
+     (`goesTotal`), and wait for their yes for that one delete (Article 7).
+     Then DELETE_ELEMENTS (DRAFT since its version 4 of 2026-11-26, which
+     stops before anything goes when Revit's own count is not the one the yes
+     named) with expectedCount= that `goesTotal` and expect_from naming the select that found
      them - never without it, which deletes whatever is selected in the
      window.
 

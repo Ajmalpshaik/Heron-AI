@@ -381,7 +381,10 @@ namespace Heron.Revit.Addin
         /// <param name="total">How many the box listed.</param>
         /// <param name="selected">How many of them were selected on screen.</param>
         /// <param name="answer">Deleted, DontDelete, Closed or TooLate.</param>
-        public static string Asking(int total, int selected, string answer)
+        /// <param name="window">The time there was to answer, when known - said on
+        /// a box that closed by itself (row 5b-1992).</param>
+        public static string Asking(int total, int selected, string answer,
+                                    TimeSpan? window = null)
         {
             var asked = "The modeller was asked in Revit whether to delete " + Count(total)
                       + " - listed by category, "
@@ -396,9 +399,54 @@ namespace Heron.Revit.Addin
                 return asked + "pressed Delete only after Heron had stopped waiting for the answer, "
                      + "which deletes nothing.";
             if (answer == TimedOut)
-                return asked + "did not answer in time, so the box closed by itself, which deletes "
-                     + "nothing.";
+                return asked + "did not answer in time"
+                     + (window.HasValue && window.Value > TimeSpan.Zero
+                           ? " - the box had " + Duration(window.Value) + " to be answered"
+                             + " (revit.askTimeoutSeconds in heron.config)"
+                           : "")
+                     + ", so the box closed by itself, which deletes nothing: TIMED OUT, NOT "
+                     + "ANSWERED - nothing was made and nothing was deleted.";
             return asked + "closed the box, which deletes nothing.";
+        }
+
+        /// <summary>A time to answer the way the box's sentences say it: "5 minutes", "45 seconds".</summary>
+        public static string Duration(TimeSpan span)
+        {
+            var seconds = (int)Math.Round(span.TotalSeconds);
+            if (seconds >= 120 && seconds % 60 == 0)
+                return (seconds / 60).ToString(CultureInfo.InvariantCulture) + " minutes";
+            if (seconds >= 120)
+                return Math.Round(span.TotalMinutes, 1).ToString("0.#", CultureInfo.InvariantCulture)
+                     + " minutes";
+            return seconds.ToString(CultureInfo.InvariantCulture) + (seconds == 1 ? " second" : " seconds");
+        }
+
+        /// <summary>
+        /// ROW 5b-1992: what a preview that deletes says first. When it is
+        /// kept, Revit's Delete box comes up for these - by category, never by
+        /// id, because the preview's ids of anything the change made itself do
+        /// not exist once it is rolled back - and nothing is deleted until the
+        /// modeller presses Delete. With Ask to Delete off there is no box and
+        /// the chat's word is the yes (D-197), and the sentence says that.
+        /// </summary>
+        /// <param name="total">How many Revit counted deleted in the preview.</param>
+        /// <param name="byCategory">"12 Curtain Panels, 30 Curtain Wall Mullions" - those back in the model.</param>
+        /// <param name="madeAndGone">How many the change itself made and removed again.</param>
+        /// <param name="asksInRevit">Is Ask to Delete on?</param>
+        public static string Ahead(int total, string byCategory, int madeAndGone, bool asksInRevit)
+        {
+            var listed = string.IsNullOrEmpty(byCategory) ? "" : " - " + byCategory;
+            var made = madeAndGone <= 0 ? ""
+                : " (" + madeAndGone.ToString("N0", CultureInfo.InvariantCulture)
+                  + (madeAndGone == 1 ? " of them is" : " of them are")
+                  + " made and removed again by the change itself, so not in the model now)";
+            var head = "Kept, this change would also delete " + Count(total) + listed + made + ". ";
+            return asksInRevit
+                ? head + "So when it is sent to keep, Revit shows Heron's Delete box for them and "
+                  + "deletes nothing until the modeller presses Delete - tell the modeller before "
+                  + "sending it, so someone is there to answer."
+                : head + "Ask to Delete is off in Heron's Settings, so Revit will not ask: the "
+                  + "chat's word is the yes - ask the modeller in words before sending it (D-197).";
         }
 
         /// <summary>

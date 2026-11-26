@@ -61,3 +61,32 @@ v5) - all **PASS**, drafts waiting for the owner's signature.
 | QP8, run 2026-11-26 | **PASS** - `SET_ELEMENT_MATERIAL` material *Glass*, the family in front: `refused` *"This is a family. In the Family Editor a form's material is LINK_FAMILY_PARAMETER and a family type's Material parameter is SET_FAMILY_TYPE_VALUES - nothing was changed"*, `writtenIds` 0. (Its read-only setup step did not bind its values; the refusal comes before any form is read.) |
 
 **Signed 2026-11-26 by Ajmal PS** (his word in chat, "6 sing"; signature put on by the session): `add-family-model-text` version 3, `create-family-freeform-solid` version 2 and `select-by-material` version 5, all three cards PROVEN. `add-family-connector` version 8 is NOT signed - its negative threw (row 5b-2051, issue #1428).
+
+### What QP1 and QP2 owe now - `ADD_FAMILY_CONNECTOR` version 9, 2026-11-26 (row 5b-2051, issue [#1428](https://github.com/Ajmalpshaik/Heron-AI/issues/1428))
+
+**Fixed in the code, compiled for 2020 to 2027, never run in Revit.** Version 9 makes the connector and checks its fit inside a SubTransaction. A port that will not fit its face or ring opening is rolled back and comes back through `refused`, with the same words and nothing kept. Version 8 threw. Version 9 changed the card's C#, so the results above are version 8's. They do not count for version 9's proof.
+
+Owed, in the same scratch family `pt-ahu` on Revit 2020 - re-run [`qp-connector-v8-...`](../../tools/jobs/qp-connector-v8-revit2020-2026-11-26.yaml) as it stands (the file keeps its name; its comments say version 9):
+
+| Check | Owed on version 9 | Pass looks like |
+|---|---|---|
+| QP1 | The positive again - the ring with 205 and 205 (the job's positive leg); the 32 mm Sanitary pipe connector on Condensate_Drain_Diameter; the flex of Supply_Air_Width to 200 | Made, sized by both parameters, *"2 and 2 mm clear each side"*; the pipe connector as on 2026-11-26; the connector reads 200 wide after the flex. **The job file holds only the duct leg** - the pipe leg needs one added, with the drain stub's full id read from the family (recorded above only as `...-00001b3e`) |
+| QP2 (i) | The ring with 215 and 205 - the job's negative leg; then the same values once by `revit_change` on `pt-ahu`, the owner pressing Discard | Verdict PASS, the negative leg answered through **`refused`** - *"... would not fit inside that opening either way round. NOTHING from this call was kept."* - never `fragment_threw`. The rolled-back job cannot show that version 9's own rollback left nothing (the host takes the whole run back anyway); the live call can - its answer says nothing changed, no element added |
+| QP2 (ii) | A whole 400 x 300 neck face with 390 and 290 | Still **NOT RUN** - `pt-ahu` has no whole-face neck; it needs a family that has one. Refused the same way, *"On a whole face the port must be the face's own size"* |
+| QP2 (iii) | A Duct Size parameter on the pipe stub | Owed again on version 9 (its refusal comes before the connector is made, so it should read as on 2026-11-26). Not in the job file - it goes with the pipe leg above |
+
+Nothing above is struck: every check here is owed again on version 9.
+
+### Results, later 2026-11-26 - version 9, Revit 2020, session 32484, add-in file `df0d401c52ca05f4`
+
+Run from this pull request's head `17cf1d586`, on the same scratch `pt-ahu`, rolled back.
+
+| Row | Result |
+|---|---|
+| QP2 (i), run again 2026-11-26 on version 9 | **PASS** - the job [`qp-connector-v8-...`](../../tools/jobs/qp-connector-v8-revit2020-2026-11-26.yaml), negative leg: `refused` *"The opening of the ring face on "Supply Air Face" is 209 x 209 mm, and "Supply_Air_Width" and "Supply_Air_Height" hold 215 and 205 mm - a port sized by them would not fit inside that opening either way round. NOTHING from this call was kept."*, `connector` empty, no `fragment_threw`. The by-hand `revit_change` half was not done. |
+| QP2 (iii), run again 2026-11-26 on version 9 | **PASS** - *"Nothing was made. "Supply_Air_Width" is a Duct Size parameter, which sizes a duct connector, not a pipe one. A Length parameter sizes any connector."* |
+| QP1, positive leg of the same job on version 9 | Made as before - 205 x 205, centred in the 209 x 209 opening, `sizedBy` both Duct Size parameters. |
+
+**Signed 2026-11-26 by Ajmal PS** (his typed word in chat, "Yes, sign it"; signature put on by the session):
+`add-family-connector` version 9, card PROVEN, on that job (QP1 positive, QP2 (i) negative). Groups PO and OT's
+connector rows and QP2 (ii) are still owed.
