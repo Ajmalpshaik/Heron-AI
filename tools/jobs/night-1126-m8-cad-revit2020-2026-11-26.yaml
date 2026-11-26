@@ -1,0 +1,17 @@
+# Night 2026-11-26, round M8 - CAD card, Revit 2020. EVERY RUN IS ROLLED BACK.
+# The DWG is %TEMP%\heron-work\night-1126\exports\Typical Room WSHP.dwg, exported tonight from the 3D view
+# "Typical Room WSHP" of "Night Rig 1126" through a DWG setup "N1126 DWG" (manage-export-setups, kept).
+model: "Night Rig 1126 (scratch copy of the Revit 2020 MEP sample), Revit 2020"
+
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+
+jobs:
+  - fragment: convert-cad-to-directshape
+    write: true
+    setup: [import-cad]
+    keep-chain: true
+    expect: created
+    set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/night-1126/exports/Typical Room WSHP.dwg", viewName: "Level 1 HVAC Plan", placement: "origin", thisViewOnly: false, category: "Generic Models"}
+    negative-set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/night-1126/exports/Typical Room WSHP.dwg", viewName: "Level 1 HVAC Plan", placement: "origin", thisViewOnly: true, category: "Generic Models"}

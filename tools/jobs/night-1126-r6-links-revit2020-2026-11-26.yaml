@@ -1,0 +1,19 @@
+# Night 2026-11-26, round 6 - link cards, Revit 2020. "Night Rig 1126" now holds ONE kept Revit link,
+# "Night Link Source.rvt" (a copy of Samples\Arch Link Model.rvt), made by link-files' try-once - it reads
+# NOT LOADED (reload-links' try-once was refused by Revit inside a transaction). "Night Tag" has no links.
+model: "Night Rig 1126 + Night Tag (scratch copies), Revit 2020"
+
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+
+jobs:
+  - fragment: list-linked-models
+    expect: summary
+    negative-in: "Night Tag"
+
+  - fragment: check-link-coordinates
+    expect: coordinates
+    set: {toleranceMm: 0}
+    negative-in: "Night Tag"
+    negative-set: {toleranceMm: 0}

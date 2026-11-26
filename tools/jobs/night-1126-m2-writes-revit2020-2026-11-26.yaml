@@ -1,0 +1,43 @@
+# Night 2026-11-26, round M2 - model-changing DRAFT cards, Revit 2020. EVERY RUN IS ROLLED BACK.
+# Scratch model "Night Rig 1126" (copy of Samples\rme_advanced_sample_project.rvt). Filter "Domestic"
+# is one of its 21 view filters (report-view-filters, round 1).
+model: "Night Rig 1126 (scratch copy of the Revit 2020 MEP sample), Revit 2020"
+
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+
+jobs:
+  - fragment: apply-view-filter
+    write: true
+    expect: applied
+    set: {view: "{3D}", filter: "Domestic", overrides: "projection-line-colour=255,0,0", visible: "true", enabled: "", keepOtherSettings: "", solidFill: ""}
+    negative-set: {view: "Project View", filter: "Domestic", overrides: "projection-line-colour=255,0,0", visible: "true", enabled: "", keepOtherSettings: "", solidFill: ""}
+
+  - fragment: set-view-filter-categories
+    write: true
+    expect: changed
+    set: {filterNames: "Domestic", categories: "Pipes, Pipe Fittings", newName: "", parameterName: "", matchValue: ""}
+    negative-set: {filterNames: "Domestic", categories: "Walls", newName: "", parameterName: "", matchValue: ""}
+
+  - fragment: set-element-material
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: writtenIds
+    set: {category: "Columns", levelId: "Level 1", material: "Glass", materialParameter: ""}
+    negative-set: {category: "Walls", levelId: "Level 1", material: "Glass", materialParameter: ""}
+
+  - fragment: auto-size-mep
+    write: true
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: sized
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", targetVelocity: 5, roundSizesMm: "100,150,200,250,300,400", rectSizesMm: "200,300,400,500", holdWidth: false}
+    negative-set: {category: "Air Terminals", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", targetVelocity: 5, roundSizesMm: "100,150,200,250,300,400", rectSizesMm: "200,300,400,500", holdWidth: false}
+
+  - fragment: set-mep-justification
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: set
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", horizontalOffsetMm: 50, verticalOffsetMm: 50}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", horizontalOffsetMm: 0, verticalOffsetMm: 0}

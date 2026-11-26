@@ -1,0 +1,54 @@
+# Night 2026-11-26, round M5 - model-changing DRAFT cards, Revit 2020. EVERY RUN IS ROLLED BACK.
+# The curtain-wall cards make their own wall in setup (create-wall "Curtain Wall : Standard", then
+# add-curtain-grid-lines), on Level 1 at Y -60000 where the sample has nothing; the negative makes a
+# basic wall there instead. Sheets: E101, E201, E301, E601, M100 ... (find-sheets).
+model: "Night Rig 1126 (scratch copy of the Revit 2020 MEP sample), Revit 2020"
+
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+
+jobs:
+  - fragment: edit-curtain-grid-segments
+    write: true
+    setup: [create-wall, add-curtain-grid-lines]
+    expect: changed
+    set: {level: "Level 1", wallType: "Curtain Wall: Standard", points: "0,-60000,0; 9000,-60000,0", height: "3000", structural: "false", direction: "vertical", positions: "equal 6", lineAt: "3000", segmentsAt: "all", action: "remove"}
+    negative-set: {level: "Level 1", wallType: "Basic Wall: MW 17.5", points: "0,-60000,0; 9000,-60000,0", height: "3000", structural: "false", direction: "vertical", positions: "equal 6", lineAt: "3000", segmentsAt: "all", action: "remove"}
+
+  - fragment: move-curtain-grid-line
+    write: true
+    setup: [create-wall, add-curtain-grid-lines]
+    expect: moved
+    set: {level: "Level 1", wallType: "Curtain Wall: Standard", points: "0,-60000,0; 9000,-60000,0", height: "3000", structural: "false", direction: "vertical", positions: "equal 6", lineAt: "3000", move: "300"}
+    negative-set: {level: "Level 1", wallType: "Basic Wall: MW 17.5", points: "0,-60000,0; 9000,-60000,0", height: "3000", structural: "false", direction: "vertical", positions: "equal 6", lineAt: "3000", move: "300"}
+
+  - fragment: set-curtain-wall-embed
+    write: true
+    setup: [create-wall]
+    expect: typesChanged
+    set: {level: "Level 1", wallType: "Curtain Wall: Standard", points: "0,-60000,0; 9000,-60000,0", height: "3000", structural: "false", embed: "yes"}
+    negative-set: {level: "Level 1", wallType: "Basic Wall: MW 17.5", points: "0,-60000,0; 9000,-60000,0", height: "3000", structural: "false", embed: "yes"}
+
+  - fragment: create-from-room-boundaries
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: finishWalls
+    set: {category: "Rooms", levelId: "Level 3", hostType: "Basic Wall: MW 11.5", heightAboveLevel: 2400, baseOffset: 0, rooms: "", joinToHost: false}
+    negative-set: {category: "Sprinklers", levelId: "Level 2", hostType: "Basic Wall: MW 11.5", heightAboveLevel: 2400, baseOffset: 0, rooms: "", joinToHost: false}
+
+  - fragment: manage-sheet-sets
+    write: true
+    setup: [find-sheets]
+    keep-chain: true
+    expect: memberCount
+    setup-set: {numberOrNameContains: "E"}
+    negative-setup-set: {numberOrNameContains: "ZZZ"}
+    set: {setName: "N1126 SET", mode: "create", newName: ""}
+    negative-set: {setName: "N1126 SET", mode: "create", newName: ""}
+
+  - fragment: load-family
+    write: true
+    expect: typesAdded
+    set: {familyPath: "C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Lighting/Architectural/Internal/M_Downlight - Round - LED.rfa", reload: false, overwriteValues: false}
+    negative-set: {familyPath: "C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Lighting/Architectural/Internal/No Such Family.rfa", reload: false, overwriteValues: false}

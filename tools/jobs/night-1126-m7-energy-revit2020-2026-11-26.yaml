@@ -1,0 +1,22 @@
+# Night 2026-11-26, round M7 - energy cards, Revit 2020. EVERY RUN IS ROLLED BACK.
+# Round M6: run-systems-analysis threw "A valid energy model is required" - so here the energy model is
+# made first, inside the same rolled-back run. Energy Settings' analysis mode was set to building
+# elements and KEPT (set-energy-settings, PROVEN, ADMIN) and the scratch model saved, 2026-11-26.
+model: "Night Rig 1126 + Night Family (scratch copies of the Revit 2020 samples), Revit 2020"
+
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+
+jobs:
+  - fragment: create-energy-model
+    write: true
+    expect: energyModel
+    negative-in: "Night Family"
+
+  - fragment: run-systems-analysis
+    write: true
+    setup: [create-energy-model]
+    expect: reportView
+    set: {reportName: "N1126 Systems Report", weatherFile: "", workflowFile: ""}
+    negative-set: {reportName: "Level 1 HVAC Plan", weatherFile: "", workflowFile: ""}
