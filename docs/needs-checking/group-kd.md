@@ -61,14 +61,14 @@ file; until it is filled in the run should stop at the setup - expected, NOT RUN
 | **KD4** | *Two beams over one column.* One column and two beams framing into its top, the three selected | `changed` 0; the column in `left`, the report naming both beams |
 | **KD5** | *A second run, and a detach.* KD2's positive, then the same selection again, then the columns with `detach=true`, all in one rolled-back group | Second run: `changed` 0, every column in `alreadyDone`. Detach: each *top detached from Floors <id>* |
 | **KD6** | *Kept, through `try-once`, on the modeller's yes.* KD2's positive on a saved copy, a section through the columns in front | Keep or Discard; afterwards Revit's own Modify Column shows Detach Top/Base available on the same columns - the second route - and one Ctrl+Z detaches them all |
-| **KD7** | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The four sentences reach this card by identity. Any sentence the re-ranker moves to this card from another is a row of its own |
+| ~~**KD7**~~ | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The four sentences reach this card by identity. Any sentence the re-ranker moves to this card from another is a row of its own **CLOSED 2026-11-26** - D-201 (2026-11-26) removed the `+rerank` backends, so the run this row asked for on `model+rerank` can no longer be made anywhere, and the owner's PC now ranks on `model`. The run on `model` that answers its look-for is on record in the routing paragraph below, measured 2026-11-01 in a cloud container; it was not made again on 2026-11-26, and this is not a run on the PC. |
 
 **Then sign**, on the owner's word only: `python brain/heron_validate.py accept attach-columns --by "Ajmal
 PS"` once its positive and negative pass, and `heron-status` set to PROVEN in the same change. A row that
 fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here - through `brain/heron_retrieve.py` and
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since D-201 (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on - through `brain/heron_retrieve.py` and
 `tools/check-routing.py` on a scratch store each, against this tree with and without the card. The four
 sentences reach this card by identity on 2020, 2024 and 2025; without it they reached
 `PLACE_COLUMN_REBAR`, `COPE_FRAMING` and `PLACE_STRUCTURAL_FAMILY`, ranked. Three undeclared phrasings -

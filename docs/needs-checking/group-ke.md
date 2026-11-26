@@ -61,14 +61,14 @@ line below with `HERON_CLIENT_ID=ajmal-pc`, `--session <process id>` when two Re
 | **KE5** | *Between two bars.* Two straight bars drawn by hand end to end in one host, both selected, `between=true`; then the same two bars moved 100 mm apart | `placed` 1, the coupler reading back on both ends. Moved apart: `placed` 0, *no other selected bar meets it end to end* |
 | **KE6** | *Kept, through `try-once`, on the modeller's yes.* KE2's positive on a saved copy, a section through C1 in front | Keep or Discard; afterwards Revit's own Rebar Coupler on another bar end matches - the second route - and one Ctrl+Z takes every coupler back |
 | **KE7** | *Revit 2026 or 2027.* KE2 again | The same answer. `GetCenterlineCurves` renamed a parameter at 2026; the call is positional, so nothing should differ |
-| **KE8** | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The three sentences reach this card by identity. Any sentence the re-ranker moves to this card from another is a row of its own |
+| ~~**KE8**~~ | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The three sentences reach this card by identity. Any sentence the re-ranker moves to this card from another is a row of its own **CLOSED 2026-11-26** - D-201 (2026-11-26) removed the `+rerank` backends, so the run this row asked for on `model+rerank` can no longer be made anywhere, and the owner's PC now ranks on `model`. The run on `model` that answers its look-for is on record in the routing paragraph below, measured 2026-11-01 in a cloud container; it was not made again on 2026-11-26, and this is not a run on the PC. |
 
 **Then sign**, on the owner's word only: `python brain/heron_validate.py accept place-rebar-couplers --by
 "Ajmal PS"` once its positive and negative pass, and `heron-status` set to PROVEN in the same change. A row
 that fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here - through `brain/heron_retrieve.py` and
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since D-201 (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on - through `brain/heron_retrieve.py` and
 `tools/check-routing.py` on a scratch store each, against this tree with and without the card. The three
 sentences reach this card by identity on 2020 and 2024; without it they ranked `PLACE_BEAM_REBAR` and
 `PLACE_COLUMN_REBAR` first. Three undeclared phrasings - *"add a coupler to this rebar"*, *"couple these

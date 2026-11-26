@@ -60,14 +60,14 @@ stop there, before the foundation runs - expected, NOT RUN. Every line below wit
 | **JZ5** | *A curtain wall.* One curtain wall, selected by hand | **Record** whether a foundation is made and read back, or the wall named *a curtain wall ... NOT made - Revit refused* and Revit's words. Either is the card working; made-then-missing is a defect |
 | **JZ6** | *A stacked wall.* One stacked wall, then one of its members Tab-selected | **Record** the same for each |
 | **JZ7** | *Kept, through `try-once`, on the modeller's yes.* Make, as JZ2's positive, on a saved copy | Keep or Discard; afterwards a Structural Foundation schedule shows one new wall foundation row per wall `report` names - the second route |
-| **JZ8** | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The three sentences reach this card by identity; *"place the pad footings"* still reaches `PLACE_STRUCTURAL_FAMILY`. Any sentence the re-ranker moves to this card from another is a row of its own |
+| ~~**JZ8**~~ | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The three sentences reach this card by identity; *"place the pad footings"* still reaches `PLACE_STRUCTURAL_FAMILY`. Any sentence the re-ranker moves to this card from another is a row of its own **CLOSED 2026-11-26** - D-201 (2026-11-26) removed the `+rerank` backends, so the run this row asked for on `model+rerank` can no longer be made anywhere, and the owner's PC now ranks on `model`. The run on `model` that answers its look-for is on record in the routing paragraph below, measured 2026-11-01 in a cloud container; it was not made again on 2026-11-26, and this is not a run on the PC. |
 
 **Then sign**, on the owner's word only: `python brain/heron_validate.py accept create-wall-foundation --by
 "Ajmal PS"` once its positive and negative pass, and `heron-status` set to PROVEN in the same change. A
 row that fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here - through `heron_brain.lookup` on a scratch
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since D-201 (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on - through `heron_brain.lookup` on a scratch
 store each, against this tree with and without the card, on Revit 2024 and 2025. The three sentences above
 reach this card by identity; without it they reached `PLACE_FOOTING_REBAR` (*"put a wall footing under
 these walls"*) and `PLACE_AREA_REINFORCEMENT` (the other two) - two writes that reinforce, ranked. Six
