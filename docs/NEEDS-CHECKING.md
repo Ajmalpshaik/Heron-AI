@@ -1771,3 +1771,7 @@ Step 6 is finished, and not before. At that point:
 ## Group RB - no office's name built into Heron: starter materials with no default prefix, and two material refusals and the view-filter refusals with a neutral example - DRAFT until proved (2026-11-26)
 
 **Its own file:** [`needs-checking/group-rb.md`](needs-checking/group-rb.md)
+
+## Group RD - four reports given an answer that can read empty: DESCRIBE_BLANK_PARAMETERS v2, REPORT_ELEMENT_DEPENDENCIES v3, REPORT_CONSTRAINTS v3, REPORT_LEVEL_ELEVATIONS v8 - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-rd.md`](needs-checking/group-rd.md)

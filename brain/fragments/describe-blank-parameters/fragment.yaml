@@ -9,7 +9,13 @@ semantic-identity: "turns blank and absent parameter results into findings"
 kind: action
 domain: revit.qa
 capability: DESCRIBE_BLANK_PARAMETERS
-version: 1
+# VERSION 2 (2026-11-26, FRAGMENT-ISSUES row 5b-2067, issue #1477) - `flagged`,
+# a count beside `findings`. Version 1 answered in sentences alone, and a phase
+# of nothing but prose is never read as empty (D-51), so its negative - every
+# element has a value, `findings` 0 item(s) - was judged "returned content" on
+# Revit 2020 and the card could not be proved. impl/ changed, so still DRAFT,
+# owing NEEDS-CHECKING Group RD (D-30).
+version: 2
 source: OFFICIAL
 risk: ANALYZE
 
@@ -34,6 +40,12 @@ contract:
   provides:
     - name: findings
       type: IList<string>
+    - name: flagged
+      # VERSION 2. How many elements the findings name - `blank` and `absent`
+      # together. 0 exactly when `findings` is empty, so the empty leg D-30
+      # asks for has a number to read (row 5b-2067).
+      role: result
+      type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -9,6 +9,16 @@ semantic-identity: "whether this model's level heights can be trusted in a calcu
 kind: action
 domain: revit.datums
 capability: REPORT_LEVEL_ELEVATIONS
+# VERSION 8 (2026-11-26, FRAGMENT-ISSUES row 5b-2070, issue #1480) - A FILE WITH
+# NO LEVELS LEAVES `storeys` EMPTY. Version 7 told an area tag family on Revit
+# 2020 "Every level is marked Building Story - 0 level(s) read: (this model has
+# no levels)" - every level ticked, of none - and that one line was all that kept
+# the run from reading empty. With no level read nothing is written there;
+# `findings` already says "0 level(s)". Every other answer is version 7's. HOW
+# THE CARD IS SIGNED IS UNCHANGED: D-204's by-hand reading still stands for a
+# model that has levels. impl/ changed, so still DRAFT, owing NEEDS-CHECKING
+# Group RD beside Group RA (D-30).
+#
 # VERSION 7 (2026-11-26, row 5b-1878 (C) and D-207, issue #1088) - THE ONE
 # DATUM TOOL. CHECK_DATUMS_AGAINST_LINK is merged in on the owner's word: one
 # tool for levels and grids in this model, in a linked model, and
@@ -21,7 +31,7 @@ capability: REPORT_LEVEL_ELEVATIONS
 # whose Building Story setting would not read, was already counted and named in
 # `storeys`; it is now declared, so a caller sees how many were passed over.
 # Still DRAFT, as version 5 was (D-30).
-version: 7
+version: 8
 source: OFFICIAL
 risk: READ
 
@@ -257,6 +267,8 @@ contract:
       # then one line per UNMARKED level with the count of model elements on
       # it. Every level marked is said in words with the levels named - never
       # a bare zero. Text, because it is read by a person, not chained.
+      # VERSION 8 (row 5b-2070): EMPTY in a document with no levels - a family
+      # file - which version 7 told "every level is marked".
       role: result
       type: IList<string>
     - name: unreadable
@@ -461,8 +473,10 @@ compatibility-note: >
 #
 # D-204 STILL APPLIES WHERE IT DID. Its by-hand reading was given for this
 # card because no input can make its answer come back empty - `storeys` is
-# written on every branch. That is still so for the level heights and the
-# storeys line, so they are signed on the reading D-204 describes (the
+# written on every branch. From version 8 a document with NO levels leaves it
+# empty (row 5b-2070); in any model that has levels it is still written, so
+# the level heights and the storeys line are signed on the reading D-204
+# describes (the
 # storeys line read against Manage > Levels). The link check now has an empty
 # leg of its own - toleranceMm 5 on a link 3 mm off gives failures 0 and
 # failingIds empty - so that part of version 7's proof is a recorded run, as

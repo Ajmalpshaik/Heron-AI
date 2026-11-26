@@ -9,13 +9,23 @@ semantic-identity: "what is holding this element, and what moves with it"
 kind: action
 domain: revit.qa
 capability: REPORT_CONSTRAINTS
+# VERSION 3 (2026-11-26, FRAGMENT-ISSUES row 5b-2071, issue #1478) - A FREE
+# ELEMENT LEAVES NOTHING TO COUNT. Versions 1 and 2 keyed `constrainedBy` and
+# `lockedTo` by every element given, an empty list for a free one, so on Revit
+# 2020 three free walls read "constrainedBy 3 entry(ies)" and the negative could
+# never read empty. Now each is keyed only by the elements something holds; a
+# free element is in `unconstrained`, as before. RESHAPED RATHER THAN PROVED BY
+# TRACKING (D-53): version 1's tracking rows matched "N entries for N elements
+# given", which a fragment that walked no constraint at all would also match.
+# impl/ changed, so still DRAFT, owing NEEDS-CHECKING Group RD (D-30).
+#
 # VERSION 2 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
 # #1005) - a constraint whose references Revit will not give is counted in
 # `unresolvedConstraints`, where version 1 let an element it held read as
 # unconstrained. It was PROVEN at version 1; that proof stays below as the
 # record, and the card is DRAFT until its NEEDS-CHECKING check runs and is
 # signed (D-30).
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -61,9 +71,14 @@ contract:
       source: ambient
   provides:
     - name: constrainedBy
+      # VERSION 3: keyed only by the elements a constraint holds, each with
+      # the constraints holding it. A free element is left out and listed in
+      # `unconstrained` (row 5b-2071).
       role: result
       type: IDictionary<ElementId, IList<ElementId>>
     - name: lockedTo
+      # VERSION 3: keyed only by the elements locked to something else, each
+      # with what is on the far end (row 5b-2071).
       role: result
       type: IDictionary<ElementId, IList<ElementId>>
     - name: unconstrained

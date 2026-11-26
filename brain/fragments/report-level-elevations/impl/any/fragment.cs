@@ -260,10 +260,21 @@ if (unticked.Count > 0)
     }
 }
 
-if (unticked.Count == 0 && unreadable.Count == 0)
+// VERSION 8 (2026-11-26, row 5b-2070, issue #1480) - A DOCUMENT WITH NO LEVELS
+// IS NOT TOLD EVERY LEVEL IS MARKED. Version 7 wrote "Every level is marked
+// Building Story - 0 level(s) read: (this model has no levels)" on Revit 2020
+// for an area tag family: a claim about levels that are not there, and the one
+// line that kept that run from reading empty. With no level read, `storeys` is
+// left EMPTY - `findings` already opens "0 level(s), bottom to top", which says
+// it - and nothing else here changes.
+if (ticked.Count == 0 && unticked.Count == 0 && unreadable.Count == 0)
+{
+    // No level read at all: nothing to say about storeys.
+}
+else if (unticked.Count == 0 && unreadable.Count == 0)
 {
     storeys.Add(string.Format("Every level is marked Building Story - {0} level(s) read: {1}",
-        ticked.Count, ticked.Count == 0 ? "(this model has no levels)" : string.Join(", ", ticked)));
+        ticked.Count, string.Join(", ", ticked)));
 }
 else
 {
