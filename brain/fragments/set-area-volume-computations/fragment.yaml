@@ -214,7 +214,7 @@ utterances:
   # gross building" reached CREATE_AREA_PLAN on the model and both re-rankers.
   - give an area scheme a new name
   - make a new area scheme with a name of its own
-  # ADDED 2026-11-26, row 5b-2046: a rename that names Revit's own scheme names
+  # ADDED 2026-11-26, row 5b-2049: a rename that names Revit's own scheme names
   # reached CREATE_AREA_PLAN, which makes a plan in a scheme and renames none,
   # on the model.
   - rename the gross building or rentable scheme

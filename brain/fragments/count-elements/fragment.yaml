@@ -129,7 +129,7 @@ utterances:
   # ADDED 2026-11-21, row 5b-1940 (issue #1161): reached SHAPE_WALL_TOPS_TO_ROOF,
   # a write, on lexical.
   - count the roofs
-  # ADDED 2026-11-26, row 5b-2046: counts of a category in the model, and of
+  # ADDED 2026-11-26, row 5b-2049: counts of a category in the model, and of
   # sheets or views, reached COUNT_BY_SPATIAL_CONTAINER, FIND_SHEETS and writes.
   - how many fans are there in the model
   - how many sheets are in this project

@@ -140,7 +140,7 @@ utterances:
   # loads in Btu/h ..." off SET_PROJECT_UNITS. The suite's "which units does this
   # model show cooling load in" stays on RUN_HEATING_COOLING_LOADS there.
   - which unit are the heating and cooling loads read in
-  # ADDED 2026-11-26, row 5b-2046: a question about which unit the loads are
+  # ADDED 2026-11-26, row 5b-2049: a question about which unit the loads are
   # shown in sat within a hair of RUN_HEATING_COOLING_LOADS, a write, on the
   # model.
   - is the heating load in kW or watts

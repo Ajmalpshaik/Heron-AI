@@ -427,7 +427,7 @@ utterances:
   - raise these ducts to an offset of 3200
   - change the middle elevation of the selected pipes to 2900
   - put these pipes at 3000 from the level
-  # ADDED 2026-11-26, row 5b-2046: setting a type's Description or Type
+  # ADDED 2026-11-26, row 5b-2049: setting a type's Description or Type
   # Comments reached LINK_FAMILY_PARAMETER and ADD_FAMILY_CONNECTOR, family-
   # editor writes.
   - change the description of this type

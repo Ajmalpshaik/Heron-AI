@@ -179,7 +179,7 @@ utterances:
   - create a new type from this one
   - make a 300 wide version of this type
   - duplicate the wall type
-  # ADDED 2026-11-26, row 5b-2046: a new size type in a family reached
+  # ADDED 2026-11-26, row 5b-2049: a new size type in a family reached
   # CONNECT_AIR_TERMINALS and CHANGE_ELEMENT_TYPE.
   - create a new size type in this family
   - add a 400x400 type to these families

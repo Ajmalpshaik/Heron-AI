@@ -263,7 +263,7 @@ utterances:
   - length and width of each room
   # ...and its semantic identity, which nothing else declares:
   - how big each room is, measured along the room's own walls
-  # ADDED 2026-11-26, row 5b-2046: the biggest room or space reached
+  # ADDED 2026-11-26, row 5b-2049: the biggest room or space reached
   # READ_SPACE_LOADS and REPORT_SPACE_ENVELOPE.
   - which is the biggest space
   - the largest room by area

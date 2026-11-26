@@ -151,8 +151,11 @@ utterances:
   - what is listed in this schedule
   - the duct is missing from the schedule
   - is that element in the schedule
-  # ADDED 2026-11-26, row 5b-2046: a count of a schedule's rows sat in an exact
+  # ADDED 2026-11-26, row 5b-2049: a count of a schedule's rows sat in an exact
   # tie with SET_SCHEDULE_FILTERS, a write, and the keyword tiebreak handed it
   # over whenever another card's words moved.
   - count the rows in this schedule
   - how long is this schedule
+  # And the routing table above claims "the duct is missing from my schedule";
+  # once CREATE_SCHEDULE named MEP categories it took that sentence by ranking.
+  - an element is not showing in my schedule

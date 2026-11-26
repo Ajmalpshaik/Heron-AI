@@ -95,7 +95,7 @@ utterances:
   - which sheets show this
   - is this on any drawing
   - will deleting this change a sheet
-  # ADDED 2026-11-26, row 5b-2046: whether elements appear on a section sheet,
+  # ADDED 2026-11-26, row 5b-2049: whether elements appear on a section sheet,
   # or on any plan, reached FIT_MEP_JOINTS and SET_DUCT_LINING, writes.
   - are these on a section sheet
   - which sheet is this element on
