@@ -1,0 +1,41 @@
+# Group QP (issue #1381) - ADD_FAMILY_CONNECTOR version 8: a Duct Size parameter sizes a duct
+# connector, and a port that will not fit the ring's opening is refused.
+# Revit 2020, 2026-11-26. Model: pt-ahu - a scratch COPY of Ajmal PS's AHU family
+# (TRG_..._SKM MAH-0202S2M.rfa) in %TEMP%\heron-work\pt, never the library file.
+# The supply flange ring cc308a19-...-00002013 lies on "Supply Air Face" (opening 209 x 209);
+# a thin port plate shares the plane, so the ring is named by form=.
+# Positive (QP1): Supply_Air_Width / Supply_Air_Height (Duct Size, 205) - made, 2 mm clear each side.
+# Negative (QP2): the setup sets Supply_Air_Width to 215 first, inside the same rolled-back run -
+# refused "would not fit inside that opening", nothing made.
+model: pt-ahu (scratch copy of the MAH-0202S2M AHU family), Revit 2020
+
+defaults:
+  setup:
+    - set-family-type-values
+  set:
+    typeName: TRG_Air Handling Unit_DX_MAH-0202S2M
+    deleteType: false
+  negative-set:
+    typeName: TRG_Air Handling Unit_DX_MAH-0202S2M
+    deleteType: false
+
+jobs:
+  - fragment: add-family-connector
+    write: true
+    expect: sizedBy
+    set:
+      values: Supply_Air_Width=205; Supply_Air_Height=205
+      facePlane: Supply Air Face
+      system: Supply Air
+      sizeParameters: Supply_Air_Width, Supply_Air_Height
+      form: cc308a19-a2cf-4bdf-be3c-244d9ddeae8b-00002013
+      facing: ""
+      at: ""
+    negative-set:
+      values: Supply_Air_Width=215; Supply_Air_Height=205
+      facePlane: Supply Air Face
+      system: Supply Air
+      sizeParameters: Supply_Air_Width, Supply_Air_Height
+      form: cc308a19-a2cf-4bdf-be3c-244d9ddeae8b-00002013
+      facing: ""
+      at: ""
