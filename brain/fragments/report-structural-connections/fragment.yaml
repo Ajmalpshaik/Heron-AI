@@ -84,7 +84,12 @@ contract:
       type: int
     - name: typeCount
       # Connection types loaded in the model.
-      role: result
+      # ACCOUNTING (row 5b-1968, #1242): the project's inventory of types, not
+      # something the selection narrowed - with wall W1 selected and no
+      # connection joining it, it still counts every loaded type, so it can
+      # never come back empty on the card's own D-30 negative. What the read
+      # found for what was handed in is `connectionCount`.
+      role: accounting
       type: int
     - name: report
       # LIST BY LIST: each connection with its id, type, the elements it joins
