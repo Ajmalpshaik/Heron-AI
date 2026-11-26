@@ -23,36 +23,9 @@
 
 ---
 
-## ✅ The read-back happened — 2026-08-29, and nothing moved
-
-**Ajmal's instruction, 2026-08-28:** *"We will do this after we finalize one more time ... when I am at
-the PC, we will do it one more time. Now we just recorded, but we will do it one more time."*
-
-**Done on 2026-08-29, and it covered D-23 to D-43 rather than only the five.** Twenty-one decisions were
-read back and twenty-one were confirmed. Three were put to him one at a time because they carried real
-consequence, and all three came back unchanged:
-
-| | |
-|---|---|
-| [**D-33**](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) | The boundary this log itself flagged as **never actually stated by him** — Heron never invents a Revit number and does decide its own code. **Confirmed as written**, so the decision stands rather than moves |
-| [**D-26**](#d-26--the-model-file-is-never-uploaded) | The model file never leaves; names, counts, sizes and reasoning are fine. **Confirmed** after moving three times on the day it was written |
-| [**D-32**](#d-32--v1-must-be-able-to-change-the-model-and-reading-is-what-gets-used-first) | v1 both reads and writes, reading first, writing off by default. **Confirmed** after being reversed once within the hour |
-
-**It happened in conversation rather than at the PC**, which is recorded rather than smoothed over. What
-*at the PC* was for — him sitting with them rather than tapping yes — did happen. What still needs a
-screen is [`R1b`](NEEDS-CHECKING.md): [D-14](#d-14--unify-six-status-vocabularies-into-two-orthogonal-axes)
-stays **Proposed** until he has seen the trust model working with his own fragments in it.
-
-**And it happened AFTER Phase 2 was built, not before**, which was his own override and is weaker than
-intended — a decision reviewed once the code exists gets defended rather than examined. Worth recording
-what that cost: **nothing measurable.** The two that had been reversed within hours did not move a fourth
-time, and no detail was found missing. That is evidence about these particular decisions, not a reason to
-review late next time.
-
-**This heading said *"Five of these get one more pass"* while the table below marked NINE** — D-32 to
-D-35 were added later and the sentence was not. Nobody noticed because the sentence and the markers were
-never read together. All nine are now confirmed, so the discrepancy is closed by the work rather than by
-an edit.
+> **Read back, 2026-08-29: D-23 to D-43, twenty-one decisions, twenty-one confirmed, nothing moved** - including D-33, D-26
+> and D-32, which carried real consequence. It happened in conversation and after Phase 2 was built, both recorded, with
+> what is still owed to a screen: [`decisions/read-back-2026-08-29.md`](decisions/read-back-2026-08-29.md).
 
 ---
 
@@ -268,6 +241,7 @@ an edit.
 | [D-197](#d-197--ask-to-delete-one-switch-in-settings-on-at-every-revit-start-that-stops-revits-delete-box-and-a-drafts-keep-or-discard-and-the-chat-asks-in-words-first) | Ask to Delete: one switch in Settings, on at every Revit start, that stops Revit's Delete box and a DRAFT's Keep or Discard, and the chat asks in words first | ✅ Accepted · 2026-11-23, built, not yet run in Revit |
 | [D-198](#d-198--agents-that-were-built-but-that-nothing-in-heron-called-are-retired-and-their-code-and-tests-removed) | Agents that were built but that nothing in Heron called are retired, and their code and tests removed | ✅ Accepted · 2026-11-24 |
 | [D-199](#d-199--thirteen-more-idle-modules-are-retired-update-trust-release-tagging-versioning-the-import-pipeline-and-the-workflow-engine) | Thirteen more idle modules are retired: update, trust, release, tagging, versioning, the import pipeline and the workflow engine | ✅ Accepted · 2026-11-24 |
+| [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
 
 ## Format
 
@@ -1813,3 +1787,15 @@ Of the agents D-198's strict count found idle, company standards and the agent r
 release, tagging, versioning, the import pipeline, commit and the workflow engine are retired and their code removed.
 
 **Full record:** [`decisions/D-199.md`](decisions/D-199.md)
+
+## D-200 — Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them
+
+**Status:** Accepted · **Date:** 2026-11-24 · **Accepted:** Ajmal PS, 2026-11-24, in conversation.
+**Numbering:** D-200 is the id `tools/next-id.py` printed free on 2026-11-24, with `origin/main` ending at D-199.
+**Affects:** [28](28-agent-registry.md) (7 rows RETIRED) · `brain/` · `mcp/server/` · `brain/agents/` · `tests/` · [`mcp/README.md`](../mcp/README.md)
+
+Of the seventeen modules D-198's strict count left idle, eleven are removed with their tests and contracts. Six stay,
+because a helper agent, a kept test, a modeller's skill or a waiting design relies on them. The three installer
+agents whose Python copies went stay built, by the installer.
+
+**Full record:** [`decisions/D-200.md`](decisions/D-200.md)

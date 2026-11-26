@@ -117,7 +117,10 @@ def main():
         print("\n3. It fires - the comparison, run with one id taken out")
         # THE INCIDENT, reproduced against the real HEAD map rather than
         # described: take out the id two files claimed and see it named.
-        victim = "HERON-AHR-ARC-003"
+        # The incident's own id, HERON-AHR-ARC-003, was retired by D-200 and
+        # its files removed, so an id still held by a module and its suite
+        # stands in for it.
+        victim = "HERON-DEV-SEC-009"
         check(victim in was,
               "%s is claimed in the last commit" % victim)
         check(len(set(was[victim])) == 2,
@@ -127,7 +130,7 @@ def main():
         gone = sorted(set(was) - set(pretend))
         check(gone == [victim],
               "and with it unclaimed, the comparison names exactly it")
-        check(all("architect" in name for name in was[victim]),
+        check(all("security" in name for name in was[victim]),
               "together with the files that held it: %s"
               % ", ".join(sorted(set(was[victim]))))
         check("was claimed by" in flat and "written over" in flat,

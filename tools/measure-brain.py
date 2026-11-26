@@ -11,17 +11,17 @@ How long the brain takes, stage by stage. The half nothing was measuring.
 THIS FILE OWNS HERON-DEV-PRF-015, DECIDED BY THE OWNER ON 2026-09-17
 ----------------------------------------------------------------------
 The row is "execution time AND RESOURCE COST", and that conjunction is the
-whole of the decision. This measures both; brain/heron_devperf.py measures
-time only. D-75 had already noticed as much - "the row's own words point at
+whole of the decision. This measures both; brain/heron_devperf.py, the other
+candidate, measured time only. D-75 had already noticed as much - "the row's own words point at
 measure-brain.py" - but declined to rule, because picking on an inference is
 exactly the guess that produced PROPOSALS F27 in the first place.
 
 So the claim waited for a person, and a person made it. F27 stays as the
 record of why it could not be settled by reading.
 
-heron_devperf.py keeps `Heron-Agent: none`. It is not lesser and it is not
-dead code: it times the test SUITES against check-gaps' bound, which is a real
-job and the reason it was written. It simply is not this row.
+heron_devperf.py kept `Heron-Agent: none`: it timed the test SUITES against
+check-gaps' bound, and it simply was not this row. Nothing ran it, and D-200
+removed it on 2026-11-24.
 
     python tools/measure-brain.py
     python tools/measure-brain.py --revit 2024 --requests 40
@@ -82,10 +82,11 @@ WHAT IT DELIBERATELY DOES NOT CLAIM
 It used to argue that against HERON-OPS-OBS-011, whose row then read "latency,
 token usage, model calls per request, cost per request" - three of which Heron
 cannot see. THAT ARGUMENT IS SPENT: D-58 corrected the row on 2026-09-09 to
-the two things Heron can see, HERON-OPS-OBS-011 is built in
-brain/heron_observability.py, and the corrected row NAMES THIS FILE as what
+the two things Heron can see, and the corrected row NAMES THIS FILE as what
 measures the latency half for the brain. So this is a tool that row relies on,
-not a candidate for its id.
+not a candidate for its id. (HERON-OPS-OBS-011 was built in
+brain/heron_observability.py, which nothing called; D-200 retired the agent
+and removed that file on 2026-11-24.)
 
 The open one is HERON-DEV-PRF-015, "execution time and resource cost", which is
 word for word what this file now measures - and claiming it would still be a

@@ -52,6 +52,16 @@ WHAT IT PROVES
      writes actually obeys its own argument. A negative result, made
      permanent.
 
+  9. A ROW RETIRED OR DEFERRED BY A DECISION IS REFUSED, and the refusal
+     names the decision. The scaffolder wrote onto any row nothing claims,
+     and D-198 / D-199 / D-200 left retired rows that nothing
+     claims by design. Measured 2026-11-24: this suite's own "unbuilt" pick
+     was the retired HERON-AHR-ARC-003, so a run of the tool on it would
+     have written three files for an agent a decision had removed. The test
+     skips such rows when it picks an "unbuilt" one, and the section that
+     proves the refusal runs against a temporary tree, so a tool that has
+     lost the refusal fails here without leaving files in the repository.
+
 WHY IT EXISTS - PROPOSALS F41
 ------------------------------
 The scaffolder had no suite at all. It derived heron_regression_test.py
@@ -103,6 +113,11 @@ def snapshot():
     return seen
 
 
+def live(row):
+    """A row nobody retired or deferred - the only kind that can be unbuilt."""
+    return not row.get("retired") and not row.get("deferred")
+
+
 def run(argv):
     """The tool's exit code and what it printed. It is never given a TTY."""
     was = sys.stdout
@@ -145,7 +160,7 @@ def main():
     # whose derived module name is already a file. A typed id here would
     # go stale the day somebody builds it.
     exact = next((aid for aid, row in sorted(agents.items())
-                  if aid not in claims
+                  if aid not in claims and live(row)
                   and os.path.exists(os.path.join(
                       ROOT, "brain",
                       "heron_%s.py" % NA.module_name(row["name"])))), None)
@@ -179,9 +194,12 @@ def main():
               "and says a half-scaffolded agent is worse than none")
 
     print("\n4. a name that shadows an existing module is refused")
-    check(NA.prefix_collisions("brain", "regression_test")
-          == ["heron_regression"],
-          "heron_regression_test shadows heron_regression - the real case")
+    # The real case was heron_regression_test against heron_regression, on
+    # 2026-09-17. heron_regression.py was retired by D-200, so the same
+    # shape is checked against a module that is still here.
+    check(NA.prefix_collisions("brain", "matrix_test")
+          == ["heron_matrix"],
+          "heron_matrix_test shadows heron_matrix - the shape of the real case")
     check(NA.prefix_collisions("brain", "qa") == [],
           "a whole name that is nobody's prefix collides with nothing")
     check("heron_buildmatrix" not in NA.prefix_collisions(
@@ -193,12 +211,20 @@ def main():
           "existing ones start with: %s" % (longer or "nothing"))
 
     shadowing = next((aid for aid, row in sorted(agents.items())
-                      if aid not in claims
+                      if aid not in claims and live(row)
                       and NA.prefix_collisions(
                           "brain", NA.module_name(row["name"]))), None)
-    check(shadowing is not None,
-          "and the register still holds a row that would hit it (%s)"
-          % shadowing)
+    # THE REAL CASE USED TO BE A RETIRED ROW. The only row whose derived name
+    # shadowed a module was HERON-FRG-PRF-002, retired by D-198, and the
+    # scaffolder now refuses a retired row before it looks at modules at all,
+    # so it is no longer a way to reach this refusal. When no live row
+    # shadows, the absence is named and the explicit --module case below
+    # carries the message checks instead.
+    if shadowing is None:
+        print("  ..    SKIPPED - no live unbuilt row derives a name that "
+              "shadows a module;")
+        print("        the --module case below still proves the refusal "
+              "and its wording.")
     if shadowing:
         code, said = run([shadowing, "--part", "brain"])
         check(code == 1, "%s exits 1" % shadowing)
@@ -221,15 +247,18 @@ def main():
     # rule. Any unbuilt row proves that; which one is an accident of the
     # register on the day. So it asks the register rather than remembering an
     # answer, exactly as the two checks above it already do.
-    unbuilt = next((aid for aid in sorted(agents) if aid not in claims), None)
+    unbuilt = next((aid for aid in sorted(agents)
+                    if aid not in claims and live(agents[aid])), None)
     check(unbuilt is not None,
           "the register still holds an unbuilt row to try this with (%s)"
           % unbuilt)
     if unbuilt:
         code, said = run([unbuilt, "--part", "brain",
-                          "--module", "regression_test"])
+                          "--module", "matrix_test"])
         check(code == 1 and "shadows" in said,
               "an explicit --module cannot walk around it either")
+        check("test_references.py" in said and "--module" in said,
+              "and it still names the suite and points at --module")
 
     print("\n5. nothing was written by any of them")
     after = snapshot()
@@ -309,6 +338,65 @@ def main():
         check(wrote() == made, "and the tree is exactly as it was")
         check("Nothing was written" in said,
               "and it says so rather than reporting a partial success")
+
+        print("\n10. a row retired or deferred by a decision is refused")
+        # Start from an empty temporary tree: section 7 wrote into it.
+        for name in ("brain", "tests"):
+            folder = os.path.join(home, name)
+            shutil.rmtree(folder, ignore_errors=True)
+            os.makedirs(os.path.join(folder, "agents") if name == "brain"
+                        else folder)
+        # The real register's own retired and deferred rows, derived rather
+        # than typed, run against the temporary tree so a tool that has lost
+        # the refusal writes into the temp folder and not into the repository.
+        # The fixture rows keep the case alive on the day the register holds
+        # no deferred row at all.
+        real_agents, real_claims = agents, claims
+        retired = next((aid for aid, row in sorted(real_agents.items())
+                        if row.get("retired") and aid not in real_claims),
+                       None)
+        deferred = next((aid for aid, row in sorted(real_agents.items())
+                         if row.get("deferred") and aid not in real_claims),
+                        None)
+        fixture = {
+            "HERON-TST-RET-001": {"name": "Retired Sample Agent",
+                                  "dept": "Test", "tier": "T1",
+                                  "retired": "D-198", "deferred": None},
+            "HERON-TST-DEF-002": {"name": "Deferred Sample Agent",
+                                  "dept": "Test", "tier": "T1",
+                                  "retired": None, "deferred": "D-77"},
+        }
+        NA.register = lambda: (dict(real_agents, **fixture), real_claims)
+        cases = [("HERON-TST-RET-001", "D-198", "RETIRED"),
+                 ("HERON-TST-DEF-002", "D-77", "DEFERRED")]
+        if retired:
+            cases.append((retired, real_agents[retired]["retired"],
+                          "RETIRED"))
+        if deferred:
+            cases.append((deferred, real_agents[deferred]["deferred"],
+                          "DEFERRED"))
+        check(retired is not None,
+              "the register still holds a retired row to try this with (%s)"
+              % retired)
+        for aid, decision, word in cases:
+            code, said = run([aid])
+            check(code == 1, "%s (%s) exits 1, and it exited %r"
+                  % (aid, word.lower(), code))
+            check(not wrote(),
+                  "and nothing is written - it wrote %r" % (wrote(),))
+            check(word in said and decision in said,
+                  "and names the decision: %s by %s" % (word, decision))
+        code, said = run(["HERON-TST-RET-001", "--part", "tools",
+                          "--module", "anything"])
+        check(code == 1 and not wrote(),
+              "an explicit --part and --module cannot walk around it either")
+        NA.register = lambda: (
+            {"HERON-DEV-ARC-003": {"name": "Architecture Agent",
+                                   "dept": "Development", "tier": "T2",
+                                   "retired": None, "deferred": None}}, {})
+        code, said = run(["HERON-DEV-ARC-003", "--step", "15"])
+        check(code == 0 and len(wrote()) == 3,
+              "and a live row is still scaffolded (exit %r)" % code)
     finally:
         NA.ROOT, NA.register = was_root, was_register
         shutil.rmtree(home, ignore_errors=True)
