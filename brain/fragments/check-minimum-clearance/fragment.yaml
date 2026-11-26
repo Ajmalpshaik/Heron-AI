@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -19,7 +19,14 @@ capability: CHECK_MINIMUM_CLEARANCE
 # measured now; a sheet, a view, a type or annotation is skipped and counted
 # with the elements that have no extent, and said. Version 3's proof below is
 # kept as the record; its C# moved, so it is DRAFT until re-proved (D-30).
-version: 4
+# VERSION 5 (2026-11-26): CHECK_VERTICAL_CLEARANCE was merged into this card
+# on the owner's answer to row 5b-1878 (A), issue #1088 - "Yes, one tool" - and
+# is DEPRECATED; see the second merge block above `utterances`. `stackedOnly`,
+# `overlapAs` (D-208), `clashing`, `overlapsMm` and `slopedOrVertical` are new.
+# Version 4's proof below - PROVEN 2026-11-24 on Night Rig 1124 - is kept as
+# the record; its C# moved, so the card is DRAFT until version 5 is proved on
+# a real model (D-30), NEEDS-CHECKING Group QY.
+version: 5
 source: OFFICIAL
 risk: READ
 
@@ -87,6 +94,13 @@ purpose: >
   when some carry none; `assumeThicknessMm` lags them on paper, said on every
   row. Each pair is measured once. Version 3 is DRAFT until proved.
 
+  **STACKED ONLY, AND HOW AN OVERLAP READS (version 5).** With `stackedOnly`
+  only pairs one above the other are measured, and the gap is the vertical
+  room between them - what a hanger and a jacket need - with every pair
+  side by side left out, and each row says which one is on top. Sloped and vertical runs are counted, because
+  their box is the whole rise. Where two overlap, `overlapAs` decides: CLASH
+  with the depth (the default), or 0 mm. Version 5 is DRAFT until proved.
+
 # A NAME TWO PARAMETERS SHARE IS NEVER READ: a linked element whose Fire Rating
 # two parameters carry - a shared or project "Fire Rating" bound beside the
 # built-in one, on the element or on the type the lookup falls through to -
@@ -150,6 +164,24 @@ contract:
       type: bool
       source: request
       optional: true
+    - name: stackedOnly
+      # VERSION 5, from CHECK_VERTICAL_CLEARANCE: only pairs one above the
+      # other in plan, and only the vertical gap between them - the bottom of
+      # the upper box to the top of the lower. Each row says which is on top.
+      # Left out it binds false: every pair, the straight-line gap.
+      type: bool
+      source: request
+      optional: true
+    - name: overlapAs
+      # VERSION 5, D-208 - how a pair that OVERLAPS is reported, the owner's
+      # choice: "clash" (or "depth") - CLASH with the depth of the overlap in
+      # `overlapsMm`, too close whatever clearance was asked; "zero" (or "0")
+      # - a 0 mm gap judged against the clearance, as version 4 did. Left out
+      # it binds "clash". Any other word measures nothing and says so.
+      type: string
+      source: request
+      optional: true
+      absent: clash
   provides:
     - name: tooClose
       role: result
@@ -208,10 +240,33 @@ contract:
       # model, never a pair it failed (D-52).
       role: accounting
       type: int
+    - name: clashing
+      # VERSION 5, from CHECK_VERTICAL_CLEARANCE's `clashing`: how many pairs
+      # OVERLAP - boxes and jackets together - whichever way `overlapAs`
+      # reports them, and whatever clearance was asked: an overlap is a fact
+      # about the model, not about the number typed.
+      role: result
+      type: int
+    - name: overlapsMm
+      # VERSION 5, D-208: with `overlapAs` clash, how deep each overlapping
+      # pair's overlap is, in millimetres, keyed as `tooClose` is - the
+      # smallest of the three axis overlaps, or with `stackedOnly` the height
+      # overlap, jackets included. Empty with `overlapAs` zero.
+      role: result
+      type: IDictionary<string, double>
+    - name: slopedOrVertical
+      # VERSION 5, from CHECK_VERTICAL_CLEARANCE: with `stackedOnly`, how many
+      # elements are sloped or vertical, whose box is the whole rise, so a
+      # vertical gap to them is smaller than the truth. The evidence it
+      # looked, never a pair it failed (D-52). 0 without `stackedOnly`.
+      role: accounting
+      type: int
     - name: findings
       # VERSION 3: the warning when some carry no insulation, the insulated /
       # bare split, the pair rows up to maxRows with bare gap, jackets and real
-      # gap, and what was skipped for want of an extent.
+      # gap, and what was skipped for want of an extent. VERSION 5: the
+      # overlaps and how they were reported, the pairs `stackedOnly` passed
+      # over, the sloped or vertical warning, and CLASH or ABOVE on a row.
       type: IList<string>
 
 proof:
@@ -288,17 +343,25 @@ compatibility-note: >
   is keyed by the two ids rendered as text rather than by any numeric id, so the
   2024 64-bit change cannot reach it.
 
-# ROUTING - repeated in CHECK_VERTICAL_CLEARANCE, CHECK_EQUIPMENT_CLEARANCE and
-# CHECK_SLEEVE_SIZE.
+# ROUTING - repeated in CHECK_EQUIPMENT_CLEARANCE, CHECK_SLEEVE_SIZE,
+# ALIGN_ELEMENTS and MEASURE_CEILING_HEIGHT.
 #
 #   "what is too close to what"          -> here - every offending pair, in
 #                                          any direction
 #   "how much room is there between the duct and the pipe above it" ->
-#                                        CHECK_VERTICAL_CLEARANCE - the Z gap
-#                                        only. Two services 200 mm apart
-#                                        diagonally pass HERE and may have
-#                                        40 mm of vertical room, which is what
-#                                        a hanger and a jacket need
+#                                        here since version 5, stackedOnly -
+#                                        only pairs one above the other, the
+#                                        vertical gap, and which is on top. It
+#                                        was CHECK_VERTICAL_CLEARANCE's, merged in
+#   "which services are stacked too close together" -> here, the same
+#   "put all these at the same height"   -> ALIGN_ELEMENTS, by an edge - the FIX once
+#                                          this has found the problem
+#   "how high is the ceiling"            -> MEASURE_CEILING_HEIGHT - how much
+#                                          void there is to work in at all
+#   "what is above this duct"            -> PROBE_AROUND_ELEMENTS, which
+#                                           NAMES what it hits and how far.
+#                                           This one judges a clearance
+#                                           against a number you give
 #   "is there enough space in front of the panel to open the door" ->
 #                                        CHECK_EQUIPMENT_CLEARANCE - a zone
 #                                        with a front and a back, off the
@@ -342,6 +405,53 @@ compatibility-note: >
 # beyond the clearance plus twice the thickest jacket - a shortcut that cannot
 # change an answer; every pair is measured here. That card's per-category
 # rules did not exist; `rules` is kept. Nothing of it was an opposite rule.
+#
+# VERSION 5 (2026-11-26) - CHECK_VERTICAL_CLEARANCE WAS MERGED INTO THIS CARD
+# on the owner's answer to row 5b-1878 (A), issue #1088: "Yes, one tool". It is
+# DEPRECATED. For a pair whose plan boxes overlap - the only pairs it measured -
+# this card's box gap already was the Z gap; `stackedOnly` measures those pairs
+# alone and says which is on top. Where each retired input and output is now:
+#
+#   CHECK_VERTICAL_CLEARANCE            here
+#     services (one set)                elements, with targets the same set -
+#                                       each pair measured once
+#     requiredGap                       defaultClearance, the same mm - and
+#                                       `rules` per category beside it
+#     (pairs above one another only)    stackedOnly
+#     findings TIGHT, "A is above B"    findings - each row names the upper one
+#                                       first, "is ABOVE", and how far short
+#     findings CLASH, the Z overlap     findings CLASH with the depth, and
+#                                       overlapsMm (overlapAs clash, the default)
+#     tooClose (tight pairs, int)       violations less clashing
+#     clashing                          clashing
+#     slopedOrVertical                  slopedOrVertical, and its warning
+#     no geometry counted               withoutBox, said in findings
+#
+# AND WHAT THE RETIRED CARD GAINS HERE: insulation (includeInsulation,
+# assumeThicknessMm), linked structure (includeLinks, each line saying ABOVE or
+# BELOW with stackedOnly), per-category rules, ignoreConnected, and
+# selectable ids (tooCloseIds).
+#
+# THE ONE OPPOSITE RULE, AND WHO SETTLED IT. Where two boxes overlap, version 4
+# reported 0 mm and the vertical card reported CLASH with the depth. The owner,
+# 2026-11-26: "depending on the user it will be ask depth or just 0, both
+# option maybe needed" - so both are kept, as `overlapAs` (D-208). The default
+# is CLASH with the depth, the vertical card's rule and the safer one: 0 mm
+# reads as two things just touching, and hides how far one has to move; a
+# CLASH is reported whatever clearance was asked, so an overlap can never pass.
+# "zero" gives version 4's answer exactly. Nothing else was opposite.
+#
+# NOT CARRIED, AND WHY. The vertical card's purpose said two services 200 mm
+# apart diagonally "may have only 40 mm of VERTICAL room" that a straight-line
+# gap would pass. Measured on boxes, as both cards measure, that cannot happen:
+# a pair whose plan boxes overlap has a box gap that already IS the vertical
+# gap (row 5b-1878's own reading), and a pair whose plan boxes do not overlap
+# is not stacked. The claim compared centre lines, which neither card reads, so
+# it is not repeated here. What `stackedOnly` really adds is leaving out every
+# pair side by side, naming the upper one, and the sloped warning.
+# The vertical card's sloped test used its requiredGap;
+# here it uses defaultClearance, the same number - a per-category rule does
+# not change which runs are sloped.
 utterances:
   - is anything too close to the ducts
   - check the clearance between services
@@ -358,3 +468,9 @@ utterances:
   - will these fit with 50mm lagging
   - insulation aware clearance check
   - the gap is not big enough once it is insulated
+  # MOVED 2026-11-26 from CHECK_VERTICAL_CLEARANCE, merged into this card.
+  - how much room is there between the duct and the pipe above it
+  - which services are stacked too close together
+  - is there enough vertical space between the services
+  - check the vertical clearance between the services
+  - will the hangers fit between these two

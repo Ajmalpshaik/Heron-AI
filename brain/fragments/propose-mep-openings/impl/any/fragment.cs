@@ -2,6 +2,17 @@
 // `includeLinks` are in scope; leaves `proposals`, `hostIds`, `runIds`,
 // `unmeasured`, `findings`, `linksSearched` and `linkedMatches` behind.
 //
+// VERSION 3 (2026-11-26, row 5b-1879 item 2, issue #1088, D-208): THE HOLE IS
+// SIZED ROUND THE INSULATION WHEN THE RUN CARRIES SOME, AND ONLY THEN. Each pipe
+// and duct is first asked whether it carries insulation - Revit's own list of
+// the wraps on it, the way CHECK_SLEEVE_SIZE asks - and when it does, twice the
+// thickest wrap is added to each side of the size before the allowance; when it
+// does not, nothing is added and the proposal says "(no insulation)". Version 2
+// had no insulation term at all, so a hole proposed for a lagged pipe read
+// UNDERSIZED when CHECK_SLEEVE_SIZE ran with the same gap. Lining is not
+// counted - it is inside the duct. Tray and conduit carry no insulation, and
+// asking throws for them: that throw IS the answer "none".
+//
 // NO TRANSACTION, and it needs none. IT CREATES NOTHING - cutting holes in
 // somebody's structure is not a side effect of looking for them.
 //
@@ -33,6 +44,33 @@ var unmeasured = new List<string>();
 var findings = new List<string>();
 
 var mmPerFoot = 304.8;
+
+// VERSION 3: the thickest insulation wrap on this run, in feet - 0 when it
+// carries none. Asked BEFORE anything is added (the owner's words, D-208).
+// GetInsulationIds throws for an element that cannot carry insulation, and the
+// catch is what reads that as none - CHECK_SLEEVE_SIZE's rule.
+var insulatedRuns = new HashSet<ElementId>();
+Func<Element, double> insulationOf = run =>
+{
+    var thickest = 0.0;
+    try
+    {
+        var wraps = InsulationLiningBase.GetInsulationIds(doc, run.Id);
+        if (wraps != null)
+        {
+            foreach (var wrapId in wraps)
+            {
+                var wrap = doc.GetElement(wrapId) as InsulationLiningBase;
+                if (wrap != null && wrap.Thickness > thickest) thickest = wrap.Thickness;
+            }
+        }
+    }
+    catch { }
+    if (thickest > 0) insulatedRuns.Add(run.Id);
+    return thickest;
+};
+Func<double, string> insulationWords = feet => feet > 0
+    ? string.Format(" + {0:0} mm insulation", feet * 304.8) : " (no insulation)";
 
 // ---- D-59: which links, only when asked for --------------------------------
 
@@ -225,6 +263,9 @@ else
             continue;
         }
 
+        // Version 3: its insulation, only when it carries some.
+        var insulationFt = insulationOf(curve);
+
         foreach (var hostPair in hostSolids)
         {
             var host = hostPair.Key;
@@ -249,12 +290,13 @@ else
                     var throughMm = segment.Length * mmPerFoot;
                     var midpoint = segment.Evaluate(0.5, true);
 
-                    var holeWidthMm = widthFt * mmPerFoot + allowanceMm * 2.0;
-                    var holeHeightMm = heightFt * mmPerFoot + allowanceMm * 2.0;
+                    var holeWidthMm = (widthFt + 2.0 * insulationFt) * mmPerFoot + allowanceMm * 2.0;
+                    var holeHeightMm = (heightFt + 2.0 * insulationFt) * mmPerFoot + allowanceMm * 2.0;
 
                     proposals.Add("host " + host.Id + " - service " + curve.Id
                         + " - opening " + Math.Round(holeWidthMm) + " x " + Math.Round(holeHeightMm)
                         + " mm" + (round ? " (round service, squared off)" : "")
+                        + insulationWords(insulationFt)
                         + ", passing through " + Math.Round(throughMm) + " mm of host"
                         + ", centred at " + Math.Round(midpoint.X * mmPerFoot) + ", "
                         + Math.Round(midpoint.Y * mmPerFoot) + ", "
@@ -307,6 +349,7 @@ else
                     try { heightFt = curve.Height; } catch { }
                 }
                 if (widthFt <= 0 && heightFt <= 0) continue;
+                var insulationFt = insulationOf(curve);
 
                 Curve local = null;
                 try { local = location.Curve.CreateTransformed(inverse); } catch (Exception) { }
@@ -364,14 +407,14 @@ else
                             var midpoint = placed.OfPoint(segment.Evaluate(0.5, true));
                             linkCount++;
                             linkedMatches.Add(string.Format("  {0} - {1} - service {2} - opening {3} x {4} "
-                                + "mm{5}, through {6} mm, centred at {7}, {8}, {9} mm in this model",
+                                + "mm{5}{10}, through {6} mm, centred at {7}, {8}, {9} mm in this model",
                                 linked.Title, describeLinked(linked, host), curve.Id,
-                                Math.Round(widthFt * mmPerFoot + allowanceMm * 2.0),
-                                Math.Round(heightFt * mmPerFoot + allowanceMm * 2.0),
+                                Math.Round((widthFt + 2.0 * insulationFt) * mmPerFoot + allowanceMm * 2.0),
+                                Math.Round((heightFt + 2.0 * insulationFt) * mmPerFoot + allowanceMm * 2.0),
                                 round ? " (round service, squared off)" : "",
                                 Math.Round(segment.Length * mmPerFoot),
                                 Math.Round(midpoint.X * mmPerFoot), Math.Round(midpoint.Y * mmPerFoot),
-                                Math.Round(midpoint.Z * mmPerFoot)));
+                                Math.Round(midpoint.Z * mmPerFoot), insulationWords(insulationFt)));
                         }
                     }
                 }
@@ -385,6 +428,12 @@ else
     findings.Add(proposals.Count + " opening(s) proposed across " + elements.Count + " service(s) "
         + "and " + hostCount + " host(s), each sized from the service plus " + allowanceMm
         + " mm all round.");
+
+    // Version 3: which runs had insulation added - said, so a hole with none
+    // added is never read as one that was checked for it and forgotten.
+    findings.Add(insulatedRuns.Count + " of the services carry insulation in the model, and their "
+        + "holes are sized round it (twice the thickest wrap, before the allowance); the rest carry "
+        + "none and nothing was added for them. Lining is not counted - it is inside the duct.");
 
     findings.Add("NOTHING WAS CREATED. This is a proposal to read and argue with. Cutting the "
         + "holes is a separate operation somebody has to approve.");

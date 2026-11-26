@@ -37,7 +37,7 @@
 // CREATE_VIEW_FILTERS_BY_VALUE.
 //
 // VERSION 2 (2026-10-15): THE OPERATOR RIDES IN FRONT OF THE VALUE, in the
-// words of Revit's own Filters dialog - "does not contain TRG". The eight text
+// words of Revit's own Filters dialog - "does not contain ABC". The eight text
 // operators are equals, does not equal, contains, does not contain, begins
 // with, does not begin with, ends with and does not end with; each has its own
 // factory method with the same two spellings and the same 2023 split as
@@ -174,7 +174,7 @@ else if (names.Contains("") || values.Contains(""))
 else if (bareOperator.Length > 0)
 {
     refused = string.Format("'{0}' is an operator with nothing after it - write what it should "
-        + "match, \"{0} TRG\", or \"equals {0}\" to match the word itself", bareOperator);
+        + "match, \"{0} ABC\", or \"equals {0}\" to match the word itself", bareOperator);
 }
 else if (texts.Contains(""))
 {

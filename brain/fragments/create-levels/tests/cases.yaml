@@ -12,28 +12,42 @@ positive:
       elevationOf matching what was asked for. It is read back as
       ProjectElevation, which is the one every coordinate in the model uses
 
+  # VERSION 3 (2026-11-26, D-207) - A NAME ALREADY TAKEN IS SKIPPED AND THE
+  # REST ARE MADE. The three name cases below were version 2's "refused, nothing
+  # created"; each now expects the skip, and each FAILS on version 2, which
+  # makes nothing and has no `skipped`. NOT RUN - NEEDS-CHECKING Group QZ.
+  - given: >
+      VERSION 3. "Level 3" at 7000 mm and "Level 2" at 9000 mm in one call, on a
+      scratch project that has "Level 1" and "Level 2" and no level at 7000 or
+      9000 mm
+    expect: >
+      "Level 3" created at 7000 mm and in `created`; "Level 2" NOT created -
+      nothing at 9000 mm - and `skipped` holding one line, ""Level 2" at 9000
+      mm - level "Level 2" already has that name; not made"; `refused` null.
+      Count the level heads in an elevation: one more than before, not two and
+      not none
+
 negative:
   - given: >
-      VERSION 2. A NAME THAT ANOTHER LEVEL ALREADY HAS - "Level 2" asked for at
-      a free height while the project has "Level 2"
+      VERSION 3. Only "Level 2" asked for, at a free height, while the project
+      has "Level 2"
     expect: >
-      NO LEVEL IS CREATED - not that one and not the others in the same call -
-      `created` empty, and `refused` naming "Level 2", the height asked for and
-      the level that holds the name. Version 1 created the level and put its id
-      in `nameRefused`, leaving a level called "Level 7" where "Level 3" was
-      asked for; on version 1 this case FAILS, because a level is made. Count
-      the levels in an elevation view before and after: the same number
+      NO LEVEL IS CREATED - `created` empty, `skipped` naming "Level 2", the
+      height asked for and the level that holds the name, and `refused` saying
+      that nothing was created because every level asked for was skipped. The
+      answer must not read as a change. Count the levels in an elevation view
+      before and after: the same number
 
-  - given: VERSION 2. The same name in other capitals - "level 2" when "Level 2" exists
+  - given: VERSION 3. The same name in other capitals - "level 2" when "Level 2" exists, beside one free name
     expect: >
-      refused exactly as above. Revit compares level names ignoring capitals,
-      so a clash checked case by case would let it through to be refused by
-      Revit after the level exists
+      "level 2" skipped exactly as above and the free one made. Revit compares
+      level names ignoring capitals, so a clash checked case by case would let
+      it through to be refused by Revit after the level exists
 
-  - given: VERSION 2. One call asking for two new levels both named "Roof"
+  - given: VERSION 3. One call asking for two new levels both named "Roof", at different free heights
     expect: >
-      refused before anything is created, `refused` saying the second clashes
-      with another level in the same request
+      the first "Roof" made; the second skipped, `skipped` saying another
+      level in this same request already has that name; `refused` null
 
   - given: >
       VERSION 2. A height Level.Create refuses or returns nothing for, among

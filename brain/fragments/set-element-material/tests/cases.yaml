@@ -5,15 +5,15 @@ positive:
   - given: >
       the Group IA scratch project: two M_Rectangular Column instances of one
       type whose Material is <By Category>, selected; material
-      "TRG_Concrete Smooth" (made by CREATE_STARTER_MATERIALS)
+      "ABC_Concrete Smooth" (made by CREATE_STARTER_MATERIALS)
     expect: >
       writtenIds the one type, materialAssignReport "type ... 'Material'
-      <By Category> -> TRG_Concrete Smooth - a type change: all N placed
-      element(s) of this type changed"; Type Properties reads TRG_Concrete Smooth
+      <By Category> -> ABC_Concrete Smooth - a type change: all N placed
+      element(s) of this type changed"; Type Properties reads ABC_Concrete Smooth
 
   - given: >
       three ducts of one Supply Air system selected, material
-      "TRG_Duct Galvanised"
+      "ABC_Duct Galvanised"
     expect: >
       the system type's Material written once and named in the report as
       every element of the system type; the ducts draw galvanised in a
@@ -22,16 +22,16 @@ positive:
 negative:
   - given: the same columns straight after, the same material
     expect: writtenIds empty, alreadyAsAsked 1 - nothing written twice
-  - given: two Basic Wall instances of a layered type, material "TRG_Concrete Smooth"
+  - given: two Basic Wall instances of a layered type, material "ABC_Concrete Smooth"
     expect: >
       both in skippedElements naming SET_COMPOUND_LAYER_WIDTH; the wall
       type's layers unchanged
-  - given: a single door selected, material "TRG_Wood Oak", materialParameter left out
+  - given: a single door selected, material "ABC_Wood Oak", materialParameter left out
     expect: >
       the door skipped naming its material parameters (frame, panel or the
       like) and asking for materialParameter; nothing written
-  - given: the columns, material "TRG Concrete Smoth"
-    expect: refused naming TRG_Concrete Smooth among the closest; nothing changed
+  - given: the columns, material "ABC Concrete Smoth"
+    expect: refused naming ABC_Concrete Smooth among the closest; nothing changed
 
   # Version 2, added 2026-11-26 (row 5b-2035). NOT RUN.
   - given: a family open in the Family Editor, any form selected, material "Glass"

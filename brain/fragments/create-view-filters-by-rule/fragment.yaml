@@ -10,7 +10,7 @@ kind: action
 domain: revit.views
 capability: CREATE_VIEW_FILTERS_BY_RULE
 # Version 2, 2026-10-15: a value may lead with the operator Revit's Filters
-# dialog shows - "does not contain TRG". A value with none is "equals", as
+# dialog shows - "does not contain ABC". A value with none is "equals", as
 # version 1 read it.
 version: 2
 source: OFFICIAL
@@ -76,7 +76,7 @@ purpose: >
   **EACH NEW ONE IS READ BACK FROM REVIT** - its categories and rule as Revit
   holds them, and how many elements the rule catches today.
 
-  **THE OPERATOR GOES IN FRONT OF THE VALUE** - "does not contain TRG",
+  **THE OPERATOR GOES IN FRONT OF THE VALUE** - "does not contain ABC",
   "begins with M_". No operator means equals.
 
   ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
@@ -98,7 +98,7 @@ contract:
       # One value per filter name, in the same order - the text the rule
       # matches, with the operator in front when it is not "equals": equals,
       # does not equal, contains, does not contain, begins with, does not
-      # begin with, ends with, does not end with ("does not contain TRG").
+      # begin with, ends with, does not end with ("does not contain ABC").
       # "equals contains" matches the word itself. Type it as Revit shows it:
       # whether capitals matter on 2023 and later is not known here
       # (CREATE_VIEW_FILTER's cases say why).
@@ -237,7 +237,7 @@ compatibility-note: >
 #    these view filters"                       This never edits a filter that
 #                                              exists - it skips the name
 #   "rename this view filter"               -> SET_VIEW_FILTER_CATEGORIES, with newName
-#   "change the filter rule to does not contain TRG_MEC" -> SET_VIEW_FILTER_CATEGORIES, with matchValue
+#   "change the filter rule to does not contain ABC_MEC" -> SET_VIEW_FILTER_CATEGORIES, with matchValue
 #   "add grids to this filter"              -> SET_VIEW_FILTER_CATEGORIES, with the whole list
 #
 # KEPT IN STEP BY HAND WITH SET_VIEW_FILTER_CATEGORIES VERSION 2 (2026-10-15,

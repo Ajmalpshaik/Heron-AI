@@ -127,9 +127,9 @@ purpose: >
   **Version 5 takes a material, a level or a family type by name.**
 
 # VERSION 5 - FRAGMENT-ISSUES 5b-1259. Measured 2026-10-19 on Revit 2020, the
-# owner's Kerala house: "Id,Material" with 346587,TRG_Material_Teak_Wood and
+# a test house model: "Id,Material" with 346587,ABC_Material_Teak_Wood and
 # includeTypeParameters true reached the M_Round Column type's Material and
-# answered "Revit would not take 'TRG_Material_Teak_Wood' for 'Material'" -
+# answered "Revit would not take 'ABC_Material_Teak_Wood' for 'Material'" -
 # an element reference was handed to SetValueString, which takes no name. Now
 # a cell for a parameter holding another element is a NAME: a material or a
 # level by its Name, a family type as "Family: Type", matched exactly, the

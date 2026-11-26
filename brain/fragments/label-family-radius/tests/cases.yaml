@@ -87,7 +87,7 @@ positive:
       the plane "Half Pitch" and its dimension used as they are, the bottom
       circle's centre locked to it - "already labelled ... used as it is";
       "Mean Radius" and "Wire Radius" labelled on this one too, beside the
-      first's. Ran 2026-10-07 building TRG_Spring_One Turn
+      first's. Ran 2026-10-07 building ABC_Spring_One Turn
 
   - given: >
       version 5, the fault's own case (row 5b-1318), on Revit 2020. A new

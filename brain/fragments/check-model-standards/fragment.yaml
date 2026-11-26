@@ -54,7 +54,7 @@ purpose: >
   not new values to supply, so a request written for version 1 runs unchanged:
   `type=` checks type names written as *"Family: Type"* - no space before the
   colon - over the types of the categories in `requiredOn`, so
-  `type=*: TRG*` finds every type whose name does not start with the office
+  `type=*: ABC*` finds every type whose name does not start with the office
   prefix; `room=` checks room names; `value:<parameter>=` is the pattern a FILLED
   value of a required parameter must match, and a filled value that breaks it is
   counted apart from a blank one, because correcting data and entering it are
@@ -76,6 +76,11 @@ purpose: >
   links and the geometry weight are the other half, and neither replaces looking
   at the drawings.
 
+# ONE PATTERN LANGUAGE FOR A NAME, 2026-11-26 (D-207, row 5b-1879 item 3, the
+# owner's "Wildcards *"). This card's `*` wildcard on the whole name is the
+# rule, and CHECK_FAMILY_STANDARDS version 5 reads its `namePattern` the same
+# way - it read "contains" before. Nothing on this card changed: no line of
+# impl/, so its proof still describes the code and it stays PROVEN.
 contract:
   needs:
     - name: doc

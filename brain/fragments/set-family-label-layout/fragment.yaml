@@ -14,7 +14,7 @@ source: OFFICIAL
 risk: MODIFY
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
-# 2026-10-21: Ajmal PS, building the pipe tag TRG_Pipe_Tag on Revit 2020,
+# 2026-10-21: Ajmal PS, building the pipe tag ABC_Pipe_Tag on Revit 2020,
 # asked for labels end to end - placed, edited, updated, not only read.
 # Read off all eight releases' shipped assemblies that day (docs/43 section
 # 8.3a): what a program may change on a label, on every release, is where it

@@ -1731,6 +1731,23 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qv.md`](needs-checking/group-qv.md)
 
+## Group QX - MEASURE_DISTANCE version 3 and MEASURE_AVAILABLE_FALL version 2: the two elements selected in Revit, or two ids typed - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qx.md`](needs-checking/group-qx.md)
+
+## Group QY - CHECK_MINIMUM_CLEARANCE version 5 (vertical clearance merged in), CHECK_SLEEVE_SIZE version 3 and PROPOSE_MEP_OPENINGS version 3 - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qy.md`](needs-checking/group-qy.md)
+
+## Group QZ - D-207's name rules: CHECK_FAMILY_STANDARDS v5 reads a name pattern as a * wildcard, CREATE_GRIDS v5 and CREATE_LEVELS v3 skip a name already taken and make the rest - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qz.md`](needs-checking/group-qz.md)
+
+
+## Group RA - REPORT_LEVEL_ELEVATIONS version 7, the one datum tool: CHECK_DATUMS_AGAINST_LINK merged in, copy-monitored levels and grids, a link placed twice refused until its copy is named - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-ra.md`](needs-checking/group-ra.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
@@ -1746,3 +1763,7 @@ Step 6 is finished, and not before. At that point:
 ## 2026-09-22 — ONE DOWNLOAD, BOTH DOORS, AND AN UPDATE CHECK THAT ONLY CHECKS
 
 **Its own file:** [`needs-checking/group-af.md`](needs-checking/group-af.md)
+
+## Group RB - no office's name built into Heron: starter materials with no default prefix, and two material refusals and the view-filter refusals with a neutral example - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-rb.md`](needs-checking/group-rb.md)

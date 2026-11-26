@@ -1709,6 +1709,151 @@ about `model+rerank`, which was not asked - the re-ranker was removed the same d
 
 ---
 
+## 2026-11-26 — short forms added to a request before the search: measured, no gain, nothing built
+
+The owner asked for fragment finding to be as good as it can be, and several of his 79 use MEP
+short forms (*VCD*, *FCU*). The lexical backend scores a synonym zero (`brain/heron_embed.py`), so
+*VCD* and *volume control damper* share nothing either route can see. **Tried:** a modeller's own
+list in Heron's home, read in `heron_retrieve.find` only after his exact words missed the identity
+and cache routes. Each recorded long form was **added after** his words, never in place of them,
+so the words route and the nearness route both saw it. The product shipped no list
+([D-34](../docs/decisions/D-34.md)). The code is in git history at branch commit `22312531`
+(pull request #1447). **It was taken out again before merging, and nothing of it ships.**
+
+**The three entries measured** were the owner's site words, rows 7 to 9 of
+`docs/work-notes/plans/earlier-brain/03-owner-data.md` (lines 38 to 40), recorded and approved by
+Ajmal PS on 2026-09-23. No other Heron file states the meaning of a short form.
+
+| short form | long form added | his row says |
+|---|---|---|
+| VCD, VCDs | volume control damper | *Volume Control Damper — a Duct Accessory family* |
+| AHU | air handling unit | *Air Handling Unit — Mechanical Equipment* |
+| FCU | fan coil unit | *Fan Coil Unit — Mechanical Equipment* |
+
+Measured in a cloud container with no Revit, 754 cards, `lexical` only. model2vec is installed
+there, so it was blocked as CI runs: in process, and by a module on `PYTHONPATH` that raises
+ImportError. Every run used a store of its own. Commands: `tools/score-routing.py` for his 79 and the
+124 plain questions, and `--sentences ... --tree <main> --compare` for 18 new short-form
+sentences frozen before any code. None of the 18 is one of his 79.
+
+| `lexical` | main `02780d9a` | with no list | with the 3 entries | main `d79ac5a9` (after #1424) | with no list | with the 3 entries |
+|---|---|---|---|---|---|---|
+| his 79 - first | 23 | 23 | **16** | 34 | 34 | **30** |
+| his 79 - top three | 33 | 33 | **30** | 43 | 43 | **41** |
+| his 79 - not found | 29 | 29 | **31** | 18 | 18 | **19** |
+| asked for no change, handed one | 9 | 9 | **11** | 7 | 7 | **10** |
+| a change asked for, a different change given | 20 | 20 | **23** | 14 | 14 | **15** |
+| plain questions answered by a change | 9 | 9 | 9 | 9 | 9 | 9 |
+| 18 new sentences - wanted answer first | 6 of 14 | 6 | **3** | 8 of 14 | 8 | **7** |
+| the same - questions reaching a write | 1 of 2 | 1 | 1 | 0 of 2 | 0 | **1** |
+
+**The variant tried:** a long form with the Revit category added (*volume control damper duct
+accessory*, *... mechanical equipment*), measured on main `02780d9a`. It was worse: 15 first, 32 not
+found, 14 handed a change.
+
+**Why it loses.** With no expansion, *VCD* matches nothing, so the action words (*isolate*, *hide*,
+*count*) decide, and they pick the generic action card. Adding the long form lets cards whose own
+text names that equipment rank above the action card:
+- `PLACE_ACCESSORY_ON_RUN` for dampers;
+- `CHECK_EQUIPMENT_CLEARANCE` and `REPORT_CONNECTORS` for AHU and fan coil.
+
+*Isolate all the VCDs* fell from 1st to 2nd, and *Zoom to that VCD* fell from 1st to not found.
+The only wins were equipment questions, such as *check the service space around the AHU*.
+
+**Not tried, each needing its own measurement:**
+- expansion on the nearness route only;
+- the added words weighted below the modeller's own;
+- his short forms written into the utterances of the cards that do the job. That is card text, not a
+  lookup list.
+
+### What this does not establish
+
+- Nothing about the trained backend: model2vec was blocked throughout, and its removal is in hand.
+- Nothing about an office's longer list, or about site words that are not short forms.
+- Nothing about the three untried variants above.
+- That any answer is right in Revit: routing was measured here, never run against a model.
+
+D-34 is not closed by this. It still holds a site word to be knowledge in the modeller's own store.
+
+---
+
+## 2026-11-26 — a question's near-tie handed to the read: nothing for the flag to settle, and risk ranking measured, built at the smaller margin and taken back
+
+Asked: on a near-tie, a question should go to the read rather than the write. Measured in a cloud
+container on `main` `2ee4d03f`, **754 fragments**, `lexical` only (the trained model set aside), no Revit
+filter, `tools/score-routing.py` through `heron_brain.lookup` on a scratch store.
+
+**The host's own flag leaves no tie to break.** With `question` true, D-128 leaves every write out
+before ranking, so a read is never in a contest with one. With the flag set the way a host that is never
+wrong would set it - every plain question, and each of his rows whose answer key is below the write line:
+
+| 754 fragments, `lexical` | flag off | the host's flag |
+|---|---|---|
+| his 79: first / top three | 23 / 33 | 25 / 34 |
+| his 79: asked for no change, handed one | 9 | **0** |
+| his 79: a change asked for, a different change given | 20 | 20 |
+| 124 plain questions reaching a write | 9 | **0** |
+
+**Without the flag the ones that reach a write are not near-ties.** *"does this duct have lining"* goes to
+`SET_DUCT_LINING` with the nearest read 13.0 fusion ranks behind; *"which elements are on the wrong
+workset"* to `SET_ELEMENT_WORKSET`, the nearest read 4.5 behind. Seven of the nine plain ones have their
+nearest read more than four ranks behind. No tie-break reaches them; only the flag does, and it does.
+
+**Ranking by risk, measured as a scratch patch and not built.** With no flag, when the winner is at or
+above the write line and a card below it sits within a margin of the winner, the card below goes first.
+It reads no words of the request, only declared risks and scores - but it is ranking by risk, which every
+retrieval change above has held back for the owner (D-101's proposed half,
+[#954](https://github.com/Ajmalpshaik/Heron-AI/issues/954)'s open choice):
+
+| flag off, `lexical` | main | margin = the status nudge's span (0.61 rank) | margin = one rank |
+|---|---|---|---|
+| his 79: first / top three | 23 / 33 | 23 / 33 | **22** / 33 |
+| his 79: asked for no change, handed one | 9 | 8 | 8 |
+| 124 plain questions reaching a write | 9 | 8 | 7 |
+| `tests/test_routing_phrases.py` checks failing | 13 | 12 | not run |
+| `tools/check-risk-crossings.py` crossings | 5 | 5 | not run |
+
+At the narrower margin it moved two answers - *"what export settings are there"* to `LIST_EXPORT_SETUPS`,
+the read that answers it, and *"How many sheets are there for the duct layout?"* to `LIST_VIEWS_ON_SHEET`,
+a read but not the key's `COUNT_ELEMENTS` - and one routing phrase. At one rank his own change request
+*"Place a door in every room, like the one I placed."* lost its first place to a read.
+
+### Built at the smaller margin, then taken back: no margin is safe
+
+The owner answered after seeing the table: *"Yes, small safe margin"*. The 0.61-rank margin was built as
+`heron_retrieve.prefer_unchanging`, with the line read from `question_ceiling()` and passed by
+`heron_brain.lookup`. On the branch merged with `origin/main` `1e4a2012`, 754 fragments, `lexical`, it moved the
+same two answers as the scratch patch, so his 79 handed a change went 9 to 8 and the plain questions 9 to 8,
+with first place and top three unchanged.
+
+**CI then failed `tests/test_brain_reachable.py`.** *"join this roof to that roof"* is a change request whose
+answer is `SHAPE_WALL_TOPS_TO_ROOF`, and it went to `REPORT_ROOF_REACH`, a read **0.23** of a rank behind. The
+local run had not asked that suite; `check-gaps` was still running when the branch was pushed. The gaps that
+decide it, all `lexical` and with the flag off:
+
+| sentence | asked for | write first, nearest read behind it by |
+|---|---|---|
+| *"join this roof to that roof"* | a change | **0.23** rank |
+| *"what export settings are there"* | a question - helped | 0.41 rank |
+| *"How many sheets are there for the duct layout?"* | a question - helped | 0.49 rank |
+| *"Place a door in every room, like the one I placed."* | a change | 0.68 rank |
+
+A margin that helps either question (above 0.41) takes the roof request off its write, and a margin that keeps
+it (0.23 or less) helps no question. The two routes' places do not separate them either. In both the roof
+request and the export question, the read is nearer by meaning and further by words. Any rule that does
+separate them would have to read the words, which is against D-01. **So there is no safe version on this
+library, and no code was kept.** [D-209](../docs/decisions/D-209.md) keeps its number as Rejected, and the
+host's `question` flag remains the fix: 0 and 0 with it.
+
+### What this does not establish
+
+- **The flag column is the answer key standing in for the host**, not a host; D-128 measured a real one.
+- **`tools/check-routing.py` could not show the patch**: it asks for one candidate, so there was no
+  runner-up to move.
+- **Lexical only, one library size, one day.** Nothing met Revit, and no ranking change was kept.
+
+---
+
 ## 2026-11-26 — the words index tuned by measurement: stemming, field weights, a domain hint, fusion - nothing kept
 
 The owner asked for fragment finding to be made the best it can be. Three levers in
