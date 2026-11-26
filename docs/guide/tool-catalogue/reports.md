@@ -147,7 +147,7 @@ Other ways to ask: *"where is this used"* · *"which sheets show this"*
 
 **What it does:** how many of each type, size or value there are - a set of parameter values turned into a schedule-style table.
 
-Turns a set of parameter values into a schedule-style table: each distinct value, and how many carried it, largest group first. **WITH A MEASURED QUANTITY IT TOTALS EACH GROUP TOO** (version 2, when SUM_BY_GROUP was merged in) - the way a bill of quantities reads: "forty lengths of 300x150 totalling 212 metres". `MEASURE_RUN_QUANTITIES` hands on the numbers for MEP runs. An element with no quantity is counted, never skipped and never treated as zero: `missing` carries them per group and `incomplete` says a total rests on partial data. Version 1's proof no longer describes the code and is kept as a record; DRAFT until it is proved again.
+Groups the elements given by one value - type, size, width, system, level or any parameter - and says how many are in each group, largest first: a schedule-style report without making a schedule. With a length, area or volume it totals each group too, the way a bill of quantities reads - "forty lengths of 300x150 totalling 212 metres" - and an element with no quantity is counted, never skipped and never treated as zero. Changes nothing.
 
 | | |
 |---|---|

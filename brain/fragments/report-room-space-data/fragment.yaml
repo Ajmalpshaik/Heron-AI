@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-026
-semantic-identity: "the room and space schedule - number, name, level, area and volume"
+semantic-identity: "how big each room and space is - the room and space schedule of number, name, level, area and volume"
 kind: action
 domain: revit.rooms
 capability: REPORT_ROOM_SPACE_DATA
