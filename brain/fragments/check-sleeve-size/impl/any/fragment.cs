@@ -1,6 +1,15 @@
 // NOT STANDALONE. Assumes `doc`, `sleeves`, `annularClearance`, `maxOversize`
 // and `includeLinks` are in scope; leaves `findings`, `undersized`, `orphaned`,
-// `unreadable`, `linksSearched` and `linkedMatches` behind.
+// `unreadable`, `combined`, `linksSearched` and `linkedMatches` behind.
+//
+// VERSION 3 (2026-11-26, row 5b-1879 item 1, issue #1088): EVERY SERVICE
+// THROUGH A SLEEVE IS CHECKED, not only the first the box test found. Each is
+// judged on its own - its size, its own insulation, the annular gap - and the
+// sleeve is undersized when any one does not fit. A sleeve with two or more
+// through it is listed in `combined` and said COMBINED; whether they fit
+// together side by side is not measured, so oversize is not judged for it.
+// The owner kept this card and AUDIT_MEP_OPENINGS apart ("Keep two",
+// 2026-11-26): size here, place there.
 //
 // READ ONLY. Opens no transaction and needs none. Sizes are internal FEET.
 //
@@ -55,6 +64,8 @@ var findings = new List<string>();
 var undersized = new List<ElementId>();
 var orphaned = new List<ElementId>();
 var unreadable = 0;
+// Version 3: sleeves with two or more services through them, each judged on its own.
+var combined = new List<ElementId>();
 
 var SIZE_NAMES = new[] { "Diameter", "Sleeve Diameter", "Nominal Diameter", "Opening Diameter",
                          "Width", "Sleeve Width", "Opening Width", "Height", "Sleeve Height" };
@@ -228,11 +239,15 @@ foreach (var sleeve in sleeves)
             : string.Format("sleeve {0}: inside nothing in any link", sleeve.Id));
     }
 
-    // Which service passes through. The box test is the whole test here and it
+    // Which services pass through. The box test is the whole test here and it
     // is stated rather than dressed up: a sleeve is a short element and a
     // service crossing its box is, in practice, through it. A service running
     // past in the next bay shares no box with a sleeve this small.
-    Element through = null;
+    // VERSION 3 (row 5b-1879 item 1): EVERY service through it, not the first.
+    // Version 2 stopped at the first the box test found (`through = service;
+    // break;`), so a sleeve two pipes pass through was judged against one of
+    // them without a word.
+    var throughAll = new List<Element>();
     foreach (var service in services)
     {
         var serviceBox = service.get_BoundingBox(null);
@@ -240,11 +255,10 @@ foreach (var sleeve in sleeves)
         if (serviceBox.Max.X < sleeveBox.Min.X || serviceBox.Min.X > sleeveBox.Max.X) continue;
         if (serviceBox.Max.Y < sleeveBox.Min.Y || serviceBox.Min.Y > sleeveBox.Max.Y) continue;
         if (serviceBox.Max.Z < sleeveBox.Min.Z || serviceBox.Min.Z > sleeveBox.Max.Z) continue;
-        through = service;
-        break;
+        throughAll.Add(service);
     }
 
-    if (through == null)
+    if (throughAll.Count == 0)
     {
         orphaned.Add(sleeve.Id);
         findings.Add(string.Format("sleeve {0}: NOTHING passes through it. Either an orphan left when a "
@@ -281,83 +295,111 @@ foreach (var sleeve in sleeves)
         continue;
     }
 
-    // The service's size, and its real insulation. Each name is counted before
-    // it is read, in the order it is tried - see the header.
-    var serviceSize = -1.0;
-    var serviceNameShared = "";
-    foreach (var name in new[] { "Outside Diameter", "Diameter", "Width" })
+    // VERSION 3: TWO OR MORE THROUGH ONE SLEEVE ARE EACH JUDGED ON THEIR OWN, and
+    // the sleeve is undersized when any one of them does not fit. Whether they
+    // fit TOGETHER, side by side, depends on how they are laid out in the hole
+    // and is not measured, so oversize is not judged for such a sleeve - and it
+    // is said, never passed in silence. AUDIT_MEP_OPENINGS calls it COMBINED.
+    var several = throughAll.Count > 1;
+    if (several)
     {
-        if (nameIsShared(through, name)) { serviceNameShared = name; break; }
-        serviceSize = readNamed(through, name);
-        if (serviceSize > 0) break;
+        combined.Add(sleeve.Id);
+        var named = new List<string>();
+        foreach (var t in throughAll)
+            named.Add(string.Format("{0} {1}", t.Category == null ? "service" : t.Category.Name, t.Id));
+        findings.Add(string.Format("sleeve {0}: COMBINED - {1} services pass through it ({2}). Each is "
+            + "checked on its own below; whether they fit together side by side is NOT measured, and "
+            + "oversize is not judged", sleeve.Id, throughAll.Count, string.Join(", ", named)));
     }
 
-    if (serviceNameShared.Length > 0)
+    var sleeveUndersized = false;
+    var sleeveUnreadable = false;
+    foreach (var through in throughAll)
     {
-        unreadable++;
-        findings.Add(string.Format("sleeve {0}: the {1} through it ({2}) carries TWO OR MORE parameters "
-            + "named '{3}' - asked by name, Revit picks one of them at random, so its size was NOT read "
-            + "and the sleeve is not checked", sleeve.Id,
-            through.Category == null ? "service" : through.Category.Name, through.Id, serviceNameShared));
-        continue;
-    }
-
-    if (serviceSize <= 0)
-    {
-        var serviceBox = through.get_BoundingBox(null);
-        if (serviceBox != null)
+        // The service's size, and its real insulation. Each name is counted
+        // before it is read, in the order it is tried - see the header.
+        var serviceSize = -1.0;
+        var serviceNameShared = "";
+        foreach (var name in new[] { "Outside Diameter", "Diameter", "Width" })
         {
-            var dx = serviceBox.Max.X - serviceBox.Min.X;
-            var dy = serviceBox.Max.Y - serviceBox.Min.Y;
-            var dz = serviceBox.Max.Z - serviceBox.Min.Z;
-            // The two SMALLEST extents are the cross-section; the largest is the
-            // run's length and is not a size.
-            var sorted = new List<double> { dx, dy, dz };
-            sorted.Sort();
-            serviceSize = sorted[1];
+            if (nameIsShared(through, name)) { serviceNameShared = name; break; }
+            serviceSize = readNamed(through, name);
+            if (serviceSize > 0) break;
+        }
+
+        if (serviceNameShared.Length > 0)
+        {
+            sleeveUnreadable = true;
+            findings.Add(string.Format("sleeve {0}: the {1} through it ({2}) carries TWO OR MORE parameters "
+                + "named '{3}' - asked by name, Revit picks one of them at random, so its size was NOT read "
+                + "and the sleeve is not checked{4}", sleeve.Id,
+                through.Category == null ? "service" : through.Category.Name, through.Id, serviceNameShared,
+                several ? " against it" : ""));
+            continue;
+        }
+
+        if (serviceSize <= 0)
+        {
+            var serviceBox = through.get_BoundingBox(null);
+            if (serviceBox != null)
+            {
+                var dx = serviceBox.Max.X - serviceBox.Min.X;
+                var dy = serviceBox.Max.Y - serviceBox.Min.Y;
+                var dz = serviceBox.Max.Z - serviceBox.Min.Z;
+                // The two SMALLEST extents are the cross-section; the largest is the
+                // run's length and is not a size.
+                var sorted = new List<double> { dx, dy, dz };
+                sorted.Sort();
+                serviceSize = sorted[1];
+            }
+        }
+
+        var insulation = 0.0;
+        try
+        {
+            var insulationIds = InsulationLiningBase.GetInsulationIds(doc, through.Id);
+            foreach (var id in insulationIds)
+            {
+                var wrap = doc.GetElement(id) as InsulationLiningBase;
+                if (wrap != null && wrap.Thickness > insulation) insulation = wrap.Thickness;
+            }
+        }
+        catch { }   // an element that cannot carry a wrap throws, and that IS the filter
+
+        var required = serviceSize + (2 * insulation) + (2 * annularClearance);
+        var slack = sleeveSize - required;
+
+        var describe = string.Format("sleeve {0} ({1} = {2:0.#} mm) round {3}{4} {5:0.#} mm{6}: needs {7:0.#} mm",
+            sleeve.Id, sizeNameUsed, sleeveSize * 304.8,
+            through.Category == null ? "service" : through.Category.Name,
+            several ? " " + through.Id : "",
+            serviceSize * 304.8,
+            insulation > 0 ? string.Format(" + {0:0.#} mm insulation", insulation * 304.8) : " (no insulation)",
+            required * 304.8);
+
+        if (slack < 0)
+        {
+            sleeveUndersized = true;
+            findings.Add(describe + string.Format("  - UNDERSIZED by {0:0.#} mm", -slack * 304.8));
+        }
+        else if (!several && slack > maxOversize)
+        {
+            findings.Add(describe + string.Format("  - OVERSIZED by {0:0.#} mm. Costs fire-stopping and "
+                + "gets queried on site", slack * 304.8));
+        }
+        else
+        {
+            findings.Add(describe + string.Format("  - ok, {0:0.#} mm spare", slack * 304.8));
         }
     }
 
-    var insulation = 0.0;
-    try
-    {
-        var insulationIds = InsulationLiningBase.GetInsulationIds(doc, through.Id);
-        foreach (var id in insulationIds)
-        {
-            var wrap = doc.GetElement(id) as InsulationLiningBase;
-            if (wrap != null && wrap.Thickness > insulation) insulation = wrap.Thickness;
-        }
-    }
-    catch { }   // an element that cannot carry a wrap throws, and that IS the filter
-
-    var required = serviceSize + (2 * insulation) + (2 * annularClearance);
-    var slack = sleeveSize - required;
-
-    var describe = string.Format("sleeve {0} ({1} = {2:0.#} mm) round {3} {4:0.#} mm{5}: needs {6:0.#} mm",
-        sleeve.Id, sizeNameUsed, sleeveSize * 304.8,
-        through.Category == null ? "service" : through.Category.Name,
-        serviceSize * 304.8,
-        insulation > 0 ? string.Format(" + {0:0.#} mm insulation", insulation * 304.8) : " (no insulation)",
-        required * 304.8);
-
-    if (slack < 0)
-    {
-        undersized.Add(sleeve.Id);
-        findings.Add(describe + string.Format("  - UNDERSIZED by {0:0.#} mm", -slack * 304.8));
-    }
-    else if (slack > maxOversize)
-    {
-        findings.Add(describe + string.Format("  - OVERSIZED by {0:0.#} mm. Costs fire-stopping and "
-            + "gets queried on site", slack * 304.8));
-    }
-    else
-    {
-        findings.Add(describe + string.Format("  - ok, {0:0.#} mm spare", slack * 304.8));
-    }
+    if (sleeveUndersized) undersized.Add(sleeve.Id);
+    if (sleeveUnreadable) unreadable++;
 }
 
 findings.Insert(0, string.Format("{0} sleeve(s) checked: {1} undersized, {2} with nothing through them, "
-    + "{3} unreadable", sleeves.Count, undersized.Count, orphaned.Count, unreadable));
+    + "{3} unreadable, {4} with more than one service through them", sleeves.Count, undersized.Count,
+    orphaned.Count, unreadable, combined.Count));
 
 // THE ANSWER SAYS WHAT IT READ. Asked-and-found, asked-and-none-loaded and not
 // asked read differently on purpose - D-59's own worked example.

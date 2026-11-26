@@ -1111,7 +1111,8 @@ Works out what gradient a drain can be laid at between two elements - the questi
 |---|---|
 | **Kind** | Answers a question (`ANALYZE`) |
 | **Reached by** | asking in a Claude chat |
-| **You say** | **upstream** - ONE PARTICULAR element - SELECT IT IN REVIT and type `selected`. Exactly one: none or several are refused, and so is a typed name, because an instance has no name of its own<br>**downstream** - ONE PARTICULAR element - SELECT IT IN REVIT and type `selected`. Exactly one: none or several are refused, and so is a typed name, because an instance has no name of its own |
+| **Works on** | what is selected in Revit: elements |
+| **You say** | **element ids** - text; optional, left out means *none* |
 | **You get** | fall mm, run mm, gradient one in, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | none |
@@ -1120,8 +1121,9 @@ Works out what gradient a drain can be laid at between two elements - the questi
 **How to use it**
 
 1. Open the model in Revit and connect Heron: press **Heron** on the Heron tab, so its heron turns orange.
-2. In a Claude chat, ask in your own words, for example *"what fall can I get between these two points"*. Say the values under **You say** in the same sentence.
-3. Heron answers in the chat. Nothing in the model changes.
+2. Select what it works on in Revit (elements) - or name it in the same request, and Heron finds it first.
+3. In a Claude chat, ask in your own words, for example *"what fall can I get between these two points"*. Say the values under **You say** in the same sentence.
+4. Heron answers in the chat. Nothing in the model changes.
 
 Other ways to ask: *"is there enough fall for this drain"* · *"what gradient is available here"*
 

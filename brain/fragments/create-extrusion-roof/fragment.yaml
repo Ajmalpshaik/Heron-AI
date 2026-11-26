@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -56,6 +56,12 @@ capability: CREATE_EXTRUSION_ROOF
 # SIGNED 2026-11-21: version 2 ran on Revit 2024 (Group OU's OU22, on the
 # model roofjoin-oy) and Ajmal PS signed it PROVEN - the proof below. The
 # Revit 2020 run OU22 asks for is still owed.
+# BACK TO DRAFT 2026-11-26, ON THE OWNER'S ANSWER TO FRAGMENT-ISSUES row
+# 5b-1967 (issue #1233): "Re-run, then sign". Group OU signs a card again only
+# after its positive AND negative rows read as written, and OU22 is written for
+# Revit 2020 on P1102 MEP - the release version 2 exists to repair. No C#
+# changed, so the version stays 2: the proof below is version 2's, its
+# fingerprint still matches impl/, and `proof-held:` says why it is not used.
 version: 2
 source: OFFICIAL
 risk: MODIFY
@@ -151,6 +157,14 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof-held: >
+  Back to DRAFT on 2026-11-26, on the owner's answer to row 5b-1967 ("Re-run,
+  then sign"): the 2026-11-21 proof ran on Revit 2024 and roofjoin-oy, and
+  NEEDS-CHECKING Group OU's OU22 is written for Revit 2020 on the scratch copy
+  P1102 MEP, where every run of version 1 threw. OU22's (a) and (b) run there
+  as written, then a new proof signed, before it is PROVEN again. impl/ is
+  unchanged since this proof.
 
 proof:
   date: '2026-11-21'

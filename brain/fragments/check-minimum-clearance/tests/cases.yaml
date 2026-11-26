@@ -46,6 +46,52 @@ positive:
       20 rows in `findings` and "... 100 further pair(s) not listed - the count
       above is complete", `violations` 120
 
+  # VERSION 5, added 2026-11-26 with the merge of CHECK_VERTICAL_CLEARANCE (row
+  # 5b-1878 (A), issue #1088) and D-208. NONE OF THESE HAS BEEN RUN - NEEDS-CHECKING
+  # Group QY. Each FAILS on version 4, which had no stackedOnly and no overlapAs.
+  - given: >
+      a duct with a sprinkler main 90 mm below it in section, the two
+      overlapping in plan, defaultClearance 150, stackedOnly true
+    expect: >
+      one row naming the duct first, "is ABOVE" the main, bare vertical gap
+      about 90 mm, "60 mm short" - CHECKED against a section, because which
+      one is on top is half the answer. Version 4 has no row that says which
+      is on top
+
+  - given: >
+      one duct with a pipe 40 mm under it and a second pipe beside it 60 mm
+      off in plan at the same height as the first, defaultClearance 100, run
+      once with stackedOnly false and once true
+    expect: >
+      false: both pipes reported against the duct, the side one at about 60 mm.
+      true: ONE row, the pipe under it, REAL GAP about 40 mm against 100,
+      the duct named as above it; the side pipe passed over and counted. The
+      same vertical gap both ways - for a stacked pair the box gap already is
+      the vertical gap - and only stackedOnly leaves the side pair out
+
+  - given: >
+      two ducts whose boxes interpenetrate by 30 mm in height, defaultClearance
+      0, overlapAs left out
+    expect: >
+      reported TOO CLOSE as "CLASH: ... overlap by 30 mm", `clashing` 1,
+      `overlapsMm` 30 for that pair, `gapsMm` 0 - never a negative number - and
+      the findings line saying it was reported as CLASH with the depth. Version
+      4 passed the pair: 0 mm against a clearance of 0
+
+  - given: the same two ducts, defaultClearance 100, overlapAs zero
+    expect: >
+      the version 4 row exactly - "REAL GAP 0 mm against 100 required" - with
+      `overlapsMm` empty, `clashing` 1, and the findings line saying overlaps
+      were reported as a 0 mm gap, as asked
+
+  - given: >
+      a drainage pipe modelled above the duct it has to cross under,
+      stackedOnly true, includeLinks true with a linked beam above both
+    expect: >
+      the host row says the drainage pipe "is ABOVE" the duct; the duct's
+      `linkedMatches` line ends ", this one BELOW it" for the beam. The wrong
+      order reads as a fact, not as two elevations to compare
+
 negative:
   - given: >
       version 4, Revit 2020 - the seven sheets of P1102 MEP, defaultClearance
@@ -63,6 +109,10 @@ negative:
       buildable - and both answers are correct for what they measured, which is
       why the flag exists
 
+  # VERSION 5 (D-208): `gapsMm` still reads 0 here, never negative, in both
+  # modes; with overlapAs clash - the default - the pair is ALSO said CLASH
+  # with the depth in `overlapsMm`, and with overlapAs zero it reads exactly as
+  # below.
   - given: two elements whose insulation already OVERLAPS
     expect: >
       a gap of 0, not a negative number. "They are touching" is the finding; a
@@ -146,6 +196,37 @@ negative:
     expect: >
       "Fewer than two measurable elements, so no pair could be compared" -
       never read as every pair passing
+
+  # VERSION 5, added 2026-11-26 (row 5b-1878 (A), D-208). NOT RUN - Group QY.
+  - given: >
+      two services that overlap in height but pass at different plan
+      positions, stackedOnly true, defaultClearance 5000
+    expect: >
+      NOT reported - violations 0, clashing 0, and "1 pair(s) passed over: not
+      one above the other in plan". THE FIRST stackedOnly CASE TO RUN. A
+      version that judges every pair buries the stacked ones in a report
+      nobody reads; with stackedOnly false the same pair IS reported
+
+  - given: a vertical riser among the services, stackedOnly true
+    expect: >
+      `slopedOrVertical` counts it once and the warning says any vertical gap
+      to it is smaller than the truth - never a TIGHT row left unexplained.
+      With stackedOnly false `slopedOrVertical` is 0
+
+  - given: overlapAs "deep" - a word it does not read
+    expect: >
+      NOTHING WAS MEASURED, the first findings line naming the word and the
+      two it reads; `tooClose`, `overlapsMm` and `clashing` empty or 0;
+      `linkedMatches` "Links NOT read". Never a guess at clash or zero
+
+  - given: >
+      the seven sheets of P1102 MEP again, stackedOnly true, overlapAs clash
+      (the default), defaultClearance 5000
+    expect: >
+      tooClose 0, clashing 0, overlapsMm empty - an overlap cannot be made of
+      elements with no model geometry. The negative that empties every result
+      together (tools/jobs/defect-finders.yaml: a gentler clearance leaves
+      `clashing` behind, because an overlap is an overlap whatever is asked)
 
 second_route:
   - >

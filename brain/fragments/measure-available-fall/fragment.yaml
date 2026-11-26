@@ -9,7 +9,18 @@ semantic-identity: "what fall can i get between these two points"
 kind: action
 domain: revit.mep
 capability: MEASURE_AVAILABLE_FALL
-version: 1
+# VERSION 2 (2026-11-26, row 5b-2006, issue #1308): the two points can be
+# handed in at last. `upstream` and `downstream` were single-element needs, and
+# the add-in's one word for those (`selected`) means exactly one element and
+# binds it to both, so every call measured an element against itself. Now the
+# two selected in Revit, or two ids typed in `elementIds` upstream first - the
+# typed ids decide - the shape REPORT_PARAMETER_INVENTORY takes ids in. One,
+# three or none is refused, saying how many came. A selection has no order, so
+# from one the higher of the two is taken as upstream and the answer says so;
+# only typed ids can report a rise. The owner, 2026-11-26: "select both in
+# revit or type id which is the best one as per job you can decide and do it".
+# C# changed; DRAFT until NEEDS-CHECKING Group QX is run (D-30).
+version: 2
 source: OFFICIAL
 risk: ANALYZE
 
@@ -46,12 +57,24 @@ contract:
   needs:
     - name: doc
       type: Document
-    - name: upstream
-      type: Element
+    # VERSION 2. The TWO elements selected in Revit, or handed on by a step
+    # before. Optional, so that two ids typed in elementIds need no selection.
+    # Exactly two: one, three or none is refused, saying how many came. A
+    # selection has no order, so the higher of the two is taken as upstream.
+    - name: elements
+      type: IList<Element>
+      optional: true
+    # VERSION 2. Two element ids as Revit shows them, UPSTREAM FIRST, digits
+    # only, comma separated - "352516, 352517". Typed ids decide over the
+    # selection, and keep their order, so only they can report a rise. Each is
+    # matched as TEXT against every element's own id in this model, so no
+    # ElementId is built from a number; one that names nothing is refused by
+    # its id. Left out (or "none", or "selected"): the selection is used.
+    - name: elementIds
+      type: string
       source: request
-    - name: downstream
-      type: Element
-      source: request
+      optional: true
+      absent: none
   provides:
     - name: fallMm
       role: result
