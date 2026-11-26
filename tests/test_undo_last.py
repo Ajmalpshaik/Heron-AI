@@ -101,6 +101,8 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+import heron_tools as SERVER_TOOLS                          # noqa: E402
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import test_failure_note as NOTE                                # noqa: E402
@@ -409,7 +411,7 @@ def wiring():
     # Revit still running it knows `undo_last`. So the repaired pair never
     # uses that name: the server cannot ask an unrepaired add-in to post.
     tools_text = NOTE.read(os.path.join(ROOT, "mcp", "server", "heron_tools.py")) or ""
-    server_text = NOTE.read(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")) or ""
+    server_text = SERVER_TOOLS.server_text()
     check(re.search(r'\{\s*"undo_last"\s*,', registry) is None
           and 'case "undo_last":' not in raw_operations,
           "the first build's operation name, undo_last, is declared and routed nowhere")

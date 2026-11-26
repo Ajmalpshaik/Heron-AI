@@ -43,6 +43,8 @@ import shutil
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+import heron_tools as SERVER_TOOLS                          # noqa: E402
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_gaps as GAPS                                     # noqa: E402
@@ -259,8 +261,7 @@ def main():
                   % result.get("raised"))
             check("the store would not open" in str(result.get("wanted_unread") or ""),
                   "and why the wanted list could not be read comes back beside it")
-            server = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
-                             encoding="utf-8").read()
+            server = SERVER_TOOLS.server_text()
             tool = server[server.find("def heron_gaps("):]
             tool = tool[:tool.find("\n@server.tool()")]
             said = tool.find('result.get("wanted_unread")')

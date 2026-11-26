@@ -1,0 +1,40 @@
+# NEEDS-CHECKING Group QR - PROPOSE_LEVELS_FROM_POINT_CLOUD version 1, a new
+# READ card: candidate levels from a linked point cloud's dense horizontal
+# layers. Written 2026-11-25 with no Revit run. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/qr-pointcloud-levels-revit2024-2026-11-25.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/qr-pointcloud-levels-revit2024-2026-11-25.yaml --session <pid>
+#
+# THE MODELS, Revit 2024, scratch, saved under %TEMP%\heron-work, never a
+# working model:
+#   "scan-levels"  new from the metric template (Level 1 at 0, Level 2 at
+#                  4000 mm), F:\Scan to BIM\UnionStation.rcp linked Origin to
+#                  Origin and pinned - a public street scan, OUTSIDE ONLY.
+#   "no-cloud"     new from the same template, nothing linked.
+#
+# Every job is a read: nothing changes and the undo list gains no entry. The
+# heights a pass needs - the road and a roof line - are read by hand in a
+# section through the cloud with spot elevations, BEFORE the run, and written
+# into docs/needs-checking/group-qr.md beside the result. The runner cannot
+# read a sentence; group-qr.md says what to look at by eye.
+
+model: "scan-levels and no-cloud (scratch, metric template, UnionStation.rcp linked origin to origin), Revit 2024"
+
+defaults:
+  in: "scan-levels"
+  setup: []
+
+jobs:
+  - fragment: propose-levels-from-point-cloud
+    in: "scan-levels"
+    expect: candidates
+    set: {}
+    negative-in: "no-cloud"
+    negative-set: {}
+    note: >
+      QR1. Negative FIRST, on no-cloud: refused "No point cloud is linked in
+      this model" - no candidate, no number. Positive, on scan-levels with
+      every value left out: pointsRead above 1,000, the lowest candidate within
+      100 mm of the road's spot elevation, and the two closing lines
+      ("candidates, not levels"; "outside only") present. The model's element
+      count unchanged.
