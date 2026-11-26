@@ -61,3 +61,12 @@ Settings. Every run that keeps a change is Undone after.
 
 **Signing, once QV1 to QV6 pass:** the card's proof is written by `tools/batch-prove.py` with the owner, and
 `heron-status` set to PROVEN in the same change - never by a session, and never on a working model.
+
+**Version 5 run and signed, 2026-11-26 - Revit 2020, session 27788, add-in file `df0d401c52ca05f4`:** this pull request's
+head `021fd164d`, on *on-mep* (a scratch copy of Revit 2020's `rme_advanced_sample_project.rvt`, `%TEMP%\heron-work\on`),
+its 78 Rooms (Revit's delete takes 81 - the rooms and 3 no-category elements), rolled back. Proof job
+[`qv-delete-elements-v5-on-mep-...`](../../tools/jobs/qv-delete-elements-v5-on-mep-revit2020-2026-11-26.yaml): **PASS** -
+`expectedCount=81`: `deleted` 81, nothing refused; `expectedCount=80`: `deleted` 0, the stop returned through `refused`,
+**not thrown**. **Signed by Ajmal PS** (his typed word in chat, "Yes, sign it"; signature put on by the session),
+card PROVEN. Still owed: the A-tag-dimension rig of QV1/QV2 itself, QV3 to QV7.
+
