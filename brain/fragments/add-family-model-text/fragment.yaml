@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -156,63 +156,68 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-22'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: N22 M_Downlight - Recessed Can, Revit 2020, session 60544 - the count is NOT recorded
-    because 21,317 elements was measured on Heron Capture Test, the document in front, and
-    this ran against another one (row 15)
+  model: pt-ahu (7,750 elements), Revit 2020, session 32484
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned along Func`3, axisLetters 3 item(s)
-    [X, Y, Z], axisOf Func`2, datums 3 item(s) [(Autodesk.Revit.DB.ReferencePlane, 1, -2.76559916460861E-14,...,
-    (Autodesk.Revit.DB.ReferencePlane, 0, 2.05505642884851E-14, ..., (Autodesk.Revit.DB.Level,
-    2, -6.12802901943647E-15, Ref. Lev...], dbNamespace Autodesk.Revit.DB, defaultSide 3 item(s)
-    [right, front, top], direction Func`2, facing 3 item(s) [facing left or right, facing
-    front or back, horizontal], fieldNames 11 item(s) [text, workPlane, at, ...], findings
-    4 item(s) [Row 1: Revit put the letters 38.46 mm along the text, 0 mm u..., Placed 1 model
-    text(s) - one entry in the undo list: "1" (id..., New Model Text type(s): "100 mm" (Arial,
-    copied from "Model ..., ...], flags BindingFlags, fontOf Func`2, halfMillimetre 0.00164041994750656,
-    ignoreCase RegexOptions, inPlane 3 item(s) [System.Int32[], System.Int32[], System.Int32[]],
-    invariant CultureInfo, isMaterial Func`2, mm Func`2, mostRows 200, notAFamily false, number
-    Func`2, ownName Func`2, pair Func`2, placed "1" (id 4412) on "Center (Front/Back)" (facing
-    front or back, Y 0 mm, offset -2560 mm), at X -650, Z 510 mm, type "100 mm" 100 mm, 3
-    mm deep, aligned center, read from the front - running +X (right), up +Z (up), on a work
-    plane of its own that does NOT move with "Center (Front/Back)". Its letters reach X -688.46
-    to -611.54, Y -2563 to -2560, Z 510 to 610.46 mm - its centre where asked, measured, placed
-    a second time after Revit''s first placing missed., plain Func`2, problems 0 item(s),
-    refused (null), revitAssembly RuntimeAssembly, rowAlign 1 item(s) [Center], rowAt 1 item(s)
-    [System.Double[]], rowByCategory 1 item(s) [False], rowDepth 1 item(s) [3], rowHeight
-    1 item(s) [100], rowMaterial 1 item(s) [(null)], rowOffset 1 item(s) [-2560], rowParameter
-    1 item(s) [(null)], rowPlane 1 item(s) [(Autodesk.Revit.DB.ReferencePlane, 1, -2.76559916460861E-14,...],
-    rowShows 1 item(s) [(null)], rowSide 1 item(s) [front], rowText 1 item(s) [1], sameKind
-    Func`3, shortened Func`2, sides 6 entry(ies), sizeOf Func`2, squash Func`2, textCount
-    1, textIds 903c7808-e267-46d2-924e-1a66dae327ab-0000113c, textTypes 2 item(s) [Model Text
-    1, ModelTextType]. inputs came texts as given. on N22 M_Downlight - Recessed Can'
-  negative_case: 'run with texts=text=1 workPlane=Center (Front Back) at=-650,510 heightMm=100
-    depthMm=3 align=center offsetMm=-2560 instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned along Func`3, axisLetters 3 item(s) [X, Y, Z], axisOf
-    Func`2, datums 3 item(s) [(Autodesk.Revit.DB.ReferencePlane, 1, -2.76559916460861E-14,...,
-    (Autodesk.Revit.DB.ReferencePlane, 0, 2.05505642884851E-14, ..., (Autodesk.Revit.DB.Level,
-    2, -6.12802901943647E-15, Ref. Lev...], dbNamespace Autodesk.Revit.DB, defaultSide 3 item(s)
-    [right, front, top], direction Func`2, facing 3 item(s) [facing left or right, facing
-    front or back, horizontal], fieldNames 11 item(s) [text, workPlane, at, ...], findings
-    1 item(s) [Nothing was placed. Row 1: no reference plane or level is ca...], flags BindingFlags,
+    [X, Y, Z], axisOf Func`2, datums 19 item(s) [(Autodesk.Revit.DB.ReferencePlane, 1, 0,
+    Center (Front/Back)..., (Autodesk.Revit.DB.ReferencePlane, 0, 0, Center (Left/Right)...,
+    (Autodesk.Revit.DB.ReferencePlane, 0, -0.492125984251968, Li..., ...], dbNamespace Autodesk.Revit.DB,
+    defaultSide 3 item(s) [right, front, top], direction Func`2, extentOf Func`2, facing 3
+    item(s) [facing left or right, facing front or back, horizontal], fieldNames 11 item(s)
+    [text, workPlane, at, ...], findings 2 item(s) [Placed 1 model text(s) - one entry in
+    the undo list: "AHU-01..., New Model Text type(s): "40 mm" (Arial, copied from "Model
+    T...], flags BindingFlags, fontOf Func`2, halfMillimetre 0.00164041994750656, ignoreCase
+    RegexOptions, inPlane 3 item(s) [System.Int32[], System.Int32[], System.Int32[]], invariant
+    CultureInfo, isMaterial Func`2, mm Func`2, mostRows 200, notAFamily false, number Func`2,
+    ownName Func`2, pair Func`2, placed "AHU-01" (id 11583) on "Center (Front/Back)" (facing
+    front or back, Y 0 mm), at X 0, Z 300 mm, type "40 mm" 40 mm, 2 mm deep, aligned left,
+    read from the front - running +X (right), up +Z (up), sketched on the plane itself. Its
+    letters reach X -0.27 to 188.36, Y -2 to 0, Z 299.37 to 340.18 mm - its left end where
+    asked, measured on its solids., plain Func`2, problems 0 item(s), refused (null), revitAssembly
+    RuntimeAssembly, rowAlign 1 item(s) [Left], rowAt 1 item(s) [System.Double[]], rowByCategory
+    1 item(s) [False], rowDepth 1 item(s) [2], rowHeight 1 item(s) [40], rowMaterial 1 item(s)
+    [(null)], rowOffset 1 item(s) [0], rowParameter 1 item(s) [(null)], rowPlane 1 item(s)
+    [(Autodesk.Revit.DB.ReferencePlane, 1, 0, Center (Front/Back)...], rowShows 1 item(s)
+    [(null)], rowSide 1 item(s) [front], rowText 1 item(s) [AHU-01], sameKind Func`3, shortened
+    Func`2, sides 6 entry(ies), sizeOf Func`2, solidsBox Func`2, squash Func`2, textCount
+    1, textIds d65b97a7-dd06-4014-b3eb-b04d55daf54a-00002d3f, textTypes 2 item(s) [Model Text
+    1, ModelTextType]. inputs came texts as given. on pt-ahu'
+  negative_case: 'run with texts=text=AHU-01 workPlane=Heron No Such Plane 1126 at=0,300 heightMm=40
+    depthMm=2 instead - chosen because it should not contain what this fragment reports -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned along Func`3, axisLetters 3 item(s) [X, Y, Z], axisOf Func`2, datums 19 item(s)
+    [(Autodesk.Revit.DB.ReferencePlane, 1, 0, Center (Front/Back)..., (Autodesk.Revit.DB.ReferencePlane,
+    0, 0, Center (Left/Right)..., (Autodesk.Revit.DB.ReferencePlane, 0, -0.492125984251968,
+    Li..., ...], dbNamespace Autodesk.Revit.DB, defaultSide 3 item(s) [right, front, top],
+    direction Func`2, extentOf Func`2, facing 3 item(s) [facing left or right, facing front
+    or back, horizontal], fieldNames 11 item(s) [text, workPlane, at, ...], findings 1 item(s)
+    [Nothing was placed. Row 1: no reference plane or level is ca...], flags BindingFlags,
     fontOf Func`2, halfMillimetre 0.00164041994750656, ignoreCase RegexOptions, inPlane 3
     item(s) [System.Int32[], System.Int32[], System.Int32[]], invariant CultureInfo, isMaterial
     Func`2, mm Func`2, mostRows 200, notAFamily false, number Func`2, ownName Func`2, pair
     Func`2, placed , plain Func`2, problems 1 item(s) [Row 1: no reference plane or level
-    is called "Center (Front ...], refused Nothing was placed. Row 1: no reference plane or
-    level is called "Center (Front Back)". This family has Center (Front/Back), Center (Left/Right),
-    Ref. Level., revitAssembly RuntimeAssembly, rowAlign 0 item(s), rowAt 0 item(s), rowByCategory
-    0 item(s), rowDepth 0 item(s), rowHeight 0 item(s), rowMaterial 0 item(s), rowOffset 0
-    item(s), rowParameter 0 item(s), rowPlane 0 item(s), rowShows 0 item(s), rowSide 0 item(s),
-    rowText 0 item(s), sameKind Func`3, shortened Func`2, sides 6 entry(ies), sizeOf Func`2,
-    squash Func`2, textCount 0, textIds , textTypes 1 item(s) [Model Text 1]. inputs came
-    texts as given. on N22 M_Downlight - Recessed Can'
+    is called "Heron No Such ...], refused Nothing was placed. Row 1: no reference plane or
+    level is called "Heron No Such Plane 1126". This family has Center (Front/Back), Center
+    (Left/Right), Coil Back Face, Coil Front Face, Equaliser Level, Feeder Plane, Fresh Air
+    Face, Gauge Tubes, Gland Plate Underside, Liquid 1 Riser, Liquid 2 Riser, Liquid 2 Riser
+    B, Nameplate Face, Panel Label Face, Pipe Level, Pipe Stub Ends, Power Entry, Ref. Level,
+    Supply Air Face., revitAssembly RuntimeAssembly, rowAlign 0 item(s), rowAt 0 item(s),
+    rowByCategory 0 item(s), rowDepth 0 item(s), rowHeight 0 item(s), rowMaterial 0 item(s),
+    rowOffset 0 item(s), rowParameter 0 item(s), rowPlane 0 item(s), rowShows 0 item(s), rowSide
+    0 item(s), rowText 0 item(s), sameKind Func`3, shortened Func`2, sides 6 entry(ies), sizeOf
+    Func`2, solidsBox Func`2, squash Func`2, textCount 0, textIds , textTypes 1 item(s) [Model
+    Text 1]. inputs came texts as given. on pt-ahu'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: cb342c04fb162701
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: bbd9218900691b75
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
