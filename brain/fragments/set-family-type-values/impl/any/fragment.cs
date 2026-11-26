@@ -18,6 +18,13 @@
 // `SpecTypeId.Int.NumberOfPoles` from 2022, the newer one named in code under
 // `#if` so the compiler checks it on every release that has it.
 //
+// A QUOTED TEXT VALUE KEEPS ITS SPACES (version 7, 2026-11-26, row 5b-2050).
+// Text is written exactly as the binder handed it over: a value typed in double
+// quotes keeps a space at either end, and an unquoted one arrives already
+// trimmed by the binder, as before. Numbers, lengths, yes/no and material
+// names are read from the trimmed form, as they always were; a new type name
+// (Type Name=) is still trimmed.
+//
 // EVERYTHING IS CHECKED BEFORE THE FIRST WRITE. A missing parameter, a value
 // that is not a number, a formula-driven or reporting parameter, a type name
 // Revit would refuse - any one of them refuses the whole call with nothing
@@ -449,6 +456,12 @@ else
     {
         var name = pair.Key == null ? "" : pair.Key.Trim();
         var text = pair.Value == null ? "" : pair.Value.Trim();
+        // VERSION 7 (row 5b-2050): TEXT IS WRITTEN AS IT ARRIVED, not trimmed.
+        // The binder (HeronBindingNote.NamedEntries) trims an unquoted value
+        // itself and hands a quoted one over whole, so a space at either end
+        // here can only have been typed inside double quotes - Keynote=" G4 ".
+        // Every other kind is still read from the trimmed form above.
+        var asGiven = pair.Value ?? "";
         var p = fm.get_Parameter(name);
 
         if (p == null)
@@ -521,7 +534,7 @@ else
                 else problems.Add("\"" + text + "\" is not true or false for the yes/no \"" + name + "\".");
                 break;
             case "text":
-                planned.Add(Tuple.Create(p, kindWord, (object)text));
+                planned.Add(Tuple.Create(p, kindWord, (object)asGiven));
                 break;
             case "material":
                 var clearing = text.ToLowerInvariant();
@@ -559,7 +572,7 @@ else
                 // ANY OTHER KIND REVIT STORES AS TEXT is written as text.
                 if (p.StorageType == StorageType.String)
                 {
-                    planned.Add(Tuple.Create(p, "text", (object)text));
+                    planned.Add(Tuple.Create(p, "text", (object)asGiven));
                     break;
                 }
                 // VERSION 4: ANY OTHER MEASURED KIND, in the family's own units.
