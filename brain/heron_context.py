@@ -470,7 +470,6 @@ def _confidence(level, said, contest=None):
                               else round(contest.top_gap, 2)),
             "spread_ranks": round(contest.spread, 2),
             "both_routes": contest.agreed,
-            "reranked": contest.reranked,
         }
     return entry
 

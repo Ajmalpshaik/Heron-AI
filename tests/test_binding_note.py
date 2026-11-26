@@ -559,6 +559,26 @@ def empty_absent_cards(HF):
     return found
 
 
+def line_style_values_may_be_left_out(HF):
+    """Row 5b-2047: CREATE_LINE_STYLE's colour, weight and patternName may be
+    left out, and each binds the value its C# already reads as "keep" - "",
+    "0" and "". Read through the bridge client's contract reader, the one that
+    sends the card to Revit. Until version 4 the three were not optional, and
+    a call leaving out weight and patternName was refused as the caller's."""
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
+    import heron_bridge_client as BC
+    path = os.path.join(ROOT, "brain", "fragments", "create-line-style", "fragment.yaml")
+    needs = dict((n.get("name"), n) for n in (BC.fragment_needs(path) or []))
+    found = []
+    for name, wanted in (("colour", ""), ("weight", "0"), ("patternName", "")):
+        need = needs.get(name)
+        ok_here = (need is not None and HF.need_may_be_absent(need)
+                   and HF.need_absent_text(need) == wanted)
+        found.append((ok_here, "create-line-style: %s left out binds \"%s\" (row 5b-2047)"
+                      % (name, wanted)))
+    return found
+
+
 def main():
     """Hand the fragment's own rule to the host, run the suite, and clear up."""
     block = part_names_block()
@@ -795,6 +815,12 @@ def _suite(handed, block):
     for ok_here, said_here in blanks:
         print("  %s  %s" % ("ok  " if ok_here else "FAIL", said_here))
     mirrored = mirrored and all(ok_here for ok_here, _ in blanks)
+
+    # Row 5b-2047: CREATE_LINE_STYLE's three "keep" values may be left out.
+    styles = line_style_values_may_be_left_out(HF)
+    for ok_here, said_here in styles:
+        print("  %s  %s" % ("ok  " if ok_here else "FAIL", said_here))
+    mirrored = mirrored and all(ok_here for ok_here, _ in styles)
 
     # Rows 5b-1120 and 5b-1549: what the host cannot see of the fragment.
     parts = routing_part(block)

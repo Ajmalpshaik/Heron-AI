@@ -29,6 +29,17 @@ positive:
   # Version 3: left out, the call is version 2's - the first positive case
   # above, run again with parentCategory not said, makes a line style.
 
+  # Version 4 (row 5b-2047). The version 3 case with colour given and weight
+  # and patternName NOT SAID - the call the owner's chat sent on 2026-11-26.
+  - given: >
+      styleName "Secondary References", colour "128,128,128", parentCategory
+      "Reference Planes", updateExisting true, weight and patternName left out
+    expect: >
+      it runs - the reply's inputs line reads weight not given - "0" and
+      patternName not given - "" - and readBack "colour 128,128,128, weight 1,
+      pattern Solid", the same as the version 3 case that passed weight 0 and
+      patternName ""
+
 negative:
   - given: styleName "Heron Setout" again straight after, updateExisting not said
     expect: >

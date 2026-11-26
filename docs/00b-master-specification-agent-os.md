@@ -680,7 +680,7 @@ User Request -> Intent -> Domain -> Knowledge Scope
 > | Knowledge scope · metadata filtering | First, as a plain SQL filter: scope, release, status | [`heron_retrieve.py`](../brain/heron_retrieve.py) |
 > | Keyword search | SQLite FTS5 over the cards | [`heron_search.py`](../brain/heron_search.py) |
 > | Semantic search · vector search | One route, *nearness*: a local encoder, nothing sent to a cloud, or spelling-only n-grams when none is installed | [D-24](DECISIONS.md), [`heron_embed.py`](../brain/heron_embed.py) |
-> | Candidate ranking | Reciprocal rank fusion, a status nudge for near-ties, an optional re-rank; the answer says how contested it was | [D-134](DECISIONS.md), [`heron_rerank.py`](../brain/heron_rerank.py) |
+> | Candidate ranking | Reciprocal rank fusion, and a status nudge for near-ties; the answer says how contested it was. The optional re-rank was removed by [D-201](DECISIONS.md) | [`heron_retrieve.py`](../brain/heron_retrieve.py) |
 > | Conflict detection | Across scopes in `heron_standards`: surfaced, never settled | [`heron_conflict.py`](../brain/heron_conflict.py) |
 > | Knowledge validation | `heron_check`, a host's draft against the cited clauses | [`heron_ground.py`](../brain/heron_ground.py) |
 > | Context assembly | `heron_context` | [`heron_context.py`](../brain/heron_context.py) |
