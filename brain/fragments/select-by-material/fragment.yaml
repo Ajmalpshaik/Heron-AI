@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,10 +9,19 @@ semantic-identity: "the elements made of one material"
 kind: filter
 domain: revit.selection
 capability: SELECT_BY_MATERIAL
-version: 4
+version: 5
 source: OFFICIAL
 risk: READ
 
+# VERSION 5 (2026-11-26, row 5b-2035, issue #1380) - ONE SENTENCE. In a
+# family, the finding for forms that take their material <By Category> said to
+# set one "with SET_FAMILY_FORM_MATERIAL" - a card merged into
+# LINK_FAMILY_PARAMETER on 2026-11-01 and refused since, so following it led
+# nowhere. It now names LINK_FAMILY_PARAMETER (Material=). Nothing else in the
+# C# moved. Version 4 was PROVEN (the proof block below, kept as the record of
+# what it proved); its implementation's fingerprint moved, so it is DRAFT until
+# NEEDS-CHECKING Group QP, QP7, is run (D-30).
+#
 # VERSION 4 (2026-11-11) - PAINT IS ADDED TO THE MAKE-UP, and back to DRAFT.
 # Version 3 was PROVEN on 2026-10-18 (the proof block below, kept as the record
 # of what it proved: five walls PAINTED with Glass, found with includePaint
