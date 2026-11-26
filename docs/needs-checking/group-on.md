@@ -122,3 +122,5 @@ no room of its own, as this group assumed. *on-arch* (a second fresh copy, rooms
 The link-half proof draft (`validate` record `%TEMP%\heron-work\on\on8.json`: ON8 positive, ON9 (1) negative) passes
 `accept`'s evidence check - waiting for the owner. Still owed: ON3 (a kept DRAFT run, the Keep box), ON4 element by
 element, ON5, ON6, ON11, ON12's question.
+
+**Signed 2026-11-26 by Ajmal PS** (his typed word in chat, "Yes, sign it"; signature put on by the session): `assign-location-data` version 4, on the link-half record (ON8 positive, ON9 (1) negative), Revit 2020, *on-mep* - card PROVEN, as this group's closing paragraph asks (after ON8 and ON9 passed).
