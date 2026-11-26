@@ -5788,8 +5788,8 @@ def heron_lookup(request: str, question: bool = False) -> str:
     Which capability serves a request in the user's own words. Answers with
     it and the values it needs typed, for revit_read or revit_change next.
 
-    question: true only when the user wants to find something out - "what size
-    is this pipe"; every capability that changes the model is left out.
+    question: true whenever the user is asking, not asking for a change - "what
+    size is this pipe"; every capability that changes the model is left out.
     Selecting or zooming is not a change. False for a change, even asked as
     a question - "how many sprinklers do I need" - and when unsure.
 
