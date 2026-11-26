@@ -96,6 +96,49 @@
 // optional), and its KEYNOTE against the keynote table (a WARN, since a keynote
 // file is the office's choice). An empty or absent table is NOT CHECKED. The
 // fix for both is SET_FAMILY_TYPE_VALUES, which writes them as text.
+//
+// ---------------------------------------------------------------------------
+// THE NAME (version 5, 2026-11-26, D-207, row 5b-1879 item 3)
+// ---------------------------------------------------------------------------
+//
+// `namePattern` IS A `*` WILDCARD ON THE WHOLE FAMILY NAME, case-insensitive -
+// CHECK_MODEL_STANDARDS' rule, so one pattern means one thing in both: "TRG*"
+// is a name starting TRG, "*MEP*" a name holding MEP anywhere, and a pattern
+// with no `*` is the WHOLE name. Versions 1 to 4 read it as CONTAINS, so an
+// old value written with no `*` - "MEP" - now passes only a family named
+// exactly MEP; write "*MEP*" for what it used to do. The owner's word for the
+// one rule, 2026-11-26: "Wildcards *". Written out, not a regular expression,
+// as CHECK_MODEL_STANDARDS writes it.
+
+Func<string, string, bool> nameMatches = (text, pattern) =>
+{
+    text = text ?? "";
+    if (string.IsNullOrEmpty(pattern)) return true;
+    if (pattern.IndexOf('*') < 0)
+        return string.Equals(text, pattern, StringComparison.OrdinalIgnoreCase);
+    var parts = pattern.Split('*');
+    var position = 0;
+    for (var i = 0; i < parts.Length; i++)
+    {
+        var part = parts[i];
+        if (part.Length == 0) continue;
+        if (i == 0)
+        {
+            if (!text.StartsWith(part, StringComparison.OrdinalIgnoreCase)) return false;
+            position = part.Length;
+            continue;
+        }
+        if (i == parts.Length - 1 && !pattern.EndsWith("*"))
+        {
+            if (!text.EndsWith(part, StringComparison.OrdinalIgnoreCase)) return false;
+            return text.Length - part.Length >= position;
+        }
+        var found = text.IndexOf(part, position, StringComparison.OrdinalIgnoreCase);
+        if (found < 0) return false;
+        position = found + part.Length;
+    }
+    return true;
+};
 
 var findings = new List<string>();
 var offStandard = 0;
@@ -403,10 +446,11 @@ if (doc.IsFamilyDocument)
 
     if (!string.IsNullOrEmpty(namePattern))
     {
-        if (familyName.IndexOf(namePattern, StringComparison.OrdinalIgnoreCase) < 0)
-            fail("Name: \"" + familyName + "\" does not contain \"" + namePattern + "\".",
+        if (!nameMatches(familyName, namePattern))
+            fail("Name: \"" + familyName + "\" does not match the pattern \"" + namePattern + "\" (* is any "
+                + "text; with no *, the whole name).",
                 "rename the family file before it is loaded (RENAME_FAMILY renames it in a project).");
-        else pass("Name contains \"" + namePattern + "\".");
+        else pass("Name matches the pattern \"" + namePattern + "\".");
     }
     foreach (var wanted in requiredParameters ?? new List<string>())
     {
@@ -1136,10 +1180,9 @@ else
         var cautions = new List<string>();
 
         // ---- name
-        if (!string.IsNullOrEmpty(namePattern)
-            && family.Name.IndexOf(namePattern, StringComparison.OrdinalIgnoreCase) < 0)
+        if (!string.IsNullOrEmpty(namePattern) && !nameMatches(family.Name, namePattern))
         {
-            faults.Add(string.Format("name does not contain '{0}'", namePattern));
+            faults.Add(string.Format("name does not match the pattern '{0}'", namePattern));
         }
 
         // ---- required parameters, on the TYPE - counted, never looked up (see
