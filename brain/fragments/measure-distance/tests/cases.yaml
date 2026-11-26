@@ -1,11 +1,25 @@
-# CANNOT BE ARRANGED YET (row 5b-1970). This card has two single-element needs
-# (`first` and `second`), and the only word that binds one is `selected`, which means exactly one
-# element and binds that one to BOTH - so no case below can be given two different
-# elements as written, and following `selected` measures an element against itself
-# (0 mm) as an answer, not a refusal. Do not run these cases until a way to name two
-# elements exists. See docs/fragment-issues/row-5b-1970.md.
+# VERSION 3 (row 5b-2006, issue #1308): the two elements are the TWO selected
+# in Revit, or two ids typed in `elementIds` - the typed ids decide. Until
+# version 3 no case below could be arranged: `first` and `second` were
+# single-element needs and `selected` bound one element to both. The first two
+# cases of each list are the two ways in; the rest are the measuring itself,
+# arranged either way. Owed in Revit: NEEDS-CHECKING Group QX.
 
 positive:
+  - given: >
+      SELECTION - two ducts 500 mm apart selected in Revit, nothing typed
+    expect: >
+      about 500 mm straight, measured between those two. No sentence about
+      typed ids
+
+  - given: >
+      TYPED IDS - the same two ducts' ids typed in elementIds ("<A>, <B>"),
+      while a third element is selected
+    expect: >
+      the same number as by selection, and the finding "The 1 element(s)
+      selected were NOT used - ids were typed, and typed ids decide". The
+      typed ids win
+
   - given: >
       two columns 6000 mm apart on one level, on the same grid line
     expect: >
@@ -23,6 +37,23 @@ positive:
       two. If straight equals horizontal, the vertical part is being dropped
 
 negative:
+  - given: >
+      SELECTION - three elements selected, nothing typed (and, the same case,
+      one element selected)
+    expect: >
+      nothing measured, every number 0, and the finding "3 element(s) are
+      selected ... and this measures between exactly TWO" ("1 element(s)"
+      for one). THE D-30 NEGATIVE FOR THE SELECTION WAY - picking two of the
+      three would be a guess
+
+  - given: >
+      TYPED IDS - one id typed ("<A>"), then two where the second names
+      nothing in the model ("<A>, 999999999")
+    expect: >
+      nothing measured, every number 0: "1 element id(s) were typed, and this
+      measures between exactly TWO", then "No element in '<model>' has the id
+      999999999". THE D-30 NEGATIVE FOR THE TYPED WAY
+
   - given: two long parallel ducts running beside each other, 200 mm apart
     expect: >
       200 mm, NOT the distance between their midpoints. THIS IS THE FIRST CASE
