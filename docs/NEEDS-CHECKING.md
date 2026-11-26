@@ -1743,6 +1743,11 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qz.md`](needs-checking/group-qz.md)
 
+
+## Group RA - REPORT_LEVEL_ELEVATIONS version 7, the one datum tool: CHECK_DATUMS_AGAINST_LINK merged in, copy-monitored levels and grids, a link placed twice refused until its copy is named - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-ra.md`](needs-checking/group-ra.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

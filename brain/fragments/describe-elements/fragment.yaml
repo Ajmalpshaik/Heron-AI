@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-009
-semantic-identity: "what are these - category, family, type and id"
+semantic-identity: "what are these - the category, family name, type name and id of each element"
 kind: action
 domain: revit.reporting
 capability: DESCRIBE_ELEMENTS
@@ -14,19 +14,30 @@ source: OFFICIAL
 risk: READ
 
 purpose: >
-  Says what an element actually IS: its category, its family, its type name and
-  its id. The plainest question in the model — *"what is this thing"* — and
-  before this fragment the library answered it with FLIP_ELEMENTS.
+  Says what each element is: its category, its family name, its type name and its id
+  - the answer to "what is this thing", and a list of family and type names for a set
+  of elements. The family and type are read from the element's type, so the answer
+  holds whatever an element is called, and an element with no type, such as a line
+  or a group, is listed and says so. Changes nothing.
 
-  **It reads the family and type from the element's TYPE, not from its name.**
-  An instance's name is frequently the type name, frequently not, and on a
-  system family it is neither. Reading the type is the answer that survives
-  somebody having renamed things.
-
-  **An element with no type is reported, not skipped.** Walls, ducts and pipes
-  are system families and have one; a line, a group or a view does not. Leaving
-  those out of the answer would report fewer things than were asked about, and
-  nobody counts the rows.
+# PURPOSE AS IT READ UNTIL 2026-11-26, kept word for word as the record (S7d card
+# audit). The purpose is routing text - the search reads every word of it - and
+# these paragraphs read as engineering notes rather than the one job a modeller
+# asks this card for. Nothing the card does changed; only where its notes live.
+#
+# Says what an element actually IS: its category, its family, its type name and
+# its id. The plainest question in the model — *"what is this thing"* — and
+# before this fragment the library answered it with FLIP_ELEMENTS.
+#
+# **It reads the family and type from the element's TYPE, not from its name.**
+# An instance's name is frequently the type name, frequently not, and on a
+# system family it is neither. Reading the type is the answer that survives
+# somebody having renamed things.
+#
+# **An element with no type is reported, not skipped.** Walls, ducts and pipes
+# are system families and have one; a line, a group or a view does not. Leaving
+# those out of the answer would report fewer things than were asked about, and
+# nobody counts the rows.
 
 contract:
   needs:

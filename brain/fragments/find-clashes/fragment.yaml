@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-QA-003
-semantic-identity: "which of these actually intersect those"
+semantic-identity: "which elements clash - ducts, pipes or trays running into or overlapping beams, columns, walls, floors or each other"
 kind: action
 domain: revit.qa
 capability: FIND_CLASHES

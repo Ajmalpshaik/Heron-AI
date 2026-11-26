@@ -63,7 +63,7 @@ piping half below is version 1 to the word - and `heron-status` set to PROVEN in
 row that fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on. The four sentences above reach this card
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on; and since [D-203](../decisions/D-203.md) the same day it ranks on `lexical`, which this was not measured on. The four sentences above reach this card
 by identity. *"add this diffuser to the existing supply system"* and *"remove these air terminals from
 the system"* reach it ranked; on the same tree without it they reached `CREATE_MEP_SYSTEM` and
 `CONNECT_AIR_TERMINALS`. *"take these sprinklers off the system"* still reaches `REPORT_SPRINKLER_NETWORK`,

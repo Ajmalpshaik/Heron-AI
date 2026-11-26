@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-001
-semantic-identity: "reads one named parameter off every element"
+semantic-identity: "read the value of one parameter on each of these elements"
 kind: action
 domain: revit.parameters
 capability: READ_ELEMENT_PARAMETERS
@@ -59,46 +59,57 @@ source: OFFICIAL
 risk: READ
 
 purpose: >
-  Reads one named parameter off every element, and says which of three things
-  was true for each: it had a value, it had the parameter but blank, or it did not
-  have the parameter at all.
+  Reads the value of one named parameter on each element given - Comments, Mark,
+  Description, a size or a type parameter - and says for each one whether
+  it has a value, has the parameter but left blank, or does not have that parameter
+  at all. The element's own value is read first, then its type's. On a text note,
+  Text is what the note says. Changes nothing.
 
-  **VERSION 2 FIXED TWO WAYS THIS SAID `absent` WHILE THE VALUE WAS RIGHT
-  THERE.** Version 1 asked `LookupParameter` and nothing else, which is correct
-  for an instance parameter and wrong for most of what gets asked:
-
-  | Asked for | v1 answered | Why it was wrong |
-  |---|---|---|
-  | A **type** parameter - size, fire rating, manufacturer | `absent`, every element | Most schedule columns live once on the type, not per instance |
-  | **"Level"** on walls or ducts | `absent` for both | A wall has no level-named parameter at all; a duct calls it "Reference Level" |
-
-  The second is the dangerous one. Across a mixed set, air terminals answered
-  and walls and ducts did not, so the report read *"most of this model has no
-  level"* - which is not a thing that can be true, and looks like a modelling
-  problem rather than a reading one.
-
-  The type is now asked **second**, never first, so an instance parameter of the
-  same name still wins - that is the one the modeller edited. `resolvedFrom`
-  records which answered, because *"they share one value"* and *"they each carry
-  the same value"* are different findings with different fixes.
-
-  **THE ANSWER IS SAID IN WORDS** (version 5). `values` and `resolvedFrom`
-  are dictionaries, and a dictionary reached a chat as its count alone: one
-  parameter read on four connectors answered *"values 4 entry(ies)"* and not
-  one value (Revit 2020, 2026-10-22). The add-in now sends a dictionary's
-  first entries beside its count; `findings` is the same answer in this
-  card's own words - *"Allow Slope Adjustments": 4 of 4 carry a value, 0
-  blank, 0 absent. 14194: Yes (instance); 7492: Yes (instance); ...* - every
-  element read (version 6), then the blank and the absent ids. It is
-  one string, so no cut on the way to a chat can shorten it to a number.
-
-  **LEVEL IS THE ONLY SPECIAL CASE.** Category, Family and Type are how a table
-  is labelled rather than something read off an element, and D-20 keeps that at
-  the edge where the user is.
-
-  **"Text" on a text note is what the note says** (version 3): its wording,
-  with each paragraph's list type - and (version 4) whether it is a numbered
-  or bulleted list and which paragraphs are bold, italic or underlined.
+# PURPOSE AS IT READ UNTIL 2026-11-26, kept word for word as the record (S7d card
+# audit). The purpose is routing text - the search reads every word of it - and
+# these paragraphs read as engineering notes rather than the one job a modeller
+# asks this card for. Nothing the card does changed; only where its notes live.
+#
+# Reads one named parameter off every element, and says which of three things
+# was true for each: it had a value, it had the parameter but blank, or it did not
+# have the parameter at all.
+#
+# **VERSION 2 FIXED TWO WAYS THIS SAID `absent` WHILE THE VALUE WAS RIGHT
+# THERE.** Version 1 asked `LookupParameter` and nothing else, which is correct
+# for an instance parameter and wrong for most of what gets asked:
+#
+# | Asked for | v1 answered | Why it was wrong |
+# |---|---|---|
+# | A **type** parameter - size, fire rating, manufacturer | `absent`, every element | Most schedule columns live once on the type, not per instance |
+# | **"Level"** on walls or ducts | `absent` for both | A wall has no level-named parameter at all; a duct calls it "Reference Level" |
+#
+# The second is the dangerous one. Across a mixed set, air terminals answered
+# and walls and ducts did not, so the report read *"most of this model has no
+# level"* - which is not a thing that can be true, and looks like a modelling
+# problem rather than a reading one.
+#
+# The type is now asked **second**, never first, so an instance parameter of the
+# same name still wins - that is the one the modeller edited. `resolvedFrom`
+# records which answered, because *"they share one value"* and *"they each carry
+# the same value"* are different findings with different fixes.
+#
+# **THE ANSWER IS SAID IN WORDS** (version 5). `values` and `resolvedFrom`
+# are dictionaries, and a dictionary reached a chat as its count alone: one
+# parameter read on four connectors answered *"values 4 entry(ies)"* and not
+# one value (Revit 2020, 2026-10-22). The add-in now sends a dictionary's
+# first entries beside its count; `findings` is the same answer in this
+# card's own words - *"Allow Slope Adjustments": 4 of 4 carry a value, 0
+# blank, 0 absent. 14194: Yes (instance); 7492: Yes (instance); ...* - every
+# element read (version 6), then the blank and the absent ids. It is
+# one string, so no cut on the way to a chat can shorten it to a number.
+#
+# **LEVEL IS THE ONLY SPECIAL CASE.** Category, Family and Type are how a table
+# is labelled rather than something read off an element, and D-20 keeps that at
+# the edge where the user is.
+#
+# **"Text" on a text note is what the note says** (version 3): its wording,
+# with each paragraph's list type - and (version 4) whether it is a numbered
+# or bulleted list and which paragraphs are bold, italic or underlined.
 
 # VERSION 3 (2026-10-17, FRAGMENT-ISSUES 5b-520). Kept out of the purpose on
 # purpose: the purpose is searched, and a paragraph about notes and lists would

@@ -622,12 +622,13 @@ card's words. **`--sentences`** asks a frozen set instead of the two above, and 
 
 - **`--tree`** measures another checkout, such as a detached worktree of main, with **that tree's own
   search code** over a store built from its cards. Default: this checkout.
-- **`--backend`** is `lexical`, `model`, `all`, or `installed` (the
-  default: whatever answers, named by what answered). **Each backend is asked in a process of its own on a
-  scratch store**, so a backend is never mixed with another, and the store every chat reads is never
-  touched. A backend this machine has not got is **NOT ASKED** and named; the others still run.
+- **`--backend`** is `lexical`, `all`, or `installed` (the default: whatever answers, named by what
+  answered) - one backend since [D-203](../docs/decisions/D-203.md) removed `model` on 2026-11-26, and
+  `--backend model` exits 2. **Each backend is asked in a process of its own on a scratch store**, so the
+  store every chat reads is never touched; a `--tree` from before D-203 has its trained encoder turned
+  off for a `lexical` run. A backend a tree cannot be asked on is **NOT ASKED** and named.
 - **Every answer carries the backends that produced it**, and a run whose answers ran on anything else —
-  the trained model asked for and lexical answering (row 481) — is refused: **not written with `--out`,
+  one backend asked for and another answering (row 481) — is refused: **not written with `--out`,
   and not compared when it is read back**.
 - **Every run says which cards it was asked on** (`Cards:`, a fingerprint of every file under
   `brain/fragments`, kept in the record as each run's `cards`), and a run whose cards changed while it was
@@ -643,8 +644,7 @@ card's words. **`--sentences`** asks a frozen set instead of the two above, and 
   re-ranker on 2026-11-26 ([D-201](../docs/decisions/D-201.md)).
 
 **It exits 0 whatever it finds** (D-100); exit 2 when nothing was measured, the set is malformed, or a
-record would be written on the wrong backend. The code and its tests need no model. A run on `model`
-needs model2vec and huggingface.co once for the weights ([`heron_embed.py`](../brain/heron_embed.py)).
+record would be written on the wrong backend. Nothing it runs needs a download.
 
 ---
 
@@ -1418,11 +1418,12 @@ loop, and a Claude Code tool call sat on `heron_capabilities` for **thirty minut
 noticed a hang.
 
 So the import is timed **first and on its own** — and as **two lines**, which it was not until it was
-re-read. `import heron_embed` is the module and is cheap everywhere. **`backend()` is where the trained
-encoder actually loads** (`_load_model()`), and that is the 1.0 s that became 40 and then thirty
-minutes. The first version timed only the module and called it the D-49 measurement; the cost happened
-on the next line, **untimed**. Invisible on a machine without `model2vec` — which is not the machine
-that matters. The report says which of the two cases it is looking at.
+re-read. `import heron_embed` is the module and is cheap everywhere. **`backend()` was where the trained
+encoder loaded**, the 1.0 s that became 40 and then thirty minutes. The first version timed only the
+module and called it the D-49 measurement; the cost happened on the next line, **untimed**. Since
+[D-203](../docs/decisions/D-203.md) (2026-11-26) there is no trained encoder and `backend()` loads
+nothing; it is still timed on its own line (`ask which backend answers`), so anything heavy added to it
+later is seen.
 
 **Three things it refuses to do:**
 
@@ -2043,8 +2044,8 @@ which Claude works the job out by reading this repository.
 It checks that the plain command `python` is a real Python and not the Microsoft Store shortcut
 (Claude Code starts Heron with `python`), that PyYAML and the MCP package import, and that the server
 loads; then it **builds the knowledge store** (only where a chat's own start-up would -
-`heron_brain._store_warm_allowed`), **downloads the search model once** if `model2vec` is installed,
-and compiles Heron's Python. It reads the Revit add-in folders and the Changes, Admin, Publish and Ask to
+`heron_brain._store_warm_allowed`) and compiles Heron's Python. Its search section downloads nothing
+(one built-in search, D-203) and names a leftover `model2vec` with the line that removes it. It reads the Revit add-in folders and the Changes, Admin, Publish and Ask to
 Keep switches, and changes none of them. **It installs nothing**, for
 [Q-39](../docs/open-questions/answered.md)'s reason: a missing package is named with its command. Exits 1
 while anything **required** is missing. Held by `tests/test_heron_ready.py`.

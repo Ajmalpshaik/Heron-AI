@@ -171,8 +171,9 @@ def main():
                   "heron_retrieve does not call the graph at all")
             check("GRAPH" not in [n for n in dir(R) if n.isupper()],
                   "and does not import it")
-            check(sorted(R.VECTOR_WEIGHT_BY_BACKEND) == sorted(
-                      [R.EMBED.LEXICAL, R.EMBED.MODEL]),
+            # One nearness backend since D-203, so one weight beside the
+            # words route's KEYWORD_WEIGHT - and no third key for a graph.
+            check(sorted(R.VECTOR_WEIGHT_BY_BACKEND) == [R.EMBED.LEXICAL],
                   "fusion still has exactly two routes with weights - words "
                   "and nearness. An edge route gets NO VOTE until a "
                   "measurement earns it one, exactly as the nearness route "

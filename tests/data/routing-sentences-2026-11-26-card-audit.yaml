@@ -1,0 +1,138 @@
+# ROUTING SENTENCES FROZEN 2026-11-26 (S7d card audit), BEFORE ANY CARD WAS EDITED.
+# Read by tools/score-routing.py --sentences, origin/main against the branch.
+# Every sentence is this session's own, written before the change, declared on
+# no card, and none is one of the owner's 79 or the 124 plain questions. The
+# `held out` groups were never used to choose a card's words: only their totals
+# decided whether a batch was kept (the compare listing does name any of their
+# answers that changed). Four sentences were swapped for others before the first
+# measurement, because a card already declared them word for word. Measured
+# together with every other tests/data/routing-sentences-*.yaml, one set of
+# 604 sentences. Never reworded to buy back a rank.
+groups:
+- group: 'tune - view visibility: hide, isolate, grey out'
+  sentences:
+  - {say: hide the cable trays in this plan, expect: want HIDE_ELEMENTS}
+  - {say: make the pipe fittings disappear from this view, expect: want HIDE_ELEMENTS}
+  - {say: just show me the fire dampers on their own, expect: want ISOLATE_ELEMENTS}
+  - {say: isolate the mechanical equipment in this view, expect: want ISOLATE_ELEMENTS}
+  - {say: turn everything grey except the sprinkler pipes, expect: want HIGHLIGHT_VS_REST}
+  - {say: make the selected pipes blue and grey the rest of the model, expect: want HIGHLIGHT_VS_REST}
+  - {say: give these ducts a halftone override in this view, expect: want OVERRIDE_GRAPHICS_IN_VIEW}
+  - {say: change the line colour of these pipes to green in this view, expect: want OVERRIDE_GRAPHICS_IN_VIEW}
+- group: 'tune - counting, describing, reading values'
+  sentences:
+  - {say: how many fan coil units are in the building, expect: want COUNT_ELEMENTS}
+  - {say: count the light fixtures, expect: want COUNT_ELEMENTS}
+  - {say: what family and type is the selected thing, expect: want DESCRIBE_ELEMENTS}
+  - {say: list the family and type names of the selected fixtures, expect: want DESCRIBE_ELEMENTS}
+  - {say: read the Comments value on these pipes, expect: want READ_ELEMENT_PARAMETERS}
+  - {say: what does the Mark say on each of these doors, expect: want READ_ELEMENT_PARAMETERS}
+  - {say: how many grilles of each size are there, expect: want GROUP_AND_COUNT}
+  - {say: break the pipes down by diameter with a count for each, expect: want GROUP_AND_COUNT}
+  - {say: which room has the largest floor area, expect: want REPORT_ROOM_SPACE_DATA}
+  - {say: list every space with its area and volume, expect: want REPORT_ROOM_SPACE_DATA}
+- group: 'tune - selecting and finding'
+  sentences:
+  - {say: select every fire damper whose type name has FD in it, expect: want SELECT_BY_PARAMETER_VALUE}
+  - {say: pick out the lights whose Comments say emergency, expect: want SELECT_BY_PARAMETER_VALUE}
+  - {say: which pipes have an open end, expect: want SELECT_BY_CONNECTION_STATUS}
+  - {say: find the duct fittings left unconnected, expect: want SELECT_BY_CONNECTION_STATUS}
+  - {say: which sheets is this damper drawn on, expect: want FIND_VIEWS_SHOWING_ELEMENT}
+  - {say: what views can I see this pipe in, expect: want FIND_VIEWS_SHOWING_ELEMENT}
+  - {say: do the pipes run into any beams, expect: want FIND_CLASHES}
+  - {say: check the ducts against the structural framing for clashes, expect: want FIND_CLASHES}
+  - {say: who is holding these elements in the central model, expect: want REPORT_ELEMENT_OWNERSHIP}
+  - {say: can I edit these or has someone else borrowed them, expect: want REPORT_ELEMENT_OWNERSHIP}
+  - {say: is the connector on this grille round or rectangular, expect: want REPORT_CONNECTORS}
+  - {say: what size is the connector on this fan coil unit, expect: want REPORT_CONNECTORS}
+- group: 'tune - changes asked for'
+  sentences:
+  - {say: "put 'Level 3 riser' into the Comments of these pipes", expect: want WRITE_ELEMENT_PARAMETERS}
+  - {say: fill in the Mark on the selected dampers as D-01, expect: want WRITE_ELEMENT_PARAMETERS}
+  - {say: make a schedule of the pipe fittings with size and system, expect: want CREATE_SCHEDULE}
+  - {say: build a lighting fixture schedule with type and wattage, expect: want CREATE_SCHEDULE}
+  - {say: lift the selected lights by 150 mm, expect: want MOVE_ELEMENTS}
+  - {say: shift the fan coil unit 600 to the left, expect: want MOVE_ELEMENTS}
+  - {say: make a copy of this pipe type called Steel 2, expect: want DUPLICATE_TYPE}
+  - {say: add a new 400x400 type to this grille family, expect: want DUPLICATE_TYPE}
+- group: 'tune - neighbours that must keep their own requests'
+  sentences:
+  - {say: tap the ceiling diffusers into the duct above them, expect: want CONNECT_AIR_TERMINALS}
+  - {say: join these grilles to the duct running past, expect: want CONNECT_AIR_TERMINALS}
+  - {say: load the airflow for each terminal from my csv of ids, expect: want SET_AIR_TERMINAL_FLOW}
+  - {say: make the tag leaders square with an elbow, expect: want FORCE_TAG_LEADER_LSHAPE}
+  - {say: associate the depth of this extrusion with the Depth parameter, expect: want LINK_FAMILY_PARAMETER}
+  - {say: set this family to be placed on any work plane, expect: want SET_FAMILY_SETTINGS}
+  - {say: turn on areas and volumes for the rooms, expect: want SET_AREA_VOLUME_COMPUTATIONS}
+  - {say: find joints where two supplies push into each other, expect: want CHECK_FLOW_DIRECTION}
+  - {say: refit the interior elevations now the room is bigger, expect: want REFIT_ROOM_ELEVATIONS}
+  - {say: dimension the width and depth of every room on this plan, expect: want DIMENSION_ROOMS}
+  - {say: which rooms does each door connect, expect: want REPORT_DOOR_ROOM_LINKS}
+  - {say: send the coordination 3d view out as an fbx file, expect: want EXPORT_VIEWS_TO_FBX}
+  - {say: add a Height length parameter to this family, expect: want ADD_FAMILY_PARAMETERS}
+  - {say: keep the duct tops level when the size changes, expect: want SET_MEP_JUSTIFICATION}
+  - {say: put elbows and tees on all these pipe joints, expect: want FIT_MEP_JOINTS}
+  - {say: draw a 300x200 duct between these two points, expect: want CREATE_MEP_RUNS}
+  - {say: resize the ducts for the airflow they carry, expect: want AUTO_SIZE_MEP}
+  - {say: what is the clear height under the ceiling in these rooms, expect: want MEASURE_CEILING_HEIGHT}
+  - {say: find dampers modelled in the wrong category, expect: want CHECK_CATEGORY_MISMATCH}
+  - {say: grey out the whole walls category in this view, expect: want SET_CATEGORY_GRAPHICS}
+  - {say: colour the spaces by their department with a legend, expect: want APPLY_COLOR_FILL_SCHEME}
+  - {say: follow this supply system from the fan and tell me what it reaches, expect: want TRACE_CONNECTIVITY}
+  - {say: what are the cooling loads on these spaces, expect: want READ_SPACE_LOADS}
+  - {say: which floor plans are on sheets, expect: want FIND_VIEWS}
+  - {say: list the sheets whose number starts with M, expect: want FIND_SHEETS}
+- group: 'tune - questions, which nothing that changes the model should answer'
+  expect: not-a-write
+  sentences:
+  - are any of these dampers missing insulation
+  - which terminals are not on a duct yet
+  - what flow is set on these grilles
+  - which family settings does this family have
+  - what justification are these ducts drawn at
+  - is this room area measured at the wall finish
+  - which tags have a diagonal leader
+  - what joint fittings does this pipe run have
+- group: 'held out - never read sentence by sentence while wording'
+  sentences:
+  - {say: hide the conduits in the current view, expect: want HIDE_ELEMENTS}
+  - {say: I only want to see the sprinkler heads in this view, expect: want ISOLATE_ELEMENTS}
+  - {say: grey out all except the plumbing fixtures, expect: want HIGHLIGHT_VS_REST}
+  - {say: make these walls show halftone, expect: want OVERRIDE_GRAPHICS_IN_VIEW}
+  - {say: how many pumps are in this model, expect: want COUNT_ELEMENTS}
+  - {say: tell me the family and type of this element, expect: want DESCRIBE_ELEMENTS}
+  - {say: show me the System Name value on these pipes, expect: want READ_ELEMENT_PARAMETERS}
+  - {say: how many dampers of each type are there, expect: want GROUP_AND_COUNT}
+  - {say: what is the area of each room on level 1, expect: want REPORT_ROOM_SPACE_DATA}
+  - {say: select the doors whose Mark starts with D1, expect: want SELECT_BY_PARAMETER_VALUE}
+  - {say: find the loose pipe ends, expect: want SELECT_BY_CONNECTION_STATUS}
+  - {say: is this valve shown on any sheet, expect: want FIND_VIEWS_SHOWING_ELEMENT}
+  - {say: do the cable trays hit the columns, expect: want FIND_CLASHES}
+  - {say: who owns this duct in the workshared model, expect: want REPORT_ELEMENT_OWNERSHIP}
+  - {say: what shape is the connector on these dampers, expect: want REPORT_CONNECTORS}
+  - {say: set the Comments of the selected lights to check, expect: want WRITE_ELEMENT_PARAMETERS}
+  - {say: create a door schedule with mark width and height, expect: want CREATE_SCHEDULE}
+  - {say: raise the selected pipes 200 mm, expect: want MOVE_ELEMENTS}
+  - {say: duplicate this door type as 1000 wide, expect: want DUPLICATE_TYPE}
+  - {say: connect the return grilles to the duct, expect: want CONNECT_AIR_TERMINALS}
+  - {say: square up the tag leaders, expect: want FORCE_TAG_LEADER_LSHAPE}
+  - {say: make the family shared, expect: want SET_FAMILY_SETTINGS}
+  - {say: put the dimensions across each room, expect: want DIMENSION_ROOMS}
+  - {say: add the fittings to the open joints in this run, expect: want FIT_MEP_JOINTS}
+  - {say: size the ducts by velocity, expect: want AUTO_SIZE_MEP}
+  - {say: colour the rooms by name and add the legend, expect: want APPLY_COLOR_FILL_SCHEME}
+  - {say: how high is the ceiling in this room, expect: want MEASURE_CEILING_HEIGHT}
+  - {say: which of these lights are in the wrong category, expect: want CHECK_CATEGORY_MISMATCH}
+  - {say: where does this pipe system go from the pump, expect: want TRACE_CONNECTIVITY}
+  - {say: list the sections that have no sheet yet, expect: want FIND_VIEWS}
+- group: 'held out - questions'
+  expect: not-a-write
+  sentences:
+  - which diffusers are not tapped into a duct
+  - what is the airflow on this terminal
+  - is this family work plane based
+  - are the tag leaders straight or bent
+  - which fittings are in this run
+  - how big are these ducts
+  - which parameters on this family are type ones
+  - is this element owned by someone

@@ -52,7 +52,7 @@ and then by a change has to be named as having fallen.
 
 Section 9, added 2026-10-17: a session's own sentence set (rows 5b-481,
 5b-485, 5b-510) - its shape, asked on a tiny fixture checkout built in a
-scratch folder (this tree's search code, four cards and no trained encoder,
+scratch folder (this tree's search code and four cards - one built-in encoder,
 so it answers alike on any machine and fetches nothing), each backend in a
 process of its own, a record refused when its answers ran on another backend,
 and every changed answer tagged against a second fixture tree with one card
@@ -575,14 +575,6 @@ def plain_questions(tool, capabilities):
 # Section 9: a session's own sentences - rows 5b-481, 5b-485 and 5b-510
 # ---------------------------------------------------------------------------
 
-# NO TRAINED ENCODER, whatever the machine running the test has - so the# AND NO TRAINED ENCODER, whatever the machine running the test has - so the
-# fixture fetches nothing and `model` is refused on every machine alike.
-NO_MODEL = '''
-def _load_model():
-    """THE TEST'S MACHINE HAS NO TRAINED ENCODER."""
-    return None
-'''
-
 # The first card must be LIVE: a DEPRECATED card is offered by nothing. It was
 # rename-elements until 2026-11-01, when that card was merged into
 # edit-text-values and retired - the fact the fixture rested on changed, not
@@ -601,8 +593,7 @@ SECTION_9_NAMES = ("load_sentences", "parse_expect", "backend_problems",
 
 
 def _fixture_tree(top, cards=FIXTURE_CARDS):
-    """A tiny checkout in TOP: this tree's search code, a few cards and no
-    trained encoder."""
+    """A tiny checkout in TOP: this tree's search code and a few cards."""
     for part in (("brain",), ("mcp", "server")):
         source, there = os.path.join(ROOT, *part), os.path.join(top, *part)
         os.makedirs(there)
@@ -613,10 +604,6 @@ def _fixture_tree(top, cards=FIXTURE_CARDS):
     for card in cards:
         shutil.copytree(os.path.join(ROOT, "brain", "fragments", card),
                         os.path.join(top, "brain", "fragments", card))
-    for name, extra in (("heron_embed.py", NO_MODEL),):
-        with io.open(os.path.join(top, "brain", name), "a",
-                     encoding="utf-8") as handle:
-            handle.write("\n\n" + extra)
     return top
 
 
@@ -728,23 +715,26 @@ def backend_evidence(tool):
     import heron_embed as EMBED
     import heron_retrieve as RETRIEVE
 
-    check((tool.LEXICAL, tool.MODEL) == (EMBED.LEXICAL, EMBED.MODEL)
+    check(tool.LEXICAL == EMBED.LEXICAL
           and "not used" in tool.NOT_RAN
           and RETRIEVE.ran([])["nearness"] in tool.NOT_RAN,
           "the backend names are the ones heron_retrieve.ran() writes")
     check("rerank" not in RETRIEVE.ran([]),
           "and ran() names no re-ranker - it was removed (D-201)")
-    check(set(tool.BACKENDS) == {"lexical", "model"},
-          "two backends: lexical and the trained model, with no +rerank "
-          "since D-201")
+    check(set(tool.BACKENDS) == {"lexical"},
+          "one backend: lexical - no +rerank since D-201, no trained model "
+          "since D-203")
     lexical = [_answer(1), _answer(2), _answer(3, route="identity",
                                                 nearness="not used")]
     check(tool.backend_problems("lexical", lexical) == [],
           "lexical answers are a lexical run, an exact phrase casting no vote")
     fell = [_answer(1), _answer(2)]
-    check(tool.backend_problems("model", fell) != [],
-          "the model asked for and lexical answering - a silent fallback - "
-          "is named")
+    check(tool.backend_problems("lexical", [_answer(1, nearness="model"),
+                                            _answer(2, nearness="model")]) != [],
+          "lexical asked for and another encoder answering - a silent "
+          "swap - is named")
+    check(fell and tool.backend_problems("lexical", fell) == [],
+          "and the same answers on lexical are a lexical run")
     check(tool.backend_problems("lexical", [_answer(
         1, nearness="not used")]) != [],
         "a run where no ranked answer named the backend proved nothing")
@@ -845,14 +835,10 @@ def asked_for_real(tool, work):
                      % (json.dumps(declared), WANTED, QUESTION))
     record_a = os.path.join(work, "a.json")
     code, said = _run(tool, ["--sentences", sentences, "--tree", tree_a,
-                             "--backend", "lexical", "--backend", "model",
-                             "--out", record_a])
+                             "--backend", "lexical", "--out", record_a])
     check(code == 0 and os.path.exists(record_a),
           "the fixture is asked and recorded, exit 0 (D-100): %r %s"
           % (code, said[-300:] if code != 0 else ""))
-    check("NOT ASKED ON MODEL" in said and "Not on model" in said,
-          "the model, which the fixture has not got, is named as not asked - "
-          "never measured as lexical under its name")
     if not os.path.exists(record_a):
         return
     with io.open(record_a, encoding="utf-8") as handle:
@@ -936,9 +922,11 @@ def asked_for_real(tool, work):
              "--record with a sentence set - the history holds his and the "
              "plain sets only"),
             (["--sentences", sentences, "--backend", "fastest"],
-             "a backend that is none of the two"),
+             "a backend that is not lexical"),
             (["--sentences", sentences, "--backend", "model+rerank"],
-             "the re-ranker's backend, removed by D-201")):
+             "the re-ranker's backend, removed by D-201"),
+            (["--sentences", sentences, "--backend", "model"],
+             "the trained model's backend, removed by D-203")):
         code, _said = _run(tool, argv)
         check(code == 2, "exit 2 for %s (got %r)" % (why, code))
     with io.open(history, "rb") as handle:

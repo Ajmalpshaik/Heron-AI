@@ -61,7 +61,7 @@ two Revits are connected, and `< /dev/null`.
 row that fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on. The three sentences above reach this card
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on; and since [D-203](../decisions/D-203.md) the same day it ranks on `lexical`, which this was not measured on. The three sentences above reach this card
 by identity. *"remove these"*, which `DELETE_ELEMENTS`' routing table claims, reached `REMOVE_TAGS` ranked
 before this card existed and this card once it did; it is declared on `DELETE_ELEMENTS` now and reaches it
 by identity ([row 5b-1358](../fragment-issues/section-5b-rows-1351-1375.md)). *"remove insulation"*, *"strip

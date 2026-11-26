@@ -60,7 +60,7 @@ import scratch_audit                                            # noqa: E402
 # trail (FRAGMENT-ISSUES row 5b-1070).
 scratch_audit.plant()
 
-#: A pip line for a package the lock pins. Optional add-ons (model2vec and the
+#: A pip line for a package the lock pins. Optional add-ons (pypdf and the
 #: like) are not in the lock and stay their own lines.
 LOCKED = re.compile(r"pip install[^\n]*?(\bpyyaml\b|\bmcp\b|\bcryptography\b|"
                     r"\bcffi\b|-r\s+requirements\.txt)", re.I)
