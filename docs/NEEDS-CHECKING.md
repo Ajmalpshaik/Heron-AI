@@ -1731,6 +1731,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qv.md`](needs-checking/group-qv.md)
 
+## Group QX - MEASURE_DISTANCE version 3 and MEASURE_AVAILABLE_FALL version 2: the two elements selected in Revit, or two ids typed - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qx.md`](needs-checking/group-qx.md)
+
 ## Group QY - CHECK_MINIMUM_CLEARANCE version 5 (vertical clearance merged in), CHECK_SLEEVE_SIZE version 3 and PROPOSE_MEP_OPENINGS version 3 - DRAFT until proved (2026-11-26)
 
 **Its own file:** [`needs-checking/group-qy.md`](needs-checking/group-qy.md)

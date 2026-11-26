@@ -377,7 +377,8 @@ Reports how far apart two elements are - the straight-line distance, and the hor
 |---|---|
 | **Kind** | Answers a question (`READ`) |
 | **Reached by** | asking in a Claude chat |
-| **You say** | **first** - ONE PARTICULAR element - SELECT IT IN REVIT and type `selected`. Exactly one: none or several are refused, and so is a typed name, because an instance has no name of its own<br>**second** - ONE PARTICULAR element - SELECT IT IN REVIT and type `selected`. Exactly one: none or several are refused, and so is a typed name, because an instance has no name of its own |
+| **Works on** | what is selected in Revit: elements |
+| **You say** | **element ids** - text; optional, left out means *none* |
 | **You get** | straight mm, horizontal mm, vertical mm, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | none |
@@ -386,8 +387,9 @@ Reports how far apart two elements are - the straight-line distance, and the hor
 **How to use it**
 
 1. Open the model in Revit and connect Heron: press **Heron** on the Heron tab, so its heron turns orange.
-2. In a Claude chat, ask in your own words, for example *"how far apart are they"*. Say the values under **You say** in the same sentence.
-3. Heron answers in the chat. Nothing in the model changes.
+2. Select what it works on in Revit (elements) - or name it in the same request, and Heron finds it first.
+3. In a Claude chat, ask in your own words, for example *"how far apart are they"*. Say the values under **You say** in the same sentence.
+4. Heron answers in the chat. Nothing in the model changes.
 
 Other ways to ask: *"how far apart are these two"* · *"what is the gap between these"*
 
