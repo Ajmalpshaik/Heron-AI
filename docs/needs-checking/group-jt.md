@@ -72,7 +72,7 @@ JT6, a workshared copy - `Project1 work_ajmal.al` or the owner's own local. The 
 fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the owner's
-PC ranks with `model+rerank`, which is **NOT RUN** here. *"model dashboard"*, *"model overview"* and *"model
+PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on. *"model dashboard"*, *"model overview"* and *"model
 health summary"* reach this card, and so do *"show me the model dashboard"* and *"give me a model
 overview"*; plain *"list warnings"*, *"is the model healthy"* and *"how many warnings"* still reach
 `READ_MODEL_WARNINGS`. `check-routing` against a run taken before the card: no question reaches a write, the
