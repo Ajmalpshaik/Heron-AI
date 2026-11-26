@@ -67,7 +67,7 @@ stop there, before the foundation runs - expected, NOT RUN. Every line below wit
 row that fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on - through `heron_brain.lookup` on a scratch
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on; and since [D-203](../decisions/D-203.md) the same day it ranks on `lexical`, which this was not measured on - through `heron_brain.lookup` on a scratch
 store each, against this tree with and without the card, on Revit 2024 and 2025. The three sentences above
 reach this card by identity; without it they reached `PLACE_FOOTING_REBAR` (*"put a wall footing under
 these walls"*) and `PLACE_AREA_REINFORCEMENT` (the other two) - two writes that reinforce, ranked. Six

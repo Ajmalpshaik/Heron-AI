@@ -19,23 +19,23 @@ positive:
 
   # VERSION 2 - 5b-1297 and 5b-1298, the family they were measured on.
   - given: >
-      'TRG_Lighting Fixture_LED Pendant_CoreLine WT120C' on Revit 2020, two
-      family types TRG_Standard and TRG_Emergency, TRG_Emergency current;
+      'ABC_Lighting Fixture_LED Pendant_CoreLine WT120C' on Revit 2020, two
+      family types ABC_Standard and ABC_Emergency, ABC_Emergency current;
       typeName empty; intensity "4500 lm", colorTemperature "4000 K"
     expect: >
       both types read Luminous Flux 4500 lm and 4000 K in their own Type
-      Properties; TRG_Emergency, which the lighting API does not list, named as
-      reached with it current; TRG_Emergency current again afterwards. Or, if
-      Revit does not let it be reached, the call fails naming TRG_Emergency and
+      Properties; ABC_Emergency, which the lighting API does not list, named as
+      reached with it current; ABC_Emergency current again afterwards. Or, if
+      Revit does not let it be reached, the call fails naming ABC_Emergency and
       the hand fix in Family Types, and nothing is kept - EITHER answer is the
       measurement Group IK wants
 
   - given: >
-      the same family; intensity "35.5 W at 127 lm/W", typeName TRG_Standard
+      the same family; intensity "35.5 W at 127 lm/W", typeName ABC_Standard
     expect: >
-      TRG_Standard's Type Properties read Wattage 35.5 W and Efficacy 127 lm/W
+      ABC_Standard's Type Properties read Wattage 35.5 W and Efficacy 127 lm/W
       out of Revit's internal units, Luminous Flux about 4508.5 lm, and the
-      BV18 finding; TRG_Emergency's light values exactly as before. Or the
+      BV18 finding; ABC_Emergency's light values exactly as before. Or the
       call fails saying this Revit did not take W, nothing kept
 
   - given: the same family; intensity "4500 lm at 35.5 W"
@@ -45,11 +45,11 @@ positive:
 
   - given: >
       the same family; lightLossFactor "0.8", dimming "incandescent",
-      colorFilter "255 240 200", typeName TRG_Standard
+      colorFilter "255 240 200", typeName ABC_Standard
     expect: >
       light loss factor 0.8, dimming incandescent and the filter read back
-      through the lighting API; Total Light Loss Factor 0.8 in TRG_Standard's
-      Type Properties; TRG_Emergency unchanged
+      through the lighting API; Total Light Loss Factor 0.8 in ABC_Standard's
+      Type Properties; ABC_Emergency unchanged
 
   - given: the same family; position "z 2400", then aim "tilt 15 about x"
     expect: >
@@ -75,7 +75,7 @@ negative:
       types' values in one call, with Revit's reason - nothing changed
 
   - given: >
-      the two-type family; typeName "TRG_Standard", shape "line 1160"
+      the two-type family; typeName "ABC_Standard", shape "line 1160"
     expect: >
       refused - the shape is the family's light source, every type takes it -
       nothing changed

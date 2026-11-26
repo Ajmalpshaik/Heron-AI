@@ -60,9 +60,9 @@ out. The lexical backend matches the function words and cannot tell that "show
 me the drawing list" and "show me every duct" want different things.
 
 So the finding is about the RETRIEVAL LAYER, not about any fragment - the same
-place D-101 landed from the other direction. Register item A7, the trained
-embedding backend, is the thing that would separate them, and it has never run
-here.
+place D-101 landed from the other direction. Register item A7's trained
+embedding backend was the hope for separating them; D-203 removed it
+(2026-11-26), not being better on the owner's own questions.
 
 AND THE BRANCH BELOW USED TO BREAK THAT RULE ITSELF
 ---------------------------------------------------

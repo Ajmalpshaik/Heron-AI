@@ -71,7 +71,7 @@ connected, and `< /dev/null`.
 that fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on - through `brain/heron_retrieve.py` and
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on; and since [D-203](../decisions/D-203.md) the same day it ranks on `lexical`, which this was not measured on - through `brain/heron_retrieve.py` and
 `tools/check-routing.py` on a scratch store each, against this tree with and without the card. The three
 sentences reach this card by identity on 2020 and 2024; without it the first two ranked
 `PLACE_FABRIC_REINFORCEMENT` first and the third `ADD_CURTAIN_GRID_LINES`. `PLACE_FABRIC_REINFORCEMENT`'s

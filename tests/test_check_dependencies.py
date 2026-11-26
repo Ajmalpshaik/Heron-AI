@@ -76,14 +76,14 @@ def load():
 # One well-formed manifest of each kind, used wherever the case under test
 # is about the OTHER file.
 GOOD_REQUIRED = "# yaml | reading yaml | nothing in brain/ runs\nPyYAML\n"
-GOOD_OPTIONAL = ("# model2vec | the trained encoder | "
-                 "retrieval falls back to character n-grams\nmodel2vec\n")
+GOOD_OPTIONAL = ("# pypdf | reading PDF documents | "
+                 "PDFs cannot be ingested\npypdf\n")
 
 # A PACKAGE THAT CANNOT BE INSTALLED, so the missing-optional path is
 # reachable on EVERY machine - fixed 2026-09-22.
 #
-# Section 1 used GOOD_OPTIONAL, which names model2vec, and then asserted that
-# the report says it is absent. On a machine where model2vec IS installed -
+# Section 1 used GOOD_OPTIONAL, which named model2vec until D-203, and then
+# asserted that the report says it is absent. On a machine where model2vec IS installed -
 # the owner's PC - check-dependencies correctly reported it present and said
 # nothing about installing it, and three checks failed the tool for being
 # RIGHT. The same shape as section 6 of tests/test_api_digest.py: a suite that
@@ -187,20 +187,25 @@ def main():
 
         print()
         print("5. The size is READ from the code that downloads, never typed")
-        # R-77: the trained embedding announces its own size, in heron_embed.
-        # (The re-ranker did too, until D-201 removed it.)
-        said = tool.announced_size("model2vec")
-        check(bool(said), "a size comes back for model2vec")
+        # R-77: the PDF reader's size is stated by heron_ingest, the code a
+        # reader meets when it is missing. (The trained embedding announced
+        # its own in heron_embed until D-203 removed it, and the re-ranker
+        # did until D-201.)
+        said = tool.announced_size("pypdf")
+        check(bool(said), "a size comes back for pypdf")
         if said:
             brain = os.path.join(ROOT, "brain")
             if brain not in sys.path:
                 sys.path.insert(0, brain)
-            import heron_embed                      # noqa: E402
-            check(said in heron_embed.announcement(),
-                  "read from heron_embed.announcement(), the code that owns "
-                  "that download and prints it before the network is touched")
+            import heron_ingest                     # noqa: E402
+            check(said == heron_ingest.PDF_READER_SIZE,
+                  "read from heron_ingest.PDF_READER_SIZE, the code that says "
+                  "it in the sentence a reader meets")
             check(said not in io.open(TOOL, encoding="utf-8").read(),
                   "and not typed in this tool")
+        check(tool.announced_size("model2vec") is None,
+              "and the removed trained embedding is announced by nothing "
+              "(D-203)")
         check(tool.announced_size("sentence_transformers") is None,
               "and the removed re-ranker's package is announced by nothing "
               "(D-201)")
@@ -220,11 +225,9 @@ def main():
         readme = io.open(os.path.join(ROOT, "README.md"), encoding="utf-8").read()
         check("docs/guide/system-requirements.md" in readme,
               "and README.md links to it")
-        import heron_embed as _embed                # noqa: E402
         import heron_ingest as _ingest              # noqa: E402
-        for owner, size in (("heron_embed", getattr(_embed, "SIZE", None)),
-                            ("heron_ingest",
-                             getattr(_ingest, "PDF_READER_SIZE", None))):
+        for owner, size in (("heron_ingest",
+                             getattr(_ingest, "PDF_READER_SIZE", None)),):
             check(bool(size) and size in body,
                   "and it states %s.SIZE word for word: %r" % (owner, size))
         check("Minimum" in body and "not yet measured" in body,

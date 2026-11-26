@@ -149,7 +149,7 @@ flowchart TD
     F["<b>1 · Filter first</b><br/>another Revit release: left out<br/>a question: no change offered"]
     X["<b>2 · Exact match?</b><br/>a card's own sentence,<br/>or words answered before"]
     KW["<b>3a · Word match</b><br/>FTS5 · heron_search"]
-    MN["<b>3b · Meaning search</b><br/>heron_embed · lexical built in<br/>model2vec when installed"]
+    MN["<b>3b · Nearness</b><br/>heron_embed · lexical, built in<br/>spelling, not meaning"]
     FU["<b>4 · Fusion</b><br/>reciprocal rank · heron_retrieve"]
     AN["<b>The answer</b><br/>the capability · how it matched<br/>which search ran · what was left out"]
 
@@ -187,8 +187,8 @@ Claude Code           calls heron_lookup with the Revit release, and `question` 
    +-- found ------------------------------------------------------------> the answer
    +-- not found
         |
-   3a Word match                  3b Meaning search
-      FTS5, heron_search             heron_embed: lexical built in, model2vec when installed
+   3a Word match                  3b Nearness
+      FTS5, heron_search             heron_embed: lexical, built in (spelling, not meaning)
         |                              |
         +--------------+---------------+
                        |
@@ -205,13 +205,13 @@ The answer            the capability, how it matched (identity / cache / hybrid 
 | **1 · Filter first** | A plain SQL `WHERE` over status, Revit release, domain and kind. A fragment for another release is **absent, not demoted**. When the host calls the request a question, every fragment above `question_ceiling()` - the level just below `revit_change`'s, read from the tool registry - is absent too ([D-128](DECISIONS.md#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model)). The answer counts both | `heron_retrieve.eligible` | 1 |
 | **2 · Exact match** | `identity`: the words are a card's own declared sentence - one lookup, no search. Only a `PROVEN` fragment may run off it unasked, and through a door only when every value it needs is given ([04 §8.5](04-heron-mcp.md#85-one-request-fewer-turns--built-2026-09-30)). `cache`: these words were answered before - a candidate, never a decision. Step 1 applies to both | `heron_search.short_circuit`, `heron_search.recall` | 5 |
 | **3a · Word match** | FTS5 over the fragments step 1 kept, ranked by bm25 | `heron_search.keywords` | 2 |
-| **3b · Meaning search** | `lexical` is built in: character n-grams, measured as *not* meaning. `model` is model2vec when it is installed and its weights can be fetched. Which one ran is recorded on the answer | [`heron_embed.py`](../brain/heron_embed.py) | 2 |
-| **4 · Fusion** | Reciprocal rank fusion of the two lists (`RRF_K`). The meaning route's vote is weighted by which backend ran (`VECTOR_WEIGHT_BY_BACKEND`), and a status nudge smaller than one rank settles near-ties only | `heron_retrieve.retrieve` | 3, and 4's status signal |
+| **3b · Nearness** | `lexical`, built in: character n-grams, measured as *not* meaning - the one search on every PC since [D-203](decisions/D-203.md) removed the trained `model` (model2vec), 2026-11-26. Which one ran is still recorded on the answer | [`heron_embed.py`](../brain/heron_embed.py) | 2 |
+| **4 · Fusion** | Reciprocal rank fusion of the two lists (`RRF_K`). The nearness route's vote is weighted by its backend (`VECTOR_WEIGHT_BY_BACKEND`, 0.6 for `lexical`), and a status nudge smaller than one rank settles near-ties only | `heron_retrieve.retrieve` | 3, and 4's status signal |
 | ~~**5 · Re-ranker**~~ | **Removed 2026-11-26 ([D-201](decisions/D-201.md)).** A cross-encoder read each (question, passage) pair of the top ~20; measured, it gave no clear gain over the model alone ([D-134](DECISIONS.md#d-134--the-re-ranker-reads-a-cards-first-declared-sentences-beside-its-identity-carried-in-the-store), superseded) | - | 4 |
 | **The answer** | The capability, the route (`identity`, `cache`, `hybrid` or `nothing`), the fragment behind it as evidence, a `nearness` line saying which search ran, and how many fragments step 1 left out | `heron_brain.lookup`, the `heron_lookup` tool | - |
 
-What to install for 3b, and what it was measured to do, is
-[WHAT-TO-INSTALL §2](WHAT-TO-INSTALL.md#2-optional--the-trained-search-model).
+Why 3b has nothing to install, and what the removed model was measured to do, is
+[WHAT-TO-INSTALL §2](WHAT-TO-INSTALL.md#2-search--built-in-no-add-on).
 
 ## 5. **[NOTE]** Vector store choice
 
@@ -256,8 +256,9 @@ Tracked as [Q-11](OPEN-QUESTIONS.md) and the wider data-residency question [Q-12
 > [D-24](DECISIONS.md#d-24--embeddings-are-computed-locally-by-default), and the cloud opt-in in the
 > recommendation above was withdrawn the same day by
 > [D-26](DECISIONS.md#d-26--the-model-file-is-never-uploaded). Embeddings are computed on the machine,
-> with no opt-in and no setting. [`heron_embed.py`](../brain/heron_embed.py) uses a trained encoder when
-> one is installed, and the built-in lexical backend otherwise. Each answer says which one ran. What to
+> with no opt-in and no setting. [`heron_embed.py`](../brain/heron_embed.py) uses the built-in lexical
+> backend on every PC - a trained encoder was used where installed until [D-203](decisions/D-203.md)
+> removed it (2026-11-26). Each answer says which one ran. What to
 > install is [WHAT-TO-INSTALL](WHAT-TO-INSTALL.md).
 
 ---

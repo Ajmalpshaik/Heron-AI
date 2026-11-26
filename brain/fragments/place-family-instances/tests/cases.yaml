@@ -38,7 +38,7 @@ positive:
   # VERSION 3, 2026-10-17 - FRAGMENT-ISSUES 5b-590. RUN in scratch Project1,
   # Revit 2020, every leg rolled back. Level 2 is at 4000 mm.
   - given: >
-      TRG_GEN_CutOut_Rectangular_HVAC: 25mm Cutout Buffer - level-based, with
+      ABC_GEN_CutOut_Rectangular_HVAC: 25mm Cutout Buffer - level-based, with
       "Defines Origin" ticked on the plane at the BOTTOM of its opening - at
       z 6152 and z 6127 on Level 2: the shape of the real refusal of
       2026-10-15, 2152 and 2127 mm above the level

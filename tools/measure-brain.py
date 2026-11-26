@@ -41,15 +41,14 @@ heron_capabilities for THIRTY MINUTES. An import costing 1.0 s in a fresh
 process was still running at 40 s there. It was found with faulthandler by
 somebody who noticed a hang - not by anything that measures.
 
-TWO LINES FOR THAT, NOT ONE, AND THE SECOND IS THE ONE THAT MATTERS.
-`import heron_embed` is the module and is cheap everywhere. `backend()` calls
-`_load_model()`, which is where the TRAINED ENCODER is imported - the 1.0 s
-that became 40 and then thirty minutes. The first version of this tool timed
-only the first and called it the D-49 measurement; the cost happened on the
-next line, untimed. On this container it is invisible either way because
-model2vec is not installed and _load_model() returns None at once. On the
-machine where it matters it would have hidden the whole thing, in the tool
-written to catch exactly that.
+TWO LINES FOR THAT, NOT ONE, AND THE SECOND WAS THE ONE THAT MATTERED.
+`import heron_embed` is the module and is cheap everywhere. `backend()` was
+where the TRAINED ENCODER was imported - the 1.0 s that became 40 and then
+thirty minutes. The first version of this tool timed only the first and
+called it the D-49 measurement; the cost happened on the next line, untimed.
+D-203 (2026-11-26) removed the trained encoder, so `backend()` loads nothing
+on any machine now - it is still timed, under its own name, so a heavy import
+that ever creeps back into it shows up on the line written for it.
 
 RESOURCE COST, AND WHY IT IS TWO NUMBERS THAT MEASURE DIFFERENT THINGS
 -----------------------------------------------------------------------
@@ -324,18 +323,12 @@ def main(argv):
     import heron_embed as EMBED
     import heron_retrieve as RETRIEVE
 
-    # TIMED, AND IT WAS NOT UNTIL 2026-09-09. `backend()` calls `_load_model()`,
-    # which is where the trained encoder is imported - the 1.0 s that became 40
-    # and then thirty minutes on an event loop (D-49). The line above times only
-    # the MODULE import, which is cheap on every machine.
-    #
-    # So the first version of this tool reported "import the embedding backend:
-    # 6.6 ms" and called it the D-49 measurement, while the cost D-49 is about
-    # happened on the next line, untimed. On this container it is invisible
-    # because model2vec is not installed and _load_model() returns None at once.
-    # On the machine where it matters it would have hidden the whole thing -
-    # in the tool written to catch exactly that.
-    backend, _why = clock.time("load the trained encoder", EMBED.backend)
+    # TIMED, AND IT WAS NOT UNTIL 2026-09-09. `backend()` was where the trained
+    # encoder was imported - the 1.0 s that became 40 and then thirty minutes
+    # on an event loop (D-49). The line above times only the MODULE import.
+    # Since D-203 there is no trained encoder and `backend()` loads nothing;
+    # it stays timed so anything heavy added to it later is seen here.
+    backend, _why = clock.time("ask which backend answers", EMBED.backend)
 
     # THE RULE BEFORE THE TIMED OPEN - row 5b-1289. From a worktree or a
     # feature branch the shared store is never touched, not even opened, and
@@ -431,16 +424,9 @@ def main(argv):
     print("Read the WORST column first. D-49's thirty-minute hang was one call,")
     print("and a median would have called that afternoon healthy.")
     print("")
-    if backend == "lexical":
-        print("  `load the trained encoder` MEANS NOTHING ON THIS RUN. The backend")
-        print("  is `lexical`, so _load_model() returns None immediately and there")
-        print("  is no encoder to load. That line is the D-49 measurement and it")
-        print("  only measures anything where model2vec is installed - which is")
-        print("  the machine that matters and is not this one.")
-    else:
-        print("  `load the trained encoder` IS the D-49 measurement. It is the")
-        print("  import that reached thirty minutes on an asyncio event loop, and")
-        print("  heron_brain.warm() exists to keep it off a request thread.")
+    print("  `ask which backend answers` loads nothing: the backend is %s, the" % backend)
+    print("  one built-in search (D-203). It was where D-49's thirty-minute import")
+    print("  happened, and is timed so anything heavy added to it is seen.")
     print("")
     if short_circuited:
         print("  find() IS FLATTERED HERE AND THE NUMBER MUST NOT BE QUOTED ALONE.")

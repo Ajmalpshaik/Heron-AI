@@ -77,7 +77,7 @@ namespace Heron.Banner.TestHost
                 + (ownThread ? "   (its own - good)" : "   (SAME AS HOST - the point of this is gone)"));
 
             await Task.Run(() => banner.Begin(
-                "Capping 13 open pipe ends", true, "TRG-XX-ZZ-M3-M-0001-MEP-Model"));
+                "Capping 13 open pipe ends", true, "ABC-XX-ZZ-M3-M-0001-MEP-Model"));
             await Task.Delay(600);
 
             var sweep = (FrameworkElement)Program.Field("_sweep").GetValue(banner);
@@ -144,7 +144,7 @@ namespace Heron.Banner.TestHost
 
             Save(banner, Path.Combine(outDir, "during-freeze.png"), ui);
 
-            banner.End(true, "13 pipes capped", clock.ElapsedMilliseconds, "TRG-XX-ZZ-M3-M-0001-MEP-Model");
+            banner.End(true, "13 pipes capped", clock.ElapsedMilliseconds, "ABC-XX-ZZ-M3-M-0001-MEP-Model");
             await Task.Delay(500);
             Save(banner, Path.Combine(outDir, "after-freeze.png"), ui);
 

@@ -14,7 +14,7 @@ source: OFFICIAL
 risk: READ
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
-# 2026-10-21: Ajmal PS, building the pipe tag TRG_Pipe_Tag on Revit 2020,
+# 2026-10-21: Ajmal PS, building the pipe tag ABC_Pipe_Tag on Revit 2020,
 # found Heron could not touch a label at all - every tag and title block went
 # through the Edit Label dialog by hand - and asked for labels end to end:
 # made, placed, edited, read. Nothing read one - checked by grep of

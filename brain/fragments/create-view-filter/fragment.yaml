@@ -462,7 +462,7 @@ compatibility-note: >
 #    these view filters"                    never edits a filter that exists -
 #                                           it skips the name
 #   "rename this view filter"            -> SET_VIEW_FILTER_CATEGORIES, with newName
-#   "change the filter rule to does not contain TRG_MEC" -> SET_VIEW_FILTER_CATEGORIES, with matchValue
+#   "change the filter rule to does not contain ABC_MEC" -> SET_VIEW_FILTER_CATEGORIES, with matchValue
 #   "add grids to this filter"           -> SET_VIEW_FILTER_CATEGORIES, with the whole list
 #   "which parameters can I filter ducts -> REPORT_FILTERABLE_PARAMETERS. What
 #    by"                                    to ask BEFORE this, when the

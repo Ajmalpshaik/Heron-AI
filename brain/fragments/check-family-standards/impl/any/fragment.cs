@@ -102,8 +102,8 @@
 // ---------------------------------------------------------------------------
 //
 // `namePattern` IS A `*` WILDCARD ON THE WHOLE FAMILY NAME, case-insensitive -
-// CHECK_MODEL_STANDARDS' rule, so one pattern means one thing in both: "TRG*"
-// is a name starting TRG, "*MEP*" a name holding MEP anywhere, and a pattern
+// CHECK_MODEL_STANDARDS' rule, so one pattern means one thing in both: "ABC*"
+// is a name starting ABC, "*MEP*" a name holding MEP anywhere, and a pattern
 // with no `*` is the WHOLE name. Versions 1 to 4 read it as CONTAINS, so an
 // old value written with no `*` - "MEP" - now passes only a family named
 // exactly MEP; write "*MEP*" for what it used to do. The owner's word for the

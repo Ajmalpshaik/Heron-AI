@@ -52,7 +52,7 @@ import heron_bridge_client as CLIENT                          # noqa: E402
 
 FAILURES = []
 
-FAMILY = "TRG_PLMB_VLV_PPR Check Valve Inline_CVI_R0"
+FAMILY = "ABC_PLMB_VLV_PPR Check Valve Inline_CVI_R0"
 
 
 def check(condition, what):

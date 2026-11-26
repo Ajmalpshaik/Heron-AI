@@ -18,9 +18,9 @@ How does Heron's search do on the questions the owner ACTUALLY asked?
 
     # A SESSION'S OWN SENTENCES - main against a branch, on a named backend
     python tools/score-routing.py --sentences s.yaml --tree ../main-wt \\
-        --backend lexical --backend model --out main.json
+        --backend lexical --out main.json
     python tools/score-routing.py --sentences s.yaml \\
-        --backend lexical --backend model --compare main.json
+        --backend lexical --compare main.json
 
 WHAT IS DIFFERENT ABOUT THIS ONE
 --------------------------------
@@ -1171,12 +1171,15 @@ def compare_plain(history_path, stamp, codes, summary, kinds, rows):
 RECORD_KIND = "score-routing sentence record"
 RECORD_VERSION = 1
 WANT, NOT_A_WRITE, NEUTRAL = "want", "not-a-write", "neutral"
-# The two backends a card's words are measured on: lexical (CI's) and the
-# trained model (the owner's PC). Rows 485 and 510 measured each with a
-# cross-encoder as well, until D-201 removed it. The names are the ones
-# heron_retrieve.ran() writes, the way backend_of() already labels a run.
-LEXICAL, MODEL = "lexical", "model"
-BACKENDS = (LEXICAL, MODEL)
+# The backend a card's words are measured on: lexical, the one search every
+# PC and CI share. Rows 485 and 510 measured a cross-encoder as well, until
+# D-201 removed it, and the trained model (`model`, the owner's PC) until
+# D-203 removed that - `--backend model` is refused now, and a record holding
+# a model run is read back as a run on a backend this tool does not ask. The
+# name is the one heron_retrieve.ran() writes, the way backend_of() already
+# labels a run.
+LEXICAL = "lexical"
+BACKENDS = (LEXICAL,)
 # Whatever this machine has, named by what answered rather than by what was
 # asked for - the run is still refused if its answers disagree with each other.
 INSTALLED = "installed"
@@ -1506,17 +1509,22 @@ def _worker(job_path, out_path):
             return refuse("%s was loaded from %s, not from the tree measured"
                           % (module.__name__, here))
 
-    # TURNED OFF BY SETTLING THE LOADER'S ANSWER BEFORE ANYTHING ASKS IT. Row
-    # 481: system Python ran a backend other than the one asked for. The
+    # A TREE FROM BEFORE D-203 MAY STILL LOAD THE TRAINED ENCODER, and is
+    # turned off by settling its loader's answer before anything asks it. Row
+    # 481: system Python ran a backend other than the one asked for. That
     # loader keeps its answer in one list and reads it first, so [None] there
-    # is "nothing installed" for the life of this process.
+    # is "nothing installed" for the life of this process. A tree from D-203
+    # on has no such list and nothing to turn off; the check below still asks
+    # which backend answers.
     nearness = split_backend(job["backend"])
     if nearness == LEXICAL:
         held = getattr(EMBED, "_MODEL_CACHE", None)
-        if not isinstance(held, list):
-            return refuse("%s has no _MODEL_CACHE to turn it off with"
-                          % EMBED.__name__)
-        held[:] = [None]
+        if held is not None:
+            if not isinstance(held, list):
+                return refuse("%s has a _MODEL_CACHE that is not a list, so "
+                              "its trained encoder cannot be turned off"
+                              % EMBED.__name__)
+            held[:] = [None]
     have = {"nearness": EMBED.backend()[0]}
     if nearness is not None and have["nearness"] != nearness:
         return refuse("%s was asked for, and this machine's encoder answers %s "
@@ -1858,9 +1866,8 @@ def sentences_main(args, rung, threshold):
     for backend in backends:
         sys.stderr.write("  asking %d sentences on %s ...\n"
                          % (len(items), backend))
-        # ONE BACKEND THIS MACHINE HAS NOT GOT IS NOT THE RUN. On a
-        # container with no trained model, `all` still measures lexical,
-        # and says which one it could not.
+        # ONE BACKEND A TREE CANNOT BE ASKED ON IS NOT THE RUN: the rest are
+        # still measured, and the report says which one could not be.
         try:
             run = ask_tree(tree, backend, items, args.revit)
         except CouldNotAsk as why:

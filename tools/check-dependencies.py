@@ -63,8 +63,8 @@ today, because none has been measured against an older release; requirements.txt
 says so in its own header.
 
 It does not print a size it made up. Where a size is known it comes from
-the code that owns the download - heron_embed.announcement() prints it
-before any network call - and where
+the code that owns the download - heron_ingest states the PDF reader's in
+the sentence a reader meets when it is missing - and where
 nothing owns it, this tool measures the package on THIS disk or says it
 cannot.
 """
@@ -278,9 +278,9 @@ def read_manifest(path):
 def on_disk(module):
     """Bytes this module occupies on THIS machine, or None if absent.
 
-    ITS OWN FILES ONLY. A package that pulls in another - model2vec pulls
-    numpy, which is most of what it costs - measures small here and is not
-    small to install. The caller says so rather than letting the number
+    ITS OWN FILES ONLY. A package that pulls in another - a library that
+    pulls numpy, which is then most of what it costs - measures small here
+    and is not small to install. The caller says so rather than letting the number
     be read as an install size.
     """
     try:
@@ -315,11 +315,10 @@ def megabytes(size):
 
 
 # Which brain module owns the download of which optional package, and the
-# name under which it states that download's size - printed by the module
-# before the network is touched (heron_embed) or in the
-# sentence a reader meets when it is missing (heron_ingest).
+# name under which it states that download's size - in the sentence a
+# reader meets when it is missing (heron_ingest). The trained embedding's
+# own entry went with it (D-203).
 ANNOUNCED_BY = {
-    "model2vec": ("heron_embed", "SIZE"),
     "pypdf": ("heron_ingest", "PDF_READER_SIZE"),
 }
 

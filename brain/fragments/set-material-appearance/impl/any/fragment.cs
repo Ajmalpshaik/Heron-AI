@@ -180,7 +180,7 @@ var findings = new List<string>();
     // ---- 1. Which materials.
     var targets = new List<Material>();
     var namedText = (materialsNamed ?? "").Trim();
-    if (namedText.Length == 0) problems.Add("no material was named - give a name, several with ';' between, or a pattern such as 'TRG_*'");
+    if (namedText.Length == 0) problems.Add("no material was named - give a name, several with ';' between, or a pattern such as 'ABC_*'");
     foreach (var token in namedText.Split(new[] { ';', '\n' }, StringSplitOptions.RemoveEmptyEntries))
     {
         var said = token.Trim();
