@@ -433,6 +433,10 @@ def _cite(question, queried, store):
 
 
 def main(argv):
+    # Rows 5b-2041 to 5b-2044: print safely on a cp1252 console.
+    import heron_console
+    heron_console.safe_streams()
+
     print("COMPANY STANDARD   it cites, and with nothing to cite it says so")
     print("=" * 72)
     print("\nscope: %s, and no signature here can read a second one"
