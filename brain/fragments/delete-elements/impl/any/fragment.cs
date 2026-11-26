@@ -1,6 +1,7 @@
-// NOT STANDALONE. Assumes `doc` and `elements` are in scope; leaves `deleted`,
-// `askedFor`, `alsoWent`, `refused`, `attachedBefore`, `detachedWalls`,
-// `wallsNote`, `deletedByCategory` and `deletedWhat` behind.
+// NOT STANDALONE. Assumes `doc`, `elements` and `expectedCount` are in scope;
+// leaves `deleted`, `askedFor`, `alsoWent`, `refused`, `attachedBefore`,
+// `detachedWalls`, `wallsNote`, `deletedByCategory`, `deletedWhat` and
+// `countChecked` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -79,6 +80,21 @@
 //   rolled back and nothing is deleted. A trial that cannot START (no open
 //   transaction to nest in) leaves only that element's ids NOT READ; the
 //   delete itself runs exactly as it did in version 2.
+//
+// VERSION 4 (2026-11-26, row 5b-1990) - A COUNT THE YES NAMED IS CHECKED
+// BEFORE ANYTHING GOES.
+//
+//   Measured on Revit 2020, a real job: the method's yes named 36 elements,
+//   Revit's delete took 62, and the method set `deleted` against what it had
+//   named only AFTER the delete - the owner kept it, but the yes had covered
+//   less than went. With `expectedCount` given, the whole request is first
+//   deleted inside ONE SubTransaction, in the same order as the real loop,
+//   and rolled back: that trial's count is Revit's own. A different count
+//   deletes NOTHING - the call is thrown with both numbers, Revit's list by
+//   category and every id beyond those asked for, so the modeller is asked
+//   again with what really goes. The same count: `countChecked` says so and
+//   the delete runs exactly as version 3. Left out (-1), nothing is tried
+//   twice and nothing here changes how a delete runs.
 
 var askedFor = elements.Count;
 var deleted = new List<ElementId>();
@@ -97,11 +113,15 @@ var readBeforeDelete = new List<string[]>();
 
 // ---- VERSION 2: THE WALLS ATTACHED TO A ROOF, FLOOR OR CEILING BEING DELETED
 var askedIds = new List<ElementId>();
+// VERSION 4: which of them are forms, read now - the loops below go by id and
+// never read an element object after a trial delete of it was rolled back.
+var askedForms = new HashSet<ElementId>();
 var hostBoxes = new List<BoundingBoxXYZ>();
 foreach (var element in elements)
 {
     if (element == null) continue;
     askedIds.Add(element.Id);
+    if (element is GenericForm) askedForms.Add(element.Id);
     if (!(element is RoofBase || element is Floor || element is Ceiling)) continue;
     BoundingBoxXYZ box = null;
     try { box = element.get_BoundingBox(null); } catch { box = null; }
@@ -152,12 +172,107 @@ if (hostBoxes.Count > 0)
         attachedBefore = "Attached, and in plan under a roof, floor or ceiling being deleted: " + attachedBefore;
 }
 
-foreach (var element in elements)
+// ---- VERSION 4: THE COUNT THE YES NAMED, CHECKED BEFORE ANYTHING GOES ------
+// With `expectedCount` given, the whole request is deleted inside ONE
+// SubTransaction - the same deletes, in the same order, as the loop below -
+// and rolled back. What that trial returned is Revit's own count of what goes.
+// A different count from the one the yes named deletes NOTHING: the call
+// stops, and its message carries Revit's list so the question can be asked
+// again. The elements are read AFTER the rollback, when they are back, and
+// only by id: an element object is never touched after its delete was rolled
+// back, here or in the loop below.
+//
+// "NO COUNT" IS A NEGATIVE NUMBER, NEVER 0. A yes can name 0 - nothing goes -
+// and that 0 is checked like any other count, so it stops if Revit would take
+// anything. Left out, `expectedCount` is -1 and nothing is tried twice.
+var countChecked = "";
+if (expectedCount >= 0)
 {
-    if (element == null) continue;
+    var wouldGo = new List<ElementId>();
+    var wouldGoSeen = new HashSet<ElementId>();
+    var wouldRefuse = new List<string>();
+    using (var whole = new SubTransaction(doc))
+    {
+        var wholeStarted = false;
+        try { whole.Start(); wholeStarted = true; } catch (Exception) { wholeStarted = false; }
+        if (!wholeStarted)
+            throw new InvalidOperationException(
+                "STOPPED BEFORE THE DELETE - expectedCount " + expectedCount + " was given, and Revit "
+                + "could not start the trial that counts what this delete takes, so that count cannot be "
+                + "checked. Nothing has been deleted");
 
-    var id = element.Id;
+        foreach (var askedId in askedIds)
+        {
+            ICollection<ElementId> wouldTake = null;
+            try { wouldTake = doc.Delete(askedId); } catch (Exception) { wouldTake = null; }
+            // Refused, or already gone with one asked before it - said in the
+            // message, never silently left out of the count.
+            if (wouldTake == null || wouldTake.Count == 0)
+            {
+                if (!wouldGoSeen.Contains(askedId)) wouldRefuse.Add(askedId.ToString());
+                continue;
+            }
+            foreach (var goingId in wouldTake)
+                if (wouldGoSeen.Add(goingId)) wouldGo.Add(goingId);
+        }
 
+        try
+        {
+            whole.RollBack();
+        }
+        catch (Exception notBack)
+        {
+            throw new InvalidOperationException(
+                "Revit could not put back the trial delete used to check the count the yes named - "
+                + notBack.Message + ". Nothing this call did is kept");
+        }
+    }
+
+    if (wouldGo.Count != expectedCount)
+    {
+        var categories = new Dictionary<string, int>();
+        var alsoIds = new List<string>();
+        foreach (var goingId in wouldGo)
+        {
+            string category = null;
+            try
+            {
+                var going = doc.GetElement(goingId);
+                category = going == null ? "NOT READ"
+                    : going.Category != null ? going.Category.Name : "(no category) " + going.GetType().Name;
+            }
+            catch (Exception) { category = "NOT READ"; }
+            int seen;
+            categories.TryGetValue(category, out seen);
+            categories[category] = seen + 1;
+            if (!askedIds.Contains(goingId)) alsoIds.Add(goingId.ToString());
+        }
+        var byCategory = string.Join(", ", categories
+            .OrderByDescending(pair => pair.Value)
+            .ThenBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(pair => pair.Key + " " + pair.Value)
+            .ToArray());
+        throw new InvalidOperationException(string.Format(
+            "STOPPED BEFORE THE DELETE - NOTHING HAS BEEN DELETED. The yes named {0} element(s); Revit's "
+            + "own delete of the {1} asked for takes {2}{3}. {4} more than the {1} asked for would go{5}.{6} "
+            + "Name what really goes to the modeller and ask again, with expectedCount={2}",
+            expectedCount, askedIds.Count, wouldGo.Count,
+            byCategory.Length > 0 ? " - by category: " + byCategory : "",
+            alsoIds.Count,
+            alsoIds.Count > 0 ? ": " + string.Join(", ", alsoIds.ToArray()) : "",
+            wouldRefuse.Count > 0
+                ? " " + wouldRefuse.Count + " asked for would NOT go - Revit refused them: "
+                  + string.Join(", ", wouldRefuse.ToArray()) + "."
+                : ""));
+    }
+
+    countChecked = string.Format(
+        "Revit's own trial of this delete takes {0} element(s) - the count the yes named - checked "
+        + "before anything was deleted.", wouldGo.Count);
+}
+
+foreach (var id in askedIds)
+{
     // VERSION 3: THE TRIAL. Revit's own delete of this element, rolled back,
     // so everything it takes can be read while it is still there.
     var readFirst = new Dictionary<string, string[]>();
@@ -228,7 +343,7 @@ foreach (var element in elements)
             };
         }
     }
-    var isForm = element is GenericForm;
+    var isForm = askedForms.Contains(id);
 
     try
     {
