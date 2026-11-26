@@ -61,7 +61,7 @@ Other ways to ask: *"create a shared parameter"* · *"add a new parameter to thi
 
 ### Assign location data
 
-**PROOF OUT OF DATE - not yet usable in a chat - refused until proved (D-117).**
+**DRAFT - not yet usable in a chat - refused until proved (D-117).**
 
 **What it does:** write where each element is onto its own parameters.
 
