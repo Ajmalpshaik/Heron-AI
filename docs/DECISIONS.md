@@ -1921,4 +1921,3 @@ No margin helps a question without that cost, and only the words could separate 
 built.
 
 **Full record:** [`decisions/D-209.md`](decisions/D-209.md)
-
