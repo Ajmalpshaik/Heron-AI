@@ -1699,6 +1699,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qp.md`](needs-checking/group-qp.md)
 
+## Group QR - PROPOSE_LEVELS_FROM_POINT_CLOUD version 1: candidate levels from a linked point cloud - DRAFT until proved (2026-11-25)
+
+**Its own file:** [`needs-checking/group-qr.md`](needs-checking/group-qr.md)
+
 ## Group QK - CREATE_CURTAIN_SYSTEM version 2: a curtain system on chosen mass faces - sloped, by number, all but some - never over a face already glazed - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qk.md`](needs-checking/group-qk.md)

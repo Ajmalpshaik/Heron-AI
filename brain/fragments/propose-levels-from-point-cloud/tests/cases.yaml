@@ -1,0 +1,77 @@
+# D-30: the negative case is what catches "read nothing and proposed
+# something anyway" - a model with no point cloud must be refused "no point
+# cloud", and a box over a bare facade must propose nothing.
+#
+# THE ARRANGEMENT (NEEDS-CHECKING group QR). The modeller's own scratch model in
+# Revit 2024, saved under %TEMP%\heron-work, never a working model:
+#
+#   scan-levels.rvt   new from Revit's metric template (Level 1 at 0, Level 2 at
+#                     4000 mm), with F:\Scan to BIM\UnionStation.rcp linked
+#                     Origin to Origin and pinned - a public street scan of
+#                     facades, OUTSIDE ONLY, no interiors.
+#   no-cloud.rvt      new from the same template, nothing linked.
+#
+# Where the model differs, the job file changes - never the card.
+
+positive:
+  - given: scan-levels.rvt, every value left out - the whole cloud, 25 mm bands, 200,000 points
+    expect: >
+      pointCloudUsed names UnionStation; pointsRead above 1,000 and at most
+      200,000; zMinMm and zMaxMm spanning the street to the highest roof line.
+      At least one candidate, the lowest at the street surface - checked in a
+      section through the cloud with a spot elevation on the road, within
+      100 mm. Each line gives a height in mm and in the project's units, a
+      share, a ratio with HIGH/MEDIUM/LOW, and the nearest of Level 1 / Level 2.
+      The two closing lines - "candidates, not levels" and "outside only" - are
+      present. No level, view or element is created (the model's element count
+      unchanged)
+
+  - given: scan-levels.rvt, boxMm drawn round ONE building's footprint (read off a plan), bandMm 25
+    expect: >
+      fewer points than the whole cloud; a candidate at the street in front of
+      it and, where the scan caught it, one at its roof line or eaves - each
+      within 100 mm of a spot elevation placed on that surface in a section
+
+  - given: scan-levels.rvt, pointCloudName given as part of its name, e.g. "Union"
+    expect: >
+      the same cloud chosen and the same answer as left out
+
+negative:
+  - given: no-cloud.rvt, every value left out
+    expect: >
+      REFUSED - "No point cloud is linked in this model, so there are no
+      points to read levels from." No candidate, no number guessed. THE FIRST
+      NEGATIVE TO RUN
+
+  - given: scan-levels.rvt, boxMm drawn tight round one facade's face (about 500 mm deep, read off a plan), bandMm 25
+    expect: >
+      at most a candidate at the foot of the wall (the pavement) and one at its
+      top (parapet or eaves), and NOTHING between them - a facade spreads its
+      points up its whole height and must not be proposed as floors. A HIGH or
+      MEDIUM candidate between ground and roof on this box is a FAIL unless a
+      section shows a ledge, sill band or canopy at that height: it would be a
+      floor the scan cannot have seen
+
+  - given: scan-levels.rvt, boxMm "900000,900000,901000,901000" - far outside the cloud
+    expect: >
+      pointsRead 0 and "NO POINTS were read inside that box" - no candidates,
+      not an empty list that reads as "nothing horizontal here"
+
+  - given: scan-levels.rvt, pointCloudName "nothing-like-this"
+    expect: >
+      REFUSED - "No point cloud matches 'nothing-like-this'. This model has:"
+      and the cloud's name
+
+  - given: scan-levels.rvt, bandMm 2
+    expect: >
+      REFUSED - a band between 5 mm and 1000 mm; nothing read
+
+second_route:
+  - >
+    cut a section through the cloud and place spot elevations on the road and
+    on a roof line; each must be within 100 mm of a candidate
+  - >
+    Manage Links > Point Clouds names the cloud this reports in pointCloudUsed
+  - >
+    the model's element count (REPORT_MODEL_DASHBOARD or Revit's own) is the
+    same before and after - nothing was created
