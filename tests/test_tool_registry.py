@@ -257,8 +257,9 @@ def titles_and_keeps():
               and tools.annotations(name)["readOnlyHint"] is False,
               "%s, which can delete what the modeller saved, is labelled "
               "destructive and not read-only" % name)
-    check(tools.annotations("heron_helped")["idempotentHint"] is False,
-          "heron_helped adds one each time it is asked - not idempotent")
+    check(tools.annotations("revit_building_loads")["idempotentHint"] is False,
+          "revit_building_loads keeps a new run each time it is asked - not "
+          "idempotent")
 
     check(getattr(tools, "OPEN_WORLD", None) == (),
           "no tool is declared to reach past this PC - OPEN_WORLD is empty")

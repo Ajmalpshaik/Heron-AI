@@ -6095,29 +6095,6 @@ def heron_context(request: str, path: str = "", full: bool = False,
 
 
 @server.tool()
-def heron_helped(chunk: str, scope: str = "global") -> str:
-    """
-    Count that a cited clause HELPED - only when the modeller says so.
-
-    Use it when the modeller says an answer was right or useful. `chunk` is
-    the chunk id the answer cited, in square brackets; `scope` is where it came
-    from (global, company, project, user). Never on your own judgement.
-    Keeps a clause id and counts on this PC - never the question - and sends
-    nothing. Touches nothing in the model.
-    """
-    # D-191: "helped" is the modeller's word, never a guess, and it nudges that
-    # clause by less than one rank next time (heron_retrieve.USAGE_SPAN).
-    try:
-        got = brain.helped(chunk, scope=scope, project=pinned.project_key,
-                           project_name=pinned.title)
-    except brain.BrainUnavailable as why:
-        return str(why)
-    except ValueError as why:
-        return "Not counted. %s" % why
-    return got["said"]
-
-
-@server.tool()
 def heron_check(draft: str, request: str, scopes: str = "") -> str:
     """
     Check a drafted standards answer against the clauses it cites. Flags,

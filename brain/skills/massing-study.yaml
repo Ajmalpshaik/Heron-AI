@@ -45,7 +45,7 @@ purpose: >
      say yes; a picture gives shape, never size (D-33). The plot ratio or
      coverage a local authority allows is the modeller's to give, never
      Heron's to assume.
-  2. CREATE_LEVELS (PROVEN) - every level the mass floors will be cut at,
+  2. CREATE_LEVELS (DRAFT since version 3, D-207) - every level the mass floors will be cut at,
      the ground and each storey, BEFORE any mass floor. A mass floor is a
      level crossing a mass, so a level added later is a floor missed. Levels
      at the roof, a parapet or a plant deck are levels too; whether each

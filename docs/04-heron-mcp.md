@@ -620,7 +620,7 @@ Every tool carries MCP's `readOnlyHint`, `destructiveHint`, `idempotentHint` and
 
 - **A tool that keeps something the modeller gave or chose is not read-only**, whatever its risk:
   `heron_tools.KEEPS` names each one and what it keeps — saved commands, checklists, a project's
-  governing standards, a loads or sprinkler job's answers, a count on the modeller's word. One that can
+  governing standards, a loads or sprinkler job's answers. One that can
   delete or replace the modeller's own thing (saved commands, checklists) is **destructive**; one that
   adds another record on every call is **not idempotent**. A record Heron keeps of its own working — the
   audit trail, a gap note, a picture written and deleted — does not count.

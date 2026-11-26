@@ -287,14 +287,6 @@ TOOLS = {
     # describe. What crosses between them is a number and a clause number.
     "heron_standards":          (READ,    None),
 
-    # The usage counter (D-70, D-191). READ, operation None, for every reason
-    # heron_hvac is: it reads no model and sends nothing to Revit. On the
-    # modeller's word that an answer helped, it adds one to that clause's count
-    # in a small file beside the knowledge store, in Heron's own folder - only
-    # the clause id and the counts, never the question - and that count nudges
-    # the clause by less than one rank next time. Nothing is ever sent.
-    "heron_helped":             (READ,    None),
-
     # Stage 9's two (HERON-RAG-RSH-017, docs/28). READ, operation None, and
     # for these two that is a stronger claim than for the others: the Research
     # agent is the one part of this plan whose NAME suggests reaching outside,
@@ -1058,10 +1050,6 @@ CAUTIOUS = {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": Fa
 # can replace or delete a thing the modeller kept (destructive); `every_call`
 # when asking again adds another (not idempotent).
 KEEPS = {
-    "heron_helped": {
-        "keeps": "one more to a cited clause's count, on the modeller's word "
-                 "(heron_usage.helped)",
-        "removes": False, "every_call": True},
     "heron_hvac": {
         "keeps": "the project's governing standards once the modeller has said "
                  "them (D-111); a changed answer replaces the old one, which "
@@ -1182,7 +1170,6 @@ TITLES = {
     "heron_context":              "What a request would be given",
     "heron_check":                "Check an answer against its clauses",
     "heron_standards":            "Ask each standards source",
-    "heron_helped":               "Count that an answer helped",
     "heron_research":             "What Heron's standards do not cover",
     "heron_research_check":       "Check an outside answer's citations",
     "heron_hvac":                 "HVAC design calculations",
