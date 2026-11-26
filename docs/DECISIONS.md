@@ -1823,7 +1823,7 @@ clearly better than the built-in search on his questions, and needs huggingface.
 
 ## D-204 — A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked
 
-**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in conversation, answering Q-98 (*"Check by hand is enough"*) and Q-97 (*"if its need to chek the revit chek that and sing make it proven"*).
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), answering Q-98 (*"Check by hand is enough"*) and Q-97 (*"if its need to chek the revit chek that and sing make it proven"*).
 **Numbering:** D-204 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201 and D-202 held by an unmerged branch.
 **Keeps:** [D-30](decisions/D-30.md) - only the negative leg is answered differently, for two named tools
 
