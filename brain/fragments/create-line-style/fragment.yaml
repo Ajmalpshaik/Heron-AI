@@ -19,6 +19,18 @@ capability: CREATE_LINE_STYLE
 # unseen ways of asking for a subcategory's colour or weight reached
 # SET_FAMILY_FORM_SUBCATEGORY on the trained backend (measured in row 5b-463).
 #
+# VERSION 4 (2026-11-26, FRAGMENT-ISSUES 5b-2047) - `colour`, `weight` and
+# `patternName` may be LEFT OUT. The card always said each is optional by
+# value (colour "" keeps black or the existing colour, weight 0 keeps 1 or the
+# existing weight, pattern "" keeps Solid or the existing pattern), but the
+# three needs were not marked optional, so a call that left out weight and
+# patternName - the owner's Reference Planes > Secondary References recolour in
+# a fixed axial-fan family, Revit 2020 - was refused as "values the CALLER
+# supplies". Each is now `optional: true` with `absent:` the very value the C#
+# already reads as "keep" ("", "0", ""), so the binder hands the fragment what
+# the caller would have typed (HeronBindingNote.DeclaredAbsent, row 5b-488).
+# The card only: impl/ is not touched, so the proof's fingerprint stands.
+#
 # VERSION 3 (2026-11-17, FRAGMENT-ISSUES 5b-1849) - an optional
 # `parentCategory` makes or changes a subcategory under ANY category that takes
 # one, in a project or a family - Reference Planes above all, so the owner's
@@ -29,7 +41,7 @@ capability: CREATE_LINE_STYLE
 # the letter. Back to DRAFT: version 2 was PROVEN on 2026-10-18 (the proof
 # block below, kept as the record of what it proved); its C# moved, so it is
 # DRAFT until NEEDS-CHECKING Group OK is run (D-30).
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -105,19 +117,26 @@ contract:
     - name: styleName
       type: string
       source: request
-    # "R,G,B" each 0 to 255; an EMPTY value keeps black, or the existing colour.
+    # "R,G,B" each 0 to 255; an EMPTY value, or left out (version 4), keeps
+    # black, or the existing colour.
     - name: colour
       type: string
       source: request
-    # 1 to 16; 0 keeps 1, or the existing weight.
+      optional: true
+      absent: ""
+    # 1 to 16; 0, or left out (version 4), keeps 1, or the existing weight.
     - name: weight
       type: int
       source: request
-    # A line pattern by name, or "Solid"; an EMPTY value keeps Solid, or the
-    # existing pattern.
+      optional: true
+      absent: "0"
+    # A line pattern by name, or "Solid"; an EMPTY value, or left out
+    # (version 4), keeps Solid, or the existing pattern.
     - name: patternName
       type: string
       source: request
+      optional: true
+      absent: ""
     # true changes an existing style of that name; false, or not said,
     # refuses it.
     - name: updateExisting
