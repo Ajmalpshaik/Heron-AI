@@ -33,6 +33,13 @@ negative:
   - given: the columns, material "TRG Concrete Smoth"
     expect: refused naming TRG_Concrete Smooth among the closest; nothing changed
 
+  # Version 2, added 2026-11-26 (row 5b-2035). NOT RUN.
+  - given: a family open in the Family Editor, any form selected, material "Glass"
+    expect: >
+      refused, naming LINK_FAMILY_PARAMETER for a form's material and
+      SET_FAMILY_TYPE_VALUES for a family type's - never SET_FAMILY_FORM_MATERIAL;
+      nothing changed
+
 second_route:
   - the Properties palette and Type Properties of each element read by eye, and the system type's Material in the Project Browser
   - one Ctrl+Z takes every write back (Golden Rule 16)

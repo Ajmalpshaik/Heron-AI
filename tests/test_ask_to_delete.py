@@ -42,6 +42,8 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+import heron_tools as SERVER_TOOLS                          # noqa: E402
 sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 
@@ -181,7 +183,7 @@ def main():
     check('"askToDelete"' not in client.replace('reply.get("askToDelete", _FIELD_MISSING)', ""),
           "the client names the field only where a reply is read")
 
-    server = read(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"))
+    server = SERVER_TOOLS.server_text()
     diagnose = read(os.path.join(ROOT, "mcp", "server", "heron_diagnose.py"))
     check("if bridge.ask_to_delete_state(b) is False:" in server,
           "revit_health prints the Ask to Delete line only when it is OFF")

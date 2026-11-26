@@ -58,6 +58,8 @@ import tempfile
 import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+import heron_tools as SERVER_TOOLS                          # noqa: E402
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
 import scratch_audit                                            # noqa: E402
@@ -657,8 +659,7 @@ def refreshing(S, F):
     # installed Heron on that PC leaves the Commands panel's runner note to the
     # developer's chats - and the runner note is still written when the brain
     # cannot load, since it needs only the standard library.
-    entry = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
-                    encoding="utf-8").read()
+    entry = SERVER_TOOLS.server_text()
     asked = entry.find("brain.developer_copy(_repo_root())")
     runner = entry.find("write_runner_note(sys.executable, _repo_root())")
     check(0 <= asked < runner,

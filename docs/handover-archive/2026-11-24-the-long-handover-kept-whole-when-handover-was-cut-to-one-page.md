@@ -460,7 +460,7 @@ front of all 135 DRAFT READ fragments** — see the verification pass.
 
 **Every session note lives in its own file in [`handover-archive/`](README.md)**, one
 file per sitting, newest first in that folder's README. These are the newest 12. Write a new note there,
-not here — [`tools/archive-handover.py`](../../tools/archive-handover.py) moves any that land here anyway.
+not here — `tools/archive-handover.py` moves any that land here anyway.
 
 | Date | Sitting |
 |---|---|

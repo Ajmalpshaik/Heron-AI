@@ -37,6 +37,8 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+import heron_tools as SERVER_TOOLS                          # noqa: E402
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 # Appended, not inserted: brain/ goes behind mcp/ so it can shadow nothing
 # this suite imports from there.
@@ -527,8 +529,7 @@ def beside_the_code():
                        "elementsCounted": 4210}, writes=False)
     check(getattr(stopped, "elements_counted", None) == 4210,
           "a stopped read's elementsCounted is read")
-    server = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
-                     encoding="utf-8").read()
+    server = SERVER_TOOLS.server_text()
     door = server[server.find("def revit_read("):]
     door = door[:door.find("\n@server.tool()")]
     check("_counted_after_stop(failure)" in door
