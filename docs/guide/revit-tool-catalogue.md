@@ -6,7 +6,7 @@
 
 **Every tool Heron has for Revit, by job** - what each one does, how you reach it, what it needs, what you get, and on which Revit releases it is built and proved. It is written by a script from Heron's own tool cards, so no count or status on these pages is typed by a person.
 
-Heron holds **617 live tools**: **485 are usable in a chat**, 46 are not proved yet but run because they change nothing in the model, and 86 are refused until they are proved. 137 retired tools are left out - each one's card names the tool that replaced it.
+Heron holds **617 live tools**: **484 are usable in a chat**, 46 are not proved yet but run because they change nothing in the model, and 87 are refused until they are proved. 137 retired tools are left out - each one's card names the tool that replaced it.
 
 ## How you reach a tool
 
@@ -74,7 +74,7 @@ Heron starts with every switch off, so it only reads until you turn **Changes** 
 | [Reports](tool-catalogue/reports.md) | 11 | 10 | 1 | 0 |
 | [Rooms, spaces and areas](tool-catalogue/rooms.md) | 9 | 8 | 0 | 1 |
 | [Schedules](tool-catalogue/schedules.md) | 12 | 12 | 0 | 0 |
-| [Sheets and title blocks](tool-catalogue/sheets.md) | 28 | 27 | 0 | 1 |
+| [Sheets and title blocks](tool-catalogue/sheets.md) | 28 | 26 | 0 | 2 |
 | [The project and its settings](tool-catalogue/project.md) | 43 | 26 | 6 | 11 |
 | [Views and visibility](tool-catalogue/views.md) | 89 | 76 | 4 | 9 |
 

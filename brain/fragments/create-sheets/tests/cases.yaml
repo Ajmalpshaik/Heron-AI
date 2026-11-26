@@ -7,6 +7,18 @@ positive:
       with the title block drawn on it. Look at one - a sheet with no border is
       the failure this fragment guards against
 
+  # VERSION 6 (2026-11-26, row 5b-1935, issue #1156). The copy job's control
+  # for the two negatives below: it holds on version 5 too, and shows the
+  # SubTransaction each copy is now made in keeps a good copy.
+  - given: >
+      VERSION 6, THE COPY JOB. Two sheets with title blocks selected, numbers
+      left out, numberSuffix "-RC", namePrefix "COPY "
+    expect: >
+      created two ids, numberedAs "<original>-RC" for each, namedAs "COPY " +
+      each source's name, each copy on its source's title block; notCreated,
+      notDuplicated, numberTaken and refused empty; the sheet count up by
+      exactly two
+
 negative:
   - given: A NUMBER THAT IS ALREADY IN THE REGISTER
     expect: >
@@ -261,6 +273,34 @@ negative:
     expect: >
       nothing made; numberTaken names PH-101 - a placeholder holds its number
 
+  # VERSION 6 (2026-11-26, row 5b-1935 - the owner's "Take the bad copy
+  # back"). D-193 rule 1 on the copy job. Each FAILS on version 5, which
+  # made its copies in the call's own transaction and kept them.
+  - given: >
+      VERSION 6, THE COPY JOB, A REFUSED NAME. The same two sheets selected,
+      numberSuffix "-RC", namePrefix "BAD:" (a ":" Revit does not allow in a
+      sheet name; "{" if ":" is taken)
+    expect: >
+      NO COPY KEPT - created empty, both sources in notDuplicated, and two
+      lines in notCreated "<original>-RC: Revit refused the name "BAD:...", so
+      the sheet was taken back. Revit said: ..." with Revit's sentence; refused
+      empty; the sheet count UNCHANGED, and no "<original>-RC" in the Project
+      Browser under any name. Version 5 kept both copies under the names Revit
+      gave them and said nothing
+
+  - given: >
+      VERSION 6, THE COPY JOB, A REFUSED NUMBER. The same two sheets
+      selected, numberSuffix "-RC:1" (a ":" Revit does not allow in a sheet
+      number; "{" if ":" is taken), namePrefix left out
+    expect: >
+      NO COPY KEPT - created empty, refused EMPTY, both sources in
+      notDuplicated, and two lines in notCreated "<original>-RC:1: Revit
+      refused the number, so the sheet was taken back. Revit said: ..." (or
+      "Revit kept the number as ..."); the sheet count UNCHANGED. Version 5
+      kept both copies under the numbers Revit picked, in created and refused.
+      RECORD what Revit said: if it takes the ":" after all, the run says
+      which character it does refuse, and this case is re-run with that one
+
 second_route:
   - >
     open the Sheets branch of the Project Browser and read the numbers - that
@@ -274,3 +314,7 @@ second_route:
     shows every value a table wrote, row by row against the spreadsheet; and
     COUNT THE SHEETS before and after a run with a refused name - the rise
     must equal the length of created, never one more
+  - >
+    version 6: the same count for a COPY run with a refused name or number -
+    the rise equals the length of created, zero when every copy was refused,
+    and one Ctrl+Z removes every copy kept
