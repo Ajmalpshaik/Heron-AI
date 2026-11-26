@@ -1722,6 +1722,10 @@ def _flag(argv, name, default=None):
 
 def main(argv):
     """The command. A flag error is reported and refused, never defaulted."""
+    # Rows 5b-2041 to 5b-2044: print safely on a cp1252 console.
+    import heron_console
+    heron_console.safe_streams()
+
     try:
         return _main(list(argv))
     except MissingFlagValue as why:

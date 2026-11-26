@@ -209,6 +209,10 @@ def _flag(argv, name):
 
 
 def main(argv):
+    # Rows 5b-2041 to 5b-2044: print safely on a cp1252 console.
+    import heron_console
+    heron_console.safe_streams()
+
     try:
         scope = (_flag(argv, "--scope") or SCOPE.GLOBAL).lower()
         project = _flag(argv, "--project")
