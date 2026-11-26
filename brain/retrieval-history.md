@@ -832,6 +832,7 @@ key, with the day he gave it.
 | 2026-11-26 | 753 | `lexical` | any | `e6e51d55` | 23 | 9 | 2 | 30 | 1 (0) | 9 | 4 of 7 | `11111---41-3-11.-112-----w---2--2111-1-2---11--243111-241w1w21--5w1---w3w-.211-` |
 | 2026-11-26 | 754 | `lexical` | any | `e6e51d55` | 34 | 9 | 3 | 18 | 1 (0) | 7 | 3 of 7 | `11111-1-31-1211.-111---33w-3-1411111-1-2-5511-11131112241w1w111-5w1---w4w-.211-` |
 | 2026-11-26 | 754 | `model` | any | `e6e51d55` | 29 | 8 | 5 | 22 | 1 (0) | 6 | 5 of 7 | `11241-11-1---11.-212-----w--51-11-111132--411-11141211231w1w11251w1---.-w-.211-` |
+| 2026-11-26 | 754 | `lexical` | any | `e6e51d55` | 38 | 7 | 4 | 15 | 1 (0) | 5 | 4 of 7 | `11111-1-31-1211.-111---11w51-141111151-2-5111-11131112231w1w1112-w1---w4w-.211-` |
 
 ### The plain questions — rows 5b-477 and 5b-478, scored beside his
 
@@ -864,6 +865,7 @@ their own table and are never added into his numbers.
 | 2026-11-26 | 753 | `lexical` | any | `6247a481` | 124 | 9 | 52 | 44 of 45 | 44 of 45 | `11..111...11..1...11..1.........ww1w.11.11..1.111....1.11....111...1...w1..w.....w111..11.w..1........w111......11...1.w1111` |
 | 2026-11-26 | 754 | `lexical` | any | `6247a481` | 124 | 9 | 52 | 44 of 45 | 44 of 45 | `11..111...11..1...11..1.........ww1w.11.11..1.111....1.11....111...1...w1..w.....w111..11.w..1........w111......11...1.w1111` |
 | 2026-11-26 | 754 | `model` | any | `6247a481` | 124 | 15 | 52 | 44 of 45 | 44 of 45 | `11w.111...11..1...11..1....w.w..ww1ww11.11..1.111..w.1.11....111...1...w1..ww....w111..11....1..w....ww111......11...1..1111` |
+| 2026-11-26 | 754 | `lexical` | any | `6247a481` | 124 | 9 | 52 | 44 of 45 | 44 of 45 | `11..111...11..1...11..1.........ww1w.11.11..1.111....1.11....111...1...w1..w.....w111..11.w..1........w111......11...1.w1111` |
 
 ---
 
@@ -1705,6 +1707,58 @@ later can move them.
 
 That any answer is right in Revit - routing is measured here, never run against a model; and anything
 about `model+rerank`, which was not asked - the re-ranker was removed the same day ([D-201](../docs/decisions/D-201.md)), so the owner's PC now ranks on `model`.
+
+---
+
+## 2026-11-26 — card identities and purposes in modeller words, on `lexical` (row 5b-2063)
+
+[Row 5b-2063](../docs/fragment-issues/row-5b-2063.md). After row 5b-2049 reworded utterances, the other
+words `heron_search.index()` reads - `semantic-identity` and `purpose` - were audited for cards that said
+their job in engineering notes or code words. **Identity and purpose only, no utterance, capability,
+domain, contract or `impl/`**; each replaced purpose is kept word for word as a comment under the new one.
+Batches were measured one at a time and kept only with a gain and nothing worse. Measured in a cloud
+container (no Revit) on **`lexical` alone**, CI's backend, every run on a store of its own; main
+`affad09c` against the branch, 754 cards.
+
+| | `lexical`, main -> branch |
+|---|---|
+| his 79 - first | 34 -> 38 |
+| his 79 - top three | 43 -> 45 |
+| his 79 - not found | 17 -> 15 |
+| asked for no change, handed one | 7 -> 5 |
+| a change asked for, a different change given | 14 -> 13 |
+| skill rows with a step in the top three | 3 -> 4 of 7 |
+| plain questions answered by a change | 9 -> 9 |
+| 604 frozen sentences - answers moved the right way / the wrong way | 8 / 0 |
+| the same - questions reaching a write | 55 -> 53 of 130 |
+| the held-out groups - wanted first / questions reaching a write | 16 -> 16 of 30 / 5 -> 4 of 8 |
+| `check-routing` claimed and not reached / two cards want one sentence | 72 -> 72 / 907 -> 900 |
+| `check-routing` own sentences first by words / by nearness | 3604 -> 3611 / 2459 -> 2433 of 4511 |
+| `check-risk-crossings` question to a write / nothing safe close | 5 -> 5 / 3 -> 3 |
+
+The 604 were [`tests/data/routing-sentences-2026-11-26-card-audit.yaml`](../tests/data/routing-sentences-2026-11-26-card-audit.yaml),
+frozen before the first edit, and every other `tests/data/routing-sentences-*.yaml`;
+`tools/score-routing.py --sentences ... --tree <main> --compare`. The fall by nearness in `check-routing`
+is on sentences each card declares, which the identity route answers before any ranking.
+
+**What moved, and what was taken back.** His *Check the Description of the duct accessories* had reached
+`SET_MEP_JUSTIFICATION` first; *How many sheets are there for the duct layout?* reached a write; *Hide
+all the air terminals.* was fifth. A short purpose raises a card's score on every common word it holds
+(*these*, *elements*, *each* are prefix terms), so three were taken back: `OVERRIDE_GRAPHICS_IN_VIEW`'s took
+a red-and-grey row from `HIGHLIGHT_VS_REST`, `WRITE_ELEMENT_PARAMETERS`' took offset, elevation and copy
+sentences, `CONNECT_AIR_TERMINALS`' moved two of his rows the wrong way. Six identities - among them
+`FILTER_ELEMENTS_BY_CATEGORY`, whose wording pushed *colour the louvres red and the rest grey* out of the
+shortlist - moved nothing or the wrong way and were taken back. After merging main,
+`READ_ELEMENT_PARAMETERS` naming the Level drew *what is the elevation of Level 2* to `CREATE_LEVELS`;
+and on the trained model (run only as a guard) `DESCRIBE_ELEMENTS` saying *renamed* drew *rename the
+selected elements* - both reworded, and `tests/test_routing_phrases.py` on the model then fails only
+the three curtain-wall checks main fails (row 5b-329). On `lexical` that suite does not run (exit 3).
+
+### What this does not establish
+
+That any answer is right in Revit; anything on the trained model beyond that one suite; and that the
+gains survive the other searches being changed the same day - short forms, the question near-tie, the
+index's stemming and weights - each of which moves the same ties.
 
 ---
 

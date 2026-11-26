@@ -202,7 +202,7 @@ Once it is proved, you will ask: *"get these parameters into a spreadsheet"* · 
 
 **What it does:** read the value of one parameter on each of these elements.
 
-Reads the value of one named parameter on each element given - Comments, Mark, Description, a size, a type parameter or the Level - and says for each one whether it has a value, has the parameter but left blank, or does not have that parameter at all. The element's own value is read first, then its type's. On a text note, Text is what the note says. Changes nothing.
+Reads the value of one named parameter on each element given - Comments, Mark, Description, a size or a type parameter - and says for each one whether it has a value, has the parameter but left blank, or does not have that parameter at all. The element's own value is read first, then its type's. On a text note, Text is what the note says. Changes nothing.
 
 | | |
 |---|---|

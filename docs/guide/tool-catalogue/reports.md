@@ -89,7 +89,7 @@ Other ways to ask: *"count the air terminals"* · *"how many are there"*
 
 **What it does:** what are these - the category, family name, type name and id of each element.
 
-Says what each element is: its category, its family name, its type name and its id - the answer to "what is this thing", and a list of family and type names for a set of elements. The family and type are read from the element's type, so a renamed element still answers truly, and an element with no type, such as a line or a group, is listed and says so. Changes nothing.
+Says what each element is: its category, its family name, its type name and its id - the answer to "what is this thing", and a list of family and type names for a set of elements. The family and type are read from the element's type, so the answer holds whatever an element is called, and an element with no type, such as a line or a group, is listed and says so. Changes nothing.
 
 | | |
 |---|---|
