@@ -23,9 +23,25 @@ as version 3. Its C# changed, so it is **DRAFT** until this group runs and Ajmal
 proof stays on the card as the record. **The dimensions themselves** - which a delete takes and which it cuts -
 are [Group QT](group-qt.md)'s, for `REPORT_ELEMENT_DEPENDENCIES` version 2; run QT first, on the same model.
 
-**Not yet run anywhere.** Compiled for Revit 2020 to 2027 (`tools/check-fragments-compile.py`, the owner's
+**Version 4 was not run before 2026-11-26** (that day's run on rooms is under Results). Compiled for Revit 2020 to 2027 (`tools/check-fragments-compile.py`, the owner's
 laptop, 2026-11-26). **Not known, and what QV2 settles:** whether Heron's own Delete box and its Keep or Discard
 box stay away when the call stops - nothing is deleted, so neither should appear.
+
+**Version 5 (2026-11-26) - the stop is a refusal now, and every row below is owed on it.** On version 4 the stop
+was THROWN, so a negative came back `fragment_threw` and could not sign the card
+([row 5b-2060](../fragment-issues/row-5b-2060.md), issue [#1462](https://github.com/Ajmalpshaik/Heron-AI/issues/1462)).
+[`DELETE_ELEMENTS`](../../brain/fragments/delete-elements/fragment.yaml) version 5 (DRAFT) gives the same words in a
+new output **`refusedWhy`**, every id asked for in `refused`, and `deleted` empty - nothing deleted. Read QV2, QV3 and
+QV3b's *"The call answers STOPPED BEFORE THE DELETE"* as **`refusedWhy` says it, never `fragment_threw`**, and write
+down the reply's `outcome:` line - it should read refused. The same holds when the trial cannot start. Compiled for
+Revit 2020 to 2027 (`tools/check-fragments-compile.py`, 2026-11-26); never run in Revit. **The re-run:** the proof job
+`tools/jobs/qv-delete-elements-v4-on-mep-revit2020-2026-11-26.yaml` (on PR #1450's branch until it merges), on the
+same scratch copy's 78 rooms, with `expectedCount` **81** for the positive (Revit's own count) and **80** for the
+negative - **change the job's `set` from 78 to 81 and its `negative-set` from 77 to 80 first**: as written it
+names 78, which version 5 now refuses, so its positive would have nothing to show. Then 82 and 0 by hand. **The
+Keep or Discard box:** a DRAFT's one run in a chat is asked whatever it counted (D-119), so it may still appear
+after a refusal - write down whether it did, and what its count said. Why Revit's count is 81 and the dependency report's 78 is row 5b-2061, a separate
+fix.
 
 **The model: a scratch copy, never the working model** - a sample project saved as
 `%TEMP%\heron-work\qv\qv.rvt`, Revit 2020 first. On Level 1's floor plan, two loadable boxes A and B (any

@@ -9,10 +9,22 @@ semantic-identity: "delete these elements from the model"
 kind: action
 domain: revit.elements
 capability: DELETE_ELEMENTS
-version: 4
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 5 (2026-11-26) - THE COUNT STOP IS A REFUSAL, NOT A THROWN ERROR,
+# and still DRAFT. FRAGMENT-ISSUES row 5b-2060 (issue #1462), Revit 2020, a
+# scratch copy of the MEP sample: 78 rooms that Revit's delete takes as 81,
+# and expectedCount 80 and 0 stopped with the right words and nothing deleted
+# - but THROWN, so the caller got `fragment_threw` and NEEDS-CHECKING Group QV
+# could not sign the card on its negatives. Now both stops - a count that
+# differs, and a trial that cannot start - put version 4's same words in
+# `refusedWhy`, every id asked for in `refused` (none of them went), and
+# delete nothing: `deleted` stays empty. A trial Revit cannot put back, and a
+# rebuild it cannot finish, are still thrown - failures, not refusals. Version
+# 4 was never proved; Group QV is owed on version 5 (D-30).
+#
 # VERSION 4 (2026-11-26) - A COUNT THE YES NAMED IS CHECKED BEFORE ANYTHING
 # GOES, and back to DRAFT. FRAGMENT-ISSUES row 5b-1990 (issue #1278), Revit
 # 2020, a real job: the yes named 36 elements and Revit's delete took 62, and
@@ -100,6 +112,11 @@ purpose: >
   asked again with what really goes. `countChecked` says the count was met.
   Left out, the delete runs as version 3 did.
 
+  **THAT STOP IS A REFUSAL** (version 5). The words are in `refusedWhy`,
+  every id asked for is in `refused`, and `deleted` is empty - the call
+  answers that it refused, never that it threw. A trial that cannot start,
+  so the count cannot be checked, is refused the same way.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -136,11 +153,21 @@ contract:
       role: result
       type: int
     - name: refused
-      # Why it declined, in the user's words - the evidence it looked and
-      # said no. Never a thing it FOUND, so it must not count toward
-      # "did this come back empty" (D-52).
+      # The ids asked for that were NOT deleted: each one Revit refused or
+      # removed nothing for, and - version 5 - every id asked for when the
+      # count check stopped the delete (why is in `refusedWhy`). The evidence
+      # it looked and said no. Never a thing it FOUND, so it must not count
+      # toward "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: refusedWhy
+      # Version 5. Why the count check stopped the delete, in the modeller's
+      # words: the count the yes named, Revit's own count, its list by
+      # category and every id beyond those asked for - or that the trial
+      # could not start, so the count could not be checked. Nothing was
+      # deleted. Empty when it did not stop (D-52).
+      role: accounting
+      type: string
     - name: attachedBefore
       # Version 2. Read BEFORE the delete: every wall whose top or base is
       # attached and whose plan extent overlaps a roof, floor or ceiling being
@@ -183,7 +210,7 @@ contract:
       # Version 4. With expectedCount given: the sentence that Revit's own
       # trial took that same count before anything was deleted. Empty when no
       # count was given. A different count never reaches here - the call
-      # stops and deletes nothing (D-52).
+      # stops, deletes nothing, and says why in `refusedWhy` (D-52).
       role: accounting
       type: string
 
@@ -238,7 +265,8 @@ compatibility-note: >
   `GenericForm` are on every release 2020 to 2027, and an id is only ever
   printed with `ElementId.ToString()`. Version 4 adds no API member: the
   same `SubTransaction`, `Document.Delete(ElementId)`,
-  `Document.GetElement` and `Element.Category` on every release.
+  `Document.GetElement` and `Element.Category` on every release. Version 5
+  adds no API member: it changes only how the stop is answered.
 
 # ROUTING - repeated in HIDE_ELEMENTS, which is what is usually meant.
 #
