@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -27,6 +27,13 @@ risk: MODIFY
 # Revit 2024 (Group OU's OU21, a ROOF type on the model roofjoin-oy) and Ajmal
 # PS signed it PROVEN - the proof below replaced version 3's. OU21's plain
 # floor, word for word, is still owed.
+# BACK TO DRAFT 2026-11-26, ON THE OWNER'S ANSWER TO FRAGMENT-ISSUES row
+# 5b-1967 (issue #1233): "Re-run, then sign". Group OU signs a card again only
+# after its positive AND negative rows read as written, and OU21's positive
+# ran a ROOF type, not a plain floor. No C# changed, so the version stays 4:
+# the proof below is version 4's, its fingerprint still matches impl/, and
+# `proof-held:` says why it is not used - the way create-from-room-boundaries
+# went back on row 5b-1643 and copy-elements waits on Group PJ.
 #
 # VERSION 3 (2026-11-01) - CREATE_CEILING AND CREATE_ROOF WERE MERGED INTO THIS
 # CARD on the owner's instruction ("make sure there is no duplicate tools", then
@@ -153,6 +160,14 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof-held: >
+  Back to DRAFT on 2026-11-26, on the owner's answer to row 5b-1967 ("Re-run,
+  then sign"): the 2026-11-21 proof's positive ran a roof type, Generic -
+  400mm, not the plain floor NEEDS-CHECKING Group OU's OU21 asks for. OU21's
+  (a), a 10 x 6 m plain floor on Level 1 answered word for word as version 3,
+  and its (b), the Foundation Slab refusal, run as written, then a new proof
+  signed, before it is PROVEN again. impl/ is unchanged since this proof.
 
 # THE PROOF BELOW IS VERSION 4's, signed 2026-11-21 (Group OU's OU21, Revit
 # 2024, roofjoin-oy - a roof type, Level 2, 12000 x 8000 mm). Before it the
