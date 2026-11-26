@@ -831,7 +831,7 @@ key, with the day he gave it.
 | 2026-11-26 | 753 | `model` | any | `e6e51d55` | 20 | 11 | 4 | 29 | 1 (0) | 6 | 5 of 7 | `1134-----1---31.-413-----w---1-51-111132---11-3225121-231w1w112-1w1---.-w-.211-` |
 | 2026-11-26 | 753 | `lexical` | any | `e6e51d55` | 23 | 9 | 2 | 30 | 1 (0) | 9 | 4 of 7 | `11111---41-3-11.-112-----w---2--2111-1-2---11--243111-241w1w21--5w1---w3w-.211-` |
 | 2026-11-26 | 754 | `lexical` | any | `e6e51d55` | 34 | 9 | 3 | 18 | 1 (0) | 7 | 3 of 7 | `11111-1-31-1211.-111---33w-3-1411111-1-2-5511-11131112241w1w111-5w1---w4w-.211-` |
-| 2026-11-26 | 754 | `model` | any | `e6e51d55` | 29 | 8 | 6 | 21 | 1 (0) | 6 | 5 of 7 | `11241-11-1--511.-212-----w--51-11-111132--411-11141211231w1w11251w1---.-w-.211-` |
+| 2026-11-26 | 754 | `model` | any | `e6e51d55` | 29 | 8 | 5 | 22 | 1 (0) | 6 | 5 of 7 | `11241-11-1---11.-212-----w--51-11-111132--411-11141211231w1w11251w1---.-w-.211-` |
 
 ### The plain questions — rows 5b-477 and 5b-478, scored beside his
 
@@ -1682,7 +1682,11 @@ trained-model branch; every suite was then run with model2vec blocked, as CI run
 **Measured again on `main` `8941e9a8`** after merging it: every figure above except that on `model` #63
 (*Move all the FCUs from 2400 to 2700*) went back to `WRITE_ELEMENT_PARAMETERS`, 0.03136 against 0.03132 -
 `MOVE_ELEMENTS` went to DRAFT on `main` with its version 4 (#1419) and lost the PROVEN nudge, not a word of
-this change. The `--record` rows above are this final tree's.
+this change. **And on `main` `02780d9a`**, after the re-ranker's removal (#1411) merged: the same again, but for
+#13 on `model` (5th to not found; not first either way). The `--record` rows above are this final tree's.
+Every suite, with model2vec blocked as CI runs them, exits 0 or 3 (`test_bridge_roundtrip`,
+`test_routing_phrases`). *Put them on the screen* now finds `SET_SELECTION` first by only 0.601 against
+0.600 for `ZOOM_TO_ELEMENTS` on lexical - a thin margin that the next card touching either may cross.
 
 **A first try moved three routing-table claims, repaired before this was recorded:** *the duct is
 missing from my schedule* (to `CREATE_SCHEDULE`), *what parameters does this have* and *how many square
