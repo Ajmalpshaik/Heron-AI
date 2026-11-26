@@ -683,6 +683,42 @@ def test_a_second_route_written_as_one_sentence():
           "a list still gives one route per row, a dict row by its given")
 
 
+def test_review_prints_on_a_cp1252_console():
+    # ROW 5B-2040. `review` died half-way on the owner's PC, 2026-11-26: a
+    # draft held a 'Δ' and a cp1252 console cannot encode it, so every draft
+    # after it went unread. The stream here is cp1252 as that console is.
+    print("review prints a non-ASCII draft on a cp1252 console (row 5b-2040)")
+    workspace = tempfile.mkdtemp()
+    original_dir, original_out = HV.DRAFTS_DIR, sys.stdout
+    try:
+        HV.DRAFTS_DIR = os.path.join(workspace, "drafts")
+        os.makedirs(HV.DRAFTS_DIR)
+        path = os.path.join(HV.DRAFTS_DIR, "sample-delta.yaml")
+        written = u"note: \"Δ offset of 3°\"\nafter: the end\n".encode("utf-8")
+        with io.open(path, "wb") as fh:
+            fh.write(written)
+        console = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+        sys.stdout = console
+        try:
+            code = HV.main(["review"])
+            console.flush()
+            shown = console.buffer.getvalue()
+        except UnicodeEncodeError as error:
+            code, shown = "crashed: %s" % error, b""
+        finally:
+            sys.stdout = original_out
+        check(code == 0, "review ran to the end (got %r)" % (code,))
+        check(b"the end" in shown, "the text after the non-ASCII character was printed")
+        check(u"Δ".encode("utf-8") in shown,
+              "the character itself was printed, not dropped")
+        with io.open(path, "rb") as fh:
+            check(fh.read() == written, "the draft file on disk is byte for byte unchanged")
+    finally:
+        HV.DRAFTS_DIR = original_dir
+        sys.stdout = original_out
+        shutil.rmtree(workspace, ignore_errors=True)
+
+
 def main():
     for test in (test_reachability,
                  test_plan_is_ordered_and_honest,
@@ -698,7 +734,8 @@ def main():
                  test_restamp_refuses_a_genuinely_stale_proof,
                  test_the_fingerprint_is_about_content_only,
                  test_audit_reading_says_what_it_cannot_say,
-                 test_a_second_route_written_as_one_sentence):
+                 test_a_second_route_written_as_one_sentence,
+                 test_review_prints_on_a_cp1252_console):
         test()
         print("")
 
