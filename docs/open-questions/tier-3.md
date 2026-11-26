@@ -1246,6 +1246,10 @@ read from the repository, nothing run in Revit:
 **Nothing is changed until this is answered.** Until then each of these is run one at a time, with the draft
 read and signed or set aside before the next run of the same tool.
 
+**Answer:** the run Revit actually checked, for the tool as it stands - run whatever Revit check a tool still needs,
+read its draft, then sign it PROVEN, one run of a tool at a time. The owner's words, 2026-11-26, in conversation:
+*"if its need to chek the revit chek that and sing make it proven"*. Recorded as [D-204](../decisions/D-204.md) item 2.
+
 ---
 
 ### 🔵 Q-98 — How should two tools that can never come back empty be proved - Refresh view and Report level elevations? *(asked 2026-11-23, row 5b-1969)*
@@ -1269,5 +1273,9 @@ for Report level elevations - or do you want them left unproved until a check ca
   the model, because the effect of each is something you can see and no run record could show more.
 
 **Nothing is changed until this is answered.** Until then neither is put in a batch job.
+
+**Answer:** a by-hand reading is enough for both, written on the proof with the Revit release, the model and the
+date. The owner's words, 2026-11-26, in conversation: *"Check by hand is enough"*. Recorded as
+[D-204](../decisions/D-204.md) item 1.
 
 ---
