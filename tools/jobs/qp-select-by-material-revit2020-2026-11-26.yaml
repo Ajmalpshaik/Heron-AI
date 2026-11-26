@@ -1,0 +1,18 @@
+# Group QP (issue #1381), QP7 - SELECT_BY_MATERIAL version 5 in a family: forms scanned whatever the
+# category list says, and the finding for a form at <By Category> names LINK_FAMILY_PARAMETER.
+# Revit 2020, 2026-11-26. Model: pt-ahu - a scratch COPY of Ajmal PS's AHU family
+# (TRG_..._SKM MAH-0202S2M.rfa) in %TEMP%\heron-work\pt, never the library file.
+# Positive: "TRG_AHU_Actuator Grey" - 9 of 698 forms. Negative: a material the family does not hold.
+model: pt-ahu (scratch copy of the MAH-0202S2M AHU family), Revit 2020
+
+jobs:
+  - fragment: select-by-material
+    expect: elements
+    set:
+      materialName: TRG_AHU_Actuator Grey
+      includePaint: false
+      categories: Mechanical Equipment
+    negative-set:
+      materialName: Heron No Such Material 1126
+      includePaint: false
+      categories: Mechanical Equipment

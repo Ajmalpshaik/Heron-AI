@@ -1,0 +1,31 @@
+# Group QP (issue #1381) - ADD_FAMILY_MODEL_TEXT version 3 and CREATE_FAMILY_FREEFORM_SOLID version 2.
+# Revit 2020, 2026-11-26. Model: pt-ahu - a scratch COPY of Ajmal PS's AHU family
+# (TRG_..._SKM MAH-0202S2M.rfa) in %TEMP%\heron-work\pt, never the library file. Every run rolled back.
+# Model text: QP5's text on Center (Front/Back), 2 mm deep - letters measured on their solids,
+# Y -2 to 0; negative, a work plane the family does not have - refused, nothing placed.
+# Freeform: QP6's rectangle-to-circle loft at X 5000, clear of the unit; negative, a loft of one
+# section - refused, nothing built.
+model: pt-ahu (scratch copy of the MAH-0202S2M AHU family), Revit 2020
+
+jobs:
+  - fragment: add-family-model-text
+    write: true
+    expect: textCount
+    set:
+      texts: text=AHU-01 workPlane=Center (Front/Back) at=0,300 heightMm=40 depthMm=2
+    negative-set:
+      texts: text=AHU-01 workPlane=Heron No Such Plane 1126 at=0,300 heightMm=40 depthMm=2
+
+  - fragment: create-family-freeform-solid
+    write: true
+    expect: formId
+    set:
+      kind: loft
+      profiles: "at 5000,0,0 facing Z: rect -200,-150 200,150 | at 5000,0,400 facing Z: ellipse 0,0 150 150 4"
+      path: ""
+      solid: true
+    negative-set:
+      kind: loft
+      profiles: "at 5000,0,0 facing Z: rect -200,-150 200,150"
+      path: ""
+      solid: true
