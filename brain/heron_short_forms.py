@@ -198,6 +198,8 @@ def sentence(used):
 
 
 def main(argv):
+    import heron_console
+    heron_console.safe_streams()   # his list may hold words cp1252 cannot print
     path = where()
     entries, problems = recorded()
     if not path:
