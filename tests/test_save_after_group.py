@@ -113,12 +113,21 @@ def card_section():
     # Version 4 since 2026-11-21: a central model opened directly is refused as
     # another open document too (row 5b-1833).
     check(card.get("version") == 4, "the card is version 4")
-    check(card.get("heron-status") == "DRAFT",
-          "and DRAFT: its C# moved, so version 2's proof no longer describes it "
-          "(D-30), and a kept change from it is refused until it is proved (D-117)")
+    # PROVEN AGAIN ON 2026-11-24 (Revit 2024, Night Rig 1124 and M_Desk): the
+    # proof now describes version 4. Until then version 2's proof stood as the
+    # record and the card was DRAFT. Either is right; a PROVEN card whose proof
+    # no longer matches its C# is not.
+    import heron_fragment as _hf
+    _frag = _hf.load(os.path.join(ROOT, "brain", "fragments", "save-document"))
+    _current = (card.get("proof") or {}).get("fingerprint") == _frag.fingerprint()
+    check(card.get("heron-status") == "DRAFT"
+          or (card.get("heron-status") == "PROVEN" and _current),
+          "DRAFT while version 2's proof stood, or PROVEN on a proof of this code "
+          "(D-30) - never PROVEN on a proof the C# moved past (D-117)")
     check(card.get("risk") == "PUBLISH", "still behind the Publish switch")
-    check(isinstance(card.get("proof"), dict) and card["proof"].get("date") == "2026-10-07",
-          "version 2's proof block is kept as the record of what it proved")
+    check(isinstance(card.get("proof"), dict)
+          and (card["proof"].get("date") == "2026-10-07" or _current),
+          "a proof block is kept as the record of what it proved")
 
     contract = card.get("contract") or {}
     needs = dict((n.get("name"), n) for n in contract.get("needs") or [])

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -145,170 +145,123 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 MEP Family, P1102 MEP - active was
-    P1102 MEP, Revit 2020, session 59096'
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: M_Desk, Night Rig 1124 - active was M_Desk,
+    Revit 2024, session 26904'
   positive_case: 'run as it would normally be run. returned axisLetters 3 item(s) [X, Y, Z],
-    axisOf Func`2, classificationCodes 23.15.30.27.11 Tanks, Reservoirs || 23.15.30.27.11.11
-    Elevated Storage Tanks || 23.15.30.27.11.14 Ground Storage Tanks || 23.15.30.27.11.17
-    Underground Storage Tanks || 23.15.30.27.11.21 Portable Storage Tanks || 23.15.30.27.21
-    Gas Tanks and Gasholders || 23.40.40.14.21 Hood and Ventilation Equipment || 23.40.40.14.21.14
-    Ventilation Equipment || 23.40.40.14.21.17 Fire Suppression Systems || 23.40.40.14.21.21
-    Catering Ventilation || 23.40.70.11.11.11.14 Laboratory Fume Hoods || 23.55.10.14.11 Cooling
-    Towers || 23.60.30.21 Pumps || 23.60.30.21.11 Pump Components || 23.60.30.21.14 Manual
-    Pumps || 23.60.30.21.17 Motor Pumps || 23.60.30.21.21 Pump Sets || 23.60.30.21.24 Booster
-    Pumps || 23.65.35.00 Heaters for Supplied Liquids || 23.65.35.11 Supply Water Heaters
-    || 23.65.35.11.11 Storage Water Heaters || 23.65.35.11.14 Instantaneous Water Heaters
-    || 23.65.35.11.17 Thermodynamic Water Heaters || 23.65.35.99 Heaters for Other Supplied
-    Liquids || 23.65.50.11.11.11 Water Filters || 23.65.50.11.11.14 Water Softeners || 23.65.55.11
-    Supply Pumps and Compressors || 23.65.55.11.11 Gas Compressors/Vacuum Pumps || 23.65.70.17.11.11
-    Fire Hydrants || 23.65.70.17.11.14 Fire Hose Reels || 23.65.70.17.11.17 Fire Hoses ||
-    23.65.70.17.11.21 Fire Fighting Gas Terminals || 23.65.70.17.11.24 Fire Fighting Sprinkler
-    Heads || 23.65.70.17.11.27 Cabinets for Fire Hoses || 23.70.30.24.17 Dust Collectors ||
-    23.70.50.11 Pumps for Liquid Waste || 23.70.50.11.11 Surface Waste Water Pumps || 23.70.50.11.14
-    Sewage and Sludge Pumps || 23.70.50.11.14.11 Oil-Water Separators || 23.70.50.11.14.14
-    Packaged Sewage and Sludge Pump Stations || 23.70.50.11.14.17 Sewage Ejectors || 23.70.50.11.17
-    Combined Macerator-Pumps || 23.75.00.00 Climate Control (HVAC) || 23.75.10.00 Transformation
-    and Conversion of Energy || 23.75.10.11 Central Heat Generators || 23.75.10.11.14 Hot
-    Water Heat Generators || 23.75.10.11.14.11 Cast-Iron Boilers || 23.75.10.11.14.14 Condensing
-    Boilers || 23.75.10.11.14.17 Finned Water-Tube Boilers || 23.75.10.11.14.21 Firebox Heating
-    Boilers || 23.75.10.11.14.24 Flexible Water-Tube Boilers || 23.75.10.11.14.27 Pulse Combustion
-    Boilers || 23.75.10.11.14.31 Scotch Marine Boilers || 23.75.10.11.14.34 Steel Water-Tube
-    Boilers || 23.75.10.11.17 Warm Air Heat Generators || 23.75.10.11.17.11 Furnaces || 23.75.10.11.17.11.11
-    Electric-Resistance Furnaces || 23.75.10.11.17.11.14 Fuel-Fired Furnaces || 23.75.10.11.21
-    Steam Heat Generators || 23.75.10.11.24 Heat Generators, Thermal Liquid || 23.75.10.11.27
-    Fuel Burners || 23.75.10.11.27.11 Fuel Oil Filters || 23.75.10.11.27.14 Nozzles || 23.75.10.11.27.17
-    Burner Controls || 23.75.10.11.31 Solid Fuel Transport and Handling Equipment || 23.75.10.11.34
-    Fuel Gas Heat Recovery Devices || 23.75.10.14 Independent Electric Heating Units || 23.75.10.14.11
-    Electric Convectors || 23.75.10.14.11.11 Static Convectors || 23.75.10.14.11.14 Fan Convectors
-    || 23.75.10.14.14 Electric Radiators || 23.75.10.14.14.11 Storage Heaters || 23.75.10.14.14.14
-    Infrared Radiators/Plates || 23.75.10.14.14.17 Ultraviolet Radiators || 23.75.10.14.17
-    Electric Surface Heating Products || 23.75.10.14.17.11 Heating Sheets for Walls and Ceilings
-    || 23.75.10.14.17.14 Heating Sheets for Glazing || 23.75.10.14.17.17 Pipe Heating Tapes/Cable
-    Heating Trace || 23.75.10.14.21 Embedded Electric Heating Appliances || 23.75.10.14.21.11
-    Heating Sheets || 23.75.10.14.21.14 Heating Cables || 23.75.10.17 Non-Electric Local Heating
-    Units || 23.75.10.17.11 Non-Electric Stoves || 23.75.10.17.14 Fuel-Fired Heaters || 23.75.10.17.14.11
-    Fuel-Fired Duct Heaters || 23.75.10.17.14.14 Fuel-Fired Radiant Heaters || 23.75.10.17.14.17
-    Fuel-Fired Unit Heaters || 23.75.10.17.14.21 Fuel-Fired Air Heaters || 23.75.10.17.14.24
-    Fuel-Fired Domestic Heaters || 23.75.10.17.17 Combined Heating/Cooking Units || 23.75.10.17.17.11
-    Heat Pumps, Heating Function || 23.75.10.17.17.14 Heat Pumps, Cooling Function || 23.75.10.17.17.17
-    Heat Pumps, Heating-Cooling Function || 23.75.10.21 Heat Pumps || 23.75.10.21.11 Air-Source
-    Heat Pumps || 23.75.10.21.14 Rooftop Heat Pumps || 23.75.10.21.17 Water-Source Heat Pumps
-    || 23.75.10.24 Cooling and Freeze Plant || 23.75.10.24.11 Chilled Water Plant || 23.75.10.24.14
-    Refrigeration Plant || 23.75.10.24.17 Cold Room Plant || 23.75.10.24.21 Cooling and Freeze
-    Components || 23.75.10.24.21.11 Refrigerant Condensing Units || 23.75.10.24.21.11.11 Packaged
-    Refrigerant Condensing Coils and Fan Units || 23.75.10.24.21.11.14 Refrigerant Condensing
-    Coils || 23.75.10.24.21.14 Refrigerant Evaporators || 23.75.10.24.21.17 Refrigerant Compressors
-    || 23.75.10.24.21.17.11 Centrifugal Refrigerant Compressors || 23.75.10.24.21.17.14 Reciprocating
-    Refrigerant Compressors || 23.75.10.24.21.17.17 Rotary-Screw Refrigerant Compressors ||
-    23.75.10.24.21.21 Packaged Water Chillers || 23.75.10.24.21.21.11 Absorption Water Chillers
-    || 23.75.10.24.21.21.14 Centrifugal Water Chillers || 23.75.10.24.21.21.17 Reciprocating
-    Water Chillers || 23.75.10.24.21.21.21 Rotary-Screw Water Chillers || 23.75.10.24.21.24
-    Liquid Coolers and Evaporative Condensers || 23.75.10.24.21.27 Unitary Air Conditioning
-    Equipment || 23.75.10.24.21.27.11 Packaged Air Conditioners || 23.75.10.24.21.27.14 Packaged
-    Rooftop Air Conditioning Units || 23.75.10.24.21.27.17 Packaged Rooftop Make-Up Air Conditioning
-    Units || 23.75.10.24.21.27.21 Packaged Terminal Air Conditioning Units || 23.75.10.24.21.27.24
-    Room Air Conditioners || 23.75.10.24.21.27.27 Split System Air Conditioning Units || 23.75.10.24.21.31
-    Cooling/Freeze Plant Accessories || 23.75.10.24.21.31.11 Refrigerant Liquid || 23.75.10.27.17.21
-    Heat Exchangers, Tubular || 23.75.10.27.17.24 Heat Exchangers, Plate || 23.75.10.27.17.27
-    Heat Exchangers, Rotary || 23.75.10.34.21 Heat Exchangers for Ventilation Air || 23.75.10.37
-    Cooling Towers || 23.75.10.37.11 Mechanical-Draft Cooling Towers || 23.75.10.37.14 Natural-Draft
-    Cooling Towers || 23.75.35.00 Impelling Equipment || 23.75.35.14 Air Handling Units ||
-    23.75.35.14.11 Built-Up Indoor Air Handling Units || 23.75.35.14.14 Customized Rooftop
-    Air Handling Units || 23.75.35.14.17 Modular Indoor Air Handling Units || 23.75.35.14.21
-    Modular Rooftop Air Handling Units || 23.75.35.17 Fans || 23.75.35.17.11 Fans for Air
-    Ductwork || 23.75.35.17.14 Fans, Single Units || 23.75.35.17.17 Room Air Circulation Fans
-    || 23.75.35.17.17.11 Ceiling Fans || 23.75.35.17.21 Air Curtains || 23.75.35.17.24 Axial
-    Fans || 23.75.35.17.27 Centrifugal Fans || 23.75.35.21 Extractors || 23.75.35.21.11 Emergency
-    Smoke Extractors || 23.75.35.21.14 Extractors for Process Air || 23.75.35.21.17 Industrial
-    Ventilating Equipment || 23.75.35.21.21 Power Ventilators || 23.75.50.11 Treatment of
-    Circulation Liquids || 23.75.50.11.14 Feedwater Equipment || 23.75.50.11.14.11 Boiler
-    Feedwater Pumps || 23.75.50.11.14.14 Deaerators || 23.75.50.11.14.17 Packaged Deaerator
-    and Feedwater Equipment || 23.75.50.14 Steam Treatment || 23.75.50.14.11 Steam Dryers
-    || 23.75.50.17.14 Dust Collectors || 23.75.50.17.17 Electronic Air Cleaners || 23.75.50.17.21
-    Air Humidifiers || 23.75.50.17.24 Dehumidifiers || 23.75.50.17.24.11 Swimming Pool Dehumidification
-    Units || 23.75.65.00 Monitoring and Control Equipment || 23.75.65.11 Monitoring and Control
-    of Internal Climate || 23.75.65.11.11 Heating Controllers || 23.75.65.11.14 Heating Programmers
-    || 23.75.65.11.17 Heating Optimizers/Economizers || 23.75.65.14 Industrial Plant Performance
-    Controls || 23.75.65.14.14 Centralized Plant Controls || 23.75.65.14.14.11 Temperature
-    Controls || 23.75.65.14.14.14 Pressure Controls || 23.75.65.14.14.21 Concentration Controls
-    || 23.75.65.14.17 Control and Monitoring Boards/Panels || 23.75.70.00 HVAC Distribution
-    Devices || 23.75.70.11 Circulation Pipe Fittings || 23.75.70.11.11 Distribution Collectors
-    || 23.75.70.11.14 Expansion Vessels || 23.75.70.11.14.24 Air Mixers || 23.75.70.17 Water
-    Heated and Cooled Terminal Heating and Cooling Units || 23.75.70.17.11 Radiators || 23.75.70.17.14
-    Convectors || 23.75.70.17.17 Radiation Panels || 23.75.70.17.21 Embedded Water Heating
-    Terminals || 23.75.70.17.24 Finned-Tube Radiation || 23.75.70.17.27 Fan Coil Units ||
-    23.75.70.17.31 Induction Units || 23.75.70.17.34 Unit Heaters || 23.75.70.17.37 Unit Ventilators
-    || 23.75.70.21 Terminals for Air || 23.75.70.21.11 Supports, Mechanical Fasteners || 23.75.70.21.14
-    Coil Units || 23.75.70.21.17 Air Curtains || 23.75.70.21.21 Local Air-Conditioning Units
-    || 23.75.70.21.24 Air Terminal Units || 23.75.70.21.24.11 Constant Volume Air Terminal
-    Units || 23.75.70.21.24.14 Variable Volume Air Terminal Units || 23.85.80.11.21 Energy
-    Monitoring and Controls || 23.85.80.11.24 Environmental Controls  (199 code(s) the classification
-    file gives Mechanical Equipment, read from C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
-    Revit 2020\OmniClassTaxonomy.txt), clsCode BuiltInParameter, clsCodeLabel OmniClass Number,
+    axisOf Func`2, classificationCodes 23.40.10.11 Site Furnishings || 23.40.10.11.14 Exterior
+    Seating || 23.40.10.11.17 Exterior Tables || 23.40.10.14.14.14 Clocks || 23.40.10.17 Garden
+    and Park Furniture || 23.40.10.17.11 Garden/Patio Seating and Tables || 23.40.10.17.14
+    Garden Umbrellas || 23.40.20.00 General Furniture and Specialties || 23.40.20.11 Wardrobe
+    and Closet Specialties || 23.40.20.11.11 Wardrobes || 23.40.20.11.14 Chests of Drawers
+    || 23.40.20.11.17 Lockers || 23.40.20.11.21 Racks and Hangers || 23.40.20.11.21.11 Coat
+    Racks || 23.40.20.11.21.14 Hat Racks || 23.40.20.11.21.17 Shoe Trees || 23.40.20.11.21.21
+    Coat Hooks || 23.40.20.11.21.24 Coat Hangers and Rails || 23.40.20.11.24 Cloakroom Units
+    || 23.40.20.11.27 Umbrella Stands || 23.40.20.11.31 Checkroom Equipment || 23.40.20.11.31.11
+    Manual Checkroom Equipment || 23.40.20.11.31.14 Automated Checkroom Equipment || 23.40.20.14
+    Residential Furniture || 23.40.20.14.14 Residential Seating || 23.40.20.14.14.11 Chairs
+    || 23.40.20.14.14.14 Settees, Sofas || 23.40.20.14.14.17 Stools || 23.40.20.14.14.21 Benches
+    || 23.40.20.14.14.24 Chaises Lounges || 23.40.20.14.14.27 Sofa Beds, Chair Beds || 23.40.20.14.17
+    Residential Tables and Cabinets || 23.40.20.14.17.11 Dining Room Tables || 23.40.20.14.17.14
+    China Cabinets || 23.40.20.14.17.17 Sideboards || 23.40.20.14.17.21 End Tables || 23.40.20.14.17.24
+    Coffee Tables || 23.40.20.17 Bedroom Furniture || 23.40.20.17.14 Bedroom Furniture, Single
+    Units || 23.40.20.17.14.11 Beds || 23.40.20.17.14.14 Headboards, Footboards || 23.40.20.17.14.17
+    Cots, Cradles || 23.40.20.17.14.21 Bedside Units || 23.40.20.17.14.24 Dressing Tables
+    || 23.40.20.17.14.27 Nursery/Children''s Furniture || 23.40.20.17.14.31 Mattresses ||
+    23.40.20.21 Toilet and Bath Specialties || 23.40.20.24 Non-Clothes Storage Furniture ||
+    23.40.20.24.14 Chests || 23.40.20.24.17 Sideboards || 23.40.20.24.21 Dressers || 23.40.20.24.24
+    Filing Cabinets || 23.40.20.24.27 Plan/Map Chests || 23.40.20.24.31 Desk || 23.40.20.24.34
+    Bookcases || 23.40.20.24.41 Key Hangers || 23.40.20.27 Storage Shelving || 23.40.20.27.11
+    Shelves || 23.40.20.27.14 Supports || 23.40.20.27.17 Racking || 23.40.20.27.21 Mobile
+    Storage Units || 23.40.20.31 Refuse Disposal Furniture || 23.40.40.17 Restaurant Furniture
+    || 23.40.40.17.11 Bars and Serving Counters || 23.40.40.17.14 Restaurant Chairs || 23.40.40.17.17
+    Restaurant Tables || 23.40.40.17.21 Restaurant Booths || 23.40.40.17.24 Restaurant Seating
+    Units || 23.40.40.17.27 Bar Stools || 23.40.50.00 Educational, Cultural Equipment and
+    Furnishings || 23.40.50.11 Educational, Entertainment Equipment and Furnishings || 23.40.50.11.11
+    Auditorium Seating || 23.40.50.11.11.11 Fixed Audience Seating || 23.40.50.11.11.14 Portable
+    Audience Seating || 23.40.50.11.11.14.11 Folding Audience Chairs || 23.40.50.11.11.14.14
+    Interlocking Audience Chairs || 23.40.50.11.11.14.17 Stacking Audience Chairs || 23.40.50.11.14
+    Classroom Furniture || 23.40.50.11.14.11 Seat and Table Assemblies || 23.40.50.11.14.14
+    Modular Desks || 23.40.50.11.17 Multiple-Use Fixed Seating || 23.40.50.17.14 Planetarium
+    Seating || 23.40.50.27.11.11 Library Shelving || 23.40.50.27.21 Library Furniture || 23.40.50.27.21.11
+    Library Filing Furniture || 23.40.50.27.21.14 Library Display Furniture || 23.40.50.27.21.17
+    Study Carrels || 23.40.50.34.47 Spectator Stands, Seating || 23.40.50.34.47.11 Fixed Stadium
+    and Arena Seating || 23.40.50.34.47.14 Telescoping Stands || 23.40.50.34.47.14.11 Telescoping
+    Bleachers || 23.40.50.34.47.14.14 Telescoping Chair Platforms || 23.40.70.11.11.14 Laboratory
+    Furniture || 23.40.70.11.14.21 Health Care Furniture || 23.40.70.14 Retail and Commercial
+    Equipment and Furnishings || 23.40.70.14.11 Hospitality Equipment and Furnishings || 23.40.70.14.14
+    Registration Equipment || 23.40.70.14.17 Checkroom Equipment || 23.40.70.14.21 Hospitality
+    Furniture || 23.40.70.14.24 Hospitality Furnishings || 23.40.70.14.24.11 Hospitality Bath
+    Furnishings || 23.40.70.14.24.11.11 Hospitality Bath Linens and Towels || 23.40.70.14.24.11.14
+    Hospitality Bath Mats || 23.40.70.14.24.11.17 Hospitality Shower Curtains || 23.40.70.14.24.14
+    Hospitality Bedroom Furnishings || 23.40.72.14.21 Hospitality Bed Linens || 23.40.72.14.22
+    Hospitality Pillows || 23.40.70.14.27 Mercantile Equipment and Furnishings || 23.40.70.14.31
+    Barber Shop Equipment || 23.40.70.14.34 Beauty Shop Equipment || 23.40.70.14.37 Cash Registers
+    and Checkout Equipment || 23.40.70.14.41 Display Cases || 23.40.70.14.64 Retail and Commercial
+    Furnishings || 23.40.70.14.64.11 Office Furniture || 23.40.70.14.64.14 Retail and Commercial
+    Seating Furniture || 23.40.70.14.64.17 Office Storage and Filing Furniture || 23.40.70.14.64.17.11
+    Lateral Filing Cabinets || 23.40.70.14.64.17.14 Vertical Filing Cabinets  (118 code(s)
+    the classification file gives Furniture, read from C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
+    Revit 2024\OmniClassTaxonomy.txt), clsCode BuiltInParameter, clsCodeLabel OmniClass Number,
     clsFiledUnder Func`3, clsLabelFor Func`3, clsLoad Action, clsNewNames false, clsPath C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
-    Revit 2020\OmniClassTaxonomy.txt, clsProblem (null), clsRows 2645 item(s) [(23.10.00.00,
+    Revit 2024\OmniClassTaxonomy.txt, clsProblem (null), clsRows 2645 item(s) [(23.10.00.00,
     Site Products, , ), (23.10.05.00, Ground Anchorages, , ), (23.10.05.10, Retaining/Stabilizing
     Ground Anchors, , ), ...], clsSample false, clsTidy Func`2, clsTitle BuiltInParameter,
     clsTitleLabel OmniClass Title, clsTried 1 item(s) [C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
     Revit...], countOf Func`2, familyKind level-based - not hosted, placed on a level, findings
-    2 item(s) ["" is level-based - not hosted, placed on a level. Category ..., OmniClass
-    Number reads 23.75.70.17.27. The codes the classif...], invariant CultureInfo, lineList
-    , mm Func`2, notAFamily false, planeList Center (Left/Right): faces X, at X 0 mm, Is Reference
-    Center (Left/Right), defines origin, pinned  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a04):
-    faces X, at X 14 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-000009c5):
-    faces X, at X 63.6 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-000009c3):
-    faces X, at X 463.6 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a06):
-    faces X, at X 489 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a11):
-    faces X, at X 514.4 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-000009c1):
-    faces X, at X 539.8 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-000009bd):
-    faces Y, at Y -12.7 mm, Is Reference Not a Reference  ||  Center (Front/Back): faces Y,
-    at Y 0 mm, Is Reference Center (Front/Back), defines origin, pinned  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a09):
-    faces Y, at Y 54 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a0b):
-    faces Y, at Y 107.9 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-000009dc):
-    faces Y, at Y 171.4 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-000009c7):
-    faces Y, at Y 184.1 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a1d):
-    faces Y, at Y 209.5 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a34):
-    faces Y, at Y 393.7 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a33):
-    faces Y, at Y 469.9 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-000009bf):
-    faces Y, at Y 495.3 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-0000072f):
-    faces Z, at Z 0 mm, Is Reference Center (Elevation), defines origin, pinned  ||  (unnamed
-    a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a13): faces Z, at Z 19 mm, Is Reference Not
-    a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-000009d7): faces Z, at
-    Z 38.1 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-000009de):
-    faces Z, at Z 50.8 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a0f):
-    faces Z, at Z 114.3 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a0d):
-    faces Z, at Z 114.3 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a42):
-    faces Z, at Z 174.7 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-000009da):
-    faces Z, at Z 200.1 mm, Is Reference Not a Reference  ||  (unnamed a0683e65-4584-4c07-94d1-ebbad3e4649b-000009d4):
-    faces Z, at Z 222.3 mm, Is Reference Not a Reference, pointList , shown Func`2, stored
-    Func`2, templateReport Family "" | category Mechanical Equipment | kind: level-based -
-    not hosted, placed on a level | units: Length = Millimeters (no symbol), rounding 1 -
-    metric | placement OneLevelBased | host elements in the template: none | settings: Host
-    (blank), Work Plane-Based No, Always Vertical Yes, Cut with Voids When Loaded No, Shared
-    No, Room Calculation Point No, Maintain Annotation Orientation No, Rotate with component
-    No, Keep text readable No, Part Type Normal, Profile Usage <Generic>, Material for Model
-    Behavior Other, OmniClass Number 23.75.70.17.27, OmniClass Title Fan Coil Units | built-in
-    parameters: Default Elevation [type] = 0.0, Assembly Code [type], Type Image [type], Keynote
-    [type], Model [type], Manufacturer [type], Type Comments [type], URL [type], Description
-    [type], Cost [type] | own parameters: 18 | reference planes: 26 | reference lines: 0 |
-    adaptive points: 0 | types: 7, current "94 LPS" | views: Ref. Level (FloorPlan), Ref.
-    Level (CeilingPlan), Back (Elevation), Front (Elevation), Left (Elevation), Right (Elevation),
-    View 1 (ThreeD), {3D} (ThreeD). on P1102 MEP Family'
-  negative_case: run against 'P1102 MEP' instead - chosen because it should not contain what
-    this fragment reports. returned axisLetters 3 item(s) [X, Y, Z], axisOf Func`2, classificationCodes
+    2 item(s) ["M_Desk" is level-based - not hosted, placed on a level. Cat..., OmniClass
+    Number reads 23.40.20.24.31. The codes the classif...], invariant CultureInfo, lineList
+    , mm Func`2, notAFamily false, planeList Left: faces X, at X -0.5 mm, Is Reference Left  ||  (unnamed
+    18774a37-3df5-41f9-9160-4e3d9a8ca4bb-000390f2): faces X, at X 202.7 mm, Is Reference Not
+    a Reference  ||  Center (Left/Right): faces X, at X 762 mm, Is Reference Center (Left/Right),
+    defines origin  ||  (unnamed 18774a37-3df5-41f9-9160-4e3d9a8ca4bb-000390f3): faces X,
+    at X 1321.3 mm, Is Reference Not a Reference  ||  Right: faces X, at X 1524.5 mm, Is Reference
+    Right  ||  Drawer Edge: faces Y, at Y -12.7 mm, Is Reference Not a Reference  ||  Bottom:
+    faces Y, at Y 0 mm, Is Reference Bottom  ||  Center (Front/Back): faces Y, at Y 381 mm,
+    Is Reference Center (Front/Back), defines origin  ||  Top: faces Y, at Y 762 mm, Is Reference
+    Top  ||  (unnamed 18774a37-3df5-41f9-9160-4e3d9a8ca4bb-0003904c): faces Z, at Z 0 mm,
+    Is Reference Not a Reference  ||  (unnamed 18774a37-3df5-41f9-9160-4e3d9a8ca4bb-00039051):
+    faces Z, at Z 152 mm, Is Reference Not a Reference  ||  (unnamed 18774a37-3df5-41f9-9160-4e3d9a8ca4bb-000390fe):
+    faces Z, at Z 304.8 mm, Is Reference Weak Reference  ||  (unnamed 18774a37-3df5-41f9-9160-4e3d9a8ca4bb-000390ff):
+    faces Z, at Z 425.5 mm, Is Reference Weak Reference  ||  (unnamed 18774a37-3df5-41f9-9160-4e3d9a8ca4bb-00039120):
+    faces Z, at Z 546.1 mm, Is Reference Weak Reference  ||  (unnamed 18774a37-3df5-41f9-9160-4e3d9a8ca4bb-00039100):
+    faces Z, at Z 546.1 mm, Is Reference Weak Reference  ||  (unnamed 18774a37-3df5-41f9-9160-4e3d9a8ca4bb-00039121):
+    faces Z, at Z 666.7 mm, Is Reference Weak Reference  ||  (unnamed 18774a37-3df5-41f9-9160-4e3d9a8ca4bb-00039101):
+    faces Z, at Z 666.8 mm, Is Reference Weak Reference  ||  (unnamed 18774a37-3df5-41f9-9160-4e3d9a8ca4bb-00039050):
+    faces Z, at Z 723.9 mm, Is Reference Not a Reference  ||  (unnamed 18774a37-3df5-41f9-9160-4e3d9a8ca4bb-00039060):
+    faces Z, at Z 762 mm, Is Reference Not a Reference, pointList , shown Func`2, stored Func`2,
+    templateReport Family "M_Desk" | category Furniture | kind: level-based - not hosted,
+    placed on a level | units: Length = Millimeters (no symbol), rounding 1 - metric | placement
+    OneLevelBased | host elements in the template: none | settings: Host (blank), Work Plane-Based
+    No, Always Vertical Yes, Cut with Voids When Loaded No, Shared Yes, Room Calculation Point
+    No, Maintain Annotation Orientation No, Rotate with component No, Keep text readable No,
+    Part Type Normal, Profile Usage <Generic>, Material for Model Behavior Other, OmniClass
+    Number 23.40.20.24.31, OmniClass Title Desk | built-in parameters: Default Elevation [type]
+    = 0.0, Assembly Code [type], Keynote [type], Model [type], Manufacturer [type], Type Comments
+    [type], Type Image [type], URL [type], Description [type], Cost [type], Type IFC Predefined
+    Type [type], Export Type to IFC As [type] | own parameters: 7 | reference planes: 19 |
+    reference lines: 0 | adaptive points: 0 | types: 3, current "1525 x 762mm" | views: Ground
+    floor (FloorPlan), Ground floor (CeilingPlan), Back (Elevation), Front (Elevation), Left
+    (Elevation), Right (Elevation), View 1 (ThreeD). on M_Desk'
+  negative_case: run against 'Night Rig 1124' instead - chosen because it should not contain
+    what this fragment reports. returned axisLetters 3 item(s) [X, Y, Z], axisOf Func`2, classificationCodes
     , clsCode BuiltInParameter, clsCodeLabel OmniClass Number, clsFiledUnder Func`3, clsLabelFor
     Func`3, clsLoad Action, clsNewNames false, clsPath (null), clsProblem (null), clsRows
     0 item(s), clsSample false, clsTidy Func`2, clsTitle BuiltInParameter, clsTitleLabel OmniClass
     Title, clsTried 0 item(s), countOf Func`2, familyKind , findings 1 item(s) [The document
-    in front, "P1102 MEP", is a project, not a fami...], invariant CultureInfo, lineList ,
+    in front, "Night Rig 1124", is a project, not a...], invariant CultureInfo, lineList ,
     mm Func`2, notAFamily true, planeList , pointList , shown Func`2, stored Func`2, templateReport
-    . on P1102 MEP
+    . on Night Rig 1124
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 1cd0dc1b6d93b51b
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.3.0.0
+    addin_hash: b5c1b9426090689f
+  fingerprint: ebdadf74122776ab
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

@@ -135,9 +135,14 @@ def grids():
     check(said.get("role") == "accounting",
           "`refused` stays accounting - why it declined, never a thing found (D-52)")
 
-    check(frag.status == "DRAFT" and int(frag.data.get("version") or 0) >= 4,
-          "its C# changed after its proof, so it is DRAFT at version 4 or later "
-          "(it reads %s, version %s)" % (frag.status, frag.data.get("version")))
+    # PROVEN AGAIN ON 2026-11-24 (Revit 2024, Night Rig 1124): version 4's own
+    # proof. DRAFT until then; PROVEN on a proof of older code is the defect.
+    proved_now = (frag.proof or {}).get("fingerprint") == frag.fingerprint()
+    check(int(frag.data.get("version") or 0) >= 4
+          and (frag.status == "DRAFT" or (frag.status == "PROVEN" and proved_now)),
+          "version 4 or later, DRAFT or PROVEN on a proof of this code - never "
+          "PROVEN on a proof its C# moved past (it reads %s, version %s)"
+          % (frag.status, frag.data.get("version")))
     check(not frag.data.get("proof-held"),
           "and it holds no proof back: its proof no longer describes the code")
 

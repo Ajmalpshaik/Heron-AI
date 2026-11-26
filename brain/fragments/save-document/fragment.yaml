@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -183,31 +183,53 @@ contract:
 # at once it is PROVEN, since D-117 refuses a DRAFT kept for real.
 
 proof:
-  date: '2026-10-07'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: HeronNest_Car (1,730 elements), Revit 2024, session 9240
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned canonical Func`2, closeWindow true,
-    closed true, findings 2 item(s) ['HeronNest_Hub' saved to C:\Users\AjmalAlavudheen\AppData\Lo...,
-    'HeronNest_Hub' is closed.], found Document, openTitles 5 item(s) [ArrayAxisScratch, HeronNest_Hub,
-    Family1, ...], refused (null), saved true, savedTo C:\Users\AjmalAlavudheen\AppData\Local\Temp\heron-work\nest\HeronNest_Hub.rfa,
-    wanted C:\Users\AjmalAlavudheen\AppData\Local\Temp\heron-work\nest\HeronNest_Hub.rfa.
-    inputs came documentPath as given; closeWindow as given. on HeronNest_Car
-  negative_case: run with documentPath=C:\Users\AjmalAlavudheen\AppData\Local\Temp\heron-work\nest\HeronNest_Car.rfa
-    instead - chosen because it should not contain what this fragment reports - run inside
-    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    canonical Func`2, closeWindow false, closed false, findings 1 item(s) ['HeronNest_Car'
-    is the document Heron is working in, and Rev...], found Document, openTitles 4 item(s)
-    [ArrayAxisScratch, Family1, HeronNest_Car, ...], refused 'HeronNest_Car' is the document
-    Heron is working in, and Revit will not save a document while Heron's Undo entry is open
-    in it. Switch Heron to another open document and name this file again - or save it with
-    Ctrl+S, saved false, savedTo (null), wanted C:\Users\AjmalAlavudheen\AppData\Local\Temp\heron-work\nest\HeronNest_Car.rfa.
-    inputs came documentPath as given; closeWindow not given - false (optional). on HeronNest_Car
+  model: Night Rig 1124, Revit 2024, session 26904 - the count is NOT recorded because 2,030
+    elements was measured on M_Desk, the document in front, and this ran against another one
+    (row 15)
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards - and the save asked for with it: SAVED  THE
+    CHANGE WAS ROLLED BACK - this run was a preview - AND THE SAVE WAS DONE: ''M_Desk'' was
+    saved as it is open now, which this run did not change. SAVED. ''M_Desk'' was saved to
+    C:\Users\ajmal\AppData\Local\Temp\heron-work\night-1124\fam\M_Desk.rfa once Heron''s Undo
+    entry had closed. A SAVE CANNOT BE UNDONE: the file on disk holds it now.. returned canonical
+    Func`2, closeAsked false, closeWindow true, findings 2 item(s) [''M_Desk'' is another
+    open document, so Heron saves it to C:\U..., ''M_Desk'' is the window in front, and Revit
+    lets no tool clos...], found Document, openTitles 3 item(s) [M_Desk, Project1, Night Rig
+    1124], refused (null), replaceFile false, saveAs , saveAsked true, saveAskedTo C:\Users\ajmal\AppData\Local\Temp\heron-work\night-1124\fam\M_Desk.rfa,
+    thisOne false, wanted C:\Users\ajmal\AppData\Local\Temp\heron-work\night-1124\fam\M_Desk.rfa.
+    inputs came documentPath as given; saveAsPath as given; replaceFile not given - false
+    (optional); closeWindow as given; saveWhenKept - Heron saves this model once its Undo
+    entry has closed, after a Keep or a preview, never after a Discard (Q-69, D-171); saveOtherWhenKept
+    - Heron saves that document once this run''s Undo entry has closed, and closes its window
+    when asked - after a Keep or a preview, never after a Discard (D-171, row 5b-1824). on
+    Night Rig 1124'
+  negative_case: 'run with documentPath=C:\nope\heron-missing-1124.rfa, closeWindow=false,
+    saveAsPath= instead - chosen because it should not contain what this fragment reports
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned canonical Func`2, closeAsked false, closeWindow false, findings 1 item(s) [No
+    document open in this Revit is saved at ''C:\nope\heron-mi...], found (null), openTitles
+    3 item(s) [M_Desk, Project1, Night Rig 1124], refused No document open in this Revit is
+    saved at ''C:\nope\heron-missing-1124.rfa'', so there is nothing to save. Open: M_Desk,
+    Project1, Night Rig 1124. A document that was never saved has no file and cannot be named
+    here - for the model Heron works in, give the path to save it as (saveAsPath), replaceFile
+    false, saveAs , saveAsked false, saveAskedTo (null), thisOne false, wanted C:\nope\heron-missing-1124.rfa.
+    inputs came documentPath as given; saveAsPath as given; replaceFile not given - false
+    (optional); closeWindow as given; saveWhenKept - Heron saves this model once its Undo
+    entry has closed, after a Keep or a preview, never after a Discard (Q-69, D-171); saveOtherWhenKept
+    - Heron saves that document once this run''s Undo entry has closed, and closes its window
+    when asked - after a Keep or a preview, never after a Discard (D-171, row 5b-1824). on
+    Night Rig 1124'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 57f71ff4de3bf4df
-
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.3.0.0
+    addin_hash: b5c1b9426090689f
+  fingerprint: 8293a7fed907cee0
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

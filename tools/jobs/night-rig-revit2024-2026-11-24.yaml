@@ -1,0 +1,111 @@
+# Night of 2026-11-24, Revit 2024 (build 24.3.60.12, add-in 0.3.0.0), batch 1.
+#
+#     python tools/batch-prove.py tools/jobs/night-rig-revit2024-2026-11-24.yaml --dry-run
+#
+# THE MODEL: Night Rig 1124 - a copy of the 2026-11-20 scratch "Rig 1040"
+# (metric architectural template, Revit 2024) in %TEMP%\heron-work\night-1124:
+# 48 placed elements - 6 walls, 2 floors, a stair, room 1, 2 structural
+# framing, 1 generic model; levels Level 1 (0) and Level 2 (4000); views
+# FloorPlan: Level 1 / Level 2 / Site, {3D}, elevations; 103 materials,
+# title block family A1 metric. Every run is rolled back.
+
+model: "Night Rig 1124 (scratch copy of Rig 1040, metric architectural template, 48 placed elements), Revit 2024, session 26904"
+
+defaults:
+  in: "Night Rig 1124"
+  setup: []
+
+jobs:
+  - fragment: read-element-parameters
+    setup: [filter-elements-by-category, set-selection]
+    expect: values
+    set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "Base Constraint"}
+    negative-set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "Heron No Such Parameter 1124"}
+
+  - fragment: set-material-properties
+    write: true
+    expect: fieldsChanged
+    set: {materialsNamed: "Aluminum", fieldValues: "Manufacturer=Heron Prove 1124"}
+    negative-set: {materialsNamed: "Heron No Such Material 1124", fieldValues: "Manufacturer=Heron Prove 1124"}
+
+  - fragment: create-sheets
+    write: true
+    expect: created
+    set:
+      sheets: "Sheet Number|Sheet Name;HP-901|HERON PROVE 1;HP-902|HERON PROVE 2"
+      titleBlockName: "A1 metric"
+    negative-set:
+      sheets: "Sheet Number|Sheet Name;HP-901|HERON PROVE 1;HP-902|HERON PROVE 2"
+      titleBlockName: "NoSuchTitleBlockAnywhere"
+
+  - fragment: find-degenerate-lines
+    expect: elements
+    set: {categories: "Walls", shorterThanMm: 100000}
+    negative-set: {categories: "Walls", shorterThanMm: 0.001}
+
+  - fragment: select-by-pin-state
+    expect: elements
+    set: {categories: "Walls", wantPinned: false}
+    negative-set: {categories: "Walls", wantPinned: true}
+
+  - fragment: select-by-parameter-value
+    expect: elements
+    set: {categories: "Walls", parameterName: "Base Constraint", matchText: "Level 1", matchMode: contains, includeTypeParameters: "false", includeLinks: "false"}
+    negative-set: {categories: "Walls", parameterName: "Base Constraint", matchText: "ZZZNOTHINGHERE", matchMode: contains, includeTypeParameters: "false", includeLinks: "false"}
+
+  - fragment: check-minimum-clearance
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: tooClose
+    set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", defaultClearance: 5000, rules: "", includeInsulation: false}
+    negative-set: {categories: "Sheets", defaultClearance: 5000, rules: "", includeInsulation: false}
+
+  - fragment: count-by-spatial-container
+    setup: [filter-elements-by-category, set-selection]
+    expect: placed
+    set: {categories: "Generic Models", inViewOnly: "FloorPlan: Level 1", containerKind: room}
+    negative-set: {categories: "Generic Models", inViewOnly: "FloorPlan: Level 1", containerKind: "ZZZNOTHINGHERE"}
+
+  - fragment: report-view-work-plane
+    expect: workPlanes
+    set: {views: "FloorPlan: Level 1"}
+    negative-set: {views: "ThreeD: {3D}"}
+
+  - fragment: check-structural-supports
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: unsupported
+    set: {categories: "Structural Framing", inViewOnly: "", toleranceMm: 0}
+    negative-set: {categories: "Walls", inViewOnly: "", toleranceMm: 0}
+
+  - fragment: edit-revision-numbering-sequence
+    write: true
+    expect: changed
+    set: {name: Alphanumeric, newName: "", minimumDigits: "", startingNumber: "", prefix: "", suffix: "", customSequence: "AA, BB, CC, DD, EE"}
+    negative-set: {name: Alphanumeric, newName: "", minimumDigits: "", startingNumber: "", prefix: "", suffix: "", customSequence: "AA, AA, BB"}
+
+  - fragment: create-grids
+    write: true
+    expect: created
+    set: {gridLines: "4000,-6000,0; 8000,-6000,0", gridNames: "Heron Prove Grid"}
+    negative-set: {gridLines: "0,0,0; 30000,0,500"}
+
+  - fragment: create-view-filter
+    write: true
+    expect: created
+    set: {categoryIds: Walls, colour: "", filterName: "Heron Prove Walls", matchValue: Heron, parameterName: Comments, view: ""}
+    negative-set: {categoryIds: Walls, colour: "255,0,0", filterName: "Heron Prove Walls", matchValue: Heron, parameterName: Comments, view: "FloorPlan: Level 1"}
+
+  - fragment: set-view-section-box
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: applied
+    set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", marginMm: 500, view: "{3D}"}
+    negative-set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", marginMm: 500, view: "Heron No Such View 1124"}
+
+  - fragment: edit-text-values
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: changed
+    set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", field: "Comments", mode: prefix, replacement: "", text: "HERON-"}
+    negative-set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", field: "Comments", mode: replace, replacement: "X", text: "ZZZNOTHINGHERE"}

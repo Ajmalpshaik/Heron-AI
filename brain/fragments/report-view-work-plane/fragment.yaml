@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -101,23 +101,29 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-09'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: Project1 (3,167 elements), Revit 2020, session 51048
-  positive_case: 'run as it would normally be run. returned findings 1 item(s) [Read 1 view(s)
-    for their work plane: 1 with one, 0 with none...], noPlane 0, withPlane 1, workPlanes
-    ''1 - Mech'' (FloorPlan) work plane "Level 1" - horizontal at elevation 0 mm. inputs came
-    views as given (1). on Project1'
-  negative_case: 'run with views=Schedule: Space Outdoor Air Schedule instead - chosen because
-    it should not contain what this fragment reports. returned findings 2 item(s) [Read 1
-    view(s) for their work plane: 0 with one, 1 with none..., ''Space Outdoor Air Schedule''
-    (Schedule) no work plane], noPlane 1, withPlane 0, workPlanes . inputs came views as given
-    (1). on Project1'
+  model: Night Rig 1124, Revit 2024, session 26904 - the count is NOT recorded because 2,021
+    elements was measured on M_Desk, the document in front, and this ran against another one
+    (row 15)
+  positive_case: 'run as it would normally be run. returned findings 2 item(s) [Read 1 view(s)
+    for their work plane: 1 with one, 0 with none..., 1 plan(s) have their work plane named
+    as their own level, ma...], noPlane 0, withPlane 1, workPlanes ''Level 1'' (FloorPlan)
+    work plane Level : Level 1 - horizontal at elevation 0 mm. inputs came views as given
+    (1). on Night Rig 1124'
+  negative_case: 'run with views=Schedule: RIG Wall List instead - chosen because it should
+    not contain what this fragment reports. returned findings 2 item(s) [Read 1 view(s) for
+    their work plane: 0 with one, 1 with none..., ''RIG Wall List'' (Schedule) no work plane],
+    noPlane 1, withPlane 0, workPlanes . inputs came views as given (1). on Night Rig 1124'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 829c679dda237a1a
-
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.3.0.0
+    addin_hash: b5c1b9426090689f
+  fingerprint: f353d834206d3806
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

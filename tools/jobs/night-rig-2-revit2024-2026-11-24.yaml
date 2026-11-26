@@ -1,0 +1,103 @@
+# Night of 2026-11-24, Revit 2024 (build 24.3.60.12, add-in 0.3.0.0), batch 2.
+#
+#     python tools/batch-prove.py tools/jobs/night-rig-2-revit2024-2026-11-24.yaml --dry-run
+#
+# THE MODELS: Night Rig 1124 (see night-rig-revit2024-2026-11-24.yaml) and
+# M_Desk, a family copy written by OPEN_FAMILY_FOR_EDITING from it into
+# %TEMP%\heron-work\night-1124\fam (furniture, Ref. Level). Schedules in the
+# rig: RIG Room Key, RIG Wall List. Wall types include Generic - 200mm (the six
+# placed walls) and Curtain Wall. Every run is rolled back.
+
+model: "Night Rig 1124 (scratch, 48 placed elements) and M_Desk (family copy from it), Revit 2024, session 26904"
+
+defaults:
+  in: "Night Rig 1124"
+  setup: []
+
+jobs:
+  - fragment: report-view-work-plane
+    expect: workPlanes
+    set: {views: "FloorPlan: Level 1"}
+    negative-set: {views: "Schedule: RIG Wall List"}
+
+  - fragment: create-view-filter
+    write: true
+    expect: created
+    set: {categoryIds: Walls, colour: "", filterName: "Heron Prove Walls", matchValue: Heron, parameterName: Comments, view: ""}
+    negative-set: {categoryIds: Walls, colour: "", filterName: "Heron Prove Walls", matchValue: Heron, parameterName: "Heron No Such Parameter 1124", view: ""}
+
+  - fragment: set-view-section-box
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: enclosed
+    set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", marginMm: 500, view: "{3D}"}
+    negative-set: {categories: "Rooms", inViewOnly: "FloorPlan: Level 1", marginMm: 500, view: "{3D}"}
+
+  - fragment: edit-text-values
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: typesEdited
+    set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", field: "Type Name", mode: prefix, replacement: "", text: "HERON-"}
+    negative-set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", field: "Type Name", mode: replace, replacement: "X", text: "ZZZNOTHINGHERE"}
+
+  - fragment: report-model-dashboard
+    expect: elementTotal
+    negative-in: "M_Desk"
+
+  - fragment: report-area-volume-computations
+    expect: areaSchemes
+    negative-in: "M_Desk"
+
+  - fragment: report-family-template
+    in: "M_Desk"
+    expect: templateReport
+    negative-in: "Night Rig 1124"
+
+  - fragment: report-level-elevations
+    expect: levels
+    negative-in: "M_Desk"
+
+  - fragment: report-curtain-wall-type
+    expect: gridsLaidOut
+    set: {curtainWallType: "Storefront"}
+    negative-set: {curtainWallType: "Generic - 200mm"}
+
+  - fragment: set-view-template-control
+    write: true
+    expect: nowHeld
+    set: {template: "Architectural Plan", parameterNames: "V/G Overrides Model", include: true}
+    negative-set: {template: "Architectural Plan", parameterNames: "ZZZNOTHINGHERE", include: true}
+
+  - fragment: set-parameter-values-by-id
+    write: true
+    expect: written
+    set: {rows: "key=Name|in=Levels;Level 2|Name=Heron Prove L2", renameViews: "no"}
+    negative-set: {rows: "key=Name|in=Levels;Heron No Such Level|Name=Heron Prove L2", renameViews: "no"}
+
+  - fragment: assign-location-data
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: written
+    set: {categories: "Generic Models", inViewOnly: "FloorPlan: Level 1", roomParameter: Comments, levelParameter: Mark, useSpaces: false}
+    negative-set: {categories: "Generic Models", inViewOnly: "FloorPlan: Level 1", roomParameter: ZZZNOTHINGHERE, levelParameter: ZZZNOTHINGHERE, useSpaces: false}
+
+  - fragment: change-element-type
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: changed
+    set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", newTypeId: "Basic Wall: Generic - 225mm Masonry"}
+    negative-set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", newTypeId: "Floor: Heron No Such Type"}
+
+  - fragment: flip-elements
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: flipped
+    set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", flipFacing: true, flipHand: false, fromToRoomOnly: false}
+    negative-set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1", flipFacing: false, flipHand: false, fromToRoomOnly: false}
+
+  - fragment: set-element-level
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: moved
+    set: {categories: "Generic Models", inViewOnly: "FloorPlan: Level 1", newLevel: "Level 2", keepWallBase: "true"}
+    negative-set: {categories: "Generic Models", inViewOnly: "FloorPlan: Level 1", newLevel: "Level 1", keepWallBase: "true"}

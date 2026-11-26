@@ -1,0 +1,79 @@
+# NOT RUN YET - written 2026-11-24 night, for the next Revit 2024 sitting.
+# Revit reached 13.2 GB (the night's stop line for new compiles) before this
+# model was opened. Restart Revit first.
+#
+#     python tools/batch-prove.py tools/jobs/night-ducts-revit2024-2026-11-24.yaml --dry-run
+#
+# THE MODELS: Night Ducts 1124 - a file copy of the 2026-11-20 scratch
+# "Ducts 1040" (itself a copy of mg\Heron JX Ducts.rvt): three 400 x 200
+# rectangular ducts, and the filters Domestic, Sanitary and Vent on
+# FloorPlan: 1 - Mech (reorder-view-filters was proved there, 2026-11-20).
+# Night Rig 1124 (no filters, no MEP) is the negative document where named.
+# Both are in %TEMP%\heron-work\night-1124. Open Night Ducts with
+# `validate`/`fragment activate-document` (read path), not by hand.
+#
+# READ EVERY VALUE AGAINST THE MODEL FIRST - they come from earlier models of
+# the same template, not from this file: the view names, whether the ducts are
+# insulated, and the pipe segment names are NOT checked on Night Ducts 1124.
+
+model: "Night Ducts 1124 (scratch copy of Ducts 1040: three rectangular ducts; filters Domestic, Sanitary, Vent on 1 - Mech) and Night Rig 1124, Revit 2024"
+
+defaults:
+  in: "Night Ducts 1124"
+  setup: []
+
+jobs:
+  - fragment: report-view-filters
+    expect: filterSettings
+    set: {viewName: "FloorPlan: 1 - Mech"}
+    negative-in: "Night Rig 1124"
+    negative-set: {viewName: "FloorPlan: Level 1"}
+
+  - fragment: apply-view-filter
+    write: true
+    expect: applied
+    set: {enabled: "", filter: Domestic, keepOtherSettings: "", overrides: "projection-line-colour=255,0,0", solidFill: "", view: "{3D}", visible: "true"}
+    negative-set: {enabled: "", filter: Domestic, keepOtherSettings: "", overrides: "projection-line-colour=255,0,0", solidFill: "", view: "Project View", visible: "true"}
+
+  - fragment: set-view-filter-categories
+    write: true
+    expect: changed
+    set: {categories: "Pipes, Pipe Fittings", filterNames: Domestic, matchValue: "", newName: "", parameterName: ""}
+    negative-set: {categories: Walls, filterNames: Domestic, matchValue: "", newName: "", parameterName: ""}
+
+  - fragment: report-connectors
+    setup: [filter-elements-by-category, set-selection]
+    expect: connectorFacts
+    set: {categories: "Ducts", inViewOnly: "FloorPlan: 1 - Mech"}
+    negative-in: "Night Rig 1124"
+    negative-set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1"}
+
+  - fragment: select-by-insulation
+    expect: elements
+    set: {categories: Ducts, countLiningAsInsulated: false, wantInsulated: false}
+    negative-set: {categories: Ducts, countLiningAsInsulated: false, wantInsulated: true}
+
+  - fragment: report-mep-pressure-drop
+    expect: uncalculated
+    set: {systemNameContains: ""}
+    negative-set: {systemNameContains: "ZZZ NO SUCH SYSTEM"}
+
+  - fragment: report-pipe-segments
+    expect: segmentCount
+    set: {nameContains: ""}
+    negative-set: {nameContains: "ZZZNOTASEGMENT"}
+
+  - fragment: set-mep-justification
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: set
+    set: {categories: "Ducts", inViewOnly: "FloorPlan: 1 - Mech", horizontal: "left", vertical: "bottom"}
+    negative-set: {categories: "Ducts", inViewOnly: "FloorPlan: 1 - Mech", horizontal: "", vertical: ""}
+
+  - fragment: auto-size-mep
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    write: true
+    expect: sized
+    set: {categories: "Ducts", inViewOnly: "FloorPlan: 1 - Mech", holdWidth: false, rectSizesMm: "200,300,400,500", roundSizesMm: "100,150,200,250,300,400", targetVelocity: 5}
+    negative-set: {categories: "Walls", inViewOnly: "", holdWidth: false, rectSizesMm: "200,300,400,500", roundSizesMm: "100,150,200,250,300,400", targetVelocity: 5}

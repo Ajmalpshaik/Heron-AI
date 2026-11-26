@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 16
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -274,63 +274,71 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  model: Night Rig 1124, Revit 2024, session 26904 - the count is NOT recorded because 2,021
+    elements was measured on M_Desk, the document in front, and this ran against another one
+    (row 15)
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned alreadyExists 0 item(s), answersTo
     Func`3, badName , bareOperator , builtInNameOf Func`2, cannotFilter 0 item(s), categoriesTyped
-    true, categoryList 1 item(s) [-2000240], categoryName 1 entry(ies), colourProblem , colourWord
-    255,0,0, created 1 item(s) [id 1020303], createdIds 1 item(s) [1020303], droppedCategories
+    true, categoryList 1 item(s) [-2000011], categoryName 1 entry(ies), colourProblem , colourWord
+    none, created 1 item(s) [id 353644], createdIds 1 item(s) [353644], droppedCategories
     0 item(s), elements 0 item(s), extra 0 item(s), factoryProblem (null), firstParameter
-    1 item(s) [id -1008000], handed 0 item(s), how and, isNone Func`2, labelOf Func`2, leftOut
-    0 item(s), moreRules , names 1 item(s) [HERON PROOF CVF Levels], namesGiven true, noTextOperators
+    1 item(s) [id -1010106], handed 0 item(s), how and, isNone Func`2, labelOf Func`2, leftOut
+    0 item(s), moreRules , names 1 item(s) [Heron Prove Walls], namesGiven true, noTextOperators
     HashSet`1, noTextWithText , noValueGiven false, operatorMethods 12 entry(ies), operatorWords
     10 item(s) [does not begin with, does not end with, does not contain, ...], operators
-    1 item(s) [does not contain], paint Color, parameterCalled Func`2, parameterProblem (null),
-    perValue false, prefix , quoteProblem , readBack ''HERON PROOF CVF Levels'': categories
-    Levels; rule Name does not contain ''Level 1''; catches 3 element(s) in the model today
-    (Levels 3); on ''3D Duct & Equipment'', line colour read back 255,0,0, refused (null),
-    repeated , ruleProblem (null), seen HashSet`1, shared 8 item(s) [-1012201, -1008000, -1007112,
-    ...], tests 1 entry(ies), textRule Func`4, texts 1 item(s) [Level 1], toCreate 1 item(s)
-    [0], unquoted Func`2, valueText does not contain Level 1, values 1 item(s) [does not contain
-    Level 1], valuesFound 0 item(s), wantColour true, wanted Name. inputs came view as given;
-    filterName as given (1); categoryIds as given (1); parameterName as given; matchValue
-    as given; moreRules given empty - "none", the card''s own default (optional); combine
-    given empty - "and", the card''s own default (optional); colour as given; elements not
-    given - none (optional); perValue not given - false (optional); namePrefix not given -
-    "none", the card''s own default (optional). on P1102 MEP'
-  negative_case: 'run with categoryIds=Levels, colour=255,0,0, combine=, filterName=HERON
-    PROOF CVF Levels, matchValue=does not contain Level 1, moreRules=, parameterName=System
-    Classification, view=3D Duct & Equipment instead - chosen because it should not contain
-    what this fragment reports - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned alreadyExists 0 item(s), answersTo Func`3, badName
-    , bareOperator , builtInNameOf Func`2, cannotFilter 1 item(s) [Levels - it cannot be filtered
-    by ''System Classification''], categoriesTyped true, categoryList 1 item(s) [-2000240],
-    categoryName 1 entry(ies), colourProblem , colourWord 255,0,0, created (null), createdIds
-    0 item(s), droppedCategories 0 item(s), elements 0 item(s), extra 0 item(s), factoryProblem
-    (null), firstParameter (null), handed 0 item(s), how and, isNone Func`2, labelOf Func`2,
-    leftOut 0 item(s), moreRules , names 1 item(s) [HERON PROOF CVF Levels], namesGiven true,
-    noTextOperators HashSet`1, noTextWithText , noValueGiven false, operatorMethods 12 entry(ies),
-    operatorWords 10 item(s) [does not begin with, does not end with, does not contain, ...],
-    operators 1 item(s) [does not contain], paint Color, parameterCalled Func`2, parameterProblem
-    (null), perValue false, prefix , quoteProblem , readBack , refused NOTHING WAS CREATED.
-    1 of the 1 categories cannot take a rule on ''System Classification'': Levels - it cannot
-    be filtered by ''System Classification''. Revit rejects a filter whose categories include
-    one the parameter does not apply to, so take it out of the list and ask again, repeated
-    , ruleProblem (null), seen HashSet`1, shared 0 item(s), tests 0 entry(ies), textRule Func`4,
-    texts 1 item(s) [Level 1], toCreate 0 item(s), unquoted Func`2, valueText does not contain
-    Level 1, values 1 item(s) [does not contain Level 1], valuesFound 0 item(s), wantColour
-    true, wanted System Classification. inputs came view as given; filterName as given (1);
-    categoryIds as given (1); parameterName as given; matchValue as given; moreRules given
-    empty - "none", the card''s own default (optional); combine given empty - "and", the card''s
-    own default (optional); colour as given; elements not given - none (optional); perValue
-    not given - false (optional); namePrefix not given - "none", the card''s own default (optional).
-    on P1102 MEP'
+    1 item(s) [equals], paint (null), parameterCalled Func`2, parameterProblem (null), perValue
+    false, prefix , quoteProblem , readBack ''Heron Prove Walls'': categories Walls; rule
+    Comments equals ''Heron''; catches 0 element(s) in the model today; on no view | none
+    of them is on a view yet - APPLY_VIEW_FILTER puts one on a view, refused (null), repeated
+    , ruleProblem (null), seen HashSet`1, shared 60 item(s) [-1155401, -1155400, -1150420,
+    ...], templateRefusal (null), tests 1 entry(ies), textRule Func`4, texts 1 item(s) [Heron],
+    toCreate 1 item(s) [0], unquoted Func`2, valueText Heron, values 1 item(s) [Heron], valuesFound
+    0 item(s), view (null), wantColour false, wanted Comments. inputs came view given empty
+    - null (optional); filterName as given (1); categoryIds as given (1); parameterName as
+    given; matchValue as given; moreRules not given - "none", the card''s own default (optional);
+    combine not given - "and", the card''s own default (optional); colour given empty - "none",
+    the card''s own default (optional); elements not given - none (optional); perValue not
+    given - false (optional); namePrefix not given - "none", the card''s own default (optional).
+    on Night Rig 1124'
+  negative_case: 'run with categoryIds=Walls, colour=, filterName=Heron Prove Walls, matchValue=Heron,
+    parameterName=Heron No Such Parameter 1124, view= instead - chosen because it should not
+    contain what this fragment reports - run inside a transaction, and Revit reported the
+    transaction group ROLLED BACK afterwards. returned alreadyExists 0 item(s), answersTo
+    Func`3, badName , bareOperator , builtInNameOf Func`2, cannotFilter 1 item(s) [Walls -
+    it cannot be filtered by ''Heron No Such Parameter 11...], categoriesTyped true, categoryList
+    1 item(s) [-2000011], categoryName 1 entry(ies), colourProblem , colourWord none, created
+    (null), createdIds 0 item(s), droppedCategories 0 item(s), elements 0 item(s), extra 0
+    item(s), factoryProblem (null), firstParameter (null), handed 0 item(s), how and, isNone
+    Func`2, labelOf Func`2, leftOut 0 item(s), moreRules , names 1 item(s) [Heron Prove Walls],
+    namesGiven true, noTextOperators HashSet`1, noTextWithText , noValueGiven false, operatorMethods
+    12 entry(ies), operatorWords 10 item(s) [does not begin with, does not end with, does
+    not contain, ...], operators 1 item(s) [equals], paint (null), parameterCalled Func`2,
+    parameterProblem (null), perValue false, prefix , quoteProblem , readBack , refused NOTHING
+    WAS CREATED. 1 of the 1 categories cannot take a rule on ''Heron No Such Parameter 1124'':
+    Walls - it cannot be filtered by ''Heron No Such Parameter 1124''. Revit rejects a filter
+    whose categories include one the parameter does not apply to, so take it out of the list
+    and ask again, repeated , ruleProblem (null), seen HashSet`1, shared 0 item(s), templateRefusal
+    (null), tests 0 entry(ies), textRule Func`4, texts 1 item(s) [Heron], toCreate 0 item(s),
+    unquoted Func`2, valueText Heron, values 1 item(s) [Heron], valuesFound 0 item(s), view
+    (null), wantColour false, wanted Heron No Such Parameter 1124. inputs came view given
+    empty - null (optional); filterName as given (1); categoryIds as given (1); parameterName
+    as given; matchValue as given; moreRules not given - "none", the card''s own default (optional);
+    combine not given - "and", the card''s own default (optional); colour given empty - "none",
+    the card''s own default (optional); elements not given - none (optional); perValue not
+    given - false (optional); namePrefix not given - "none", the card''s own default (optional).
+    on Night Rig 1124'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 66b3bb0bc787d845
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.3.0.0
+    addin_hash: b5c1b9426090689f
+  fingerprint: ffe5678c3062d1cc
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

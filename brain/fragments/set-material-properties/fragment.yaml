@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -165,30 +165,34 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: Snowdon Towers Sample Architectural (34,509 elements), Revit 2024, session 57392
+  model: Night Rig 1124 (3,349 elements), Revit 2024, session 26904
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned alreadyAsAsked 0, changedMaterialIds
-    1 item(s) [18940], fieldsChanged 2, findings 2 item(s) [2 field(s) changed on 1 of the
+    1 item(s) [141538], fieldsChanged 1, findings 2 item(s) [1 field(s) changed on 1 of the
     1 material(s) named; 0 alread..., Every element using these materials draws with them
-    now - on...], materialReport Concrete, Precast: Manufacturer '''' -> ''P1102 Maker'',
-    Mark '''' -> ''P1'', nowColour , refused , sharedAssets , wasColour . inputs came materialsNamed
-    as given; fieldValues as given. on Snowdon Towers Sample Architectural'
-  negative_case: 'run with fieldValues=Mark=P2, materialsNamed=Concrete, Precst instead -
-    chosen because it should not contain what this fragment reports - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyAsAsked
-    0, changedMaterialIds 0 item(s), fieldsChanged 0, findings 1 item(s) [no material matches
-    ''Concrete, Precst'' in this project - clo...], materialReport , nowColour , refused no
-    material matches ''Concrete, Precst'' in this project - closest: ''Concrete Masonry Units'',
-    ''Concrete, Cast-in-Place gray'', ''Concrete, Lightweight'', ''Concrete, Polished'', ''Concrete,
-    Precast'', ''Concrete, Precast Smooth, Light Grey''. LIST_MATERIALS names every one. Nothing
-    was changed, sharedAssets , wasColour . inputs came materialsNamed as given; fieldValues
-    as given. on Snowdon Towers Sample Architectural'
+    now - on...], materialReport Aluminum: Manufacturer '''' -> ''Heron Prove 1124'', nowColour
+    , refused , sharedAssets , wasColour . inputs came materialsNamed as given; fieldValues
+    as given. on Night Rig 1124'
+  negative_case: 'run with fieldValues=Manufacturer=Heron Prove 1124, materialsNamed=Heron
+    No Such Material 1124 instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned alreadyAsAsked 0, changedMaterialIds 0 item(s), fieldsChanged 0,
+    findings 1 item(s) [no material matches ''Heron No Such Material 1124'' in this pr...],
+    materialReport , nowColour , refused no material matches ''Heron No Such Material 1124''
+    in this project - closest: nothing close. LIST_MATERIALS names every one. Nothing was
+    changed, sharedAssets , wasColour . inputs came materialsNamed as given; fieldValues as
+    given. on Night Rig 1124'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 83c7d04d133e17cf
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.3.0.0
+    addin_hash: b5c1b9426090689f
+  fingerprint: 4e6c30d08d3b984f
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
