@@ -752,10 +752,9 @@ async def exercise(server):
         label = getattr(tool, "annotations", None)
         got = (label.model_dump(by_alias=True, exclude_none=True)
                if label is not None else {})
-        # The hints are compared and nothing else: the three the registry
-        # derives, and openWorldHint, which it deliberately leaves unset - so
-        # one appearing from anywhere else is a label nobody derived. A title,
-        # if the SDK adds one, says nothing about what the tool can change.
+        # The hints are compared here, all four the registry derives (D-202) -
+        # so one appearing from anywhere else is a label nobody derived. The
+        # title says nothing about what the tool can change; it is held below.
         got = dict((k, v) for k, v in got.items()
                    if k in ("readOnlyHint", "destructiveHint", "idempotentHint",
                             "openWorldHint"))
@@ -771,6 +770,24 @@ async def exercise(server):
     check("revit_change" in writers and "revit_apply_move" in writers,
           "and the two tools that change the model are among the ones a host "
           "sees as NOT read-only")
+
+    # THE TITLE A HOST SHOWS IS THE REGISTRY'S (D-202), on the tool and in its
+    # labels alike - and a tool served with none is a failure, not a default.
+    title_of = getattr(registry, "title_of", None)
+    titled = []
+    for name, tool in sorted(served.items() if title_of else ()):
+        label = getattr(tool, "annotations", None)
+        in_label = (label.model_dump(by_alias=True, exclude_none=True).get("title")
+                    if label is not None else None)
+        if not title_of(name) or getattr(tool, "title", None) != title_of(name) \
+                or in_label != title_of(name):
+            titled.append("%s served %r / %r, registry says %r"
+                          % (name, getattr(tool, "title", None), in_label,
+                             title_of(name)))
+    check(served and title_of is not None and not titled,
+          "every served tool carries the registry's title, on the tool and in "
+          "its labels (%d tools)%s"
+          % (len(served), "" if not titled else " - " + "; ".join(titled[:3])))
 
     print()
     print("  the tools a chat is given before it asks, against the registry")
