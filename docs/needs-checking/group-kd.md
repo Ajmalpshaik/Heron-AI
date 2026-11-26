@@ -68,7 +68,7 @@ PS"` once its positive and negative pass, and `heron-status` set to PROVEN in th
 fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on - through `brain/heron_retrieve.py` and
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on; and since [D-203](../decisions/D-203.md) the same day it ranks on `lexical`, which this was not measured on - through `brain/heron_retrieve.py` and
 `tools/check-routing.py` on a scratch store each, against this tree with and without the card. The four
 sentences reach this card by identity on 2020, 2024 and 2025; without it they reached
 `PLACE_COLUMN_REBAR`, `COPE_FRAMING` and `PLACE_STRUCTURAL_FAMILY`, ranked. Three undeclared phrasings -

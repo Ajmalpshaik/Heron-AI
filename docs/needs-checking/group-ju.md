@@ -70,7 +70,7 @@ a model without bringing it forward.
 fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the owner's
-PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on. `heron_retrieve.find` answers *"show the model in
+PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on; and since [D-203](../decisions/D-203.md) the same day it ranks on `lexical`, which this was not measured on. `heron_retrieve.find` answers *"show the model in
 3D"*, *"3D view of the model in the companion"* and *"model geometry for the dashboard"* with this card by
 identity, and the paraphrases *"show me the model in 3d in the companion"* and *"draw the model in the
 dashboard"* on the hybrid route; *"what is this element's geometry"* still reaches `REPORT_ELEMENT_GEOMETRY`,
