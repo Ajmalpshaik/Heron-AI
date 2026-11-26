@@ -56,7 +56,43 @@ positive:
       "Revit gives it no panel Width or Height". RECORD which, for each - never
       a size worked out from the grid
 
+  - given: >
+      VERSION 3 - THE D-30 POSITIVE FOR A CURTAIN SYSTEM (Group QU, QT1). A mass
+      box with a curtain system made By Face on two of its faces, of a type with
+      a grid each way, handed in alone
+    expect: >
+      curtainSystemsFound 1, curtainWallsFound 0; findings open "0 curtain
+      wall(s) and 1 curtain system(s) (2 face grid(s)): ..." and carry two
+      blocks headed "curtain system face 1 of 2:" and "face 2 of 2:", each with
+      its panels, mullions by type and grid lines counted as drawn - counted on
+      the elevation in Revit, not taken from the return value. The last line
+      reads "Across the 0 curtain wall(s) and 1 curtain system(s): ..."
+
+  - given: >
+      VERSION 3. The curtain system above and one curtain wall handed in
+      together
+    expect: >
+      both read - the wall's block word for word as version 2 writes it, the
+      system's two face blocks after it - and the totals and the across line
+      count all three grids' panels and sizes together
+
 negative:
+  - given: >
+      VERSION 3 - THE D-30 NEGATIVE FOR A CURTAIN SYSTEM (Group QU, QT2). The
+      mass itself, with no curtain system selected
+    expect: >
+      named in notCurtain "is not a wall or a curtain system", curtainSystemsFound
+      0, panelCount 0 - never read as a curtain system because one is hosted on
+      it
+
+  - given: >
+      VERSION 3. Curtain walls alone, handed in as version 2's own positive
+      cases were
+    expect: >
+      findings word for word as version 2 wrote them - the opening line still
+      "N curtain wall(s): ...", the last line still "Across the N curtain
+      wall(s): ..." - and curtainSystemsFound 0
+
   - given: a curtain wall with one panel deleted
     expect: >
       that cell counted in emptyCells and named as a hole in the elevation. THIS

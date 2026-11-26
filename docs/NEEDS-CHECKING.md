@@ -1707,6 +1707,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qs.md`](needs-checking/group-qs.md)
 
+## Group QU - REPORT_CURTAIN_ELEMENTS version 3: a curtain system read face by face, curtain walls word for word as before - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qu.md`](needs-checking/group-qu.md)
+
+## Group QW - the Delete box announced: a preview that deletes says the box is coming and what goes by category, and a box that closed by itself says TIMED OUT with the time it had - NOT RUN (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qw.md`](needs-checking/group-qw.md)
+
 ## Group QK - CREATE_CURTAIN_SYSTEM version 2: a curtain system on chosen mass faces - sloped, by number, all but some - never over a face already glazed - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qk.md`](needs-checking/group-qk.md)
@@ -1718,6 +1726,10 @@ Step 6 is finished, and not before. At that point:
 ## Group QT - REPORT_ELEMENT_DEPENDENCIES version 2: every dimension in every view that a delete takes or cuts - DRAFT until proved (2026-11-26)
 
 **Its own file:** [`needs-checking/group-qt.md`](needs-checking/group-qt.md)
+
+## Group QV - a delete whose count is not the one the yes named stops before anything goes: `DELETE_ELEMENTS` version 4 - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qv.md`](needs-checking/group-qv.md)
 
 ## Group QZ - D-207's name rules: CHECK_FAMILY_STANDARDS v5 reads a name pattern as a * wildcard, CREATE_GRIDS v5 and CREATE_LEVELS v3 skip a name already taken and make the rest - DRAFT until proved (2026-11-26)
 

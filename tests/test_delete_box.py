@@ -313,10 +313,52 @@ def wiring():
           "unless its own setup steps chose the selection")
 
 
+def ahead():
+    print("\n8. row 5b-1992: a preview that deletes says the box is coming; a timed-out box says how long")
+    batch = RUNS.Batch()
+    says = ("Kept, this change would also delete 49 elements - 30 Curtain Wall Mullions, 12 "
+            "Curtain Panels (7 of them are made and removed again by the change itself, so not "
+            "in the model now). So when it is sent to keep, Revit shows Heron's Delete box ...")
+    preview = {"verdict": "'create-curtain-system' was ROLLED BACK: ...",
+               "verdictKind": "rolled_back", "deleteAhead": 49, "deleteAheadSays": says}
+    line = RUNS.verdict_line(preview, batch) or ""
+    check(line.startswith(says) and "ROLLED BACK" in line,
+          "a preview's delete warning is printed first, before its ROLLED BACK verdict")
+    plain = {"verdict": "'set-x' was ROLLED BACK: ...", "verdictKind": "rolled_back"}
+    check(RUNS.verdict_line(plain, batch) == "'set-x' was ROLLED BACK: ...",
+          "a preview that deletes nothing reads exactly as it did")
+
+    executor = code(EXECUTOR)
+    gate_code = code(GATE)
+    words = code(WORDS)
+    run = NOTE_SUITE.body_of(executor, "public static string Run(")
+    gate = NOTE_SUITE.body_of(gate_code, "private static string DeleteGate(")
+    check(before(gate, "if (!keeping && changed.DeletedIds.Count > 0) ahead = changed.DeletedIds.ToList();",
+                 "if (!keeping) return null;"),
+          "the gate hands a preview's deletions on and still lets the preview roll back")
+    check("if (deleteAhead != null && !apply)" in run
+          and before(run, "WithDeleteUnasked(verdict", "WithDeleteAhead(verdict, target, deleteAhead, asksInRevit)"),
+          "Run says them on the preview's reply, after the rollback - never on a kept run")
+    # The words are string literals, and code() strips those: read them raw.
+    gate_text, words_text = read(GATE), read(WORDS)
+    ahead_body = NOTE_SUITE.body_of(gate_code, "private static string WithDeleteAhead(")
+    check("InModel(doc, id)" in ahead_body and "ListedAs(doc, id)" in ahead_body
+          and "madeAndGone++" in ahead_body
+          and '"deleteAheadMadeAndGone"' in gate_text and '"deleteAheadSays"' in gate_text,
+          "by category for those back in the model, and the ones the change made and removed counted apart")
+    check("HeronDeleteQuestion.Asking(going.Count, onScreen, answer, window)" in gate_code
+          and "ANSWERED - nothing was made and nothing was deleted" in words_text
+          and "revit.askTimeoutSeconds" in words_text,
+          "a box that closed by itself says TIMED OUT, NOT ANSWERED, and how long there was to answer")
+    check("Ask to Delete is off" in NOTE_SUITE.body_of(words_text, "public static string Ahead("),
+          "and with Ask to Delete off the warning says no box comes and the chat's word is the yes")
+
+
 def main():
     timeout()
     reply()
     wiring()
+    ahead()
     print()
     if FAILURES:
         print("FAILED  %d check(s)" % len(FAILURES))

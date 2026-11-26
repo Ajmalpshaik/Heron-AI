@@ -243,6 +243,7 @@
 | [D-199](#d-199--thirteen-more-idle-modules-are-retired-update-trust-release-tagging-versioning-the-import-pipeline-and-the-workflow-engine) | Thirteen more idle modules are retired: update, trust, release, tagging, versioning, the import pipeline and the workflow engine | ✅ Accepted · 2026-11-24 |
 | [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
 | [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 |
+| [D-204](#d-204--a-tool-that-can-never-come-back-empty-is-signed-on-a-by-hand-reading-and-a-tool-with-two-runs-waiting-is-signed-on-the-run-revit-checked) | A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked | ✅ Accepted · 2026-11-26 |
 | [D-207](#d-207--a-name-rule-is-one-rule-across-the-tools-that-share-it-a-name-pattern-is-a--wildcard-a-datum-maker-skips-a-name-already-taken-and-says-so-and-a-link-placed-twice-is-never-measured-until-one-copy-is-named) | A name rule is one rule across the tools that share it: a name pattern is a * wildcard, a datum maker skips a name already taken and says so, and a link placed twice is never measured until one copy is named | ✅ Accepted · 2026-11-26 |
 
 ## Format
@@ -1820,6 +1821,18 @@ his PC ever had it, since Setup installs neither add-on. It is removed. model2ve
 clearly better than the built-in search on his questions, and needs huggingface.co once.
 
 **Full record:** [`decisions/D-201.md`](decisions/D-201.md)
+
+## D-204 — A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), answering Q-98 (*"Check by hand is enough"*) and Q-97 (*"if its need to chek the revit chek that and sing make it proven"*).
+**Numbering:** D-204 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201 and D-202 held by an unmerged branch.
+**Keeps:** [D-30](decisions/D-30.md) - only the negative leg is answered differently, for two named tools
+
+`REFRESH_VIEW` and `REPORT_LEVEL_ELEVATIONS` can never come back empty, so each is signed on a by-hand reading
+written on the proof, with release, model and date. A tool with more than one run waiting is signed on the run
+checked in Revit for the tool as it stands, one run at a time. The owner signs; nothing in code changes.
+
+**Full record:** [`decisions/D-204.md`](decisions/D-204.md)
 
 ## D-207 — A name rule is one rule across the tools that share it: a name pattern is a * wildcard, a datum maker skips a name already taken and says so, and a link placed twice is never measured until one copy is named
 
