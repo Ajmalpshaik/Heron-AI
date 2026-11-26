@@ -38,6 +38,12 @@ WHAT IS PROVED
   6. an archive that already holds a row the register still carries in full
      is REFUSED, and nothing at all is written;
   7. CRLF stays CRLF, and a register mixing CRLF and LF is not touched.
+  8. the heading and link helpers the split tools borrow - HEADING,
+     anchor_of(), fenced_lines() and _repoint(), moved here from the retired
+     tools/archive-handover.py - still do what they did there: an anchor is
+     check-docs.py's rule, a fenced line is never a heading, and a link is
+     re-pointed to the file it went to or one folder deeper, never left
+     reaching a different file.
 
 No backslash is typed here either: the escaped pipe and the anchor pattern
 are built from chr(92), for the reason the tool's own docstring gives.
@@ -372,6 +378,42 @@ def main():
               "and not touched")
     finally:
         shutil.rmtree(top)
+
+    print("")
+    print("8. the heading and link helpers the split tools borrow")
+    check(TOOL.anchor_of("2026-09-22 " + chr(0x2014) + " SECOND SITTING") == "2026-09-22--second-sitting",
+          "an anchor drops the dash, keeps the hyphens and does not collapse them")
+    check(TOOL.anchor_of("9a. The recipe") == "9a-the-recipe",
+          "and drops a full stop")
+    shown = TOOL.fenced_lines(["a", "```bash", "# not a heading", "```", "### a heading", "b"])
+    check(shown == set([1, 2, 3]),
+          "fenced_lines holds the fences and what is between them, nothing else (%s)" % sorted(shown))
+    check(TOOL.HEADING.match("### A title").group(1) == "A title"
+          and TOOL.HEADING.match("####### seven") is None
+          and TOOL.HEADING.match("not a heading") is None,
+          "HEADING reads one to six hashes and a title")
+    page = os.path.join(os.sep, "x", "docs", "PAGE.md")
+    folder = os.path.join(os.sep, "x", "docs", "page-archive")
+    moved = {"two": "b.md", "one": "a.md"}
+
+    def point(text, sitting_file):
+        trouble = []
+        out = TOOL._repoint(text, sitting_file, moved, page, folder, trouble, "test")
+        return out, trouble
+
+    got, trouble = point("[s](#two) [k](#kept) [w](https://example.org/a.md#two)", None)
+    check(got == "[s](page-archive/b.md#two) [k](#kept) [w](https://example.org/a.md#two)" and not trouble,
+          "text that stays: a link to a heading that moved follows it, the rest is left alone")
+    got, trouble = point("[f](../tools/x.py) [d](DECISIONS.md) [m](#kept) [a](/abs.md)", "a.md")
+    check(got == "[f](../../tools/x.py) [d](../DECISIONS.md) [m](../PAGE.md#kept) [a](/abs.md)" and not trouble,
+          "text that moves: a relative link goes one folder deeper, a link to what stayed points back, "
+          "an absolute one is left alone")
+    got, trouble = point("[o](#one) [t](#two)", "a.md")
+    check(got == "[o](#one) [t](b.md#two)" and not trouble,
+          "a link to a heading in the same file stays inside it, and to another file's names that file")
+    check(os.path.normpath(os.path.join(os.path.dirname(page), "../tools/x.py"))
+          == os.path.normpath(os.path.join(folder, "../../tools/x.py")),
+          "../tools/x.py from the page's folder is ../../tools/x.py from the archive's")
 
     print("")
     if FAILURES:

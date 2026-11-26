@@ -123,6 +123,14 @@ plans on, and layout_relinked() writes its shortened line back to the file
 it came from, so a finished row's own file keeps its number, its title and
 the opening of its state, with the link to its full text here.
 
+SINCE 2026-11-26 THIS FILE ALSO HOLDS THE HEADING AND LINK HELPERS THE SPLIT
+TOOLS USE - HEADING, anchor_of(), fenced_lines() and _repoint(). They came from
+tools/archive-handover.py, which moved session notes out of HANDOVER.md until
+2026-11-24, when that file became one page; the tool's own job was done and the
+helpers were all that was still used, by split-decisions.py, split-register.py,
+split-needs-checking.py and archive-needs-checking.py. They were moved here word
+for word and the tool removed.
+
 NO BACKSLASH IS TYPED IN THIS FILE. The one regular expression it needs, and
 the escaped pipe a table cell needs, are built from chr(92): a typed backslash
 can be turned into a control character on its way into a file, and a regular
@@ -222,8 +230,8 @@ RT = OD.RT
 
 def _split_tool():
     """tools/split-register.py, loaded when a split register is written and
-    not before: it loads this file, through archive-handover.py, so loading
-    it here at import would load the two of them round and round."""
+    not before: it loads this file for the helpers above, so loading it here
+    at import would load the two of them round and round."""
     path = os.path.join(ROOT, "tools", "split-register.py")
     spec = importlib.util.spec_from_file_location("split_register", path)
     module = importlib.util.module_from_spec(spec)
@@ -313,6 +321,79 @@ def repoint(text, register, archive, ident, trouble):
             trouble.append("the link (%s) would reach a different file from "
                            "the archive" % href)
         return "[" + label + "](" + moved + mark + fragment + ")"
+
+    return LINK.sub(swap, text)
+
+
+# ----------------------------------------- headings and links, for the split tools
+#
+# Until 2026-11-26 these lived in tools/archive-handover.py, which moved session
+# notes out of HANDOVER.md until 2026-11-24, when that file became one page and
+# the tool had nothing left to move. Its job went; these stayed, because
+# tools/split-decisions.py, tools/split-register.py, tools/split-needs-checking.py
+# and tools/archive-needs-checking.py each use them - the heading pattern, the
+# anchor rule, the fenced-block reader and the link re-pointer that proves each
+# link still reaches the file it reached before. They are moved here word for word
+# (only AF._same became _same, this file being AF), so the split tools produce
+# exactly what they produced. The parameters of _repoint keep their old names:
+# "handover" is the page whose links are being moved, "sitting_file" the file
+# a piece of it goes to (None for text that stays on the page).
+
+HEADING = re.compile("^#{1,6} (.+)$")
+NOT_WORD = re.compile("[^" + BS + "w" + BS + "s-]")
+
+
+def anchor_of(text):
+    """tools/check-docs.py's rule: GitHub's, runs of hyphens NOT collapsed."""
+    return NOT_WORD.sub("", text.lower()).strip().replace(" ", "-")
+
+
+def fenced_lines(lines):
+    """Indexes of the lines inside a fenced code block, fences included. A
+    '# ' or '### ' line there is an example or a shell comment, never a
+    heading - HANDOVER.md carries five of them and DECISIONS.md its template."""
+    inside, out = False, set()
+    for i, line in enumerate(lines):
+        if line.lstrip().startswith("```"):
+            out.add(i)
+            inside = not inside
+        elif inside:
+            out.add(i)
+    return out
+
+
+def _repoint(text, sitting_file, moved, handover, archive, trouble, where):
+    """Re-point every link in TEXT, which is going into SITTING_FILE (None for
+    text that stays in HANDOVER.md). MOVED maps an anchor to the file it went to."""
+    home = os.path.dirname(handover)
+    name = os.path.basename(handover)
+    staying = sitting_file is None
+
+    def swap(match):
+        label, href = match.group(1), match.group(2)
+        if href.startswith(("http://", "https://", "mailto:")):
+            return match.group(0)
+        target, mark, fragment = href.partition("#")
+        if target.startswith("/"):
+            return match.group(0)
+        if target.startswith("./"):
+            target = target[2:]
+        self_link = (not target) or _same(os.path.join(home, target), handover)
+        if self_link and fragment and fragment in moved:
+            dest = moved[fragment]
+            if staying:
+                new = os.path.basename(archive) + "/" + dest + "#" + fragment
+            elif dest == sitting_file:
+                new = "#" + fragment
+            else:
+                new = dest + "#" + fragment
+            return "[" + label + "](" + new + ")"
+        if staying:
+            return match.group(0)
+        moved_target = "../" + (target or name)
+        if not _same(os.path.join(home, target or name), os.path.join(archive, moved_target)):
+            trouble.append("%s: the link (%s) would reach a different file" % (where, href))
+        return "[" + label + "](" + moved_target + mark + fragment + ")"
 
     return LINK.sub(swap, text)
 

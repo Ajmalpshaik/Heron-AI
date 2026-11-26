@@ -8,7 +8,7 @@
 
 """
 Heron's command lines print safely on a cp1252 Windows console - rows 5b-2041
-to 5b-2044. Runs without Revit.
+and 5b-2044. Runs without Revit.
 
     python tests/test_console_streams.py
 
@@ -26,9 +26,7 @@ WHAT IT PROVES
   3. Row 5b-2042: heron_retrieve.py, run as a command with
      PYTHONIOENCODING=cp1252, shows a document that has headings - its heading
      path holds '→' - and an Arabic question, and ends with exit 0.
-  4. Row 5b-2043: resign-machine-proofs.py --by with an Arabic name, on a copy
-     of a card, ends with exit 0 and its last line printed.
-  5. Row 5b-2044: every main the row names makes its streams safe before
+  4. Row 5b-2044: every main the row names makes its streams safe before
      anything else it does - read from the code, since most of them need a
      store, a model or a network to run.
 
@@ -39,7 +37,6 @@ is that console as Python sees it; the console itself is not here.
 from __future__ import print_function
 
 import ast
-import importlib.util
 import io
 import json
 import os
@@ -59,7 +56,8 @@ DELTA = u"Δ"
 
 FAILURES = []
 
-# Row 5b-2044's list, with 5b-2041 to 5b-2043's own three.
+# Row 5b-2044's list, with 5b-2041 and 5b-2042's own two. Row 5b-2043's
+# tools/resign-machine-proofs.py was removed by #1417, and the row withdrawn.
 BRAIN_MAINS = (
     "heron_sheet_list heron_retrieve heron_gaps heron_ingest heron_ground "
     "heron_research heron_designbasis heron_commands heron_checklists "
@@ -67,7 +65,7 @@ BRAIN_MAINS = (
     "heron_hvac heron_contract heron_conflict heron_search heron_context "
     "heron_embed heron_earlier heron_agents heron_capability heron_graph "
     "heron_fragment heron_dotnet heron_instructions heron_matrix").split()
-TOOL_MAINS = ("resign-machine-proofs heron-ready check-revit-gate new-agent "
+TOOL_MAINS = ("heron-ready check-revit-gate new-agent "
               "build-release-assets build-setup").split()
 
 
@@ -179,30 +177,6 @@ def test_retrieve():
         shutil.rmtree(folder, ignore_errors=True)
 
 
-def test_resign():
-    print("row 5b-2043: re-signing with an Arabic name ends with exit 0")
-    spec = importlib.util.spec_from_file_location(
-        "resign_machine_proofs", os.path.join(ROOT, "tools", "resign-machine-proofs.py"))
-    tool = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(tool)
-    folder = tempfile.mkdtemp()
-    try:
-        card = os.path.join(folder, "probe")
-        os.makedirs(card)
-        with io.open(os.path.join(card, "fragment.yaml"), "w", encoding="utf-8") as fh:
-            fh.write(u"id: probe\nproof:\n  by: Claude Opus 5\n  fingerprint: abc\n")
-        tool.FRAGMENTS = folder
-        code, shown = run_on_console(lambda: tool.main(
-            ["resign", "--by", ARABIC, "--date", "2026-11-26"]))
-        check(code == 0, "the run ended with exit 0 (got %r)" % (code,))
-        check(b"now signed by" in shown and ARABIC.encode("utf-8") in shown,
-              "its last line, naming the signer, was printed")
-        with io.open(os.path.join(card, "fragment.yaml"), encoding="utf-8") as fh:
-            check(ARABIC in fh.read(), "the card was signed with the name")
-    finally:
-        shutil.rmtree(folder, ignore_errors=True)
-
-
 def first_statements(path):
     """The source of main's first statement after any docstring."""
     tree = ast.parse(io.open(path, encoding="utf-8").read())
@@ -232,7 +206,7 @@ def test_every_main_named():
 def main():
     heron_console.safe_streams()      # this suite prints a 'Δ' of its own
     print(__doc__.strip().splitlines()[0])
-    for test in (test_the_helper, test_sheet_list, test_retrieve, test_resign,
+    for test in (test_the_helper, test_sheet_list, test_retrieve,
                  test_every_main_named):
         test()
     print("")

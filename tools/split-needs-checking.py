@@ -50,7 +50,7 @@ Nothing here writes a byte unless:
      today, and check-gaps files exactly the same rows as waiting - borrowed,
      not re-implemented, as archive-needs-checking.py proves itself;
   3. every link re-pointed on the way out reaches the file it reached before
-     (archive-handover.py's own function, which proves each one), and no other
+     (archive-fragment-issues.py's _repoint, which proves each one), and no other
      document links into a heading that would move.
 
 A second run moves nothing. Sections already moved are left as they are, and
@@ -78,8 +78,7 @@ def _load(name, filename):
 
 
 NCR = _load("needs_checking_register", "needs-checking-register.py")
-AH = _load("archive_handover", "archive-handover.py")
-AF = AH.AF
+AF = _load("archive_fragment_issues", "archive-fragment-issues.py")
 NL, CR, DASH = AF.NL, AF.CR, AF.DASH
 OK, REFUSED, COULD_NOT = AF.OK, AF.REFUSED, AF.COULD_NOT
 
@@ -194,21 +193,21 @@ def split_by(text, layout, headers, today, index, folder):
         if not name:
             continue
         for k in range(start, end):
-            h = AH.HEADING.match(lines[k])
+            h = AF.HEADING.match(lines[k])
             if h and k not in fenced:
-                moved.setdefault(AH.anchor_of(h.group(1)), name)
+                moved.setdefault(AF.anchor_of(h.group(1)), name)
     trouble, out, files = [], [], {}
     if first:
-        out.append(AH._repoint(NL.join(lines[:first]), None, moved, index, folder, trouble,
+        out.append(AF._repoint(NL.join(lines[:first]), None, moved, index, folder, trouble,
                                "the register's opening"))
     for start, end, name in runs:
         if not name:
-            out.append(AH._repoint(NL.join(lines[start:end]), None, moved, index, folder, trouble,
+            out.append(AF._repoint(NL.join(lines[start:end]), None, moved, index, folder, trouble,
                                    lines[start]))
             continue
         k = NCR.last_filled(lines, start, end)
         out.append(NL.join([lines[start], "", NCR.stub_line(name)] + lines[k:end]))
-        body = AH._repoint(NL.join(lines[start:k]), name, moved, index, folder, trouble, lines[start])
+        body = AF._repoint(NL.join(lines[start:k]), name, moved, index, folder, trouble, lines[start])
         # A link into the folder comes out as ../needs-checking/group-x.md;
         # from a group file it is the file beside it, and is written so.
         body = body.replace("](../" + NCR.FOLDER_NAME + "/", "](")
@@ -380,9 +379,9 @@ def plan(index=INDEX, folder=FOLDER, today=None, root=ROOT, check_others=True):
         for start, end in spans:
             if joined[start] in leaving:
                 for k in range(start + 1, end):
-                    h = AH.HEADING.match(joined[k])
+                    h = AF.HEADING.match(joined[k])
                     if h and k not in fenced:
-                        subs.add(AH.anchor_of(h.group(1)))
+                        subs.add(AF.anchor_of(h.group(1)))
         p.problems.extend(inbound(root, index, folder, subs))
     return p
 
