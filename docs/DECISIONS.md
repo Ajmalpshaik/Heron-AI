@@ -243,6 +243,7 @@
 | [D-199](#d-199--thirteen-more-idle-modules-are-retired-update-trust-release-tagging-versioning-the-import-pipeline-and-the-workflow-engine) | Thirteen more idle modules are retired: update, trust, release, tagging, versioning, the import pipeline and the workflow engine | ✅ Accepted · 2026-11-24 |
 | [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
 | [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 |
+| [D-208](#d-208--an-overlap-in-a-clearance-check-is-reported-as-the-modeller-asks-clash-with-its-depth-unless-0-mm-is-asked-for-and-a-hole-is-sized-round-a-services-insulation-only-when-the-model-says-it-carries-some) | An overlap in a clearance check is reported as the modeller asks, CLASH with its depth unless 0 mm is asked for, and a hole is sized round a service's insulation only when the model says it carries some | ✅ Accepted · 2026-11-26 |
 
 ## Format
 
@@ -1819,3 +1820,17 @@ his PC ever had it, since Setup installs neither add-on. It is removed. model2ve
 clearly better than the built-in search on his questions, and needs huggingface.co once.
 
 **Full record:** [`decisions/D-201.md`](decisions/D-201.md)
+
+## D-208 — An overlap in a clearance check is reported as the modeller asks, CLASH with its depth unless 0 mm is asked for, and a hole is sized round a service's insulation only when the model says it carries some
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), answering issue #1088: *"depending on the user it will be ask depth or just 0, both option maybe needed"*, and *"include insulation if the pipe has insulation - not only pipe, duct also ... before that need to check the pipe or duct has insulation or not"*.
+**Numbering:** D-208 is the id the coordinating session named; `tools/next-id.py` on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201, printed D-207 as the next free and nothing read held D-208.
+**Keeps:** [D-33](decisions/D-33.md) - a clearance or an allowance is still a number the request gives · [D-30](decisions/D-30.md)
+
+Where two boxes overlap, a clearance check reports CLASH with the depth of the overlap unless the request asks for
+0 mm; both are kept, the overlapping pairs are counted either way, and a gap is never a negative number
+(`CHECK_MINIMUM_CLEARANCE` version 5, `overlapAs`). A hole or sleeve is sized round a pipe's or duct's insulation
+only when the model says it carries some - read first, never assumed, lining not counted (`PROPOSE_MEP_OPENINGS`
+version 3, as `CHECK_SLEEVE_SIZE` reads it).
+
+**Full record:** [`decisions/D-208.md`](decisions/D-208.md)
