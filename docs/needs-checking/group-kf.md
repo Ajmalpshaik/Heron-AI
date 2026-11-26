@@ -64,14 +64,14 @@ connected, and `< /dev/null`.
 | **KF5** | *Off the host, and no height.* S1 with a point outside its edge; W1 with `x,y` only | S1: `placed` 0, skipped - Revit says the sheet does not lie within it, or Revit's own refusal - and nothing left in S1. W1: skipped *a wall needs the height too* |
 | **KF6** | *Kept, through `try-once`, on the modeller's yes.* KF2's positive on a saved copy, `FloorPlan: Level 1` in front at Detail Level Fine | Keep or Discard; afterwards Revit's own Fabric Sheet tool, the same type placed by hand in S1, matches in size and turn - the second route - and one Ctrl+Z takes the sheet back |
 | **KF7** | *Revit 2026 or 2027.* KF2 again | The same answer. Nothing this card calls changed between releases |
-| **KF8** | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The three sentences reach this card by identity. Any sentence the re-ranker moves to this card from another is a row of its own |
+| ~~**KF8**~~ | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The three sentences reach this card by identity. Any sentence the re-ranker moves to this card from another is a row of its own **CLOSED 2026-11-26** - [D-201](../decisions/D-201.md) (2026-11-26) removed the `+rerank` backends, so the run this row asked for on `model+rerank` can no longer be made anywhere, and the owner's PC now ranks on `model`. The run on `model` that answers its look-for is on record in the routing paragraph below, measured 2026-11-01 in a cloud container; it was not made again on 2026-11-26, and this is not a run on the PC. |
 
 **Then sign**, on the owner's word only: `python brain/heron_validate.py accept place-fabric-sheet --by
 "Ajmal PS"` once its positive and negative pass, and `heron-status` set to PROVEN in the same change. A row
 that fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here - through `brain/heron_retrieve.py` and
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on - through `brain/heron_retrieve.py` and
 `tools/check-routing.py` on a scratch store each, against this tree with and without the card. The three
 sentences reach this card by identity on 2020 and 2024; without it the first two ranked
 `PLACE_FABRIC_REINFORCEMENT` first and the third `ADD_CURTAIN_GRID_LINES`. `PLACE_FABRIC_REINFORCEMENT`'s

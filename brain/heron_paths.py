@@ -680,6 +680,10 @@ def where_and_carry(argv):
 
 
 def main(argv):
+    # Rows 5b-2041 to 5b-2044: print safely on a cp1252 console.
+    import heron_console
+    heron_console.safe_streams()
+
     if "--where" in argv or "--carry" in argv:
         return where_and_carry(argv)
     print("PATHS   product, data and derived, in one place instead of five")

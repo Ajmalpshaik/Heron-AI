@@ -205,6 +205,10 @@ def record(project_key, given, project_name=None, when=None, discipline="hvac"):
 
 
 def main(argv):
+    # Rows 5b-2041 to 5b-2044: print safely on a cp1252 console.
+    import heron_console
+    heron_console.safe_streams()
+
     if len(argv) < 2:
         print("usage: python brain/heron_designbasis.py <project-key> [hvac|fire]")
         return 2
