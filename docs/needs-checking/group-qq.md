@@ -38,7 +38,8 @@ the ducts are insulated, and the pipe segment names. Read them against the model
   [Group OI](group-oi.md).
 - `measure-distance` and `measure-available-fall` are blocked by issues
   [#1244](https://github.com/Ajmalpshaik/Heron-AI/issues/1244) and
-  [#1308](https://github.com/Ajmalpshaik/Heron-AI/issues/1308).
+  [#1308](https://github.com/Ajmalpshaik/Heron-AI/issues/1308) - unblocked 2026-11-26: both take two
+  elements selected or two ids typed, and [Group QX](group-qx.md) is their run.
 - `set-family-formula` passed in batch-prove but `accept` refuses its set path - it waits on the fix of
   issue [#1322](https://github.com/Ajmalpshaik/Heron-AI/issues/1322) (row 5b-2009).
 

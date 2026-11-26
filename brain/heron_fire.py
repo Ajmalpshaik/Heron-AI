@@ -3405,7 +3405,8 @@ def calc_obstruction(a):
     _check_standard(a, held["sprinkler_standard"], "the tables used are", "nfpa")
     a.cite(beam["source"])
     a.into_revit("PROBE_AROUND_ELEMENTS finds which sprinklers have a beam or duct within a "
-                 "distance; CHECK_VERTICAL_CLEARANCE measures the gap between services")
+                 "distance; CHECK_MINIMUM_CLEARANCE with stackedOnly measures the vertical gap "
+                 "between services")
 
 
 # --- what NFPA 13's annex lists --------------------------------------------------

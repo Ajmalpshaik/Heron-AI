@@ -76,6 +76,11 @@ purpose: >
   links and the geometry weight are the other half, and neither replaces looking
   at the drawings.
 
+# ONE PATTERN LANGUAGE FOR A NAME, 2026-11-26 (D-207, row 5b-1879 item 3, the
+# owner's "Wildcards *"). This card's `*` wildcard on the whole name is the
+# rule, and CHECK_FAMILY_STANDARDS version 5 reads its `namePattern` the same
+# way - it read "contains" before. Nothing on this card changed: no line of
+# impl/, so its proof still describes the code and it stays PROVEN.
 contract:
   needs:
     - name: doc

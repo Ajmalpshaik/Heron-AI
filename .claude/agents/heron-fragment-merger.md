@@ -110,7 +110,7 @@ python tests/test_search.py                     # 4b: no sentence answers to a r
 python tools/score-routing.py --sentences "$WORK/s.yaml" --backend lexical --compare "$WORK/base.json"
 ```
 
-Then the gates in [heron-ship](../skills/heron-ship/SKILL.md), all twelve. Name the backend every routing
+Then the gates in [heron-ship](../skills/heron-ship/SKILL.md), all thirteen. Name the backend every routing
 number came from; one this machine has not got is NOT RUN, never a pass.
 
 ## What to return

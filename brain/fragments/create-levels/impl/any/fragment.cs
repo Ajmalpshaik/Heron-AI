@@ -1,6 +1,19 @@
 // NOT STANDALONE. Assumes `doc`, `elevations` and `names` are in scope, and
 // leaves `created`, `namedAs`, `elevationOf`, `nameRefused`, `alreadyThere`,
-// `refused` and `noViewsMade` behind.
+// `skipped`, `refused` and `noViewsMade` behind.
+//
+// VERSION 3 (2026-11-26, D-207, row 5b-1879 item 4) - A NAME ALREADY TAKEN IS
+// SKIPPED, THE REST ARE MADE, AND THE ANSWER SAYS WHICH AND WHY. The owner's
+// rule for all three datum makers - levels, grids and project reference
+// planes - in his words: "Skip it, make the rest, and the skipped one needs to
+// inform the user that we skipped because of this." A level whose name a level
+// in the project already has, or an earlier level in this same call, is NOT
+// made, and `skipped` holds one line for it - the name, the height and which
+// level holds the name - in CREATE_PROJECT_REFERENCE_PLANES' words. Version 2
+// refused the whole call on one clash. A skipped level is still never made
+// first and named after, which is the reason version 2 checked first.
+// `refused` now says only that NOTHING was made because every level asked for
+// was skipped by its name; null whenever anything was made.
 //
 // VERSION 2 (2026-11-01) - CREATE_LEVEL MERGED IN, AND THE THREE RULES IT HAD
 // THAT VERSION 1 LACKED:
@@ -72,6 +85,8 @@ var namedAs = new Dictionary<ElementId, string>();
 var elevationOf = new Dictionary<ElementId, double>();
 var nameRefused = new List<ElementId>();
 var alreadyThere = new List<double>();
+// Version 3 (D-207): each level not made because its name was taken, with why.
+var skipped = new List<string>();
 string refused = null;
 // Always true, and there to be said out loud (version 2, from CREATE_LEVEL).
 var noViewsMade = true;
@@ -131,21 +146,25 @@ for (int i = 0; i < elevations.Count; i++)
     }
     if (holder != null)
     {
-        clashes.Add(string.Format("\"{0}\" at {1} mm is already the name of {2}",
+        // SKIPPED, NEVER MADE (version 3, D-207): the level is taken out of the
+        // plan, so its height does not block a later level asked at it either.
+        planned.RemoveAt(planned.Count - 1);
+        clashes.Add(string.Format("\"{0}\" at {1} mm - {2} already has that name; not made",
             name, Math.Round(askedMm[i], 1), holder));
+        continue;
     }
     plannedNames.Add(name);
 }
 
-if (clashes.Count > 0)
+skipped.AddRange(clashes);
+if (clashes.Count > 0 && planned.Count == 0)
 {
-    // REFUSED BEFORE ANYTHING IS CREATED (version 2, from CREATE_LEVEL).
+    // EVERY LEVEL ASKED FOR WAS SKIPPED BY ITS NAME (version 3) - so nothing is
+    // made, and the answer says so rather than reading as a change.
     refused = string.Format(
-        "{0} name(s) already taken, so NO LEVEL WAS CREATED: {1}. Revit refuses a duplicate "
-        + "level name, ignoring capitals, and creating the level first and naming it after "
-        + "leaves a level in the model under a name nobody asked for. Choose free names and "
-        + "ask again.",
-        clashes.Count, string.Join("; ", clashes));
+        "NO LEVEL WAS CREATED: every level asked for was skipped because its name is taken - {0}. "
+        + "Revit refuses a duplicate level name, ignoring capitals. Choose free names and ask again.",
+        string.Join("; ", clashes));
 }
 else
 {

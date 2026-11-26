@@ -1,7 +1,22 @@
 // NOT STANDALONE. Assumes `doc`, `origin`, `spacingsAcross`, `spacingsUp`,
 // `firstLetter`, `firstNumber`, `gridLines`, `gridNames`, `centreMm`,
 // `radiiMm`, `spokeAnglesDegrees`, `startDegrees` and `endDegrees` are in
-// scope; leaves `created`, `namedAs`, `refused` and `findings` behind.
+// scope; leaves `created`, `namedAs`, `skipped`, `refused` and `findings`
+// behind.
+//
+// VERSION 5 (2026-11-26, D-207, row 5b-1879 item 4) - A NAME ALREADY TAKEN IS
+// SKIPPED, THE REST ARE MADE, AND THE ANSWER SAYS WHICH AND WHY. The owner's
+// one rule for levels, grids and project reference planes: "Skip it, make the
+// rest, and the skipped one needs to inform the user that we skipped because
+// of this." A grid whose name a grid in the project already has, or an earlier
+// grid in this same call, is taken out of the plan before anything is made,
+// and `skipped` holds one line for it - its name and which grid holds the
+// name - in CREATE_PROJECT_REFERENCE_PLANES' words. Version 4 refused the
+// whole call on one clash. A grid is still never made first and named after.
+// Every grid asked for skipped is the one case that still makes nothing, and
+// `refused` says so. Grids Revit names itself (radial ones, and lines with no
+// name asked) never clash. Everything else is version 4's: all or nothing for
+// a grid Revit will not make or a name it will not take.
 //
 // VERSION 4 (2026-11-21, FRAGMENT-ISSUES row 5b-1948, issue #1174) - WHAT
 // WAS MADE IS SAID IN `findings`, NEVER IN `refused`. Seen on Revit 2024 that
@@ -101,6 +116,8 @@ var created = new List<Element>();
 var namedAs = new List<string>();
 var refused = new List<string>();
 var findings = new List<string>();
+// Version 5 (D-207): each grid not made because its name was taken, with why.
+var skipped = new List<string>();
 
 var taken = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(Grid)))
@@ -361,26 +378,29 @@ else
     }
 }
 
-// A NAME ALREADY TAKEN IS REFUSED BEFORE ANYTHING IS MADE (version 2) - by a
-// grid in the project or by an earlier name in this call, ignoring capitals.
+// A NAME ALREADY TAKEN IS SKIPPED BEFORE ANYTHING IS MADE (version 5, D-207;
+// version 2 refused the call) - taken by a grid in the project or by an
+// earlier name in this call, ignoring capitals. The rest of the plan is made.
 if (refused.Count == 0)
 {
-    var clashes = new List<string>();
     var inThisCall = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    var kept = new List<Tuple<XYZ, XYZ, string>>();
     foreach (var item in plan)
     {
-        if (item.Item3 == null) continue;
         string holder;
-        if (taken.TryGetValue(item.Item3, out holder))
-            clashes.Add(string.Format("'{0}' is already the name of grid '{1}'", item.Item3, holder));
-        else if (!inThisCall.Add(item.Item3))
-            clashes.Add(string.Format("'{0}' is asked for twice in this call", item.Item3));
+        if (item.Item3 != null && taken.TryGetValue(item.Item3, out holder))
+            skipped.Add(string.Format("'{0}' - grid '{1}' in this project already has that name; not made",
+                item.Item3, holder));
+        else if (item.Item3 != null && !inThisCall.Add(item.Item3))
+            skipped.Add(string.Format("'{0}' - asked for twice in this call; made once, the second not made",
+                item.Item3));
+        else kept.Add(item);
     }
-    if (clashes.Count > 0)
-        refused.Add(string.Format("{0} name(s) already taken, so NO GRID WAS CREATED: {1}. Revit refuses a "
-            + "duplicate grid name, ignoring capitals, and creating the grid first and naming it after "
-            + "leaves a wrongly-named grid in the setting-out. Choose free names - start the sequence "
-            + "somewhere else - and ask again", clashes.Count, string.Join("; ", clashes)));
+    plan = kept;
+    if (skipped.Count > 0 && plan.Count == 0 && radial.Count == 0)
+        refused.Add(string.Format("NO GRID WAS CREATED: every grid asked for was skipped because its name is "
+            + "taken - {0}. Revit refuses a duplicate grid name, ignoring capitals. Choose free names - start "
+            + "the sequence somewhere else - and ask again", string.Join("; ", skipped)));
 }
 
 if (refused.Count == 0)
@@ -470,4 +490,8 @@ if (refused.Count == 0)
             + "gave {3} numbered grid(s). Spacings are GAPS - n of them make n+1 grids",
             acrossPositions.Count == 0 ? 0 : across.Count, acrossPositions.Count,
             upPositions.Count == 0 ? 0 : up.Count, upPositions.Count));
+    // VERSION 5 (D-207): what was skipped is said beside what was made.
+    if (skipped.Count > 0)
+        findings.Add(string.Format("{0} grid(s) SKIPPED because the name was taken, and not made - {1}. "
+            + "The other {2} were made", skipped.Count, string.Join("; ", skipped), created.Count));
 }

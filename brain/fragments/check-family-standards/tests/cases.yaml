@@ -1,4 +1,15 @@
 positive:
+  # VERSION 5 (2026-11-26, D-207) - `namePattern` is a `*` wildcard on the
+  # whole name. NOT RUN - NEEDS-CHECKING Group QZ. Fails on version 4, which
+  # reads the pattern as "contains" and so finds no '*' in any family name.
+  - given: >
+      VERSION 5. A project with families "TRG_Supply Diffuser",
+      "TRG_Return Grille" and "Supply Diffuser TRG", namePattern "TRG*"
+    expect: >
+      the two starting TRG pass the name check; "Supply Diffuser TRG" is off
+      standard with "name does not match the pattern 'TRG*'". Version 4 failed
+      all three, looking for the text "TRG*" inside each name
+
   - given: a library where six air terminal types are missing the office prefix
     expect: >
       those six named, each with its placed count - CHECKED against the Project
@@ -91,6 +102,15 @@ positive:
       part has 2", FIX naming REMOVE_FAMILY_CONNECTOR
 
 negative:
+  # VERSION 5 (D-207). An old "contains" value, written with no '*'.
+  - given: >
+      VERSION 5. The same three families, namePattern "TRG" - a value written
+      for version 4
+    expect: >
+      ALL THREE off standard for their name - "TRG" with no '*' is now the
+      WHOLE name, and none is named exactly TRG. Version 4 passed all three.
+      Then namePattern "*TRG*": all three pass, which is what "TRG" used to do
+
   - given: >
       VERSION 4. The same scratch elbow with its Angle switched to a TYPE
       parameter, and one connector's System Classification set to Global
