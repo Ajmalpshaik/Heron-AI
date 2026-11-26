@@ -1,11 +1,11 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-039
-semantic-identity: "the panels, mullions and grid lines a curtain wall is actually made of"
+semantic-identity: "the panels, mullions and grid lines a curtain wall or a curtain system is actually made of"
 kind: action
 domain: revit.reporting
 capability: REPORT_CURTAIN_ELEMENTS
@@ -20,13 +20,30 @@ capability: REPORT_CURTAIN_ELEMENTS
 # Version 1's proof below no longer described the code and was kept as a record;
 # the card was DRAFT at the time, until NEEDS-CHECKING Group JR proves version 2
 # and the owner signs.
-version: 2
+#
+# VERSION 3 (2026-11-26, row 5b-2028, issue #1365, the owner's choice that day -
+# "Teach it (Revit later)"): a CURTAIN SYSTEM is read too. One made By Face on a
+# mass is not a Wall, so version 2 named it "not a wall", and its questions -
+# "how many panels are on this curtain system" - reached tools that change
+# curtain panels. Each face's grid is now read as a curtain wall's grid is, and
+# a run on curtain walls alone answers word for word as version 2 did.
+# impl/ moved, so the card is DRAFT again: version 2's proof below is kept as the
+# record until NEEDS-CHECKING Group QU proves version 3 and the owner signs.
+version: 3
 source: OFFICIAL
 risk: READ
 
 purpose: >
-  Reads what a curtain wall is built from - its panels, its mullions by type,
-  and how many grid lines run each way. It changes nothing.
+  Reads what a curtain wall or a curtain system is built from - its panels,
+  its mullions by type, and how many grid lines run each way. It changes
+  nothing.
+
+  **A CURTAIN SYSTEM IS READ FACE BY FACE (version 3).** A curtain system made
+  By Face on a mass holds one curtain grid for each face, and each face is read
+  the way a curtain wall is - how many panels a curtain system has, its
+  mullions and its panel sizes - under its own heading, "face 1 of 3". It
+  answers the panels of a curtain system that already exists; making one is
+  CREATE_CURTAIN_SYSTEM's.
 
   **IT EXISTS BECAUSE THE QUESTION WAS BEING ANSWERED BY `CREATE_WALL`.**
   Measured before this batch, *"what panels and mullions are in this curtain
@@ -78,6 +95,11 @@ contract:
     - name: curtainWallsFound
       # How many curtain walls were read. The size of the sweep, never a panel
       # or mullion it found (D-52).
+      role: accounting
+      type: int
+    - name: curtainSystemsFound
+      # VERSION 3. How many curtain systems were read, each face by face. The
+      # size of the sweep, never a panel or mullion it found (D-52).
       role: accounting
       type: int
     - name: panelCount
@@ -283,3 +305,9 @@ utterances:
   # "how many different panel sizes a facade has". Before it, ranking alone
   # brought it here, with SET_CURTAIN_PANEL_TYPE - a write - second.
   - how many different panel sizes are on this curtain wall
+  # VERSION 3 (row 5b-2028): a curtain system's panels are read face by face.
+  # Before it, on all four backends, this question reached SET_CURTAIN_PANEL_TYPE
+  # or ADD_CURTAIN_GRID_LINES - writes (D-86) - for want of a read that knew a
+  # curtain system.
+  - how many panels are on this curtain system
+  - what is this curtain system made of
