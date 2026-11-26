@@ -91,3 +91,16 @@ utterances:
   - I do not want to see the ceilings here
   - hide it on this drawing
   - take them off the view
+  # ADDED 2026-11-26, row 5b-2049: a hide of a whole named set - every element
+  # of a category, or every family whose name holds a word - reached
+  # CONNECT_AIR_TERMINALS and LOAD_FAMILY, writes, on lexical and the model;
+  # nothing here said hide beside a set.
+  - hide all the lights in this view
+  - hide every conduit on this plan
+  - hide these elements in the active view
+  - hide the families whose name contains this word
+  - hide everything from this family
+  # ADDED 2026-11-26, row 5b-2049: the same, said of MEP terminals, which
+  # CONNECT_AIR_TERMINALS and SET_AIR_TERMINAL_FLOW took on both backends.
+  - hide the diffusers and grilles in this view
+  - hide all the sprinklers

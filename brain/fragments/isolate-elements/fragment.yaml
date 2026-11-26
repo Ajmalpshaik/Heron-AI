@@ -103,3 +103,10 @@ utterances:
   - hide everything else
   - only show the ducts
   - let me see these on their own
+  # ADDED 2026-11-26, row 5b-2049: an isolate of one part of a category, or of
+  # one size, reached other writes; these name the part.
+  - isolate the dampers in this view
+  - isolate only these, not the whole category
+  - isolate the one with the largest size
+  - temporary isolate these in the active view
+  - how do I see only these in the view

@@ -1072,7 +1072,10 @@ def verdict_line(reply, batch):
         return None
     brief = reply.get("verdictShort")
     if reply.get("verdictKind") != "kept":
-        return str(verdict)
+        # ROW 5b-1992: a preview Revit counted deletions in says FIRST that
+        # keeping it brings up the Delete box, and for what - so the modeller
+        # is told before the change is sent, not by a box nobody expected.
+        return _with_asking(str(verdict), reply.get("deleteAheadSays"))
     line = str(verdict) if not brief or batch.whole_kept() else str(brief)
     line = _with_asking(_with_asking(line, reply.get("asking")), reply.get("deleteAsking"))
     if nothing_written(reply):
