@@ -80,3 +80,24 @@ columns beside a Level 1 plan showing the spaces' tags (ON3 kept on the scratch 
 have passed too**, because the link half is the code his own job needs, and the job file runs the space
 half alone. ON5, ON6, ON10 and ON11 each pass or are written NOT RUN with the reason, and ON12 passes on ON1's reply, before he signs.
 Until he does, the card stays DRAFT, and `revit_change` refuses it for a kept run on any model (D-117).
+
+### Results, 2026-11-26 - Revit 2020, session 32484, add-in 0.3.0.0 (file `df0d401c52ca05f4`), card version 4 from main
+
+**Model:** *P1102 MEP* - a FRESH scratch copy of Revit 2020's `rme_advanced_sample_project.rvt` in
+`%TEMP%\heron-work\p1102`, standing in for `on-mep` (the same sample, freshly copied, so one model fewer loaded).
+**The sample is not as this group assumed:** it holds **76 placed rooms** (2 unplaced) beside 89 spaces, and no
+duct accessories at all. Proof job
+[`on-assign-location-data-v4-p1102-...`](../../tools/jobs/on-assign-location-data-v4-p1102-revit2020-2026-11-26.yaml) -
+**PASS** (ON1 positive; negative: the same 98 with a target parameter they do not carry - written 0), a draft that,
+by this group's own rule, is signed only after ON8 and ON9.
+
+| Row | Result |
+|---|---|
+| ON0, run 2026-11-26 | **DONE.** (1) 4 levels: Level 1 94.2 mm, Level 2 3800 mm, Level 3, Roof Level. (2) Level 1 Air Terminals by space: **98 of 98 landed in one** (24 spaces); Duct Accessories: **0** on any level - the model has none. (3) Level 1 spaces: 30, `roomsSeen` 0 for the spaces; but the model holds 78 Rooms, 76 placed (`REPORT_ROOM_SPACE_DATA` on Rooms: `unplaced` 2). (4) `ADD_PROJECT_PARAMETER`, KEPT on the scratch copy: *ID_Room Name* and *ID_Room Number*, TEXT, instance, bound to Duct Accessories and Air Terminals, from a NEW scratch file `%TEMP%\heron-work\on\on-shared.txt` (`createFile`, `createMissing`); the finding says *"Revit's shared parameter file setting was put back to 'D:\04_BIM\06_Shared_Parameters\Shared_Parameters.txt'"*. Not saved. |
+| ON1, run 2026-11-26 | **PASS** (rolled back) - the 98 Level 1 air terminals, `useSpaces=true`: *"98 element(s) written, using SPACES - name 98, number 98, level 0; 98 found in one of this model's own SPACES, 0 in a linked one."*, `nameWritten` 98, `numberWritten` 98, `notKept` 0, `noRoomFound` 0; samples *383543: name "Archive" \| number "21"*, *386293: name "Washing Room" \| number "25"* - no number inside a name. |
+| ON2, run 2026-11-26 | **CANNOT PASS AS WRITTEN on this sample** - `useSpaces=false`: *"97 element(s) written, using ROOMS"*, `noRoomFound` [408625] - the sample has rooms. And **`COUNT_BY_SPATIAL_CONTAINER containerKind=room` on the same 98 says "4 landed in one, 94 did not"** - the two tools disagree about rooms (they agree about spaces, 98 and 98). Recorded as row [5b-2057](../fragment-issues/row-5b-2057.md), issue [#1457](https://github.com/Ajmalpshaik/Heron-AI/issues/1457). |
+| ON4, run 2026-11-26, totals only | **AGREE on totals** - COUNT_BY (space) puts all 98 in a space; ON1 wrote 98. Not compared element by element (ON1 prints 10 samples). |
+| ON12, read on ON1's reply | **HALF** - the summary line is in `findings`, as version 4 says. But `refused` is **not empty** on a run where nothing was declined: it holds *"97 element(s) were in plan of more than one SPACE - another storey's - and were given the one on their own storey"* and *"2 SPACE(S) in this model are UNPLACED or UNENCLOSED and were not asked"*. ON6's own text wants such storey counts in `refused`, so this row and ON6 disagree - a question for the owner, not recorded as a defect. |
+| ON0L, ON8, ON9, ON10 | **NOT RUN** - the link rig needs a second model loaded, and Revit's committed memory stood at 11.7 GB (the stop is about 13). |
+| ON3 | **NOT RUN** - a DRAFT's kept run raises the Keep box (D-119), the owner's press. |
+| ON5, ON6, ON11 | **NOT RUN** this sitting - each needs an element placed in setup at a chosen point; owed. |
