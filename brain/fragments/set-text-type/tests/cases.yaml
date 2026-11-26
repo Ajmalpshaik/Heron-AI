@@ -1,7 +1,7 @@
 # D-30: the negative case is what catches "succeeded and did nothing" - and
 # here, "changed the wrong type".
 # Arrange on SCRATCH files, never a working model: a copy of the modeller's
-# pipe tag family (TRG_Pipe_Tag, Revit 2020) saved as "Heron Text Type Test",
+# pipe tag family (ABC_Pipe_Tag, Revit 2020) saved as "Heron Text Type Test",
 # its labels on ONE label type, and a text note placed in its view on a text
 # type; and a scratch project with two text types and a few text notes. Every
 # change is a type change, so run the negative cases FIRST and the kept run

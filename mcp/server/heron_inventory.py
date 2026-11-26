@@ -1902,7 +1902,7 @@ def revit_groups(category: str = "") -> str:
     category - show which of those elements sit inside one and how many other
     placements an edit would reach.
 
-    ASK THIS BEFORE ANY CHANGE to elements that might be grouped. Editing one
+    USE IT BEFORE A CHANGE to elements that might be grouped. Editing one
     member of a group edits it in every place that group is put, which is the
     point of groups and a nasty surprise when you did not know the element was
     in one. Revit raises NO error for this: a move of a group member returns
