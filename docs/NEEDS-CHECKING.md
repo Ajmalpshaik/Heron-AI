@@ -1719,6 +1719,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qt.md`](needs-checking/group-qt.md)
 
+## Group QZ - D-207's name rules: CHECK_FAMILY_STANDARDS v5 reads a name pattern as a * wildcard, CREATE_GRIDS v5 and CREATE_LEVELS v3 skip a name already taken and make the rest - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qz.md`](needs-checking/group-qz.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
