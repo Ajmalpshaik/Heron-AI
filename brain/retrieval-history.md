@@ -828,8 +828,8 @@ key, with the day he gave it.
 | 2026-10-17 | 569 | `model` | any | `88c7eadd` | 17 | 12 | 5 | 30 | 1 (0) | 9 | 5 of 7 | `11-42----1---21.-212-----w---4----1111-4--411-4222111-231w1w121-3w2---w-w-w2221` |
 | 2026-10-17 | 571 | `lexical` | any | `88c7eadd` | 18 | 9 | 4 | 33 | 1 (0) | 8 | 4 of 7 | `15131----1-3-11.-112-----w-------41151-2---11--242111-241w1w12---w2---w3w-w2--1` |
 | 2026-10-17 | 571 | `model` | any | `88c7eadd` | 17 | 11 | 3 | 33 | 1 (0) | 8 | 5 of 7 | `11-------1---21.-212-----w---4----1111-4---11-4222121-231w1w121-3w2---w-w-w1221` |
-| 2026-11-26 | 754 | `lexical` | any | `e6e51d55` | 34 | 9 | 3 | 18 | 1 (0) | 7 | 3 of 7 | `11111-1-31-1211.-111---23w-3-1411111-1-2-5511-11131112241w1w111-5w1---w4w-.211-` |
-| 2026-11-26 | 754 | `model` | any | `e6e51d55` | 30 | 7 | 6 | 21 | 1 (0) | 6 | 5 of 7 | `11241-11-1--511.-212-----w--51-11-111132--411-11141211231w1w11151w1---.-w-.211-` |
+| 2026-11-26 | 754 | `lexical` | any | `e6e51d55` | 34 | 9 | 3 | 18 | 1 (0) | 7 | 3 of 7 | `11111-1-31-1211.-111---33w-3-1411111-1-2-5511-11131112241w1w111-5w1---w4w-.211-` |
+| 2026-11-26 | 754 | `model` | any | `e6e51d55` | 29 | 8 | 6 | 21 | 1 (0) | 6 | 5 of 7 | `11241-11-1--511.-212-----w--51-11-111132--411-11141211231w1w11251w1---.-w-.211-` |
 
 ### The plain questions — rows 5b-477 and 5b-478, scored beside his
 
@@ -1603,26 +1603,26 @@ either run, so #616's change is not exercised here.
 
 ---
 
-## 2026-11-26 — card wording on 31 cards, his 79 and the plain questions on both backends (row 5b-2049)
+## 2026-11-26 — card wording on 30 cards, his 79 and the plain questions on both backends (row 5b-2049)
 
 [Row 5b-2049](../docs/fragment-issues/row-5b-2049.md), GitHub issue
 [#1422](https://github.com/Ajmalpshaik/Heron-AI/issues/1422). The owner asked for better tool
-descriptions after about half his questions found no right tool. **Utterances only, on 31 cards** - no
+descriptions after about half his questions found no right tool. **Utterances only, on 30 cards** - no
 identity, purpose, contract or `impl/` - each a general modeller line that pairs a job's verb with the
 set, colour, size or category said beside it; none is one of his 79, a plain question or a suite
 sentence, and none is another live card's. Measured in a cloud container (no Revit), `main` `b83b30db`
-(and again on `35cd59e0` after merging it, every figure the same) against the branch, 754 cards, every run on a store of its own built fresh: `lexical`, and `model`
+(and again on `35cd59e0`, the same figures) against the branch, 754 cards, every run on a store of its own built fresh: `lexical`, and `model`
 (model2vec, `minishlab/potion-base-8M`, no re-ranker).
 
 | | `lexical`, main -> branch | `model`, main -> branch |
 |---|---|---|
-| his 79 - first | 23 -> 34 | 20 -> 30 |
+| his 79 - first | 23 -> 34 | 20 -> 30 (29 on `8941e9a8`, below) |
 | his 79 - top three | 32 -> 43 | 31 -> 37 |
 | his 79 - not found | 30 -> 18 | 29 -> 21 |
 | asked for no change, handed one | 9 -> 7 | 6 -> 6 |
-| a change asked for, a different change given | 20 -> 14 | 15 -> 12 |
+| a change asked for, a different change given | 20 -> 14 | 15 -> 12 (13 on `8941e9a8`) |
 | plain questions answered by a change | 9 -> 9, identical question by question | 15 -> 15, identical |
-| 400 sentences frozen before the first edit - wanted answers | 122 -> 153 of 232 | 121 -> 152 of 232 |
+| 400 sentences frozen before the first edit - wanted answers | 122 -> 153 of 232 | 121 -> 152 of 232 (151 on `8941e9a8`) |
 | the same - questions reaching a write | 15 -> 14 of 152 | 22 -> 19 of 152 |
 | the same - answers moved the wrong way | 0 | 0 |
 | `tests/test_routing_phrases.py` | 9 -> 8 routing failures, none new | 6 -> 3 failing checks |
@@ -1631,6 +1631,16 @@ The 400 were his 79, the 124 plain questions, the suite's own sentences and 116 
 declared; `tools/score-routing.py --sentences ... --tree <main> --compare`. Also measured: `check-routing`
 claimed-and-not-reached 76 -> 75, its words and nearness rates unchanged; `check-risk-crossings`
 question-to-write crossings 5 -> 4; the skill rows `lexical` 4 -> 3 of 7 (#72 3rd -> 4th).
+
+**After the change was opened, CI's sweep on `lexical` failed `tests/test_embed.py`:** two lines added to
+`SET_SELECTION` (*zoom to it*, *zoom to that one*) moved its character n-grams so that *put them on the
+screen* found `ZOOM_TO_ELEMENTS` nearest (0.600 against 0.590). They had moved none of his questions and were
+taken back. It was missed here because model2vec is installed in this container, so that suite took its
+trained-model branch; every suite was then run with model2vec blocked, as CI runs them, and each exits 0 or 3.
+**Measured again on `main` `8941e9a8`** after merging it: every figure above except that on `model` #63
+(*Move all the FCUs from 2400 to 2700*) went back to `WRITE_ELEMENT_PARAMETERS`, 0.03136 against 0.03132 -
+`MOVE_ELEMENTS` went to DRAFT on `main` with its version 4 (#1419) and lost the PROVEN nudge, not a word of
+this change. The `--record` rows above are this final tree's.
 
 **A first try moved three routing-table claims, repaired before this was recorded:** *the duct is
 missing from my schedule* (to `CREATE_SCHEDULE`), *what parameters does this have* and *how many square
