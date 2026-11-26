@@ -242,6 +242,7 @@
 | [D-198](#d-198--agents-that-were-built-but-that-nothing-in-heron-called-are-retired-and-their-code-and-tests-removed) | Agents that were built but that nothing in Heron called are retired, and their code and tests removed | ✅ Accepted · 2026-11-24 |
 | [D-199](#d-199--thirteen-more-idle-modules-are-retired-update-trust-release-tagging-versioning-the-import-pipeline-and-the-workflow-engine) | Thirteen more idle modules are retired: update, trust, release, tagging, versioning, the import pipeline and the workflow engine | ✅ Accepted · 2026-11-24 |
 | [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
+| [D-202](#d-202--every-tool-has-a-title-and-read-and-write-labels-that-match-what-it-keeps-and-a-description-says-when-to-use-its-tool-rather-than-ordering-a-call) | Every tool has a title and read and write labels that match what it keeps, and a description says when to use its tool rather than ordering a call | ✅ Accepted · 2026-11-26 |
 
 ## Format
 
@@ -1799,3 +1800,15 @@ because a helper agent, a kept test, a modeller's skill or a waiting design reli
 agents whose Python copies went stay built, by the installer.
 
 **Full record:** [`decisions/D-200.md`](decisions/D-200.md)
+
+## D-202 — Every tool has a title and read and write labels that match what it keeps, and a description says when to use its tool rather than ordering a call
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in conversation.
+**Numbering:** D-202 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` ending at D-200 and the id after it taken by an open pull request.
+**Affects:** [04 §8.4](04-heron-mcp.md) · `mcp/server/heron_tools.py` · `mcp/server/heron_server_core.py` · `tests/test_tool_registry.py` · `tests/test_mcp_serves.py`
+
+Every MCP tool is served with a title from `heron_tools.TITLES`. A tool that keeps something the modeller gave or
+chose (`heron_tools.KEEPS`) is not labelled read-only, and is destructive when it can delete or replace it; no tool
+is labelled open-world. A tool's description says when it is used and never orders a call to another tool.
+
+**Full record:** [`decisions/D-202.md`](decisions/D-202.md)
