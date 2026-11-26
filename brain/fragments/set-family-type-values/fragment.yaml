@@ -29,7 +29,22 @@ capability: SET_FAMILY_TYPE_VALUES
 # wrote it. Version 5 was PROVEN (the proof block below, kept as the record of
 # what it proved); its C# moved, so it is DRAFT again until version 6 is proved
 # on a real model - tests/cases.yaml, positive_poles and negative_poles (D-30).
-version: 6
+#
+# VERSION 7 (2026-11-26, row 5b-2050) - A QUOTED TEXT VALUE KEEPS ITS SPACES.
+# Found 2026-11-26 on Revit 2020, NEEDS-CHECKING Group PT check PT4:
+# Keynote=" G4 - \"bag\" " read back "G4 - "bag"" - the inner quote marks kept,
+# the space at each end gone, because impl/ trimmed every value. The binder
+# (HeronBindingNote.NamedEntries) already trims an unquoted value and keeps a
+# quoted one whole, so impl/ now writes TEXT exactly as it is handed over: a
+# quoted value keeps its spaces, an unquoted one is trimmed as before (by the
+# binder). Numbers, lengths, angles, yes/no, Number of Poles, measured kinds and
+# material names are still read from the trimmed text, line for line as
+# version 6; "Type Name=" is still trimmed. Still DRAFT: version 6 was never
+# proved, and version 7 owes the Revit run - tests/cases.yaml, positive_spaces
+# and negative_spaces, as well as positive_poles and negative_poles (D-30).
+# If Revit itself drops the spaces, the read-back no longer matches and the
+# call fails with nothing kept - it is never written as something else unseen.
+version: 7
 source: OFFICIAL
 risk: MODIFY
 
@@ -143,7 +158,9 @@ contract:
     # "Type Name=New name" renames the type (version 3). Empty when deleting.
     # A text value that holds a semicolon goes in double quotes, kept exactly -
     # Note="70 % ASHRAE; design 81 %"; Width=600 - and \" inside is a quote
-    # (row 5b-1994, the binder's rule for every such list).
+    # (row 5b-1994, the binder's rule for every such list). A TEXT value in
+    # quotes also keeps a space at either end - Keynote=" G4 " - and an
+    # unquoted one is trimmed (version 7, row 5b-2050).
     - name: values
       type: IDictionary<string, string>
       source: request

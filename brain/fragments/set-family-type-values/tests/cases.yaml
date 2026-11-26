@@ -185,3 +185,37 @@ negative_poles:
     expect: >
       refused naming the unit in Width - all or nothing, Number_of_Poles not
       written either and still reads 3
+
+# VERSION 7 (2026-11-26, row 5b-2050) - a quoted TEXT value keeps its spaces.
+# The first fails on version 6, which trimmed every value: NEEDS-CHECKING Group
+# PT check PT4 read back "G4 - "bag"" on Revit 2020. The negatives pass on both
+# versions - they are the proof nothing else moved.
+positive_spaces:
+  - given: >
+      a SAVED scratch family with a type text parameter "Keynote", values
+      'Keynote=" G4 - \"bag\" "' (the space before G4 and after "bag" inside
+      the quotes)
+    expect: >
+      written - Keynote reads back ' G4 - "bag" ', the space at each end kept
+      and the two inner quote marks written as quote marks; Family Types shows
+      the same with that type chosen. If Revit itself drops the spaces, the call
+      fails "Not every value held what was asked for", nothing kept - record
+      which
+
+  - given: the same family, typeName "all", values 'Keynote=" a; b "'
+    expect: >
+      every type reads ' a; b ', the spaces and the semicolon kept, one entry in
+      Revit's undo list; the answer's route says which way it was written
+
+negative_spaces:
+  - given: the same family, values "Keynote=   G4   " (no quotes)
+    expect: >
+      written - Keynote reads back "G4", trimmed exactly as before version 7
+      (the binder trims an unquoted value)
+
+  - given: >
+      the same family with a type length "Width" and a type yes/no "Show_Filter",
+      values 'Width=" 600 "; Show_Filter=" true "'
+    expect: >
+      written - Width reads 600 mm and Show_Filter reads true: a quoted number or
+      yes/no is still read from its trimmed text, exactly as version 6 read it
