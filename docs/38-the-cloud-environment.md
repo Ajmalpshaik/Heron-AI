@@ -23,14 +23,13 @@ Set in **Add cloud environment**, in the Claude desktop app or at claude.ai/code
 
     Heron
 
-### Network access — **Custom**, with the default list still ticked
+### Network access — **Trusted** is enough since 2026-11-26
 
-Tick **"Also include default list of common package managers"**, then add:
-
-    huggingface.co
-    *.huggingface.co
-    hf.co
-    *.hf.co
+Until then this was **Custom**, with *"Also include default list of common package managers"* ticked and
+four Hugging Face hosts added (`huggingface.co`, `*.huggingface.co`, `hf.co`, `*.hf.co`) for the trained
+search model's weights. [D-203](decisions/D-203.md) removed that model: Heron has one built-in search and
+downloads nothing for it, so nothing here needs a host outside the Trusted list any more. An environment
+still set to that Custom list works as before; the four hosts are simply unused, and may be taken off.
 
 ### Environment variables
 
@@ -72,57 +71,31 @@ does and, as importantly, what it refuses to do.
 
 ---
 
-## 2. Why **Custom** and not **Trusted**
+## 2. Why it was **Custom**, and why it is not any more
 
-**Trusted already covers everything else.** `archive.ubuntu.com` and `security.ubuntu.com` for the
+**Trusted covers everything section 3 installs.** `archive.ubuntu.com` and `security.ubuntu.com` for the
 .NET SDK, `api.nuget.org` for the Revit API reference packages, `pypi.org`, `github.com`,
-`packages.microsoft.com`. Nothing in section 3 needs a domain outside that list —
+`packages.microsoft.com`.
 
-**except `huggingface.co`, which is not on it at all.**
-
-That single absence is the difference between Heron understanding a question and matching its letters.
-`pip install model2vec` succeeds — pypi.org answers 200 — and then `StaticModel.from_pretrained` has
-to reach `huggingface.co` for the weights. [`brain/heron_embed.py`](../brain/heron_embed.py) has this
-written down twice already, as a 403 recorded 2026-08-28 and re-checked 2026-09-11, and its fallback
-reports itself as *"built-in character n-grams — tolerant of spelling and word order, but **NOT
-meaning**"*.
-
-**Four lines, not one, and the extra three are the point.** Hugging Face serves metadata from
-`huggingface.co` and the weight files themselves from separate storage hosts under `hf.co`. One line
-would have looked correct and failed at the download.
-
-**The tick box is load-bearing.** Custom *without* "Also include default list" allows **only** what is
-typed, so PyPI, NuGet and the Ubuntu archive would all be gone and nothing would install at all.
-
-**Nothing here costs money and nothing needs an account.** `minishlab/potion-base-8M` is public and
-ungated: measured on the owner's PC 2026-09-22, 59 MB in the Hugging Face cache with `HF_TOKEN` unset
-and no stored login file. Trusted alone still works — it costs retrieval quality, and every answer
-says so.
-
-### Whether it worked, in one line
-
-Run this **inside the cloud session**, never on the owner's PC — that machine answers `model`
-regardless of what the cloud can reach, so asking it proves nothing about the environment:
+Until 2026-11-26 one thing was outside it: `huggingface.co`, where the optional trained search model
+(`model2vec`, `minishlab/potion-base-8M`) fetched its weights - `pip install model2vec` succeeded and the
+weights download was refused, so the environment was **Custom** with four Hugging Face hosts (metadata from
+`huggingface.co`, the weight files from storage hosts under `hf.co`). **[D-203](decisions/D-203.md)
+removed that model** - it was not better than the built-in search on the owner's own questions, and only
+his PC ever had it - and the setup script no longer installs it. Every session's search is the built-in
+one, here as on every PC, and `heron_embed.backend()` says so:
 
 ```bash
 python -c "import sys; sys.path.insert(0,'brain'); import heron_embed; print(heron_embed.backend())"
+# ('lexical', 'built-in character n-grams - tolerant of spelling and word order, but NOT meaning')
 ```
-
-| It answers | Meaning |
-|---|---|
-| `('model', 'a trained model - this one understands meaning')` | the four domains are reachable |
-| `('lexical', 'built-in character n-grams ...')` | the weights were refused, and the reply names its own remedy |
-
-**Ask once per environment, and ask early.** Both backends return results and neither raises, so an
-environment with no weights looks exactly like a working one until a question turns on meaning rather
-than on shared words. This is the only thing on this page that cannot be checked from a checkout.
 
 ---
 
 ## 3. What the setup script does, and the three things it will not do
 
-In order: the .NET 10 SDK and `python-is-python3` from apt, side by side with PyYAML, `mcp`, `model2vec`
-and `pypdf` from pip (`sqlite-vec` left the list on 2026-11-21, D-194); the knowledge directory; then a fragment index rebuild and a NuGet restore, run
+In order: the .NET 10 SDK and `python-is-python3` from apt, side by side with PyYAML, `mcp` and `pypdf`
+from pip (`sqlite-vec` left the list on 2026-11-21, D-194, and `model2vec` on 2026-11-26, D-203); the knowledge directory; then a fragment index rebuild and a NuGet restore, run
 in parallel. The rebuild and the restore are bounded with `timeout`. Every failure is kept in a named
 log rather than raised, and the script's last lines say what did not arrive - `dotnet ... NOT
 INSTALLED`, or `python packages MISSING:` and the names - because the exit code cannot say it.
@@ -131,7 +104,7 @@ INSTALLED`, or `python packages MISSING:` and the names - because the exit code 
 flowchart TD
     S(["<b>tools/cloud-setup.sh</b><br/>as root, before Claude Code starts"])
     APT["<b>apt</b> · heron-apt.log<br/>update, then install even if it failed<br/>dotnet-sdk-10.0 · python-is-python3"]
-    PIP["<b>pip</b> · heron-pip.log<br/>pyyaml · mcp · model2vec · pypdf<br/>plain, then --ignore-installed"]
+    PIP["<b>pip</b> · heron-pip.log<br/>pyyaml · mcp · pypdf<br/>plain, then --ignore-installed"]
     SAY["<b>Say what arrived</b><br/>dotnet version or NOT INSTALLED<br/>python packages MISSING: and the names"]
     KB["<b>The knowledge folder</b><br/>HERON_KNOWLEDGE, /opt/heron-kb"]
     RB["<b>Store rebuild</b> · timeout 180 s<br/>heron_scope.py --rebuild<br/>heron-rebuild.log"]
@@ -168,7 +141,7 @@ restore. A step that fails leaves its log and the script carries on. Read from t
 ```text
 tools/cloud-setup.sh, as root, before Claude Code starts
   together:  apt  (update, then install anyway)  dotnet-sdk-10.0, python-is-python3   -> heron-apt.log
-             pip  pyyaml mcp model2vec pypdf (plain, then --ignore-installed) -> heron-pip.log
+             pip  pyyaml mcp pypdf (plain, then --ignore-installed) -> heron-pip.log
   then:      say what arrived - the dotnet version or NOT INSTALLED; python packages MISSING: ...
   then:      the knowledge folder, HERON_KNOWLEDGE (/opt/heron-kb)
   together:  heron_scope.py --rebuild (timeout 180 s)   dotnet restore for Revit 2024 (timeout 120 s)
@@ -243,11 +216,10 @@ real edit does.
 
 So a cloud session goes **further than CI does**. Since 2026-11-21 `gates.yml` builds the .NET host and
 runs the suites that need the MCP SDK on a venv holding the pinned lock, but it leaves
-`test_routing_phrases.py` unrun on its not-runnable list - the trained embedding is not there, and on
-the embedding - what the owner's PC ranks with since D-201 - that suite still fails 6 card-wording
-checks (row 5b-1882); this environment
-installs the embedding on request, so **nothing in `tests/` is out of its reach** once §2's check
-answers `model`.
+`test_routing_phrases.py` on its not-runnable list: since D-203 it runs on the one built-in search
+everywhere and exits 3 - waiting on the owner - while five of its guards are recorded open
+([row 5b-2053](fragment-issues/row-5b-2053.md)). It answers the same here, in CI and on the owner's PC,
+so **nothing in `tests/` is out of this environment's reach**.
 
 No total is written here on purpose. One was — *"196 of 199"* — and
 [`check-docs.py`](../tools/check-docs.py) caught it on this page's first run: the source said **219**.

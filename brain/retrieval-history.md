@@ -833,6 +833,7 @@ key, with the day he gave it.
 | 2026-11-26 | 754 | `lexical` | any | `e6e51d55` | 23 | 10 | 2 | 29 | 1 (0) | 9 | 3 of 7 | `11111---51-3-11.-112-----w---2--2111-1-2---11--243111-241w1w213-5w1---w4w-.211-` |
 | 2026-11-26 | 754 | `lexical` | any | `e6e51d55` | 34 | 9 | 3 | 18 | 1 (0) | 7 | 3 of 7 | `11111-1-31-1211.-111---33w-3-1411111-1-2-5511-11131112241w1w111-5w1---w4w-.211-` |
 | 2026-11-26 | 754 | `model` | any | `e6e51d55` | 29 | 8 | 5 | 22 | 1 (0) | 6 | 5 of 7 | `11241-11-1---11.-212-----w--51-11-111132--411-11141211231w1w11251w1---.-w-.211-` |
+| 2026-11-26 | 754 | `lexical` | any | `e6e51d55` | 34 | 9 | 3 | 18 | 1 (0) | 7 | 3 of 7 | `11111-1-31-1211.-111---33w-3-1411111-1-2-5511-11131112241w1w111-5w1---w4w-.211-` |
 
 ### The plain questions — rows 5b-477 and 5b-478, scored beside his
 
@@ -865,6 +866,7 @@ their own table and are never added into his numbers.
 | 2026-11-26 | 753 | `lexical` | any | `6247a481` | 124 | 9 | 52 | 44 of 45 | 44 of 45 | `11..111...11..1...11..1.........ww1w.11.11..1.111....1.11....111...1...w1..w.....w111..11.w..1........w111......11...1.w1111` |
 | 2026-11-26 | 754 | `lexical` | any | `6247a481` | 124 | 9 | 52 | 44 of 45 | 44 of 45 | `11..111...11..1...11..1.........ww1w.11.11..1.111....1.11....111...1...w1..w.....w111..11.w..1........w111......11...1.w1111` |
 | 2026-11-26 | 754 | `model` | any | `6247a481` | 124 | 15 | 52 | 44 of 45 | 44 of 45 | `11w.111...11..1...11..1....w.w..ww1ww11.11..1.111..w.1.11....111...1...w1..ww....w111..11....1..w....ww111......11...1..1111` |
+| 2026-11-26 | 754 | `lexical` | any | `6247a481` | 124 | 9 | 52 | 44 of 45 | 44 of 45 | `11..111...11..1...11..1.........ww1w.11.11..1.111....1.11....111...1...w1..w.....w111..11.w..1........w111......11...1.w1111` |
 
 ---
 
@@ -1706,6 +1708,51 @@ later can move them.
 
 That any answer is right in Revit - routing is measured here, never run against a model; and anything
 about `model+rerank`, which was not asked - the re-ranker was removed the same day ([D-201](../docs/decisions/D-201.md)), so the owner's PC now ranks on `model`.
+
+
+## 2026-11-26 — model2vec is removed too (D-203); one built-in search for every PC
+
+[D-203](../docs/decisions/D-203.md), the owner's decision the same day: *"ok remove model2vec also"*. It was
+taken on the figures the proposing session measured on the card wording of #1424 at 753 fragments -
+`lexical` against `model`, his 79 first **34 / 30**, top three **43 / 37**, not found **18 / 21**, a
+question handed a change **7 / 6**, 124 plain questions reaching a write **9 / 15**, a lookup median
+**109 / 147 ms** - recorded in D-203, not re-run here.
+
+**Before and after the removal, on `lexical`, identical.** Measured in a cloud container that has model2vec
+installed, so the "before" turned it off in the process (`heron_embed._MODEL_CACHE[:] = [None]`) and the
+"after" has no code that could load it: `main` `2ee4d03f` against the branch, **754 fragments**, no Revit
+filter. `tools/score-routing.py` on his 79 and the 124 plain questions printed the same report line for
+line (only the store's path, md5 and timing differ); nine frozen sets,
+`tests/data/routing-sentences-*.yaml`, 540 sentences, `--sentences --backend lexical --compare` the
+before records: **0 answers changed**. `tests/test_routing_phrases.py` failed the same nine routing
+checks on both trees.
+
+**Then card wording, measured the same way.** Thirteen general utterances on `offset-tags-from-host`,
+`select-by-host`, `list-views-on-sheet` and `edit-text-values` (row 5b-2053): his 79 and the 124 plain
+questions answer as before - the rows above for this date are that tree, by `--record`; the nine frozen
+sets moved two of 540, one wanted (*"which doors are hosted in the stair..."* now `SELECT_BY_HOST`) and
+one neutral (*"put two windows in the north wall"*, still not `PLACE_HOSTED_FAMILY`, now a read rather
+than another write); `tests/test_routing_phrases.py` went from nine routing failures to seven, which it
+records open and waits on (exit 3). **With #1424 merged the same day** (its wording on 30 cards, the entry
+above) two more pass - *"rename the schedule"* and *"check if volume calculation is enabled"* - and five
+stay open. On the merged tree, against `main` `d79ac5a9` (#1424 in) with the model blocked: his 79 answer
+exactly as there (first 34, top three 43, not found 18); of the 124 plain questions one moved, #103 *"what is
+the thermal resistance of this wall"*, from one write to another (`CREATE_WALL_ELEVATION` to
+`SHAPE_WALL_TOPS_TO_ROOF`), so 9 still reach a write. The last two rows for this date are that tree.
+
+| 754 fragments, `lexical` | before | after |
+|---|---|---|
+| his 79: first / top three | 23 / 33 | 23 / 33 |
+| his 79: asked for no change, handed one | 9 | 9 |
+| 124 plain questions reaching a write | 9 | 9 |
+| `tests/test_routing_phrases.py` routing failures | 9 | 7, recorded open (row 5b-2053) |
+| ... with #1424 merged | - | 5, recorded open |
+
+### What this does not establish
+
+- **The owner's PC was not measured.** It ranks on this search now, and should answer as above.
+- **That the model is worse at meaning.** It was not better on his questions; meaning was not measured
+  apart from them. Nothing met Revit.
 
 ---
 

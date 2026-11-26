@@ -655,3 +655,9 @@ utterances:
   - change the family name
   - the family name does not match our standard
   - rename the family these came from
+  # ADDED 2026-11-26 (row 5b-2053, D-203): general phrasing, measured on the built-in
+  # search every PC ranks with now (tests/test_routing_phrases.py, score-routing). No
+  # sentence of that suite, nor one a word away from it, is declared here.
+  - give the schedules their new names
+  - change the schedule names to the new standard
+  - rename schedules, sheets and views to the office standard

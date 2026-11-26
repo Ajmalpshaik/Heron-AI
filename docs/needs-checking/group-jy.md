@@ -68,7 +68,7 @@ before the lining runs - expected, NOT RUN. Every line below with `HERON_CLIENT_
 row that fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on - through `heron_brain.lookup` on a scratch
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on; and since [D-203](../decisions/D-203.md) the same day it ranks on `lexical`, which this was not measured on - through `heron_brain.lookup` on a scratch
 store each, against this tree with and without the card. The four sentences above reach this card by
 identity; without it they reached `SET_MEP_INSULATION` (*"add 25 mm lining to these ducts"*, *"change the
 lining thickness to 50"*), `CREATE_DUCT` (*"line this supply duct and its fittings"*) and

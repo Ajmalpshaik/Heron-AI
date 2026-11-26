@@ -365,3 +365,10 @@ utterances:
   # the re-ranker, on spelling and on the trained model; viewName answers it
   # here - the sheets the view is on, or none.
   - is this view already on a sheet
+  # ADDED 2026-11-26 (row 5b-2053, D-203): general phrasing, measured on the built-in
+  # search every PC ranks with now (tests/test_routing_phrases.py, score-routing). No
+  # sentence of that suite, nor one a word away from it, is declared here.
+  - which legends or viewports hang outside the title block
+  - check that every legend sits inside the sheet border
+  - which schedules and legends overlap the title block
+  - find the legends placed beyond the sheet border

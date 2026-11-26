@@ -7426,15 +7426,10 @@ if __name__ == "__main__":
         if kept:
             sys.stderr.write("No knowledge folder is named here, so the library's "
                              "index is kept in %s.\n" % kept)
-    # Load the trained encoder on a background thread BEFORE serving anything.
-    # It is about a second in a fresh process and was measured still importing
-    # forty seconds later when it first ran inside a request handler, on the
-    # event loop - the host waited and no reply ever came. Until it finishes,
-    # every answer uses the lexical backend and says so. See heron_embed.warm().
     # First, Heron's data into its home, once on this PC (D-135): a second or
-    # two the first time, one look for a note after that.
+    # two the first time, one look for a note after that. (No encoder is
+    # warmed any more: the one search is built in, D-203.)
     brain.carry_home()
-    brain.warm()
     # And the knowledge store, behind it, so the chat's first lookup finds the
     # one-time work done (6.4-7.3 s measured 2026-10-01). Only where it cannot
     # spread a worktree's unmerged cards - see heron_brain.warm_store().

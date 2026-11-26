@@ -409,3 +409,8 @@ utterances:
   # the ducts with a leader" (tests/test_routing_phrases.py) reached
   # TAG_ELEMENTS_IN_VIEW; with this line it reaches this card.
   - put each tag above its duct or pipe on a leader
+  # ADDED 2026-11-26 (row 5b-2053, D-203): general phrasing, measured on the built-in
+  # search every PC ranks with now (tests/test_routing_phrases.py, score-routing). No
+  # sentence of that suite, nor one a word away from it, is declared here.
+  - align the door and window tags with the direction of their host walls
+  - orient each opening tag along its wall

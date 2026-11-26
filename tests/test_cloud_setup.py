@@ -32,7 +32,7 @@ installed and the real /tmp/heron-*.log files are not touched.
 WHAT THIS PROVES
   1. A FAILED `apt-get update` DOES NOT STOP THE INSTALL: dotnet-sdk-10.0 and
      python-is-python3 are still asked for, and dotnet then answers.
-  2. PIP NEVER HAS TO UNINSTALL A DISTRIBUTION'S PACKAGE: all four arrive on
+  2. PIP NEVER HAS TO UNINSTALL A DISTRIBUTION'S PACKAGE: all three arrive on
      the image that refused them - and on an image with no such conflict the
      plain install is the only one made, so a re-run touches nothing.
   3. IT SAYS WHAT DID NOT ARRIVE. The exit code cannot carry a failure, so the
@@ -76,10 +76,10 @@ except AttributeError:
 
 FAILURES = []
 
-# The four the script installs, as pip names them and as Python imports them.
+# The three the script installs, as pip names them and as Python imports them.
 # sqlite-vec left the list on 2026-11-21: nothing in Heron uses it (D-194).
-PACKAGES = {"pyyaml": "yaml", "mcp": "mcp", "model2vec": "model2vec",
-            "pypdf": "pypdf"}
+# model2vec left it on 2026-11-26: one built-in search everywhere (D-203).
+PACKAGES = {"pyyaml": "yaml", "mcp": "mcp", "pypdf": "pypdf"}
 
 # THE STAND-INS. Each one appends what it was asked to $SANDBOX/calls, so the
 # test reads what the script DID rather than what its text says.
@@ -246,7 +246,7 @@ def main():
         check("[heron] dotnet 10.0.112" in out,
               "and dotnet answers afterwards")
         check(set(PACKAGES) <= installed(box),
-              "all four Python packages arrive - got %s"
+              "all three Python packages arrive - got %s"
               % (sorted(installed(box)) or "none"))
         check(not any("sqlite-vec" in c for c in calls(box, "pip")),
               "and sqlite-vec is not asked for - nothing in Heron uses it "
@@ -271,7 +271,7 @@ def main():
         check(len(pip_calls) == 1 and "--ignore-installed" not in pip_calls[0],
               "one plain pip install and no other, so a re-run touches "
               "nothing - %s" % pip_calls)
-        check(set(PACKAGES) <= installed(box), "all four arrive")
+        check(set(PACKAGES) <= installed(box), "all three arrive")
 
         print("")
         print("An image where nothing can be installed")
@@ -285,7 +285,7 @@ def main():
               % missing)
         named = missing[0] if missing else ""
         check(all(mod in named for mod in
-                  ("mcp", "model2vec", "pypdf")),
+                  ("mcp", "pypdf")),
               "it names every package that does not import")
         check("yaml" not in named.split("MISSING", 1)[-1].split(" - ")[0],
               "and not Debian's PyYAML, which does")

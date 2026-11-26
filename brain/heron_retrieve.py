@@ -23,7 +23,7 @@ THE ORDER MATTERS AND IT IS NOT NEGOTIABLE
   4. A small quality nudge, which may settle a near-tie and may not overturn a
      clearly better match.
      Nothing re-orders the list after this: the optional second reader that
-     did was removed by D-201, measured as no clear gain over the model alone.
+     did was removed by D-201, measured as no clear gain.
   5. SAY HOW CONTESTED THE RESULT WAS. Stages 1 to 4 already compute every
      number this needs and used to throw all of them away, so a coin toss and
      a clear winner came back wearing the same face. See Contest.
@@ -96,14 +96,13 @@ ONE_RANK = 1.0 / (RRF_K + 1) - 1.0 / (RRF_K + 2)
 #            so it is a real signal about spelling and a weak one about intent.
 #            docs/05 s4 already argues the same thing from the other end: BIM
 #            requests are full of exact tokens that embeddings handle worst.
-#   model    a trained encoder. It earns an equal vote, and gets one.
 #
-# Revisit this when A7 puts a trained model in front of it - not by feeling,
-# by running the same queries and looking.
+# A trained encoder had an equal vote (1.0) here until D-203 removed it
+# (2026-11-26): the built-in backend is the only one, on every PC. Its weight
+# is unchanged, so every answer is the one it was on a PC without the model.
 KEYWORD_WEIGHT = 1.0
 VECTOR_WEIGHT_BY_BACKEND = {
     EMBED.LEXICAL: 0.6,
-    EMBED.MODEL:   1.0,
 }
 
 # The quality nudge. Deliberately smaller than the gap between adjacent fusion
@@ -243,13 +242,11 @@ class Contest(object):
     numbers say the lexical backend has no opinion about meaning, which is
     precisely what heron_embed's own docstring says about it: "IT IS NOT
     MEANING". Asking it to tell a duct from a cat is asking it for the one
-    thing it says it cannot do. The measurement belongs on the MODEL backend,
-    where nearness is meaning, and it has not been run because the container
-    this was written in refuses huggingface.co - the same block heron_embed
-    recorded on 2026-08-28, still in force on 2026-09-11.
+    thing it says it cannot do. A trained backend, where nearness would be
+    meaning, was never measured on this and is gone (D-203): nothing in Heron
+    can tell a duct from a cat by meaning, so nothing here pretends to.
 
-    Reported, so the run on a machine that can reach a model has a before to
-    read against. brain/retrieval-history.md carries this run in full, and
+    Reported, so a later run has a before to read against. brain/retrieval-history.md carries this run in full, and
     docs/NEEDS-CHECKING.md `A15` is the run that settles it - carried there
     from a working note (as W-8) when that note was retired 2026-09-12.
     """

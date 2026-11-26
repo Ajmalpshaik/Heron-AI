@@ -394,7 +394,7 @@ def resumed():
     main_block = server[cut:] if cut >= 0 else ""
     check("bridge.adopt_host_conversation()" in main_block,
           "the MCP server adopts it when it is RUN")
-    check(before(main_block, "bridge.adopt_host_conversation()", "brain.warm()"),
+    check(before(main_block, "bridge.adopt_host_conversation()", "brain.warm_store()"),
           "before it starts serving")
     check(cut >= 0 and "bridge.adopt_host_conversation()" not in server[:cut],
           "and not when a suite or a tool only imports it")
