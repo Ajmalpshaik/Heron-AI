@@ -60,7 +60,7 @@ risk: READ
 
 purpose: >
   Reads the value of one named parameter on each element given - Comments, Mark,
-  Description, a size, a type parameter or the Level - and says for each one whether
+  Description, a size or a type parameter - and says for each one whether
   it has a value, has the parameter but left blank, or does not have that parameter
   at all. The element's own value is read first, then its type's. On a text note,
   Text is what the note says. Changes nothing.
