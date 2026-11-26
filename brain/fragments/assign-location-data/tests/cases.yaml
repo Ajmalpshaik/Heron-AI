@@ -30,6 +30,15 @@ positive:
       READ_ELEMENT_PARAMETERS afterwards, never taken from the count. Version 2
       wrote "NAME NUMBER" into the one field it had
 
+  - given: >
+      version 4 (5b-2037) - roomParameter and numberParameter naming two text
+      parameters, levelParameter none, one element inside a placed room,
+      nothing declined
+    expect: >
+      written 1, `refused` EMPTY, and the summary line ("1 element(s) written,
+      using ROOMS - name 1, number 1, level 0 ...") in `findings`. Version 3
+      put that summary in `refused`, so every success answered "refused 1"
+
 negative:
   - given: a ceiling-mounted diffuser sitting above the room's upper limit
     expect: >

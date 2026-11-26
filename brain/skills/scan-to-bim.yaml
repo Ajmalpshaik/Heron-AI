@@ -1,0 +1,170 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: scan-to-bim
+name: Model a building from a point cloud - link the scan, read it in sections and slices, then build to it
+domain: revit.elements
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Turns a laser scan - a point cloud - into a Revit model of what was
+  actually built. The cloud is linked, PINNED, and read in thin SECTIONS for
+  heights and thin PLAN SLICES for wall lines; every level, wall, slab,
+  opening and roof is then built to what those views show, and checked back
+  against the points.
+
+  WHAT HERON CANNOT DO HERE. No capability in the library reads a point
+  cloud's points - not a height, not a wall face, not an opening. So every
+  size in this method is MEASURED BY THE MODELLER in Revit (the Measure tool,
+  in a section or a slice) and given back in the chat; Heron never takes a
+  size off a picture of the cloud (D-33), and never guesses at what was not
+  scanned. What Heron does is the order, the building once the sizes are
+  given, and the checks.
+
+  THE MODELLER MAY DO EVERY STEP BY HAND. This method is also how a modeller
+  LEARNS scan to BIM: asked to teach it, or told "I will do it myself", say
+  each step in Revit's own words - the tab, the button, the view - wait for
+  the modeller to do it, and check what they did (a screenshot they send, or
+  revit_view_image) before the next step. Build nothing then unless asked.
+
+  The list of capabilities after this method is read from the library every
+  time it is served, with each one's status: where it and this text differ,
+  the list is right.
+
+  0. FROM SCAN FILE TO RCP - OUTSIDE REVIT, THE MODELLER'S STEP. Revit links
+     only .rcp or .rcs. A scan sent as .e57 (the neutral format surveyors
+     export) is converted in Autodesk ReCap: New Project, Import point cloud,
+     name and folder - the project's own folder, never ReCap's default under
+     AppData, which is hard to find later - then Select files to import. An
+     .e57 from a surveyor is normally ALREADY REGISTERED: choose Process
+     Aligned Scans (skip registration); Auto or Manual Registration is for raw
+     scans straight off a scanner. Launch the project, delete the noise
+     (window or fence select, Delete) and save. The .rcp is a small pointer;
+     the points live in the .rcs files in the "<name> Support" folder beside
+     it, which is never moved or renamed. Revit needs no ReCap once the .rcp
+     exists.
+
+  1. SAVE THE MODEL FIRST. REPORT_OPEN_DOCUMENTS says whether the model has
+     never been saved; ask the modeller once to save it (a click inside Revit
+     first, then Ctrl+S) and read it again - the building-shell method's step
+     0, for the same reason.
+
+  2. LINK AND PIN THE CLOUD. LINK_FILES with paths= the .rcp's full path and
+     placement=origin - a point cloud is linked origin to origin only, and
+     "shared" only names it. While LINK_FILES is not PROVEN no chat tool runs
+     it (D-117): the modeller links it by hand - Insert, Point Cloud, the
+     .rcp, Positioning "Auto - Origin to Internal Origin". Either way the
+     modeller then selects the cloud in a 3D view and PINS it (PN): a cloud
+     that moves after the levels are set moves the whole model off the scan.
+     Not seen? VG, the Point Clouds tab, ticked; ZE in the 3D view.
+
+  3. SAY WHAT WAS SCANNED - AND WHAT WAS NOT. Orbit the cloud in 3D with the
+     modeller and say back what it holds: outside only or inside too, which
+     faces, which floors, how much roof. A scanner records only what it could
+     see; a street scan has no back walls, no inside and part of the roofs.
+     Agree the area to model, and write down what is NOT captured ("rear
+     facade not scanned"). Nothing outside the scan is built from a guess.
+
+  4. LEVELS, FROM A THIN SECTION. The modeller draws a section ACROSS the
+     building, square to the facade, and drags its far clip in to about 500
+     mm so only a slice of points shows. In it they MEASURE from the ground
+     points to each floor - inside scans show the floors; an outside scan
+     does not, and a floor is then read from the window sills (floor = sill
+     less the sill height the modeller gives) - and to the eaves and ridge.
+     Put the heights in ONE TABLE with how each was found, for the
+     modeller's yes; then CREATE_LEVELS. VG, Point Clouds, Color Mode
+     Elevation makes heights easier to read.
+
+  5. GRIDS, when the building is on bays - CREATE_GRIDS on the column or
+     wall lines the slice shows, points measured by the modeller.
+
+  6. WALLS, FROM A THIN PLAN SLICE. In each floor plan the modeller sets the
+     View Range thin - Cut Plane about 1200 mm, Bottom about 1000 mm, View
+     Depth about 1000 mm - so the walls show as a crisp outline. They measure
+     each wall's thickness face to face and the corner points. ASK THE RULE
+     FIRST and write it down: walls straight on the AVERAGE face (the usual
+     choice) or modelled AS-IS. A type per thickness - DUPLICATE_TYPE - then
+     CREATE_WALL with the points given, exterior walls on their outside face,
+     and SET_ELEMENT_LEVEL to tie each top to the level above.
+
+  7. SLABS AND ROOF. CREATE_FLOOR per floor to the outside faces of the
+     outside walls; the roof is CREATE_FLOOR with a roof type, and
+     SLOPE_ROOF_EDGES where it is pitched, the pitch MEASURED in a section
+     through the roof points - never assumed.
+
+  8. DOORS AND WINDOWS. The openings are the gaps in the slice. The
+     modeller measures each width in plan and each height and sill in a
+     section or elevation through it; a type per size (DUPLICATE_TYPE), then
+     PLACE_HOSTED_FAMILY with its points on the wall's line.
+
+  9. CHECK AGAINST THE SCAN - the proof that the model is the building.
+     Three or four sections through the model with the cloud ON; the
+     modeller looks where the model sits off the points and says by how
+     much, against the tolerance agreed at step 3 (for example 20 mm).
+     revit_view_image on those sections gives the picture to look at
+     together; it changes nothing. Then FILTER_ELEMENTS_BY_CATEGORY and
+     COUNT_ELEMENTS for what was built per level, and READ_MODEL_WARNINGS.
+     Report what was not captured with the model, never filled in.
+
+  NOT YET: no capability reads the cloud, so nothing in Heron finds a wall
+  face, a floor height or a deviation from the points by itself; MEP from a
+  scan (ducts and pipes traced in the cloud) has no method; and a cloud
+  placed on shared coordinates is named by LINK_FILES, not linked.
+
+# The words a modeller uses when they want a model made from a scan.
+utterances:
+  - scan to BIM
+  - model the building from the point cloud
+  - link the point cloud and trace the walls
+  - build the as-built model from the laser scan
+  - teach me scan to BIM step by step
+  - I have an e57 file, how do I get it into Revit
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+# revit_view_image is a Heron tool of its own, not a capability, so it is
+# named in the method and not here.
+needs:
+  - REPORT_OPEN_DOCUMENTS
+  # Step 2 - a point cloud is linked when its .rcp or .rcs is named.
+  - LINK_FILES
+  - CREATE_LEVELS
+  - CREATE_GRIDS
+  - DUPLICATE_TYPE
+  - CREATE_WALL
+  - SET_ELEMENT_LEVEL
+  # Slabs, and the roof with a roof type - step 7.
+  - CREATE_FLOOR
+  - SLOPE_ROOF_EDGES
+  - PLACE_HOSTED_FAMILY
+  # The check - step 9.
+  - FILTER_ELEMENTS_BY_CATEGORY
+  - COUNT_ELEMENTS
+  - READ_MODEL_WARNINGS
+
+preconditions:
+  - a project, not a family, is open in front, and it is the model the modeller means
+  - the scan is an .rcp or .rcs Revit can link - an .e57 or a scanner's own format is converted in ReCap first, by the modeller
+  - the cloud is pinned before the first level is set, so nothing set from it can move off it
+  - every size - each level's height, each wall's points and thickness, each opening, the roof pitch - was measured by the modeller in a section or slice of THIS cloud, never read off a picture and never assumed (D-33)
+  - the area to model, the wall rule (average face or as-is) and the tolerance are agreed, and what the scan did not capture is written down
+  - the model has been saved under a name before the first step
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  WRITTEN 2026-11-25 FROM A TEACHING SESSION, NOT RUN AS A HERON PLAN. Steps
+  0 to 4 are the order a modeller followed by hand that day on Revit 2024
+  with a public sample street scan: an .e57 converted in ReCap with Process
+  Aligned Scans, saved first into ReCap's AppData default and then moved to
+  the project's folder (the lesson in step 0), linked origin to origin and
+  pinned. The scan was outside only - street facades, no back walls, part of
+  the roofs - which is step 3's lesson. Steps 5 to 9 are the building-shell
+  method's order with the sizes coming from the cloud. LINK_FILES has linked
+  a point cloud by name since its version 2, and no proof yet covers a
+  point cloud; until one does, step 2 is done by hand.

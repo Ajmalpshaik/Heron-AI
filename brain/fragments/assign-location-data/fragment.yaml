@@ -47,11 +47,19 @@ capability: ASSIGN_LOCATION_DATA
 #      `linkedMatches` names the link each came from. Added on Ajmal PS's word
 #      the same day ("YES ADD LINKED ROOMS TO THE FIX"): his job's rooms are in
 #      the architect's link.
+# VERSION 4 (2026-11-24, FRAGMENT-ISSUES 5b-2037) - the closing summary moved
+# out of `refused`. Version 3 added "N element(s) written, using ROOMS - name ..,
+# number .., level .." to `refused` on EVERY run, so a fully successful run
+# answered "refused 1" and a chat read a refusal (seen 2026-11-24 night,
+# Revit 2024, scratch model Night Rig 1124, rolled back). The sentence now goes
+# into `findings` (accounting); `refused` holds only what was declined. Nothing
+# else changed. Its C# moved, so it is DRAFT until re-proved: the same case
+# must show `refused` empty and the summary in `findings`.
 # Version 2 was PROVEN on 2026-10-18 on Project2 with ROOMS (the proof block
 # below, kept as the record of what it proved). Its C# moved, so it is DRAFT
 # until NEEDS-CHECKING Group ON is run and signed (D-30). Spaces have never
 # been proved on this card.
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -96,7 +104,7 @@ purpose: >
   lookup by name then returns one of them at random, in Autodesk's own words - so
   the room name would land in a field no schedule reads. Counted and named per
   parameter in `refused`, and neither is touched (D-54 s3, FRAGMENT-ISSUES
-  5b-203). This is version 3; the proof below is version 2's, kept as a record,
+  5b-203). This is version 4; the proof below is version 2's, kept as a record,
   and the fragment is DRAFT until it is proved again.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
@@ -152,6 +160,13 @@ contract:
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
       # "did this come back empty" (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      # VERSION 4 (5b-2037): what was done, in the user's words - the closing
+      # summary: how many were written, rooms or spaces, name, number and level
+      # counts, how many from a link. Never a refusal, and never counted
+      # toward "did this come back empty" - `written` is the result.
       role: accounting
       type: IList<string>
     - name: linksSearched

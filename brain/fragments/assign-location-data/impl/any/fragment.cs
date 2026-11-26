@@ -1,7 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `roomParameter`, `numberParameter`,
 // `levelParameter`, `useSpaces` and `includeLinks` are in scope; leaves
-// `written`, `noRoomFound`, `refused`, `linksSearched` and `linkedMatches`
-// behind.
+// `written`, `noRoomFound`, `refused`, `findings`, `linksSearched` and
+// `linkedMatches` behind.
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
 // IT IS NOT WRITE_ELEMENT_PARAMETERS. That writes a value somebody supplies.
@@ -23,6 +23,12 @@
 //   4. THE STOREY IS CHECKED - see below. Version 2 took the first container
 //      that had the element in plan, whatever floor it was on.
 //   5. includeLinks: rooms and spaces in loaded links, when asked - see below.
+//
+// VERSION 4 (2026-11-24, FRAGMENT-ISSUES 5b-2037): the closing summary - how
+// many were written, rooms or spaces, how many from a link - goes into
+// `findings`, never `refused`. Version 3 added it to `refused` on every run,
+// so a fully successful run answered "refused 1" and a chat read a refusal.
+// `refused` now holds only what was declined. Nothing else moved.
 // Every target is optional: left out, "none" (the card's word for left out) or
 // blank skips it.
 //
@@ -89,6 +95,7 @@
 var written = 0;
 var noRoomFound = new List<ElementId>();
 var refused = new List<string>();
+var findings = new List<string>();    // version 4: what was done - never a refusal
 
 var wantedCategory = useSpaces ? BuiltInCategory.OST_MEPSpaces : BuiltInCategory.OST_Rooms;
 var label = useSpaces ? "SPACE" : "ROOM";
@@ -656,7 +663,7 @@ if (includeLinks && nestedLinks > 0)
 if (linksSearched > 0)
     linkedMatches.Add("Linked rooms and spaces are only READ - every element written is this model's own");
 
-refused.Add(string.Format("{0} element(s) written, using {1}S - name {2}, number {3}, level {4}; "
+findings.Add(string.Format("{0} element(s) written, using {1}S - name {2}, number {3}, level {4}; "
     + "{5} found in one of this model's own {1}S, {6} in a linked one. Architecture puts people in ROOMS and "
     + "MEP calculates in SPACES; a model can hold both in the same place with different names, and "
     + "picking the wrong one is the commonest way a location register comes out wrong", written, label,
