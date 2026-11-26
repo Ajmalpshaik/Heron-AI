@@ -76,3 +76,18 @@ Owed, in the same scratch family `pt-ahu` on Revit 2020 - re-run [`qp-connector-
 | QP2 (iii) | A Duct Size parameter on the pipe stub | Owed again on version 9 (its refusal comes before the connector is made, so it should read as on 2026-11-26). Not in the job file - it goes with the pipe leg above |
 
 Nothing above is struck: every check here is owed again on version 9.
+
+### Results, later 2026-11-26 - version 9, Revit 2020, session 32484, add-in file `df0d401c52ca05f4`
+
+Run from this pull request's head `17cf1d586`, on the same scratch `pt-ahu`, rolled back.
+
+| Row | Result |
+|---|---|
+| QP2 (i), run again 2026-11-26 on version 9 | **PASS** - the job [`qp-connector-v8-...`](../../tools/jobs/qp-connector-v8-revit2020-2026-11-26.yaml), negative leg: `refused` *"The opening of the ring face on "Supply Air Face" is 209 x 209 mm, and "Supply_Air_Width" and "Supply_Air_Height" hold 215 and 205 mm - a port sized by them would not fit inside that opening either way round. NOTHING from this call was kept."*, `connector` empty, no `fragment_threw`. The by-hand `revit_change` half was not done. |
+| QP2 (iii), run again 2026-11-26 on version 9 | **PASS** - *"Nothing was made. "Supply_Air_Width" is a Duct Size parameter, which sizes a duct connector, not a pipe one. A Length parameter sizes any connector."* |
+| QP1, positive leg of the same job on version 9 | Made as before - 205 x 205, centred in the 209 x 209 opening, `sizedBy` both Duct Size parameters. |
+
+**Signed 2026-11-26 by Ajmal PS** (his typed word in chat, "Yes, sign it"; signature put on by the session):
+`add-family-connector` version 9, card PROVEN, on that job (QP1 positive, QP2 (i) negative). Groups PO and OT's
+connector rows and QP2 (ii) are still owed.
+
