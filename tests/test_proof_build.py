@@ -43,6 +43,8 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+import heron_tools as SERVER_TOOLS                          # noqa: E402
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
@@ -551,9 +553,7 @@ def test_the_line_under_an_answer():
     check("code moved" in said and said["code moved"] == "",
           "a proof whose code moved is left to the line that already says so")
 
-    with io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
-                 encoding="utf-8") as fh:
-        server = fh.read()
+    server = SERVER_TOOLS.server_text()
     for door in ("revit_read", "revit_show", "revit_change"):
         start = server.find("def %s(" % door)
         end = server.find("\n@server.tool()", start + 1)

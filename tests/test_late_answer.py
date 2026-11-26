@@ -47,9 +47,10 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+import heron_tools as SERVER_TOOLS                          # noqa: E402
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 DISPATCHER = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitDispatcher.cs")
 FAILURES = []
 
@@ -91,7 +92,7 @@ def lookup():
 
 def words():
     print("\n2. a lost answer says where it can still be read - and only then")
-    text = io.open(SERVER, encoding="utf-8").read()
+    text = SERVER_TOOLS.server_text()
     start = text.find("\ndef _late_answer(")
     check(start >= 0, "the server has _late_answer")
     if start < 0:
@@ -116,7 +117,7 @@ def words():
 
 def wiring():
     print("\n3. the request is named, recorded and read by its name")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = SERVER_TOOLS.server_text()
     dispatcher = io.open(DISPATCHER, encoding="utf-8").read()
     record = dispatcher[dispatcher.find("string RunRecord("):dispatcher.find("string DescribeJob(")]
     check('Json.Str("requestId", Json.ReadString(job.Request, "requestId"))' in record,

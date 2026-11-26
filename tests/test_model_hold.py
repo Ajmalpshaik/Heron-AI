@@ -389,7 +389,7 @@ def resumed():
     check(first and second and first != second and one not in (first, second),
           "a command line keeps a conversation of its own, even inside the chat's shell")
 
-    server = read(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"))
+    server = server_text()
     cut = server.rfind('if __name__ == "__main__":')
     main_block = server[cut:] if cut >= 0 else ""
     check("bridge.adopt_host_conversation()" in main_block,
