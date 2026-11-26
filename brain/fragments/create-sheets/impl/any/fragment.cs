@@ -6,6 +6,19 @@
 // `columnsUnmatched`, `columnsNotWritten`, `valuesNotSet` and `findings`
 // behind.
 //
+// VERSION 6 (2026-11-26, FRAGMENT-ISSUES row 5b-1935, issue #1156) - THE COPY
+// JOB TAKES A BAD COPY BACK. The owner's answer, 2026-11-26: "Take the bad
+// copy back". D-193's rule 1 now reaches the copy job: each copy is made in a
+// SubTransaction of its own by `makeSheet` - the helper the typed numbers use,
+// moved out of their loop unchanged - and a copy whose number or name Revit
+// refuses is taken back, nothing of it kept, its source in notDuplicated and a
+// line in notCreated with Revit's words. Version 5 kept a copy whose number did
+// not take (in `created` and `refused`), and a copy whose name Revit refused
+// under Revit's own name, with no word. No route fills `refused` now; it is
+// kept, empty, so a caller that reads it is not broken. A table and typed
+// numbers behave as version 5. previewOnly with the copy job is still refused.
+// Not run in Revit: NEEDS-CHECKING Group RC.
+//
 // VERSION 5 (2026-11-21, work-note item WN-6, issue #1005) - PLACEHOLDER
 // SHEETS. With typed numbers, `titleBlockName` placeholder - the word, said
 // outright as none is - makes each sheet with ViewSheet.CreatePlaceholder: a
@@ -30,7 +43,7 @@
 //   `elements` is not read, so a selection never adds a copy.
 //
 //   NO TABLE, NO NUMBERS, SHEETS HANDED IN WITH A `numberSuffix` - version 3's
-//   copy job, unchanged: the source's own title block, its number + the
+//   copy job, with rule 1 since version 6: the source's own title block, its number + the
 //   suffix, `namePrefix` + its name. No suffix is refused: the copy would
 //   collide with its source, and "make a new sheet" said with sheets selected
 //   must not copy them.
@@ -57,10 +70,13 @@
 // discipline and rolls the WHOLE call back - one undo, nothing kept (Article
 // 8); a SubTransaction cannot keep the rest past that.
 //
-// THE COPY JOB KEEPS VERSION 3'S RULES. It makes its copies in the call's own
-// transaction, so a copy whose number did not take is still in `created` and
-// `refused` because it exists; whether D-193's first rule should reach it too
-// is the owner's (FRAGMENT-ISSUES row 5b-1935).
+// THE COPY JOB KEPT VERSION 3'S RULES UNTIL VERSION 6: it made its copies in
+// the call's own transaction, so a copy whose number did not take stayed in
+// `created` and `refused`. Since version 6, on the owner's answer to row
+// 5b-1935, rule 1 holds for it too - each copy in its own SubTransaction
+// (`makeSheet`), a refused one taken back. Rules 2 and 3 are about numbers
+// typed or in a table, and the copy job has its own check of a number two
+// copies would share, kept from version 3.
 //
 // previewOnly (version 4) - a table, or typed numbers: the whole job is done
 // and every sheet's SubTransaction is rolled back after its read-back, so the
@@ -81,7 +97,8 @@
 // collidedNumbers); `notDuplicated` the sources no copy came back for.
 //
 // ASSUMES AN OPEN TRANSACTION. It does not start one - Golden Rule 16. It
-// opens a SubTransaction per sheet for a table and for typed numbers.
+// opens a SubTransaction per sheet for a table, for typed numbers and, since
+// version 6, for each copy.
 //
 // THE NUMBER IS CHECKED BEFORE ANYTHING IS CREATED.
 //
@@ -211,6 +228,80 @@ var findings = new List<string>();
 const int mostRows = 1000;
 const int mostPreviewLines = 500;
 Func<string, string> oneLine = text => string.Join(" ", (text ?? "").Split());
+
+// VERSION 6 (row 5b-1935, issue #1156): ONE SHEET IN A SUBTRANSACTION OF ITS
+// OWN - D-193 rule 1, one helper for typed numbers AND the copy job. Version 4
+// wrote it inside the typed-numbers loop; it moved here unchanged so the copy
+// job takes a refused copy back the same way. `makeIt` makes the sheet
+// (ViewSheet.Create on a title block, CreatePlaceholder, or a copy's source
+// title block); its number and, when one is asked, its name must both take,
+// read back, or the SubTransaction is rolled back and the reason comes back in
+// Revit's own words - no sheet stays under a number or a name Revit chose by
+// itself. A preview reads the sheet back and rolls it back too. Returns the
+// sheet KEPT (null when taken back, and on a preview), why it was taken back
+// (null when it took), and the number and the name read back. The table keeps
+// its own SubTransaction: it writes its row's parameters before it commits.
+Func<Func<ViewSheet>, string, string, Tuple<ViewSheet, string, string, string>> makeSheet =
+    (makeIt, askedNumber, askedName) =>
+{
+    using (var step = new SubTransaction(doc))
+    {
+        ViewSheet sheet = null;
+        string why = null, actualNumber = null, actualName = null;
+        try
+        {
+            step.Start();
+            string revitSaid = null;
+            try { sheet = makeIt(); }
+            catch (Exception failure) { revitSaid = failure.Message; }
+            if (sheet == null)
+            {
+                why = "Revit declined to create the sheet"
+                    + (revitSaid == null ? "" : ". Revit said: " + oneLine(revitSaid));
+            }
+            else
+            {
+                try { sheet.SheetNumber = askedNumber; }
+                catch (Exception failure)
+                {
+                    why = "Revit refused the number, so the sheet was taken back. Revit said: "
+                        + oneLine(failure.Message);
+                }
+                if (why == null && askedName != null)
+                {
+                    try { sheet.Name = askedName; }
+                    catch (Exception failure)
+                    {
+                        why = "Revit refused the name \"" + askedName + "\", so the sheet was taken "
+                            + "back. Revit said: " + oneLine(failure.Message);
+                    }
+                }
+                // READ BACK, number and name apart - they fail independently.
+                try { actualNumber = sheet.SheetNumber; } catch (Exception) { }
+                try { actualName = sheet.Name; } catch (Exception) { }
+                if (why == null && actualNumber != askedNumber)
+                    why = "Revit kept the number as \"" + (actualNumber ?? "") + "\", so the sheet was taken back";
+                if (why == null && askedName != null && actualName != askedName)
+                    why = "Revit kept the name as \"" + (actualName ?? "") + "\" where \"" + askedName
+                        + "\" was asked, so the sheet was taken back";
+            }
+            if (why == null)
+            {
+                // Kept - or, a preview, read back above and taken back now.
+                // Inside the try, so a commit Revit refuses is this sheet's
+                // refusal, not the whole call's.
+                if (previewOnly) step.RollBack();
+                else step.Commit();
+            }
+        }
+        catch (Exception failure)
+        {
+            why = "Revit refused it, so the sheet was taken back. Revit said: " + oneLine(failure.Message);
+        }
+        if (why != null && step.HasStarted() && !step.HasEnded()) step.RollBack();
+        return Tuple.Create(why == null && !previewOnly ? sheet : null, why, actualNumber, actualName);
+    }
+};
 
 // VERSION 3: WHICH JOB. The card's `absent:` words - "none" for a list, a
 // table or a prefix not given, "from the source sheets" for a title block not
@@ -1148,93 +1239,36 @@ if (titleBlockChosen)
         string wantedName = names != null && i < names.Count && !string.IsNullOrWhiteSpace(names[i])
             ? names[i].Trim() : null;
 
-        // VERSION 4, D-193 rule 1: THE SHEET IN A SUBTRANSACTION OF ITS OWN.
-        // Its number and its name must both take, read back, or the sheet is
-        // TAKEN BACK and listed with Revit's own words - no sheet stays under a
-        // number or a name Revit chose by itself. Fewer names than numbers is
-        // still allowed: a sheet with no name given takes the one Revit gives
-        // it, reported in namedAs.
-        using (var step = new SubTransaction(doc))
+        // VERSION 4, D-193 rule 1: THE SHEET IN A SUBTRANSACTION OF ITS OWN -
+        // makeSheet, above, since version 6. Its number and its name must both
+        // take, read back, or the sheet is TAKEN BACK and listed with Revit's
+        // own words - no sheet stays under a number or a name Revit chose by
+        // itself. Fewer names than numbers is still allowed: a sheet with no
+        // name given takes the one Revit gives it, reported in namedAs.
+        var one = makeSheet(() => placeholderAsked
+                                ? ViewSheet.CreatePlaceholder(doc)
+                                : ViewSheet.Create(doc, titleBlockId),
+                            wantedNumber, wantedName);
+        if (one.Item2 != null)
         {
-            ViewSheet sheet = null;
-            string why = null, actualNumber = null, actualName = null;
-            try
-            {
-                step.Start();
-                string revitSaid = null;
-                try
-                {
-                    sheet = placeholderAsked
-                        ? ViewSheet.CreatePlaceholder(doc)
-                        : ViewSheet.Create(doc, titleBlockId);
-                }
-                catch (Exception failure) { revitSaid = failure.Message; }
-                if (sheet == null)
-                {
-                    why = "Revit declined to create the sheet"
-                        + (revitSaid == null ? "" : ". Revit said: " + oneLine(revitSaid));
-                }
-                else
-                {
-                    try { sheet.SheetNumber = wantedNumber; }
-                    catch (Exception failure)
-                    {
-                        why = "Revit refused the number, so the sheet was taken back. Revit said: "
-                            + oneLine(failure.Message);
-                    }
-                    if (why == null && wantedName != null)
-                    {
-                        try { sheet.Name = wantedName; }
-                        catch (Exception failure)
-                        {
-                            why = "Revit refused the name \"" + wantedName + "\", so the sheet was taken "
-                                + "back. Revit said: " + oneLine(failure.Message);
-                        }
-                    }
-                    // READ BACK, number and name apart - they fail independently.
-                    try { actualNumber = sheet.SheetNumber; } catch (Exception) { }
-                    try { actualName = sheet.Name; } catch (Exception) { }
-                    if (why == null && actualNumber != wantedNumber)
-                        why = "Revit kept the number as \"" + (actualNumber ?? "") + "\", so the sheet was taken back";
-                    if (why == null && wantedName != null && actualName != wantedName)
-                        why = "Revit kept the name as \"" + (actualName ?? "") + "\" where \"" + wantedName
-                            + "\" was asked, so the sheet was taken back";
-                }
-                if (why == null)
-                {
-                    // Kept - or, a preview, read back above and taken back now.
-                    // Inside the try, so a commit Revit refuses is this sheet's
-                    // refusal, not the whole call's.
-                    if (previewOnly) step.RollBack();
-                    else step.Commit();
-                }
-            }
-            catch (Exception failure)
-            {
-                why = "Revit refused it, so the sheet was taken back. Revit said: " + oneLine(failure.Message);
-            }
-
-            if (why != null)
-            {
-                if (step.HasStarted() && !step.HasEnded()) step.RollBack();
-                notMade(wantedNumber + ": " + why);
-                continue;
-            }
-
-            if (previewOnly)
-            {
-                previewLines.Add(wantedNumber + " \"" + (actualName ?? "") + "\" on " + titleBlockLabel
-                                 + ": would be made");
-            }
-            else
-            {
-                created.Add(sheet.Id);
-                if (actualNumber != null) numberedAs[sheet.Id] = actualNumber;
-                if (actualName != null) namedAs[sheet.Id] = actualName;
-            }
-            made++;
-            taken[wantedNumber] = actualName ?? "";
+            notMade(wantedNumber + ": " + one.Item2);
+            continue;
         }
+        string actualNumber = one.Item3, actualName = one.Item4;
+
+        if (previewOnly)
+        {
+            previewLines.Add(wantedNumber + " \"" + (actualName ?? "") + "\" on " + titleBlockLabel
+                             + ": would be made");
+        }
+        else
+        {
+            created.Add(one.Item1.Id);
+            if (actualNumber != null) numberedAs[one.Item1.Id] = actualNumber;
+            if (actualName != null) namedAs[one.Item1.Id] = actualName;
+        }
+        made++;
+        taken[wantedNumber] = actualName ?? "";
     }
 
     // VERSION 5: what kind of sheet was made, said when it was a placeholder,
@@ -1259,11 +1293,11 @@ else if (copying)
 {
     if (previewOnly)
     {
-        // VERSION 4. A preview is for a table or typed numbers, whose rows are
-        // each made in a SubTransaction and taken back. The copy job makes its
-        // copies in the call's own transaction, as version 3 did, so it cannot
-        // take them back alone - and copies kept by a call that said "preview"
-        // are the one wrong answer. Refused, nothing made.
+        // VERSION 4. A preview is for a table or typed numbers. Copies kept by
+        // a call that said "preview" are the one wrong answer, so it is
+        // refused and nothing is made. Version 6 makes each copy in a
+        // SubTransaction of its own (makeSheet), so a copy run could now be
+        // previewed; that was not asked, and the refusal is unchanged.
         foreach (var element in elements) if (element != null) notDuplicated.Add(element.Id);
         notCreated.Add("previewOnly was asked with sheets handed in to copy - a copy run is not "
                      + "previewed, so nothing was created. Ask for the copies without previewOnly, "
@@ -1281,7 +1315,7 @@ else if (copying)
         // read-backs inside a third.
         //
         // THE NUMBER IS CHECKED BEFORE ANY SHEET EXISTS, as for a typed number,
-        // capitals ignored - and each number made is added as it goes, so two
+        // capitals ignored - and each number kept is added as it goes, so two
         // sources in one batch cannot both claim one new number. Measured where
         // DUPLICATE_SHEETS was re-authored from: "Duplicated 0 of 1 sheet(s), 1
         // failed" while the sheet count went 2 to 3 and an orphan remained. So
@@ -1365,41 +1399,31 @@ else if (copying)
                     continue;
                 }
 
-                ViewSheet made = null;
-                string revitSaid = null;
-                try { made = ViewSheet.Create(doc, sourceTitleBlockType); }
-                catch (Exception failure) { revitSaid = failure.Message; }
-                if (made == null)
+                // VERSION 6 (row 5b-1935, issue #1156 - the owner's "Take the bad
+                // copy back", 2026-11-26): D-193 RULE 1 REACHES THE COPY JOB. Each
+                // copy is made by makeSheet, in a SubTransaction of its own, the
+                // way typed numbers make theirs; a copy whose number or name
+                // Revit refuses - or reads back other than asked - is TAKEN BACK,
+                // nothing of it kept, its source in notDuplicated and a line in
+                // notCreated with Revit's own words. Version 5 kept a copy whose
+                // number did not take (in `created` and `refused`), and kept one
+                // whose name was refused under Revit's own name with no word.
+                // An empty name - no prefix and a source with none - is not
+                // asked: the copy takes the name Revit gives it, in namedAs.
+                var wantedName = prefix + (source.Name ?? "");
+                var one = makeSheet(() => ViewSheet.Create(doc, sourceTitleBlockType), wantedNumber,
+                                    wantedName.Length > 0 ? wantedName : null);
+                if (one.Item2 != null)
                 {
                     notDuplicated.Add(source.Id);
-                    notCreated.Add(wantedNumber + ": Revit declined to create the sheet"
-                        + (revitSaid == null ? "" : ". Revit said: " + string.Join(" ", revitSaid.Split())));
+                    notCreated.Add(wantedNumber + ": " + one.Item2);
                     continue;
                 }
 
-                created.Add(made.Id);
-                var wantedName = prefix + (source.Name ?? "");
-                taken[wantedNumber] = wantedName;
-
-                try { made.SheetNumber = wantedNumber; } catch { }
-                try { made.Name = wantedName; } catch { }
-
-                // READ BACK, number and name apart - they fail independently.
-                string actualNumber = null, actualName = null;
-                try { actualNumber = made.SheetNumber; } catch { }
-                try { actualName = made.Name; } catch { }
-                if (actualNumber != null) numberedAs[made.Id] = actualNumber;
-                if (actualName != null) namedAs[made.Id] = actualName;
-
-                // A COPY WHOSE NUMBER DID NOT TAKE IS NOT THE COPY ASKED FOR - but it
-                // EXISTS, so it stays in `created` with its real number in
-                // numberedAs, is named in `refused`, and its source is in
-                // notDuplicated. The register must show the truth.
-                if (!string.Equals(actualNumber, wantedNumber, StringComparison.OrdinalIgnoreCase))
-                {
-                    refused.Add(made.Id);
-                    notDuplicated.Add(source.Id);
-                }
+                created.Add(one.Item1.Id);
+                if (one.Item3 != null) numberedAs[one.Item1.Id] = one.Item3;
+                if (one.Item4 != null) namedAs[one.Item1.Id] = one.Item4;
+                taken[wantedNumber] = one.Item4 ?? "";
             }
         }
     }

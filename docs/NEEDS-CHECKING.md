@@ -1743,6 +1743,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qz.md`](needs-checking/group-qz.md)
 
+## Group RC - CREATE_SHEETS version 6: the copy job takes a bad copy back - a copy whose number or name Revit refuses is not kept, and is listed with Revit's words - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-rc.md`](needs-checking/group-rc.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)
