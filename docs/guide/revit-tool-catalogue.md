@@ -67,7 +67,7 @@ Heron starts with every switch off, so it only reads until you turn **Changes** 
 | [Geometry and placement](tool-catalogue/geometry.md) | 34 | 27 | 4 | 3 |
 | [Levels and grids](tool-catalogue/datums.md) | 9 | 7 | 2 | 0 |
 | [MEP - ducts, pipes, systems and equipment](tool-catalogue/mep.md) | 84 | 58 | 9 | 17 |
-| [Model checks](tool-catalogue/model-checks.md) | 32 | 27 | 5 | 0 |
+| [Model checks](tool-catalogue/model-checks.md) | 32 | 26 | 6 | 0 |
 | [Model elements and types](tool-catalogue/elements.md) | 125 | 98 | 7 | 20 |
 | [Parameters](tool-catalogue/parameters.md) | 17 | 14 | 0 | 3 |
 | [Phases](tool-catalogue/phases.md) | 3 | 3 | 0 | 0 |

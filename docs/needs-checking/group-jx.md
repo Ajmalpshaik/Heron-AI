@@ -54,14 +54,14 @@ two Revits are connected, and `< /dev/null`.
 | **JX8** | *A tagged layer.* An insulated duct whose insulation carries a tag, if the model has one | **Record** whether the layer is removed with the tag counted, or put back as *Revit would also have deleted 1 other element(s)*. The second is safe and wrong, and is a row of its own |
 | **JX9** | *What else Delete takes.* Read the run record of JX2 | **Record** any host put back with *would also have deleted*, and what Revit named |
 | **JX10** | *Kept, through `try-once`, on the modeller's yes.* Remove, as JX2, on a saved copy | Keep: Revit's Delete box first ([D-142](../DECISIONS.md)), then Keep or Discard; afterwards a section through one duct shows no wrap - the second route |
-| **JX11** | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The three sentences reach this card by identity, and *"remove these"* reaches `DELETE_ELEMENTS`. Any sentence the re-ranker moves to this card from another is a row of its own |
+| ~~**JX11**~~ | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The three sentences reach this card by identity, and *"remove these"* reaches `DELETE_ELEMENTS`. Any sentence the re-ranker moves to this card from another is a row of its own **CLOSED 2026-11-26** - [D-201](../decisions/D-201.md) (2026-11-26) removed the `+rerank` backends, so the run this row asked for on `model+rerank` can no longer be made anywhere, and the owner's PC now ranks on `model`. The run on `model` that answers its look-for is on record in the routing paragraph below, measured 2026-11-01 in a cloud container; it was not made again on 2026-11-26, and this is not a run on the PC. |
 
 **Then sign**, on the owner's word only: `python brain/heron_validate.py accept remove-mep-insulation --by
 "Ajmal PS"` once its positive and negative pass, and `heron-status` set to PROVEN in the same change. A
 row that fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here. The three sentences above reach this card
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on. The three sentences above reach this card
 by identity. *"remove these"*, which `DELETE_ELEMENTS`' routing table claims, reached `REMOVE_TAGS` ranked
 before this card existed and this card once it did; it is declared on `DELETE_ELEMENTS` now and reaches it
 by identity ([row 5b-1358](../fragment-issues/section-5b-rows-1351-1375.md)). *"remove insulation"*, *"strip
