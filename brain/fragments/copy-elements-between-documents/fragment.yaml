@@ -272,8 +272,10 @@ compatibility-note: >
 #                                         (a read) came first and this second on
 #                                         2026-11-17; identity sends it here
 #   "check our grids and levels line up with the linked architect's model"
-#                                                             -> CHECK_DATUMS_AGAINST_LINK -
+#                                                             -> REPORT_LEVEL_ELEVATIONS -
 #                                         a read; it copies nothing
+#                                         (CHECK_DATUMS_AGAINST_LINK's until
+#                                         it was merged there, 2026-11-26)
 #   "what links are in this model"                            -> LIST_LINKED_MODELS
 #   "reload the links"                                        -> RELOAD_LINKS -
 #                                         and the copies made from a link do

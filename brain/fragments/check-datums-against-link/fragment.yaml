@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -44,6 +44,24 @@ capability: CHECK_DATUMS_AGAINST_LINK
 version: 1
 source: OFFICIAL
 risk: READ
+# RETIRED 2026-11-26 - MERGED INTO REPORT_LEVEL_ELEVATIONS version 7 (row
+# 5b-1878 (C), issue #1088). Everything below is left as it was: the record.
+deprecated:
+  date: '2026-11-26'
+  by: Ajmal PS
+  superseded-by: REPORT_LEVEL_ELEVATIONS
+  why: >
+    The same job made as two: both carried a link's levels into this model and
+    matched them by name. REPORT_LEVEL_ELEVATIONS version 7 holds this card's
+    whole check - grids and levels against a link by name then by position,
+    the two tolerances, tilt, multi-segment and arc rules, `report`,
+    `failures`, `failingIds` (and `failingElements`, this card's `elements`),
+    `linkUsed`, `refused` - beside the level heights, and adds copy-monitored
+    datums, on the owner's word of 2026-11-26 that one tool should cover levels
+    and grids in the model, in a link and copy-monitored. A link placed more
+    than once is refused until its copy is named, this card's rule (D-207).
+    This card was PROVEN on Revit 2020 (House Scratch 1042, 2026-11-20); the
+    keeper is DRAFT until NEEDS-CHECKING Group RA is run.
 
 purpose: >
   Checks this model's grids and levels against the grids and levels of one

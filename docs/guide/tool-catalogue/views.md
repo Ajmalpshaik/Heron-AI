@@ -1120,7 +1120,7 @@ Once it is proved, you will ask: *"turn a 3D view into a perspective camera view
 
 **What it does:** hide these elements in this view, temporarily or for good.
 
-Hides the given elements in one view - the opposite of isolating, in that everything else stays visible and these disappear. **Temporary unless somebody asked for permanent, and the two are genuinely different things.** A temporary hide is a look-at-this-for-a-moment and Revit's own Reset clears it. A permanent hide is **saved into the view**: it survives closing the model, it appears on the printed sheet, and the next person to open that view has no idea why something is missing. Nothing infers which one was meant - the flag is an input. The risk on this fragment is MODIFY because of that second mode. The temporary path is far lighter, and a caller that only ever hides temporarily is welcome to say so - but a capability's risk is the worst thing it can do. ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+Makes the elements given disappear from one view - a set of ducts, terminals, fixtures, or everything of one family or name - while everything else stays as it is: the opposite of isolate. A temporary hide is cleared by Revit's own Reset Temporary Hide/Isolate; hiding for good is saved into the view and shows on the printed sheet, so it is done only when asked for.
 
 | | |
 |---|---|

@@ -34,11 +34,11 @@ green: a sheet let through the list of kinds drawn at a scale (so it would be
 printed with a number), the view-template test reversed (so "held by its view
 template" and "its own" swap), and the ratio typed as "1 : 100" for every view.
 It also showed that the routing half was guarded only by
-tests/test_routing_phrases.py section 8, which exits 3 - COULD NOT RUN - on
-every machine without the trained model, CI included. This suite is the guard
-that runs everywhere: no Revit, and no trained model - sections 1 to 6 need no
-store at all, and section 7 builds a private one on whichever backend the
-machine has.
+tests/test_routing_phrases.py section 8, which then exited 3 - COULD NOT RUN -
+on every machine without the trained model, CI included (since D-203 there is
+no trained model and it runs on the built-in search everywhere). This suite is
+the guard that runs everywhere: no Revit - sections 1 to 6 need no store at
+all, and section 7 builds a private one on the machine's backend.
 
 A second review found the card's own wording taking change requests from
 SET_VIEW_SCALE on ranking, and six more claims of the C# that could be turned
@@ -91,7 +91,7 @@ the words route alone - what check-routing's list of contested sentences reads
 on whichever backend the machine has, which on CI is spelling, and each of
 those holds on both backends. It does not ask that a change reaches
 SET_VIEW_SCALE: that depends on every other card, and
-tests/test_routing_phrases.py asks it on the trained model.
+tests/test_routing_phrases.py asks it.
 
 WHAT IT CANNOT DO
 Run the fragment. That View.Scale on a real floor plan matches the Properties

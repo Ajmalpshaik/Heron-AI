@@ -830,8 +830,11 @@ key, with the day he gave it.
 | 2026-10-17 | 571 | `model` | any | `88c7eadd` | 17 | 11 | 3 | 33 | 1 (0) | 8 | 5 of 7 | `11-------1---21.-212-----w---4----1111-4---11-4222121-231w1w121-3w2---w-w-w1221` |
 | 2026-11-26 | 753 | `model` | any | `e6e51d55` | 20 | 11 | 4 | 29 | 1 (0) | 6 | 5 of 7 | `1134-----1---31.-413-----w---1-51-111132---11-3225121-231w1w112-1w1---.-w-.211-` |
 | 2026-11-26 | 753 | `lexical` | any | `e6e51d55` | 23 | 9 | 2 | 30 | 1 (0) | 9 | 4 of 7 | `11111---41-3-11.-112-----w---2--2111-1-2---11--243111-241w1w21--5w1---w3w-.211-` |
+| 2026-11-26 | 754 | `lexical` | any | `e6e51d55` | 23 | 10 | 2 | 29 | 1 (0) | 9 | 3 of 7 | `11111---51-3-11.-112-----w---2--2111-1-2---11--243111-241w1w213-5w1---w4w-.211-` |
 | 2026-11-26 | 754 | `lexical` | any | `e6e51d55` | 34 | 9 | 3 | 18 | 1 (0) | 7 | 3 of 7 | `11111-1-31-1211.-111---33w-3-1411111-1-2-5511-11131112241w1w111-5w1---w4w-.211-` |
 | 2026-11-26 | 754 | `model` | any | `e6e51d55` | 29 | 8 | 5 | 22 | 1 (0) | 6 | 5 of 7 | `11241-11-1---11.-212-----w--51-11-111132--411-11141211231w1w11251w1---.-w-.211-` |
+| 2026-11-26 | 754 | `lexical` | any | `e6e51d55` | 34 | 9 | 3 | 18 | 1 (0) | 7 | 3 of 7 | `11111-1-31-1211.-111---33w-3-1411111-1-2-5511-11131112241w1w111-5w1---w4w-.211-` |
+| 2026-11-26 | 754 | `lexical` | any | `e6e51d55` | 38 | 7 | 4 | 15 | 1 (0) | 5 | 4 of 7 | `11111-1-31-1211.-111---11w51-141111151-2-5111-11131112231w1w1112-w1---w4w-.211-` |
 
 ### The plain questions — rows 5b-477 and 5b-478, scored beside his
 
@@ -864,6 +867,7 @@ their own table and are never added into his numbers.
 | 2026-11-26 | 753 | `lexical` | any | `6247a481` | 124 | 9 | 52 | 44 of 45 | 44 of 45 | `11..111...11..1...11..1.........ww1w.11.11..1.111....1.11....111...1...w1..w.....w111..11.w..1........w111......11...1.w1111` |
 | 2026-11-26 | 754 | `lexical` | any | `6247a481` | 124 | 9 | 52 | 44 of 45 | 44 of 45 | `11..111...11..1...11..1.........ww1w.11.11..1.111....1.11....111...1...w1..w.....w111..11.w..1........w111......11...1.w1111` |
 | 2026-11-26 | 754 | `model` | any | `6247a481` | 124 | 15 | 52 | 44 of 45 | 44 of 45 | `11w.111...11..1...11..1....w.w..ww1ww11.11..1.111..w.1.11....111...1...w1..ww....w111..11....1..w....ww111......11...1..1111` |
+| 2026-11-26 | 754 | `lexical` | any | `6247a481` | 124 | 9 | 52 | 44 of 45 | 44 of 45 | `11..111...11..1...11..1.........ww1w.11.11..1.111....1.11....111...1...w1..w.....w111..11.w..1........w111......11...1.w1111` |
 
 ---
 
@@ -1706,6 +1710,51 @@ later can move them.
 That any answer is right in Revit - routing is measured here, never run against a model; and anything
 about `model+rerank`, which was not asked - the re-ranker was removed the same day ([D-201](../docs/decisions/D-201.md)), so the owner's PC now ranks on `model`.
 
+
+## 2026-11-26 — model2vec is removed too (D-203); one built-in search for every PC
+
+[D-203](../docs/decisions/D-203.md), the owner's decision the same day: *"ok remove model2vec also"*. It was
+taken on the figures the proposing session measured on the card wording of #1424 at 753 fragments -
+`lexical` against `model`, his 79 first **34 / 30**, top three **43 / 37**, not found **18 / 21**, a
+question handed a change **7 / 6**, 124 plain questions reaching a write **9 / 15**, a lookup median
+**109 / 147 ms** - recorded in D-203, not re-run here.
+
+**Before and after the removal, on `lexical`, identical.** Measured in a cloud container that has model2vec
+installed, so the "before" turned it off in the process (`heron_embed._MODEL_CACHE[:] = [None]`) and the
+"after" has no code that could load it: `main` `2ee4d03f` against the branch, **754 fragments**, no Revit
+filter. `tools/score-routing.py` on his 79 and the 124 plain questions printed the same report line for
+line (only the store's path, md5 and timing differ); nine frozen sets,
+`tests/data/routing-sentences-*.yaml`, 540 sentences, `--sentences --backend lexical --compare` the
+before records: **0 answers changed**. `tests/test_routing_phrases.py` failed the same nine routing
+checks on both trees.
+
+**Then card wording, measured the same way.** Thirteen general utterances on `offset-tags-from-host`,
+`select-by-host`, `list-views-on-sheet` and `edit-text-values` (row 5b-2053): his 79 and the 124 plain
+questions answer as before - the rows above for this date are that tree, by `--record`; the nine frozen
+sets moved two of 540, one wanted (*"which doors are hosted in the stair..."* now `SELECT_BY_HOST`) and
+one neutral (*"put two windows in the north wall"*, still not `PLACE_HOSTED_FAMILY`, now a read rather
+than another write); `tests/test_routing_phrases.py` went from nine routing failures to seven, which it
+records open and waits on (exit 3). **With #1424 merged the same day** (its wording on 30 cards, the entry
+above) two more pass - *"rename the schedule"* and *"check if volume calculation is enabled"* - and five
+stay open. On the merged tree, against `main` `d79ac5a9` (#1424 in) with the model blocked: his 79 answer
+exactly as there (first 34, top three 43, not found 18); of the 124 plain questions one moved, #103 *"what is
+the thermal resistance of this wall"*, from one write to another (`CREATE_WALL_ELEVATION` to
+`SHAPE_WALL_TOPS_TO_ROOF`), so 9 still reach a write. The last two rows for this date are that tree.
+
+| 754 fragments, `lexical` | before | after |
+|---|---|---|
+| his 79: first / top three | 23 / 33 | 23 / 33 |
+| his 79: asked for no change, handed one | 9 | 9 |
+| 124 plain questions reaching a write | 9 | 9 |
+| `tests/test_routing_phrases.py` routing failures | 9 | 7, recorded open (row 5b-2053) |
+| ... with #1424 merged | - | 5, recorded open |
+
+### What this does not establish
+
+- **The owner's PC was not measured.** It ranks on this search now, and should answer as above.
+- **That the model is worse at meaning.** It was not better on his questions; meaning was not measured
+  apart from them. Nothing met Revit.
+
 ---
 
 ## 2026-11-26 — short forms added to a request before the search: measured, no gain, nothing built
@@ -1850,6 +1899,188 @@ host's `question` flag remains the fix: 0 and 0 with it.
 - **`tools/check-routing.py` could not show the patch**: it asks for one candidate, so there was no
   runner-up to move.
 - **Lexical only, one library size, one day.** Nothing met Revit, and no ranking change was kept.
+
+---
+
+## 2026-11-26 — the words index tuned by measurement: stemming, field weights, a domain hint, fusion - nothing kept
+
+The owner asked for fragment finding to be made the best it can be. Three levers in
+[`heron_search.py`](heron_search.py)'s index and rank, and the fusion constants in
+[`heron_retrieve.py`](heron_retrieve.py), each measured on its own and kept only if his 79 rose (first or
+top three) with nothing less safe - no question handed a change more often, document retrieval no worse,
+no guard newly failing. **None met it, and no code changed.** Measured on `main` `02780d9a` (and first on
+`2ee4d03f`, the same answers wherever both were run), **754 fragments**, no Revit filter, backend
+**`lexical`** (model2vec set aside in the process), every run on its own scratch store, each variant set
+by an environment switch in a scratch copy of the tree - with every switch at its default the copy gave
+`main`'s answers question for question.
+
+| Lever, `lexical` | his 79: first / top 3 / not found | asked for no change, handed one / a different change | 124 plain reaching a write | `check-routing` claims not reached | `test_routing_phrases` checks failing |
+|---|---|---|---|---|---|
+| `main` | 23 / 33 / 29 | 9 / 20 | 9 | 74 | 13 |
+| porter stemming (`porter unicode61`), on a fresh store | **16** / 32 / 30 | **12** / 24 | **14** | 76 | **18** |
+| porter, with prefixes off or from six letters | 16 / 30 / 31 | 12-13 / 24 | 13-14 | | |
+| plurals folded in the query only (*walls* → *wall*\*, *-ies* → *-y*) | 19 / 33 / 30 | 11 / 22 | **15** | 76 | 15 |
+| identity + utterances weighted 2 (bm25 2,1,1,1) | 20 / 33 / 31 | 9 / 21 | 8 | 73 | 13 |
+| identity alone weighted 2, its utterances a column of their own | 22 / 34 / 29 | 9 / 20 | 9 | | |
+| eleven other weightings at `2ee4d03f` (identity 1.5 or 3, capability 2, purpose 0.5 or 2, domain 0.5, 2 or 4, utterances 0.5) | 21-23 / 31-33 | 8-10 / 19-21 | 8-11 | | |
+| nearness weight 0.55 on `lexical` (0.6 now) | 23 / 33 / 29 | 9 / 20 | 9 | **72** | **12** |
+| nearness weight 0.65 | **25** / 33 / 29 | 9 / **19** | 9 | 76 (at `2ee4d03f`, 75 → 76) | 13 |
+| nearness 0.5 / 0.7 / 0.8 / 1.0 | 23-25 / 32-33 | 8-9 / 19-20 | **10-11** | 78 at 0.7 (at `2ee4d03f`) | 12 at 0.5 |
+| RRF constant 30 / 100 - and at 100 one rank (0.000097) is narrower than the PROVEN nudge, so status would outrank matching | 23 / 24, top 3 33 | 9 / 20 | 10 / 9 | | |
+| a route's missing rank filled as pool + 1 | 24 / 32 / 29 | **10** / 17 | **12** | | |
+| nearness asked 40 deep, with and without that | 23 / 32-33 | 9 / 19-20 | 9 | | |
+
+`check-risk-crossings --revit 2024` (5 and 3) gave `main`'s report at nearness 0.55 and 0.65, the two rows
+it was asked on; `check-intrusion` at 0.65 moved a shortlist count or two and nothing else.
+`tests/test_search.py`, `test_retrieve.py`, `test_document_retrieval.py` and `test_embed.py` passed on
+`main`; `test_retrieve` and `test_document_retrieval` passed at 0.55 and 0.65, `test_search` at 0.65. An
+empty cell is a set that was not asked.
+
+**Why stemming loses, and it is the same thing both ways.** In these cards a word's ending carries the
+difference between reading and changing. A question says what a thing **is** - *loaded*, *used*,
+*connected*, *the schedules*, *the accessories* - and a change card names what it **does** - *load*,
+*use*, *connect*, *a schedule*, *an accessory*. Porter folds the first onto the second: *"which families
+are loaded in the project"* went from `REPORT_FAMILY_TABLES_IN_PROJECT` to `LOAD_FAMILY`, and *"Isolate
+only the VCDs, not all the duct accessories"* lost `ISOLATE_ELEMENTS` to `PLACE_ACCESSORY_ON_RUN`. The
+lighter fold, plurals only, met the same wall from the other side: *"how many rows does this schedule
+have"*, *"which schedules are not on a sheet"*, *"which materials are used on this wall"* each reached a
+write. Today's prefix rule is one-way - *duct* finds *ducts*, *ducts* does not find *duct* - and that
+asymmetry is doing work. What porter does to Revit's own words is harmless, for the record: `OST_DuctCurves`
+is two tokens already (`ost`, `ductcurves`; the underscore separates in `unicode61`) and stems to
+`ductcurv` on both sides, `250x250` is untouched, and identity phrases never meet the tokenizer. The
+2026-10-09 trial of porter for short words found the same direction at 480 fragments.
+
+**Why field weights cannot help, now measured three ways.** bm25 here scores the whole row: splitting the
+utterances into a column of their own, unweighted, gave exactly `main`'s answers. Weighting the identity
+and its utterances up lifted `check-routing`'s words-route first place from 3535 to 3744 of 4412 - and
+those are the cards' own declared sentences, so that figure measures the declarations back - while his 79
+lost three first places. It rewards a sentence for looking like a declaration, which is overfitting by
+construction; 2026-10-09's 34 weightings said the same.
+
+**A domain hint was not built, and not for want of trying.** The one signal that classifies nothing is the
+modeller's own word matching a card's domain - *views*, *sheets*, *rooms* - and bm25 already reads it
+(`domain` is an indexed column). Weighting that column 2 moved nothing; 4 handed one more plain question a
+change. Any stronger hint maps a request's words to a domain, which is classifying intent (D-01), and it
+would push *"isolate the VCDs"* - an MEP word for a views tool - the wrong way.
+
+**The nearness weight is a balance, not a slack.** Raised, it helps his long sentences; lowered, it helps
+the short ones the routing tables claim - monotonically on `check-routing` (73 at 0.55, 75 at 0.6, 76 at
+0.62 and 0.65, 78 at 0.7, at `2ee4d03f`). 0.65 gives him two first places (#33, #61) and loses the claim
+*"the drawing prints heavy"*; 0.68 already hands the plain *"how many rows does this schedule have"* a
+change. 0.55 changes nothing of his or the plain set, reaches two more claims (*"how many faces does this
+have"*, *"tap these terminals in"*) and stops *"check if volume calculation is enabled"* reaching
+`APPLY_VIEW_FILTER`; 0.5 hands a plain question a change. **The same constant weights the document
+route**, so either move would need a document measurement first. Which way to lean is the owner's call,
+not a measurement's.
+
+**The question that started the fusion look.** *"select all walls of type Curtain Wall"*: the words route
+puts `SELECT_BY_PARAMETER_VALUE` first and the nearness route leaves it outside its 20, while every
+curtain card is found by both. Under reciprocal rank fusion it scores 1/61 against 1/64 + 0.6/62 for
+`REPORT_CURTAIN_WALL_TYPE` (words 4th, nearness 2nd) and 1/62 + 0.6/71 for `EDIT_CURTAIN_GRID_SEGMENTS`
+(2nd, 11th), and it would come first only with a nearness weight under 0.03 - the route all but switched
+off. Filling the missing rank with 21 handed three more plain questions a
+change; asking nearness 40 deep gained nothing.
+
+### Re-measured the same day on `main` `d79ac5a9`, after the 30-card wording above
+
+Same method, `lexical`, 754 fragments. The wording raised `main` itself a long way, and one lever now
+reads differently:
+
+| Lever | his 79: first / top 3 / not found | handed a change / a different change | plain reaching a write | claims not reached | `test_routing_phrases` failing |
+|---|---|---|---|---|---|
+| `main` | 34 / 43 / 18 | 7 / 14 | 9 | 72 | 12 |
+| porter | **29** / 42 / 18 | **9** / 18 | **14** | | |
+| plurals folded | **30** / 43 / 18 | **11** / 15 | **14** | | |
+| identity + utterances weighted 1.5 / **2** / 3 | 33 / 35 / 35, top 3 43, not found 14 / 14 / 16 | 5 / **4** / 4, and 14 / 14 / 15 | 8 / **8** / **10** | 73 at 2 | 12 at 2 |
+| identity alone ×2, its utterances split out | 33 / 42 / 17 | 7 / 14 | **10** | | |
+| domain column ×2 | 34 / 42 / 18 | 7 / 14 | 9 | | |
+| nearness 0.5 / 0.55 / 0.65 / 0.7 | 34 / 42-43 / 17-18 | 7 / 14 | 9 | | |
+| a route's missing rank filled as pool + 1 | **36 / 47** / 17 | **8** / 12 | **11** | | |
+
+**Identity weighted 2 is the one candidate, and it is not kept.** On his 79 and the plain set it is
+better on every column. But the same weight cost him three first places at `02780d9a`, an hour earlier,
+so what it rewards is the sentences the wording just declared - and those were written for these two
+sets (row 5b-2049). On the sets nobody wrote for, it churns: `check-routing` reached 5 claims it had
+missed and lost 6 it had reached, so net one worse. `check-risk-crossings --revit 2024` gave the same eight answers, with a read now
+second on two of them. 1.5 drops a first place and 3 hands a plain question a change, so the gain sits
+at one value only. **Whether to take it is the owner's call**, with that trade stated; a fresh set of
+questions, written before anyone reads these cards, is what would settle it. The nearness weight no
+longer moves anything on his 79 or the plain set, and the missing-rank fill now gains top-three places
+but hands two more plain questions a change.
+
+### What this does not establish
+
+- **`lexical` only.** The owner's PC runs `model`, which gets an equal vote and was not asked here; model2vec
+  is being taken out in parallel, which would make `lexical` everyone's.
+- **One library size, one day,** and his 79 are 64 scored rows: a step of one or two is inside what a single
+  card edit moves. Nothing met Revit.
+
+---
+
+## 2026-11-26 — card identities and purposes in modeller words, on `lexical` (row 5b-2063)
+
+[Row 5b-2063](../docs/fragment-issues/row-5b-2063.md). After row 5b-2049 reworded utterances, the other
+words `heron_search.index()` reads - `semantic-identity` and `purpose` - were audited for cards that said
+their job in engineering notes or code words. **Identity and purpose only, no utterance, capability,
+domain, contract or `impl/`**; each replaced purpose is kept word for word as a comment under the new one.
+Batches were measured one at a time and kept only with a gain and nothing worse. Measured in a cloud
+container (no Revit) on **`lexical` alone**, CI's backend, every run on a store of its own; main
+`affad09c` against the branch, 754 cards.
+
+| | `lexical`, main -> branch |
+|---|---|
+| his 79 - first | 34 -> 38 |
+| his 79 - top three | 43 -> 45 |
+| his 79 - not found | 17 -> 15 |
+| asked for no change, handed one | 7 -> 5 |
+| a change asked for, a different change given | 14 -> 13 |
+| skill rows with a step in the top three | 3 -> 4 of 7 |
+| plain questions answered by a change | 9 -> 9 |
+| 604 frozen sentences - answers moved the right way / the wrong way | 8 / 0 |
+| the same - questions reaching a write | 55 -> 53 of 130 |
+| the held-out groups - wanted first / questions reaching a write | 16 -> 16 of 30 / 5 -> 4 of 8 |
+| `check-routing` claimed and not reached / two cards want one sentence | 72 -> 72 / 907 -> 900 |
+| `check-routing` own sentences first by words / by nearness | 3604 -> 3611 / 2459 -> 2433 of 4511 |
+| `check-risk-crossings` question to a write / nothing safe close | 5 -> 5 / 3 -> 3 |
+
+**Measured again on main `83c36ecb`** (D-203 merged: lexical is the only search) against the branch with
+it merged: his 79 the same (first 34 -> 38, top three 43 -> 45, not found 17 -> 15, handed a change 7 -> 5,
+a different change 14 -> 13); skill rows 4 -> 4 of 7, main having gained one; the 604 frozen sentences 8
+better, 0 worse, questions reaching a write 58 -> 56 of 130, held-out 16 -> 16 of 30 and 5 -> 4 of 8;
+`check-routing` claimed and not reached 73 -> 73, two cards want one sentence 908 -> 900, by words
+3616 -> 3624, by nearness 2458 -> 2434 of 4524; `check-risk-crossings` 6 -> 6 and 2 -> 2.
+
+The 604 were [`tests/data/routing-sentences-2026-11-26-card-audit.yaml`](../tests/data/routing-sentences-2026-11-26-card-audit.yaml),
+frozen before the first edit, and every other `tests/data/routing-sentences-*.yaml`;
+`tools/score-routing.py --sentences ... --tree <main> --compare`. The fall by nearness in `check-routing`
+is on sentences each card declares, which the identity route answers before any ranking.
+
+**What moved, and what was taken back.** His *Check the Description of the duct accessories* had reached
+`SET_MEP_JUSTIFICATION` first; *How many sheets are there for the duct layout?* reached a write; *Hide
+all the air terminals.* was fifth. A short purpose raises a card's score on every common word it holds
+(*these*, *elements*, *each* are prefix terms), so three were taken back: `OVERRIDE_GRAPHICS_IN_VIEW`'s took
+a red-and-grey row from `HIGHLIGHT_VS_REST`, `WRITE_ELEMENT_PARAMETERS`' took offset, elevation and copy
+sentences, `CONNECT_AIR_TERMINALS`' moved two of his rows the wrong way. Six identities - among them
+`FILTER_ELEMENTS_BY_CATEGORY`, whose wording pushed *colour the louvres red and the rest grey* out of the
+shortlist - moved nothing or the wrong way and were taken back. After merging main,
+`READ_ELEMENT_PARAMETERS` naming the Level drew *what is the elevation of Level 2* to `CREATE_LEVELS`;
+and on the trained model (run only as a guard) `DESCRIBE_ELEMENTS` saying *renamed* drew *rename the
+selected elements* - both reworded, and `tests/test_routing_phrases.py` on the model then fails only
+the three curtain-wall checks main fails (row 5b-329). On `lexical` that suite does not run (exit 3).
+
+**Row 5b-2053's five guards left open on the one search,** asked on `lexical` afterwards:
+`LIST_VIEWS_ON_SHEET`'s identity, shorter, takes *is the legend going off the sheet* from
+`PLACE_VIEW_ON_SHEET` once main's D-203 tree is merged, and the guard came off `OPEN_ON_THE_ONE_SEARCH`.
+`PLACE_HOSTED_FAMILY`'s, naming each host, took *place doors and windows hosted in walls at points* from
+`SELECT_BY_HOST` until row 5b-2053's `select-by-host` lines merged, and lost it again. The other three found
+no honest wording (the row says why). His 79, the plain
+questions and the 604 frozen sentences read exactly as in the table above with both in.
+
+### What this does not establish
+
+That any answer is right in Revit; anything on the trained model beyond that one suite; and that the
+gains survive the other searches being changed the same day - short forms, the question near-tie, the
+index's stemming and weights - each of which moves the same ties.
 
 ---
 

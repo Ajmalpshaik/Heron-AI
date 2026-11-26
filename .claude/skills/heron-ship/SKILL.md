@@ -208,16 +208,15 @@ that the failures **do not share a reason**, because a lump total is how a real 
 | the **MCP SDK** | `pip install --user mcp` |
 | a **.NET SDK** | `apt-get update && apt-get install -y dotnet-sdk-10.0` - then `test_bridge_roundtrip.py` wants one build of its test host, and its own message prints the command |
 
-**The one is `test_routing_phrases.py`, and it waits here on purpose.** It asks its sentences of the
-trained embedding the owner's PC ranks with (model2vec), and exits 3 anywhere else - CI lists it as not
-runnable for that reason. Leave it to that PC, or to a venv of its own (§3a): model2vec in the system
-Python would put every other suite on a backend CI does not use. Measured 2026-10-18 in a container with
-both installs above: this one and `test_bridge_roundtrip.py`, its host not yet built, were the only
-suites waiting. **Where the system Python already has model2vec it runs, and a red there may be the
-machine:** measured 2026-11-12 in a cloud container with model2vec and no re-ranker installed, it failed 8
-checks - the same 8 on `origin/main` at `c65509a9`, so not the branch's change. Since D-201 removed the
-re-ranker (2026-11-26) the PC ranks on the model alone too, so those reds are the PC's as well - card
-wording, owed in their rows: run it on main's tree before reading such a red as yours.
+**The one is `test_routing_phrases.py`, and it waits on the owner, not on an install.** Since D-203
+(2026-11-26) Heron has one search, built in, the same on every machine, so the suite runs everywhere and
+asks every guard. While each failure is one of the guards recorded open on that search
+(`OPEN_ON_THE_ONE_SEARCH`, [row 5b-2053](../../../docs/fragment-issues/row-5b-2053.md), issue #1440) it
+exits 3 - WAITING, not a pass - and CI keeps it on its not-runnable list. **A failure off that list exits
+1 and is a finding**, very likely a card's words you changed: run it on main's tree before reading it as
+the machine's - it answers the same on every machine now. An open guard that starts passing fails it too,
+until it comes off the list in the same change. (Until D-203 it asked only the trained embedding
+model2vec, and exited 3 wherever that was absent.)
 
 **Derive which ones, rather than reading a list here** — the same rule as the suite total four lines
 up, and for the same reason it is written twice:
@@ -285,7 +284,7 @@ again on the venv, where an exit 3 fails the job. "They drag in native dependenc
 measured that day rather than repeated: the lock installs on Linux from wheels alone, in seconds. The job
 still **fails the build if a suite on its not-runnable list runs there after all**, so a suite that
 starts running comes off that list in the same change - which today holds `test_routing_phrases.py`
-alone, for its reds on the model (row 5b-1882).
+alone, waiting on the owner for its guards open on the one search (row 5b-2053).
 
 **Nothing else should fail on any machine.** `test_graph.py` and `test_reachable.py` were on this list
 until 2026-09-12, when both were fixed rather than excused — each had a fixture describing a repository
@@ -477,19 +476,18 @@ say every capability is still reachable; **what moved, sentence by sentence, is
 ```bash
 WORK="$(mktemp -d)"     # rough work goes outside Heron's folder, never beside it (AGENTS.md); s.yaml goes here
 git worktree add --detach "$WORK/main-wt" origin/main
-python tools/score-routing.py --sentences "$WORK/s.yaml" --tree "$WORK/main-wt" --backend all --out "$WORK/main.json"
-python tools/score-routing.py --sentences "$WORK/s.yaml" --backend all --compare "$WORK/main.json"
+python tools/score-routing.py --sentences "$WORK/s.yaml" --tree "$WORK/main-wt" --backend lexical --out "$WORK/main.json"
+python tools/score-routing.py --sentences "$WORK/s.yaml" --backend lexical --compare "$WORK/main.json"
 git worktree remove "$WORK/main-wt"
 ```
 
 - **Freeze the sentences before you edit the card**, each with `want <CAPABILITY>`, `not-a-write` or
   `neutral`. A set written after the edit measures the edit's own words back.
-- **Name the backend.** Two: `lexical` (CI's) and `model` - the owner's PC is `model`. (Row 485
-  measured each with `+rerank` too, until D-201 removed the re-ranker on 2026-11-26.) A backend this
-  machine has not got is **NOT ASKED**, which is **NOT RUN**, never a pass: a cloud container usually
-  has `lexical` alone. Leave the model to the PC, and say so - or, where PyPI and huggingface.co answer,
-  put model2vec in a **venv of its own** and run the tool with its Python (each backend's process uses
-  the same one). **Never in the system Python:** every suite would then run on a backend CI does not.
+- **Name the backend.** One: `lexical`, the search every PC, the owner's included, and CI share since
+  D-203 removed `model` on 2026-11-26 (row 485 measured `+rerank` too, until D-201 removed the
+  re-ranker). `--backend model` exits 2. A `--tree` from before D-203 still holds the trained encoder in
+  its code, and a `lexical` run turns it off there, so main-against-branch measures one search on both
+  sides.
 - **The order of a card's utterances moves nothing.** It did while the re-ranker read a card's identity
   and its first eight (D-134, superseded by D-201); the words and nearness routes read them all.
 - **A refused run is the point, not a nuisance.** Row 481's "both backends" were not the backends asked

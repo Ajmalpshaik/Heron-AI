@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-027
-semantic-identity: "make a new type from the type these are using"
+semantic-identity: "make a new type as a copy of the type these use, under a new name"
 kind: action
 domain: revit.elements
 capability: DUPLICATE_TYPE
@@ -31,34 +31,46 @@ risk: MODIFY
 # 2026-11-16 to fix every issue from #852 to #854.
 
 purpose: >
-  Duplicates the TYPE behind the elements handed in, under a new name -
-  *"make a new duct type at 300 wide"*, *"I need a copy of this wall type"*.
-  The new type is created and nothing else happens: no instance is moved onto
-  it and no size is set on it.
+  Makes a new type by copying the type the elements given use - or a type picked
+  or named as Family: Type - under a new name: a new duct or wall type, a new
+  size in a door or diffuser family. The copy is exact; setting its sizes or
+  other values, and moving elements onto it, are separate steps. When the
+  elements use more than one type, the types are named and nothing is made, and
+  forty elements of one type still make one new type.
 
-  **It refuses when the selection sits on more than one type**, and that refusal
-  is the fragment's main decision. The earlier library let one literal name be
-  applied to every distinct type found; Revit requires type names to be unique,
-  so the first duplicate succeeded and the rest quietly did not - a batch that
-  reports success and half-happened. So the distinct types are counted first,
-  and if there is more than one they are NAMED and nothing is created. The user
-  then narrows the selection, which is the answer they wanted anyway.
-
-  **A type handed in is the type duplicated** (version 2) - a door type picked
-  in the Project Browser or by SELECT_TYPES, with no door placed - and so is
-  one named as *"Family: Type"*, *"copy M_Single-Flush: 0915 x 2134mm as
-  1000 x 2134mm"*.
-
-  **Forty instances of one type give ONE new type, not forty.** The types are
-  de-duplicated before anything is created.
-
-  **Two steps have to follow it and neither is guessed.** A duplicated type is
-  an exact copy - same size, same everything - so WRITE_ELEMENT_PARAMETERS sets
-  what makes it different, and CHANGE_ELEMENT_TYPE moves instances onto it if
-  that is wanted. Doing either from here would mean deciding, on somebody's
-  behalf, that their existing elements should change.
-
-  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+# PURPOSE AS IT READ UNTIL 2026-11-26, kept word for word as the record (S7d card
+# audit). The purpose is routing text - the search reads every word of it - and
+# these paragraphs read as engineering notes rather than the one job a modeller
+# asks this card for. Nothing the card does changed; only where its notes live.
+#
+# Duplicates the TYPE behind the elements handed in, under a new name -
+# *"make a new duct type at 300 wide"*, *"I need a copy of this wall type"*.
+# The new type is created and nothing else happens: no instance is moved onto
+# it and no size is set on it.
+#
+# **It refuses when the selection sits on more than one type**, and that refusal
+# is the fragment's main decision. The earlier library let one literal name be
+# applied to every distinct type found; Revit requires type names to be unique,
+# so the first duplicate succeeded and the rest quietly did not - a batch that
+# reports success and half-happened. So the distinct types are counted first,
+# and if there is more than one they are NAMED and nothing is created. The user
+# then narrows the selection, which is the answer they wanted anyway.
+#
+# **A type handed in is the type duplicated** (version 2) - a door type picked
+# in the Project Browser or by SELECT_TYPES, with no door placed - and so is
+# one named as *"Family: Type"*, *"copy M_Single-Flush: 0915 x 2134mm as
+# 1000 x 2134mm"*.
+#
+# **Forty instances of one type give ONE new type, not forty.** The types are
+# de-duplicated before anything is created.
+#
+# **Two steps have to follow it and neither is guessed.** A duplicated type is
+# an exact copy - same size, same everything - so WRITE_ELEMENT_PARAMETERS sets
+# what makes it different, and CHANGE_ELEMENT_TYPE moves instances onto it if
+# that is wanted. Doing either from here would mean deciding, on somebody's
+# behalf, that their existing elements should change.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
   needs:

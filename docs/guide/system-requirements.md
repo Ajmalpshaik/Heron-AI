@@ -24,12 +24,11 @@ Windows figures are **not yet measured**, and Windows wheels differ in size:
 | The knowledge store, built from Heron's own library | Yes | about 5 MB | `global.db` after `python brain/heron_scope.py --rebuild` |
 | **Minimum, all of the above** | | **about 70 MB, plus 6 to 8 MB for each Revit release** | the four lines above |
 | The download itself, while you keep it | - | 120 MB | `HeronSetup-0.2.0-unsigned.exe`, the v0.2.0 release page; each release page gives its own Setup's size |
-| The trained search add-on, `model2vec` | No | about 130 MB on disk - the package with what it pulls in, and the weights | `heron_embed.SIZE`, printed by `python brain/heron_embed.py` before anything is fetched |
 | Reading PDFs, `pypdf` | No | about 2 MB | `heron_ingest.PDF_READER_SIZE`, said when a PDF cannot be read without it |
 
-**Memory** matters more than disk once an add-on is in: each open chat's Heron holds its own copy.
-The one reading, on the owner's laptop, was taken with the re-ranker installed, and the re-ranker was
-removed on 2026-11-26 ([D-201](../decisions/D-201.md)) -
-[WHAT-TO-INSTALL §2](../WHAT-TO-INSTALL.md#2-optional--the-trained-search-model).
+**Memory:** each open chat's Heron holds its own copy. The one reading, on the owner's laptop, was
+taken with the re-ranker and the trained search model installed, and both were removed on 2026-11-26
+([D-201](../decisions/D-201.md), [D-203](../decisions/D-203.md)) -
+[WHAT-TO-INSTALL §2](../WHAT-TO-INSTALL.md#2-search--built-in-no-add-on).
 `python tools/check-dependencies.py` says, on your own PC, which pieces are there, what each one is for,
 and whether each installed version is the right one.
