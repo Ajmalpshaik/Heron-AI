@@ -325,7 +325,7 @@ def claude_app():
                      "%s==%s" % item for item in sorted(
                          pinned.items(), key=lambda item: item[0].lower())),
                  "Leave out any you do not want - only a DIFFERENT version is a",
-                 "problem. sentence-transformers and torch are the re-ranker."])
+                 "problem."])
         say(NOTE, "a Reset or uninstall of the Claude app deletes that copy",
             ["The packages Claude installed go with it. Heron's knowledge store,",
              "the projects' memory and the brain's audit no longer live there",
@@ -637,8 +637,9 @@ def claude_side():
 
 #: The packages whose presence or version can change how fast Heron answers.
 #: sqlite-vec left this list on 2026-11-21: nothing in Heron uses it (D-194).
-SNAPSHOT_PACKAGES = ("PyYAML", "mcp", "model2vec", "sentence-transformers",
-                     "torch", "numpy", "pypdf", "huggingface_hub")
+#: Two more left it on 2026-11-26, with the optional second reader (D-201).
+SNAPSHOT_PACKAGES = ("PyYAML", "mcp", "model2vec", "numpy", "pypdf",
+                     "huggingface_hub")
 
 #: The only keys ever copied out of a Claude Code settings file.
 SETTINGS_KEYS = ("enableAllProjectMcpServers", "enabledMcpjsonServers",

@@ -91,10 +91,9 @@ every tool. The table below this one says more about each module.
 
 | Module | Job | Reached by |
 |---|---|---|
-| [`heron_retrieve.py`](heron_retrieve.py) | The whole lookup: filter first, then word match and meaning search fused, then the optional re-ranker. For documents, asks each scope on its own | `heron_lookup`; `revit_read`, `revit_show`, `revit_change` given words; `heron_standards`, `heron_research`, `heron_check` for documents |
+| [`heron_retrieve.py`](heron_retrieve.py) | The whole lookup: filter first, then word match and meaning search fused. For documents, asks each scope on its own | `heron_lookup`; `revit_read`, `revit_show`, `revit_change` given words; `heron_standards`, `heron_research`, `heron_check` for documents |
 | [`heron_search.py`](heron_search.py) | Word match (FTS5), and the exact-sentence (`identity`) and seen-before (`cache`) routes | The same, through `heron_retrieve` |
 | [`heron_embed.py`](heron_embed.py) | Meaning search: `lexical` built in, model2vec when installed | The same, through `heron_retrieve` |
-| [`heron_rerank.py`](heron_rerank.py) | The optional second read of the top ~20 | The same, through `heron_retrieve` |
 | [`heron_scope.py`](heron_scope.py) · [`heron_paths.py`](heron_paths.py) | One SQLite store per knowledge scope, and where on the PC they live | Every tool that answers from the library; `python brain/heron_paths.py --where` |
 | [`heron_fragment.py`](heron_fragment.py) | What a fragment card is, the validator, and whether a proof still matches its code | `revit_change`, before it keeps a change ([D-117](../docs/DECISIONS.md)); every store rebuild |
 | [`heron_capability.py`](heron_capability.py) | A capability's providers, best first, for one Revit release - and the one order they are chosen in, `provider_order` (trust, then newest version, then id) | `heron_resolve`, `heron_capabilities`, `heron_method`; the `revit_` doors' `_fragment_for`, through `heron_brain.order_providers` (row 5b-1131) |
@@ -118,7 +117,9 @@ every tool. The table below this one says more about each module.
 
 **How a lookup runs:** your words → filter first (another Revit release is left out; a question is
 offered no change, D-128) → an exact match, or else word match and meaning search side by side →
-fusion → the re-ranker, if installed → the `heron_lookup` answer, which names the search that ran.
+fusion → the `heron_lookup` answer, which names the search that ran. (An optional cross-encoder
+re-ranker re-read the top ~20 after fusion until [D-201](../docs/decisions/D-201.md) removed it on
+2026-11-26: measured, no clear gain over the model alone.)
 Drawn, with the code behind each step, in
 [docs/05 §4.1](../docs/05-heron-brain.md#41-how-heron-finds-the-right-tool-for-your-words).
 
@@ -133,7 +134,6 @@ Drawn, with the code behind each step, in
 | [`heron_graph.py`](heron_graph.py) | **Step 13.** *What breaks if this changes.* Every edge but one is **computed from the fragments on demand** (D-40) — the only stored edge is a skill's requirement, which no artifact underneath carries. Names the dangerous case out loud: a **sole provider**, because whatever asked for its capability never named it |
 | [`heron_capability.py`](heron_capability.py) | **Step 12.** Ask for *what you want done*, never for *who does it*. Add a provider, retire one, split one into three — **no call site changes**. Almost all of it is **derived** from the fragments (D-40), including risk, which already has two homes and must not gain a third |
 | [`heron_retrieve.py`](heron_retrieve.py) | **Step 11.** The whole lookup: a structured filter **first**, then keywords and nearness over the survivors, fused by reciprocal rank. **The Revit version filter is a wall** — an incompatible fragment is not demoted, it is absent — and what was excluded is reported with its reason. **So is a question's risk ceiling** since 2026-10-17 ([D-128](../docs/DECISIONS.md)): when the host passes `question` to `heron_lookup`, every fragment above the level just below the change door's is left out the same way, the identity route included, and the answer says how many |
-| [`heron_rerank.py`](heron_rerank.py) | **Stage 7 of the RAG plan.** Reads the top ~20 **(question, passage) pairs together**, which neither retrieval route can do — and it is the largest optional piece in Heron, so `python brain/heron_rerank.py` names the package, the **500 MB – 2 GB** and the `--user` install **before** anything downloads (R-77, [D-01](../docs/DECISIONS.md)). **With nothing installed the shortlist comes back in exactly fusion's order and says so** — `Re-rank: absent` from the retrieval command, and a `re-rank` line on every `heron_lookup` through the MCP seam, beside which nearness backend answered — measured at 360 fragments as byte-identical to the recorded before, and costing 0.05 % of a query. **A cross-encoder ran for the first time on 2026-09-24**, in a cloud session that reaches `huggingface.co` (`A10`), and on the owner's own questions it made picking a tool **worse** while it fixed the one document question there is - [`retrieval-history.md`](retrieval-history.md) carries every figure, and [`docs/WHAT-TO-INSTALL.md`](../docs/WHAT-TO-INSTALL.md) says it in plain words. **Since 2026-10-17 it reads more of each card** - the identity, then the card's first declared sentences, carried in the store so a question never opens a card file ([D-134](../docs/DECISIONS.md)); the figures measured before and after are in D-134's record |
 | [`retrieval-history.md`](retrieval-history.md) | **What was measured, and at what library size.** Quote this file, never a remembered figure — the owner's earlier library once had three accuracy numbers in circulation at once because the early scores recorded no corpus size. It records the built-in backend **sinking in proportion as the library grows**, and since 2026-09-11 it also records **both backends measured at the same library size** — which is the comparison `A7` was opened to get, and `A7` is closed |
 | [`heron_embed.py`](heron_embed.py) | **Step 10.** Finding a fragment by something other than its exact words. **Two backends**: `lexical` is built in, offline, needs nothing installed — and is measured, in numbers, as *not meaning*; `model` is a trained encoder **used when one is present** — it ran on 2026-09-10 at 360 fragments and put the tracked duct filter **19th where the built-in one puts it 194th** ([`retrieval-history.md`](retrieval-history.md)), and it loads **only where the weights can be fetched**, so a container that blocks `huggingface.co` gets `lexical` and is told so. Content-hashed, so re-indexing unchanged files costs nothing — and since Stage 6 `--refresh` **fires** that check: a changed file is re-ingested and **retires its predecessor, naming it**, a moved file **deletes nothing**, and a clause byte-identical to one already held is reported at write time |
 | [`heron_paths.py`](heron_paths.py) | **Where the Python side keeps what it writes** - one home for its DATA: `HERON_DATA` when set; on Windows `%USERPROFILE%\.heron`, outside the AppData a Microsoft Store Claude keeps a private copy of; anywhere else none. The knowledge stores and every project's memory are `<home>\knowledge`, the brain's audit `<home>\audit` ([D-135](../docs/DECISIONS.md)). `python brain/heron_paths.py --where` says where each is on this PC |
@@ -223,9 +223,9 @@ python tools/check-dependencies.py       # present, missing, and what each one b
 pip install --user -r requirements.txt   # the required half off Windows; the MCP package is in the optional list
 ```
 
-**Do not install the optional half in one command.** One of them is large enough that a person is
-entitled to know first — and the figure is **not written here**, because the code that performs the
-download owns it: `heron_rerank.announcement()` and `heron_embed.announcement()` print the size before
+**Read what each optional package buys before installing it** — and the trained embedding's size is
+**not written here**, because the code that performs the download owns it: `heron_embed.announcement()`
+prints the size before
 any network call rather than during, and `check-dependencies.py` above reads it from there. A size copied
 into a README is a size that goes stale in the one place it had to be right - which is why the one place
 that does type them, the [system requirements](../docs/guide/system-requirements.md) page, is held

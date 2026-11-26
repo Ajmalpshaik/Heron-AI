@@ -5,10 +5,11 @@
 # rank.
 #
 # Read by tools/score-routing.py --sentences. Measured in a cloud container on
-# lexical only. OWED ON THE OWNER'S PC, which ranks model+rerank:
+# lexical only. OWED ON THE OWNER'S PC, which ranks model since D-201 removed the re-ranker
+# (2026-11-26; it was model+rerank when this was frozen):
 #
 #   python tools/score-routing.py --sentences tests/data/routing-sentences-2026-11-21-row132.yaml \
-#       --backend model+rerank
+#       --backend model
 groups:
 - group: 'row 132: the five skill questions left (skill files'' own words)'
   sentences:

@@ -18,11 +18,9 @@ How does Heron's search do on the questions the owner ACTUALLY asked?
 
     # A SESSION'S OWN SENTENCES - main against a branch, on a named backend
     python tools/score-routing.py --sentences s.yaml --tree ../main-wt \\
-        --backend lexical --backend model+rerank --shortlists --out main.json
+        --backend lexical --backend model --out main.json
     python tools/score-routing.py --sentences s.yaml \\
-        --backend lexical --backend model+rerank --compare main.json
-    python tools/score-routing.py --identities ids.txt --card EDIT_TEXT_VALUES \\
-        --from main.json                        # re-score identities offline
+        --backend lexical --backend model --compare main.json
 
 WHAT IS DIFFERENT ABOUT THIS ONE
 --------------------------------
@@ -105,9 +103,10 @@ AND A SESSION'S OWN SENTENCES, WHICH NEVER REACH EITHER TABLE
 Rows 5b-481, 5b-485 and 5b-510 each rebuilt the same scratch kit on the
 owner's PC to measure a card's words: a probe asking a frozen sentence set on
 a private store built from one checkout, a check that every answer ran on the
-backend asked for, a comparer of main against the branch, and a fast loop
-re-scoring candidate identities on the shortlists the re-ranker read. It is
-`--sentences` now. Each backend is asked in a process of its own, with the
+backend asked for, and a comparer of main against the branch. It is
+`--sentences` now. (A fourth piece, re-scoring candidate identities on the
+shortlists a cross-encoder read, went with that re-ranker - D-201.) Each
+backend is asked in a process of its own, with the
 measured tree's search code and a store built from its cards, and the answers
 go to a record (`--out`) - never to brain/retrieval-history.md, which holds
 the two frozen sets above and nothing else. See "A session's own sentences"
@@ -134,7 +133,7 @@ two, before anybody reads a difference as the search's.
 
 HOW AN EXACT TIE IS BROKEN. heron_retrieve.retrieve sorts on the fused score,
 then on the words route's rank - the stronger route - and then on the card's
-id; the re-ranker, where it runs, reads that order and only reorders it. So
+id. So
 two cards with the same fused score go to the one the words route put higher:
 in the model run above, SET_SCHEDULE_FILTERS (words 1st, nearness 3rd) beat
 READ_SCHEDULE_CONTENTS (words 3rd, nearness 1st) on exactly equal scores.
@@ -696,13 +695,10 @@ def backend_of(results):
     run would repeat made the run comparable with nothing. A run where NO
     answer carried a rank is still called "not used".
     """
-    near, rerank, unused = {}, set(), 0
+    near, unused = {}, 0
     for r in results:
         if r.get("error") or r.get("route") != "hybrid":
             continue
-        again = (r.get("backends") or {}).get("rerank")
-        if again and again != "not used":
-            rerank.add(again)
         said = (r.get("backends") or {}).get("nearness") or "not said"
         if said == "not used":
             unused += 1
@@ -714,7 +710,7 @@ def backend_of(results):
         name = list(near)[0]
     else:
         name = "mixed " + ", ".join("%s %d" % kv for kv in sorted(near.items()))
-    return name + ("+rerank" if rerank else "")
+    return name
 
 
 def report(results, summary, stamp, rows):
@@ -1166,7 +1162,8 @@ def compare_plain(history_path, stamp, codes, summary, kinds, rows):
 #
 # Rows 5b-481, 5b-485 and 5b-510 each rebuilt this as a scratch kit on the
 # owner's PC, and each time a silent fallback measured nothing: row 481's
-# "both backends" were both re-ranked, found only later. So every backend is
+# "both backends" were both re-ranked, by a cross-encoder this tool no longer
+# knows of (D-201), found only later. So every backend is
 # asked in a process of its own, every answer carries the backends that
 # produced it, and a record whose answers ran on anything but the backend
 # asked for is refused, whether it is being written or read back.
@@ -1174,17 +1171,16 @@ def compare_plain(history_path, stamp, codes, summary, kinds, rows):
 RECORD_KIND = "score-routing sentence record"
 RECORD_VERSION = 1
 WANT, NOT_A_WRITE, NEUTRAL = "want", "not-a-write", "neutral"
-# The four backends a card's words were measured on in rows 485 and 510:
-# lexical (CI's), the trained model, and each with the cross-encoder (the
-# owner's PC is the model with it). The names are the ones heron_retrieve.ran()
-# writes, joined the way backend_of() already labels a run.
+# The two backends a card's words are measured on: lexical (CI's) and the
+# trained model (the owner's PC). Rows 485 and 510 measured each with a
+# cross-encoder as well, until D-201 removed it. The names are the ones
+# heron_retrieve.ran() writes, the way backend_of() already labels a run.
 LEXICAL, MODEL = "lexical", "model"
-BACKENDS = (LEXICAL, MODEL, LEXICAL + "+rerank", MODEL + "+rerank")
+BACKENDS = (LEXICAL, MODEL)
 # Whatever this machine has, named by what answered rather than by what was
 # asked for - the run is still refused if its answers disagree with each other.
 INSTALLED = "installed"
-# What an answer's `backends` says when a route did not run. Anything else in
-# `rerank` means the cross-encoder re-read that shortlist.
+# What an answer's `backends` says when a route did not run.
 NOT_RAN = ("not used", "not said")
 
 TAGS = (WANT, "bad", NEUTRAL)
@@ -1304,15 +1300,10 @@ def sentence_fingerprint(items):
 
 
 def split_backend(name):
-    """(nearness, re-ranked) asked for, or (None, None) for `installed`."""
+    """The nearness backend asked for, or None for `installed`."""
     if name == INSTALLED:
-        return None, None
-    nearness, _sep, extra = name.partition("+")
-    return nearness, extra == "rerank"
-
-
-def _reranked(answer):
-    return (answer.get("backends") or {}).get("rerank") not in (None,) + NOT_RAN
+        return None
+    return name
 
 
 def backend_problems(asked, answers):
@@ -1321,9 +1312,7 @@ def backend_problems(asked, answers):
     A RANK IS THE EVIDENCE, per answer (heron_retrieve.ran()). An exact phrase
     or a remembered answer runs no route and casts no vote. A ranked answer
     whose meaning route found nothing says "not used", which names no backend;
-    a run where NO ranked answer named the one asked for proved nothing. And a
-    shortlist of two or more that the re-ranker did not re-read, on a run that
-    asked for it, is the silent fallback rows 481 and 485 measured.
+    a run where NO ranked answer named the one asked for proved nothing.
     """
     ranked = [a for a in answers if not a.get("error")
               and a.get("route") == "hybrid"]
@@ -1332,25 +1321,18 @@ def backend_problems(asked, answers):
         said = (a.get("backends") or {}).get("nearness") or "not said"
         if said != "not used":
             named.setdefault(said, []).append(a["n"])
-    could_rerank = [a for a in ranked if (a.get("candidates") or 0) >= 2]
-    reread = [a["n"] for a in could_rerank if _reranked(a)]
-    unread = [a["n"] for a in could_rerank if not _reranked(a)]
 
     def which(ns):
         return "#" + ", #".join(str(n) for n in ns[:5]) + (
             " and %d more" % (len(ns) - 5) if len(ns) > 5 else "")
 
     problems = []
-    nearness, rerank = split_backend(asked)
+    nearness = split_backend(asked)
     if nearness is None:
         if len(named) > 1:
             problems.append("the answers ran on more than one nearness backend "
                             "- %s" % "; ".join("%s %s" % (k, which(v))
                                                for k, v in sorted(named.items())))
-        if reread and unread:
-            problems.append("the re-ranker re-read %d shortlists and not %d "
-                            "others - %s" % (len(reread), len(unread),
-                                             which(unread)))
         return problems
     for said, ns in sorted(named.items()):
         if said != nearness:
@@ -1359,12 +1341,6 @@ def backend_problems(asked, answers):
     if ranked and nearness not in named:
         problems.append("no ranked answer carried a %s nearness rank, so "
                         "nothing here measured %s" % (nearness, nearness))
-    if rerank and unread:
-        problems.append("%d shortlist(s) of two or more were not re-read by the "
-                        "cross-encoder - %s" % (len(unread), which(unread)))
-    if not rerank and reread:
-        problems.append("the cross-encoder re-read %d shortlist(s) on a run "
-                        "asked for without it - %s" % (len(reread), which(reread)))
     return problems
 
 
@@ -1441,13 +1417,12 @@ def cards_moved(before, after):
                       if before.get(key) != after.get(key)))
 
 
-def ask_tree(tree, backend, items, shortlists=False, revit=None):
+def ask_tree(tree, backend, items, revit=None):
     """Ask every sentence on one backend, with `tree`'s own search code over a
     store built from `tree`'s cards. Returns the worker's run.
 
-    A PROCESS PER BACKEND, AND A STORE PER PROCESS. Which encoder and which
-    re-ranker answer is settled once per process (heron_embed, heron_rerank),
-    and a store's vectors are the encoder's that wrote them - so a second
+    A PROCESS PER BACKEND, AND A STORE PER PROCESS. Which encoder answers is
+    settled once per process (heron_embed), and a store's vectors are the encoder's that wrote them - so a second
     backend in the same process, or on the same store, is the silent mix this
     exists to stop. The store is a scratch folder deleted afterwards, never
     the one every chat on the machine reads (row 5b-233).
@@ -1461,7 +1436,7 @@ def ask_tree(tree, backend, items, shortlists=False, revit=None):
         with io.open(job, "w", encoding="utf-8") as handle:
             json.dump({"tree": tree, "backend": backend,
                        "sentences": [item["say"] for item in items],
-                       "shortlists": bool(shortlists), "revit": revit},
+                       "revit": revit},
                       handle, ensure_ascii=False)
         env = dict(os.environ)
         env["HERON_KNOWLEDGE"] = os.path.join(work, "knowledge")
@@ -1492,44 +1467,6 @@ def ask_tree(tree, backend, items, shortlists=False, revit=None):
         shutil.rmtree(work, ignore_errors=True)
 
 
-def _cell(row, key):
-    try:
-        return row[key]
-    except (IndexError, KeyError, TypeError):
-        return None
-
-
-def _spy_on_shortlists(retrieve, rerank, held):
-    """Wrap `retrieve._rerank` so each call leaves the shortlist it read in
-    `held`. False when this tree has no such seam.
-
-    NO HOOK IN heron_retrieve, AND THAT IS WHY IT WORKS ON MAIN TOO. `retrieve`
-    looks `_rerank` up as a module global on every call, so wrapping it here
-    reads the head of the list - at most heron_rerank.SHORTLIST, the most the
-    cross-encoder ever reads - with the passage each candidate is given, the
-    fused score that breaks a tie and the cross-encoder's score once it has
-    run. The order it returns is the real `_rerank`'s, untouched.
-    """
-    real = getattr(retrieve, "_rerank", None)
-    if not callable(real):
-        return False
-    size = getattr(rerank, "SHORTLIST", 20)
-
-    def spy(text, ranked, passage):
-        head = list(ranked[:size])
-        passages = [passage(c) for c in head]
-        out = real(text, ranked, passage)
-        held.append([{"id": c.id, "capability": _cell(c.row, "capability"),
-                      "identity": _cell(c.row, "semantic_identity"),
-                      "passage": said, "fused": c.score,
-                      "rerank": c.rerank_score}
-                     for c, said in zip(head, passages)])
-        return out
-
-    retrieve._rerank = spy
-    return True
-
-
 def _worker(job_path, out_path):
     """The other half of ask_tree(), in its own process. Writes the answers,
     or `refused` with why. Exit 0, or 2 when nothing was asked."""
@@ -1557,48 +1494,33 @@ def _worker(job_path, out_path):
                     os.path.join(tree, "brain")]
     try:
         import heron_embed as EMBED
-        import heron_rerank as RERANK
         import heron_retrieve as RETRIEVE
         import heron_scope as SCOPE
         import heron_brain as BRAIN
     except Exception as why:                                # noqa: BLE001
         return refuse("%s's search could not be imported: %s: %s"
                       % (tree, type(why).__name__, why))
-    for module in (EMBED, RERANK, RETRIEVE, SCOPE, BRAIN):
+    for module in (EMBED, RETRIEVE, SCOPE, BRAIN):
         here = os.path.normcase(os.path.realpath(module.__file__))
         if not here.startswith(os.path.normcase(tree) + os.sep):
             return refuse("%s was loaded from %s, not from the tree measured"
                           % (module.__name__, here))
 
     # TURNED OFF BY SETTLING THE LOADER'S ANSWER BEFORE ANYTHING ASKS IT. Row
-    # 481: system Python ran the cross-encoder whatever HERON_EMBED_MODEL
-    # said. Each loader keeps its answer in one list and reads it first, so
-    # [None] there is "nothing installed" for the life of this process.
-    nearness, rerank = split_backend(job["backend"])
-    for off, module, cache in ((nearness == LEXICAL, EMBED, "_MODEL_CACHE"),
-                               (rerank is False, RERANK, "_CACHE")):
-        if not off:
-            continue
-        held = getattr(module, cache, None)
+    # 481: system Python ran a backend other than the one asked for. The
+    # loader keeps its answer in one list and reads it first, so [None] there
+    # is "nothing installed" for the life of this process.
+    nearness = split_backend(job["backend"])
+    if nearness == LEXICAL:
+        held = getattr(EMBED, "_MODEL_CACHE", None)
         if not isinstance(held, list):
-            return refuse("%s has no %s to turn it off with" % (module.__name__,
-                                                                 cache))
+            return refuse("%s has no _MODEL_CACHE to turn it off with"
+                          % EMBED.__name__)
         held[:] = [None]
-    have = {"nearness": EMBED.backend()[0], "rerank": RERANK.backend()[0]}
+    have = {"nearness": EMBED.backend()[0]}
     if nearness is not None and have["nearness"] != nearness:
         return refuse("%s was asked for, and this machine's encoder answers %s "
                       "- nothing was asked" % (job["backend"], have["nearness"]))
-    if rerank and have["rerank"] != RERANK.CROSS_ENCODER:
-        return refuse("%s was asked for, and this machine has no cross-encoder "
-                      "(%s) - nothing was asked. %s"
-                      % (job["backend"], have["rerank"],
-                         "pip install --user sentence-transformers, which "
-                         "needs huggingface.co once for the weights"))
-
-    held = []
-    if job.get("shortlists") and not _spy_on_shortlists(RETRIEVE, RERANK, held):
-        return refuse("%s's heron_retrieve has no _rerank to read a shortlist "
-                      "at" % tree)
 
     # THE CARDS BEFORE THE FIRST SENTENCE AND AFTER THE LAST (row 5b-1880).
     # Every lookup re-reads the cards on disk, so a card edited while the run
@@ -1608,7 +1530,6 @@ def _worker(job_path, out_path):
     for i, say in enumerate(job["sentences"], 1):
         if i % 25 == 0:
             sys.stderr.write("  asked %d of %d\n" % (i, len(job["sentences"])))
-        del held[:]
         try:
             found = BRAIN.lookup(say, revit=job.get("revit"))
         except Exception as why:                            # noqa: BLE001
@@ -1625,14 +1546,11 @@ def _worker(job_path, out_path):
             "provider": found.get("provider"), "risk": found.get("risk"),
             "order": shortlist(found),
             "candidates": len(found.get("candidates") or []),
-            "backends": {"nearness": said.get("nearness"),
-                         "rerank": said.get("rerank")},
+            "backends": {"nearness": said.get("nearness")},
             # AN UNREADABLE RISK COLUMN IS NOT A READ - row 5b-35, as above.
             "error": ("the fragments' risks could not be read (%s)"
                       % found["risks_unreadable"]
-                      if found.get("risks_unreadable") else None),
-            "shortlist": (held[-1] if held else None)
-            if job.get("shortlists") else None})
+                      if found.get("risks_unreadable") else None)})
 
     moved = cards_moved(cards, cards_of(tree))
     if moved:
@@ -1652,8 +1570,7 @@ def _worker(job_path, out_path):
         store.close()
     write({"tree": tree, "asked": job["backend"], "available": have,
            "fragments": fragments, "capabilities": held_caps,
-           "cards": cards_fingerprint(cards),
-           "shortlists": bool(job.get("shortlists")), "answers": answers})
+           "cards": cards_fingerprint(cards), "answers": answers})
     return 0
 
 
@@ -1892,188 +1809,11 @@ def load_record(path):
     return record, refused
 
 
-def items_from_record(record):
-    """The sentence set a record was taken on, shaped as load_sentences()."""
-    items = []
-    for n, one in enumerate(record["sentences"]["items"], 1):
-        kind, want = parse_expect(one["expect"]) or (NEUTRAL, None)
-        items.append({"n": n, "say": one["say"], "kind": kind, "want": want,
-                      "expect": one["expect"], "groups": list(one["groups"])})
-    return items
-
-
-# ---------------------------------------------------------------------------
-# The fast loop - candidate identities for one card, on recorded shortlists
-# ---------------------------------------------------------------------------
-
-def load_identities(path):
-    """The candidate identities, one per line; blank and # lines skipped."""
-    with io.open(path, encoding="utf-8") as handle:
-        lines = [_norm(line) for line in handle.read().splitlines()]
-    out = []
-    for line in lines:
-        if line and not line.startswith("#") and line not in out:
-            out.append(line)
-    return out
-
-
-def _winner(shortlist_, scores):
-    """The capability first after a re-read - heron_retrieve._rerank's order:
-    the cross-encoder's score, then the fused score, then the id; anything it
-    did not score stays behind everything it did."""
-    scored = [(s, e) for s, e in zip(scores, shortlist_) if s is not None]
-    if not scored:
-        return shortlist_[0].get("capability") if shortlist_ else None
-    scored.sort(key=lambda se: (-se[0], -(se[1].get("fused") or 0.0),
-                                str(se[1].get("id"))))
-    return scored[0][1].get("capability")
-
-
-def rescore(items, run, card, identities, scorer, rung, threshold):
-    """What each candidate identity for `card` would win and take, on the
-    shortlists `run` recorded. Never asks the search. Returns a dict.
-
-    `scorer(question, passages)` is heron_rerank.scores in a real run - a
-    score per passage, or None. The baseline is re-scored too, so the
-    recorded identity and every candidate are judged by the same model.
-
-    WHAT IT CANNOT SEE, SAID RATHER THAN GUESSED. A new identity also moves
-    the words and nearness routes, so it can carry a card into a shortlist or
-    out of one; this keeps every shortlist as recorded. A sentence whose
-    shortlist did not hold the card is out of reach - only a full run says -
-    and one answered by an exact phrase never reached the re-ranker at all.
-    """
-    card_writes = rung(run["capabilities"].get(card)) >= threshold
-    # BY ITS WORDS, NOT ITS NUMBER: --sentences beside --from may be a set
-    # that grew since the record was taken.
-    by_say = dict((_norm(a["say"]).lower(), a) for a in run["answers"])
-    skipped = {"identity": 0, "no shortlist": 0, "not scored": 0,
-               "not in the record": 0}
-    reach = {"wanted": 0, "bad": 0, "neutral": 0}
-    blind = 0
-    prepared = []
-    for item in items:
-        answer = by_say.get(item["say"].lower())
-        if answer is None:
-            skipped["not in the record"] += 1
-            continue
-        if answer.get("error"):
-            skipped["not scored"] += 1
-            continue
-        if answer.get("route") != "hybrid":
-            skipped["identity"] += 1
-            continue
-        held = answer.get("shortlist")
-        if not held:
-            skipped["no shortlist"] += 1
-            continue
-        if item["kind"] == WANT:
-            role = "wanted" if item["want"] == card else "bad"
-        elif item["kind"] == NOT_A_WRITE and card_writes:
-            role = "bad"
-        else:
-            role = "neutral"
-        mine = [k for k, e in enumerate(held) if e.get("capability") == card]
-        if not mine:
-            reach[role] += 1
-            continue
-        swap = [k for k in mine if held[k].get("identity")
-                and held[k]["identity"] in (held[k].get("passage") or "")]
-        blind += len(swap) < len(mine)
-        base = scorer(item["say"], [e.get("passage") or "" for e in held])
-        if base is None or len(base) != len(held):
-            skipped["not scored"] += 1
-            continue
-        prepared.append((item, answer, held, swap, list(base), role))
-
-    lines = []
-    agree = 0
-    for identity in [None] + list(identities):
-        tally = {"wanted": 0, "won": 0, "bad": 0, "taken": 0, "questions": 0,
-                 "neutral": 0, "neutral_taken": 0}
-        for item, answer, held, swap, base, role in prepared:
-            scores = list(base)
-            if identity is not None and swap:
-                got = scorer(item["say"], [
-                    held[k]["passage"].replace(held[k]["identity"], identity, 1)
-                    for k in swap])
-                if got is not None and len(got) == len(swap):
-                    for k, value in zip(swap, got):
-                        scores[k] = value
-            won = _winner(held, scores) == card
-            if identity is None:
-                agree += _winner(held, scores) == answer.get("capability")
-            if role == "wanted":
-                tally["wanted"] += 1
-                tally["won"] += won
-            elif role == "bad":
-                tally["bad"] += 1
-                tally["taken"] += won
-                tally["questions"] += won and item["kind"] == NOT_A_WRITE
-            else:
-                tally["neutral"] += 1
-                tally["neutral_taken"] += won
-        lines.append((identity, tally))
-    return {"lines": lines, "skipped": skipped, "out_of_reach": reach,
-            "blind": blind, "read": len(prepared), "agree": agree,
-            "card_writes": card_writes}
-
-
-def report_rescore(label, card, found, took):
-    """Print one line per candidate: wanted won, bad taken, neutral taken."""
-    out = sys.stdout.write
-    sk, reach = found["skipped"], found["out_of_reach"]
-    out("\nRE-SCORED OFFLINE FOR %s (%s) on the %s shortlists - %d read, "
-        "%.1f s:\n" % (card, "a write" if found["card_writes"] else "not a "
-                       "write", label, found["read"], took))
-    out("  skipped: %d answered by an exact phrase or remembered (they never "
-        "reach the re-ranker),\n  %d with no shortlist, %d not scored, %d not "
-        "in the record\n" % (sk["identity"], sk["no shortlist"],
-                             sk["not scored"], sk["not in the record"]))
-    if any(reach.values()):
-        out("  OUT OF REACH - the recorded shortlist did not hold %s: %d wanted, "
-            "%d bad, %d neutral.\n  A new identity can carry it in; only a "
-            "full run says.\n" % (card, reach["wanted"], reach["bad"],
-                                  reach["neutral"]))
-    if found["blind"]:
-        out("  %d shortlist(s) gave the re-ranker a passage without the card's "
-            "identity in it, so no\n  candidate can move them.\n"
-            % found["blind"])
-    if label.endswith("+rerank") and found["agree"] != found["read"]:
-        out("  THE RECORDED IDENTITY, RE-SCORED HERE, PICKS ANOTHER WINNER ON %d "
-            "of %d - this cross-encoder\n  is not the one the record was taken "
-            "with, so read the lines below against the first.\n"
-            % (found["read"] - found["agree"], found["read"]))
-    out("\n  %-14s %-16s %-8s %s\n" % ("wanted won", "bad taken", "neutral",
-                                      "identity"))
-    for identity, t in found["lines"]:
-        out("  %-14s %-16s %-8s %s\n"
-            % ("%d of %d" % (t["won"], t["wanted"]),
-               "%d (%d question%s)" % (t["taken"], t["questions"],
-                                       "" if t["questions"] == 1 else "s"),
-               "%d" % t["neutral_taken"],
-               "(as recorded)" if identity is None else '"%s"' % identity))
-
-
 def sentences_main(args, rung, threshold):
-    """--sentences, --compare, --identities: everything a session's own set
+    """--sentences and --compare: everything a session's own set
     does. Exit 0 whatever it finds (D-100); 2 when nothing was measured, or a
     record would be written or read on the wrong backend."""
     err = sys.stderr.write
-    asking = args.sentences and not args.source
-    if args.source and (args.tree or args.out or args.compare
-                        or args.shortlists):
-        err("COULD NOT RUN: --from re-scores a record and asks nothing, so "
-            "--tree, --out, --compare and --shortlists do not go with it\n")
-        return 2
-    if args.identities and not args.card:
-        err("COULD NOT RUN: --identities needs --card, the capability whose "
-            "identity they would replace\n")
-        return 2
-    if args.identities and asking and not args.shortlists:
-        err("COULD NOT RUN: --identities re-scores shortlists - take them with "
-            "--shortlists, or read a record with --from\n")
-        return 2
     if args.record:
         err("COULD NOT RUN: brain/retrieval-history.md holds the owner's and "
             "the plain questions only - a sentence set's record is --out\n")
@@ -2103,81 +1843,64 @@ def sentences_main(args, rung, threshold):
                                                       40), item["say"]))
             return 0
 
-    try:
-        if args.source:
-            record, refused = load_record(args.source)
-            runs = dict((k, v) for k, v in record["runs"].items()
-                        if k not in refused
-                        and (not args.backend or k in backends))
-            for label, why in sorted(refused.items()):
-                print("NOT READ - the %s run in %s: %s" % (label, args.source,
-                                                           why))
-            items = items or items_from_record(record)
-            tree = record["tree"]["path"]
-        else:
-            tree = os.path.realpath(args.tree or ROOT)
-            problem = tree_problem(tree)
-            if problem:
-                err("COULD NOT RUN: %s\n" % problem)
-                return 2
-            print("Sentences: %d in %s, set %s" % (len(items), args.sentences,
-                                                   sentence_fingerprint(items)))
-            head, dirty = tree_head(tree)
-            print("Tree: %s at %s%s" % (tree, (head or "no git")[:12],
-                                        ", WITH CHANGES NOT COMMITTED"
-                                        if dirty else ""))
-            runs = {}
-            for backend in backends:
-                sys.stderr.write("  asking %d sentences on %s ...\n"
-                                 % (len(items), backend))
-                # ONE BACKEND THIS MACHINE HAS NOT GOT IS NOT THE RUN. On a
-                # container with no trained model, `all` still measures the
-                # two lexical backends, and says which two it could not.
-                try:
-                    run = ask_tree(tree, backend, items, args.shortlists,
-                                   args.revit)
-                except CouldNotAsk as why:
-                    unasked[backend] = str(why)
-                    continue
-                label = backend if backend != INSTALLED else backend_of(
-                    run["answers"])
-                run["capabilities"] = highest_risks(run["capabilities"], rung)
-                runs[label] = run
-            for backend, why in unasked.items():
-                print("\nNOT ASKED ON %s - %s" % (backend.upper(), why))
-            if not runs:
-                err("COULD NOT RUN: no backend asked for could be asked\n")
-                return 2
-            # ONE TREE FOR EVERY BACKEND (row 5b-1880): each is asked in a
-            # process of its own, one after another, and a card edited between
-            # two of them makes the backends' answers two trees' answers.
-            seen_cards = sorted(set(str(run.get("cards")) for run in
-                                    runs.values()))
-            if len(seen_cards) > 1:
-                err("COULD NOT RUN: the cards changed between one backend's "
-                    "run and the next (%s), so the runs measured different "
-                    "trees. Ask again on a tree nothing is editing\n"
-                    % ", ".join("%s %s" % (label, run.get("cards"))
-                                for label, run in sorted(runs.items())))
-                return 2
-            print("Cards: %s - every file under brain/fragments, the same "
-                  "before the first sentence and after the last"
-                  % seen_cards[0])
-    except CouldNotAsk as why:
-        err("COULD NOT RUN: %s\n" % why)
+    tree = os.path.realpath(args.tree or ROOT)
+    problem = tree_problem(tree)
+    if problem:
+        err("COULD NOT RUN: %s\n" % problem)
         return 2
+    print("Sentences: %d in %s, set %s" % (len(items), args.sentences,
+                                           sentence_fingerprint(items)))
+    head, dirty = tree_head(tree)
+    print("Tree: %s at %s%s" % (tree, (head or "no git")[:12],
+                                ", WITH CHANGES NOT COMMITTED"
+                                if dirty else ""))
+    runs = {}
+    for backend in backends:
+        sys.stderr.write("  asking %d sentences on %s ...\n"
+                         % (len(items), backend))
+        # ONE BACKEND THIS MACHINE HAS NOT GOT IS NOT THE RUN. On a
+        # container with no trained model, `all` still measures lexical,
+        # and says which one it could not.
+        try:
+            run = ask_tree(tree, backend, items, args.revit)
+        except CouldNotAsk as why:
+            unasked[backend] = str(why)
+            continue
+        label = backend if backend != INSTALLED else backend_of(
+            run["answers"])
+        run["capabilities"] = highest_risks(run["capabilities"], rung)
+        runs[label] = run
+    for backend, why in unasked.items():
+        print("\nNOT ASKED ON %s - %s" % (backend.upper(), why))
+    if not runs:
+        err("COULD NOT RUN: no backend asked for could be asked\n")
+        return 2
+    # ONE TREE FOR EVERY BACKEND (row 5b-1880): each is asked in a
+    # process of its own, one after another, and a card edited between
+    # two of them makes the backends' answers two trees' answers.
+    seen_cards = sorted(set(str(run.get("cards")) for run in
+                            runs.values()))
+    if len(seen_cards) > 1:
+        err("COULD NOT RUN: the cards changed between one backend's "
+            "run and the next (%s), so the runs measured different "
+            "trees. Ask again on a tree nothing is editing\n"
+            % ", ".join("%s %s" % (label, run.get("cards"))
+                        for label, run in sorted(runs.items())))
+        return 2
+    print("Cards: %s - every file under brain/fragments, the same "
+          "before the first sentence and after the last"
+          % seen_cards[0])
 
     wrong = {}
-    if asking:
-        for label, run in runs.items():
-            problems = backend_problems(run["asked"], run["answers"])
-            report_run(label, run, items, rung, threshold)
-            if problems:
-                wrong[label] = problems
-                print("\n  NOT A RUN ON %s - %s" % (label.upper(),
-                                                   "; ".join(problems)))
-            else:
-                print("\n  Every ranked answer ran on %s." % label)
+    for label, run in runs.items():
+        problems = backend_problems(run["asked"], run["answers"])
+        report_run(label, run, items, rung, threshold)
+        if problems:
+            wrong[label] = problems
+            print("\n  NOT A RUN ON %s - %s" % (label.upper(),
+                                               "; ".join(problems)))
+        else:
+            print("\n  Every ranked answer ran on %s." % label)
 
     if args.compare:
         try:
@@ -2208,32 +1931,6 @@ def sentences_main(args, rung, threshold):
             else:
                 compare_runs(label, earlier["runs"][label], run, items, rung,
                              threshold)
-
-    if args.identities:
-        import heron_rerank as RERANK
-        if RERANK.backend()[0] != RERANK.CROSS_ENCODER:
-            err("COULD NOT RUN: re-scoring needs a cross-encoder on this "
-                "machine, and there is none - %s\n" % RERANK.backend()[1])
-            return 2
-        identities = load_identities(args.identities)
-        if not identities:
-            err("COULD NOT RUN: %s holds no identity\n" % args.identities)
-            return 2
-        for label, run in sorted(runs.items()):
-            if label in wrong:
-                continue
-            if args.card not in run["capabilities"]:
-                err("COULD NOT RUN: no card in the %s run provides %s\n"
-                    % (label, args.card))
-                return 2
-            if not run.get("shortlists"):
-                print("\nNOT RE-SCORED ON %s - its run recorded no shortlists"
-                      % label.upper())
-                continue
-            started = time.time()
-            found = rescore(items, run, args.card, identities, RERANK.scores,
-                            rung, threshold)
-            report_rescore(label, args.card, found, time.time() - started)
 
     if args.out:
         if wrong:
@@ -2290,17 +1987,6 @@ def main(argv=None):
     parser.add_argument("--compare", default=None,
                         help="an earlier record: list every changed answer, "
                              "tagged want, bad or neutral, per backend")
-    parser.add_argument("--shortlists", action="store_true",
-                        help="record the shortlist the re-ranker read for "
-                             "each sentence - at most its top 20")
-    parser.add_argument("--identities", default=None,
-                        help="candidate semantic identities, one per line, "
-                             "re-scored offline for --card")
-    parser.add_argument("--card", default=None,
-                        help="the capability whose identity they replace")
-    parser.add_argument("--from", dest="source", default=None,
-                        help="the record whose shortlists --identities "
-                             "re-scores; asks nothing")
     parser.add_argument("--worker", nargs=2, default=None,
                         help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
@@ -2316,17 +2002,15 @@ def main(argv=None):
                          "%s\n" % INSTALL.install_line("pip install --user pyyaml"))
         return 2
 
-    if args.sentences or args.source:
+    if args.sentences:
         _risk_name, threshold, ladder = _sibling(
             "generate-jobs.py").write_threshold()
         return sentences_main(args, lambda risk: ladder.get(
             (risk or "").upper(), -1), threshold)
-    if (args.tree or args.backend or args.out or args.compare
-            or args.shortlists or args.identities or args.card):
-        sys.stderr.write("COULD NOT RUN: --tree, --backend, --out, --compare, "
-                         "--shortlists, --identities and --card measure a "
-                         "sentence set - name one with --sentences, or a "
-                         "record with --from\n")
+    if args.tree or args.backend or args.out or args.compare:
+        sys.stderr.write("COULD NOT RUN: --tree, --backend, --out and "
+                         "--compare measure a sentence set - name one with "
+                         "--sentences\n")
         return 2
 
     doc, rows, problems = load_key(args.questions)

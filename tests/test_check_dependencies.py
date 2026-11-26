@@ -187,31 +187,23 @@ def main():
 
         print()
         print("5. The size is READ from the code that downloads, never typed")
-        stated = tool.announced_size("sentence_transformers")
-        check(bool(stated), "a size comes back for sentence-transformers")
-        if stated:
-            source = io.open(TOOL, encoding="utf-8").read()
-            check(stated not in source,
-                  "and it is NOT in this tool's source: %r" % stated[:24])
+        # R-77: the trained embedding announces its own size, in heron_embed.
+        # (The re-ranker did too, until D-201 removed it.)
+        said = tool.announced_size("model2vec")
+        check(bool(said), "a size comes back for model2vec")
+        if said:
             brain = os.path.join(ROOT, "brain")
             if brain not in sys.path:
                 sys.path.insert(0, brain)
-            import heron_rerank                     # noqa: E402
-            check(stated in heron_rerank.announcement(),
-                  "it is in heron_rerank.announcement(), which is the code "
-                  "that owns the download and prints it before the network "
-                  "is touched")
-        # R-77, 2026-11-20: the trained embedding announces its own size now,
-        # in heron_embed - so the same rule holds for it as for the re-ranker.
-        said = tool.announced_size("model2vec")
-        check(bool(said), "a size comes back for model2vec too")
-        if said:
             import heron_embed                      # noqa: E402
             check(said in heron_embed.announcement(),
                   "read from heron_embed.announcement(), the code that owns "
-                  "that download")
+                  "that download and prints it before the network is touched")
             check(said not in io.open(TOOL, encoding="utf-8").read(),
                   "and not typed in this tool")
+        check(tool.announced_size("sentence_transformers") is None,
+              "and the removed re-ranker's package is announced by nothing "
+              "(D-201)")
         check(tool.announced_size("mcp") is None,
               "and nothing is invented for a package no code announces")
 
@@ -229,10 +221,8 @@ def main():
         check("docs/guide/system-requirements.md" in readme,
               "and README.md links to it")
         import heron_embed as _embed                # noqa: E402
-        import heron_rerank as _rerank              # noqa: E402
         import heron_ingest as _ingest              # noqa: E402
         for owner, size in (("heron_embed", getattr(_embed, "SIZE", None)),
-                            ("heron_rerank", getattr(_rerank, "SIZE", None)),
                             ("heron_ingest",
                              getattr(_ingest, "PDF_READER_SIZE", None))):
             check(bool(size) and size in body,

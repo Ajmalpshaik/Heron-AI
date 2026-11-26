@@ -63,7 +63,6 @@ def main():
     import heron_search as SEARCH
     import heron_ingest as I
     import heron_retrieve as R
-    import heron_rerank as RERANK
     import heron_graph as GRAPH
     import heron_scope as SCOPE
     import heron_search as SEARCH
@@ -160,20 +159,9 @@ def main():
           "and a clause number and nothing a person could open")
     print()
 
-    print("5. NOTHING DOWNLOADS A MODEL WITHOUT SAYING SO FIRST")
-    said = RERANK.fetch(confirmed=False)
-    check("Nothing was downloaded" in said,
-          "fetch() without a yes downloads nothing")
-    check(RERANK.SIZE in said,
-          "and shows the size first - warm() used to go straight to "
-          "CrossEncoder(), which FETCHES the weights, so production start "
-          "could pull gigabytes with nobody told")
+    # 5 and 7 were the optional cross-encoder's - its download asked first,
+    # and a re-ranked report said how many it read. Both went with it (D-201).
     import inspect
-    source = inspect.getsource(RERANK._load)
-    check("offline=True" in source,
-          "and the automatic path loads offline-only, so it can never start "
-          "a download by itself")
-    print()
 
     print("6. THE CONTEST DOES NOT BLAME STATUS FOR GAPS STATUS CANNOT MAKE")
     span = R.QUALITY_SPAN / R.ONE_RANK
@@ -199,24 +187,6 @@ def main():
     narrow = R.Contest(pair(0.30, 0.30 - 0.2 * R.ONE_RANK), 200, 20, 40)
     check("status alone" in narrow.sentence(),
           "and a 0.2-rank gap still is, because status can")
-    print()
-
-    print("7. A RE-RANKED REPORT SAYS HOW MANY IT ACTUALLY READ")
-    RERANK._CACHE[:] = [lambda pairs: [float(i) for i in range(len(pairs))]]
-    many = [R.Candidate("f%02d" % i, {"capability": "c", "status": "DRAFT",
-                                      "semantic_identity": "s", "domain": "d"})
-            for i in range(20)]
-    for i, got in enumerate(many):
-        got.fused = 1.0 - i * 0.01
-        got.keyword_rank = i + 1
-    ranked = R._rerank("a question", many, R._fragment_passage)
-    contest = R.Contest(ranked[:5], 200, 20, 40)
-    check("it read 20" in contest.sentence(),
-          "with limit=5 the report says the re-ranker read 20 - it used to "
-          "call five candidates 'the shortlist it was given'")
-    check("over THESE 5" in contest.sentence(),
-          "and says the fusion numbers are over the five in hand")
-    RERANK._CACHE[:] = [None]
     print()
 
     print("8. A SENTENCE END INSIDE THE LIMIT BEATS A BLANK LINE PAST IT")
@@ -415,12 +385,13 @@ def main():
     print()
 
     print("19. NO PROCESS-WIDE OFFLINE FLAGS, EVER")
-    source = inspect.getsource(RERANK)
+    # Found in the cross-encoder's loader, which set one around its own load
+    # while heron_brain.warm() started the ENCODER on another thread - so the
+    # encoder could see the flag, fail its download and cache None for the
+    # process. That loader is gone (D-201); the encoder keeps the rule.
+    source = inspect.getsource(EMBED)
     check("os.environ[key]" not in source and "HF_HUB_OFFLINE\"" not in source,
-          "the re-ranker sets no huggingface environment variable - it did, "
-          "around its own load, and heron_brain.warm() starts the ENCODER on "
-          "another thread at the same moment, so the encoder could see the "
-          "flag, fail its download and cache None for the process")
+          "the encoder sets no huggingface environment variable")
     check("local_files_only" in source,
           "it uses a per-load keyword instead, which no other loader can see")
     print()
@@ -510,26 +481,24 @@ def main():
     import heron_brain as BRAIN2
     for route in ("identity", "cache", "nothing"):
         said = BRAIN2._backends(SEARCH.Answer(route))
-        check(said["nearness"] == "not used" and said["rerank"] == "not used",
-              "the %r route reports both backends as 'not used' - it answers "
-              "without searching, so there was no shortlist for either to "
-              "touch" % route)
+        check(said["nearness"] == "not used" and "rerank" not in said,
+              "the %r route reports the nearness backend as 'not used', and "
+              "names no re-ranker (D-201) - it answers without searching, so "
+              "there was no shortlist to touch" % route)
 
     # AND IT READS WHAT THE RUN RECORDED, never what the machine has now.
     # Gating on the route fixed only the short circuits: a warm-up finishing
-    # between find() and the question still labelled a lexical answer "model",
-    # and a loaded re-ranker that returned no scores was reported as having
-    # re-read the shortlist. Round seven, 2026-09-11.
+    # between find() and the question still labelled a lexical answer "model".
+    # Round seven, 2026-09-11.
     check("def ran(" in inspect.getsource(R),
           "heron_retrieve records which backends produced a rank, in the "
           "function that produced it")
     made_up = SEARCH.Answer("hybrid", backends={
-        "nearness": "lexical", "nearness_why": "measured on this run",
-        "rerank": "not used", "rerank_why": "nothing re-read this shortlist"})
+        "nearness": "lexical", "nearness_why": "measured on this run"})
     check(BRAIN2._backends(made_up)["nearness"] == "lexical",
           "and the seam repeats the run's own record rather than asking a "
           "backend a second question with a different answer")
-    check(BRAIN2._backends(SEARCH.Answer("hybrid"))["rerank"] == "not said",
+    check(BRAIN2._backends(SEARCH.Answer("hybrid"))["nearness"] == "not said",
           "a searching route that recorded nothing says so - naming a backend "
           "there would be a sentence about the machine wearing the words of a "
           "sentence about the answer")
@@ -675,8 +644,7 @@ def main():
     print("32. ONE SEARCH PER SCOPE ON THE SERVED PATH")
     check("asked=asked" in brain_source,
           "standards() hands the Librarian's answer to the conflict check - "
-          "without it every served request searched, and where a "
-          "cross-encoder is installed re-ranked, every scope TWICE, and the "
+          "without it every served request searched every scope TWICE, and the "
           "two shortlists could differ so the disagreement shown was about "
           "other clauses than the ones listed above it")
     check("asked=None" in inspect.getsource(C.disagreements),
@@ -1166,7 +1134,7 @@ def main():
           "the chunks a draft CITES are fetched by id - check_answer "
           "reassembles the packet by re-running retrieval, so a clause that "
           "heron_standards had shown could fall out of the new top-five when "
-          "a re-ranker warmed or a document was ingested between the two "
+          "the encoder warmed or a document was ingested between the two "
           "calls, and the report said UNRESOLVED about a real clause still "
           "sitting in the store")
     print()
