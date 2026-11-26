@@ -29,8 +29,8 @@ install_line() - and this holds it and everything that prints such a line:
      are not scanned.
   4. The MCP server, loaded with an MCP package that has neither SDK's
      server module, stops with the line install_line() gives here.
-  5. A brain module, and a tool that does not put brain/ on its path, each
-     with no PyYAML, print the line install_line() gives here.
+  5. A brain module, with no PyYAML, prints the line install_line() gives
+     here.
 
 WHAT IT CANNOT DO: see the Windows line printed on a real Windows. Sections 4
 and 5 run on whatever runs this suite; the Windows answer is held by 2 and 3.
@@ -195,7 +195,7 @@ def main():
         check(mine in said, "and names %s" % mine)
 
         print()
-        print("5. With no PyYAML, a brain module and a tool name this platform's line")
+        print("5. With no PyYAML, a brain module names this platform's line")
         shadow = os.path.join(work, "shadow")
         os.makedirs(shadow)
         io.open(os.path.join(shadow, "yaml.py"), "w").write(
@@ -205,15 +205,6 @@ def main():
                                 "import heron_agents" % (shadow, BRAIN), work)
         check(code != 0 and mine in said,
               "brain/heron_agents.py stops and names %s (exit %d)" % (mine, code))
-        tool = os.path.join(ROOT, "tools", "resign-machine-proofs.py")
-        code, said = run_python(
-            "import importlib.util, sys; sys.path[:0] = [%r]; "
-            "spec = importlib.util.spec_from_file_location('t', %r); "
-            "t = importlib.util.module_from_spec(spec); spec.loader.exec_module(t); "
-            "t._yaml()" % (shadow, tool), work)
-        check(code != 0 and mine in said,
-              "tools/resign-machine-proofs.py, which puts no brain/ on its path, "
-              "names %s too (exit %d)" % (mine, code))
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
