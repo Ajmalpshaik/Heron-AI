@@ -1754,6 +1754,12 @@ and on the trained model (run only as a guard) `DESCRIBE_ELEMENTS` saying *renam
 selected elements* - both reworded, and `tests/test_routing_phrases.py` on the model then fails only
 the three curtain-wall checks main fails (row 5b-329). On `lexical` that suite does not run (exit 3).
 
+**Row 5b-2053's five guards left open on the one search,** asked on `lexical` afterwards:
+`PLACE_HOSTED_FAMILY`'s identity, now naming each host, takes *place doors and windows hosted in walls at
+points* from `SELECT_BY_HOST`; `LIST_VIEWS_ON_SHEET`'s, shorter, lifts *is the legend going off the sheet*
+from fourth to second. The other three found no honest wording (the row says why). His 79, the plain
+questions and the 604 frozen sentences read exactly as in the table above with both in.
+
 ### What this does not establish
 
 That any answer is right in Revit; anything on the trained model beyond that one suite; and that the
