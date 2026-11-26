@@ -17,7 +17,9 @@ positive:
       before and after. Version 2 answered "0 moved the whole offset ... 2
       could not be read back" (row 5b-1733)
 
-  # VERSION 4 (2026-11-26) - row 5b-2046. Each FAILS on version 3. NOT RUN.
+  # VERSION 4 (2026-11-26) - row 5b-2046. The first FAILS on version 3; the
+  # locked one fails on it by `notModelElements`; the lines case counts only
+  # where a line reads Category null (see its expect). NOT RUN.
   # Arranged in a SCRATCH family on Revit 2020 (NEEDS-CHECKING Group QS) - a
   # new family from Metric Generic Model.rft, never the owner's fan family.
   - given: >
@@ -37,16 +39,31 @@ positive:
       held by a labelled dimension), offset 0,0,100 - the state the owner's
       fan body is most likely in
     expect: >
-      write down which it is - `blocked`, `partly`, or Revit refusing for the
+      `notModelElements` EMPTY (version 3 refused it there), and write down
+      which it came back as - `blocked`, `partly`, or Revit refusing for the
       constraint - and that it is NOT in `movedIds`. Either is an honest
       answer; a clean `moved` with the extrusion where it was is the defect
+  - given: >
+      two extrusions locked to ONE shared reference plane, both handed in in
+      one call, offset 0,0,100 - the field case was 31 forms in one call
+    expect: >
+      write down what each did. If moving the first carried the second, the
+      second is in `unverified` with the FAMILY finding ("carried by a
+      constraint ... move the reference plane"), never the tag advice and
+      never counted in `movedIds`
+  - given: one free extrusion with toPoint 0,0,1000, offset left out
+    expect: >
+      in `noLocationPoint`, not moved, and the finding says it has no
+      location point - "a family form" - not that it is positioned by a curve
   - given: >
       one model line (offset 0,0,100) and one symbolic line in a plan view
       (offset 100,0,0) in the scratch family
     expect: >
       both moved, not refused. Write down what Category reads on each - only
-      forms were seen refused in the field; lines are let through by the same
-      rule without having been seen
+      forms were seen refused in the field. The case says something about
+      version 4 ONLY where a line reads Category null; where it reads a
+      category, version 3 moved it too, and the CurveElement half of the rule
+      stays unexercised - say so
 
 negative:
   # VERSION 4 (2026-11-26) - row 5b-2046. NOT RUN. Load any small family into
@@ -61,6 +78,26 @@ negative:
       back. The version 4 widening is for forms and lines in a family, never
       for types. The version 3 wall-and-wall-type case below still holds in a
       project, where the family exception does not apply
+  - given: >
+      in the scratch family, one free extrusion and an element with NO
+      category that is neither a form nor a line (the prover picks one - a
+      sketch or sketch plane of a form is the likely one - and writes down
+      what it was and what its Category read), offset 0,0,100
+    expect: >
+      REFUSED before anything moves, the other element's id alone in
+      `notModelElements`. This is the case that reaches version 4's changed
+      line: a version that let every no-category element through in a
+      family would move both
+  - given: in the scratch family, one extrusion and the LOADED family's own Family id, offset 0,0,100
+    expect: refused, the Family id in `notModelElements`, nothing moved
+  - given: >
+      in a PROJECT, a no-category element that is not a type - id 398 on
+      Heron OC Tags, the version 3 proof's own negative; read first that it
+      is not a type, and pick another if it is - with one wall,
+      offset 1000,0,0
+    expect: >
+      refused as in version 3, 398 in `notModelElements` - the family
+      exception does not reach a project
 
   - given: >
       2 of the 4 ducts put inside a REVIT GROUP, the same 200 mm up

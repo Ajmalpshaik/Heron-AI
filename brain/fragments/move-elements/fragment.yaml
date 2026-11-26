@@ -239,12 +239,24 @@ compatibility-note: >
 utterances:
   - move the ducts up 200
   - shift them 300 to the left
+  # ADDED 2026-11-26 (row 5b-2048), put among the first eight because the
+  # re-ranker reads only those (D-134). In the owner's family build "move all
+  # the solid forms in this family up by 360 mm" reached CREATE_FAMILY_FORMS
+  # and "move selected elements by a distance in Z" OFFSET_TAGS_FROM_HOST. A
+  # family's own forms moved by a distance are this card's since version 4.
+  - move the forms in this family up by a distance
+  - move the selection along the Z axis
   - raise the terminals
   - nudge these over
   - move them down 50
-  - drop the services 100 mm
   # MOVED 2026-11-01 from MOVE_ELEMENTS_TO_POINT, merged into this card.
+  # Kept within the first eight on 2026-11-26 (row 5b-2048): pushed to ninth,
+  # "move the equipment to the coordinates 4500, 2200" left this card on both
+  # re-ranked backends.
   - move this to these coordinates
+  - drop the services 100 mm
+  # ADDED 2026-11-26 (row 5b-2048), after the first eight.
+  - lift the extrusions and blends in the family editor
   - put it at this exact point
   - set the location of these
   - move to 0,0,0

@@ -43,3 +43,14 @@ groups:
     expect: want MOVE_ANNOTATION
   - say: where is this element now
     expect: not-a-write
+# ADDED AFTER THE FIRST CARD EDIT, and said so: the edit moved two to-a-point
+# utterances out of the re-ranker's first eight (D-134), so this group guards
+# what that could cost. Measured on BOTH trees, main re-run with it.
+- group: 'to a point - guard on what the edit pushed down'
+  sentences:
+  - say: put this pump at 12000, 5000, 0
+    expect: want MOVE_ELEMENTS
+  - say: move the equipment to the coordinates 4500, 2200
+    expect: want MOVE_ELEMENTS
+  - say: place the fan exactly at the origin
+    expect: want MOVE_ELEMENTS

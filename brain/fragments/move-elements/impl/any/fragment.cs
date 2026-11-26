@@ -258,8 +258,8 @@ else if (stop != null || toAPoint)
 
         findings.Add(string.Format(
             "{0} are now at the point, {1} did not arrive ({2} of them Revit would not move at all - a "
-            + "constraint, a group or a pin holds them), {3} are positioned by a curve rather than a point "
-            + "and have no single answer to this",
+            + "constraint, a group or a pin holds them), {3} have no location point - positioned by a curve, "
+            + "or a family form, which has no location at all - and have no single answer to this",
             moved, notAtPoint.Count, blocked.Count, noLocationPoint.Count));
     }
 }
@@ -321,7 +321,15 @@ foreach (var element in attempted)
 
 findings.Add(string.Format("{0} moved the whole offset, {1} part of it, {2} did not move, {3} could not "
     + "be read back", moved, partly, blocked.Count, unverified.Count - overshot));
-if (overshot > 0)
+// VERSION 4: in a family the usual cause is not a tag but a CONSTRAINT -
+// two forms locked to one reference plane, so moving the first carried the
+// second before it was moved itself.
+if (overshot > 0 && doc.IsFamilyDocument)
+    findings.Add(string.Format("{0} moved FURTHER than the offset - in a family, usually a form or line "
+        + "carried by a constraint it shares with another one handed in (both locked to one reference "
+        + "plane), then moved again itself. Each is in `unverified`; move the reference plane they are "
+        + "locked to instead, or unlock them and move them again", overshot));
+else if (overshot > 0)
     findings.Add(string.Format("{0} moved FURTHER than the offset - usually a tag handed in with the element "
         + "it tags, which carried it as well. Each is in `unverified`; move the elements without their "
         + "tags, or the tags alone with MOVE_ANNOTATION", overshot));

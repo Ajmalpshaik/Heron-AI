@@ -472,7 +472,7 @@ Shifts every element by one offset and reports FOUR outcomes, because "it did no
 | **Proved on Revit** | none |
 | **Capability** | `MOVE_ELEMENTS` |
 
-Once it is proved, you will ask: *"move the ducts up 200"* · *"shift them 300 to the left"* · *"raise the terminals"*
+Once it is proved, you will ask: *"move the ducts up 200"* · *"shift them 300 to the left"* · *"move the forms in this family up by a distance"*
 
 <a id="move-to-ray-hit"></a>
 
