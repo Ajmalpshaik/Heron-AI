@@ -202,10 +202,18 @@ positive_spaces:
       fails "Not every value held what was asked for", nothing kept - record
       which
 
-  - given: the same family, typeName "all", values 'Keynote=" a; b "'
+  - given: >
+      the same family with TWO types, typeName "all", values
+      'Keynote=" a; b "'
     expect: >
-      every type reads ' a; b ', the spaces and the semicolon kept, one entry in
+      both types read ' a; b ', the spaces and the semicolon kept, one entry in
       Revit's undo list; the answer's route says which way it was written
+
+  - given: the same family, values 'Keynote="   "' (three spaces in quotes)
+    expect: >
+      Keynote reads back three spaces - version 6 trimmed this to a blank; a
+      blank is now Keynote= or Keynote="". If Revit stores the spaces as empty,
+      the call fails "Not every value held", nothing kept - record which
 
 negative_spaces:
   - given: the same family, values "Keynote=   G4   " (no quotes)

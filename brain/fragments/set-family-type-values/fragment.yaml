@@ -160,7 +160,8 @@ contract:
     # Note="70 % ASHRAE; design 81 %"; Width=600 - and \" inside is a quote
     # (row 5b-1994, the binder's rule for every such list). A TEXT value in
     # quotes also keeps a space at either end - Keynote=" G4 " - and an
-    # unquoted one is trimmed (version 7, row 5b-2050).
+    # unquoted one is trimmed (version 7, row 5b-2050). So Keynote="   " is
+    # three spaces, no longer a blank: a blank is Keynote= or Keynote="".
     - name: values
       type: IDictionary<string, string>
       source: request
