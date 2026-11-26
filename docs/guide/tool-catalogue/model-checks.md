@@ -528,7 +528,7 @@ The missing link between reading a parameter and reporting on it: turns the blan
 | **Reached by** | asking in a Claude chat |
 | **Works on** | what is selected in Revit: blank, absent |
 | **You say** | **parameter name** - text |
-| **You get** | findings |
+| **You get** | findings, flagged |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | none |
 | **Capability** | `DESCRIBE_BLANK_PARAMETERS` |
@@ -794,7 +794,7 @@ For each element, what Revit would take away with it - the tags, dimensions, hos
 | **Kind** | Answers a question (`READ`) |
 | **Reached by** | asking in a Claude chat |
 | **Works on** | what is selected in Revit: elements |
-| **You get** | dependents, joined, undeletable, dimensions deleted, dimensions cut, dimension lines, goes total |
+| **You get** | dependents, joined, undeletable, dimensions deleted, dimensions cut, dimension lines |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | none |
 | **Capability** | `REPORT_ELEMENT_DEPENDENCIES` |
