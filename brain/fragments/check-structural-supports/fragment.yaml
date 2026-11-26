@@ -1,6 +1,6 @@
 heron-agent: HERON-QA-BIM-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -70,38 +70,39 @@ contract:
       type: int
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: P1102 ARCH, Revit 2020, session 59096 - the count is NOT recorded because 1,501 elements
-    was measured on HeronNewFam_P1102, the document in front, and this ran against another
-    one (row 15)
+  model: Night Rig 1124 (3,349 elements), Revit 2024, session 26904
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
     filter-elements-by-category with this phase''s own values. returned MmPerFoot 304.8, checkedCount
-    67, columns 1 item(s) [id -2001330], findings 1 item(s) [67 beam(s) and column(s) checked;
-    6 end(s) or base(s) with n...], framing 1 item(s) [id -2001320], lines 6 item(s) [column
-    201277: nothing under its base within 50 mm., column 201278: nothing under its base within
-    50 mm., column 201279: nothing under its base within 50 mm., ...], report column 201277:
-    nothing under its base within 50 mm. | column 201278: nothing under its base within 50
-    mm. | column 201279: nothing under its base within 50 mm. | column 201280: nothing under
-    its base within 50 mm. | column 201281: nothing under its base within 50 mm. | column
-    201282: nothing under its base within 50 mm., supportCategories 5 item(s) [-2001330, -2001320,
-    -2001300, ...], supported Func`4, tolerance 0.164041994750656, toleranceMm 0, unsupported
-    6 item(s) [column 201277 base, column 201278 base, column 201279 base, ...]. inputs came
-    elements from filter-elements-by-category (67); toleranceMm as given. on P1102 ARCH'
-  negative_case: run with toleranceMm=0 arranged with category=Walls, levelId=01 - Entry Level
-    instead - chosen because it should not contain what this fragment reports - the arrangement
-    was re-made first by running filter-elements-by-category with this phase's own values.
-    returned MmPerFoot 304.8, checkedCount 0, columns 1 item(s) [id -2001330], findings 1
-    item(s) [0 beam(s) and column(s) checked; 0 end(s) or base(s) with no...], framing 1 item(s)
-    [id -2001320], lines 0 item(s), report , supportCategories 5 item(s) [-2001330, -2001320,
-    -2001300, ...], supported Func`4, tolerance 0.164041994750656, toleranceMm 0, unsupported
-    0 item(s). inputs came elements from filter-elements-by-category (72); toleranceMm as
-    given. on P1102 ARCH
+    2, columns 1 item(s) [id -2001330], findings 1 item(s) [2 beam(s) and column(s) checked;
+    4 end(s) or base(s) with no...], framing 1 item(s) [id -2001320], lines 4 item(s) [beam
+    352589: nothing within 50 mm of its start., beam 352589: nothing within 50 mm of its end.,
+    beam 352591: nothing within 50 mm of its start., ...], report beam 352589: nothing within
+    50 mm of its start. | beam 352589: nothing within 50 mm of its end. | beam 352591: nothing
+    within 50 mm of its start. | beam 352591: nothing within 50 mm of its end., skippedMembers
+    0, supportCategories 5 item(s) [-2001330, -2001320, -2001300, ...], supported Func`4,
+    tolerance 0.164041994750656, toleranceMm 0, unsupported 4 item(s) [beam 352589 start,
+    beam 352589 end, beam 352591 start, ...]. inputs came elements from filter-elements-by-category
+    (2); toleranceMm as given. on Night Rig 1124'
+  negative_case: run with categories=Walls, inViewOnly=, toleranceMm=0 instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running filter-elements-by-category with this phase's own values. returned MmPerFoot 304.8,
+    checkedCount 0, columns 1 item(s) [id -2001330], findings 1 item(s) [0 beam(s) and column(s)
+    checked; 0 end(s) or base(s) with no...], framing 1 item(s) [id -2001320], lines 0 item(s),
+    report , skippedMembers 0, supportCategories 5 item(s) [-2001330, -2001320, -2001300,
+    ...], supported Func`4, tolerance 0.164041994750656, toleranceMm 0, unsupported 0 item(s).
+    inputs came elements from filter-elements-by-category (6); toleranceMm as given. on Night
+    Rig 1124
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 7cdcffc3e589697c
-
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.3.0.0
+    addin_hash: b5c1b9426090689f
+  fingerprint: 71eb521b37918fb2
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

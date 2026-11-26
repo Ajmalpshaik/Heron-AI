@@ -1703,6 +1703,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qk.md`](needs-checking/group-qk.md)
 
+## Group QQ - the rest of the night of 2026-11-24 on Revit 2024: nine MEP and view-filter cards on Night Ducts 1124, and two arrangements owed - NOT RUN (2026-11-24)
+
+**Its own file:** [`needs-checking/group-qq.md`](needs-checking/group-qq.md)
+
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
 **Its own file:** [`needs-checking/group-ac.md`](needs-checking/group-ac.md)

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -74,23 +74,28 @@ contract:
       type: int
 
 proof:
-  date: '2026-09-08'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  model: Night Rig 1124 (3,349 elements), Revit 2024, session 26904
   positive_case: run as it would normally be run. returned bounded true, collector FilteredElementCollector,
-    elements 1053 item(s) [Tees, Tees, Tees, ...], findings 1 item(s) [1053 of 1053 scanned
-    element(s) are NOT pinned, within 1 cat...], scanned 1053, wantPinned false. inputs came
-    wantPinned as given; categories as given (1). on Snowdon-scratch_ajmal.al
-  negative_case: run with wantPinned=true, categories=Ducts instead - chosen because it should
+    elements 6 item(s) [Generic - 200mm, Generic - 200mm, Generic - 200mm, ...], findings
+    1 item(s) [6 of 6 scanned element(s) are NOT pinned, within 1 category/...], scanned 6,
+    unresolvedElements 0, wantPinned false. inputs came wantPinned as given; categories as
+    given (1). on Night Rig 1124
+  negative_case: run with categories=Walls, wantPinned=True instead - chosen because it should
     not contain what this fragment reports. returned bounded true, collector FilteredElementCollector,
-    elements 0 item(s), findings 1 item(s) [0 of 1053 scanned element(s) are pinned, within
-    1 category/c...], scanned 1053, wantPinned true. inputs came wantPinned as given; categories
-    as given (1). on Snowdon-scratch_ajmal.al
+    elements 0 item(s), findings 1 item(s) [0 of 6 scanned element(s) are pinned, within 1
+    category/cate...], scanned 6, unresolvedElements 0, wantPinned true. inputs came wantPinned
+    as given; categories as given (1). on Night Rig 1124
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 28e5005afa4410ba
-
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.3.0.0
+    addin_hash: b5c1b9426090689f
+  fingerprint: b5186ea322e860fb
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

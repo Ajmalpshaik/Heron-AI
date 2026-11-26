@@ -1,6 +1,6 @@
 heron-agent: HERON-QA-BIM-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -81,26 +81,29 @@ contract:
       type: int
 
 proof:
-  date: '2026-09-19'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: Project1 work_ajmal.al (3,529 elements), Revit 2024, session 20472
+  model: Night Rig 1124 (3,349 elements), Revit 2024, session 26904
   positive_case: run as it would normally be run. returned MillimetresPerFoot 304.8, elements
-    18 item(s) [Radius Elbows / Tees, Radius Elbows / Tees, Radius Elbows / Tees, ...], examined
-    18, findings 2 item(s) [18 of 18 curve-driven element(s) are shorter than 100000.0 m...,
-    Nothing has been deleted. DELETE_ELEMENTS is the other half,...], shorterThanMm 100000,
-    shortestMm 2000.00000000002. inputs came categories as given (1); shorterThanMm as given.
-    on Project1 work_ajmal.al
-  negative_case: run with categories=Ducts, categoryName=Text Notes, inViewOnly=Legend 1,
-    shorterThanMm=0.001 instead - chosen because it should not contain what this fragment
-    reports. returned MillimetresPerFoot 304.8, elements 0 item(s), examined 18, findings
-    1 item(s) [0 of 18 curve-driven element(s) are shorter than 0.0 mm. The...], shorterThanMm
-    0.001, shortestMm 2000.00000000002. inputs came categories as given (1); shorterThanMm
-    as given. on Project1 work_ajmal.al
+    6 item(s) [Generic - 200mm, Generic - 200mm, Generic - 200mm, ...], examined 6, findings
+    2 item(s) [6 of 6 curve-driven element(s) are shorter than 100000.0 mm...., Nothing has
+    been deleted. DELETE_ELEMENTS is the other half,...], shorterThanMm 100000, shortestMm
+    2000, skippedCurves 0. inputs came categories as given (1); shorterThanMm as given. on
+    Night Rig 1124
+  negative_case: run with categories=Walls, shorterThanMm=0.001 instead - chosen because it
+    should not contain what this fragment reports. returned MillimetresPerFoot 304.8, elements
+    0 item(s), examined 6, findings 1 item(s) [0 of 6 curve-driven element(s) are shorter
+    than 0.0 mm. The ...], shorterThanMm 0.001, shortestMm 2000, skippedCurves 0. inputs came
+    categories as given (1); shorterThanMm as given. on Night Rig 1124
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 3c7bb67d686afbc8
-
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.3.0.0
+    addin_hash: b5c1b9426090689f
+  fingerprint: 148ac72131530fec
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

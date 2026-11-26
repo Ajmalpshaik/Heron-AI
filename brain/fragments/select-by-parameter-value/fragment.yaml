@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -232,45 +232,53 @@ contract:
       type: int
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  model: Night Rig 1124 (3,349 elements), Revit 2024, session 26904
   positive_case: run as it would normally be run. returned MillimetresPerFoot 304.8, ambiguous
-    0, compareValue NaN, compareValueMax NaN, elements 372 item(s) [Mitered Elbows / Taps,
-    Mitered Elbows / Taps, Mitered Elbows / Taps, ...], exactMatch false, findings 1 item(s)
-    [372 of 728 scanned element(s) match System Type contains 'Su...], found 372, includeLinks
+    0, calledAs Base Constraint, compareValue NaN, compareValueMax NaN, elements 6 item(s)
+    [Generic - 200mm, Generic - 200mm, Generic - 200mm, ...], exactMatch false, findings 1
+    item(s) [6 of 6 scanned element(s) match Base Constraint contains 'Le...], found 6, includeLinks
     false, includeTypeParameters false, knownModes 6 item(s) [contains, equals, begins, ...],
     linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches
     1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, lowValue
-    NaN, matchedFamilies 2 entry(ies), mode contains, namingFamily false, needle Supply, nestedLinks
-    0, notNumeric 0, numeric false, numericModes 7 item(s) [gt, gte, lt, ...], scannedWholeModel
-    false, slack 0.00328083989501312, tolerance 0, typedIsNumber false, typedNumber 0, wantName
-    System Type, withoutParameter 0. inputs came parameterName as given; matchText as given;
-    matchMode as given; includeTypeParameters as given; categories as given (1); includeLinks
-    as given; exactMatch not given - false (optional); compareValue not given - "NaN", the
-    card's own default (optional); compareValueMax not given - "NaN", the card's own default
-    (optional); tolerance not given - "0", the card's own default (optional). on P1102 MEP
-  negative_case: run with categories=Ducts, category=Sheets, includeLinks=false, includeTypeParameters=false,
-    matchMode=contains, matchText=ZZZNOTHINGHERE, parameterName=System Type instead - chosen
-    because it should not contain what this fragment reports. returned MillimetresPerFoot
-    304.8, ambiguous 0, compareValue NaN, compareValueMax NaN, elements 0 item(s), exactMatch
-    false, findings 1 item(s) [0 of 728 scanned element(s) match System Type contains 'ZZZN...],
-    found 0, includeLinks false, includeTypeParameters false, knownModes 6 item(s) [contains,
-    equals, begins, ...], linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes
-    0 item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0,
-    linksSearched 0, lowValue NaN, matchedFamilies 0 entry(ies), mode contains, namingFamily
-    false, needle ZZZNOTHINGHERE, nestedLinks 0, notNumeric 0, numeric false, numericModes
-    7 item(s) [gt, gte, lt, ...], scannedWholeModel false, slack 0.00328083989501312, tolerance
-    0, typedIsNumber false, typedNumber 0, wantName System Type, withoutParameter 0. inputs
-    came parameterName as given; matchText as given; matchMode as given; includeTypeParameters
-    as given; categories as given (1); includeLinks as given; exactMatch not given - false
-    (optional); compareValue not given - "NaN", the card's own default (optional); compareValueMax
-    not given - "NaN", the card's own default (optional); tolerance not given - "0", the card's
-    own default (optional). on P1102 MEP
+    NaN, matchedFamilies 1 entry(ies), mode contains, namingFamily false, needle Level 1,
+    nestedLinks 0, notNumeric 0, numeric false, numericModes 7 item(s) [gt, gte, lt, ...],
+    qualified false, reachedAs 0 item(s), scannedWholeModel false, slack 0.00328083989501312,
+    tolerance 0, typedIsNumber false, typedNumber 0, wantBuiltIn BuiltInParameter, wantGuid
+    Guid, wantName Base Constraint, withoutParameter 0. inputs came parameterName as given;
+    matchText as given; matchMode as given; includeTypeParameters as given; categories as
+    given (1); includeLinks as given; exactMatch not given - false (optional); compareValue
+    not given - "NaN", the card's own default (optional); compareValueMax not given - "NaN",
+    the card's own default (optional); tolerance not given - "0", the card's own default (optional).
+    on Night Rig 1124
+  negative_case: run with categories=Walls, includeLinks=false, includeTypeParameters=false,
+    matchMode=contains, matchText=ZZZNOTHINGHERE, parameterName=Base Constraint instead -
+    chosen because it should not contain what this fragment reports. returned MillimetresPerFoot
+    304.8, ambiguous 0, calledAs Base Constraint, compareValue NaN, compareValueMax NaN, elements
+    0 item(s), exactMatch false, findings 1 item(s) [0 of 6 scanned element(s) match Base
+    Constraint contains 'ZZ...], found 0, includeLinks false, includeTypeParameters false,
+    knownModes 6 item(s) [contains, equals, begins, ...], linkBlocked , linkDocs 0 item(s),
+    linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only
+    - links not read], linkedTotal 0, linksSearched 0, lowValue NaN, matchedFamilies 0 entry(ies),
+    mode contains, namingFamily false, needle ZZZNOTHINGHERE, nestedLinks 0, notNumeric 0,
+    numeric false, numericModes 7 item(s) [gt, gte, lt, ...], qualified false, reachedAs 0
+    item(s), scannedWholeModel false, slack 0.00328083989501312, tolerance 0, typedIsNumber
+    false, typedNumber 0, wantBuiltIn BuiltInParameter, wantGuid Guid, wantName Base Constraint,
+    withoutParameter 0. inputs came parameterName as given; matchText as given; matchMode
+    as given; includeTypeParameters as given; categories as given (1); includeLinks as given;
+    exactMatch not given - false (optional); compareValue not given - "NaN", the card's own
+    default (optional); compareValueMax not given - "NaN", the card's own default (optional);
+    tolerance not given - "0", the card's own default (optional). on Night Rig 1124
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 2b8b88e3592f3ab5
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.3.0.0
+    addin_hash: b5c1b9426090689f
+  fingerprint: b8faf189a4d057a5
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

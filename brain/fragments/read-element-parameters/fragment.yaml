@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -203,30 +203,35 @@ contract:
       type: string
 
 proof:
-  date: '2026-11-13'
+  date: '2026-11-24'
   by: Ajmal PS
-  model: Heron Reads Test (3,263 elements), Revit 2024, session 22684
+  model: Night Rig 1124 (3,349 elements), Revit 2024, session 26904
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
     filter-elements-by-category, set-selection with this phase''s own values. returned absent
     0 item(s), ambiguous 0 item(s), askingForLevel false, askingText false, blank 0 item(s),
-    findings "Mark": 5 of 5 carry a value, 0 blank, 0 absent. 352517: A (instance); 352545:
-    A (instance); 352555: D (instance); 352563: C (instance); 352571: E (instance)., noteWording
-    (null), readValue Func`2, resolvedFrom 5 entry(ies), values 5 entry(ies). inputs came
-    elements from the selection (5); parameterName as given. on Heron Reads Test'
-  negative_case: 'run with category=Walls, inViewOnly=FloorPlan: Level 1, parameterName=Comments
-    instead - chosen because it should not contain what this fragment reports - the arrangement
-    was re-made first by running filter-elements-by-category, set-selection with this phase''s
-    own values. returned absent 0 item(s), ambiguous 5 item(s) [352517, 352545, 352555, ...],
-    askingForLevel false, askingText false, blank 0 item(s), findings "Comments": 0 of 5 carry
-    a value, 0 blank, 0 absent. 5 element(s) carry TWO OR MORE parameters called ''Comments''
-    - NOT READ, because Revit hands back whichever of them it meets first: 352517, 352545,
-    352555, 352563, 352571. On the element, or on its type where the read reached it., noteWording
-    (null), readValue Func`2, resolvedFrom 0 entry(ies), values 0 entry(ies). inputs came
-    elements from the selection (5); parameterName as given. on Heron Reads Test'
+    findings "Base Constraint": 6 of 6 carry a value, 0 blank, 0 absent. 352516: Level 1 (instance);
+    352517: Level 1 (instance); 352518: Level 1 (instance); 352519: Level 1 (instance); 352520:
+    Level 1 (instance); 352521: Level 1 (instance)., noteWording (null), readValue Func`2,
+    resolvedFrom 6 entry(ies), values 6 entry(ies). inputs came elements from the selection
+    (6); parameterName as given. on Night Rig 1124'
+  negative_case: 'run with categories=Walls, inViewOnly=FloorPlan: Level 1, parameterName=Heron
+    No Such Parameter 1124 instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running filter-elements-by-category, set-selection
+    with this phase''s own values. returned absent 6 item(s) [352516, 352517, 352518, ...],
+    ambiguous 0 item(s), askingForLevel false, askingText false, blank 0 item(s), findings
+    "Heron No Such Parameter 1124": 0 of 6 carry a value, 0 blank, 6 absent. Absent: 352516,
+    352517, 352518, 352519, 352520, 352521., noteWording (null), readValue Func`2, resolvedFrom
+    0 entry(ies), values 0 entry(ies). inputs came elements from the selection (6); parameterName
+    as given. on Night Rig 1124'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: d6f26c56720dcaeb
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.3.0.0
+    addin_hash: b5c1b9426090689f
+  fingerprint: 1fe0befa76ebeb49
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

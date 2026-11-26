@@ -1,0 +1,49 @@
+# RESULT 2026-11-24 ~19:40: the four cards were already PROVEN from batches 1-4, so batch-prove said ALREADY;
+# each case was run by hand with `validate --out brain/proof-drafts/runs/<card>.vcheck.json` instead, and
+# each version case held: QF2 found exactly HP-901 (ambiguous 0) and NOTHING carries {NO_SUCH_PARAMETER};
+# Building Story -1 and Elevation abc refused by key, never thrown, Level 2 still written; the generic
+# model moved to Level 2 (alreadyThere 1 in the negative); name "Room" and number "1" written apart.
+# Night of 2026-11-24, Revit 2024 (build 24.3.60.12, add-in 0.3.0.0), batch 6.
+# Night Rig 1124. Every run is rolled back. No new card is compiled here: each
+# card and setup step already ran tonight. These are the cases each card's
+# LATEST VERSION added, run after batches 1-4 had signed them on a general case:
+#   select-by-parameter-value v5 - "Name {BUILT_IN}" reaches one of two
+#     parameters sharing a name (Group QF, QF2), on two sheets made in setup;
+#   set-parameter-values-by-id v11 - a value Revit turns down is refused, never
+#     thrown (QF4/QF5's keyed form): a number given 'abc', a Yes/No given -1;
+#   set-element-level v4 - a family instance's level from its OWN parameters;
+#   assign-location-data v3 - the room's Number written apart from its Name.
+
+model: "Night Rig 1124 (scratch, 48 placed elements), Revit 2024, session 26904"
+
+defaults:
+  in: "Night Rig 1124"
+  setup: []
+
+jobs:
+  - fragment: select-by-parameter-value
+    setup: [create-sheets]
+    write: true
+    expect: elements
+    set: {sheets: "Sheet Number|Sheet Name;HP-901|HERON PROVE 1;HP-902|HERON PROVE 2", titleBlockName: "none", categories: "Sheets", parameterName: "Sheet Number {SHEET_NUMBER}", matchText: "HP-901", matchMode: equals, includeTypeParameters: "false", includeLinks: "false"}
+    negative-set: {sheets: "Sheet Number|Sheet Name;HP-901|HERON PROVE 1;HP-902|HERON PROVE 2", titleBlockName: "none", categories: "Sheets", parameterName: "Sheet Number {NO_SUCH_PARAMETER}", matchText: "HP-901", matchMode: equals, includeTypeParameters: "false", includeLinks: "false"}
+
+  - fragment: set-parameter-values-by-id
+    write: true
+    expect: written
+    set: {rows: "key=Name|in=Levels;Level 1|Elevation=abc;Level 2|Name=Heron Prove L2;Level 1|Building Story=-1", renameViews: "no"}
+    negative-set: {rows: "key=Name|in=Levels;Level 1|Elevation=abc;Level 1|Building Story=-1", renameViews: "no"}
+
+  - fragment: set-element-level
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: moved
+    set: {categories: "Generic Models", inViewOnly: "FloorPlan: Level 1", newLevel: "Level 2", keepWallBase: "false"}
+    negative-set: {categories: "Generic Models", inViewOnly: "FloorPlan: Level 1", newLevel: "Level 1", keepWallBase: "false"}
+
+  - fragment: assign-location-data
+    setup: [filter-elements-by-category, set-selection]
+    write: true
+    expect: written
+    set: {categories: "Generic Models", inViewOnly: "FloorPlan: Level 1", roomParameter: Comments, numberParameter: Mark, levelParameter: none, useSpaces: false}
+    negative-set: {categories: "Generic Models", inViewOnly: "FloorPlan: Level 1", roomParameter: ZZZNOTHINGHERE, numberParameter: ZZZNOTHINGHERE, levelParameter: none, useSpaces: false}

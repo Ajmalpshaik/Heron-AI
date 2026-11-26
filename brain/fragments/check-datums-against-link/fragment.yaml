@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -155,6 +155,90 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-20'
+  by: Ajmal PS
+  model: House Scratch 1042 (5,206 elements), Revit 2020, session 40712
+  positive_case: "run as it would normally be run. returned MmPerFoot 304.8, Vertical 1E-09,\
+    \ aligned 19, angleToleranceDeg 0.01, chosen RevitLinkInstance, compare Func`3, compared\
+    \ 20, deg Func`2, doGrids true, doLevels true, elements 1 item(s) [B], everyName 'Datum\
+    \ Link 1036.rvt : 1 : location <Not Shared>', failingIds 1 item(s) [195411], failures\
+    \ 1, findings 3 item(s) [grids and levels checked against 'Datum Link 1036.rvt : 1 : ...,\
+    \ Off: 'B'. Their ids are in failingIds, to select., Grids are measured in plan from the\
+    \ link grid's start point ...], given only, host 20 item(s) [(1, grid, Autodesk.Revit.DB.Grid,\
+    \ line, (-16.201012082, 25.5..., (2, grid, Autodesk.Revit.DB.Grid, line, (-6.358492397,\
+    \ 25.51..., (3, grid, Autodesk.Revit.DB.Grid, line, (3.484027288, 25.513..., ...], hostOnly\
+    \ 0, hostTaken 20 item(s) [True, True, True, ...], invariant CultureInfo, link 20 item(s)\
+    \ [(1, grid, Autodesk.Revit.DB.Grid, line, (-16.201012082, 25.5..., (2, grid, Autodesk.Revit.DB.Grid,\
+    \ line, (-6.358492397, 25.51..., (3, grid, Autodesk.Revit.DB.Grid, line, (3.484027288,\
+    \ 25.513..., ...], linkOnly 0, linkUsed Datum Link 1036.rvt : 1 : location <Not Shared>,\
+    \ linked Document, mm Func`2, nameDiffers 20 item(s) [False, False, False, ...], nestedInLink\
+    \ 0, notChecked 0, pairOf 20 item(s) [0, 1, 2, ...], placed Transform, placements 1 item(s)\
+    \ [Datum Link 1036.rvt : 1 : location <Not Shared>], read Func`3, refused (null), report\
+    \ kind | name | status | offset | angle | reason\ngrid | 1 | aligned | 0.00 mm | 0.0000\
+    \ deg | \ngrid | 2 | aligned | 0.00 mm | 0.0000 deg | \ngrid | 3 | aligned | 0.00 mm |\
+    \ 0.0000 deg | \ngrid | 4 | aligned | 0.00 mm | 0.0000 deg | \ngrid | 5 | aligned | 0.00\
+    \ mm | 0.0000 deg | \ngrid | 6 | aligned | 0.00 mm | 0.0000 deg | \ngrid | 7 | aligned\
+    \ | 0.00 mm | 0.0000 deg | \ngrid | A | aligned | 0.00 mm | 0.0000 deg | \ngrid | B |\
+    \ off | 3.00 mm | 0.0000 deg | \ngrid | C | aligned | 0.00 mm | 0.0000 deg | \ngrid |\
+    \ D | aligned | 0.00 mm | 0.0000 deg | \ngrid | E | aligned | 0.00 mm | 0.0000 deg | \n\
+    grid | F | aligned | 0.00 mm | 0.0000 deg | \ngrid | G | aligned | 0.00 mm | 0.0000 deg\
+    \ | \nlevel | Foundation | aligned | 0.00 mm | - | \nlevel | Level 1 Living Rm. | aligned\
+    \ | 0.00 mm | - | \nlevel | Level 1 | aligned | 0.00 mm | - | \nlevel | Ceiling | aligned\
+    \ | 0.00 mm | - | \nlevel | Level 2 | aligned | 0.00 mm | - | \nlevel | Roof Line | aligned\
+    \ | 0.00 mm | - | , rows 21 item(s) [kind | name | status | offset | angle | reason, grid\
+    \ | 1 | aligned | 0.00 mm | 0.0000 deg | , grid | 2 | aligned | 0.00 mm | 0.0000 deg |\
+    \ , ...], tidy Func`3, tiltReason the link is placed TILTED - its Z axis is not straight\
+    \ up - so this cannot be compared, tilted false, toleranceMm 0.5, wantText both. inputs\
+    \ came linkName not given - \"only\", the card's own default (optional); datums not given\
+    \ - \"both\", the card's own default (optional); toleranceMm not given - \"0.5\", the\
+    \ card's own default (optional); angleToleranceDeg not given - \"0.01\", the card's own\
+    \ default (optional). on House Scratch 1042"
+  negative_case: "run with toleranceMm=5 instead - chosen because it should not contain what\
+    \ this fragment reports. returned MmPerFoot 304.8, Vertical 1E-09, aligned 20, angleToleranceDeg\
+    \ 0.01, chosen RevitLinkInstance, compare Func`3, compared 20, deg Func`2, doGrids true,\
+    \ doLevels true, elements 0 item(s), everyName 'Datum Link 1036.rvt : 1 : location <Not\
+    \ Shared>', failingIds 0 item(s), failures 0, findings 2 item(s) [grids and levels checked\
+    \ against 'Datum Link 1036.rvt : 1 : ..., Grids are measured in plan from the link grid's\
+    \ start point ...], given only, host 20 item(s) [(1, grid, Autodesk.Revit.DB.Grid, line,\
+    \ (-16.201012082, 25.5..., (2, grid, Autodesk.Revit.DB.Grid, line, (-6.358492397, 25.51...,\
+    \ (3, grid, Autodesk.Revit.DB.Grid, line, (3.484027288, 25.513..., ...], hostOnly 0, hostTaken\
+    \ 20 item(s) [True, True, True, ...], invariant CultureInfo, link 20 item(s) [(1, grid,\
+    \ Autodesk.Revit.DB.Grid, line, (-16.201012082, 25.5..., (2, grid, Autodesk.Revit.DB.Grid,\
+    \ line, (-6.358492397, 25.51..., (3, grid, Autodesk.Revit.DB.Grid, line, (3.484027288,\
+    \ 25.513..., ...], linkOnly 0, linkUsed Datum Link 1036.rvt : 1 : location <Not Shared>,\
+    \ linked Document, mm Func`2, nameDiffers 20 item(s) [False, False, False, ...], nestedInLink\
+    \ 0, notChecked 0, pairOf 20 item(s) [0, 1, 2, ...], placed Transform, placements 1 item(s)\
+    \ [Datum Link 1036.rvt : 1 : location <Not Shared>], read Func`3, refused (null), report\
+    \ kind | name | status | offset | angle | reason\ngrid | 1 | aligned | 0.00 mm | 0.0000\
+    \ deg | \ngrid | 2 | aligned | 0.00 mm | 0.0000 deg | \ngrid | 3 | aligned | 0.00 mm |\
+    \ 0.0000 deg | \ngrid | 4 | aligned | 0.00 mm | 0.0000 deg | \ngrid | 5 | aligned | 0.00\
+    \ mm | 0.0000 deg | \ngrid | 6 | aligned | 0.00 mm | 0.0000 deg | \ngrid | 7 | aligned\
+    \ | 0.00 mm | 0.0000 deg | \ngrid | A | aligned | 0.00 mm | 0.0000 deg | \ngrid | B |\
+    \ aligned | 3.00 mm | 0.0000 deg | \ngrid | C | aligned | 0.00 mm | 0.0000 deg | \ngrid\
+    \ | D | aligned | 0.00 mm | 0.0000 deg | \ngrid | E | aligned | 0.00 mm | 0.0000 deg |\
+    \ \ngrid | F | aligned | 0.00 mm | 0.0000 deg | \ngrid | G | aligned | 0.00 mm | 0.0000\
+    \ deg | \nlevel | Foundation | aligned | 0.00 mm | - | \nlevel | Level 1 Living Rm. |\
+    \ aligned | 0.00 mm | - | \nlevel | Level 1 | aligned | 0.00 mm | - | \nlevel | Ceiling\
+    \ | aligned | 0.00 mm | - | \nlevel | Level 2 | aligned | 0.00 mm | - | \nlevel | Roof\
+    \ Line | aligned | 0.00 mm | - | , rows 21 item(s) [kind | name | status | offset | angle\
+    \ | reason, grid | 1 | aligned | 0.00 mm | 0.0000 deg | , grid | 2 | aligned | 0.00 mm\
+    \ | 0.0000 deg | , ...], tidy Func`3, tiltReason the link is placed TILTED - its Z axis\
+    \ is not straight up - so this cannot be compared, tilted false, toleranceMm 5, wantText\
+    \ both. inputs came linkName not given - \"only\", the card's own default (optional);\
+    \ datums not given - \"both\", the card's own default (optional); toleranceMm as given;\
+    \ angleToleranceDeg not given - \"0.01\", the card's own default (optional). on House\
+    \ Scratch 1042"
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.2.0.0
+    addin_hash: 01b4315add24c9b2
+  fingerprint: feacf432d0a6710b
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
