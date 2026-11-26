@@ -41,7 +41,10 @@ This is the part that is easy to get wrong, and it is written down nowhere else.
 
 **Exit 3 is deliberate and is not a pass.** `test_mcp_serves.py` uses it when the MCP SDK is absent.
 (`test_routing_phrases.py` used it when the trained embedding was absent, until D-203 removed that
-embedding on 2026-11-26; it runs on the one built-in search everywhere now.)
+embedding on 2026-11-26. It runs on the one built-in search everywhere now, and exits 3 for a second
+reason: **waiting on the owner** - every guard is asked, and while each failure is one of the guards
+recorded open in [row 5b-2053](../docs/fragment-issues/row-5b-2053.md) it waits rather than passes; any
+other failure exits 1.)
 `tools/check-gaps.py` reads 3 as *waiting for a machine* rather than counting it green. A suite
 that cannot run must never be allowed to look like one that ran.
 

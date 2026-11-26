@@ -830,6 +830,7 @@ key, with the day he gave it.
 | 2026-10-17 | 571 | `model` | any | `88c7eadd` | 17 | 11 | 3 | 33 | 1 (0) | 8 | 5 of 7 | `11-------1---21.-212-----w---4----1111-4---11-4222121-231w1w121-3w2---w-w-w1221` |
 | 2026-11-26 | 753 | `model` | any | `e6e51d55` | 20 | 11 | 4 | 29 | 1 (0) | 6 | 5 of 7 | `1134-----1---31.-413-----w---1-51-111132---11-3225121-231w1w112-1w1---.-w-.211-` |
 | 2026-11-26 | 753 | `lexical` | any | `e6e51d55` | 23 | 9 | 2 | 30 | 1 (0) | 9 | 4 of 7 | `11111---41-3-11.-112-----w---2--2111-1-2---11--243111-241w1w21--5w1---w3w-.211-` |
+| 2026-11-26 | 754 | `lexical` | any | `e6e51d55` | 23 | 10 | 2 | 29 | 1 (0) | 9 | 3 of 7 | `11111---51-3-11.-112-----w---2--2111-1-2---11--243111-241w1w213-5w1---w4w-.211-` |
 
 ### The plain questions — rows 5b-477 and 5b-478, scored beside his
 
@@ -860,6 +861,7 @@ their own table and are never added into his numbers.
 | 2026-10-17 | 571 | `model` | any | `e21ad1a0` | 124 | 10 | 50 | 44 of 45 | 45 of 45 | `11..111...11..1...11..1.........ww1.w11.11..1.111....1.11....111...1.w.w1..w.....w111..11....1..ww.....111......11...1.w1111` |
 | 2026-11-26 | 753 | `model` | any | `6247a481` | 124 | 15 | 52 | 44 of 45 | 44 of 45 | `11w.111...11..1...11..1....w.w..ww1ww11.11..1.111..w.1.11....111...1...w1..ww....w111..11....1..w....ww111......11...1..1111` |
 | 2026-11-26 | 753 | `lexical` | any | `6247a481` | 124 | 9 | 52 | 44 of 45 | 44 of 45 | `11..111...11..1...11..1.........ww1w.11.11..1.111....1.11....111...1...w1..w.....w111..11.w..1........w111......11...1.w1111` |
+| 2026-11-26 | 754 | `lexical` | any | `6247a481` | 124 | 9 | 52 | 44 of 45 | 44 of 45 | `11..111...11..1...11..1.........ww1w.11.11..1.111....1.11....111...1...w1..w.....w111..11.w..1........w111......11...1.w1111` |
 
 ---
 
@@ -1638,6 +1640,46 @@ failing checks below are the same on both trees:
 - **The owner's PC was not measured.** Its answers become the model's; the 6 `test_routing_phrases`
   failures above are what it should now show, and they are card wording, owed in their rows.
 - **One sample of his 79, on one day, at one library size.** Nothing met Revit.
+
+---
+
+## 2026-11-26 — model2vec is removed too (D-203); one built-in search for every PC
+
+[D-203](../docs/decisions/D-203.md), the owner's decision the same day: *"ok remove model2vec also"*. It was
+taken on the figures the proposing session measured on the card wording of #1424 at 753 fragments -
+`lexical` against `model`, his 79 first **34 / 30**, top three **43 / 37**, not found **18 / 21**, a
+question handed a change **7 / 6**, 124 plain questions reaching a write **9 / 15**, a lookup median
+**109 / 147 ms** - recorded in D-203, not re-run here.
+
+**Before and after the removal, on `lexical`, identical.** Measured in a cloud container that has model2vec
+installed, so the "before" turned it off in the process (`heron_embed._MODEL_CACHE[:] = [None]`) and the
+"after" has no code that could load it: `main` `2ee4d03f` against the branch, **754 fragments**, no Revit
+filter. `tools/score-routing.py` on his 79 and the 124 plain questions printed the same report line for
+line (only the store's path, md5 and timing differ); nine frozen sets,
+`tests/data/routing-sentences-*.yaml`, 540 sentences, `--sentences --backend lexical --compare` the
+before records: **0 answers changed**. `tests/test_routing_phrases.py` failed the same nine routing
+checks on both trees.
+
+**Then card wording, measured the same way.** Thirteen general utterances on `offset-tags-from-host`,
+`select-by-host`, `list-views-on-sheet` and `edit-text-values` (row 5b-2053): his 79 and the 124 plain
+questions answer as before - the rows above for this date are that tree, by `--record`; the nine frozen
+sets moved two of 540, one wanted (*"which doors are hosted in the stair..."* now `SELECT_BY_HOST`) and
+one neutral (*"put two windows in the north wall"*, still not `PLACE_HOSTED_FAMILY`, now a read rather
+than another write); `tests/test_routing_phrases.py` went from nine routing failures to seven, which it
+records open and waits on (exit 3).
+
+| 754 fragments, `lexical` | before | after |
+|---|---|---|
+| his 79: first / top three | 23 / 33 | 23 / 33 |
+| his 79: asked for no change, handed one | 9 | 9 |
+| 124 plain questions reaching a write | 9 | 9 |
+| `tests/test_routing_phrases.py` routing failures | 9 | 7, recorded open (row 5b-2053) |
+
+### What this does not establish
+
+- **The owner's PC was not measured.** It ranks on this search now, and should answer as above.
+- **That the model is worse at meaning.** It was not better on his questions; meaning was not measured
+  apart from them. Nothing met Revit.
 
 ---
 

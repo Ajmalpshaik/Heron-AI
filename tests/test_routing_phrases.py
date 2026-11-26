@@ -71,6 +71,20 @@ character n-grams, which heron_embed's own docstring calls NOT MEANING - and
 this asks it on every machine. Section 1 checks every card's vector came
 from it.
 
+SEVEN GUARDS ARE OPEN ON IT, AND THE SUITE WAITS ON THE OWNER FOR THEM
+------------------------------------------------------------------------
+Asked on the built-in search for the first time on 2026-11-26, nine of its
+guards failed - the same nine on main before D-203 with the model turned off,
+so not that change. Card wording repaired two (OFFSET_TAGS_FROM_HOST and
+SELECT_BY_HOST). The seven left are OPEN_ON_THE_ONE_SEARCH below, each named
+in row 5b-2053: wording a guard back by pasting its sentence, or one near it,
+into a card would make the guard test nothing, and closing one is the owner's
+decision. Each is still ASKED and printed as OPEN, never as a pass. While
+every failure is one of them the suite exits 3 - WAITING on the owner, NOT a
+pass - so CI keeps it on its not-runnable list; a failure that is not one of
+them exits 1, and so does an entry that now passes, which has to come off the
+list in the same change (the rule check-routing's KNOWN_DANGLING keeps).
+
 NOT A SCORE
 -----------
 A handful of sentences that once went wrong, each with its row. It is not the
@@ -300,6 +314,28 @@ QUESTIONS = [
 # so the question is asked again on the one search there is.
 CLOSED_BY_DESIGN = {}
 
+# OPEN ON THE ONE SEARCH (row 5b-2053), each still asked - see the top of this
+# file. Not excused: printed OPEN, counted, and the suite waits (exit 3) only
+# while every failure is one of these.
+OPEN_ON_THE_ONE_SEARCH = {
+    "place doors and windows hosted in walls at points":
+        "5b-2053: SELECT_BY_HOST, a read, takes it by a hair",
+    "add windows to the outside walls":
+        "5b-2053: PLACE_HOSTED_FAMILY is not in the nearness shortlist",
+    "change the area scheme name from rentable to lettable":
+        "5b-2053: REPORT_AREAS ties SET_AREA_VOLUME_COMPUTATIONS",
+    "rename the schedule":
+        "5b-2053: REPORT_SCHEDULE_DEFINITION, a read, takes it",
+    "check if volume calculation is enabled":
+        "5b-2053: APPLY_VIEW_FILTER; #1424's wording repairs it on its branch",
+    "select all elements of type Curtain Wall":
+        "5b-2053: SET_CURTAIN_PANEL_TYPE - row 5b-329's residue",
+    "is the legend going off the sheet":
+        "5b-2053: PLACE_VIEW_ON_SHEET; LIST_VIEWS_ON_SHEET is 19th by nearness",
+}
+OPEN_FAILED = []
+OPEN_PASSED = []
+
 # A question about the project's own setup reaches the tool that READS it.
 # Three site questions still reach SET_PROJECT_LOCATION and are NOT here -
 # row 5b-346 records them, measured; this guards the ones the change moved.
@@ -407,6 +443,21 @@ def check(condition, what):
         FAILURES.append(what)
 
 
+def check_open(text, condition, what):
+    """check(), for a sentence that may be OPEN_ON_THE_ONE_SEARCH: asked and
+    printed either way; an open one that fails is counted apart, and an open
+    one that passes is a failure until it comes off the list."""
+    if text not in OPEN_ON_THE_ONE_SEARCH:
+        return check(condition, what)
+    if condition:
+        print("  %-5s %s - PASSES NOW: take it off OPEN_ON_THE_ONE_SEARCH" % ("FAIL", what))
+        OPEN_PASSED.append(what)
+        FAILURES.append("%s - passes now, and is still on OPEN_ON_THE_ONE_SEARCH" % what)
+    else:
+        print("  %-5s %s - %s" % ("OPEN", what, OPEN_ON_THE_ONE_SEARCH[text]))
+        OPEN_FAILED.append(what)
+
+
 def write_line():
     """(ladder, threshold) from the operation registry - Golden Rule 19."""
     path = os.path.join(ROOT, "tools", "generate-jobs.py")
@@ -474,11 +525,15 @@ def main():
         for text in CLOSED_BY_DESIGN:
             check(text in asked, "the question closed as by design %r is one "
                   "of section 4's, so the exception names a real row" % text)
+        ranked = set(t for t, _c, _w in CHANGES) | asked
+        for text in OPEN_ON_THE_ONE_SEARCH:
+            check(text in ranked, "the open guard %r is one of sections 3 and "
+                  "4's, so the list names a real guard" % text)
 
         print("\n3. A CHANGE ASKED FOR REACHES THE TOOL THAT MAKES IT")
         for text, want, why in CHANGES:
             answer, got, _risk = ask(text)
-            check(got == want, "%r -> %s (%s)" % (text, got, why))
+            check_open(text, got == want, "%r -> %s (%s)" % (text, got, why))
             check(answer.route != "identity",
                   "  and it was ranked, not matched word for word (%s)" % answer.route)
 
@@ -489,7 +544,8 @@ def main():
                       % ("n/a", text, CLOSED_BY_DESIGN[text]))
                 continue
             _answer, got, risk = ask(text)
-            check(not writes(risk), "%r -> %s, %s (%s)" % (text, got, risk or "no risk", why))
+            check_open(text, not writes(risk),
+                       "%r -> %s, %s (%s)" % (text, got, risk or "no risk", why))
 
         print("\n5. A CHANGE NOTHING MAKES IS NOT ANSWERED BY ANOTHER CHANGE")
         for text, why in NO_TOOL:
@@ -541,6 +597,15 @@ def main():
         for one in FAILURES:
             print("  - %s" % one)
         return 1
+    if OPEN_FAILED:
+        print("WAITING - every other check passed, and %d guard(s) are OPEN on the"
+              % len(OPEN_FAILED))
+        print("one search, each recorded in row 5b-2053 for the owner's decision:")
+        for one in OPEN_FAILED:
+            print("  - %s" % one)
+        print("\nThis is exit 3, which is NOT a pass: those guards were asked and")
+        print("answered wrong. A failure that is not on the list exits 1.")
+        return 3
     print("PASSED - every sentence reached what it asked for.")
     return 0
 

@@ -216,11 +216,10 @@ real edit does.
 
 So a cloud session goes **further than CI does**. Since 2026-11-21 `gates.yml` builds the .NET host and
 runs the suites that need the MCP SDK on a venv holding the pinned lock, but it leaves
-`test_routing_phrases.py` unrun on its not-runnable list - the trained embedding is not there, and on
-the embedding - what the owner's PC ranks with since D-201 - that suite still fails 6 card-wording
-checks (row 5b-1882); this environment
-installs the embedding on request, so **nothing in `tests/` is out of its reach** once §2's check
-answers `model`.
+`test_routing_phrases.py` on its not-runnable list: since D-203 it runs on the one built-in search
+everywhere and exits 3 - waiting on the owner - while seven of its guards are recorded open
+([row 5b-2053](fragment-issues/row-5b-2053.md)). It answers the same here, in CI and on the owner's PC,
+so **nothing in `tests/` is out of this environment's reach**.
 
 No total is written here on purpose. One was — *"196 of 199"* — and
 [`check-docs.py`](../tools/check-docs.py) caught it on this page's first run: the source said **219**.
