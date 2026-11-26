@@ -1,0 +1,23 @@
+# 2026-11-27, Revit 2020 - roof cards in "Night OU21" (new DefaultMetric project): four Generic - 200mm walls
+# 10 x 6 m on Level 1, 3 m high, and a gable extrusion roof (id 345451, Generic - 125mm, top 4500) - all made
+# and KEPT tonight with PROVEN cards, then saved. Walls are NOT attached to the roof (shape-wall-tops-to-roof
+# lists Revit 2022 on only; a 3D view "OU21 3D" was made with create-3d-view and kept, so report-wall-attachments is left for a 2022+ run).
+model: "Night OU21 (new project from Revit 2020's DefaultMetric.rte), Revit 2020"
+defaults:
+  in: "Night OU21"
+  setup: [filter-elements-by-category, set-selection]
+jobs:
+  - fragment: report-roof-slopes
+    setup: [filter-elements-by-id, set-selection]
+    expect: roofsRead
+    setup-set: {elementIds: "345451"}
+    negative-setup-set: {elementIds: "345441, 345443"}
+
+  - fragment: report-roof-reach
+    expect: meets
+    setup: [filter-elements-by-id, set-selection]
+    setup-set: {elementIds: "345440, 345442"}
+    negative-setup-set: {elementIds: "345451"}
+    set: {view3d: "OU21 3D"}
+    negative-set: {view3d: "OU21 3D"}
+

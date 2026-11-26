@@ -1,0 +1,18 @@
+# 2026-11-27, Revit 2020 - roof-to-roof cards in "Night OU21" (new DefaultMetric project). Kept tonight with
+# PROVEN cards and saved: a gable extrusion roof 345451 over a 10 x 6 m house (eaves at X -300 and 10300), and a
+# shed roof 345483 (X 11000-14000, Y 300-3300, Z 3475-3800, extruded along X from grid S so its west END
+# faces the main roof), a 3D view "OU21 3D". (An earlier shed 345475 extruded along Y faces nothing.)
+# Then (after extend-roof-to-roof below PASSED and was signed) the shed was EXTENDED and KEPT to meet the main
+# roof; report-roof-reach ran afterwards in tools/jobs/night-1126-roof-meet-revit2020-2026-11-27.yaml.
+# Every run ROLLED BACK.
+model: "Night OU21 (new project from Revit 2020's DefaultMetric.rte), Revit 2020"
+defaults:
+  in: "Night OU21"
+  setup: [filter-elements-by-id, set-selection]
+jobs:
+  - fragment: report-roof-reach
+    expect: meets
+    setup-set: {elementIds: "345483, 345451"}
+    negative-setup-set: {elementIds: "345475, 345451"}
+    set: {view3d: "OU21 3D"}
+    negative-set: {view3d: "OU21 3D"}
