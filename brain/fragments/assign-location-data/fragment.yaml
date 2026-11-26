@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -55,6 +55,11 @@ capability: ASSIGN_LOCATION_DATA
 # into `findings` (accounting); `refused` holds only what was declined. Nothing
 # else changed. Its C# moved, so it is DRAFT until re-proved: the same case
 # must show `refused` empty and the summary in `findings`.
+# 2026-11-26: the proof block below is VERSION 3's, proved on Revit 2024 on
+# 2026-11-24 night (Night Rig 1124) and signed as Ajmal PS on his word (PR
+# #1385). #1385 and #1392 merged minutes apart, and the merge kept #1385's
+# PROVEN over #1392's version 4 code - so the card read PROVEN on a proof of
+# older code. Set back to DRAFT here; the version 3 proof stays as the record.
 # Version 2 was PROVEN on 2026-10-18 on Project2 with ROOMS (the proof block
 # below, kept as the record of what it proved). Its C# moved, so it is DRAFT
 # until NEEDS-CHECKING Group ON is run and signed (D-30). Spaces have never
