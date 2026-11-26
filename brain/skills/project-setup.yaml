@@ -79,9 +79,10 @@ purpose: >
      the modeller gives; a setting left out is left alone. Then
      REPORT_LOCATION for the site, the base point and the survey point as
      they now read.
-  5. LEVELS. CREATE_LEVELS (PROVEN, version 2) with elevations in
-     millimetres (D-71) and names, in one call. A name already taken refuses
-     the whole call before any level is made. To match the linked model,
+  5. LEVELS. CREATE_LEVELS (DRAFT, version 3) with elevations in
+     millimetres (D-71) and names, in one call. A name already taken is
+     skipped and the rest are made (D-207) - read `skipped` out to the
+     modeller, each name and the level that holds it. To match the linked model,
      revit_levels and REPORT_LEVEL_ELEVATIONS (DRAFT, a read) with
      includeLinks give its levels to read the heights from - typed by the
      host, never guessed. A LEVEL MADE THIS WAY COMES WITH NO PLAN VIEW: the

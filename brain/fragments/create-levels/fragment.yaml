@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,11 @@ semantic-identity: "add storeys to the project"
 kind: action
 domain: revit.datums
 capability: CREATE_LEVELS
-version: 2
+# VERSION 3 (2026-11-26, D-207, row 5b-1879 item 4) - a name already taken is
+# SKIPPED and the rest made, where version 2 refused the whole call. C# changed,
+# so DRAFT until NEEDS-CHECKING Group QZ is run (D-30); version 2's proof is
+# kept below as the record.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -17,7 +21,14 @@ purpose: >
   Creates levels at the elevations given - one level or many - and reports what
   each one ended up at and what it ended up called.
 
-  **A NAME ALREADY TAKEN IS REFUSED BEFORE ANY LEVEL IS CREATED** (version 2,
+  **A NAME ALREADY TAKEN IS SKIPPED, AND THE REST ARE MADE** (version 3, the
+  owner's one rule for levels, grids and project reference planes, D-207). A
+  level whose name a level in the project already has, or an earlier level in
+  the same call, is not made; `skipped` names each one, its height and the
+  level that holds the name, and every other level asked for is made. Only
+  when every level asked for is skipped is nothing made, and `refused` says so.
+
+  **A NAME ALREADY TAKEN WAS REFUSED BEFORE ANY LEVEL WAS CREATED** (version 2,
   when CREATE_LEVEL was merged in). Every name asked for is checked against
   the project's levels and against the other names in the call, ignoring
   capitals as Revit does, and one clash creates nothing: `refused` says which
@@ -81,11 +92,20 @@ contract:
       # (D-52).
       role: accounting
       type: IList<double>
+    - name: skipped
+      # Version 3 (D-207). One line for each level NOT made because its name
+      # was taken - by a level in the project or an earlier one in this call -
+      # with its height and the level that holds the name: "Level 2 at
+      # 3000 mm - level "Level 2" already has that name; not made. What it
+      # was asked for and did not do, never a thing it made (D-52).
+      role: accounting
+      type: IList<string>
     - name: refused
-      # Version 2, from CREATE_LEVEL. The sentence saying which name asked for
-      # is already taken, and by which level - and that NO level was created.
-      # Null when nothing was refused. Why it declined, never a thing it made
-      # (D-52).
+      # Version 2, from CREATE_LEVEL, narrowed by version 3: the sentence
+      # saying NO level was created because every level asked for was skipped
+      # by its name. Null whenever anything was made - a level skipped beside
+      # levels made is in `skipped`, not here. Why it declined, never a thing
+      # it made (D-52).
       role: accounting
       type: string
     - name: noViewsMade

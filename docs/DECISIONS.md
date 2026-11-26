@@ -246,6 +246,7 @@
 | [D-204](#d-204--a-tool-that-can-never-come-back-empty-is-signed-on-a-by-hand-reading-and-a-tool-with-two-runs-waiting-is-signed-on-the-run-revit-checked) | A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked | ✅ Accepted · 2026-11-26 |
 | [D-206](#d-206--a-decision-accepted-on-the-owners-word-links-where-that-word-can-be-read-or-is-written-proposed-and-a-check-refuses-one-that-does-neither) | A decision accepted on the owner's word links where that word can be read, or is written Proposed, and a check refuses one that does neither | ✅ Accepted · 2026-11-26 |
 | [D-208](#d-208--an-overlap-in-a-clearance-check-is-reported-as-the-modeller-asks-clash-with-its-depth-unless-0-mm-is-asked-for-and-a-hole-is-sized-round-a-services-insulation-only-when-the-model-says-it-carries-some) | An overlap in a clearance check is reported as the modeller asks, CLASH with its depth unless 0 mm is asked for, and a hole is sized round a service's insulation only when the model says it carries some | ✅ Accepted · 2026-11-26 |
+| [D-207](#d-207--a-name-rule-is-one-rule-across-the-tools-that-share-it-a-name-pattern-is-a--wildcard-a-datum-maker-skips-a-name-already-taken-and-says-so-and-a-link-placed-twice-is-never-measured-until-one-copy-is-named) | A name rule is one rule across the tools that share it: a name pattern is a * wildcard, a datum maker skips a name already taken and says so, and a link placed twice is never measured until one copy is named | ✅ Accepted · 2026-11-26 |
 
 ## Format
 
@@ -1863,3 +1864,13 @@ only when the model says it carries some - read first, never assumed, lining not
 version 3, as `CHECK_SLEEVE_SIZE` reads it).
 
 **Full record:** [`decisions/D-208.md`](decisions/D-208.md)
+
+## D-207 — A name rule is one rule across the tools that share it: a name pattern is a * wildcard, a datum maker skips a name already taken and says so, and a link placed twice is never measured until one copy is named
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), answering items 3, 4 and 5 of [row 5b-1879](fragment-issues/row-5b-1879.md) and the link half of [row 5b-1878](fragment-issues/row-5b-1878.md) (C), issue [#1088](https://github.com/Ajmalpshaik/Heron-AI/issues/1088): for item 3 *"Wildcards \*"*; for item 4 *"Skip it, make the rest, and the skipped one needs to inform the user that we skipped because of this"*; for item 5 *"Ask which copy"*.
+**Numbering:** D-207 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201 and D-202 to D-206 held by unmerged branches.
+**Answers:** [row 5b-1879](fragment-issues/row-5b-1879.md) items 3, 4 and 5 · [row 5b-1878](fragment-issues/row-5b-1878.md) (C), its rule for a link placed more than once
+**Keeps:** [D-30](decisions/D-30.md) - every card whose C# this changes is DRAFT until it is run on a real model and signed by the owner · Article 8 - one request is one change; a name skipped is a level or grid never made, not one made and then undone
+**Affects:** `CHECK_FAMILY_STANDARDS` version 5 · `CHECK_MODEL_STANDARDS` (unchanged - its rule is the one kept) · `CREATE_LEVELS` version 3 · `CREATE_GRIDS` version 5 · `CREATE_PROJECT_REFERENCE_PLANES` (unchanged - it already skipped) · the datum tool `REPORT_LEVEL_ELEVATIONS`, which takes `CHECK_DATUMS_AGAINST_LINK`'s refusal in the merge of row 5b-1878 (C) · the [`project-setup`](../brain/skills/project-setup.yaml) method · [NEEDS-CHECKING Group QZ](needs-checking/group-qz.md)
+
+**Full record:** [`decisions/D-207.md`](decisions/D-207.md)

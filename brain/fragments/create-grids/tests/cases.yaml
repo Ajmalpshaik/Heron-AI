@@ -42,15 +42,30 @@ negative:
       and reading them as positions gives one grid too few and every line in the
       wrong place - and both readings look sensible to somebody checking the code
 
-  - given: a project that already has a grid called "B"
+  # VERSION 5 (2026-11-26, D-207) - A NAME ALREADY TAKEN IS SKIPPED AND THE
+  # REST ARE MADE. The first two cases below were versions 2 to 4's "refused before
+  # any grid is made"; each now expects the skip, and each FAILS on version 4,
+  # which makes nothing and has no `skipped`. NOT RUN - NEEDS-CHECKING Group QZ.
+  - given: >
+      VERSION 5. A scratch project that already has a grid called "B";
+      firstLetter "A", spacingsAcross "6000,6000", no spacings up
     expect: >
-      VERSION 2: REFUSED BEFORE ANY GRID IS MADE, `refused` naming "B" and
-      the grid that holds it, and the Grids count unchanged. (Version 1 made
-      the grid anyway, left it with Revit's own name and reported it; the
-      merge with CREATE_GRID kept the safer rule, so this case FAILS on
-      version 1)
-  - given: VERSION 2, a project with a grid "b" and firstLetter "A" across two gaps
-    expect: refused - names are compared ignoring capitals, as Revit compares them
+      grids A and C made where they fall - A at the start, C 12000 mm on - and
+      no grid between them; B NOT made -
+      `skipped` one line, "'B' - grid 'B' in this project already has that
+      name; not made"; `findings` saying 1 grid skipped and 2 made; `refused`
+      EMPTY. The Grids count up by two, not three and not none
+  - given: VERSION 5. A project with a grid "b", firstLetter "A" across two gaps
+    expect: >
+      B skipped exactly as above - names are compared ignoring capitals, as
+      Revit compares them - and A and C made
+  - given: >
+      VERSION 5, the whole call skipped. gridLines one line, gridNames "B", in
+      the project that has "B"
+    expect: >
+      NOTHING MADE; `skipped` naming B, and `refused` "NO GRID WAS CREATED:
+      every grid asked for was skipped because its name is taken ...". The
+      answer must not read as a change
 
   - given: empty spacings in both directions
     expect: refused before anything is created
