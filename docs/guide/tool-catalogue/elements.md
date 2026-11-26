@@ -688,7 +688,7 @@ Builds new floors, ceilings or wall finishes room by room, each one the shape of
 | **Reached by** | asking in a Claude chat |
 | **Works on** | what is selected in Revit: elements |
 | **You say** | **host type** - by name, as Revit writes it<br>**height above level** - a number - digits only - 250 or 250.5, not 250mm<br>**base offset** - a number - digits only - 250 or 250.5, not 250mm; optional, left out means *0*<br>**rooms** - text; optional, left out means *all*<br>**join to host** - yes or no - true or false; optional |
-| **You get** | created, with holes, finish walls, finish summary |
+| **You get** | created, with holes, finish walls |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | none |
 | **Capability** | `CREATE_FROM_ROOM_BOUNDARIES` |
@@ -2803,7 +2803,7 @@ Answers which structural steel connections the model holds - each connection's t
 | **Reached by** | asking in a Claude chat |
 | **Works on** | what is selected in Revit: elements |
 | **You say** | **show** - text; optional, left out means *all* |
-| **You get** | connection count, type count, findings |
+| **You get** | connection count, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | none |
 | **Capability** | `REPORT_STRUCTURAL_CONNECTIONS` |
