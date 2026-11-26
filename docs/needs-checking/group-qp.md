@@ -90,4 +90,3 @@ Run from this pull request's head `17cf1d586`, on the same scratch `pt-ahu`, rol
 **Signed 2026-11-26 by Ajmal PS** (his typed word in chat, "Yes, sign it"; signature put on by the session):
 `add-family-connector` version 9, card PROVEN, on that job (QP1 positive, QP2 (i) negative). Groups PO and OT's
 connector rows and QP2 (ii) are still owed.
-
