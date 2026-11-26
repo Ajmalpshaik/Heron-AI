@@ -6,7 +6,7 @@
 
 **Every tool Heron has for Revit, by job** - what each one does, how you reach it, what it needs, what you get, and on which Revit releases it is built and proved. It is written by a script from Heron's own tool cards, so no count or status on these pages is typed by a person.
 
-Heron holds **617 live tools**: **491 are usable in a chat**, 43 are not proved yet but run because they change nothing in the model, and 83 are refused until they are proved. 137 retired tools are left out - each one's card names the tool that replaced it.
+Heron holds **617 live tools**: **492 are usable in a chat**, 43 are not proved yet but run because they change nothing in the model, and 82 are refused until they are proved. 137 retired tools are left out - each one's card names the tool that replaced it.
 
 ## How you reach a tool
 
@@ -68,7 +68,7 @@ Heron starts with every switch off, so it only reads until you turn **Changes** 
 | [Levels and grids](tool-catalogue/datums.md) | 9 | 5 | 2 | 2 |
 | [MEP - ducts, pipes, systems and equipment](tool-catalogue/mep.md) | 84 | 61 | 6 | 17 |
 | [Model checks](tool-catalogue/model-checks.md) | 30 | 20 | 10 | 0 |
-| [Model elements and types](tool-catalogue/elements.md) | 125 | 94 | 6 | 25 |
+| [Model elements and types](tool-catalogue/elements.md) | 125 | 95 | 6 | 24 |
 | [Parameters](tool-catalogue/parameters.md) | 17 | 15 | 0 | 2 |
 | [Phases](tool-catalogue/phases.md) | 3 | 3 | 0 | 0 |
 | [Reports](tool-catalogue/reports.md) | 11 | 10 | 1 | 0 |

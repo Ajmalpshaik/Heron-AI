@@ -291,8 +291,9 @@ purpose: >
      which deletes whatever is selected in the window. HERON STOPS BEFORE
      ANYTHING GOES WHEN THE COUNT DIFFERS (DELETE_ELEMENTS version 4, row
      5b-1990): it tries the whole delete and rolls it back first, and when
-     Revit's own count is not `goesTotal` it deletes NOTHING and answers with
-     Revit's list - by category, and every id beyond the old ones. Then name
+     Revit's own count is not `goesTotal` it deletes NOTHING and refuses, with
+     Revit's list in `refusedWhy` (version 5, row 5b-2060) - by category, and
+     every id beyond the old ones. Then name
      that list, ask the yes again with Revit's count, and send DELETE_ELEMENTS
      with expectedCount= that count; never leave expectedCount out to get
      past the stop. REVIT'S DELETE BOX STILL NAMES HOW MANY IT WILL DELETE:

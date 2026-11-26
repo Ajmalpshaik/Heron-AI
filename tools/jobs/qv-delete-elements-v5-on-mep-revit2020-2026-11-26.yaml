@@ -1,0 +1,12 @@
+# Group QV - DELETE_ELEMENTS version 5 (PR #1470). on-mep, the 78 rooms (Revit takes 81).
+model: on-mep (copy of Revit 2020 rme_advanced_sample_project), Revit 2020
+defaults:
+  in: on-mep
+  negative-in: on-mep
+  setup: [filter-elements-by-category, set-selection]
+jobs:
+  - fragment: delete-elements
+    write: true
+    expect: deleted
+    set: {category: Rooms, expectedCount: "81"}
+    negative-set: {category: Rooms, expectedCount: "80"}

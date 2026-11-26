@@ -51,6 +51,16 @@ positive:
       runs exactly as version 3: deleted holds the wall, the door and the tag,
       and deletedWhat names each. One undo entry puts all of it back
 
+  # VERSION 5 (row 5b-2060). NOT RUN on version 5. The stops moved, so the
+  # count-met case is owed again: on version 4 it held (Revit 2020,
+  # 2026-11-26, the 78 rooms of the MEP sample copy).
+  - given: >
+      VERSION 5. The 78 rooms, expectedCount=81 - Revit's own count
+    expect: >
+      countChecked says Revit's trial took 81; deleted holds 81,
+      deletedByCategory "81 deleted. Asked for 78: Rooms 78. Also went 3:
+      (no category) Element 3."; refused and refusedWhy empty
+
 negative:
   - given: 1 wall carrying 3 doors and 2 windows
     expect: >
@@ -168,6 +178,40 @@ negative:
       no trial of the whole request, countChecked empty, and the delete runs
       exactly as version 3 - the same deleted, deletedWhat and
       deletedByCategory for the same model
+
+  # VERSION 5 - THE COUNT STOP IS A REFUSAL, NOT A THROWN ERROR (row 5b-2060,
+  # issue #1462). NOT RUN. Measured on version 4, Revit 2020, 2026-11-26: the
+  # 78 Rooms of a scratch copy of the MEP sample, which Revit's delete takes
+  # as 81 (78 rooms and 3 with no category) - expectedCount 80 and 0 came back
+  # fragment_threw with the right words. Every case below FAILS on version 4,
+  # which threw. NEEDS-CHECKING Group QV.
+  - given: >
+      VERSION 5. The 78 rooms, expectedCount=80 - one LESS than Revit's 81
+    expect: >
+      NEVER fragment_threw. refusedWhy reads "STOPPED BEFORE THE DELETE -
+      NOTHING HAS BEEN DELETED. The yes named 80 element(s); Revit's own
+      delete of the 78 asked for takes 81 - by category: Rooms 78, (no
+      category) Element 3. 3 more than the 78 asked for would go: ..." with
+      the three ids; refused holds the 78 room ids; deleted, deletedWhat and
+      detachedWalls empty, alsoWent 0, countChecked and deletedByCategory
+      empty. The reply's outcome is refused, and all 78 rooms are still in
+      the model
+  - given: >
+      VERSION 5. The same rooms, expectedCount=82 - one MORE than Revit's 81
+    expect: >
+      refused the same way - refusedWhy names 82 and 81 - and nothing deleted
+  - given: >
+      VERSION 5. The same rooms, expectedCount=0
+    expect: >
+      refused the same way - refusedWhy names 0 and 81 - and nothing deleted:
+      a 0 is a count, never "no check"
+  - given: >
+      VERSION 5. No open transaction for the trial to nest in, expectedCount
+      given
+    expect: >
+      refused, never thrown: refusedWhy reads "STOPPED BEFORE THE DELETE -
+      expectedCount N was given, and Revit could not start the trial ...
+      Nothing has been deleted", every id asked for in refused, deleted empty
 
 second_route:
   - Revit's own undo stack: one Ctrl+Z must put back exactly what `deleted` listed

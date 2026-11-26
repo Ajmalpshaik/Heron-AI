@@ -1,7 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `elements` and `expectedCount` are in scope;
-// leaves `deleted`, `askedFor`, `alsoWent`, `refused`, `attachedBefore`,
-// `detachedWalls`, `wallsNote`, `deletedByCategory`, `deletedWhat` and
-// `countChecked` behind.
+// leaves `deleted`, `askedFor`, `alsoWent`, `refused`, `refusedWhy`,
+// `attachedBefore`, `detachedWalls`, `wallsNote`, `deletedByCategory`,
+// `deletedWhat` and `countChecked` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -95,10 +95,26 @@
 //   again with what really goes. The same count: `countChecked` says so and
 //   the delete runs exactly as version 3. Left out (-1), nothing is tried
 //   twice and nothing here changes how a delete runs.
+//
+// VERSION 5 (2026-11-26, row 5b-2060) - THE COUNT STOP IS A REFUSAL, NOT A
+// THROWN ERROR.
+//
+//   Measured on Revit 2020, 78 rooms that Revit's delete takes as 81:
+//   expectedCount 80 and 0 stopped with the right words and nothing deleted,
+//   but THROWN, so the caller got `fragment_threw` - and a thrown negative
+//   cannot sign a proof. Now both stops - a count that differs, and a trial
+//   that cannot start - put the same words in `refusedWhy`, every id asked for
+//   in `refused` (none of them went), and delete NOTHING: the delete loop
+//   below is handed no ids, so `deleted` stays empty. A trial Revit cannot
+//   put back, and a rebuild it cannot finish, are still THROWN: those are
+//   failures, never a refusal, and the whole call is rolled back.
 
 var askedFor = elements.Count;
 var deleted = new List<ElementId>();
 var refused = new List<ElementId>();
+// VERSION 5: why the count check stopped the delete, in the modeller's words.
+// Empty unless it stopped.
+var refusedWhy = "";
 var attachedBefore = "";
 var detachedWalls = new List<ElementId>();
 var wallsNote = "";
@@ -177,7 +193,7 @@ if (hostBoxes.Count > 0)
 // SubTransaction - the same deletes, in the same order, as the loop below -
 // and rolled back. What that trial returned is Revit's own count of what goes.
 // A different count from the one the yes named deletes NOTHING: the call
-// stops, and its message carries Revit's list so the question can be asked
+// stops, and `refusedWhy` carries Revit's list so the question can be asked
 // again. The elements are read AFTER the rollback, when they are back, and
 // only by id: an element object is never touched after its delete was rolled
 // back, here or in the loop below.
@@ -185,50 +201,61 @@ if (hostBoxes.Count > 0)
 // "NO COUNT" IS A NEGATIVE NUMBER, NEVER 0. A yes can name 0 - nothing goes -
 // and that 0 is checked like any other count, so it stops if Revit would take
 // anything. Left out, `expectedCount` is -1 and nothing is tried twice.
+//
+// VERSION 5: A STOP IS A REFUSAL (row 5b-2060). Version 4 threw both stops
+// below, so the caller saw `fragment_threw`. Now each one writes its words to
+// `refusedWhy`, puts every id asked for in `refused`, and the delete loop is
+// handed no ids - nothing is deleted. The words are version 4's own.
 var countChecked = "";
 if (expectedCount >= 0)
 {
     var wouldGo = new List<ElementId>();
     var wouldGoSeen = new HashSet<ElementId>();
     var wouldRefuse = new List<string>();
+    var wholeStarted = false;
     using (var whole = new SubTransaction(doc))
     {
-        var wholeStarted = false;
         try { whole.Start(); wholeStarted = true; } catch (Exception) { wholeStarted = false; }
-        if (!wholeStarted)
-            throw new InvalidOperationException(
-                "STOPPED BEFORE THE DELETE - expectedCount " + expectedCount + " was given, and Revit "
-                + "could not start the trial that counts what this delete takes, so that count cannot be "
-                + "checked. Nothing has been deleted");
-
-        foreach (var askedId in askedIds)
+        if (wholeStarted)
         {
-            ICollection<ElementId> wouldTake = null;
-            try { wouldTake = doc.Delete(askedId); } catch (Exception) { wouldTake = null; }
-            // Refused, or already gone with one asked before it - said in the
-            // message, never silently left out of the count.
-            if (wouldTake == null || wouldTake.Count == 0)
+            foreach (var askedId in askedIds)
             {
-                if (!wouldGoSeen.Contains(askedId)) wouldRefuse.Add(askedId.ToString());
-                continue;
+                ICollection<ElementId> wouldTake = null;
+                try { wouldTake = doc.Delete(askedId); } catch (Exception) { wouldTake = null; }
+                // Refused, or already gone with one asked before it - said in the
+                // message, never silently left out of the count.
+                if (wouldTake == null || wouldTake.Count == 0)
+                {
+                    if (!wouldGoSeen.Contains(askedId)) wouldRefuse.Add(askedId.ToString());
+                    continue;
+                }
+                foreach (var goingId in wouldTake)
+                    if (wouldGoSeen.Add(goingId)) wouldGo.Add(goingId);
             }
-            foreach (var goingId in wouldTake)
-                if (wouldGoSeen.Add(goingId)) wouldGo.Add(goingId);
-        }
 
-        try
-        {
-            whole.RollBack();
-        }
-        catch (Exception notBack)
-        {
-            throw new InvalidOperationException(
-                "Revit could not put back the trial delete used to check the count the yes named - "
-                + notBack.Message + ". Nothing this call did is kept");
+            // A trial Revit cannot put back is a FAILURE, not a refusal: still
+            // thrown, so the whole call is rolled back.
+            try
+            {
+                whole.RollBack();
+            }
+            catch (Exception notBack)
+            {
+                throw new InvalidOperationException(
+                    "Revit could not put back the trial delete used to check the count the yes named - "
+                    + notBack.Message + ". Nothing this call did is kept");
+            }
         }
     }
 
-    if (wouldGo.Count != expectedCount)
+    if (!wholeStarted)
+    {
+        // A count that cannot be checked is never taken as met.
+        refusedWhy = "STOPPED BEFORE THE DELETE - expectedCount " + expectedCount + " was given, and Revit "
+            + "could not start the trial that counts what this delete takes, so that count cannot be "
+            + "checked. Nothing has been deleted";
+    }
+    else if (wouldGo.Count != expectedCount)
     {
         var categories = new Dictionary<string, int>();
         var alsoIds = new List<string>();
@@ -252,7 +279,7 @@ if (expectedCount >= 0)
             .ThenBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
             .Select(pair => pair.Key + " " + pair.Value)
             .ToArray());
-        throw new InvalidOperationException(string.Format(
+        refusedWhy = string.Format(
             "STOPPED BEFORE THE DELETE - NOTHING HAS BEEN DELETED. The yes named {0} element(s); Revit's "
             + "own delete of the {1} asked for takes {2}{3}. {4} more than the {1} asked for would go{5}.{6} "
             + "Name what really goes to the modeller and ask again, with expectedCount={2}",
@@ -263,15 +290,24 @@ if (expectedCount >= 0)
             wouldRefuse.Count > 0
                 ? " " + wouldRefuse.Count + " asked for would NOT go - Revit refused them: "
                   + string.Join(", ", wouldRefuse.ToArray()) + "."
-                : ""));
+                : "");
     }
-
-    countChecked = string.Format(
-        "Revit's own trial of this delete takes {0} element(s) - the count the yes named - checked "
-        + "before anything was deleted.", wouldGo.Count);
+    else
+    {
+        countChecked = string.Format(
+            "Revit's own trial of this delete takes {0} element(s) - the count the yes named - checked "
+            + "before anything was deleted.", wouldGo.Count);
+    }
 }
 
-foreach (var id in askedIds)
+// VERSION 5: STOPPED, SO NOTHING GOES. Every id asked for is in `refused` -
+// none of them was deleted - and the loop below is handed none of them, so
+// `deleted`, `deletedWhat` and `alsoWent` stay empty and no wall is read
+// again. Not stopped: the loop runs over every id asked for, as version 4.
+if (refusedWhy.Length > 0) refused.AddRange(askedIds);
+var deleteNow = refusedWhy.Length > 0 ? new List<ElementId>() : askedIds;
+
+foreach (var id in deleteNow)
 {
     // VERSION 3: THE TRIAL. Revit's own delete of this element, rolled back,
     // so everything it takes can be read while it is still there.

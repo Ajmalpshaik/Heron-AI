@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,10 +9,22 @@ semantic-identity: "delete these elements from the model"
 kind: action
 domain: revit.elements
 capability: DELETE_ELEMENTS
-version: 4
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 5 (2026-11-26) - THE COUNT STOP IS A REFUSAL, NOT A THROWN ERROR,
+# and still DRAFT. FRAGMENT-ISSUES row 5b-2060 (issue #1462), Revit 2020, a
+# scratch copy of the MEP sample: 78 rooms that Revit's delete takes as 81,
+# and expectedCount 80 and 0 stopped with the right words and nothing deleted
+# - but THROWN, so the caller got `fragment_threw` and NEEDS-CHECKING Group QV
+# could not sign the card on its negatives. Now both stops - a count that
+# differs, and a trial that cannot start - put version 4's same words in
+# `refusedWhy`, every id asked for in `refused` (none of them went), and
+# delete nothing: `deleted` stays empty. A trial Revit cannot put back, and a
+# rebuild it cannot finish, are still thrown - failures, not refusals. Version
+# 4 was never proved; Group QV is owed on version 5 (D-30).
+#
 # VERSION 4 (2026-11-26) - A COUNT THE YES NAMED IS CHECKED BEFORE ANYTHING
 # GOES, and back to DRAFT. FRAGMENT-ISSUES row 5b-1990 (issue #1278), Revit
 # 2020, a real job: the yes named 36 elements and Revit's delete took 62, and
@@ -100,6 +112,11 @@ purpose: >
   asked again with what really goes. `countChecked` says the count was met.
   Left out, the delete runs as version 3 did.
 
+  **THAT STOP IS A REFUSAL** (version 5). The words are in `refusedWhy`,
+  every id asked for is in `refused`, and `deleted` is empty - the call
+  answers that it refused, never that it threw. A trial that cannot start,
+  so the count cannot be checked, is refused the same way.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -136,11 +153,21 @@ contract:
       role: result
       type: int
     - name: refused
-      # Why it declined, in the user's words - the evidence it looked and
-      # said no. Never a thing it FOUND, so it must not count toward
-      # "did this come back empty" (D-52).
+      # The ids asked for that were NOT deleted: each one Revit refused or
+      # removed nothing for, and - version 5 - every id asked for when the
+      # count check stopped the delete (why is in `refusedWhy`). The evidence
+      # it looked and said no. Never a thing it FOUND, so it must not count
+      # toward "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: refusedWhy
+      # Version 5. Why the count check stopped the delete, in the modeller's
+      # words: the count the yes named, Revit's own count, its list by
+      # category and every id beyond those asked for - or that the trial
+      # could not start, so the count could not be checked. Nothing was
+      # deleted. Empty when it did not stop (D-52).
+      role: accounting
+      type: string
     - name: attachedBefore
       # Version 2. Read BEFORE the delete: every wall whose top or base is
       # attached and whose plan extent overlaps a roof, floor or ceiling being
@@ -183,33 +210,43 @@ contract:
       # Version 4. With expectedCount given: the sentence that Revit's own
       # trial took that same count before anything was deleted. Empty when no
       # count was given. A different count never reaches here - the call
-      # stops and deletes nothing (D-52).
+      # stops, deletes nothing, and says why in `refusedWhy` (D-52).
       role: accounting
       type: string
 
 proof:
-  date: '2026-11-24'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: 4355-BHVD-3D-60P00-BL003A (43,051 elements), Revit 2020, session 29500
-  positive_case: 'run with elementIds=8697022 - the first of 3 tracked inputs - the arrangement
-    was re-made first by running filter-elements-by-id with this phase''s own values - run
-    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned alsoWent 0, askedFor 1, askedIds 1 item(s) [8697022], attachedBefore , candidates
-    0 item(s), deleted 1 item(s) [8697022], deletedByCategory 1 deleted. Asked for 1: Air
-    Terminals 1. Nothing else went. Each was read before the delete, from Revit''s own trial
-    of it; every id is in deletedWhat., deletedWhat 1 entry(ies), detachedWalls 0 item(s),
-    hostBoxes 0 item(s), isAttached Func`3, readBeforeDelete 1 item(s) [System.String[]],
-    refused 0 item(s), wallsNote . inputs came elements from filter-elements-by-id (1). on
-    4355-BHVD-3D-60P00-BL003A'
-  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). delete-elements\
-    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
-    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
-    \ about a set it was not given - is caught here by the answer following the input exactly\
-    \ across 3 different inputs:\n\n      elementIds=8697022 -> askedIds 1 item(s) [8697022]\n\
-    \      elementIds=8700586 -> askedIds 1 item(s) [8700586]\n      elementIds=8697022,9284295\
-    \ -> askedIds 2 item(s) [8697022, 9284295]\n\n    Different inputs, exact matches every\
-    \ time. A fragment falling back to the active view, the whole model, or a previous run\
-    \ could not do that."
+  model: on-mep, Revit 2020, session 27788 - the count is NOT recorded because 1,560 elements
+    was measured on qs-scratch, the document in front, and this ran against another one (row
+    15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    alsoWent 3, askedFor 78, askedForms HashSet`1, askedIds 78 item(s) [573789, 573790, 573791,
+    ...], attachedBefore , candidates 0 item(s), countChecked Revit''s own trial of this delete
+    takes 81 element(s) - the count the yes named - checked before anything was deleted.,
+    deleteNow 78 item(s) [573789, 573790, 573791, ...], deleted 81 item(s) [573789, 573790,
+    573791, ...], deletedByCategory 81 deleted. Asked for 78: Rooms 78. Also went 3: (no category)
+    Element 3. Each was read before the delete, from Revit''s own trial of it; every id is
+    in deletedWhat., deletedWhat 81 entry(ies), detachedWalls 0 item(s), expectedCount 81,
+    hostBoxes 0 item(s), isAttached Func`3, readBeforeDelete 81 item(s) [System.String[],
+    System.String[], System.String[], ...], refused 0 item(s), refusedWhy , wallsNote . inputs
+    came elements from the selection (78); expectedCount as given. on on-mep'
+  negative_case: 'run against ''on-mep'' with category=Rooms, expectedCount=80 instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running filter-elements-by-category, set-selection with this phase''s own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned alsoWent 0, askedFor 78, askedForms HashSet`1, askedIds 78 item(s) [573789, 573790,
+    573791, ...], attachedBefore , candidates 0 item(s), countChecked , deleteNow 0 item(s),
+    deleted 0 item(s), deletedByCategory , deletedWhat 0 entry(ies), detachedWalls 0 item(s),
+    expectedCount 80, hostBoxes 0 item(s), isAttached Func`3, readBeforeDelete 0 item(s),
+    refused 78 item(s) [573789, 573790, 573791, ...], refusedWhy STOPPED BEFORE THE DELETE
+    - NOTHING HAS BEEN DELETED. The yes named 80 element(s); Revit''s own delete of the 78
+    asked for takes 81 - by category: Rooms 78, (no category) Element 3. 3 more than the 78
+    asked for would go: 580983, 580984, 580982. Name what really goes to the modeller and
+    ask again, with expectedCount=81, wallsNote . inputs came elements from the selection
+    (78); expectedCount as given. on on-mep'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
@@ -217,8 +254,8 @@ proof:
     revit_release: '2020'
     revit_build: 20191106_1200(x64)
     addin_version: 0.3.0.0
-    addin_hash: dc82efa01aa2e93e
-  fingerprint: edd73baa67ce280c
+    addin_hash: df0d401c52ca05f4
+  fingerprint: bb67a9baa0830c77
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -238,7 +275,8 @@ compatibility-note: >
   `GenericForm` are on every release 2020 to 2027, and an id is only ever
   printed with `ElementId.ToString()`. Version 4 adds no API member: the
   same `SubTransaction`, `Document.Delete(ElementId)`,
-  `Document.GetElement` and `Element.Category` on every release.
+  `Document.GetElement` and `Element.Category` on every release. Version 5
+  adds no API member: it changes only how the stop is answered.
 
 # ROUTING - repeated in HIDE_ELEMENTS, which is what is usually meant.
 #
