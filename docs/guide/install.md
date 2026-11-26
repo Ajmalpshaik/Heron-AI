@@ -7,6 +7,9 @@ rights.** This page takes you from download to your first request, then covers u
 the problems people actually meet. It is the step-by-step version of
 [What to install](../WHAT-TO-INSTALL.md), which is the whole picture and wins where the two differ.
 
+**Modellers: use the Setup file.** Downloading or cloning the repository is for developers - it has no
+Revit add-in, and Heron answers only in a Claude Code chat opened in the Heron folder.
+
 Like loading a family into a project: the Setup puts the add-in where each Revit looks for it, and
 Revit picks it up the next time it opens.
 

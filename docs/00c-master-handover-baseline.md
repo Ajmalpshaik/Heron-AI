@@ -568,7 +568,7 @@ User Request -> Intent -> Domain Detection -> Knowledge Scope
 > | Intent · Domain Detection | The host reads the request ([D-01](DECISIONS.md)); the domain is one column of the filter below |
 > | Knowledge Scope · Metadata Filtering | **Step 1:** a plain SQL filter on scope, Revit release, status, domain and kind. A fragment for the wrong Revit release is not returned at all — a wall, not a weighting |
 > | Keyword Search · Semantic Search · Vector Search | **Step 2:** two searches over the survivors — exact words (`heron_search.py`) and meaning, by embeddings computed on the PC (`heron_embed.py`, [D-24](DECISIONS.md)). Semantic and vector search are one route here |
-> | Ranking · Trust Evaluation | **Steps 3 and 4:** the two lists fused by reciprocal rank; a small nudge by status that may settle a near-tie and never overturn a clear winner; an optional re-reader of the top results when one is installed (`heron_rerank.py`, [D-134](DECISIONS.md)) |
+> | Ranking · Trust Evaluation | **Steps 3 and 4:** the two lists fused by reciprocal rank; a small nudge by status that may settle a near-tie and never overturn a clear winner. The optional re-reader of the top results was removed by [D-201](DECISIONS.md) |
 > | Conflict Detection | Two scopes answering one question with different numbers is said out loud, never settled (`heron_conflict.py`) — and the answer says how contested the ranking was |
 > | Context Assembly | What an agent is given and nothing else (`heron_context.py`, served as `heron_context`) |
 >

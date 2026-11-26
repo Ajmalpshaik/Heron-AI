@@ -167,54 +167,20 @@ def main():
                       - RETRIEVE.USAGE_SPAN / 2) < 1e-15,
                   "and helped half the times shown is half of it")
 
-            # THE SAME TWO RULES WHEN A RE-RANKER SETS THE ORDER - asked of
-            # _rerank directly, with a scorer this suite supplies, so every
-            # machine checks it whether or not a cross-encoder is installed.
-            # On that backend the cross-encoder's score decides; the usage
-            # nudge rides in the tie-break (the fused score), so it decides
-            # only between clauses the cross-encoder scored the same.
-            was = RETRIEVE.RERANK.scores
-            try:
-                for label, given, expected in (
-                        ("scored the same", [0.5, 0.5], ["b", "a"]),
-                        ("scored a above b", [0.9, 0.1], ["a", "b"])):
-                    pair = [RETRIEVE.Candidate("a", {}), RETRIEVE.Candidate("b", {})]
-                    pair[0].fused = pair[1].fused = 0.03
-                    RETRIEVE.apply_usage(pair[1], {"b": {"offered": 1, "helped": 1}})
-                    RETRIEVE.RERANK.scores = (lambda q, ps, given=given:
-                                              list(given[:len(ps)]))
-                    got = [c.id for c in RETRIEVE._rerank("q", pair, lambda c: c.id)]
-                    check(got == expected,
-                          "re-ranked, the cross-encoder %s: %r - %s" % (
-                              label, got,
-                              "the clause said to help wins the tie"
-                              if expected[0] == "b" else
-                              "the nudge never beats the cross-encoder's order"))
-            finally:
-                RETRIEVE.RERANK.scores = was
-
             # THROUGH THE REAL STACK, ON WHATEVER BACKEND THIS MACHINE HAS. The
-            # order is the LIST's order - never assumed to be the score's,
-            # because with a re-ranker the cross-encoder sets it. `winner` is
-            # the copy that came second before anything was said.
+            # order is the LIST's order, read as it came back. `winner` is the
+            # copy that came second before anything was said.
             again = RETRIEVE.find_documents(store, QUESTION)
             order = [c["id"] for c in again.candidates if c["id"] in clause_ids]
             before = [c["id"] for c in first.candidates if c["id"] in clause_ids]
             check(before[-1] == winner,
                   "before anything was said, %s came second" % winner[:12])
             old = dict((c["id"], c) for c in first.candidates)
-            reranked = old[before[0]].get("rerank_score") is not None
-            if reranked:
-                # The deciding value is the cross-encoder's. Only an exact tie
-                # lets the nudge decide.
-                tied = old[before[0]]["rerank_score"] == old[winner]["rerank_score"]
-                backend = "%s+rerank" % EMBED.backend()[0]
-            else:
-                # The deciding value is the fused score; a gap inside
-                # USAGE_SPAN is one the nudge may close.
-                tied = (old[before[0]]["score"] - old[winner]["score"]
-                        < RETRIEVE.USAGE_SPAN)
-                backend = EMBED.backend()[0]
+            # The deciding value is the fused score; a gap inside USAGE_SPAN
+            # is one the nudge may close.
+            tied = (old[before[0]]["score"] - old[winner]["score"]
+                    < RETRIEVE.USAGE_SPAN)
+            backend = EMBED.backend()[0]
             expected = [winner, before[0]] if tied else before
             check(order == expected,
                   "on this machine's backend (%s), the two copies %s - so after "

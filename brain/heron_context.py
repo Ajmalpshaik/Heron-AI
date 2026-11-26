@@ -470,7 +470,6 @@ def _confidence(level, said, contest=None):
                               else round(contest.top_gap, 2)),
             "spread_ranks": round(contest.spread, 2),
             "both_routes": contest.agreed,
-            "reranked": contest.reranked,
         }
     return entry
 
@@ -1367,6 +1366,10 @@ def report(ctx, out=None, full=False):
 
 
 def main(argv):
+    # Rows 5b-2041 to 5b-2044: print safely on a cp1252 console.
+    import heron_console
+    heron_console.safe_streams()
+
     if not argv:
         print(__doc__.strip().splitlines()[0])
         print()

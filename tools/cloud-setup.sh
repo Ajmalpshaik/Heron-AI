@@ -67,8 +67,7 @@ apt_pid=$!
 #   pypdf       ingesting PDFs
 # sqlite-vec is LEFT OUT since 2026-11-21: every vector is compared in plain
 # Python and nothing in Heron loads it (D-194).
-# sentence-transformers is deliberately LEFT OUT: it pulls torch, 500 MB to
-# 2 GB, to re-order a shortlist it already has. mcp is deliberately NOT pinned:
+# mcp is deliberately NOT pinned:
 # D-45, and both suites pass on SDK 2.2.0 as well as 1.x.
 #
 # PIP MUST NEVER HAVE TO UNINSTALL A PACKAGE DEBIAN INSTALLED. It cannot -

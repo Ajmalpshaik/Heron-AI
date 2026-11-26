@@ -100,7 +100,7 @@ This is **Golden Rule 5**. A polluted brain is unsearchable and untrustworthy, a
 | Retriever | [`heron_search.py`](../brain/heron_search.py) - word match, and the identity and cache routes |
 | Fragment Matcher | [`heron_matcher.py`](../brain/heron_matcher.py) |
 | Skill Matcher | [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) - the jobs a `heron_lookup` answer names, through `heron_skill.methods_for` |
-| Ranking | [`heron_retrieve.py`](../brain/heron_retrieve.py) - fusion; [`heron_rerank.py`](../brain/heron_rerank.py) - the optional re-ranker |
+| Ranking | [`heron_retrieve.py`](../brain/heron_retrieve.py) - fusion. The optional cross-encoder re-ranker was removed by [D-201](decisions/D-201.md) |
 | Context Builder | [`heron_context.py`](../brain/heron_context.py), with `heron_retrieve.py` |
 | Embedding, Vector Search | [`heron_embed.py`](../brain/heron_embed.py) |
 | Index Manager | `heron_search.py` |
@@ -139,7 +139,8 @@ That last point matters most: the common case ("select all ducts", asked for the
 
 ### 4.1 How Heron finds the right tool for your words
 
-As built (2026-10-18), read from `heron_retrieve.find()` and `heron_brain.lookup()`.
+As built (2026-10-18; step 5, the optional re-ranker, removed 2026-11-26 by [D-201](decisions/D-201.md)),
+read from `heron_retrieve.find()` and `heron_brain.lookup()`.
 
 ```mermaid
 flowchart TD
@@ -150,7 +151,6 @@ flowchart TD
     KW["<b>3a · Word match</b><br/>FTS5 · heron_search"]
     MN["<b>3b · Meaning search</b><br/>heron_embed · lexical built in<br/>model2vec when installed"]
     FU["<b>4 · Fusion</b><br/>reciprocal rank · heron_retrieve"]
-    RR["<b>5 · Re-ranker</b> · optional<br/>re-reads the top ~20 · heron_rerank"]
     AN["<b>The answer</b><br/>the capability · how it matched<br/>which search ran · what was left out"]
 
     W ==> CC ==> F ==> X
@@ -158,8 +158,7 @@ flowchart TD
     X ==>|not found| KW & MN
     KW ==> FU
     MN ==> FU
-    FU ==> RR ==> AN
-    FU -.->|no re-ranker installed| AN
+    FU ==> AN
 
     classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
     classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
@@ -168,12 +167,9 @@ flowchart TD
     class W user
     class CC host
     class F,X,KW,MN,FU,AN brain
-    class RR search
 ```
 
-**Solid arrows are the path a lookup takes; the dotted arrow is the path with no re-ranker installed**,
-where fusion's order comes back unchanged and the answer says `re-rank: not used`. The dashed box is the
-optional install. `revit_read`, `revit_show` and `revit_change` given your words (`request`) run this
+**The arrows are the path a lookup takes**; fusion's order is the order shown. `revit_read`, `revit_show` and `revit_change` given your words (`request`) run this
 same lookup before they run anything.
 
 <details>
@@ -198,9 +194,6 @@ Claude Code           calls heron_lookup with the Revit release, and `question` 
                        |
 4  Fusion             reciprocal rank, heron_retrieve
    |
-5  Re-ranker          optional - re-reads the top ~20, heron_rerank
-   |                  not installed -> fusion's order, unchanged, and the answer says so
-   |
 The answer            the capability, how it matched (identity / cache / hybrid / nothing),
                       the fragment behind it, which search ran, and what step 1 left out
 ```
@@ -212,13 +205,13 @@ The answer            the capability, how it matched (identity / cache / hybrid 
 | **1 · Filter first** | A plain SQL `WHERE` over status, Revit release, domain and kind. A fragment for another release is **absent, not demoted**. When the host calls the request a question, every fragment above `question_ceiling()` - the level just below `revit_change`'s, read from the tool registry - is absent too ([D-128](DECISIONS.md#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model)). The answer counts both | `heron_retrieve.eligible` | 1 |
 | **2 · Exact match** | `identity`: the words are a card's own declared sentence - one lookup, no search. Only a `PROVEN` fragment may run off it unasked, and through a door only when every value it needs is given ([04 §8.5](04-heron-mcp.md#85-one-request-fewer-turns--built-2026-09-30)). `cache`: these words were answered before - a candidate, never a decision. Step 1 applies to both | `heron_search.short_circuit`, `heron_search.recall` | 5 |
 | **3a · Word match** | FTS5 over the fragments step 1 kept, ranked by bm25 | `heron_search.keywords` | 2 |
-| **3b · Meaning search** | `lexical` is built in: character n-grams, measured as *not* meaning. `model` is model2vec when it is installed and its weights can be fetched; sentence-transformers is tried next. Which one ran is recorded on the answer | [`heron_embed.py`](../brain/heron_embed.py) | 2 |
+| **3b · Meaning search** | `lexical` is built in: character n-grams, measured as *not* meaning. `model` is model2vec when it is installed and its weights can be fetched. Which one ran is recorded on the answer | [`heron_embed.py`](../brain/heron_embed.py) | 2 |
 | **4 · Fusion** | Reciprocal rank fusion of the two lists (`RRF_K`). The meaning route's vote is weighted by which backend ran (`VECTOR_WEIGHT_BY_BACKEND`), and a status nudge smaller than one rank settles near-ties only | `heron_retrieve.retrieve` | 3, and 4's status signal |
-| **5 · Re-ranker** | A cross-encoder reads each (question, passage) pair of the top ~20 (`heron_rerank.SHORTLIST`) together. The passage is the card's identity, its first declared sentences, its capability and its domain ([D-134](DECISIONS.md#d-134--the-re-ranker-reads-a-cards-first-declared-sentences-beside-its-identity-carried-in-the-store)). With nothing installed, fusion's order comes back unchanged | [`heron_rerank.py`](../brain/heron_rerank.py) | 4 |
-| **The answer** | The capability, the route (`identity`, `cache`, `hybrid` or `nothing`), the fragment behind it as evidence, a `nearness` and a `re-rank` line saying which search ran, and how many fragments step 1 left out | `heron_brain.lookup`, the `heron_lookup` tool | - |
+| ~~**5 · Re-ranker**~~ | **Removed 2026-11-26 ([D-201](decisions/D-201.md)).** A cross-encoder read each (question, passage) pair of the top ~20; measured, it gave no clear gain over the model alone ([D-134](DECISIONS.md#d-134--the-re-ranker-reads-a-cards-first-declared-sentences-beside-its-identity-carried-in-the-store), superseded) | - | 4 |
+| **The answer** | The capability, the route (`identity`, `cache`, `hybrid` or `nothing`), the fragment behind it as evidence, a `nearness` line saying which search ran, and how many fragments step 1 left out | `heron_brain.lookup`, the `heron_lookup` tool | - |
 
-What to install for 3b and 5, and what each was measured to do, is
-[WHAT-TO-INSTALL §2](WHAT-TO-INSTALL.md#2-optional--the-two-search-add-ons).
+What to install for 3b, and what it was measured to do, is
+[WHAT-TO-INSTALL §2](WHAT-TO-INSTALL.md#2-optional--the-trained-search-model).
 
 ## 5. **[NOTE]** Vector store choice
 

@@ -61,14 +61,14 @@ before the lining runs - expected, NOT RUN. Every line below with `HERON_CLIENT_
 | **JY10** | *Flex duct.* One flex duct at 25 | Named *Flex duct - not lined here*. **Record** whether Revit's own ribbon offers Add Lining on a flex duct; if it does, the card is narrower than Revit and that is a row of its own |
 | **JY11** | *A type change.* Lined ducts at their own thickness with another `liningType` | **Record** whether each reads back with the new type and the same element id |
 | **JY12** | *Kept, through `try-once`, on the modeller's yes.* Line, as JY2, on a saved copy | Keep or Discard; afterwards a duct schedule with Lining Thickness shows 25 mm on exactly the ducts `report` names - the second route |
-| **JY13** | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The four sentences reach this card by identity; *"remove the insulation from these ducts"* still reaches `REMOVE_MEP_INSULATION`. Any sentence the re-ranker moves to this card from another is a row of its own |
+| ~~**JY13**~~ | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The four sentences reach this card by identity; *"remove the insulation from these ducts"* still reaches `REMOVE_MEP_INSULATION`. Any sentence the re-ranker moves to this card from another is a row of its own **CLOSED 2026-11-26** - [D-201](../decisions/D-201.md) (2026-11-26) removed the `+rerank` backends, so the run this row asked for on `model+rerank` can no longer be made anywhere, and the owner's PC now ranks on `model`. The run on `model` that answers its look-for is on record in the routing paragraph below, measured 2026-11-01 in a cloud container; it was not made again on 2026-11-26, and this is not a run on the PC. |
 
 **Then sign**, on the owner's word only: `python brain/heron_validate.py accept set-duct-lining --by
 "Ajmal PS"` once its positive and negative pass, and `heron-status` set to PROVEN in the same change. A
 row that fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here - through `heron_brain.lookup` on a scratch
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on - through `heron_brain.lookup` on a scratch
 store each, against this tree with and without the card. The four sentences above reach this card by
 identity; without it they reached `SET_MEP_INSULATION` (*"add 25 mm lining to these ducts"*, *"change the
 lining thickness to 50"*), `CREATE_DUCT` (*"line this supply duct and its fittings"*) and

@@ -177,7 +177,7 @@
 | [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed) | A proof on another Revit release is an entry of proof.releases, and a second route on a PROVEN fragment is written by accept, signed | ✅ Accepted · 2026-10-17 |
 | [D-132](#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool) | Off Windows the Heron server serves its library alone, and no Revit tool | ✅ Accepted · 2026-10-17 |
 | [D-133](#d-133--a-run-that-contradicts-a-proofreleases-entry-is-reported-as-one-that-contradicts-the-proof-is) | A run that contradicts a proof.releases entry is reported, as one that contradicts the proof is | ✅ Accepted · 2026-10-17 |
-| [D-134](#d-134--the-re-ranker-reads-a-cards-first-declared-sentences-beside-its-identity-carried-in-the-store) | The re-ranker reads a card's first declared sentences beside its identity, carried in the store | ✅ Accepted · 2026-10-17 |
+| [D-134](#d-134--the-re-ranker-reads-a-cards-first-declared-sentences-beside-its-identity-carried-in-the-store) | The re-ranker reads a card's first declared sentences beside its identity, carried in the store | ✅ Accepted · 2026-10-17 · superseded by D-201 · 2026-11-26 |
 | [D-135](#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them) | Heron's Python side keeps its data in %USERPROFILE%\.heron, and the Companion's notes in the temporary folder, where a Store Claude's copy cannot reach them | ✅ Accepted · 2026-10-18 |
 | [D-136](#d-136--the-companions-folder-is-the-users-temporary-folder-found-from-inside-revit-by-stepping-out-of-a-guid-named-one) | The Companion's folder is the user's temporary folder, found from inside Revit by stepping out of a GUID-named one | ✅ Accepted · 2026-10-18 |
 | [D-138](#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking) | The Keep or Discard question gets a switch on the ribbon, and its box can keep the rest of one job without asking | ✅ Accepted · 2026-10-18 · item 2 superseded in part by D-141 · 2026-10-18 |
@@ -232,7 +232,7 @@
 | [D-188](#d-188--a-chat-the-claude-app-resumes-after-a-restart-is-the-same-conversation-to-revit-and-takes-back-its-own-model) | A chat the Claude app resumes after a restart is the same conversation to Revit, and takes back its own model | ✅ Accepted · 2026-11-20 |
 | [D-189](#d-189--a-development-session-never-pulls-into-the-main-heron-folder) | A development session never pulls into the main Heron folder | ✅ Accepted · 2026-11-20 |
 | [D-190](#d-190--the-readme-stops-asking-modellers-not-to-install-before-a-release-is-signed-and-says-plainly-the-build-is-unsigned-and-what-was-checked) | The README stops asking modellers not to install before a release is signed, and says plainly the build is unsigned and what was checked | ✅ Accepted · 2026-11-20 |
-| [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) | The usage counter keeps offered, helped and the last date it helped; "helped" is only the modeller's word; it moves a clause less than one rank; and no question text is kept | ✅ Accepted · 2026-11-20 |
+| [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) | The usage counter keeps offered, helped and the last date it helped; "helped" is only the modeller's word; it moves a clause less than one rank; and no question text is kept | ✅ Accepted · 2026-11-20 · *where a re-ranker is installed* superseded in part by D-201 · 2026-11-26 |
 | [D-192](#d-192--a-job-that-works-only-outside-the-model-it-is-aimed-at-declares-nogroupopen-and-an-admin-or-publish-job-then-opens-no-transaction-group-in-that-model) | A job that works only outside the model it is aimed at declares noGroupOpen, and an Admin or Publish job then opens no transaction group in that model | ✅ Accepted · 2026-11-21 |
 | [D-193](#d-193--making-sheets-keeps-three-rules-for-a-table-and-typed-numbers-alike-a-sheet-whose-number-or-name-revit-refuses-is-taken-back-a-number-asked-for-twice-makes-neither-and-1000-is-the-most-in-one-call) | Making sheets keeps three rules for a table and typed numbers alike: a sheet whose number or name Revit refuses is taken back, a number asked for twice makes neither, and 1,000 is the most in one call | ✅ Accepted · 2026-11-21 |
 | [D-194](#d-194--every-stored-vector-is-compared-in-plain-python-sqlite-vec-is-not-used) | Every stored vector is compared in plain Python; sqlite-vec is not used | ✅ Accepted · 2026-11-21 |
@@ -242,6 +242,7 @@
 | [D-198](#d-198--agents-that-were-built-but-that-nothing-in-heron-called-are-retired-and-their-code-and-tests-removed) | Agents that were built but that nothing in Heron called are retired, and their code and tests removed | ✅ Accepted · 2026-11-24 |
 | [D-199](#d-199--thirteen-more-idle-modules-are-retired-update-trust-release-tagging-versioning-the-import-pipeline-and-the-workflow-engine) | Thirteen more idle modules are retired: update, trust, release, tagging, versioning, the import pipeline and the workflow engine | ✅ Accepted · 2026-11-24 |
 | [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
+| [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 |
 
 ## Format
 
@@ -1220,7 +1221,8 @@ What this makes easy. What this makes hard. What it locks in.
 **Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation - shown the numbers measured on `main` `e309c81` and the costs, asked *"Ship it?"*, he chose *"Yes, ship it (Recommended)"* · **Source:** [row 5b-978](fragment-issues/section-5b-rows-976-1000.md)
 **Numbering:** written as D-133, which `tools/next-id.py` found free on `main` and on every branch when it was written, 2026-10-17. #615 merged its own D-133 first, so this was renumbered D-134 with `tools/renumber.py` the same day; the owner's yes was given to it as D-133. The question put to him named row 5b-918, free then; branches took ids up to 5b-977 before this was written, so the row is 5b-978.
 **Keeps:** R-41 - with no re-ranker installed every answer is what it was, measured on the words-only and model-only backends · the rule in `heron_retrieve._fragment_passage` that a question never reads the library · [D-128](#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model) · [D-86](#d-86--a-write-may-declare-a-question-only-when-answering-it-requires-the-write) - no write declares a question here, and every question a change answered is counted on every backend
-**Affects:** [`heron_rerank.py`](../brain/heron_rerank.py) (`PASSAGE_UTTERANCES`, `PASSAGE_WORDS`, `passage_said`), [`heron_search.py`](../brain/heron_search.py) (`rerank_said`, `INDEX_FORMAT` 3), [`heron_retrieve.py`](../brain/heron_retrieve.py) (`_fragment_passage`, `_carry_said`), [`tests/test_rerank.py`](../tests/test_rerank.py) section 12
+**Affects:** `heron_rerank.py` (`PASSAGE_UTTERANCES`, `PASSAGE_WORDS`, `passage_said`), [`heron_search.py`](../brain/heron_search.py) (`rerank_said`, `INDEX_FORMAT` 3), [`heron_retrieve.py`](../brain/heron_retrieve.py) (`_fragment_passage`, `_carry_said`), `tests/test_rerank.py` section 12 - the re-ranker's files, deleted by D-201
+**Superseded by:** [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional), accepted by the owner 2026-11-26 - the re-ranker is removed, and with it the passage this decision shaped and the store's `rerank_said`
 
 **Full record:** [`decisions/D-134.md`](decisions/D-134.md)
 
@@ -1705,6 +1707,7 @@ What this makes easy. What this makes hard. What it locks in.
 **Settles:** the four parts [D-70](decisions/D-70.md) left open · R-16 and R-25 of [the RAG requirement note](work-notes/plans/rag/01-requirements.md) · WN-12 of [#1006](https://github.com/Ajmalpshaik/Heron-AI/issues/1006)
 **Extends:** [D-70](decisions/D-70.md) - Heron keeps a usage counter, on the machine, as numbers
 **Affects:** [`brain/heron_usage.py`](../brain/heron_usage.py) · [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) `USAGE_SPAN` · the `heron_helped` tool · [`tests/test_usage_counter.py`](../tests/test_usage_counter.py)
+**Superseded in part by:** [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional), accepted by the owner 2026-11-26 - *"where a re-ranker is installed, its score sets the order"*: no re-ranker is installed anywhere, so the usage nudge always sits in the fused score
 
 **Full record:** [`decisions/D-191.md`](decisions/D-191.md)
 
@@ -1799,3 +1802,20 @@ because a helper agent, a kept test, a modeller's skill or a waiting design reli
 agents whose Python copies went stay built, by the installer.
 
 **Full record:** [`decisions/D-200.md`](decisions/D-200.md)
+
+## D-201 — The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in conversation, after being shown the measurements: remove the re-ranker only, and keep model2vec optional.
+**Numbering:** D-201 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `5d9941bb` ending at D-200.
+**Supersedes:** [D-134](#d-134--the-re-ranker-reads-a-cards-first-declared-sentences-beside-its-identity-carried-in-the-store) - the re-ranker it shaped is gone, and with it the store's `rerank_said`
+**Supersedes in part:** [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) - its consequence *"where a re-ranker is installed, its score sets the order"*
+**Keeps:** model2vec and the built-in backend in [`brain/heron_embed.py`](../brain/heron_embed.py) · [D-49](#d-49--a-heavy-optional-import-never-happens-on-a-request-thread) · [D-100](decisions/D-100.md)
+**Affects:** `brain/heron_rerank.py` and `tests/test_rerank.py` deleted · [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) · [`brain/heron_search.py`](../brain/heron_search.py) (`INDEX_FORMAT` 4) · [`brain/heron_embed.py`](../brain/heron_embed.py) · [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) · [`tools/score-routing.py`](../tools/score-routing.py) · `requirements-optional.txt` · [WHAT-TO-INSTALL](WHAT-TO-INSTALL.md)
+
+The re-ranker re-read the top 20 after fusion. Measured, it gave no clear gain over the model alone after
+D-134 (first place 17 and 17, a question handed a change 11 against 8, at 571 fragments), cost about 80 ms
+a question, was the largest optional download, and held about 2 GB a chat on the owner's laptop - and only
+his PC ever had it, since Setup installs neither add-on. It is removed. model2vec stays optional: it is not
+clearly better than the built-in search on his questions, and needs huggingface.co once.
+
+**Full record:** [`decisions/D-201.md`](decisions/D-201.md)

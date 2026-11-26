@@ -220,8 +220,8 @@ purpose: >
 # APPLY_VIEW_TEMPLATE second, beside views-per-level. Two of the thirteen
 # are reads. Recorded, not tuned away: a bare name is what a chat sends
 # after it has chosen, not how a modeller asks.
-# NOT MEASURED AT ALL: the spelling backend CI uses, and the re-ranker the
-# owner's PC has.
+# NOT MEASURED AT ALL: the spelling backend CI uses. (The re-ranker the
+# owner's PC had then was removed on 2026-11-26, D-201.)
 #
 # WHAT WAS TAKEN OUT TO GET THERE. "annotate this view for issue", the
 # brief's own wording, was the first sentence and named NO method: the

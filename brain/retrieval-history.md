@@ -828,6 +828,8 @@ key, with the day he gave it.
 | 2026-10-17 | 569 | `model` | any | `88c7eadd` | 17 | 12 | 5 | 30 | 1 (0) | 9 | 5 of 7 | `11-42----1---21.-212-----w---4----1111-4--411-4222111-231w1w121-3w2---w-w-w2221` |
 | 2026-10-17 | 571 | `lexical` | any | `88c7eadd` | 18 | 9 | 4 | 33 | 1 (0) | 8 | 4 of 7 | `15131----1-3-11.-112-----w-------41151-2---11--242111-241w1w12---w2---w3w-w2--1` |
 | 2026-10-17 | 571 | `model` | any | `88c7eadd` | 17 | 11 | 3 | 33 | 1 (0) | 8 | 5 of 7 | `11-------1---21.-212-----w---4----1111-4---11-4222121-231w1w121-3w2---w-w-w1221` |
+| 2026-11-26 | 753 | `model` | any | `e6e51d55` | 20 | 11 | 4 | 29 | 1 (0) | 6 | 5 of 7 | `1134-----1---31.-413-----w---1-51-111132---11-3225121-231w1w112-1w1---.-w-.211-` |
+| 2026-11-26 | 753 | `lexical` | any | `e6e51d55` | 23 | 9 | 2 | 30 | 1 (0) | 9 | 4 of 7 | `11111---41-3-11.-112-----w---2--2111-1-2---11--243111-241w1w21--5w1---w3w-.211-` |
 | 2026-11-26 | 754 | `lexical` | any | `e6e51d55` | 34 | 9 | 3 | 18 | 1 (0) | 7 | 3 of 7 | `11111-1-31-1211.-111---33w-3-1411111-1-2-5511-11131112241w1w111-5w1---w4w-.211-` |
 | 2026-11-26 | 754 | `model` | any | `e6e51d55` | 29 | 8 | 6 | 21 | 1 (0) | 6 | 5 of 7 | `11241-11-1--511.-212-----w--51-11-111132--411-11141211231w1w11251w1---.-w-.211-` |
 
@@ -858,6 +860,8 @@ their own table and are never added into his numbers.
 | 2026-10-17 | 569 | `model` | any | `b5734ccb` | 120 | 9 | 47 | 40 of 41 | 41 of 41 | `11..111...11..1...11..1.........ww1.w11.11..1.111....1.11....111...1...w1..w.....w111..11....1..ww.....111......11...1.w` |
 | 2026-10-17 | 571 | `lexical` | any | `e21ad1a0` | 124 | 12 | 50 | 44 of 45 | 45 of 45 | `11..111...11..1...11..1.........ww1..11w11..1.111....1.11....111...1w..w1..w....ww111..11.w..1...w....w111......11...1.w1111` |
 | 2026-10-17 | 571 | `model` | any | `e21ad1a0` | 124 | 10 | 50 | 44 of 45 | 45 of 45 | `11..111...11..1...11..1.........ww1.w11.11..1.111....1.11....111...1.w.w1..w.....w111..11....1..ww.....111......11...1.w1111` |
+| 2026-11-26 | 753 | `model` | any | `6247a481` | 124 | 15 | 52 | 44 of 45 | 44 of 45 | `11w.111...11..1...11..1....w.w..ww1ww11.11..1.111..w.1.11....111...1...w1..ww....w111..11....1..w....ww111......11...1..1111` |
+| 2026-11-26 | 753 | `lexical` | any | `6247a481` | 124 | 9 | 52 | 44 of 45 | 44 of 45 | `11..111...11..1...11..1.........ww1w.11.11..1.111....1.11....111...1...w1..w.....w111..11.w..1........w111......11...1.w1111` |
 | 2026-11-26 | 754 | `lexical` | any | `6247a481` | 124 | 9 | 52 | 44 of 45 | 44 of 45 | `11..111...11..1...11..1.........ww1w.11.11..1.111....1.11....111...1...w1..w.....w111..11.w..1........w111......11...1.w1111` |
 | 2026-11-26 | 754 | `model` | any | `6247a481` | 124 | 15 | 52 | 44 of 45 | 44 of 45 | `11w.111...11..1...11..1....w.w..ww1ww11.11..1.111..w.1.11....111...1...w1..ww....w111..11....1..w....ww111......11...1..1111` |
 
@@ -1603,6 +1607,44 @@ either run, so #616's change is not exercised here.
 
 ---
 
+## 2026-11-26 — the cross-encoder re-ranker is removed (D-201); model2vec stays optional
+
+[D-201](../docs/decisions/D-201.md), the owner's decision the same day after these figures. Measured in a
+cloud container on `main` `5d9941bb` and on the branch that removes the re-ranker, **753 fragments**, no
+Revit filter, `tools/score-routing.py` through `heron_brain.lookup` on a scratch store. Backends:
+`model` (model2vec, `minishlab/potion-base-8M`) and `lexical` (the same Python with the trained model
+set aside). **sentence-transformers was not installed, so no run here re-ranked** - and no PC but the
+owner's ever had it: Setup installs from `requirements-lock.txt`, which holds neither add-on.
+
+**Why it went, from figures already above:** at 571 fragments on 2026-10-17, after D-134, the owner's
+backend (`model+rerank`) put the right tool first for **17** of his questions and in the top three for
+**27**, handing **11** a change; the model alone the same day **17**, **28** and **8**. About **+80 ms a
+question** (D-134's record), the largest optional download (a torch build, 500 MB to 2 GB), and
+**2.0 to 2.3 GB** a chat on his laptop with it installed (2026-10-11, docs/WHAT-TO-INSTALL.md).
+
+**Before and after the removal, identical.** `score-routing` on `model` and on `lexical`, and
+`tests/test_routing_phrases.py` on both, gave the same answer to every sentence on `main` and on the
+branch; the only lines that differ are the test's own wording for the one question the owner closed as
+by design (row 5b-1293), which nowhere asks now. The rows above for this date are those runs, and the
+failing checks below are the same on both trees:
+
+| 753 fragments | `lexical` | `model` |
+|---|---|---|
+| his 79: first / top three | 23 / 32 | 20 / 31 |
+| his 79: asked for no change, handed one | 9 | 6 |
+| 124 plain questions reaching a write | 9 | 15 |
+| `tests/test_routing_phrases.py` | 13 checks fail - 10 routing, 3 that ask for the model itself | 6 checks fail (row 5b-1882) |
+
+**model2vec stays optional:** better on one line, worse on two, and it needs huggingface.co once.
+
+### What this does not establish
+
+- **The owner's PC was not measured.** Its answers become the model's; the 6 `test_routing_phrases`
+  failures above are what it should now show, and they are card wording, owed in their rows.
+- **One sample of his 79, on one day, at one library size.** Nothing met Revit.
+
+---
+
 ## 2026-11-26 — card wording on 30 cards, his 79 and the plain questions on both backends (row 5b-2049)
 
 [Row 5b-2049](../docs/fragment-issues/row-5b-2049.md), GitHub issue
@@ -1658,7 +1700,7 @@ later can move them.
 ### What this does not establish
 
 That any answer is right in Revit - routing is measured here, never run against a model; and anything
-about `model+rerank`, the owner's PC until the re-ranker is removed, which was not asked.
+about `model+rerank`, which was not asked - the re-ranker was removed the same day ([D-201](../docs/decisions/D-201.md)), so the owner's PC now ranks on `model`.
 
 ---
 

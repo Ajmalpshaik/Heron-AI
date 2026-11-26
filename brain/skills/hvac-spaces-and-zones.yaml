@@ -274,8 +274,8 @@ purpose: >
 # REPORT_SPRINKLER_LAYOUT_SPACES second, in place of terminal-layout - the
 # last two reads. Recorded, not tuned away: a bare name is what a chat sends
 # after it has chosen, not how a modeller asks.
-# NOT MEASURED AT ALL: the spelling backend CI uses, and the re-ranker the
-# owner's PC has.
+# NOT MEASURED AT ALL: the spelling backend CI uses. (The re-ranker the
+# owner's PC had then was removed on 2026-11-26, D-201.)
 #
 # A request in the modeller's own words - "set up the spaces
 # and zones from the architect's link" - names this method first: the name

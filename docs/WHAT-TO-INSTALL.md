@@ -41,7 +41,7 @@
 
 ## At a glance
 
-A new PC, top to bottom. The two dotted boxes are optional; everything else is needed.
+A new PC, top to bottom. The dotted box is optional; everything else is needed.
 
 ```mermaid
 flowchart TD
@@ -53,11 +53,9 @@ flowchart TD
     MC["<b>6 · Open Claude Code</b><br/>/mcp says heron connected<br/><i>any folder, with the Setup's Claude tick</i>"]
     SW{{"<b>7 · Heron's Settings window</b><br/>Changes · Admin · Publish · Ask to Keep<br/>all start off"}}
     M2["<i>model2vec</i><br/>reads meaning · optional"]
-    RR["<i>re-ranker</i><br/>a second read · optional"]
 
     RV ==> CC ==> PY ==> HI ==> HR ==> MC ==> SW
     PY -.->|pip --user| M2
-    PY -.->|pip --user| RR
     M2 -.->|loaded once| HR
 
     classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
@@ -69,7 +67,7 @@ flowchart TD
     class CC,PY,MC host
     class HI,HR heron
     class SW guard
-    class M2,RR quiet
+    class M2 quiet
 ```
 
 <details>
@@ -89,7 +87,6 @@ flowchart TD
                                   Ask to Delete starts on
 
 Optional, after 3:  model2vec (reads meaning; heron-ready loads it once)
-                    re-ranker  (a second read of the top picks)
 ```
 
 </details>
@@ -113,14 +110,14 @@ Settings button on the Heron tab — not on the ribbon itself.
 | **PyYAML and `mcp`** | Yes | The Setup's *Set up Heron's AI side too* tick. By hand, the lock line in [section 1](#1-what-every-pc-needs) | `python tools/check-dependencies.py` |
 | **The first-chat set-up** | Yes, once per PC | `python tools/heron-ready.py` | `python tools/heron-ready.py --check` ends `READY` |
 | **model2vec** | No | `pip install --user model2vec` | `python brain/heron_embed.py` says `Backend: model` |
-| **The re-ranker** | No — read [section 2](#2-optional--the-two-search-add-ons) first | `pip install --user sentence-transformers`, then `python brain/heron_rerank.py --fetch --yes` | `python brain/heron_rerank.py` |
+| **The re-ranker** | **Removed** 2026-11-26 ([D-201](decisions/D-201.md)) | Nothing to install. A PC that has it: `pip uninstall -y sentence-transformers` | `python tools/check-dependencies.py` no longer names it |
 | **Git, the .NET 10 SDK** | Only to build Heron | [Section 4](#4-only-to-build-heron-yourself) | `git --version` · `dotnet --version` |
 
 ## The short answer
 
 | **Every PC needs** | **Optional** | **Only to build Heron yourself** |
 |---|---|---|
-| Revit · Claude Code · Python · two Python packages · Heron itself | the two search add-ons, and more Python packages | Git · the .NET SDK |
+| Revit · Claude Code · Python · two Python packages · Heron itself | the trained search model, and more Python packages | Git · the .NET SDK |
 
 **None of it needs administrator rights.** Everything installs for your own Windows user.
 
@@ -276,65 +273,72 @@ What to do:
 - **Not settled:** Heron's settings file `heron.config` still has a copy of its own on such a PC; which
   one Heron should believe is [Q-70](OPEN-QUESTIONS.md).
 
-## 2. Optional — the two search add-ons
+## 2. Optional — the trained search model
 
 When you type *"select all ducts"*, Heron has to pick the right tool out of its library. **That pick is
 the search.** Heron sends the best few to Claude and Claude chooses from those — so when the right tool
 is not in that short list, Claude never sees it.
 
-**Heron works without either add-on:** the basic search is built in, and every answer says which search
+**Heron works without the add-on:** the basic search is built in, and every answer says which search
 ran.
 
-| Level | What it does | Needs | What the first measurement says |
+| Level | What it does | Needs | What was measured |
 |---|---|---|---|
-| **Basic** | Matches letters and words. It does not understand meaning, and its own code says so | Nothing — built in | It is what runs when nothing else is installed |
-| **Trained search model** (`model2vec`) | Understands meaning: *"stop the air going the wrong way"* can reach the flow-direction check without sharing a word with it | A small download, once | **Finds more of your questions** — and sent more *"just asking"* questions to a tool that changes the model |
-| **Re-ranker** (`sentence-transformers`) | A second, careful read of the top 20 picks, the question and each description together | The largest optional download in Heron | **Worse at picking tools.** Right on the one standards-document question measured |
+| **Basic** | Matches letters and words. It does not understand meaning, and its own code says so | Nothing — built in | What every modeller has: Setup installs no search add-on |
+| **Trained search model** (`model2vec`) | Understands meaning: *"stop the air going the wrong way"* can reach the flow-direction check without sharing a word with it | A small download, once (about 130 MB with what it brings, `heron_embed.SIZE`), and `huggingface.co` reachable once for its weights | **Not clearly better than basic** on your questions — below |
 
-**The measurement, 2026-09-24:** your 79 real questions, asked of all three levels at the same library
-size.
+**The latest measurement, 2026-11-26:** your 79 real questions and the 124 plain questions, at
+**753 fragments**, through `tools/score-routing.py`
+([`brain/retrieval-history.md`](../brain/retrieval-history.md), that date):
 
-- The trained model put the right tool in the **top three for 30** of 64, where basic search managed 25.
-- It handed a model-changing tool to **9** questions that asked for no change, where basic search
-  handed one to 5.
-- The re-ranker dropped **right-first from 19 to 12** and raised that 9 to **15**.
+| | Basic | Trained model |
+|---|---|---|
+| Your questions: right tool **first** | 23 | 20 |
+| Your questions: right tool in the **top three** | 32 | 31 |
+| Your questions that asked for no change, **handed a tool that changes the model** | 9 | 6 |
+| Plain questions **handed a tool that changes the model**, of 124 | 9 | 15 |
 
-Every figure, and what was not measured, is in
-[`brain/retrieval-history.md`](../brain/retrieval-history.md) under that date.
+**So model2vec stays optional** ([D-201](decisions/D-201.md), the owner's decision on 2026-11-26): it is
+better on one line and worse on two, it needs a download a locked-down PC may refuse, and Setup does not
+install it - `requirements-lock.txt` holds neither add-on. Install it if you want the meaning search; leave
+it if you do not.
 
 **Why a wrong pick is not a wrong edit:** with **Changes** off — the default — a tool that changes the
 model cannot run. A wrong pick is a wrong suggestion.
 
-**Are these "AI"?** Small trained helpers with **one job**: score how close your sentence is to each
-tool's description. They cannot talk, decide, write code or touch Revit. **They run on your own PC and
-send nothing anywhere.** Claude still decides what you meant; these only help the right tool reach it.
+**Is this "AI"?** A small trained helper with **one job**: score how close your sentence is to each
+tool's description. It cannot talk, decide, write code or touch Revit. **It runs on your own PC and
+sends nothing anywhere.** Claude still decides what you meant; it only helps the right tool reach it.
 
 **To install the trained model:** `pip install --user model2vec`, then `python brain/heron_embed.py`
-should answer `Backend: model`.
+should answer `Backend: model`. **To take it away:** `pip uninstall model2vec`. Heron goes back to the
+basic search and says so on every answer.
 
-**The re-ranker — read before you agree.**
+### The re-ranker was removed (2026-11-26)
 
-- `python brain/heron_rerank.py` says what it is and how big, before anything downloads.
-- The size it prints is a field reading, and a Linux machine downloaded more than it says
-  ([row 5b-200](FRAGMENT-ISSUES.md)); it has not been measured on Windows.
-- **It also costs memory for as long as a chat is open:** measured 2026-10-11 on the owner's laptop
-  (15.8 GB), with the trained model and the re-ranker installed, each open chat's Heron held 2.0 to
-  2.3 GB, and seven chats open at once left 492 MB free. There is no reading from before the install,
-  so the re-ranker's own share of that is not known.
-- If you still want it: `pip install --user sentence-transformers`, then
-  `python brain/heron_rerank.py --fetch --yes`.
+Heron had a second optional add-on, a **re-ranker** (`sentence-transformers`): a second read of the top 20
+picks, the question and each description together. **It is gone** ([D-201](decisions/D-201.md)), on the
+owner's decision after these measurements:
 
-**To take either one away:** `pip uninstall` the same package. Heron goes back to the level below and
-says so on every answer.
+- **No clear gain over the trained model alone.** At 571 fragments on 2026-10-17, after its last change
+  ([D-134](decisions/D-134.md)): right tool first **17 with it and 17 without**, a question handed a
+  change **11 with it and 8 without**. Its first measurement, 2026-09-24, had dropped right-first from
+  19 to 12.
+- **It was slow and heavy:** about **80 ms more a question**, the largest optional download in Heron
+  (a torch build, 500 MB to 2 GB), and on the owner's 15.8 GB laptop each open chat's Heron held
+  **2.0 to 2.3 GB** with it installed (2026-10-11; seven chats left 492 MB free).
+- **Only one PC ever had it.** Setup never installed it, so every modeller was already without it.
+
+**On a PC that has it - the owner's:** `pip uninstall -y sentence-transformers`. Uninstall `torch` too
+if nothing else on the PC uses it. Nothing else changes; model2vec stays.
 
 ## 3. Optional — more Python packages
 
 [`requirements-optional.txt`](../requirements-optional.txt) lists the rest — on the day this page was
 written, a faster vector search and a PDF reader for standards documents.
 
-- It also names `huggingface_hub`, which either search add-on brings with it, so it never needs
-  installing on its own: Heron imports it by name to load the search model from your PC.
-- **Do not install that file in one command:** it holds the re-ranker too.
+- It also names `huggingface_hub`, which model2vec brings with it, so it never needs installing on its
+  own: Heron imports it by name to load the search model from your PC.
 - `python tools/check-dependencies.py` says what each one buys and whether you have it.
 
 ## 4. Only to build Heron yourself
@@ -485,11 +489,11 @@ Heron's Python       writes              -> %USERPROFILE%\.heron    knowledge, m
 | **The Companion's notes** | `%TEMP%\Heron\companion` — safe to delete ([D-136](decisions/D-136.md)) |
 | **Bridges, logs, run records, the install a rollback goes back to** | `%LOCALAPPDATA%\Heron` — machine-local, never roamed ([D-17](DECISIONS.md)) |
 | **Python packages** | Your own Python's user folder — and with a Microsoft Store Claude, a second copy of whatever Claude installed, which only Claude sees ([1b](#1b-if-your-claude-app-came-from-the-microsoft-store--install-from-your-own-terminal)) |
-| **The search add-ons' model files** | `C:\Users\<you>\.cache\huggingface` |
+| **The trained search model's files** | `C:\Users\<you>\.cache\huggingface` - a PC that had the re-ranker keeps its weights there too until deleted |
 | **The Heron folder** | The code and the tools. **None of the installs above** — so a Heron folder copied to another PC needs this page's list done again there |
 | **GitHub** | The code and these lists. **Never** the model files, and never your settings |
 
-After the first download, the search add-ons read their files from your own PC.
+After the first download, the trained search model reads its files from your own PC.
 
 ## 7. What is not decided yet
 
@@ -499,10 +503,6 @@ After the first download, the search add-ons read their files from your own PC.
   words, pulling a runtime onto somebody's machine unasked is what a careful user and a corporate laptop
   are both right to refuse. Whether a release should ever bundle Python is still open
   ([Q-38](open-questions/from-master-specification-part-2.md#-q-38--what-is-the-exact-install-command-new)).
-- **Whether the re-ranker should read standards documents only**, and not tool cards, is a code change
-  nobody has made.
-- **Why it misreads tools is not settled.** It is given a one-line description of each tool and not the
-  tool's example phrases, and its model was trained on web searches. Neither has been tried another way.
 
 ---
 

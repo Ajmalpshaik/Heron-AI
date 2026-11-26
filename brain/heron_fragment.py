@@ -2113,6 +2113,10 @@ def feeders(consumer, fragments):
 # ---------------------------------------------------------------------------
 
 def main(argv):
+    # Rows 5b-2041 to 5b-2044: print safely on a cp1252 console.
+    import heron_console
+    heron_console.safe_streams()
+
     if argv[:1] == ["--show"]:
         if len(argv) < 2:
             print("--show needs a fragment id")

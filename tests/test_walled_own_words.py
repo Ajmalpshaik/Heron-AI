@@ -36,7 +36,7 @@ WHAT THIS HOLDS
      identity, and nothing is named beside it.
 
 WHAT THIS DOES NOT PROVE: whether the tool offered in its place does the job
-(each tool's own question), or what the re-ranker (`model+rerank`, the owner's
+(each tool's own question), or what the trained model (`model`, the owner's
 PC) ranks first. Only the identity table is read for (1) and (2), so they hold
 on every backend; this checkout's own backend is what (3) ran on.
 """
