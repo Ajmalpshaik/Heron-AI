@@ -61,7 +61,7 @@
 | [Set family preview view](#set-family-preview-view) | usable | MODIFY |
 | [Set family settings](#set-family-settings) | usable | MODIFY |
 | [Set family sweep profile](#set-family-sweep-profile) | usable | MODIFY |
-| [Set family type values](#set-family-type-values) | refused until proved | MODIFY |
+| [Set family type values](#set-family-type-values) | usable | MODIFY |
 | [Write family size table](#write-family-size-table) | usable | MODIFY |
 
 ---
@@ -1565,7 +1565,7 @@ Other ways to ask: *"set the sweep profile to the loaded profile family"* · *"c
 
 ### Set family type values
 
-**DRAFT - not yet usable in a chat - refused until proved (D-117).**
+**Usable in a chat.** Proved on a real model on 2026-11-26 (Revit 2020).
 
 **What it does:** give this family type these parameter values, making the type if it is new - or rename or delete the family type.
 
@@ -1578,10 +1578,17 @@ Writes values into one TYPE of the family open in the Family Editor - "600 x 600
 | **You say** | **type name** - text<br>**values** - name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"; a value holding a ";" goes in double quotes - Note="a; b"<br>**delete type** - yes or no - true or false; optional |
 | **You get** | type used, type created, written, drives, types written, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
-| **Proved on Revit** | none |
+| **Proved on Revit** | 2020 |
 | **Capability** | `SET_FAMILY_TYPE_VALUES` |
 
-Once it is proved, you will ask: *"make a 600 by 600 type in this family"* · *"set the family type values"* · *"give the family type Width 600 and Depth 600"*
+**How to use it**
+
+1. Open the model in Revit and connect Heron: press **Heron** on the Heron tab, so its heron turns orange.
+2. Turn **Changes** on in Heron's **Settings** (Heron tab).
+3. In a Claude chat, ask in your own words, for example *"make a 600 by 600 type in this family"*. Say the values under **You say** in the same sentence.
+4. Heron makes the change as **one entry in Revit's Undo list**. With **Ask to Keep** on, Revit asks **Keep or Discard** first; Ctrl+Z takes it back.
+
+Other ways to ask: *"set the family type values"* · *"give the family type Width 600 and Depth 600"*
 
 <a id="write-family-size-table"></a>
 
