@@ -1706,7 +1706,7 @@ A margin that helps either question (above 0.41) takes the roof request off its 
 it (0.23 or less) helps no question. The two routes' places do not separate them either. In both the roof
 request and the export question, the read is nearer by meaning and further by words. Any rule that does
 separate them would have to read the words, which is against D-01. **So there is no safe version on this
-library, and no code was kept.** The decision recorded on the branch was withdrawn before it merged, and the
+library, and no code was kept.** [D-205](../docs/decisions/D-205.md) keeps its number as Rejected, and the
 host's `question` flag remains the fix: 0 and 0 with it.
 
 ### What this does not establish
