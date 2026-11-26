@@ -6,7 +6,8 @@
 # a thin port plate shares the plane, so the ring is named by form=.
 # Positive (QP1): Supply_Air_Width / Supply_Air_Height (Duct Size, 205) - made, 2 mm clear each side.
 # Negative (QP2): the setup sets Supply_Air_Width to 215 first, inside the same rolled-back run -
-# refused "would not fit inside that opening", nothing made.
+# expected refused "would not fit inside that opening", nothing made. CAME BACK 2026-11-26 as
+# fragment_threw with those words (NO NEGATIVE) - row 5b-2051, issue #1428. Re-run once that is fixed.
 model: pt-ahu (scratch copy of the MAH-0202S2M AHU family), Revit 2020
 
 defaults:
