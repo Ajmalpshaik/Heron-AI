@@ -1,11 +1,13 @@
-# Needs checking — Group QV
+# Needs checking — Group QW
 
 > One group of [the register](../NEEDS-CHECKING.md), in its own file so that it can be read alone. **The
 > register's rules, and every group's place in it, are on that page.** A new row for this group goes in this
 > file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py) reads it back into the
 > register for every tool that reads the register.
 
-## Group QV - the Delete box announced: a preview that deletes says the box is coming and what goes by category, and a box that closed by itself says TIMED OUT with the time it had - NOT RUN (2026-11-26)
+## Group QW - the Delete box announced: a preview that deletes says the box is coming and what goes by category, and a box that closed by itself says TIMED OUT with the time it had - NOT RUN (2026-11-26)
+
+**Tracked as GitHub issue [#1435](https://github.com/Ajmalpshaik/Heron-AI/issues/1435) since 2026-11-26** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
 **Why:** seen 2026-11-22 on Revit 2024.3, model `Tower 171.rvt`: making a curtain system on 14 faces of a mass
 would also delete 49 elements, so Heron's Delete box ([`HeronDeleteQuestion`](../../revit/Heron.Revit.Addin/HeronDeleteQuestion.cs),
@@ -34,8 +36,8 @@ one mass. Every run is a dry run or answered as the row says.
 
 | ID | Do this | Pass looks like |
 |---|---|---|
-| **QV1** | **Negative, first.** A dry run of a change that deletes nothing - rename one view | No `deleteAhead` on the reply, and the chat's line reads exactly as before |
-| **QV2** | A dry run of a change that deletes elements already in the model - change one wall's type to one that loses its hosted door, or delete two walls with doors | `deleteAhead` equals what Revit counted, `deleteAheadByCategory` names each category with its count, `deleteAheadMadeAndGone` 0, and the chat's first line is `deleteAheadSays` |
-| **QV3** | A dry run of `CREATE_CURTAIN_SYSTEM` on mass faces where it removes elements it made (the row's case) | Write down `deleteAhead` and `deleteAheadMadeAndGone`: the ones not in the model after the rollback are counted apart, never listed by id |
-| **QV4** | With Ask to Delete off (Heron's Settings), QV2 again | `deleteAheadSays` says Revit will not ask and the chat's word is the yes |
-| **QV5** | Keep QV2's change (Ask to Delete on) and do not answer the Delete box; set `revit.askTimeoutSeconds` to 60 in heron.config first | The box closes by itself after 60 s; nothing deleted; the reply's `deleteAsking` says *"TIMED OUT, NOT ANSWERED"* and *"the box had 60 seconds to be answered"*. Put the setting back |
+| **QW1** | **Negative, first.** A dry run of a change that deletes nothing - rename one view | No `deleteAhead` on the reply, and the chat's line reads exactly as before |
+| **QW2** | A dry run of a change that deletes elements already in the model - change one wall's type to one that loses its hosted door, or delete two walls with doors | `deleteAhead` equals what Revit counted, `deleteAheadByCategory` names each category with its count, `deleteAheadMadeAndGone` 0, and the chat's first line is `deleteAheadSays` |
+| **QW3** | A dry run of `CREATE_CURTAIN_SYSTEM` on mass faces where it removes elements it made (the row's case) | Write down `deleteAhead` and `deleteAheadMadeAndGone`: the ones not in the model after the rollback are counted apart, never listed by id |
+| **QW4** | With Ask to Delete off (Heron's Settings), QW2 again | `deleteAheadSays` says Revit will not ask and the chat's word is the yes |
+| **QW5** | Keep QW2's change (Ask to Delete on) and do not answer the Delete box; set `revit.askTimeoutSeconds` to 60 in heron.config first | The box closes by itself after 60 s; nothing deleted; the reply's `deleteAsking` says *"TIMED OUT, NOT ANSWERED"* and *"the box had 60 seconds to be answered"*. Put the setting back |
