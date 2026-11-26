@@ -611,7 +611,7 @@ Once it is proved, you will ask: *"make an extruded roof along grid A with this 
 
 ### Create floor
 
-**DRAFT - not yet usable in a chat - refused until proved (D-117).** Held on purpose: Back to DRAFT on 2026-11-26, on the owner's answer to row 5b-1967 ("Re-run, then sign"): the 2026-11-21 proof's positive ran a roof type, Generic - 400mm, not the plain floor NEEDS-CHECKING Group OU's OU21 asks for. OU21's (a), a 10 x 6 m plain floor on Level 1 answered word for word as version 3, and its (b), the Foundation Slab refusal, run as written, then a new proof signed, before it is PROVEN again. impl/ is unchanged since this proof.
+**DRAFT - not yet usable in a chat - refused until proved (D-117).** Held on purpose: Back to DRAFT on 2026-11-26, on the owner's answer to row 5b-1967 ("Re-run, then sign"): the 2026-11-21 proof's positive ran a roof type, Generic - 400mm, not the plain floor NEEDS-CHECKING Group OU's OU21 asks for. OU21's (a), a 10 x 6 m plain floor on Level 1 whose reply reads word for word as version 3's, and its (b), the Foundation Slab refusal, run as written, then a new proof signed, before it is PROVEN again. impl/ is unchanged since this proof.
 
 **What it does:** make a floor slab over this area.
 
