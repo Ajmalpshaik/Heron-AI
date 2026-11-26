@@ -1707,6 +1707,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qs.md`](needs-checking/group-qs.md)
 
+## Group QU - REPORT_CURTAIN_ELEMENTS version 3: a curtain system read face by face, curtain walls word for word as before - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qu.md`](needs-checking/group-qu.md)
+
 ## Group QW - the Delete box announced: a preview that deletes says the box is coming and what goes by category, and a box that closed by itself says TIMED OUT with the time it had - NOT RUN (2026-11-26)
 
 **Its own file:** [`needs-checking/group-qw.md`](needs-checking/group-qw.md)
