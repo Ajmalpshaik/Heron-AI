@@ -1708,6 +1708,74 @@ about `model+rerank`, which was not asked - the re-ranker was removed the same d
 
 ---
 
+## 2026-11-26 — short forms added to a request before the search: measured, no gain, nothing built
+
+The owner asked for fragment finding to be as good as it can be, and several of his 79 use MEP
+short forms (*VCD*, *FCU*). The lexical backend scores a synonym zero (`brain/heron_embed.py`), so
+*VCD* and *volume control damper* share nothing either route can see. **Tried:** a modeller's own
+list in Heron's home, read in `heron_retrieve.find` only after his exact words missed the identity
+and cache routes. Each recorded long form was **added after** his words, never in place of them,
+so the words route and the nearness route both saw it. The product shipped no list
+([D-34](../docs/decisions/D-34.md)). The code is in git history at branch commit `22312531`
+(pull request #1447). **It was taken out again before merging, and nothing of it ships.**
+
+**The three entries measured** were the owner's site words, rows 7 to 9 of
+`docs/work-notes/plans/earlier-brain/03-owner-data.md` (lines 38 to 40), recorded and approved by
+Ajmal PS on 2026-09-23. No other Heron file states the meaning of a short form.
+
+| short form | long form added | his row says |
+|---|---|---|
+| VCD, VCDs | volume control damper | *Volume Control Damper — a Duct Accessory family* |
+| AHU | air handling unit | *Air Handling Unit — Mechanical Equipment* |
+| FCU | fan coil unit | *Fan Coil Unit — Mechanical Equipment* |
+
+Measured in a cloud container with no Revit, 754 cards, `lexical` only. model2vec is installed
+there, so it was blocked as CI runs: in process, and by a module on `PYTHONPATH` that raises
+ImportError. Every run used a store of its own. Commands: `tools/score-routing.py` for his 79 and the
+124 plain questions, and `--sentences ... --tree <main> --compare` for 18 new short-form
+sentences frozen before any code. None of the 18 is one of his 79.
+
+| `lexical` | main `02780d9a` | with no list | with the 3 entries | main `d79ac5a9` (after #1424) | with no list | with the 3 entries |
+|---|---|---|---|---|---|---|
+| his 79 - first | 23 | 23 | **16** | 34 | 34 | **30** |
+| his 79 - top three | 33 | 33 | **30** | 43 | 43 | **41** |
+| his 79 - not found | 29 | 29 | **31** | 18 | 18 | **19** |
+| asked for no change, handed one | 9 | 9 | **11** | 7 | 7 | **10** |
+| a change asked for, a different change given | 20 | 20 | **23** | 14 | 14 | **15** |
+| plain questions answered by a change | 9 | 9 | 9 | 9 | 9 | 9 |
+| 18 new sentences - wanted answer first | 6 of 14 | 6 | **3** | 8 of 14 | 8 | **7** |
+| the same - questions reaching a write | 1 of 2 | 1 | 1 | 0 of 2 | 0 | **1** |
+
+**The variant tried:** a long form with the Revit category added (*volume control damper duct
+accessory*, *... mechanical equipment*), measured on main `02780d9a`. It was worse: 15 first, 32 not
+found, 14 handed a change.
+
+**Why it loses.** With no expansion, *VCD* matches nothing, so the action words (*isolate*, *hide*,
+*count*) decide, and they pick the generic action card. Adding the long form lets cards whose own
+text names that equipment rank above the action card:
+- `PLACE_ACCESSORY_ON_RUN` for dampers;
+- `CHECK_EQUIPMENT_CLEARANCE` and `REPORT_CONNECTORS` for AHU and fan coil.
+
+*Isolate all the VCDs* fell from 1st to 2nd, and *Zoom to that VCD* fell from 1st to not found.
+The only wins were equipment questions, such as *check the service space around the AHU*.
+
+**Not tried, each needing its own measurement:**
+- expansion on the nearness route only;
+- the added words weighted below the modeller's own;
+- his short forms written into the utterances of the cards that do the job. That is card text, not a
+  lookup list.
+
+### What this does not establish
+
+- Nothing about the trained backend: model2vec was blocked throughout, and its removal is in hand.
+- Nothing about an office's longer list, or about site words that are not short forms.
+- Nothing about the three untried variants above.
+- That any answer is right in Revit: routing was measured here, never run against a model.
+
+D-34 is not closed by this. It still holds a site word to be knowledge in the modeller's own store.
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:

@@ -607,8 +607,8 @@ which do not, and the registry test fails when the two disagree.
 
 ### 8.4 Safety labels — advice to the host, never the gate
 
-Every tool carries MCP's `readOnlyHint`, `destructiveHint` and `idempotentHint`, **read off its risk in
-`heron_tools.TOOLS` as it registers** — never typed at a tool:
+Every tool carries MCP's `readOnlyHint`, `destructiveHint`, `idempotentHint` and `openWorldHint`, and a
+**title** a modeller can read, **read off `heron_tools` as it registers** — never typed at a tool:
 
 | Risk | Read-only | Destructive | Idempotent |
 |---|---|---|---|
@@ -616,9 +616,31 @@ Every tool carries MCP's `readOnlyHint`, `destructiveHint` and `idempotentHint`,
 | `EXECUTE` | no | no | yes |
 | `MODIFY`, `PUBLISH`, `ADMIN` | no | yes | **no** — asking twice can do the work twice |
 
-`openWorldHint` is not set: risk says what a tool can change, not where it reaches. A host may call a
-read-only tool without asking, which is why a **write labelled read-only** is the one wrong label that
-matters, and why the labels are derived rather than written. **The gate stays in the add-in (§4).**
+**Since [D-202](decisions/D-202.md):**
+
+- **A tool that keeps something the modeller gave or chose is not read-only**, whatever its risk:
+  `heron_tools.KEEPS` names each one and what it keeps — saved commands, checklists, a project's
+  governing standards, a loads or sprinkler job's answers. One that can
+  delete or replace the modeller's own thing (saved commands, checklists) is **destructive**; one that
+  adds another record on every call is **not idempotent**. A record Heron keeps of its own working — the
+  audit trail, a gap note, a picture written and deleted — does not count.
+- **`openWorldHint` is false** for every tool, because `heron_tools.OPEN_WORLD` is empty: Heron talks to
+  a Revit on this PC, to its own files and to the Companion page on `127.0.0.1`, and
+  `tests/test_tool_registry.py` holds that no file of the server imports a network client. Until D-202 it
+  was left unset, which a host reads as *open*.
+- **`EXECUTE` stays not read-only**, judged rather than assumed: selecting, zooming and Temporary
+  Hide/Isolate change nothing in the model, but they replace what the modeller has selected or isolated
+  on screen. Not destructive, because nothing they change is kept.
+- **The title** is `heron_tools.TITLES`, served on the tool and in its labels; a tool the server
+  registers without one fails `tests/test_tool_registry.py`.
+
+A host may call a read-only tool without asking, which is why a **write labelled read-only** is the one
+wrong label that matters, and why the labels are derived rather than written. **The gate stays in the
+add-in (§4).**
+
+**A description says when its tool is used, and never orders a call** (D-202): *"a question is
+`revit_read`'s"*, not *"use `revit_read`"*; *"Use it when ..."*, not *"Call this BEFORE ..."*.
+`tests/test_tool_registry.py` fails on a description that does.
 
 ### 8.5 One request, fewer turns — built 2026-09-30
 

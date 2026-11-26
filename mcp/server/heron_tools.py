@@ -287,14 +287,6 @@ TOOLS = {
     # describe. What crosses between them is a number and a clause number.
     "heron_standards":          (READ,    None),
 
-    # The usage counter (D-70, D-191). READ, operation None, for every reason
-    # heron_hvac is: it reads no model and sends nothing to Revit. On the
-    # modeller's word that an answer helped, it adds one to that clause's count
-    # in a small file beside the knowledge store, in Heron's own folder - only
-    # the clause id and the counts, never the question - and that count nudges
-    # the clause by less than one rank next time. Nothing is ever sent.
-    "heron_helped":             (READ,    None),
-
     # Stage 9's two (HERON-RAG-RSH-017, docs/28). READ, operation None, and
     # for these two that is a stronger claim than for the others: the Research
     # agent is the one part of this plan whose NAME suggests reaching outside,
@@ -1004,33 +996,116 @@ def disk_refusal(door, capability, source):
 # THE SAFETY LABELS MCP LETS A SERVER PUT ON A TOOL, in the protocol's own
 # spelling. A host reads them to decide what it may call without asking - and
 # a host that is told nothing assumes the worst: not read-only, destructive,
-# not idempotent. So an unlabelled tool is safe, and a WRONG label is the
-# only real danger: a write marked read-only is one a host may run unasked.
+# not idempotent, reaching the open world. So an unlabelled tool is safe, and
+# a WRONG label is the only real danger: a write marked read-only is one a
+# host may run unasked.
 #
 # THAT IS WHY THEY ARE DERIVED HERE AND NEVER TYPED AT A TOOL. The risk in
 # TOOLS is what the add-in's gate is checked against; a label typed beside a
 # decorator would be a second declaration of the same fact, free to drift.
+# Two more facts go into them since D-202, each declared once, below: what a
+# tool KEEPS outside the model, and whether it reaches past this PC.
 #
-#   read-only    below EXECUTE: READ, ANALYZE and SUGGEST change nothing -
-#                docs/12 section 1: observe, compute, propose
+#   read-only    below EXECUTE, and not in KEEPS: READ, ANALYZE and SUGGEST
+#                change nothing in the model - docs/12 section 1: observe,
+#                compute, propose - and a tool that keeps the modeller's own
+#                things is not read-only for that (D-202)
 #   destructive  MODIFY and above - the boundary docs/12 draws, and the one
-#                `writes()` already answers
-#   idempotent   everything that does not write. Asking a read twice costs
+#                `writes()` already answers - and a tool in KEEPS that can
+#                replace or delete a thing the modeller kept
+#   idempotent   everything that does not write, but for a tool in KEEPS that
+#                adds something new on every call. Asking a read twice costs
 #                nothing; asking a write twice can do the work twice, which is
 #                exactly why the bridge client sends writes idempotent=False
+#   open world   only a tool in OPEN_WORLD, and none is (D-202). Until D-202
+#                it was left unset, which a host reads as open.
 #
-# `openWorldHint` is NOT set, and that is a decision: risk says what a tool
-# can change, not where it reaches, and this table has no column for the
-# second. The host's default for it stands rather than a claim nobody derived.
+# EXECUTE IS NEITHER READ-ONLY NOR DESTRUCTIVE, and that was judged, not
+# assumed: selecting, zooming and Temporary Hide/Isolate change nothing in the
+# model, but they replace what the modeller has selected or isolated in the
+# Revit in front of them, and a host that runs a read-only tool unasked would
+# do that unasked. Not destructive, because nothing they change is kept: Reset
+# Temporary Hide/Isolate, a new selection or closing the model puts it back.
 #
 # THE LABELS ARE ADVICE TO THE HOST. The gate is the add-in's, on the far side
 # of the pipe, and nothing here moves it.
-CAUTIOUS = {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False}
+CAUTIOUS = {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False,
+            "openWorldHint": True}
+
+
+# WHAT A TOOL KEEPS OUTSIDE THE MODEL, ON THE MODELLER'S WORD (D-202). Risk
+# says what a tool can do to the MODEL, and every tool here is READ or ANALYZE
+# by that measure - rightly, for the gate. But each also keeps something the
+# modeller gave or chose, in Heron's own folder on this PC, and a later answer
+# depends on it: a host must not call one unasked as if it kept nothing.
+#
+# A RECORD HERON KEEPS OF ITS OWN WORKING IS NOT ONE OF THESE, and the line is
+# drawn on purpose: the audit trail every call writes, a capability noted as
+# wanted for the gap report (heron_resolve), the dashboard's last numbers kept
+# to compare with (revit_model_dashboard), a picture written and deleted again
+# (revit_view_image), a table put on the Companion page (revit_edit_table,
+# revit_offer_settings). None of those is the modeller's to lose.
+#
+# Each row: what it keeps, read off its code on 2026-11-26; `removes` when it
+# can replace or delete a thing the modeller kept (destructive); `every_call`
+# when asking again adds another (not idempotent).
+KEEPS = {
+    "heron_hvac": {
+        "keeps": "the project's governing standards once the modeller has said "
+                 "them (D-111); a changed answer replaces the old one, which "
+                 "stays in the record's history (heron_designbasis)",
+        "removes": False, "every_call": False},
+    "heron_fire": {
+        "keeps": "the project's governing fire standards, as heron_hvac keeps "
+                 "its own (D-111)",
+        "removes": False, "every_call": False},
+    "heron_earlier_answers": {
+        "keeps": "a copy of the earlier answers the modeller says are this "
+                 "model's, or that none are; the old files stay, and a model "
+                 "answers once (D-113)",
+        "removes": False, "every_call": False},
+    "revit_building_loads": {
+        "keeps": "each finished run with the answers it was given, for the "
+                 "project - a new run file on every call "
+                 "(heron_building_loads.save)",
+        "removes": False, "every_call": True},
+    "revit_sprinkler_hydraulics": {
+        "keeps": "the project's fire standards once said, and each finished "
+                 "run with its answers - a new run file on every call "
+                 "(heron_sprinkler_run.save)",
+        "removes": False, "every_call": True},
+    "revit_sprinkler_layout": {
+        "keeps": "the project's sprinkler standard once said, and the job's "
+                 "answers (heron_sprinkler_layout.save_inputs)",
+        "removes": False, "every_call": False},
+    "heron_commands": {
+        "keeps": "the modeller's saved commands: save, replace=true and "
+                 "delete write and remove their files (heron_commands)",
+        "removes": True, "every_call": False},
+    "heron_checklist": {
+        "keeps": "the modeller's checklists - save, replace=true and delete - "
+                 "and each finished run, so the next says what changed; "
+                 "report=true writes Excel and HTML files (heron_checklists)",
+        "removes": True, "every_call": True},
+}
+
+# THE TOOLS THAT REACH PAST THIS PC (D-202): none. Every Heron tool talks to a
+# Revit on this PC through its named pipe, to Heron's own files, or to the
+# Companion page on 127.0.0.1 - and heron_research says in its own words that
+# Heron does not fetch: the host has the network (D-01). The one download a
+# tool can set off is the library encoder's weights, ONCE, on a machine that
+# has never held them (brain/heron_embed.py): a part being installed, not
+# where the tool reaches, and the same for every tool that searches.
+# tests/test_tool_registry.py holds that no file of the server imports a
+# network client; a tool that needs one joins this list in the same change.
+OPEN_WORLD = ()
 
 
 def annotations(tool):
     """
-    The MCP safety labels for one tool, read off its declared risk.
+    The MCP safety labels for one tool, read off its declared risk, what it
+    keeps outside the model (KEEPS) and whether it reaches past this PC
+    (OPEN_WORLD).
 
     A tool nobody declared gets CAUTIOUS - the worst reading of every label,
     which is also what a host assumes of a tool with none. That is not a
@@ -1041,11 +1116,87 @@ def annotations(tool):
         risk = risk_of(tool)
     except NotDeclared:
         return dict(CAUTIOUS)
+    kept = KEEPS.get(tool)
     return {
-        "readOnlyHint": risk < EXECUTE,
-        "destructiveHint": risk >= MODIFY,
-        "idempotentHint": not writes(tool),
+        "readOnlyHint": risk < EXECUTE and kept is None,
+        "destructiveHint": risk >= MODIFY or bool(kept and kept["removes"]),
+        "idempotentHint": not writes(tool) and not (kept and kept["every_call"]),
+        "openWorldHint": tool in OPEN_WORLD,
     }
+
+
+# WHAT A MODELLER SEES A TOOL CALLED (D-202). MCP lets a host show a tool by a
+# title rather than by its name, and a name - revit_isolate_temporary - is a
+# code word. Short, in Revit words, and saying what the tool does to the
+# model where it does anything: a host that asks "allow Change the Revit
+# model?" has asked the right question. Declared once, here, for the reason
+# the labels are; tests/test_tool_registry.py fails on a tool without one.
+TITLES = {
+    "revit_health":               "Check the Revit connection",
+    "heron_version":              "Heron and add-in versions",
+    "revit_use_session":          "Choose which Revit to work in",
+    "revit_use_this_model":       "Work on the model in front",
+    "revit_release":              "Free a model for another chat",
+    "revit_select_by_category":   "Select elements by category",
+    "revit_links":                "List linked models",
+    "revit_phases":               "List phases and design options",
+    "revit_systems":              "List duct and pipe systems",
+    "revit_parameters":           "Read element parameters",
+    "revit_groups":               "List groups and assemblies",
+    "revit_levels":               "List levels and grids",
+    "revit_worksets":             "List worksets and who owns what",
+    "revit_views":                "List views",
+    "revit_sheets":               "List sheets",
+    "revit_view_image":           "Take a picture of a view",
+    "revit_rooms":                "List rooms, spaces and areas",
+    "revit_schedules":            "List schedules",
+    "revit_families":             "List families and types",
+    "revit_export_check":         "Check an export before it is made",
+    "revit_imports":              "List imported and linked files",
+    "revit_annotation":           "List dimensions, tags and text",
+    "revit_preview_move":         "Preview moving elements",
+    "revit_apply_move":           "Move elements (after a preview)",
+    "revit_change":               "Change the Revit model",
+    "revit_read":                 "Read from the Revit model",
+    "revit_show":                 "Show elements in Revit",
+    "revit_isolate_temporary":    "Temporarily isolate or hide",
+    "revit_reset_temporary":      "Reset temporary hide/isolate",
+    "revit_undo_last":            "Undo Heron's last change",
+    "heron_capabilities":         "What Heron can do",
+    "heron_resolve":              "What to give a capability",
+    "heron_lookup":               "Find the capability for a request",
+    "heron_method":               "The steps of a multi-step job",
+    "heron_why":                  "Why Heron cannot do something",
+    "heron_context":              "What a request would be given",
+    "heron_check":                "Check an answer against its clauses",
+    "heron_standards":            "Ask each standards source",
+    "heron_research":             "What Heron's standards do not cover",
+    "heron_research_check":       "Check an outside answer's citations",
+    "heron_hvac":                 "HVAC design calculations",
+    "heron_fire":                 "Fire protection calculations",
+    "heron_earlier_answers":      "Answers kept for a shared template",
+    "heron_gaps":                 "What failed or was slow lately",
+    "heron_run_record":           "Everything a change did",
+    "heron_compatibility":        "Which Revit versions work",
+    "heron_diagnose":             "Find what is wrong with Heron",
+    "heron_companion":            "Open the Heron Companion",
+    "heron_commands":             "Saved commands",
+    "heron_checklist":            "QA checklists",
+    "heron_sheet_list":           "Read a sheet list from Excel",
+    "revit_edit_table":           "Open an editable parameter table",
+    "revit_building_loads":       "Heating and cooling loads",
+    "revit_sprinkler_hydraulics": "Sprinkler hydraulic calculation",
+    "revit_sprinkler_layout":     "Plan a sprinkler layout",
+    "revit_model_dashboard":      "Model dashboard",
+    "revit_offer_settings":       "Offer settings as a table",
+}
+
+
+def title_of(tool):
+    """The title a host shows for a tool, or None for one nobody titled -
+    which tests/test_tool_registry.py fails on, rather than this inventing
+    one from the name."""
+    return TITLES.get(tool)
 
 
 def describe():

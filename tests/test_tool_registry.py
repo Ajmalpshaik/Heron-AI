@@ -133,35 +133,55 @@ def labels(declared_cs):
     if annotations is None:
         return
 
+    keeps = getattr(tools, "KEEPS", {})
     for tool in sorted(tools.TOOLS):
         risk = tools.risk_of(tool)
         label = annotations(tool)
         op = tools.operation_of(tool)
-        if risk <= tools.ANALYZE:
+        kept = keeps.get(tool)
+        if kept is not None:
+            # D-202: READ or ANALYZE to the gate, but it keeps something the
+            # modeller gave or chose - so a host is not told it changes nothing.
+            ok = (risk <= tools.ANALYZE
+                  and label == {"readOnlyHint": False,
+                                "destructiveHint": bool(kept["removes"]),
+                                "idempotentHint": not kept["every_call"],
+                                "openWorldHint": False})
+            what = ("not read-only: it keeps %s%s%s"
+                    % (kept["keeps"][:48] + "...",
+                       "; destructive" if kept["removes"] else "",
+                       "; not idempotent" if kept["every_call"] else ""))
+        elif risk <= tools.ANALYZE:
             ok = label == {"readOnlyHint": True, "destructiveHint": False,
-                           "idempotentHint": True}
+                           "idempotentHint": True, "openWorldHint": False}
             what = "read-only"
         elif tools.writes(tool):
             ok = label == {"readOnlyHint": False, "destructiveHint": True,
-                           "idempotentHint": False}
+                           "idempotentHint": False, "openWorldHint": False}
             what = "destructive and not idempotent"
         else:
             ok = (label["readOnlyHint"] is False
-                  and label["destructiveHint"] is False)
+                  and label["destructiveHint"] is False
+                  and label["openWorldHint"] is False)
             what = "neither read-only nor destructive"
         # AND THE ADD-IN AGREES. A tool's risk already equals its operation's
         # (checked above); a label derived from one is therefore the label
         # the other implies, and this says so for the tool in hand.
+        # What a tool keeps in Heron's own folder is not the add-in's to know,
+        # so for a tool in KEEPS only the destructive half is held to it.
         theirs = declared_cs.get(op) if op else None
         agrees = (theirs is None
-                  or (label["readOnlyHint"] == (theirs in ("READ", "ANALYZE", "SUGGEST"))
-                      and label["destructiveHint"] == (theirs in ("MODIFY", "PUBLISH", "ADMIN"))))
+                  or ((kept is not None
+                       or label["readOnlyHint"] == (theirs in ("READ", "ANALYZE", "SUGGEST")))
+                      and (label["destructiveHint"] == (theirs in ("MODIFY", "PUBLISH", "ADMIN"))
+                           or bool(kept and kept["removes"]))))
         check(ok and agrees,
               "%s is %s - labelled %s" % (tool, tools.NAMES[risk], what)
               + ("" if agrees else "  <- the add-in's %s says otherwise" % theirs))
 
     check(annotations("revit_delete_everything") ==
-          {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False},
+          {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False,
+           "openWorldHint": True},
           "an undeclared tool gets the worst label on every count - which is "
           "also what a host assumes of a tool with none")
 
@@ -172,9 +192,136 @@ def labels(declared_cs):
           "argument that could carry one, is typed at a tool")
     check("class _Labelled(_Server)" in server
           and "tools.annotations(" in server
+          and "tools.title_of(" in server
           and "server = _Labelled(" in server,
           "and the server registers every tool through _Labelled, which reads "
-          "the label off the registry as the tool registers")
+          "the label and the title off the registry as the tool registers")
+
+
+def titles_and_keeps():
+    """
+    EVERY TOOL HAS A TITLE, AND WHAT IT KEEPS AND WHERE IT REACHES ARE DECLARED
+    (D-202).
+
+    A title is what a host shows a modeller in place of the tool's code name -
+    "allow Change the Revit model?" - so a tool registered without one is the
+    failure this holds: it fails for a tool the server's source registers, not
+    only for a row in TOOLS, so a new `@server.tool()` with no title is red
+    before it is served.
+    """
+    print()
+    print("Every tool has a title a modeller can read (D-202)")
+    title_of = getattr(tools, "title_of", None)
+    check(title_of is not None, "heron_tools gives a title - title_of() exists")
+    if title_of is None:
+        return
+    registered = tools.served_order()
+    untitled = [n for n in registered if not title_of(n)]
+    check(registered and not untitled,
+          "every tool the server registers has a title (%d tools)%s"
+          % (len(registered), "" if not untitled else
+             " - none for: " + ", ".join(untitled)))
+    stray = sorted(set(tools.TITLES) - set(tools.TOOLS))
+    check(not stray, "and every title is for a declared tool%s"
+          % ("" if not stray else " - not: " + ", ".join(stray)))
+    plain = [n for n in registered if title_of(n)
+             and (len(title_of(n)) > 40 or "_" in title_of(n)
+                  or title_of(n) != title_of(n).strip())]
+    check(not plain, "each is short plain words - 40 characters at most, no "
+          "code name in it%s" % ("" if not plain else " - not: " + ", ".join(plain)))
+    shared = sorted(t for t in set(tools.TITLES.values())
+                    if list(tools.TITLES.values()).count(t) > 1)
+    check(not shared, "and no two tools share one%s"
+          % ("" if not shared else " - shared: " + ", ".join(shared)))
+    for writer in ("revit_change", "revit_apply_move", "revit_undo_last"):
+        check(title_of(writer) and any(w in title_of(writer).lower()
+                                       for w in ("change", "move", "undo")),
+              "%s's title says what it does to the model: %r"
+              % (writer, title_of(writer)))
+
+    print()
+    print("What a tool keeps outside the model is declared, and none reaches past this PC")
+    keeps = getattr(tools, "KEEPS", None)
+    check(isinstance(keeps, dict) and keeps,
+          "heron_tools declares what tools keep outside the model - KEEPS")
+    for name, kept in sorted((keeps or {}).items()):
+        check(name in tools.TOOLS
+              and tools.risk_of(name) <= tools.ANALYZE
+              and set(kept) == {"keeps", "removes", "every_call"}
+              and kept["keeps"].strip(),
+              "%s is declared, below EXECUTE, and says what it keeps" % name)
+    # The saved commands and checklists can delete the modeller's own files,
+    # so a host must be told they are destructive (D-202).
+    for name in ("heron_commands", "heron_checklist"):
+        check(tools.annotations(name)["destructiveHint"] is True
+              and tools.annotations(name)["readOnlyHint"] is False,
+              "%s, which can delete what the modeller saved, is labelled "
+              "destructive and not read-only" % name)
+    check(tools.annotations("revit_building_loads")["idempotentHint"] is False,
+          "revit_building_loads keeps a new run each time it is asked - not "
+          "idempotent")
+
+    check(getattr(tools, "OPEN_WORLD", None) == (),
+          "no tool is declared to reach past this PC - OPEN_WORLD is empty")
+    check(all(tools.annotations(n)["openWorldHint"] is False for n in tools.TOOLS),
+          "and every declared tool is labelled openWorldHint false")
+    # THE CLAIM IS HELD, NOT TRUSTED: a file of the server that imported a
+    # network client would make OPEN_WORLD's empty list a guess.
+    reaching = re.compile(
+        r"^\s*(?:import|from)\s+(urllib\.request|urllib3|http\.client|requests|"
+        r"httpx|aiohttp|socket|websockets?|ftplib|smtplib)\b", re.M)
+    found = []
+    for path in tools.server_files():
+        with io.open(path, encoding="utf-8") as fh:
+            found.extend("%s: %s" % (os.path.basename(path), m.group(1))
+                         for m in reaching.finditer(fh.read()))
+    check(not found, "and no file of the server imports a network client%s"
+          % ("" if not found else " - found: " + "; ".join(found)))
+
+
+# A DESCRIPTION SAYS WHEN TO USE ITS TOOL, AND NEVER ORDERS ANOTHER CALLED
+# (D-202). "Call heron_check", "use revit_read", "Call this BEFORE answering"
+# push a host into a call rather than telling it when one fits. Naming another
+# tool is fine - "a question is revit_read's" - telling the host to call it is
+# not. "call again", for the same tool, is the tool's own instruction.
+_ORDERS_OTHER = re.compile(
+    r"(?i)\b(?:call|use|run|ask|try)\s+`?((?:revit|heron)_[a-z_]+)")
+_ORDERS_ITSELF = re.compile(
+    r"(?i)(?:^|[.!?:;]\s+|\bnever\s+|\bthen\s+|\band\s+)(?:call|ask)\s+(?:this|it)\b")
+
+
+def orders_a_call(name, description):
+    """The phrases in one tool's description that order a call: another
+    tool's, or this one's as "Call this" / "Call it" rather than "Use it
+    when". An empty list for a description that only says when."""
+    text = " ".join(description.split())
+    found = [m.group(0) for m in _ORDERS_OTHER.finditer(text) if m.group(1) != name]
+    found += [m.group(0).strip(" .!?:;") for m in _ORDERS_ITSELF.finditer(text)]
+    return found
+
+
+def descriptions_say_when():
+    print()
+    print("No description orders a call - each says when its tool is used (D-202)")
+    # THE RULE CATCHES WHAT IT IS FOR, seen on the sentences it replaced.
+    for name, said in (("heron_standards", "Before showing it, call heron_check."),
+                       ("heron_research", "Call this BEFORE answering."),
+                       ("revit_change", "To answer a question, use revit_read."),
+                       ("revit_groups", "ASK THIS BEFORE ANY CHANGE.")):
+        check(orders_a_call(name, said),
+              "the rule finds the order in %r" % said)
+    for name, said in (("revit_change", "A question is revit_read's."),
+                       ("heron_commands", "`name` as they call it."),
+                       ("revit_read", "call again with the `capability`."),
+                       ("heron_capabilities", "Use this before planning.")):
+        check(not orders_a_call(name, said),
+              "and lets %r stand" % said)
+    ordering = []
+    for name, text in sorted(tools.descriptions().items()):
+        ordering.extend("%s: %r" % (name, got) for got in orders_a_call(name, text))
+    check(not ordering,
+          "no tool's description orders a call%s"
+          % ("" if not ordering else " - " + "; ".join(ordering[:5])))
 
 
 def source_list():
@@ -303,7 +450,8 @@ def library():
     check("heron_why" in listed,
           "and it is served with no Revit, beside heron_capabilities")
     check(tools.annotations("heron_why")
-          == {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True},
+          == {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True,
+              "openWorldHint": False},
           "and a host is told it is read-only, not destructive and safe to ask again")
     check("heron_why" in tools.descriptions(),
           "and the server source registers it as a tool")
@@ -756,6 +904,8 @@ def main():
     undeclared_before_the_queue()
 
     labels(declared_cs)
+    titles_and_keeps()
+    descriptions_say_when()
     source_list()
     suites_read_the_server_whole()
     library()

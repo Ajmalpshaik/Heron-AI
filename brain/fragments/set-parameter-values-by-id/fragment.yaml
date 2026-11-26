@@ -23,7 +23,7 @@ capability: SET_PARAMETER_VALUES_BY_ID
 # searched, and the routing for 5b-610 was measured with it unchanged.
 #
 #   WHY. On 2026-10-15/17 the owner set the instance Wall Width of 18 openings
-#   (TRG_GEN_CutOut_Rectangular_HVAC : 12.5mm Cutout Buffer, a real project in
+#   (ABC_GEN_CutOut_Rectangular_HVAC : 12.5mm Cutout Buffer, a real project in
 #   Revit 2020) from 255.5 or 260 to 100 and kept the outside face where it
 #   was. Wall Width was measured to shrink symmetrically about the
 #   LocationPoint, so by hand it took this tool once and MOVE_ELEMENTS five

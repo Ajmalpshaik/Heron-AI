@@ -14,7 +14,7 @@ source: OFFICIAL
 risk: READ
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
-# 2026-10-21: Ajmal PS, building the pipe tag family TRG_Pipe_Tag on Revit
+# 2026-10-21: Ajmal PS, building the pipe tag family ABC_Pipe_Tag on Revit
 # 2020, wanted his labels' text changed - 2.5 to 5 mm, font, bold. Nothing in
 # Heron read or changed a TEXT TYPE (checked that day by grep of
 # brain/fragments, DRAFT and PROVEN): ADD_FAMILY_MODEL_TEXT writes the size of

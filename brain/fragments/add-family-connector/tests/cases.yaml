@@ -5,7 +5,7 @@ positive:
     expect: >
       a pipe connector reading Global, the pipe domain taken from the
       category and said so. MEASURED 2026-10-04, Revit 2024, rolled back in
-      TRG_PLMB_VLV_PPR Gate Valve_GV_R0
+      ABC_PLMB_VLV_PPR Gate Valve_GV_R0
 
   - given: >
       an Air Terminals family with a NON-SQUARE 400 x 300 neck locked between

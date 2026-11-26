@@ -58,9 +58,10 @@ revit_reset_temporary call FIXED operations in the add-in, EXECUTE as well.
 EVERY CHAT IS TOLD THE RULES, AND EVERY TOOL CARRIES ITS LABELS. The server's
 instructions are the Instruction Registry's `host.chat`, with the Constitution's
 Articles assembled at start-up (heron_brain.host_instructions), and each tool's
-MCP safety labels are read off its risk in heron_tools.TOOLS as it registers
-(_Labelled, in heron_server_core.py). Neither is typed in this file, for the
-reason the tool list is not.
+MCP safety labels and title are read off heron_tools as it registers - its risk
+in TOOLS, what it keeps in KEEPS, its title in TITLES (D-202; _Labelled, in
+heron_server_core.py). Neither is typed in this file, for the reason the tool
+list is not.
 
     ============ revit_change: RUN, AND E16 STILL OPEN ============
     Written 2026-09-15 at the owner's instruction and run the SAME
@@ -917,8 +918,8 @@ def revit_preview_move(category: str = "ducts", distance: str = "") -> str:
 
     Use this whenever the user asks to move, raise, lower or shift elements.
     It changes nothing: it reports how many would move, how many would be
-    skipped, and in which model. Call revit_apply_move afterwards only if the
-    user says yes to what this describes.
+    skipped, and in which model. What it describes is applied by
+    revit_apply_move, and only once the user has said yes to it.
 
     Category is the BIM word the user said - "ducts", "pipes", "air
     terminals". Heron resolves it to a Revit category; it is not a Revit
@@ -1629,7 +1630,7 @@ def revit_change(capability: str = "", values: str = "",
     Article 7's explicit yes comes BEFORE this call for destructive work, and
     Article 10 holds - nothing is saved, synced or exported unasked.
 
-    To answer a question, use revit_read - it cannot change anything. One
+    A question is revit_read's - it cannot change anything. One
     Ctrl+Z in Revit undoes what this did to the model, never a save, a sync or
     an export.
     """
@@ -3398,8 +3399,8 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     Show the user something in Revit - select it, zoom to it - with one of
     Heron's capabilities that changes only what is ON SCREEN, and change
     nothing in the model: "select these", "zoom to the beams in the
-    structural link". To isolate in the active view use
-    revit_isolate_temporary; revit_reset_temporary ends it.
+    structural link". Isolating in the active view is
+    revit_isolate_temporary's, and revit_reset_temporary ends it.
 
     It works with Changes OFF: no transaction is open, and the model is counted
     before and after - a run that moved it is reported, never answered. A
@@ -3946,7 +3947,7 @@ def revit_offer_settings(capability: str, values: str) -> str:
     there - "show the filters and their colours in the Companion", "give me
     that as a table" - after you have READ the current values (for a view's
     filters, REPORT_VIEW_FILTERS). Offer one table per thing: for three
-    filters, call this three times with APPLY_VIEW_FILTER, one filter each.
+    filters, three tables with APPLY_VIEW_FILTER, one filter each.
 
     `capability` must be one the Companion offers tables for (its card says
     companion: settings, and every input is a typed value). `values` is
@@ -4046,8 +4047,8 @@ def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 200
 
     `parameters` is the column list, comma separated: "Mark, Comments, Flow".
     The rows are the elements selected in Revit - or, with `expect_from`, the
-    elements an earlier fragment left, e.g. find them first with
-    revit_read("FILTER_ELEMENTS_BY_CATEGORY", ...) and pass
+    elements an earlier fragment left, e.g. those a revit_read of
+    FILTER_ELEMENTS_BY_CATEGORY found, with
     expect_from="filter-elements-by-category". `max_rows` caps the table.
 
     You are told only how many rows the table holds. The modeller edits it on
@@ -5187,7 +5188,7 @@ def heron_method(job: str = "") -> str:
     out terminals, a building shell - in the order the steps must happen,
     what must be true first, and each capability it uses with its risk.
 
-    Call it ONCE, before the first step, when heron_lookup or a hand-back
+    Use it ONCE, before the first step, when heron_lookup or a hand-back
     names a job with a method, or the modeller asks for something that is
     plainly more than one call. Empty `job` lists every job by id. This is
     everything Heron holds about how the job is done: nothing in Heron's own
@@ -5598,7 +5599,7 @@ def heron_resolve(capability: str) -> str:
 
     NOT NEEDED FOR THE CAPABILITY heron_lookup ALREADY NAMED, nor after a
     revit_read or revit_change handed back a list: both already carry these
-    same lines. Call it for a capability named some other way, or for the
+    same lines. Use it for a capability named some other way, or for the
     risk, releases and providers.
     """
     # "IT TOUCHES NOTHING" UNTIL 2026-11-11 (FRAGMENT-ISSUES 5b-1165), and it
@@ -5787,8 +5788,8 @@ def heron_lookup(request: str, question: bool = False) -> str:
     Which capability serves a request in the user's own words. Answers with
     it and the values it needs typed, for revit_read or revit_change next.
 
-    question: true only when the user wants to find something out - "what size
-    is this pipe"; every capability that changes the model is left out.
+    question: true whenever the user is asking, not asking for a change - "what
+    size is this pipe"; every capability that changes the model is left out.
     Selecting or zooming is not a change. False for a change, even asked as
     a question - "how many sprinklers do I need" - and when unsure.
 
@@ -6094,35 +6095,12 @@ def heron_context(request: str, path: str = "", full: bool = False,
 
 
 @server.tool()
-def heron_helped(chunk: str, scope: str = "global") -> str:
-    """
-    Count that a cited clause HELPED - only when the modeller says so.
-
-    Call this when the modeller says an answer was right or useful. `chunk` is
-    the chunk id the answer cited, in square brackets; `scope` is where it came
-    from (global, company, project, user). Never call it on your own judgement.
-    Keeps a clause id and counts on this PC - never the question - and sends
-    nothing. Touches nothing in the model.
-    """
-    # D-191: "helped" is the modeller's word, never a guess, and it nudges that
-    # clause by less than one rank next time (heron_retrieve.USAGE_SPAN).
-    try:
-        got = brain.helped(chunk, scope=scope, project=pinned.project_key,
-                           project_name=pinned.title)
-    except brain.BrainUnavailable as why:
-        return str(why)
-    except ValueError as why:
-        return "Not counted. %s" % why
-    return got["said"]
-
-
-@server.tool()
 def heron_check(draft: str, request: str, scopes: str = "") -> str:
     """
     Check a drafted standards answer against the clauses it cites. Flags,
     never rewrites.
 
-    Call this BEFORE showing the user an answer about a standard. Pass the
+    Use it on an answer about a standard, before the user sees it. Pass the
     `draft` you are about to show and the SAME `request` you passed to
     heron_context: it reports which claims the clause they cite carries, which
     state a fact the clause does not, which cite nothing, and which are the
@@ -6193,9 +6171,9 @@ def heron_standards(request: str, scopes: str = "company,project") -> str:
     `scopes` is a comma-separated list: global, company, project, user,
     temporary, experimental. Touches nothing in the model.
 
-    Before showing an answer drafted from this, call heron_check with the
-    draft, the SAME request and the SAME scopes. The chunk ids below belong to
-    those stores and cannot be resolved against any other.
+    An answer drafted from this is checked by heron_check, given the draft,
+    the SAME request and the SAME scopes: the chunk ids below belong to those
+    stores and cannot be resolved against any other.
     """
     try:
         got = brain.standards(request, [s for s in scopes.split(",")],
@@ -6304,8 +6282,8 @@ def heron_research(request: str, scopes: str = "company,project") -> str:
     Say what Heron does NOT know about a question, and what an outside answer
     must carry.
 
-    Call this BEFORE answering a standards question from your own knowledge or
-    from the web. Pass the user's question as `request`, in their own words:
+    Use it when a standards question would otherwise be answered from your own
+    knowledge or the web, before that answer. Pass the user's question as `request`, in their own words:
     Heron searches the `scopes` you name - comma separated: global, company,
     project, user, temporary, experimental - says what each holds, and hands
     back what is missing and what every claim in an answer must carry.
@@ -6341,8 +6319,8 @@ def heron_research_check(answer: str) -> str:
     """
     Check the CITATIONS in an answer that came from outside Heron. Never the facts.
 
-    Call this on a draft built from research - your own knowledge, a web page,
-    anything not in Heron's stores - before showing it to the user. It reports
+    Use it on a draft built from research - your own knowledge, a web page,
+    anything not in Heron's stores - before the user sees it. It reports
     which claims cite nothing, which cite something nobody could look up, and
     which name a document, an edition and a clause.
 
@@ -6355,9 +6333,9 @@ def heron_research_check(answer: str) -> str:
     A claim about ISO 19650, QCS, Ashghal or a company standard that cites
     nothing is a **bug** rather than a low-confidence answer (docs/05 s8).
 
-    To make any of it checkable: ingest the source document, then ask again
-    through heron_standards and ground the draft with heron_check. Touches
-    nothing in the model.
+    Any of it becomes checkable once the source document is ingested:
+    heron_standards can then answer from it, and heron_check ground the
+    draft. Touches nothing in the model.
     """
     try:
         got = brain.research_check(answer)
@@ -6766,9 +6744,9 @@ def heron_commands(action: str = "list", name: str = "", capability: str = "",
     action="list" names every saved command; "show" gives one with its inputs;
     "delete" removes one, only when they ask.
 
-    To RUN one from chat: "show" it, put their inputs in, and call
-    revit_change (or revit_read for a read) with that capability and values -
-    the same checks as any change. One saved command is one capability.
+    RUN from chat, a saved command goes through revit_change (revit_read for
+    a read) with the capability and values "show" gives, their inputs put in
+    - the same checks as any change. One saved command is one capability.
     """
     try:
         store = brain.commands()

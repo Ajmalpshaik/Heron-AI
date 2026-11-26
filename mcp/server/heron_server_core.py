@@ -158,6 +158,11 @@ except ImportError:
 _TAKES_LABELS = (_Annotations is not None
                  and "annotations" in inspect.signature(_Server.tool).parameters)
 
+# AND A TITLE, which the SDK's tool() took only part-way through 1.x as well:
+# an SDK without it serves the tool by its name, as before, and costs nothing
+# else (D-202).
+_TAKES_TITLE = "title" in inspect.signature(_Server.tool).parameters
+
 # THE DESCRIPTION A HOST IS SERVED IS THE DOCSTRING CLEANED, ON EVERY PYTHON.
 # The SDK takes `fn.__doc__` as it finds it, and Python 3.12 - the owner's -
 # keeps every line of it indented four spaces where 3.13 strips them: measured
@@ -236,7 +241,8 @@ NO_REVIT_HERE = "No Revit on this machine (it is not Windows)"
 class _Labelled(_Server):
     """
     The SDK's server with one difference: every `@server.tool()` is registered
-    with the MCP safety labels its declared risk implies.
+    with the MCP safety labels its declared risk implies, and its title - both
+    read off heron_tools (annotations, title_of; D-202).
 
     WHY A SUBCLASS AND NOT A LABEL ON EACH DECORATOR. A label typed beside a
     tool is a second declaration of what the tool can do, and the first one -
@@ -264,9 +270,17 @@ class _Labelled(_Server):
                 # and then refused. Still callable from the server's own
                 # code, as every tool is.
                 return _recorded(fn)
+            # THE TITLE TOO (D-202), read off the registry as the labels are:
+            # on the tool, where a host looks first, and in the labels, where
+            # MCP also lets a host look - the same words in both places.
+            title = tools.title_of(name)
+            if _TAKES_TITLE and title and "title" not in options:
+                options["title"] = title
             if _TAKES_LABELS and "annotations" not in options:
-                options["annotations"] = _Annotations.model_validate(
-                    tools.annotations(name))
+                label = dict(tools.annotations(name))
+                if title:
+                    label["title"] = title
+                options["annotations"] = _Annotations.model_validate(label)
             if _TAKES_DESCRIPTION and "description" not in options and fn.__doc__:
                 options["description"] = inspect.cleandoc(fn.__doc__)
             return register(*args, **options)(_recorded(fn))

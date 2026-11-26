@@ -63,11 +63,12 @@ DELTA = u"Δ"
 FAILURES = []
 
 # Row 5b-2044's list, with 5b-2041 and 5b-2042's own two. Row 5b-2043's
-# tools/resign-machine-proofs.py was removed by #1417, and the row withdrawn.
+# tools/resign-machine-proofs.py was removed by #1417, and the row withdrawn;
+# brain/heron_usage.py was removed with the usage counter by D-205.
 BRAIN_MAINS = (
     "heron_sheet_list heron_retrieve heron_gaps heron_ingest heron_ground "
     "heron_research heron_designbasis heron_commands heron_checklists "
-    "heron_usage heron_audit heron_scope heron_paths heron_company heron_fire "
+    "heron_audit heron_scope heron_paths heron_company heron_fire "
     "heron_hvac heron_contract heron_conflict heron_search heron_context "
     "heron_embed heron_earlier heron_agents heron_capability heron_graph "
     "heron_fragment heron_dotnet heron_instructions heron_matrix").split()
