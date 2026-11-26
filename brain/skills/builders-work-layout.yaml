@@ -173,8 +173,10 @@ purpose: >
      the modeller gives.
 
   8. BEFORE ANYTHING IS DELETED - an old opening family, a dimension, a tag:
-     REPORT_ELEMENT_DEPENDENCIES (PROVEN) on exactly what will go, then name
-     to the modeller every tag and dimension that goes with it and the count,
+     REPORT_ELEMENT_DEPENDENCIES (DRAFT since its version 2 of 2026-11-26,
+     which also names every dimension in every view that a delete takes or
+     cuts) on exactly what will go, then name to the modeller every tag and
+     dimension that goes with it, every dimension cut, and the count,
      and wait for their yes for that one delete (Article 7). Then
      DELETE_ELEMENTS (DRAFT since its version 3 of 2026-11-23, which names every
      element a delete takes by category and name) with expect_from naming the select that found

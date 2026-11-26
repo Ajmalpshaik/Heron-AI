@@ -3,9 +3,11 @@
 positive:
   - given: a TAGGED door hosted in a wall
     expect: >
-      its tag among the dependents. Check it against what Revit warns when you
-      press Delete on that door by hand - the two lists must agree, because this
-      is Revit's own answer rather than one assembled here
+      its tag among the dependents, and `goesTotal` the number Revit's own
+      Delete box shows when you press Delete on that door by hand (then
+      Escape). Version 1 claimed Revit's dependents list WAS that set; on
+      2026-11-23 it was 36 against a delete of 62 (row 5b-1990), so the
+      number is compared, not assumed
 
   - given: a wall joined to three others
     expect: >
@@ -18,7 +20,38 @@ positive:
       the sketch lines and the opening among the dependents. These are the ones
       nothing could derive by hand, and are why Revit's own call is used
 
+  # VERSION 2 (row 5b-1990). Each of these fails on version 1, which never
+  # read a dimension outside Revit's dependents list.
+  - given: >
+      a family instance with ONE dimension from it to a grid drawn in a
+      SECTION (not the active view), and a three-reference linear string
+      grid - instance - grid drawn in an ELEVATION
+    expect: >
+      the section's dimension in `dimensionsDeleted` (one reference would be
+      left) unless Revit already listed it among the dependents, and the
+      elevation's string in `dimensionsCut` (two stay); each a line in
+      `dimensionLines` naming its own view, DELETED or CUT, and "1 of its 2" /
+      "1 of its 3" references on what goes. Run with a plan open, not either
+      view - the answer must not change with the active view. `goesTotal`
+      equals the count in Revit's Delete box for the instance; afterwards the
+      elevation's string still exists with two references
+
+  - given: an in-place family whose dimensions measure to its own parts
+    expect: >
+      a dimension to one of the in-place family's parts is named the same as
+      one to the instance - its parts are dependents, and what goes is the
+      instance AND its dependents
+
 negative:
+  - given: >
+      a dimension in another view between two elements that are NOT in the
+      set and are not dependents of it - two grids beside the instance
+    expect: >
+      it is in neither `dimensionsDeleted` nor `dimensionsCut` and has no line
+      in `dimensionLines`; `dimensionsRead` counts it. A version that named
+      every dimension near the element, or every dimension in the view, fails
+      here
+
   - given: an element with nothing attached to it at all
     expect: >
       dependents empty for it, and its id in `standalone`. THE COUNT MUST BE 0

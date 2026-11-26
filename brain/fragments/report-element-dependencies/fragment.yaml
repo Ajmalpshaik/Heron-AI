@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,27 @@ semantic-identity: "what else goes if this element goes"
 kind: action
 domain: revit.qa
 capability: REPORT_ELEMENT_DEPENDENCIES
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-11-26, FRAGMENT-ISSUES row 5b-1990, issue #1278) - EVERY
+# DIMENSION THAT MEASURES TO WHAT GOES, IN EVERY VIEW, AND BACK TO DRAFT.
+# Version 1 trusted `GetDependentElements(null)` to be the whole of what a
+# delete takes. Measured 2026-11-23 on Revit 2020, project
+# 4355-BHVD-3D-60P00-BL003A: three in-place Mechanical Equipment units
+# reported 36 dependents; the delete of them took 62 elements and cut 26
+# dimensions that measured to them and to something else. Version 2 also
+# reads every dimension in the model - no view, so sections, elevations and
+# 3D views too - and names each one whose references touch the elements or
+# their dependents: DELETED when too few references would be left
+# (`dimensionsDeleted`, only those Revit did not already list), CUT when a
+# linear string keeps two or more (`dimensionsCut`); each with its view in
+# `dimensionLines`, and `goesTotal` the count Revit's Delete box should show.
+# A filter on GetDependentElements was not the fix: a filter narrows the same
+# list. Version 1 was PROVEN on 2026-09-09 (the proof block below, kept as the
+# record); its C# moved, so it is DRAFT until NEEDS-CHECKING group QT is run
+# (D-30).
 
 purpose: >
   For each element, what Revit would take away with it - the tags, dimensions,
@@ -19,12 +37,13 @@ purpose: >
   would allow the deletion at all. Asked BEFORE the change rather than
   discovered after it.
 
-  **THE LIST IS REVIT'S OWN, NOT ONE ASSEMBLED HERE.**
-  `GetDependentElements(null)` returns what Revit itself considers attached -
-  the same set it removes on delete. It reaches things nothing could reasonably
-  derive: a tag that references the element, a dimension witnessed on it, a
-  family hosted in it, the sketch a floor is drawn from, an opening cut through
-  it.
+  **THE DEPENDENTS ARE REVIT'S OWN LIST, AND IT IS NOT EVERYTHING A DELETE
+  TAKES.** `GetDependentElements(null)` returns what Revit itself considers
+  attached: a tag that references the element, a family hosted in it, the
+  sketch a floor is drawn from, an opening cut through it. It can leave out a
+  dimension that measures to the element, so every dimension in the model,
+  in every view, is read as well, and each one that measures to what goes is
+  named as deleted or cut.
 
   **THE LIST ALWAYS CONTAINS THE ELEMENT ITSELF.** That is not a defect and it
   must not be stripped blindly - it is why a count reads one higher than
@@ -42,8 +61,9 @@ purpose: >
   nobody was looking at. Folding it in with the dependents would say the wrong
   thing about it in both directions.
 
-  **WHAT IT CANNOT SEE, SAID OUT LOUD:** a reference from a linked model, and
-  which sheets show the element. A clean report here does not mean nothing
+  **WHAT IT CANNOT SEE, SAID OUT LOUD:** a reference from a linked model,
+  which sheets show the element, and what a delete changes in a view itself
+  (on 2026-11-23 a delete also modified seven 3D views). A clean report here does not mean nothing
   downstream breaks.
 
 contract:
@@ -75,6 +95,40 @@ contract:
       # the undeletable ones are the answer (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: dimensionsDeleted
+      # VERSION 2. Dimensions in any view that measure to what goes - the
+      # elements or a dependent - and keep too few references to stand, which
+      # Revit did NOT list as a dependent. A delete takes these too.
+      role: result
+      type: IList<ElementId>
+    - name: dimensionsCut
+      # VERSION 2. Linear dimensions in any view that measure to what goes and
+      # keep two or more references: not deleted, but their segments to what
+      # goes are removed - a changed drawing nobody asked for.
+      role: result
+      type: IList<ElementId>
+    - name: dimensionLines
+      # VERSION 2. One line per dimension that measures to what goes, deleted
+      # or cut: its view, kind, id, DELETED or CUT, how many of its references
+      # are on what goes and how many stay, and which ids it measures to.
+      role: result
+      type: IList<string>
+    - name: goesTotal
+      # VERSION 2. Every distinct element the delete is expected to take - the
+      # elements, Revit's dependents and `dimensionsDeleted` - the number
+      # Revit's Delete box should show. Expected, not promised (group QT).
+      role: result
+      type: int
+    - name: dimensionsRead
+      # VERSION 2. How many dimensions in the model were read - the evidence
+      # the model was looked at, not one view (D-52).
+      role: accounting
+      type: int
+    - name: dimensionsUnread
+      # VERSION 2. Dimensions whose references Revit would not give: looked
+      # at, not answered. Never counted as clear of what goes.
+      role: accounting
+      type: IList<ElementId>
 
 proof:
   date: '2026-09-09'
@@ -104,7 +158,13 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `Element.GetDependentElements`,
   `DocumentValidation.CanDeleteElement` and `JoinGeometryUtils` are unchanged
-  2020 to 2027. `JoinGeometryUtils.GetJoinedElements` throws rather than
+  2020 to 2027, and so are the members version 2 reads -
+  `Dimension.AreReferencesAvailable`, `References`, `DimensionShape` and
+  `Reference.ElementId`, read 2026-11-26 off the shipped assemblies with
+  `tools/api-surface --members`. From 2025 a dimension is a
+  `LinearDimension`, `RadialDimension` or `ArcLengthDimension`; all derive
+  from `Dimension`, so `OfClass(typeof(Dimension))` finds them on every
+  release, and the shape is read from `DimensionShape`, never from the class. `JoinGeometryUtils.GetJoinedElements` throws rather than
   returning empty for an element that cannot be joined at all - a tag, a view -
   so it is guarded per element rather than assumed to be answerable, which is
   the difference between a report and a crash on a mixed selection.
