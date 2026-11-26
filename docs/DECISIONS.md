@@ -244,7 +244,7 @@
 | [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
 | [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 |
 | [D-204](#d-204--a-tool-that-can-never-come-back-empty-is-signed-on-a-by-hand-reading-and-a-tool-with-two-runs-waiting-is-signed-on-the-run-revit-checked) | A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked | ✅ Accepted · 2026-11-26 |
-| [D-205](#d-205--on-a-near-tie-with-a-write-the-card-that-changes-nothing-goes-first---inside-the-status-nudges-span-never-wider) | On a near-tie with a write, the card that changes nothing goes first - inside the status nudge's span, never wider | ❌ Rejected · 2026-11-26 - no margin is safe, nothing built |
+| [D-209](#d-209--on-a-near-tie-with-a-write-the-card-that-changes-nothing-goes-first---inside-the-status-nudges-span-never-wider) | On a near-tie with a write, the card that changes nothing goes first - inside the status nudge's span, never wider | ❌ Rejected · 2026-11-26 - no margin is safe, nothing built |
 
 ## Format
 
@@ -1834,10 +1834,10 @@ checked in Revit for the tool as it stands, one run at a time. The owner signs; 
 
 **Full record:** [`decisions/D-204.md`](decisions/D-204.md)
 
-## D-205 — On a near-tie with a write, the card that changes nothing goes first - inside the status nudge's span, never wider
+## D-209 — On a near-tie with a write, the card that changes nothing goes first - inside the status nudge's span, never wider
 
 **Status:** Rejected · **Date:** 2026-11-26 · **Asked:** Ajmal PS, 2026-11-26, in the session [session_01XqSwbZ51VK4sEaC3EX94vH](https://claude.ai/code/session_01XqSwbZ51VK4sEaC3EX94vH): *"Yes, small safe margin"* - rejected the same day, before it merged, because measurement showed no margin is safe.
-**Numbering:** D-205 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `1e4a2012` ending at D-204 and D-202 and D-203 held by unmerged branches.
+**Numbering:** D-205 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `1e4a2012` ending at D-204 and D-202 and D-203 held by unmerged branches. Renumbered from D-205 to D-209 on 2026-11-26 with `tools/renumber.py`, because `main` had given D-205 to another decision first.
 **Keeps:** [D-01](decisions/D-01.md) · [D-128](decisions/D-128.md) - the host's `question` flag remains the fix · [D-100](decisions/D-100.md)
 
 With the flag off, a near-tied card that changes nothing would have gone ahead of a write. At 0.61 rank it took
@@ -1846,4 +1846,4 @@ roof"* to a read only 0.23 rank behind its write, and the questions it helped si
 No margin helps a question without that cost, and only the words could separate the two (D-01). Nothing was
 built.
 
-**Full record:** [`decisions/D-205.md`](decisions/D-205.md)
+**Full record:** [`decisions/D-209.md`](decisions/D-209.md)
