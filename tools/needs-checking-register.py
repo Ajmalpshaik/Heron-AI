@@ -83,7 +83,7 @@ def _lines(text):
 
 def fenced_lines(lines):
     """Indexes of the lines inside a fenced code block, fences included - the
-    same rule as archive-handover.py's. A '## ' line there is an example."""
+    same rule as archive-fragment-issues.py's fenced_lines(). A '## ' line there is an example."""
     inside, out = False, set()
     for i, line in enumerate(lines):
         if line.lstrip().startswith(FENCE):

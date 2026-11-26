@@ -111,6 +111,16 @@ negative:
       the project answer exactly as before - no family finding, nothing
       scanned beyond the categories
 
+  # Version 5, added 2026-11-26 (row 5b-2035). NOT RUN.
+  - given: >
+      the version 3 scratch family, materialName "Glass", categories "Generic
+      Models" - the revolve at <By Category>
+    expect: >
+      the same answer as version 3, and the family finding says to set one
+      "with LINK_FAMILY_PARAMETER (Material=)" - never SET_FAMILY_FORM_MATERIAL;
+      LINK_FAMILY_PARAMETER with the revolve's id and Material=Glass then makes
+      a second run find 2 elements
+
 second_route: >
   A material takeoff schedule filtered to the same material and counted, and
   one element's type opened in Revit to read its compound structure by hand -

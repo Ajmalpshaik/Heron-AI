@@ -82,7 +82,7 @@ written. Nothing here writes a byte unless:
      lists, and check-docs.py's count of them and of its Progress line - run
      whole, on each copy;
   3. every link re-pointed on the way out reaches the file it reached before
-     (archive-handover.py's own function, which proves each one), and no other
+     (archive-fragment-issues.py's _repoint, which proves each one), and no other
      document links into a heading that would leave the page.
 
 A LINK THAT NAMES A ROW THIS RUN MOVES FOLLOWS IT. A link whose words name
@@ -136,8 +136,7 @@ def _load(name, filename):
 
 
 RT = _load("register_text", "register-text.py")
-AH = _load("archive_handover", "archive-handover.py")
-AF = AH.AF
+AF = _load("archive_fragment_issues", "archive-fragment-issues.py")
 NL, CR, DASH = AF.NL, AF.CR, AF.DASH
 OK, REFUSED, COULD_NOT = AF.OK, AF.REFUSED, AF.COULD_NOT
 
@@ -435,12 +434,12 @@ def split_by(text, layout, banded, config, headers, today, index, each=None):
         if not name:
             continue
         for k in range(start, end):
-            h = AH.HEADING.match(lines[k])
+            h = AF.HEADING.match(lines[k])
             if h and k not in fenced:
-                moved.setdefault(AH.anchor_of(h.group(1)), name)
+                moved.setdefault(AF.anchor_of(h.group(1)), name)
     trouble, out, files = [], [], {}
     if first:
-        out.append(AH._repoint(NL.join(lines[:first]), None, moved, index, folder, trouble,
+        out.append(AF._repoint(NL.join(lines[:first]), None, moved, index, folder, trouble,
                                "the register's opening"))
     for start, end in spans:
         heading = lines[start]
@@ -449,12 +448,12 @@ def split_by(text, layout, banded, config, headers, today, index, each=None):
         if name:
             k = RT.last_filled(lines, start, end)
             out.append(NL.join([heading, "", RT.file_line(folder_name, name)] + lines[k:end]))
-            body = _beside(AH._repoint(NL.join(lines[start:k]), name, moved, index, folder, trouble,
+            body = _beside(AF._repoint(NL.join(lines[start:k]), name, moved, index, folder, trouble,
                                        heading), folder_name)
             files[name] = (headers.get(name) or _section_header(config["title"], page, heading, today)) + body + NL
             continue
         if not table:
-            out.append(AH._repoint(NL.join(lines[start:end]), None, moved, index, folder, trouble, heading))
+            out.append(AF._repoint(NL.join(lines[start:end]), None, moved, index, folder, trouble, heading))
             continue
         top, bottom = table
         body, own = lines[top + 2:bottom], []
@@ -471,19 +470,19 @@ def split_by(text, layout, banded, config, headers, today, index, each=None):
         if cut is not None:
             said += ([""] if said else []) + [RT.each_line(folder_name, own_stem, cut)]
         kept = lines[start:top] + said + lines[bottom:end]
-        out.append(AH._repoint(NL.join(kept), None, moved, index, folder, trouble, heading))
+        out.append(AF._repoint(NL.join(kept), None, moved, index, folder, trouble, heading))
         for number, got in own:
             name = RT.row_name(own_stem, number)
             if name in files:
                 trouble.append("row %s-%d is written twice, and %s holds one row - one of the two takes "
                                "another number first (tools/renumber.py)" % (label_of(heading), number, name))
                 continue
-            body = _beside(AH._repoint(NL.join(lines[top:top + 2] + got), name, moved, index, folder,
+            body = _beside(AF._repoint(NL.join(lines[top:top + 2] + got), name, moved, index, folder,
                                        trouble, "%s, row %d" % (heading, number)), folder_name)
             opening = headers.get(name) or _row_header(config["title"], page, heading, number)
             files[name] = opening + body + NL
         for (low, high, chunk), name in zip(chunks, names):
-            body = _beside(AH._repoint(NL.join(lines[top:top + 2] + chunk), name, moved, index, folder,
+            body = _beside(AF._repoint(NL.join(lines[top:top + 2] + chunk), name, moved, index, folder,
                                        trouble, "%s, rows %d to %d" % (heading, low, high)), folder_name)
             opening = headers.get(name) or _rows_header(config["title"], page, heading, low, high, today,
                                                         own_stem)
@@ -943,9 +942,9 @@ def plan(key="fragment-issues", index=None, today=None, root=ROOT, check_others=
         for start, end in spans:
             if joined[start] in leaving:
                 for k in range(start + 1, end):
-                    h = AH.HEADING.match(joined[k])
+                    h = AF.HEADING.match(joined[k])
                     if h and k not in fenced:
-                        subs.add(AH.anchor_of(h.group(1)))
+                        subs.add(AF.anchor_of(h.group(1)))
         p.problems.extend(inbound(root, index, folder, subs))
     return p
 

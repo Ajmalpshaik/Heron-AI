@@ -47,8 +47,8 @@ only its links changed: a relative link is re-pointed one folder deeper and
 proved to reach the same file, and a link to a heading that moved follows it -
 to the same file, or to the decision file it went to.
 
-It borrows the link handling from tools/archive-handover.py and the file
-handling from tools/archive-fragment-issues.py. No backslash is typed here.
+It borrows the link handling and the file handling from
+tools/archive-fragment-issues.py. No backslash is typed here.
 """
 
 import argparse
@@ -72,8 +72,7 @@ def _load_sibling(name, filename):
     return module
 
 
-AH = _load_sibling("archive_handover", "archive-handover.py")
-AF = AH.AF
+AF = _load_sibling("archive_fragment_issues", "archive-fragment-issues.py")
 NL, DASH, LINK = AF.NL, AF.DASH, AF.LINK
 OK, REFUSED, COULD_NOT = AF.OK, AF.REFUSED, AF.COULD_NOT
 
@@ -115,7 +114,7 @@ def plan(path=DECISIONS, folder=FOLDER, today=None):
 
     # A "## " line inside a fenced code block is an example, not a section -
     # the Format section's own template is one - so it never ends a decision.
-    fenced = AH.fenced_lines(lines)
+    fenced = AF.fenced_lines(lines)
     heads = [i for i, l in enumerate(lines) if l.startswith("## ") and i not in fenced]
     for n, i in enumerate(heads):
         m = HEADING.match(lines[i])
@@ -150,14 +149,14 @@ def plan(path=DECISIONS, folder=FOLDER, today=None):
     inside = set()
     for d in p.decisions:
         for x in range(d.start + 1, d.end):
-            h = AH.HEADING.match(lines[x])
+            h = AF.HEADING.match(lines[x])
             if h and x not in fenced:
                 inside.add(x)
-                moved.setdefault(AH.anchor_of(h.group(1)), d.name)
+                moved.setdefault(AF.anchor_of(h.group(1)), d.name)
     for x, l in enumerate(lines):
-        h = AH.HEADING.match(l)
+        h = AF.HEADING.match(l)
         if h and x not in inside and x not in fenced:
-            staying.add(AH.anchor_of(h.group(1)))
+            staying.add(AF.anchor_of(h.group(1)))
     moved = dict((a, f) for a, f in moved.items() if a not in staying)
 
     docs = os.path.dirname(path)
@@ -187,7 +186,7 @@ def plan(path=DECISIONS, folder=FOLDER, today=None):
         while own and (not own[-1].strip() or own[-1].strip() == "---"):
             own.pop()
         trouble = []
-        body = AH._repoint(NL.join(own), d.name, moved, path, folder, trouble, d.name)
+        body = AF._repoint(NL.join(own), d.name, moved, path, folder, trouble, d.name)
         p.problems.extend(trouble)
         p.files[d.name] = NL.join([
             "# " + d.ident + " " + DASH + " " + d.title,
@@ -200,7 +199,7 @@ def plan(path=DECISIONS, folder=FOLDER, today=None):
         ]) + body + NL
     kept.extend(lines[cursor:])
     trouble = []
-    p.after = AH._repoint(p.eol.join(kept), None, moved, path, folder, trouble, "DECISIONS.md")
+    p.after = AF._repoint(p.eol.join(kept), None, moved, path, folder, trouble, "DECISIONS.md")
     p.problems.extend(trouble)
     return p
 
