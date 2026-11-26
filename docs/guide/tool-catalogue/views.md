@@ -664,7 +664,7 @@ Creates a line style - Manage > Additional Settings > Line Styles - with a colou
 |---|---|
 | **Kind** | Changes the model (`MODIFY`) |
 | **Reached by** | asking in a Claude chat |
-| **You say** | **style name** - text<br>**colour** - text<br>**weight** - a whole number - digits only - 250, not 250mm<br>**pattern name** - text<br>**update existing** - yes or no - true or false; optional<br>**family category** - yes or no - true or false; optional<br>**parent category** - text; optional, left out means *none* |
+| **You say** | **style name** - text<br>**colour** - text; optional<br>**weight** - a whole number - digits only - 250, not 250mm; optional, left out means *0*<br>**pattern name** - text; optional<br>**update existing** - yes or no - true or false; optional<br>**family category** - yes or no - true or false; optional<br>**parent category** - text; optional, left out means *none* |
 | **You get** | style, made new, read back, findings |
 | **Built for Revit** | 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
 | **Proved on Revit** | 2020 |
