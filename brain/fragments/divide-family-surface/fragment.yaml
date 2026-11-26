@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -125,30 +125,34 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-23'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: PQ Box 2020 (1,706 elements), Revit 2020, session 35712
+  model: PY Box 2020 (1,706 elements), Revit 2020, session 32484
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned chosenFace Reference, divided Divided
     its top face, 81 m2 of form bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e: U rule: Number
     20; V rule: Number 4; Revit counts 7 U-gridlines and 23 V-gridlines; pattern _No Pattern
-    - surface 0a4f47ba-4100-408b-aa0c-05fdfe36a5e1-0000816d, read back., faceWords its top
+    - surface 27631b92-b2d7-405a-a3b6-6b01f7c2ce18-00008170, read back., faceWords its top
     face, 81 m2, findings 2 item(s) [Divided its top face, 81 m2 of form bcb0b59e-99d9-418b-a20c-...,
     Which rule makes which gridlines is not settled, so Revit''s ...], gridOf Func`3, host
     Form, invariant CultureInfo, mm Func`2, notAFamily false, patternWord , problems 0 item(s),
-    refused (null), squash Func`2, surfaceId 0a4f47ba-4100-408b-aa0c-05fdfe36a5e1-0000816d,
+    refused (null), squash Func`2, surfaceId 27631b92-b2d7-405a-a3b6-6b01f7c2ce18-00008170,
     uAsked Tuple`3, vAsked Tuple`3. inputs came form as given; face as given; uGrid as given;
-    vGrid as given; pattern as given. on PQ Box 2020'
-  negative_case: run with face=top, form=bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e, pattern=,
-    uGrid=0, vGrid=4 instead - chosen because it should not contain what this fragment reports
-    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned chosenFace Reference, divided , faceWords its top face, 81 m2, findings 1 item(s)
-    [Nothing was divided. "0" is not a U grid - a number, "10", o...], gridOf Func`3, host
-    Form, invariant CultureInfo, mm Func`2, notAFamily false, patternWord , problems 1 item(s)
-    ["0" is not a U grid - a number, "10", or a distance, "1500 m...], refused Nothing was
-    divided. "0" is not a U grid - a number, "10", or a distance, "1500 mm"., squash Func`2,
-    surfaceId , uAsked (null), vAsked Tuple`3. inputs came form as given; face as given; uGrid
-    as given; vGrid as given; pattern as given. on PQ Box 2020
+    vGrid as given; pattern as given. on PY Box 2020'
+  negative_case: run against 'PY Box 2020' with face=top, form=bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e,
+    pattern=Not A Pattern, uGrid=20, vGrid=4 instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned chosenFace Reference, divided , faceWords its top
+    face, 81 m2, findings 1 item(s) [Nothing was divided. No pattern or panel called "Not
+    A Patte...], gridOf Func`3, host Form, invariant CultureInfo, mm Func`2, notAFamily false,
+    patternWord Not A Pattern, problems 0 item(s), refused Nothing was divided. No pattern
+    or panel called "Not A Pattern" is offered for this surface - Revit offers _No Pattern,
+    Rectangle, Triangle (bent), Rhomboid, Hexagon, 1/2 Step, 1/3 Step, Triangle Checkerboard
+    (bent), Rectangle Checkerboard, Rhomboid Checkerboard, Triangle Step (bent), Arrows, Zig
+    Zag, Octagon, Octagon Rotate, Triangle (flat), Triangle Checkerboard (flat). A panel family
+    is loaded into this family first (LOAD_FAMILY)., squash Func`2, surfaceId , uAsked Tuple`3,
+    vAsked Tuple`3. inputs came form as given; face as given; uGrid as given; vGrid as given;
+    pattern as given. on PY Box 2020
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
@@ -156,8 +160,8 @@ proof:
     revit_release: '2020'
     revit_build: 20191106_1200(x64)
     addin_version: 0.3.0.0
-    addin_hash: 3545dba0dc8cd0c7
-  fingerprint: 4749036afa247bd5
+    addin_hash: df0d401c52ca05f4
+  fingerprint: de24dfb7b4d66617
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
