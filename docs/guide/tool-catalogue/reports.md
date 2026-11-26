@@ -58,9 +58,9 @@ Other ways to ask: *"count these elements by room"* · *"count these by space"*
 
 **Usable in a chat.** Proved on a real model on 2026-09-07 (Revit 2024).
 
-**What it does:** how many elements a filter found.
+**What it does:** count how many elements there are - of a category, in the selection, or what was just found.
 
-How many elements a filter found. Trivial arithmetic, and a separate fragment on purpose: every count question in the library ends here, so the one place a count can go wrong is one place.
+Counts how many there are of whatever was found or selected - ducts, pipes, fittings, fixtures, equipment, rooms, sheets or views - and changes nothing. A count that finds nothing says zero out loud, never a blank.
 
 | | |
 |---|---|
@@ -87,9 +87,9 @@ Other ways to ask: *"count the air terminals"* · *"how many are there"*
 
 **Usable in a chat.** Proved on a real model on 2026-09-07 (Revit 2024).
 
-**What it does:** what are these - category, family, type and id.
+**What it does:** what are these - the category, family name, type name and id of each element.
 
-Says what an element actually IS: its category, its family, its type name and its id. The plainest question in the model — *"what is this thing"* — and before this fragment the library answered it with FLIP_ELEMENTS. **It reads the family and type from the element's TYPE, not from its name.** An instance's name is frequently the type name, frequently not, and on a system family it is neither. Reading the type is the answer that survives somebody having renamed things. **An element with no type is reported, not skipped.** Walls, ducts and pipes are system families and have one; a line, a group or a view does not. Leaving those out of the answer would report fewer things than were asked about, and nobody counts the rows.
+Says what each element is: its category, its family name, its type name and its id - the answer to "what is this thing", and a list of family and type names for a set of elements. The family and type are read from the element's type, so a renamed element still answers truly, and an element with no type, such as a line or a group, is listed and says so. Changes nothing.
 
 | | |
 |---|---|

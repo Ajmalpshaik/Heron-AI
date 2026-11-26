@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SEL-007
-semantic-identity: "the elements whose parameter text matches what i typed"
+semantic-identity: "select the elements whose mark, comments, type or any other parameter matches some text or a number"
 kind: filter
 domain: revit.selection
 capability: SELECT_BY_PARAMETER_VALUE
