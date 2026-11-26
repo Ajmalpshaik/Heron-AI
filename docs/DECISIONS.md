@@ -243,6 +243,7 @@
 | [D-199](#d-199--thirteen-more-idle-modules-are-retired-update-trust-release-tagging-versioning-the-import-pipeline-and-the-workflow-engine) | Thirteen more idle modules are retired: update, trust, release, tagging, versioning, the import pipeline and the workflow engine | ✅ Accepted · 2026-11-24 |
 | [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
 | [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 |
+| [D-202](#d-202--every-tool-has-a-title-and-read-and-write-labels-that-match-what-it-keeps-and-a-description-says-when-to-use-its-tool-rather-than-ordering-a-call) | Every tool has a title and read and write labels that match what it keeps, and a description says when to use its tool rather than ordering a call | ✅ Accepted · 2026-11-26 |
 | [D-204](#d-204--a-tool-that-can-never-come-back-empty-is-signed-on-a-by-hand-reading-and-a-tool-with-two-runs-waiting-is-signed-on-the-run-revit-checked) | A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked | ✅ Accepted · 2026-11-26 |
 | [D-206](#d-206--a-decision-accepted-on-the-owners-word-links-where-that-word-can-be-read-or-is-written-proposed-and-a-check-refuses-one-that-does-neither) | A decision accepted on the owner's word links where that word can be read, or is written Proposed, and a check refuses one that does neither | ✅ Accepted · 2026-11-26 |
 | [D-208](#d-208--an-overlap-in-a-clearance-check-is-reported-as-the-modeller-asks-clash-with-its-depth-unless-0-mm-is-asked-for-and-a-hole-is-sized-round-a-services-insulation-only-when-the-model-says-it-carries-some) | An overlap in a clearance check is reported as the modeller asks, CLASH with its depth unless 0 mm is asked for, and a hole is sized round a service's insulation only when the model says it carries some | ✅ Accepted · 2026-11-26 |
@@ -1828,6 +1829,18 @@ his PC ever had it, since Setup installs neither add-on. It is removed. model2ve
 clearly better than the built-in search on his questions, and needs huggingface.co once.
 
 **Full record:** [`decisions/D-201.md`](decisions/D-201.md)
+
+## D-202 — Every tool has a title and read and write labels that match what it keeps, and a description says when to use its tool rather than ordering a call
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in conversation, relayed to this change through the session [session_01XqSwbZ51VK4sEaC3EX94vH](https://claude.ai/code/session_01XqSwbZ51VK4sEaC3EX94vH); the pull request is [#1446](https://github.com/Ajmalpshaik/Heron-AI/pull/1446).
+**Numbering:** D-202 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` ending at D-200 and the id after it taken by an open pull request.
+**Affects:** [04 §8.4](04-heron-mcp.md) · `mcp/server/heron_tools.py` · `mcp/server/heron_server_core.py` · `tests/test_tool_registry.py` · `tests/test_mcp_serves.py`
+
+Every MCP tool is served with a title from `heron_tools.TITLES`. A tool that keeps something the modeller gave or
+chose (`heron_tools.KEEPS`) is not labelled read-only, and is destructive when it can delete or replace it; no tool
+is labelled open-world. A tool's description says when it is used and never orders a call to another tool.
+
+**Full record:** [`decisions/D-202.md`](decisions/D-202.md)
 
 ## D-204 — A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked
 

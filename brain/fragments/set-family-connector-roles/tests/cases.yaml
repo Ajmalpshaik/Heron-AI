@@ -8,7 +8,7 @@ positive:
     expect: >
       the Domestic Cold Water connector reads Global, the two already Global
       are reported "already Global", nothing else changes. MEASURED
-      2026-10-04, Revit 2024, rolled back in TRG_PLMB_VLV_PPR Gate Valve_GV_R0
+      2026-10-04, Revit 2024, rolled back in ABC_PLMB_VLV_PPR Gate Valve_GV_R0
 
   - given: >
       the same family; connectors "Port Right", settings "flowDirection=Out;

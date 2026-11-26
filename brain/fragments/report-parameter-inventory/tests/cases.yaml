@@ -20,7 +20,7 @@ positive:
 
   - given: >
       an element whose type carries two shared parameters with the same name -
-      on 4355-BHVD-3D-60A10-BL003A the exhaust fan type "TRG_FAN_EXHAUST FAN:
+      on 4355-BHVD-3D-60A10-BL003A the exhaust fan type "ABC_FAN_EXHAUST FAN:
       AX45 (450mm Long)" carries two "Classification.Uniclass.Pr.Number"
     expect: >
       BOTH listed, each with its own GUID and value (8212e2e8... blank,

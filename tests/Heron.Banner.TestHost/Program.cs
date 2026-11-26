@@ -93,7 +93,7 @@ namespace Heron.Banner.TestHost
 
             // A real MEP name, because the question about the model line is
             // whether a long one still reads.
-            const string BigName = "TRG-XX-ZZ-M3-M-0001-MEP-Model";
+            const string BigName = "ABC-XX-ZZ-M3-M-0001-MEP-Model";
 
             await Begin("Counting pipes in the active view", false, "Project1");
             Save("1-reading-short-name.png");

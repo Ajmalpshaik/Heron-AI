@@ -191,7 +191,7 @@ CHANGES = [
     # the card at DRAFT and again at PROVEN, on both backends.
     ("rename the filter OUTSEL_TRG_MECH_Level to OUTSEL_TRG_MECH_Level_Grid",
      "SET_VIEW_FILTER_CATEGORIES", "5b-481: asked live 2026-10-15, answered RENAME_WORKSET"),
-    ("change this filter's rule to type name does not contain TRG_MEC",
+    ("change this filter's rule to type name does not contain ABC_MEC",
      "SET_VIEW_FILTER_CATEGORIES", "5b-481: answered CREATE_VIEW_FILTERS_BY_RULE"),
     ("edit the rule of the OUTSEL filter", "SET_VIEW_FILTER_CATEGORIES",
      "5b-481: answered CREATE_VIEW_FILTER"),

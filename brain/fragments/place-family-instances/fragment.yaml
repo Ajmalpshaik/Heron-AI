@@ -166,7 +166,7 @@ purpose: >
 # in Revit 2020, two cut-outs asked 2152 mm above 'PLAN AT EL. +106.832' were
 # refused - "Revit put ... 2014.5 mm above ... where it was asked 2152 mm
 # above" - and nothing was kept, with each one's centre, its Elevation from
-# Level, exactly where it was wanted. TRG_GEN_CutOut_Rectangular_HVAC, a
+# Level, exactly where it was wanted. ABC_GEN_CutOut_Rectangular_HVAC, a
 # level-based Generic Model, ticks "Defines Origin" on the reference plane at
 # the BOTTOM of its opening, so its insertion point (LocationPoint) stands half
 # the opening's height below its own level, and moves with Object Height.

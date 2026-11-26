@@ -39,10 +39,10 @@ positive:
 
   - given: >
       version 3 - the Group IA scratch project after CREATE_STARTER_MATERIALS,
-      withAllTabs true, namePattern "TRG_*"
+      withAllTabs true, namePattern "ABC_*"
     expect: >
       twelve lines, each with its identity, its shading colour and patterns,
-      and "appearance 'TRG_...' (Generic) colour ..." equal to its shading
+      and "appearance 'ABC_...' (Generic) colour ..." equal to its shading
       colour; a material with no appearance asset reads "appearance NONE"
 
   - given: version 3, withLibraryAppearances true
