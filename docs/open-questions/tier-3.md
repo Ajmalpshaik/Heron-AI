@@ -1288,3 +1288,53 @@ date. The owner's words, 2026-11-26, in conversation: *"Check by hand is enough"
 [D-204](../decisions/D-204.md) item 1.
 
 ---
+
+### 🔵 Q-99 — Heron's search has no "nothing here covers that" cut-off, and the measurement it was waiting for can no longer be made. Measure it on the built-in search, change what is measured, or drop it? *(asked 2026-11-26, after D-203)*
+
+**Tracked as GitHub issue [#1474](https://github.com/Ajmalpshaik/Heron-AI/issues/1474) since 2026-11-26** - the owner answers there.
+
+**Where it comes from.** Two requirements of the knowledge search,
+[R-56 and R-58](../work-notes/plans/rag/01-requirements.md), want a **confidence floor**: a candidate
+with no real claim on the question is dropped rather than ranked last (R-56), and a question nothing in
+Heron covers is refused by name rather than answered with a confident shortlist (R-58). R-57, and the third
+of R-59's three *nothings*, stand on them. [R-60](../work-notes/plans/rag/01-requirements.md) says the floor
+comes from a measurement and from nothing else, and [R-55](../work-notes/plans/rag/01-requirements.md) forbids
+moving a threshold to make a result look better. All of them were **blocked on measuring that floor on the
+trained model search** - [NEEDS-CHECKING row A15](../needs-checking/group-a.md), carried in as `W-8`.
+[D-203](../decisions/D-203.md) removed the trained model on 2026-11-26, so that measurement **cannot be made
+any more**: Heron's one search is the built-in one. Read from the files, nothing run:
+
+1. **On the built-in search the questions overlap.** A15 records that at 360 fragments it did not separate a
+   BIM question from a question about cats - twelve questions, every column overlapping, *"how do I bake
+   sourdough bread"* holding the widest winning gap - and that on the four questions written down it still
+   overlaps. Its reasons are structural: the fused score keeps order and drops strength, and the built-in
+   search's own description says it is not meaning.
+2. **On the trained model the four were apart** (2026-09-24), but A15 already said that was not a floor: two
+   questions with no BIM content are an observation, and six of your 79 - jobs nothing in Heron does - scored
+   higher than either, so a floor on nearness would have caught a question about cats and not a BIM job
+   Heron cannot do.
+3. **Until this is answered the search has no floor** - [`brain/heron_retrieve.py`](../../brain/heron_retrieve.py)
+   and [`brain/heron_conflict.py`](../../brain/heron_conflict.py) say so where they rank - and A15, R-56 and
+   R-58 stay open on a run that no PC can make.
+
+**The question, in a modeller's words: when a modeller asks Heron something it knows nothing about, should
+Heron still try to say *"nothing here covers that"* - and if so, measured how?**
+
+- **Measure it on the built-in search.** Write the questions with no BIM content in a file first, ask them
+  beside your 79, and record every column (A15's own closing condition). A15's figures say it will most
+  likely overlap; R-60 counts that fail as an answer - the floor cannot be had this way.
+- **Change what is measured.** Keep R-56 and R-58, but measure something other than nearness on the one
+  search - for one, how much of the question the winning card's own words cover - and write the new
+  measurement into R-60 before it is run.
+- **Drop it.** R-56, R-57, R-58 and R-59's third *nothing* are closed as not built by your decision, A15 is
+  closed with them, and Heron keeps what it does today: it ranks, says which search ran, and never refuses
+  a question for having no match.
+- **Recommended, from what is recorded:** the first, because it is the one A15 already names and needs no
+  network - and if it overlaps, as A15's figures say it will, the second or the third is chosen then, with the
+  figures in front of you.
+
+**Nothing is changed until this is answered.** Until then A15 stays open, R-56 to R-58 stay blocked, and the
+search ranks without a floor, as today. **Not checked:** no question was asked of the search for this entry;
+every figure above is A15's, from [`brain/retrieval-history.md`](../../brain/retrieval-history.md).
+
+---
