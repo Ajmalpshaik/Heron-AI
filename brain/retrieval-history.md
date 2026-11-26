@@ -1641,7 +1641,7 @@ failing checks below are the same on both trees:
 
 ---
 
-## 2026-11-26 — a question's near-tie handed to the read: nothing for the flag to settle, and risk ranking measured, not built
+## 2026-11-26 — a question's near-tie handed to the read: nothing for the flag to settle, and risk ranking measured, then built at the smaller margin (D-205)
 
 Asked: on a near-tie, a question should go to the read rather than the write. Measured in a cloud
 container on `main` `2ee4d03f`, **754 fragments**, `lexical` only (the trained model set aside), no Revit
@@ -1682,12 +1682,33 @@ the read that answers it, and *"How many sheets are there for the duct layout?"*
 a read but not the key's `COUNT_ELEMENTS` - and one routing phrase. At one rank his own change request
 *"Place a door in every room, like the one I placed."* lost its first place to a read.
 
+### Built the same day at the smaller margin - D-205
+
+The owner answered after seeing the table: *"Yes, small safe margin"*. [D-205](../docs/decisions/D-205.md) builds
+the 0.61-rank margin as `heron_retrieve.prefer_unchanging`, with the line read from `question_ceiling()` and
+passed by `heron_brain.lookup`. Measured on the branch merged with `origin/main` `1e4a2012`, 754 fragments,
+`lexical`:
+
+| | main, flag off | built, flag off | built, the host's flag |
+|---|---|---|---|
+| his 79: first / top three | 23 / 33 | 23 / 33 | 25 / 34 |
+| his 79: asked for no change, handed one | 9 | **8** | 0 |
+| his 79: a change asked for, a different change given | 20 | 20 | 20 |
+| 124 plain questions reaching a write | 9 | **8** | 0 |
+| `tools/check-risk-crossings.py` crossings | 5 | 5 | - |
+| `tests/test_routing_phrases.py` checks failing | 13 | 13 | - |
+
+The two rows that moved are the ones the scratch patch moved. `test_routing_phrases` and `check-routing` call
+`heron_retrieve.find` without the line, so they rank as before; the scratch patch's twelfth check came from
+reaching `find` itself. `tests/test_retrieve.py` section 10 pins the rule, and `tests/test_mcp_serves.py` pins
+the door request keeping a write first on this library.
+
 ### What this does not establish
 
 - **The flag column is the answer key standing in for the host**, not a host; D-128 measured a real one.
 - **`tools/check-routing.py` could not show the patch**: it asks for one candidate, so there was no
   runner-up to move.
-- **Lexical only, one library size, one day.** Nothing met Revit, and no ranking change was kept.
+- **Lexical only, one library size, one day.** Nothing met Revit. The `model` backend was not measured with D-205.
 
 ---
 

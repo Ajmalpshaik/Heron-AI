@@ -244,6 +244,7 @@
 | [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
 | [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 |
 | [D-204](#d-204--a-tool-that-can-never-come-back-empty-is-signed-on-a-by-hand-reading-and-a-tool-with-two-runs-waiting-is-signed-on-the-run-revit-checked) | A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked | ✅ Accepted · 2026-11-26 |
+| [D-205](#d-205--on-a-near-tie-with-a-write-the-card-that-changes-nothing-goes-first---inside-the-status-nudges-span-never-wider) | On a near-tie with a write, the card that changes nothing goes first - inside the status nudge's span, never wider | ✅ Accepted · 2026-11-26 |
 
 ## Format
 
@@ -1832,3 +1833,18 @@ written on the proof, with release, model and date. A tool with more than one ru
 checked in Revit for the tool as it stands, one run at a time. The owner signs; nothing in code changes.
 
 **Full record:** [`decisions/D-204.md`](decisions/D-204.md)
+
+## D-205 — On a near-tie with a write, the card that changes nothing goes first - inside the status nudge's span, never wider
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwbZ51VK4sEaC3EX94vH](https://claude.ai/code/session_01XqSwbZ51VK4sEaC3EX94vH), after seeing the measurements: *"Yes, small safe margin"* - 0.61 rank, not one rank.
+**Numbering:** D-205 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `1e4a2012` ending at D-204 and D-202 and D-203 held by unmerged branches.
+**Keeps:** [D-01](decisions/D-01.md) - no words of the request are read · [D-128](decisions/D-128.md) - with the host's flag every write is still left out · [D-100](decisions/D-100.md)
+**Affects:** [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) (`prefer_unchanging`) · [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) (`lookup`) · [`tests/test_retrieve.py`](../tests/test_retrieve.py) · [`tests/test_mcp_serves.py`](../tests/test_mcp_serves.py)
+
+When the ranked winner is above the question ceiling and a card at or below it scores within the status nudge's
+span of the winner (`QUALITY_SPAN`, about 0.61 rank), that card goes first and says which write it was put ahead
+of. Flag off, `lexical`, 754 fragments: his 79 handed a change 9 to 8 with first place unchanged, and the plain
+questions reaching a write 9 to 8. One whole rank took his *"Place a door in every room"* request off first place,
+so the owner chose the smaller margin.
+
+**Full record:** [`decisions/D-205.md`](decisions/D-205.md)
