@@ -503,6 +503,12 @@ def checksums(out_dir):
 
 
 def main():
+    # Row 5b-2044: print safely on a cp1252 console. A stream
+    # that cannot be reconfigured - a test's StringIO - is left as it is.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", default="dist",
                         help="where to write the assets (default: dist)")
