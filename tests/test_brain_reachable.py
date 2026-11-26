@@ -856,12 +856,12 @@ def main():
                   "the replace method first - %s" % [s.id for s in swap])
             openings = SKILL.methods_for(
                 jobs_now,
-                "replace these openings with the TRG family at the same place",
+                "replace these openings with the ABC family at the same place",
                 ["SELECT_OPENINGS", "COPY_TAGS_TO_REPLACEMENTS",
                  "AUDIT_MEP_OPENINGS", "SET_SHEET_TITLE_BLOCK",
                  "SET_VIEW_FILTER_CATEGORIES"])
             check([s.id for s in openings][:1] == ["replace-in-place-family"],
-                  "\"replace these openings with the TRG family at the same "
+                  "\"replace these openings with the ABC family at the same "
                   "place\" names the replace method first - %s"
                   % [s.id for s in openings])
             # And it is named beside nothing that replaces nothing: a hosted

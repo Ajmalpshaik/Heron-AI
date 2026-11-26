@@ -60,9 +60,9 @@
 //
 // THE RULE IS WRITTEN THE WAY CREATE_VIEW_FILTERS_BY_RULE VERSION 2 TAKES IT -
 // the operator in front of the value, in Revit's Filters dialog words: "does
-// not contain TRG_MEC", "begins with M_", "equals Level 1"; none means equals.
+// not contain ABC_MEC", "begins with M_", "equals Level 1"; none means equals.
 // `parameterName` blank keeps the parameter the filter's rule already tests,
-// which is how "change the rule to does not contain TRG_MEC" is said. A filter
+// which is how "change the rule to does not contain ABC_MEC" is said. A filter
 // whose rule tests more than one parameter, or none, or holds more than one
 // condition, needs the parameter named. A NEW RULE REPLACES EVERY CONDITION
 // the filter had, AND or OR; the read-back says what it holds afterwards.
@@ -259,13 +259,13 @@ else if (renameTo.Length > 0 && !NamingUtils.IsValidName(renameTo))
 else if (wanted.Length > 0 && !changingRule)
 {
     refused = string.Format("NOTHING WAS CHANGED. '{0}' was named for the rule but no value was given - "
-        + "write what it should match, \"does not contain TRG\", or leave both blank to keep the rule",
+        + "write what it should match, \"does not contain ABC\", or leave both blank to keep the rule",
         wanted);
 }
 else if (bareOperator)
 {
     refused = string.Format("NOTHING WAS CHANGED. '{0}' is an operator with nothing after it - write "
-        + "what it should match, \"{0} TRG\", or \"equals {0}\" to match the word itself", ruleValue);
+        + "what it should match, \"{0} ABC\", or \"equals {0}\" to match the word itself", ruleValue);
 }
 else if (noTextWithText)
 {

@@ -9,12 +9,19 @@ semantic-identity: "whether this model's level heights can be trusted in a calcu
 kind: action
 domain: revit.datums
 capability: REPORT_LEVEL_ELEVATIONS
+# VERSION 7 (2026-11-26, row 5b-1878 (C) and D-207, issue #1088) - THE ONE
+# DATUM TOOL. CHECK_DATUMS_AGAINST_LINK is merged in on the owner's word: one
+# tool for levels and grids in this model, in a linked model, and
+# copy-monitored. impl/ changed, so still DRAFT, owing NEEDS-CHECKING Group RA.
+# The comment block above `utterances` says where each of the retired card's
+# outputs is found now and what was not carried.
+#
 # VERSION 6 (2026-11-24, D-64, row 5b-1909, work-note item WN-7 of issue
 # #1005) - CONTRACT ONLY, no line of impl/ changed: `unreadable`, the levels
 # whose Building Story setting would not read, was already counted and named in
 # `storeys`; it is now declared, so a caller sees how many were passed over.
 # Still DRAFT, as version 5 was (D-30).
-version: 6
+version: 7
 source: OFFICIAL
 risk: READ
 
@@ -102,6 +109,23 @@ purpose: >
   are kept as the record; this is version 3, and the fragment is DRAFT until
   it is proved again.
 
+  **VERSION 7 - THE ONE DATUM TOOL: LEVELS AND GRIDS, HERE, IN A LINK, AND
+  COPY-MONITORED.** CHECK_DATUMS_AGAINST_LINK is merged in. With
+  `includeLinks` or a link named in `linkName`, this model's grids and levels
+  are checked against the link's - matched by name, then by lining up, and
+  each said aligned within the tolerance, off by how many millimetres and
+  degrees, not checked and why, or only in one model - one row each in
+  `report`, the datums off counted in `failures` and handed on in
+  `failingIds` to select, `compared` the pairs measured. `toleranceMm`,
+  `angleToleranceDeg` and `datums` (grids, levels or both) are the check's.
+  Every grid or level here that copy-monitors a link is listed in
+  `monitored`, with the link placement it watches, and is measured against
+  that placement when links are asked for. A linked file placed more than
+  once is never measured until the copy is named in `linkName` - every
+  placement is named and the modeller asked, never the first one taken
+  (D-207); a placement a datum here copy-monitors is named by that
+  monitoring. Nothing is changed. DRAFT until version 7 is proved.
+
   **IT IS ALSO THE LIST OF LEVELS** (version 4, when LIST_LEVELS was merged
   in): the levels bottom to top, handed on as `elements`, each one's height in
   millimetres as its level head shows it in `elevationsMm` and from the
@@ -123,6 +147,45 @@ contract:
       type: bool
       source: request
       optional: true
+    # VERSION 7, from CHECK_DATUMS_AGAINST_LINK. Which link placement to
+    # check against: its full name as Manage Links shows it ("Arch.rvt : 1 :
+    # location <Not Shared>"), any part of it ("Arch"), or "only" for the one
+    # placement this model has. A part matching two placements, or none, is
+    # refused with every placement named, never picked. Naming one reads that
+    # link whatever `includeLinks` says. LEFT OUT, NOTHING IS NAMED - not
+    # "only", as it was on the retired card: with `includeLinks` every link
+    # file placed once is checked and a file placed twice is refused until
+    # one copy is named (D-207); without it no link is read (D-59).
+    - name: linkName
+      type: string
+      source: request
+      optional: true
+      absent: ""
+    # Version 7, from CHECK_DATUMS_AGAINST_LINK. "grids", "levels" or "both"
+    # - what the link check compares. Left out, both. Anything else refuses
+    # the check, never the level heights above it.
+    - name: datums
+      type: string
+      source: request
+      optional: true
+      absent: both
+    # Version 7, from CHECK_DATUMS_AGAINST_LINK. How far apart counts as
+    # aligned, in mm - a grid's distance square to the grid here, a level's
+    # height, an arc's centre and radius - and the "same height" of a linked
+    # level's line in `linkedMatches`. Left out, 0.5. 0 or less is refused.
+    - name: toleranceMm
+      type: double
+      source: request
+      optional: true
+      absent: "0.5"
+    # Version 7, from CHECK_DATUMS_AGAINST_LINK. How far a straight grid may
+    # turn and still be aligned, in degrees. Left out, 0.01 - which moves the
+    # far end of a 60 m grid 10.5 mm. Above 0 and below 90.
+    - name: angleToleranceDeg
+      type: double
+      source: request
+      optional: true
+      absent: "0.01"
   provides:
     - name: levels
       role: result
@@ -202,6 +265,75 @@ contract:
       # and named in `storeys` when there are any. Empty on an ordinary model.
       role: accounting
       type: IList<string>
+    # ---- VERSION 7: CHECK_DATUMS_AGAINST_LINK's outputs, under its names ----
+    - name: report
+      # ONE STRING, a header row then one row per datum compared, joined by
+      # new lines: "kind | name | status | offset | angle | reason | against".
+      # Status aligned, off, not checked, host only or link only; offset in mm
+      # (a level's the link's minus this model's, + when the link's is
+      # higher); angle in degrees for a straight grid; `against` the link
+      # placement the row was measured against. Empty when no link was read.
+      # ACCOUNTING: it carries rows on a run that finds nothing off.
+      role: accounting
+      type: string
+    - name: failures
+      # Datums OFF - compared and outside a tolerance, against any link read.
+      # The number a QA check rules on: "failures == 0", beside `compared`.
+      role: result
+      type: int
+    - name: aligned
+      # Datums compared and aligned within both tolerances.
+      role: accounting
+      type: int
+    - name: compared
+      # Pairs actually measured - aligned plus off. 0 means nothing was read
+      # from a link, and "failures == 0" beside it has met nothing (D-165).
+      role: accounting
+      type: int
+    - name: notChecked
+      # Pairs that could not be compared - a multi-segment grid, an arc
+      # against a straight grid, a tilted placement - each row saying why.
+      role: accounting
+      type: int
+    - name: hostOnly
+      # This model's datums with no partner in a link read, by name or
+      # position - a copy-monitored one whose source is gone among them.
+      role: accounting
+      type: int
+    - name: linkOnly
+      # A link's datums with no partner here, by name or position.
+      role: accounting
+      type: int
+    - name: failingIds
+      # THIS model's datums that are off, as ids - what a QA check selects.
+      # Never a linked element (FRAGMENT-ISSUES row 75).
+      role: result
+      type: IList<ElementId>
+    - name: failingElements
+      # The same datums as elements. The retired card called this `elements`;
+      # on this card `elements` is the levels, bottom to top (version 4), so
+      # it carries this name instead.
+      role: result
+      type: IList<Element>
+    - name: linkUsed
+      # The link placement(s) compared against, by full name, "; " between.
+      # Empty when nothing was compared (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why NO link datum was compared - no link, a name matching none or
+      # two, not loaded, a file placed more than once with no copy named
+      # (D-207), a tolerance nothing meets. The level heights above are
+      # still answered. Null when the check ran or was not asked for (D-52).
+      role: accounting
+      type: string
+    - name: monitored
+      # Version 7, new. Every level and grid HERE that copy-monitors a link
+      # element, with the link placement it watches - read from this model
+      # alone, on every run - after one line counting this model's levels,
+      # grids and monitored datums. Never a bare empty list.
+      role: accounting
+      type: IList<string>
 
 proof:
   date: '2026-09-13'
@@ -227,7 +359,15 @@ compatibility-note: >
   of them. Version 3's members were looked up in every release's reference
   assemblies on 2026-10-04: `LEVEL_IS_BUILDING_STORY`, `FAMILY_LEVEL_PARAM`,
   `RBS_START_LEVEL_PARAM`, `Parameter.AsInteger` and `Category.CategoryType`
-  are present 2020 to 2027. Heights are handed on in Revit's internal feet, not millimetres -
+  are present 2020 to 2027. Version 7's check is CHECK_DATUMS_AGAINST_LINK's,
+  whose members - RevitLinkInstance.GetLinkDocument, Instance.GetTotalTransform,
+  RevitLinkType.IsNestedLink, Transform.OfPoint, OfVector and BasisZ,
+  Grid.Curve, MultiSegmentGrid.GetGridIds and the static
+  MultiSegmentGrid.GetMultiSegementGridId (Revit's own spelling), Line and Arc -
+  were read on all eight releases on 2026-11-17; and
+  Element.IsMonitoringLinkElement and Element.GetMonitoredLinkElementIds (which
+  gives the LINK INSTANCE ids, not the linked elements) are present 2020 to
+  2027 (tools/api-surface --members Element, 2026-11-26). Heights are handed on in Revit's internal feet, not millimetres -
   D-20 keeps the conversion at the edge where the user is, and this fragment is
   about which of two numbers to use rather than about units.
 
@@ -255,19 +395,26 @@ compatibility-note: >
 #                                        position, internal or shared; this
 #                                        fragment is about LEVELS
 #   "check our grids and levels line up with the linked architect's model"
-#                                     -> CHECK_DATUMS_AGAINST_LINK (2026-11-17)
-#                                        - one link, grids and levels, a
-#                                        tolerance, aligned or off, a count
-#                                        and the ids that are off. IT OVERLAPS
-#                                        THIS CARD'S includeLinks LEVEL LINES,
-#                                        which compare by name with no
-#                                        tolerance; recorded on both cards for
-#                                        heron-duplicate-checker to rule on
+#                                     -> here since version 7 (2026-11-26) -
+#                                        CHECK_DATUMS_AGAINST_LINK's until it
+#                                        was merged in (row 5b-1878 (C))
+#   "list the grids"                  -> LIST_GRIDS - the grids themselves in
+#                                        drawing order, for the next step; this
+#                                        card checks them against a link
+#   "check the links against our shared coordinates"
+#                                     -> CHECK_LINK_COORDINATES - where a link
+#                                        sits by the survey, not whether its
+#                                        datums meet ours
+#   "bring the grids in from the architect"
+#                                     -> COPY_ELEMENTS_BETWEEN_DOCUMENTS,
+#                                        fromLink - a write; this card copies
+#                                        nothing, and copy-monitoring is set up
+#                                        in Revit's own Copy/Monitor tool
 #   "what levels are in this model"   -> here. On the ranked routes it was
 #                                        REMOVE_MASS_FLOORS's before
-#                                        2026-11-17 and is
-#                                        CHECK_DATUMS_AGAINST_LINK's since, a
-#                                        read; identity sends it here
+#                                        2026-11-17 and
+#                                        CHECK_DATUMS_AGAINST_LINK's from then
+#                                        until that card was merged in
 #
 # Version 3's Building Story report has NO utterance of its own yet: no
 # modeller has asked for it in words, and none is invented.
@@ -287,6 +434,39 @@ compatibility-note: >
 # into this model's space and set against this model's level of the same name,
 # with its own level head beside it.
 
+# CHECK_DATUMS_AGAINST_LINK WAS MERGED INTO THIS CARD on 2026-11-26 (row
+# 5b-1878 (C), issue #1088), on the owner's words: "2 tools are there for the
+# same purpose, level checking or datum checking. Levels or grids - 3 types are
+# there: one is in the model, one is in the linked model, another is
+# copy-monitored level or grid. If you can add all in one tool that is better,
+# so with one tool all can cover." It is DEPRECATED. Its outputs, here now
+# under the same names: `report` (one more column, `against`, the placement
+# each row was measured against), `failures`, `aligned`, `compared`,
+# `notChecked`, `hostOnly`, `linkOnly`, `failingIds`, `linkUsed` (every
+# placement read, "; " between), `refused` and its lines at the end of
+# `findings`; its `elements` is `failingElements` here, because this card's
+# `elements` is the levels. Its four inputs are here under their names.
+#
+# NOT CARRIED, AND WHY. (1) Its `linkName` left out read "only" and checked
+# the one link with nothing asked; here nothing is read from a link unless
+# `includeLinks` is set or a link is named - this card's D-59 rule, the safer
+# of the two, and the one its own proof measured. Asked as a check against a
+# link, the host sets `includeLinks` or names it. (2) Its refusal of two
+# DIFFERENT linked files with none named: here each file placed once is
+# checked, as this card's `includeLinks` read every link - only a file placed
+# more than once waits for its copy to be named (D-207). Version 6's first
+# placement is gone with it.
+#
+# THE THIRD KIND IS NEW: copy-monitored levels and grids were in neither card.
+#
+# D-204 STILL APPLIES WHERE IT DID. Its by-hand reading was given for this
+# card because no input can make its answer come back empty - `storeys` is
+# written on every branch. That is still so for the level heights and the
+# storeys line, so they are signed on the reading D-204 describes (the
+# storeys line read against Manage > Levels). The link check now has an empty
+# leg of its own - toleranceMm 5 on a link 3 mm off gives failures 0 and
+# failingIds empty - so that part of version 7's proof is a recorded run, as
+# D-30 asks, not a reading.
 utterances:
   - can I trust the level heights on this model
   - what elevation is each level at
@@ -320,3 +500,7 @@ utterances:
   # CREATE_LEVELS, a write. At the END, so the eight the
   # re-ranker reads (D-134) are unchanged.
   - what is the elevation of this level
+  # MOVED 2026-11-26 from CHECK_DATUMS_AGAINST_LINK, merged into this card.
+  - check our grids and levels line up with the linked architect's model
+  - check our grids and levels line up with the linked structural model
+  - before every issue check our grids and levels line up with the linked architect's model

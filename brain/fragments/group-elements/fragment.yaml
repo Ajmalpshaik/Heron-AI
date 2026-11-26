@@ -43,7 +43,7 @@ contract:
       type: Document
     - name: elements
       type: IList<Element>
-    # The group type's name - "Bracket parts", "TRG_Toilet Block". EMPTY for
+    # The group type's name - "Bracket parts", "ABC_Toilet Block". EMPTY for
     # Revit's own "Group 1". A name another group already has, or one with a
     # character Revit forbids in names, is refused and nothing is grouped.
     - name: name

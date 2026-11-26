@@ -24,7 +24,7 @@
       "says": "check our grids line up with the architect's model",
       "expect": [
         {"tool": ["heron_lookup", "heron_resolve"]},
-        {"tool": "revit_read", "capability": "CHECK_DATUMS_AGAINST_LINK"}
+        {"tool": "revit_read", "capability": "REPORT_LEVEL_ELEVATIONS"}
       ],
       "never": ["revit_change"]
     }

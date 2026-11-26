@@ -243,12 +243,14 @@
 | [D-199](#d-199--thirteen-more-idle-modules-are-retired-update-trust-release-tagging-versioning-the-import-pipeline-and-the-workflow-engine) | Thirteen more idle modules are retired: update, trust, release, tagging, versioning, the import pipeline and the workflow engine | ✅ Accepted · 2026-11-24 |
 | [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
 | [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 · *model2vec half superseded by D-203 · 2026-11-26* |
+| [D-202](#d-202--every-tool-has-a-title-and-read-and-write-labels-that-match-what-it-keeps-and-a-description-says-when-to-use-its-tool-rather-than-ordering-a-call) | Every tool has a title and read and write labels that match what it keeps, and a description says when to use its tool rather than ordering a call | ✅ Accepted · 2026-11-26 |
 | [D-203](#d-203--the-trained-embedding-model2vec-is-removed-heron-has-one-search-built-in-the-same-on-every-pc) | The trained embedding (model2vec) is removed: Heron has one search, built in, the same on every PC | ✅ Accepted · 2026-11-26 |
 | [D-204](#d-204--a-tool-that-can-never-come-back-empty-is-signed-on-a-by-hand-reading-and-a-tool-with-two-runs-waiting-is-signed-on-the-run-revit-checked) | A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked | ✅ Accepted · 2026-11-26 |
 | [D-206](#d-206--a-decision-accepted-on-the-owners-word-links-where-that-word-can-be-read-or-is-written-proposed-and-a-check-refuses-one-that-does-neither) | A decision accepted on the owner's word links where that word can be read, or is written Proposed, and a check refuses one that does neither | ✅ Accepted · 2026-11-26 |
 | [D-208](#d-208--an-overlap-in-a-clearance-check-is-reported-as-the-modeller-asks-clash-with-its-depth-unless-0-mm-is-asked-for-and-a-hole-is-sized-round-a-services-insulation-only-when-the-model-says-it-carries-some) | An overlap in a clearance check is reported as the modeller asks, CLASH with its depth unless 0 mm is asked for, and a hole is sized round a service's insulation only when the model says it carries some | ✅ Accepted · 2026-11-26 |
 | [D-207](#d-207--a-name-rule-is-one-rule-across-the-tools-that-share-it-a-name-pattern-is-a--wildcard-a-datum-maker-skips-a-name-already-taken-and-says-so-and-a-link-placed-twice-is-never-measured-until-one-copy-is-named) | A name rule is one rule across the tools that share it: a name pattern is a * wildcard, a datum maker skips a name already taken and says so, and a link placed twice is never measured until one copy is named | ✅ Accepted · 2026-11-26 |
 | [D-205](#d-205--the-usage-counter-is-removed-no-clause-is-counted-and-a-clauses-place-in-an-answer-is-fusions-alone) | The usage counter is removed: no clause is counted, and a clause's place in an answer is fusion's alone | ✅ Accepted · 2026-11-26 |
+| [D-209](#d-209--on-a-near-tie-with-a-write-the-card-that-changes-nothing-goes-first---inside-the-status-nudges-span-never-wider) | On a near-tie with a write, the card that changes nothing goes first - inside the status nudge's span, never wider | ❌ Rejected · 2026-11-26 - no margin is safe, nothing built |
 
 ## Format
 
@@ -1831,6 +1833,18 @@ clearly better than the built-in search on his questions, and needs huggingface.
 
 **Full record:** [`decisions/D-201.md`](decisions/D-201.md)
 
+## D-202 — Every tool has a title and read and write labels that match what it keeps, and a description says when to use its tool rather than ordering a call
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in conversation, relayed to this change through the session [session_01XqSwbZ51VK4sEaC3EX94vH](https://claude.ai/code/session_01XqSwbZ51VK4sEaC3EX94vH); the pull request is [#1446](https://github.com/Ajmalpshaik/Heron-AI/pull/1446).
+**Numbering:** D-202 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` ending at D-200 and the id after it taken by an open pull request.
+**Affects:** [04 §8.4](04-heron-mcp.md) · `mcp/server/heron_tools.py` · `mcp/server/heron_server_core.py` · `tests/test_tool_registry.py` · `tests/test_mcp_serves.py`
+
+Every MCP tool is served with a title from `heron_tools.TITLES`. A tool that keeps something the modeller gave or
+chose (`heron_tools.KEEPS`) is not labelled read-only, and is destructive when it can delete or replace it; no tool
+is labelled open-world. A tool's description says when it is used and never orders a call to another tool.
+
+**Full record:** [`decisions/D-202.md`](decisions/D-202.md)
+
 ## D-203 — The trained embedding (model2vec) is removed: Heron has one search, built in, the same on every PC
 
 **Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in conversation, after being shown the measurements: *"ok remove model2vec also"*.
@@ -1901,7 +1915,7 @@ version 3, as `CHECK_SLEEVE_SIZE` reads it).
 ## D-205 — The usage counter is removed: no clause is counted, and a clause's place in an answer is fusion's alone
 
 **Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), asked *"The usage counter only counts which standards clauses helped you and moves them up a tiny bit. Remove it?"*: he chose *"Remove it"*.
-**Numbering:** D-205 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201, and D-202, D-203 and D-204 held by unmerged branches.
+**Numbering:** D-205 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201, and D-202, D-203 and D-204 held by unmerged branches. The same number was first written on branch `session/S7b-questions-read` (b6bc890, 2026-11-26) as "On a near-tie with a write, the card that changes nothing goes first - inside the status nudge's span, never wider"; that rejected decision was renumbered [D-209](#d-209--on-a-near-tie-with-a-write-the-card-that-changes-nothing-goes-first---inside-the-status-nudges-span-never-wider) before it merged.
 **Supersedes:** [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) - the counter it built is removed whole
 **Supersedes in part:** [D-70](#d-70--heron-keeps-a-usage-counter-on-the-machine-and-it-is-numbers-rather-than-a-diary) - its *"Yes - Heron keeps a usage counter"*. Its three constraints stand for any counter proposed again
 **Affects:** `brain/heron_usage.py` and `tests/test_usage_counter.py` deleted · the `heron_helped` tool · [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) · [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) · [`tests/test_console_streams.py`](../tests/test_console_streams.py)
@@ -1913,3 +1927,17 @@ now fusion's alone. The `<scope>-usage.json` files it wrote are left on disk, un
 refuses one.
 
 **Full record:** [`decisions/D-205.md`](decisions/D-205.md)
+
+## D-209 — On a near-tie with a write, the card that changes nothing goes first - inside the status nudge's span, never wider
+
+**Status:** Rejected · **Date:** 2026-11-26 · **Asked:** Ajmal PS, 2026-11-26, in the session [session_01XqSwbZ51VK4sEaC3EX94vH](https://claude.ai/code/session_01XqSwbZ51VK4sEaC3EX94vH): *"Yes, small safe margin"* - rejected the same day, before it merged, because measurement showed no margin is safe.
+**Numbering:** D-205 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `1e4a2012` ending at D-204 and D-202 and D-203 held by unmerged branches. Renumbered from D-205 to D-209 on 2026-11-26 with `tools/renumber.py`, because `main` had given D-205 to another decision first.
+**Keeps:** [D-01](decisions/D-01.md) · [D-128](decisions/D-128.md) - the host's `question` flag remains the fix · [D-100](decisions/D-100.md)
+
+With the flag off, a near-tied card that changes nothing would have gone ahead of a write. At 0.61 rank it took
+one of his 79 and one plain question off a write. It also sent the change request *"join this roof to that
+roof"* to a read only 0.23 rank behind its write, and the questions it helped sit 0.41 and 0.49 behind theirs.
+No margin helps a question without that cost, and only the words could separate the two (D-01). Nothing was
+built.
+
+**Full record:** [`decisions/D-209.md`](decisions/D-209.md)

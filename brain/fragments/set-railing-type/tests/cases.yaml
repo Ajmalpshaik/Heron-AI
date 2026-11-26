@@ -1,9 +1,9 @@
 # D-30: the negative case is what catches "read something and called it the answer".
 
 positive:
-  - given: 'railing type "Handrail - Rectangular", duplicateAs "TRG Guard 1100", topRailHeightMm 1100, handrailSide both'
+  - given: 'railing type "Handrail - Rectangular", duplicateAs "ABC Guard 1100", topRailHeightMm 1100, handrailSide both'
     expect: >
-      a new type "TRG Guard 1100" with its top rail at 1100 mm and the
+      a new type "ABC Guard 1100" with its top rail at 1100 mm and the
       handrail on both sides, read back as asked; the original unchanged; 0
       railings of the new type
 

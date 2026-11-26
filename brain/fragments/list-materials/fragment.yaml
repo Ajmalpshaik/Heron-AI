@@ -203,7 +203,7 @@ contract:
       type: bool
       source: request
       optional: true
-    # Version 3. Only the names this matches - "TRG_*". Left out, every one.
+    # Version 3. Only the names this matches - "ABC_*". Left out, every one.
     - name: namePattern
       type: string
       source: request

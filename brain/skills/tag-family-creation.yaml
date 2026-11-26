@@ -58,7 +58,7 @@ purpose: >
      PARAMETER: the modeller makes the label by hand - Create > Label, click
      at the insertion point, Edit Label - with the parameters, prefixes,
      suffixes, break and unit format said here in one list first. Ajmal PS's
-     first one (2026-10-21, TRG_Pipe_Tag): ONE label, ONE line - System
+     first one (2026-10-21, ABC_Pipe_Tag): ONE label, ONE line - System
      Abbreviation; Diameter, prefix "Ø"; Bottom Elevation, prefix "BOP ",
      millimetres with the + sign. Then save that family as the seed.
   4. REPORT_FAMILY_LABELS reads every label back: on Revit 2027 each
@@ -126,7 +126,7 @@ preconditions:
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
-  Written 2026-10-21 on Ajmal PS's request while building TRG_Pipe_Tag on
+  Written 2026-10-21 on Ajmal PS's request while building ABC_Pipe_Tag on
   Revit 2020, from the label research in docs/43 section 8.3a. Every step is
   DRAFT until it has been run on a real family with a negative case (D-30):
   NEEDS-CHECKING Group IJ.

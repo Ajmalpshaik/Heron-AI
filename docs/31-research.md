@@ -436,7 +436,7 @@ current word on whether it is proven**; this table does not repeat it.
 | Hide folder paths in replies | 51 §3.2 item 3 | Dropped - [D-180](decisions/D-180.md) not accepted |
 | Group Policy templates for the three ceilings | 51 §3.2 item 4 | Built in [`platform/policy/`](../platform/policy/README.md); a run on a domain NOT TRACKED |
 | Build provenance on every release asset | 51 §3.2 item 5 | Built in `.github/workflows/release.yml`; its first run at a tagged release NOT TRACKED |
-| Grids and levels against a link | 51 §3.2 item 6 | Built as `CHECK_DATUMS_AGAINST_LINK` - [Group OJ](needs-checking/group-oj.md) |
+| Grids and levels against a link | 51 §3.2 item 6 | Built as `CHECK_DATUMS_AGAINST_LINK` - [Group OJ](needs-checking/group-oj.md); merged into `REPORT_LEVEL_ELEVATIONS` version 7 on 2026-11-26, with copy-monitored datums - [Group RA](needs-checking/group-ra.md) |
 | Many models overnight, read only | 51 §3.2 item 7 | Decided, not built - [D-181](decisions/D-181.md), [Q-93](open-questions/tier-3.md) |
 | The host AI tested end to end | 51 §3.2 item 8 | First half built, [`tools/score-host.py`](../tools/score-host.py); driving a live chat NOT TRACKED |
 | Revit 2021, 2022, 2023 and 2025 on a PC for the per-release check | 51 §7.1 | Tracked - [Group EQ](needs-checking/group-eq.md) |

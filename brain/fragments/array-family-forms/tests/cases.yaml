@@ -35,7 +35,7 @@ positive:
       Top to "Top Turn Start". Ran 2026-10-07, scratch SpringMainProbe, kept
 
   - given: >
-      in TRG_Spring_Compression Spring, the one-turn spring family nested,
+      in ABC_Spring_Compression Spring, the one-turn spring family nested,
       count "Active Coils" (4), step "Z 73.5 last"
     expect: >
       labelled true; FLEX through Active Coils 4, 5 and 8 re-made the copies,
