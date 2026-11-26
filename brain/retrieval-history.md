@@ -1641,6 +1641,56 @@ failing checks below are the same on both trees:
 
 ---
 
+## 2026-11-26 — a question's near-tie handed to the read: nothing for the flag to settle, and risk ranking measured, not built
+
+Asked: on a near-tie, a question should go to the read rather than the write. Measured in a cloud
+container on `main` `2ee4d03f`, **754 fragments**, `lexical` only (the trained model set aside), no Revit
+filter, `tools/score-routing.py` through `heron_brain.lookup` on a scratch store.
+
+**The host's own flag leaves no tie to break.** With `question` true, D-128 leaves every write out
+before ranking, so a read is never in a contest with one. With the flag set the way a host that is never
+wrong would set it - every plain question, and each of his rows whose answer key is below the write line:
+
+| 754 fragments, `lexical` | flag off | the host's flag |
+|---|---|---|
+| his 79: first / top three | 23 / 33 | 25 / 34 |
+| his 79: asked for no change, handed one | 9 | **0** |
+| his 79: a change asked for, a different change given | 20 | 20 |
+| 124 plain questions reaching a write | 9 | **0** |
+
+**Without the flag the ones that reach a write are not near-ties.** *"does this duct have lining"* goes to
+`SET_DUCT_LINING` with the nearest read 13.0 fusion ranks behind; *"which elements are on the wrong
+workset"* to `SET_ELEMENT_WORKSET`, the nearest read 4.5 behind. Seven of the nine plain ones have their
+nearest read more than four ranks behind. No tie-break reaches them; only the flag does, and it does.
+
+**Ranking by risk, measured as a scratch patch and not built.** With no flag, when the winner is at or
+above the write line and a card below it sits within a margin of the winner, the card below goes first.
+It reads no words of the request, only declared risks and scores - but it is ranking by risk, which every
+retrieval change above has held back for the owner (D-101's proposed half,
+[#954](https://github.com/Ajmalpshaik/Heron-AI/issues/954)'s open choice):
+
+| flag off, `lexical` | main | margin = the status nudge's span (0.61 rank) | margin = one rank |
+|---|---|---|---|
+| his 79: first / top three | 23 / 33 | 23 / 33 | **22** / 33 |
+| his 79: asked for no change, handed one | 9 | 8 | 8 |
+| 124 plain questions reaching a write | 9 | 8 | 7 |
+| `tests/test_routing_phrases.py` checks failing | 13 | 12 | not run |
+| `tools/check-risk-crossings.py` crossings | 5 | 5 | not run |
+
+At the narrower margin it moved two answers - *"what export settings are there"* to `LIST_EXPORT_SETUPS`,
+the read that answers it, and *"How many sheets are there for the duct layout?"* to `LIST_VIEWS_ON_SHEET`,
+a read but not the key's `COUNT_ELEMENTS` - and one routing phrase. At one rank his own change request
+*"Place a door in every room, like the one I placed."* lost its first place to a read.
+
+### What this does not establish
+
+- **The flag column is the answer key standing in for the host**, not a host; D-128 measured a real one.
+- **`tools/check-routing.py` could not show the patch**: it asks for one candidate, so there was no
+  runner-up to move.
+- **Lexical only, one library size, one day.** Nothing met Revit, and no ranking change was kept.
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:
