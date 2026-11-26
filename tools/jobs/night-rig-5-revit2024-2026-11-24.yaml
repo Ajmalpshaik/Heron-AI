@@ -34,7 +34,9 @@ jobs:
     set: {categories: "Generic Models", inViewOnly: "", room: "Room 1"}
     negative-set: {categories: "Structural Framing", inViewOnly: "", room: "Room 1"}
 
+  # Version 3 (2026-11-26, row 5b-2006): `first` and `second` became one
+  # `elementIds` - the two ids typed, comma separated. The same two walls.
   - fragment: measure-distance
     expect: straightMm
-    set: {first: "352516", second: "352517"}
-    negative-set: {first: "352516", second: "352516"}
+    set: {elementIds: "352516, 352517"}
+    negative-set: {elementIds: "352516, 352516"}

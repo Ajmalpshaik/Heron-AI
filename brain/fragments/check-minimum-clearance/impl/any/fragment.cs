@@ -1,8 +1,40 @@
 // NOT STANDALONE. Assumes `elements`, `targets`, `defaultClearance`, `rules`,
-// `includeInsulation`, `assumeThicknessMm`, `ignoreConnected`, `maxRows`, `doc`
-// and `includeLinks` are in scope, and leaves `tooClose`, `gapsMm`, `judgedBy`,
-// `pairsChecked`, `linksSearched`, `linkedMatches`, `tooCloseIds`, `violations`,
-// `insulatedCount`, `bareCount` and `findings` behind.
+// `includeInsulation`, `assumeThicknessMm`, `ignoreConnected`, `maxRows`, `doc`,
+// `includeLinks`, `stackedOnly` and `overlapAs` are in scope, and leaves
+// `tooClose`, `gapsMm`, `judgedBy`, `pairsChecked`, `linksSearched`,
+// `linkedMatches`, `tooCloseIds`, `violations`, `insulatedCount`, `bareCount`,
+// `clashing`, `overlapsMm`, `slopedOrVertical` and `findings` behind.
+//
+// VERSION 5 (2026-11-26) - CHECK_VERTICAL_CLEARANCE MERGED IN (row 5b-1878 (A),
+// issue #1088, the owner's "Yes, one tool"), AND WHAT IT HAD THAT VERSION 4
+// LACKED:
+//
+//   `stackedOnly` - ONLY PAIRS ONE ABOVE THE OTHER, AND ONLY THE VERTICAL GAP.
+//   A pair whose plan boxes (each grown by its own jacket) do not overlap is
+//   passed over and counted, and for the rest the gap is the bottom of the
+//   upper box to the top of the lower one. Each row says WHICH IS ON TOP.
+//   For a pair one above the other the box gap already was the vertical gap;
+//   what this adds is every pair side by side LEFT OUT, and the upper one named.
+//   In plan, boxes that only touch count as overlapping, and so does a
+//   crossing at an angle over its box corner - at a crossing, the box corner
+//   is where the hanger goes (CHECK_VERTICAL_CLEARANCE's rule).
+//
+//   `slopedOrVertical` - with `stackedOnly`, an element whose box is taller
+//   than a quarter of its longest side and taller than the clearance is
+//   counted and said: its box is the whole rise, so a vertical gap to it
+//   comes out SMALLER than the truth. It over-reports and never misses.
+//
+//   `overlapAs` - HOW A PAIR THAT OVERLAPS IS REPORTED, the owner's choice:
+//   "depending on the user it will be ask depth or just 0, both option maybe
+//   needed" (D-208). "clash", the default: CLASH with the depth of the
+//   overlap - boxes, jackets included - in `overlapsMm` and on its row, and
+//   too close whatever clearance was asked, because an overlap is never a
+//   pass. "zero": the gap reads 0 mm and is judged against the clearance,
+//   exactly as version 4 did. `clashing` counts the pairs that overlap either
+//   way - an overlap is a fact about the model, not about the clearance asked
+//   - and `gapsMm` never holds a negative number in either: a minus sign in a
+//   clearance column reads as tight. Any other word measures nothing and
+//   says so, never a guess at which was meant.
 //
 // VERSION 3 (2026-11-01) - CHECK_INSULATION_CLEARANCE MERGED IN, AND WHAT IT
 // HAD THAT VERSION 2 LACKED:
@@ -80,6 +112,14 @@ defaultClearance = defaultClearance / MillimetresPerFoot;
 var assumedFeet = assumeThicknessMm > 0.0 ? assumeThicknessMm / MillimetresPerFoot : 0.0;
 var insulationOn = includeInsulation || assumedFeet > 0.0;
 var rowLimit = maxRows > 0 ? maxRows : 50;
+
+// VERSION 5: how an overlap is reported (D-208). Left out it binds "clash".
+var overlapWord = (overlapAs ?? "").Trim().ToLowerInvariant();
+var overlapAsClash = overlapWord.Length == 0 || overlapWord == "clash" || overlapWord == "depth";
+var overlapAsZero = overlapWord == "zero" || overlapWord == "0";
+var refused = !overlapAsClash && !overlapAsZero;
+IList<Element> hostElements = refused ? new List<Element>() : elements;
+IList<Element> hostTargets = refused ? new List<Element>() : targets;
 
 // AND `rules` IS THE SECOND LENGTH IN THIS FILE, which the D-71 sweep walked
 // straight past. FRAGMENT-ISSUES row 51 records that sweep: it looked for a
@@ -197,6 +237,44 @@ Func<double, double, double, double, double> axisGap = (aMin, aMax, bMin, bMax) 
     return 0.0;
 };
 
+// VERSION 5: ONE MEASUREMENT FOR BOTH SWEEPS, host and link. Boxes a and b by
+// their corners, and the two jackets added together. Null when the pair is not
+// measured - `stackedOnly` and neither above the other. Otherwise
+// { the BARE gap, 1 when a is the upper one }. A bare gap below zero is a box
+// overlap of that depth: the smallest of the three axis overlaps, or with
+// `stackedOnly` the Z overlap alone.
+Func<XYZ, XYZ, XYZ, XYZ, double, double[]> measure = (aMin, aMax, bMin, bMax, jackets) =>
+{
+    var dx = axisGap(aMin.X, aMax.X, bMin.X, bMax.X);
+    var dy = axisGap(aMin.Y, aMax.Y, bMin.Y, bMax.Y);
+    if (stackedOnly)
+    {
+        // Plan boxes, each grown by its own jacket, must overlap, or this is
+        // not a stacking question.
+        if (dx > jackets || dy > jackets) return null;
+        if (aMin.Z >= bMin.Z) return new[] { aMin.Z - bMax.Z, 1.0 };
+        return new[] { bMin.Z - aMax.Z, 0.0 };
+    }
+    var dz = axisGap(aMin.Z, aMax.Z, bMin.Z, bMax.Z);
+    if (dx > 0.0 || dy > 0.0 || dz > 0.0)
+        return new[] { Math.Sqrt((dx * dx) + (dy * dy) + (dz * dz)), 0.0 };
+    var ox = Math.Min(aMax.X, bMax.X) - Math.Max(aMin.X, bMin.X);
+    var oy = Math.Min(aMax.Y, bMax.Y) - Math.Max(aMin.Y, bMin.Y);
+    var oz = Math.Min(aMax.Z, bMax.Z) - Math.Max(aMin.Z, bMin.Z);
+    return new[] { -Math.Min(ox, Math.Min(oy, oz)), 0.0 };
+};
+
+// VERSION 5, from CHECK_VERTICAL_CLEARANCE: with `stackedOnly`, an element whose
+// box is mostly rise is sloped or vertical - each one once.
+var sloped = new HashSet<ElementId>();
+Action<Element, BoundingBoxXYZ> noteSlope = (element, box) =>
+{
+    if (!stackedOnly || element == null || box == null) return;
+    var height = box.Max.Z - box.Min.Z;
+    var run = Math.Max(box.Max.X - box.Min.X, box.Max.Y - box.Min.Y);
+    if (height > run * 0.25 && height > defaultClearance) sloped.Add(element.Id);
+};
+
 // VERSION 4 (row 5b-1400): A MODEL BOX ONLY. A sheet, a view, a type or an
 // annotation element can answer a box with no model extent behind it, and
 // version 3 measured seven sheets as 21 pairs too close on Revit 2020. Such an
@@ -219,11 +297,12 @@ var targetInfo = new List<KeyValuePair<Element, BoundingBoxXYZ>>();
 var targetJacket = new Dictionary<ElementId, double>();
 var withoutBox = new HashSet<ElementId>();
 var measurable = new HashSet<ElementId>();
-foreach (var target in targets)
+foreach (var target in hostTargets)
 {
     if (target == null) continue;
     var box = modelBox(target);
     if (box == null) { withoutBox.Add(target.Id); continue; }
+    noteSlope(target, box);
     targetInfo.Add(new KeyValuePair<Element, BoundingBoxXYZ>(target, box));
     targetJacket[target.Id] = jacketOf(target);
     measurable.Add(target.Id);
@@ -236,12 +315,17 @@ var tooCloseIds = new List<ElementId>();
 var flagged = new HashSet<ElementId>();
 var violations = 0;
 var rows = new List<string>();
+// VERSION 5: overlapping pairs, their depth, and the pairs `stackedOnly` passed over.
+var clashing = 0;
+var overlapsMm = new Dictionary<string, double>();
+var notStacked = 0;
 
-foreach (var element in elements)
+foreach (var element in hostElements)
 {
     if (element == null) continue;
     var sourceBox = modelBox(element);
     if (sourceBox == null) { withoutBox.Add(element.Id); continue; }
+    noteSlope(element, sourceBox);
     measurable.Add(element.Id);
 
     double sourceJacket = jacketOf(element);
@@ -259,21 +343,26 @@ foreach (var element in elements)
         if (ignoreConnected && connected.Contains(target.Id)) continue;
 
         var box = pair.Value;
-        pairsChecked++;
 
-        double dx = axisGap(sourceBox.Min.X, sourceBox.Max.X, box.Min.X, box.Max.X);
-        double dy = axisGap(sourceBox.Min.Y, sourceBox.Max.Y, box.Min.Y, box.Max.Y);
-        double dz = axisGap(sourceBox.Min.Z, sourceBox.Max.Z, box.Min.Z, box.Max.Z);
-        double gap = Math.Sqrt((dx * dx) + (dy * dy) + (dz * dz));
-
-        // Both jackets come off the gap. A pair whose insulation already
-        // overlaps is reported at 0, not at a negative number, because "they
-        // are touching" is the finding and a negative gap reads as a depth.
         double jacket;
         if (!targetJacket.TryGetValue(target.Id, out jacket)) jacket = 0.0;
-        double bareGap = gap;
-        gap = gap - sourceJacket - jacket;
-        if (gap < 0.0) gap = 0.0;
+
+        // Version 5: one measurement, straight-line or - with `stackedOnly` -
+        // vertical, and a pair not one above the other is passed over, counted.
+        var measured = measure(sourceBox.Min, sourceBox.Max, box.Min, box.Max, sourceJacket + jacket);
+        if (measured == null) { notStacked++; continue; }
+        pairsChecked++;
+
+        // Both jackets come off the gap. Below zero the two OVERLAP, boxes and
+        // jackets together, and `overlapAs` says how that reads (D-208): CLASH
+        // with the depth, or 0 mm as version 4 reported it. `gap` itself is
+        // never negative - a minus sign in a clearance column reads as tight.
+        double bareGap = measured[0];
+        double real = bareGap - sourceJacket - jacket;
+        double gap = real < 0.0 ? 0.0 : real;
+        bool overlaps = real < 0.0;
+        if (overlaps) clashing++;
+        bool asClash = overlaps && overlapAsClash;
 
         // Which rule judged this pair. Reported so a wrong threshold is visible
         // rather than buried in a pass.
@@ -288,12 +377,14 @@ foreach (var element in elements)
             rule = categoryName;
         }
 
-        if (gap >= required) continue;
+        // An overlap reported as a CLASH is too close whatever was asked.
+        if (gap >= required && !asClash) continue;
 
         string key = element.Id.ToString() + " -> " + target.Id.ToString();
         tooClose.Add(key);
         gapsMm[key] = gap * MillimetresPerFoot;
         judgedBy[key] = rule;
+        if (asClash) overlapsMm[key] = -real * MillimetresPerFoot;
 
         violations++;
         if (flagged.Add(element.Id)) tooCloseIds.Add(element.Id);
@@ -302,13 +393,39 @@ foreach (var element in elements)
         if (rows.Count < rowLimit)
         {
             var assumedHere = assumedJacket.Contains(element.Id) || assumedJacket.Contains(target.Id);
-            rows.Add(string.Format("  {0} (id {1}) to {2} (id {3}): bare {4:F0} mm, jackets {5:F0} + "
-                + "{6:F0} mm, REAL GAP {7:F0} mm against {8:F0} required ({9}){10}",
-                element.Name, element.Id, target.Name, target.Id,
-                bareGap * MillimetresPerFoot, sourceJacket * MillimetresPerFoot,
-                jacket * MillimetresPerFoot, gap * MillimetresPerFoot,
-                required * MillimetresPerFoot, rule,
-                assumedHere ? "  [ASSUMED lagging - not modelled]" : ""));
+            // With `stackedOnly` the row names the upper one first and says so.
+            var aIsUpper = measured[1] > 0.5;
+            var first = stackedOnly && !aIsUpper ? target : element;
+            var second = stackedOnly && !aIsUpper ? element : target;
+            var firstJacket = stackedOnly && !aIsUpper ? jacket : sourceJacket;
+            var secondJacket = stackedOnly && !aIsUpper ? sourceJacket : jacket;
+            var bareShown = bareGap < 0.0 ? 0.0 : bareGap;
+            if (asClash)
+                rows.Add(string.Format("  CLASH: {0} (id {1}){2} {3} (id {4}) - they overlap by {5:F0} mm{6} "
+                    + "(boxes {7:F0} mm, jackets {8:F0} + {9:F0} mm), against {10:F0} required ({11}){12}",
+                    first.Name, first.Id, stackedOnly ? " is ABOVE" : " and", second.Name, second.Id,
+                    -real * MillimetresPerFoot, stackedOnly ? " in height" : "",
+                    bareGap < 0.0 ? -bareGap * MillimetresPerFoot : 0.0,
+                    firstJacket * MillimetresPerFoot, secondJacket * MillimetresPerFoot,
+                    required * MillimetresPerFoot, rule,
+                    assumedHere ? "  [ASSUMED lagging - not modelled]" : ""));
+            else if (stackedOnly)
+                rows.Add(string.Format("  {0} (id {1}) is ABOVE {2} (id {3}): bare vertical gap {4:F0} mm, "
+                    + "jackets {5:F0} + {6:F0} mm, REAL GAP {7:F0} mm against {8:F0} required ({9}) - "
+                    + "{10:F0} mm short{11}",
+                    first.Name, first.Id, second.Name, second.Id, bareShown * MillimetresPerFoot,
+                    firstJacket * MillimetresPerFoot, secondJacket * MillimetresPerFoot,
+                    gap * MillimetresPerFoot, required * MillimetresPerFoot, rule,
+                    (required - gap) * MillimetresPerFoot,
+                    assumedHere ? "  [ASSUMED lagging - not modelled]" : ""));
+            else
+                rows.Add(string.Format("  {0} (id {1}) to {2} (id {3}): bare {4:F0} mm, jackets {5:F0} + "
+                    + "{6:F0} mm, REAL GAP {7:F0} mm against {8:F0} required ({9}){10}",
+                    element.Name, element.Id, target.Name, target.Id,
+                    bareShown * MillimetresPerFoot, sourceJacket * MillimetresPerFoot,
+                    jacket * MillimetresPerFoot, gap * MillimetresPerFoot,
+                    required * MillimetresPerFoot, rule,
+                    assumedHere ? "  [ASSUMED lagging - not modelled]" : ""));
         }
     }
 }
@@ -323,10 +440,28 @@ foreach (var id in measurable)
     else bareCount++;
 }
 
+var slopedOrVertical = sloped.Count;
+
 var findings = new List<string>();
-findings.Add(string.Format("{0} pair(s) too close of {1} checked{2}. Distances are bounding-box "
+findings.Add(string.Format("{0} pair(s) too close of {1} checked{2}{3}. Distances are bounding-box "
     + "based - an engineering figure, not a defensible millimetre", violations, pairsChecked,
-    insulationOn ? ", measured between the OUTSIDE faces of the insulation" : ", bare geometry"));
+    insulationOn ? ", measured between the OUTSIDE faces of the insulation" : ", bare geometry",
+    stackedOnly ? ", STACKED PAIRS ONLY - the vertical gap from the bottom of the upper one to the "
+        + "top of the lower one" : ""));
+// Version 5: the overlaps, and how they were reported (D-208).
+if (clashing > 0)
+    findings.Add(overlapAsClash
+        ? string.Format("{0} pair(s) OVERLAP - reported as CLASH with the depth of the overlap, "
+            + "too close whatever clearance was asked (overlapAs clash)", clashing)
+        : string.Format("{0} pair(s) OVERLAP - reported as a 0 mm gap, as asked (overlapAs zero); "
+            + "ask with overlapAs clash for how deep each overlap is", clashing));
+if (stackedOnly && notStacked > 0)
+    findings.Add(string.Format("{0} pair(s) passed over: not one above the other in plan, so not a "
+        + "stacking question", notStacked));
+if (slopedOrVertical > 0)
+    findings.Add(string.Format("{0} element(s) are sloped or vertical. Their bounding box is the whole "
+        + "rise, so any vertical gap reported for them is SMALLER than the truth - take those to a "
+        + "section", slopedOrVertical));
 if (insulationOn)
 {
     findings.Add(string.Format("{0} element(s) measurable: {1} insulated in the model, {2} with "
@@ -350,9 +485,13 @@ if (withoutBox.Count > 0)
         + "not checked, which is not the same as passing", withoutBox.Count,
         noModelGeometry.Count == 0 ? "" : string.Format(" - {0} of them have no model geometry at all (a sheet, "
             + "a view, a type or annotation)", noModelGeometry.Count)));
-if (measurable.Count < 2)
+if (measurable.Count < 2 && !refused)
     findings.Add("Fewer than two measurable elements, so no pair could be compared. That is NOT "
         + "every pair passing");
+if (refused)
+    findings.Insert(0, string.Format("NOTHING WAS MEASURED: overlapAs '{0}' is not a word this reads. "
+        + "Say clash - an overlap reported as CLASH with its depth, the default - or zero - an "
+        + "overlap reported as a 0 mm gap", overlapAs));
 foreach (var row in rows) findings.Add(row);
 if (violations > rows.Count)
     findings.Add(string.Format("  ... {0} further pair(s) not listed - the count above is complete",
@@ -374,7 +513,7 @@ var linkTypes = new List<ElementId>();
 var linkDocs = new List<Document>();
 var linkPlacements = new List<List<RevitLinkInstance>>();
 
-if (includeLinks)
+if (includeLinks && !refused)
 {
     foreach (var instance in new FilteredElementCollector(doc)
         .OfClass(typeof(RevitLinkInstance)).Cast<RevitLinkInstance>())
@@ -459,7 +598,7 @@ Func<Document, Element, string> describeLinked = (linked, element) =>
         typeName, element.Id, fireRatingOf(element));
 };
 
-var linkBlocked = "";
+var linkBlocked = refused ? "Links NOT read: nothing was measured - see findings" : "";
 
 var buildingCategories = new List<BuiltInCategory> { BuiltInCategory.OST_Walls,
     BuiltInCategory.OST_Floors, BuiltInCategory.OST_Roofs, BuiltInCategory.OST_Ceilings,
@@ -485,7 +624,7 @@ for (var i = 0; i < linkDocs.Count; i++)
         if (placed == null) continue;
         var inverse = placed.Inverse;
 
-        foreach (var element in elements)
+        foreach (var element in hostElements)
         {
             if (element == null) continue;
             var sourceBox = modelBox(element);
@@ -534,12 +673,15 @@ for (var i = 0; i < linkDocs.Count; i++)
                             oHigh = new XYZ(Math.Max(oHigh.X, corner.X), Math.Max(oHigh.Y, corner.Y), Math.Max(oHigh.Z, corner.Z));
                         }
 
+                // Version 5: the same measurement as the host sweep, and the
+                // same rule for an overlap (D-208) - only this element's own
+                // jacket comes off.
+                var measured = measure(sourceBox.Min, sourceBox.Max, oLow, oHigh, sourceJacket);
+                if (measured == null) continue;
                 linkPairs++;
-                var dx = axisGap(sourceBox.Min.X, sourceBox.Max.X, oLow.X, oHigh.X);
-                var dy = axisGap(sourceBox.Min.Y, sourceBox.Max.Y, oLow.Y, oHigh.Y);
-                var dz = axisGap(sourceBox.Min.Z, sourceBox.Max.Z, oLow.Z, oHigh.Z);
-                var gap = Math.Sqrt((dx * dx) + (dy * dy) + (dz * dz)) - sourceJacket;
-                if (gap < 0.0) gap = 0.0;
+                var real = measured[0] - sourceJacket;
+                var gap = real < 0.0 ? 0.0 : real;
+                var asClash = real < 0.0 && overlapAsClash;
 
                 var categoryName = other.Category == null ? "" : other.Category.Name;
                 var required = defaultClearance;
@@ -549,13 +691,16 @@ for (var i = 0; i < linkDocs.Count; i++)
                     required = clearances[categoryName];
                     rule = categoryName;
                 }
-                if (gap >= required) continue;
+                if (gap >= required && !asClash) continue;
 
                 linkClose++;
                 if (linkedMatches.Count - summaryAt < 50)
-                    linkedMatches.Add(string.Format("  {0} -> {1} - {2}: {3:0} mm, needs {4:0} mm ({5})",
-                        element.Id, linked.Title, describeLinked(linked, other), gap * MillimetresPerFoot,
-                        required * MillimetresPerFoot, rule));
+                    linkedMatches.Add(string.Format("  {0} -> {1} - {2}: {3}, needs {4:0} mm ({5}){6}",
+                        element.Id, linked.Title, describeLinked(linked, other),
+                        asClash ? string.Format("CLASH, they overlap by {0:0} mm", -real * MillimetresPerFoot)
+                            : string.Format("{0:0} mm", gap * MillimetresPerFoot),
+                        required * MillimetresPerFoot, rule,
+                        stackedOnly ? (measured[1] > 0.5 ? ", this one ABOVE it" : ", this one BELOW it") : ""));
             }
         }
     }

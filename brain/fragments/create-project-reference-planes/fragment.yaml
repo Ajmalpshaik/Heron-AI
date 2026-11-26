@@ -51,6 +51,13 @@ purpose: >
   equal centres. A name already in the project, or a place a plane already
   lies, is skipped and named. Each plane is read back.
 
+# ONE RULE FOR A NAME ALREADY TAKEN, 2026-11-26 (D-207, row 5b-1879 item 4, the
+# owner's words: "Skip it, make the rest, and the skipped one needs to inform
+# the user that we skipped because of this"). This card already did it -
+# SKIPPED AND NAMED, NEVER MADE TWICE, each skip a line in `skipped` with why -
+# and CREATE_GRIDS version 5 and CREATE_LEVELS version 3 now do the same, in
+# these words. Nothing on this card changed: no line of impl/, so its proof
+# still describes the code and it stays PROVEN.
 contract:
   needs:
     - name: doc

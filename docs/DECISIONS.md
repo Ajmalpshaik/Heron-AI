@@ -6,7 +6,7 @@
 > | **For** | Anyone asking **what was decided, and why** |
 > | **Authority** | The [Constitution](../HERON_CONSTITUTION.md) and [Golden Rules](14-golden-rules.md) win over this file. This file wins over every work note |
 > | **Waiting on you?** | `python tools/owner-queue.py` — **never a list typed on this page** |
-> | **Adding to it** | A settled answer is **promoted here from [OPEN-QUESTIONS](OPEN-QUESTIONS.md)**. A reversal gets a **new entry** that supersedes the old — the original stays, so the reasoning is never lost |
+> | **Adding to it** | A settled answer is **promoted here from [OPEN-QUESTIONS](OPEN-QUESTIONS.md)**. A reversal gets a **new entry** that supersedes the old — the original stays, so the reasoning is never lost. **An Accepted decision's `**Accepted:**` line links where the owner's words can be read** — a pull request or issue of this repository by its full URL, or a claude.ai session he can open; a yes heard only in a session's own chat is written **Proposed**, for him or the coordinator to confirm. `tools/check-decision-sources.py` refuses one that does neither, in CI ([D-206](decisions/D-206.md)) |
 > | **Its numbers** | Derive the highest decision: `grep -oE '^#+ *D-[0-9]+' docs/DECISIONS.md | grep -oE '[0-9]+' | sort -n | tail -1` |
 > | **Where each decision lives** | Since 2026-09-23 **each decision is its own file**, `decisions/D-NN.md`, and this page is the index: the heading, the metadata lines, and a link to the full record. To add one, write it here in full as below and run `python tools/split-decisions.py --write` |
 
@@ -114,7 +114,7 @@
 | [D-67](#d-67--a-point-crosses-as-three-millimetre-numbers) | A point crosses as three millimetre numbers | ✅ Accepted · 2026-09-09 |
 | [D-68](#d-68--a-significant-change-states-its-intent-before-it-is-made-and-is-judged-against-it-afterwards) | A significant change states its intent before it is made, and is judged against it afterwards | ✅ Accepted · 2026-09-12 |
 | [D-69](#d-69--a-script-in-tools-reads-the-code-it-checks-and-that-is-not-a-layering-violation) | A script in `tools/` reads the code it checks, and that is not a layering violation | ✅ Accepted · 2026-09-12 |
-| [D-70](#d-70--heron-keeps-a-usage-counter-on-the-machine-and-it-is-numbers-rather-than-a-diary) | Heron keeps a usage counter, on the machine, and it is numbers rather than a diary | ✅ Accepted · 2026-09-12 |
+| [D-70](#d-70--heron-keeps-a-usage-counter-on-the-machine-and-it-is-numbers-rather-than-a-diary) | Heron keeps a usage counter, on the machine, and it is numbers rather than a diary | ✅ Accepted · 2026-09-12 · *keeps a usage counter* superseded in part by D-205 · 2026-11-26 |
 | [D-71](#d-71--every-length-a-caller-types-is-millimetres-and-the-fragment-converts-it) | Every length a caller types is millimetres, and the fragment converts it | ✅ Accepted · 2026-09-13 |
 | [D-72](#d-72--four-values-a-caller-could-not-type-are-now-built-from-what-they-type-and-a-face-still-is-not) | Four values a caller could not type are now built from what they type, and a face still is not | • status not stated |
 | [D-73](#d-73--a-table-by-name-is-two-separators-and-the-key-is-the-models-word-not-ours) | A table by name is two separators, and the key is the model's word, not ours | ✅ Accepted · 2026-11-15 · read back to the owner |
@@ -232,7 +232,7 @@
 | [D-188](#d-188--a-chat-the-claude-app-resumes-after-a-restart-is-the-same-conversation-to-revit-and-takes-back-its-own-model) | A chat the Claude app resumes after a restart is the same conversation to Revit, and takes back its own model | ✅ Accepted · 2026-11-20 |
 | [D-189](#d-189--a-development-session-never-pulls-into-the-main-heron-folder) | A development session never pulls into the main Heron folder | ✅ Accepted · 2026-11-20 |
 | [D-190](#d-190--the-readme-stops-asking-modellers-not-to-install-before-a-release-is-signed-and-says-plainly-the-build-is-unsigned-and-what-was-checked) | The README stops asking modellers not to install before a release is signed, and says plainly the build is unsigned and what was checked | ✅ Accepted · 2026-11-20 |
-| [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) | The usage counter keeps offered, helped and the last date it helped; "helped" is only the modeller's word; it moves a clause less than one rank; and no question text is kept | ✅ Accepted · 2026-11-20 · *where a re-ranker is installed* superseded in part by D-201 · 2026-11-26 |
+| [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) | The usage counter keeps offered, helped and the last date it helped; "helped" is only the modeller's word; it moves a clause less than one rank; and no question text is kept | ✅ Accepted · 2026-11-20 · *where a re-ranker is installed* superseded in part by D-201 · 2026-11-26 · superseded by D-205 · 2026-11-26 |
 | [D-192](#d-192--a-job-that-works-only-outside-the-model-it-is-aimed-at-declares-nogroupopen-and-an-admin-or-publish-job-then-opens-no-transaction-group-in-that-model) | A job that works only outside the model it is aimed at declares noGroupOpen, and an Admin or Publish job then opens no transaction group in that model | ✅ Accepted · 2026-11-21 |
 | [D-193](#d-193--making-sheets-keeps-three-rules-for-a-table-and-typed-numbers-alike-a-sheet-whose-number-or-name-revit-refuses-is-taken-back-a-number-asked-for-twice-makes-neither-and-1000-is-the-most-in-one-call) | Making sheets keeps three rules for a table and typed numbers alike: a sheet whose number or name Revit refuses is taken back, a number asked for twice makes neither, and 1,000 is the most in one call | ✅ Accepted · 2026-11-21 |
 | [D-194](#d-194--every-stored-vector-is-compared-in-plain-python-sqlite-vec-is-not-used) | Every stored vector is compared in plain Python; sqlite-vec is not used | ✅ Accepted · 2026-11-21 |
@@ -244,6 +244,10 @@
 | [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
 | [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 |
 | [D-204](#d-204--a-tool-that-can-never-come-back-empty-is-signed-on-a-by-hand-reading-and-a-tool-with-two-runs-waiting-is-signed-on-the-run-revit-checked) | A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked | ✅ Accepted · 2026-11-26 |
+| [D-206](#d-206--a-decision-accepted-on-the-owners-word-links-where-that-word-can-be-read-or-is-written-proposed-and-a-check-refuses-one-that-does-neither) | A decision accepted on the owner's word links where that word can be read, or is written Proposed, and a check refuses one that does neither | ✅ Accepted · 2026-11-26 |
+| [D-208](#d-208--an-overlap-in-a-clearance-check-is-reported-as-the-modeller-asks-clash-with-its-depth-unless-0-mm-is-asked-for-and-a-hole-is-sized-round-a-services-insulation-only-when-the-model-says-it-carries-some) | An overlap in a clearance check is reported as the modeller asks, CLASH with its depth unless 0 mm is asked for, and a hole is sized round a service's insulation only when the model says it carries some | ✅ Accepted · 2026-11-26 |
+| [D-207](#d-207--a-name-rule-is-one-rule-across-the-tools-that-share-it-a-name-pattern-is-a--wildcard-a-datum-maker-skips-a-name-already-taken-and-says-so-and-a-link-placed-twice-is-never-measured-until-one-copy-is-named) | A name rule is one rule across the tools that share it: a name pattern is a * wildcard, a datum maker skips a name already taken and says so, and a link placed twice is never measured until one copy is named | ✅ Accepted · 2026-11-26 |
+| [D-205](#d-205--the-usage-counter-is-removed-no-clause-is-counted-and-a-clauses-place-in-an-answer-is-fusions-alone) | The usage counter is removed: no clause is counted, and a clause's place in an answer is fusion's alone | ✅ Accepted · 2026-11-26 |
 | [D-209](#d-209--on-a-near-tie-with-a-write-the-card-that-changes-nothing-goes-first---inside-the-status-nudges-span-never-wider) | On a near-tie with a write, the card that changes nothing goes first - inside the status nudge's span, never wider | ❌ Rejected · 2026-11-26 - no margin is safe, nothing built |
 
 ## Format
@@ -258,6 +262,7 @@ Decisions already split are left alone. **A number is used once**: D-45 to D-49 
 
 **Status:** Proposed | Accepted | Superseded by D-NN | Rejected
 **Date:** YYYY-MM-DD
+**Accepted:** who, the date, and a link to where the words can be read - a pull request or issue URL, or https://claude.ai/code/session_... (D-206)
 **Question:** Q-NN
 **Affects:** which documents / components
 
@@ -750,6 +755,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-70 — Heron keeps a usage counter, on the machine, and it is numbers rather than a diary
 
 **Status:** Accepted · **Date:** 2026-09-12 · **Found during:** Stage 8 of the RAG track, which could
+**Superseded in part by:** [D-205](#d-205--the-usage-counter-is-removed-no-clause-is-counted-and-a-clauses-place-in-an-answer-is-fusions-alone), accepted by the owner 2026-11-26 - its *"Yes - Heron keeps a usage counter"*: the counter is removed. Its three constraints stand for any counter proposed again
 
 **Full record:** [`decisions/D-70.md`](decisions/D-70.md)
 
@@ -1708,7 +1714,8 @@ What this makes easy. What this makes hard. What it locks in.
 **Numbering:** written as D-190; renumbered D-191 on 2026-11-20 with `tools/renumber.py`, because `main` had given D-190 to another decision first.
 **Settles:** the four parts [D-70](decisions/D-70.md) left open · R-16 and R-25 of [the RAG requirement note](work-notes/plans/rag/01-requirements.md) · WN-12 of [#1006](https://github.com/Ajmalpshaik/Heron-AI/issues/1006)
 **Extends:** [D-70](decisions/D-70.md) - Heron keeps a usage counter, on the machine, as numbers
-**Affects:** [`brain/heron_usage.py`](../brain/heron_usage.py) · [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) `USAGE_SPAN` · the `heron_helped` tool · [`tests/test_usage_counter.py`](../tests/test_usage_counter.py)
+**Affects:** `brain/heron_usage.py` · [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) `USAGE_SPAN` · the `heron_helped` tool · `tests/test_usage_counter.py` - the counter's files, deleted by D-205
+**Superseded by:** [D-205](#d-205--the-usage-counter-is-removed-no-clause-is-counted-and-a-clauses-place-in-an-answer-is-fusions-alone), accepted by the owner 2026-11-26 - the counter is removed whole: nothing is counted, `heron_helped` is gone, and a clause's place in an answer is fusion's alone
 **Superseded in part by:** [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional), accepted by the owner 2026-11-26 - *"where a re-ranker is installed, its score sets the order"*: no re-ranker is installed anywhere, so the usage nudge always sits in the fused score
 
 **Full record:** [`decisions/D-191.md`](decisions/D-191.md)
@@ -1833,6 +1840,60 @@ written on the proof, with release, model and date. A tool with more than one ru
 checked in Revit for the tool as it stands, one run at a time. The owner signs; nothing in code changes.
 
 **Full record:** [`decisions/D-204.md`](decisions/D-204.md)
+
+## D-206 — A decision accepted on the owner's word links where that word can be read, or is written Proposed, and a check refuses one that does neither
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), asked *"When a session writes 'the owner said yes', must it link to where you said it?"* and choosing *"Yes, and a checker blocks it"* ([#1262](https://github.com/Ajmalpshaik/Heron-AI/issues/1262) items 2 and 3).
+**Numbering:** D-206 - `tools/next-id.py` printed D-205 free on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201; D-205 was given to a sibling session the same day, so this took the next.
+**Affects:** [`tools/check-decision-sources.py`](../tools/check-decision-sources.py), new · CI's *The gates that must pass*, thirteen commands · the *Adding to it* line and the Format above
+
+An Accepted decision's **Accepted:** line links where the owner's words can be read - a pull request or issue of this
+repository by its full URL, or a claude.ai session he can open; a bare `#N` or a commit's sha does not count. A
+session that heard his yes only in its own chat writes the decision Proposed, for him or the coordinator to confirm.
+`tools/check-decision-sources.py` refuses, in CI, an Accepted decision from D-206 on with no such link; D-00 to D-205
+are grandfathered by number, and `--all` reports them.
+
+**Full record:** [`decisions/D-206.md`](decisions/D-206.md)
+
+## D-208 — An overlap in a clearance check is reported as the modeller asks, CLASH with its depth unless 0 mm is asked for, and a hole is sized round a service's insulation only when the model says it carries some
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), answering issue #1088: *"depending on the user it will be ask depth or just 0, both option maybe needed"*, and *"include insulation if the pipe has insulation - not only pipe, duct also ... before that need to check the pipe or duct has insulation or not"*.
+**Numbering:** D-208 is the id the coordinating session named; `tools/next-id.py` on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201, printed D-207 as the next free and nothing read held D-208.
+**Keeps:** [D-33](decisions/D-33.md) - a clearance or an allowance is still a number the request gives · [D-30](decisions/D-30.md)
+
+Where two boxes overlap, a clearance check reports CLASH with the depth of the overlap unless the request asks for
+0 mm; both are kept, the overlapping pairs are counted either way, and a gap is never a negative number
+(`CHECK_MINIMUM_CLEARANCE` version 5, `overlapAs`). A hole or sleeve is sized round a pipe's or duct's insulation
+only when the model says it carries some - read first, never assumed, lining not counted (`PROPOSE_MEP_OPENINGS`
+version 3, as `CHECK_SLEEVE_SIZE` reads it).
+
+**Full record:** [`decisions/D-208.md`](decisions/D-208.md)
+
+## D-207 — A name rule is one rule across the tools that share it: a name pattern is a * wildcard, a datum maker skips a name already taken and says so, and a link placed twice is never measured until one copy is named
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), answering items 3, 4 and 5 of [row 5b-1879](fragment-issues/row-5b-1879.md) and the link half of [row 5b-1878](fragment-issues/row-5b-1878.md) (C), issue [#1088](https://github.com/Ajmalpshaik/Heron-AI/issues/1088): for item 3 *"Wildcards \*"*; for item 4 *"Skip it, make the rest, and the skipped one needs to inform the user that we skipped because of this"*; for item 5 *"Ask which copy"*.
+**Numbering:** D-207 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201 and D-202 to D-206 held by unmerged branches.
+**Answers:** [row 5b-1879](fragment-issues/row-5b-1879.md) items 3, 4 and 5 · [row 5b-1878](fragment-issues/row-5b-1878.md) (C), its rule for a link placed more than once
+**Keeps:** [D-30](decisions/D-30.md) - every card whose C# this changes is DRAFT until it is run on a real model and signed by the owner · Article 8 - one request is one change; a name skipped is a level or grid never made, not one made and then undone
+**Affects:** `CHECK_FAMILY_STANDARDS` version 5 · `CHECK_MODEL_STANDARDS` (unchanged - its rule is the one kept) · `CREATE_LEVELS` version 3 · `CREATE_GRIDS` version 5 · `CREATE_PROJECT_REFERENCE_PLANES` (unchanged - it already skipped) · the datum tool `REPORT_LEVEL_ELEVATIONS`, which takes `CHECK_DATUMS_AGAINST_LINK`'s refusal in the merge of row 5b-1878 (C) · the [`project-setup`](../brain/skills/project-setup.yaml) method · [NEEDS-CHECKING Group QZ](needs-checking/group-qz.md)
+
+**Full record:** [`decisions/D-207.md`](decisions/D-207.md)
+
+## D-205 — The usage counter is removed: no clause is counted, and a clause's place in an answer is fusion's alone
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), asked *"The usage counter only counts which standards clauses helped you and moves them up a tiny bit. Remove it?"*: he chose *"Remove it"*.
+**Numbering:** D-205 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201, and D-202, D-203 and D-204 held by unmerged branches.
+**Supersedes:** [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) - the counter it built is removed whole
+**Supersedes in part:** [D-70](#d-70--heron-keeps-a-usage-counter-on-the-machine-and-it-is-numbers-rather-than-a-diary) - its *"Yes - Heron keeps a usage counter"*. Its three constraints stand for any counter proposed again
+**Affects:** `brain/heron_usage.py` and `tests/test_usage_counter.py` deleted · the `heron_helped` tool · [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) · [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) · [`tests/test_console_streams.py`](../tests/test_console_streams.py)
+
+The usage counter counted each standards clause shown to the chat, counted it as helped on the modeller's word,
+and moved it up by at most half a rank next time. The owner chose to remove it: a modeller's jobs differ day to
+day, recording it costs time, and a count carried between jobs can push the wrong clause up. A clause's place is
+now fusion's alone. The `<scope>-usage.json` files it wrote are left on disk, unused; the release builder still
+refuses one.
+
+**Full record:** [`decisions/D-205.md`](decisions/D-205.md)
 
 ## D-209 — On a near-tie with a write, the card that changes nothing goes first - inside the status nudge's span, never wider
 

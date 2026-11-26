@@ -1,5 +1,18 @@
-// NOT STANDALONE. Assumes `doc`, `first` and `second` are in scope; leaves
-// `straightMm`, `horizontalMm`, `verticalMm` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `elements` and `elementIds` are in scope;
+// leaves `straightMm`, `horizontalMm`, `verticalMm` and `findings` behind.
+//
+// VERSION 3 (2026-11-26, row 5b-2006, issue #1308) - THE TWO ELEMENTS ARE THE
+// TWO SELECTED IN REVIT, OR TWO IDS TYPED, AND TYPED IDS DECIDE. Version 2 had
+// two single-element needs, `first` and `second`, and the add-in's only word for
+// one (`selected`) means exactly one element and binds it to BOTH - so two
+// different elements could never be handed in. The shape is now
+// REPORT_PARAMETER_INVENTORY's: `elements` is what is selected (or handed on by
+// a step before), `elementIds` is ids typed as Revit shows them, matched here as
+// TEXT - each element's own Id.ToString() against what was typed, in one walk of
+// the model - so no ElementId is built from a number (that constructor changed
+// at Revit 2024, and nothing here carries a version #if; D-05). Exactly two
+// either way: one or three is refused in words that say how many came and that
+// two are needed, because measuring "two of the three" would be a guess.
 //
 // AN ELEMENT IS NOT A POINT. A thirty-metre duct has no single position, so
 // centre to centre would call two touching runs thirty metres apart. The gap is
@@ -21,9 +34,103 @@ var horizontalMm = 0.0;
 var verticalMm = 0.0;
 var findings = new List<string>();
 
-if (first == null || second == null)
+// ---- which two: two ids typed, or the two selected ----
+
+Element first = null;
+Element second = null;
+string notTwo = null;
+
+Func<string, string, bool> sameWord = (a, b) =>
+    string.Equals((a ?? "").Trim(), b, StringComparison.OrdinalIgnoreCase);
+
+var handedIn = new List<Element>();
+if (elements != null)
+    foreach (var element in elements) if (element != null) handedIn.Add(element);
+
+var typedText = (elementIds ?? "").Trim();
+var idsTyped = typedText.Length > 0 && !sameWord(typedText, "none")
+    && !sameWord(typedText, "selected") && !sameWord(typedText, "selection");
+
+if (idsTyped)
 {
-    findings.Add("Two elements are needed - name both of the things being measured between");
+    var typed = new List<string>();
+    foreach (var piece in typedText.Split(new[] { ',', ';', ' ', '\t', '\r', '\n' },
+                                          StringSplitOptions.RemoveEmptyEntries))
+    {
+        var part = piece.Trim();
+        var digits = part.Length > 0;
+        foreach (var c in part) if (c < '0' || c > '9') digits = false;
+        if (!digits)
+        {
+            notTwo = "\"" + part + "\" is not an element id. Type the two ids as Revit shows them - "
+                + "digits only, comma separated, like \"352516, 352517\". Nothing was measured";
+            break;
+        }
+        typed.Add(part);
+    }
+
+    if (notTwo == null && typed.Count != 2)
+    {
+        notTwo = string.Format("{0} element id(s) were typed, and this measures between exactly TWO. "
+            + "Type two ids, comma separated. Nothing was measured", typed.Count);
+    }
+    else if (notTwo == null)
+    {
+        // Element types too, in the one walk, and it stops once both are found.
+        // The same id typed twice is one element - said below, as before.
+        var found = new Element[2];
+        var left = typed[0] == typed[1] ? 1 : 2;
+        var everything = new LogicalOrFilter(new ElementIsElementTypeFilter(false),
+                                             new ElementIsElementTypeFilter(true));
+        foreach (var id in new FilteredElementCollector(doc).WherePasses(everything).ToElementIds())
+        {
+            var text = id.ToString();
+            if (text != typed[0] && text != typed[1]) continue;
+            var named = doc.GetElement(id);
+            if (text == typed[0]) found[0] = named;
+            if (text == typed[1]) found[1] = named;
+            if (--left == 0) break;
+        }
+
+        var missing = new List<string>();
+        for (var i = 0; i < 2; i++)
+            if (found[i] == null && !missing.Contains(typed[i])) missing.Add(typed[i]);
+
+        if (missing.Count > 0)
+        {
+            notTwo = string.Format("No element in '{0}' has the id {1}. An id belongs to one model. "
+                + "Nothing was measured", doc.Title, string.Join(" or ", missing));
+        }
+        else
+        {
+            first = found[0];
+            second = found[1];
+        }
+    }
+
+    if (handedIn.Count > 0)
+        findings.Add(string.Format("The {0} element(s) selected were NOT used - ids were typed, and "
+            + "typed ids decide", handedIn.Count));
+}
+else if (handedIn.Count != 2)
+{
+    notTwo = handedIn.Count == 0
+        ? "Nothing is selected and no element ids were typed, and this measures between exactly TWO "
+            + "elements. Select the two in Revit, or type their two ids in elementIds, comma separated"
+        : string.Format("{0} element(s) are selected (or handed on by the step before), and this "
+            + "measures between exactly TWO. A selection has no order to pick two of them by, so "
+            + "nothing was measured. Select just the two, or type their two ids in elementIds",
+            handedIn.Count);
+}
+else
+{
+    first = handedIn[0];
+    second = handedIn[1];
+}
+
+if (notTwo != null)
+{
+    findings.Add(notTwo);
 }
 else if (first.Id == second.Id)
 {

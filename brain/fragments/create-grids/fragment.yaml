@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 15
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,11 @@ semantic-identity: "set out a whole grid from bay spacings"
 kind: action
 domain: revit.datums
 capability: CREATE_GRIDS
-version: 4
+# VERSION 5 (2026-11-26, D-207, row 5b-1879 item 4) - a name already taken is
+# SKIPPED and the rest made, where versions 2 to 4 refused the whole call. C#
+# changed, so DRAFT until NEEDS-CHECKING Group QZ is run (D-30); version 4's
+# proof is kept below as the record.
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -118,9 +122,17 @@ purpose: >
 
   **VERSION 2 DRAWS GRIDS BETWEEN POINTS GIVEN AS WELL** - `gridLines`, named
   by `gridNames` - each line level, its ends forced onto one height, one whose
-  ends differ in height refused. **A name already taken is refused before any
-  grid is made**, ignoring capitals, and a grid Revit will not make undoes the
-  whole call.
+  ends differ in height refused. A grid Revit will not make undoes the whole
+  call.
+
+  **VERSION 5: A NAME ALREADY TAKEN IS SKIPPED, AND THE REST ARE MADE** - the
+  owner's one rule for levels, grids and project reference planes (D-207). A
+  grid whose name a grid in the project already has, or an earlier grid in
+  the same call, ignoring capitals, is not made; `skipped` names each one and
+  the grid holding the name, `findings` says how many were skipped beside how
+  many were made, and only when every grid asked for is skipped is nothing
+  made and `refused` says so. Versions 2 to 4 refused the whole call on one
+  clash.
 
   **VERSION 3 ALSO SETS OUT A RADIAL GRID** - arcs about one centre over a
   sweep, and spokes out from it - named by Revit and read back.
@@ -229,6 +241,14 @@ contract:
       # "did this come back empty" (D-52). Since version 2 a refusal means
       # NOTHING was created. Since version 4 it holds nothing else - what
       # was made is in `findings` (row 5b-1948).
+      role: accounting
+      type: IList<string>
+    - name: skipped
+      # Version 5 (D-207). One line for each grid NOT made because its name was
+      # taken - "'B' - grid 'B' in this project already has that name; not
+      # made", or asked twice in this call. What it was asked for and did not
+      # do, never a thing it made (D-52). A whole call skipped is also said in
+      # `refused`.
       role: accounting
       type: IList<string>
     - name: findings
