@@ -131,7 +131,8 @@ If you commit any of these by accident, **report it privately** via
    They are not all of CI's checks. The `gates` job in
    [`.github/workflows/gates.yml`](.github/workflows/gates.yml) also runs `check-signatures`,
    `check-licence`, `check-narrow-errors`, `check-secrets`, `check-products`, `check-decision-titles`,
-   `check-routing` and `check-intrusion`, and a non-zero from any of them turns a pull request red.
+   `check-decision-sources`, `check-routing` and `check-intrusion`, and a non-zero from any of them
+   turns a pull request red.
    `check-secrets` is the one that answers the *credentials* row of the table above before a reviewer
    has to ([D-143](docs/DECISIONS.md)). Some need something
    first: `check-decision-titles` needs the whole git history, and `check-routing` and
@@ -193,8 +194,8 @@ You, on your branch
   -> push, open the pull request
   -> CI, gates.yml, side by side:
        gates      the four + check-signatures, check-licence, check-narrow-errors, check-secrets,
-                  check-products, check-decision-titles, check-routing,
-                  check-intrusion                                       red on any non-zero
+                  check-products, check-decision-titles, check-decision-sources,
+                  check-routing, check-intrusion                        red on any non-zero
        compile    every C# project and every fragment, Revit 2020 to 2027 red on a failure or a skip
        tests      every suite                                           red on FAIL, HUNG, or an
                                                                         unexpected NOT RUN
@@ -225,6 +226,7 @@ counting this table:
 | `check-secrets` | A credential shape in a tracked file, or a tracked file whose name the Secrets block of `.gitignore` refuses ([D-143](docs/DECISIONS.md)) | **git** - it asks git which files are tracked |
 | `check-products` | In `platform/heron-products.json`: a duplicate `addInId`, a `partOf` typo, a stale Revit list | No |
 | `check-decision-titles` | A decision number that stopped meaning its decision | **The whole git history** — `git fetch --unshallow` in a shallow clone, or it exits 2 |
+| `check-decision-sources` | An Accepted decision from D-206 on whose `**Accepted:**` line links neither a pull request or issue of this repository nor a claude.ai session — where the owner's yes can be read ([D-206](docs/decisions/D-206.md)) | No |
 | `check-routing` | A routing row naming a capability no fragment declares — exit 1. A fragment outranked for its own words is reported and exits 0 | **A knowledge store** — an empty folder named by `HERON_KNOWLEDGE`, or it exits 2 — and PyYAML. `--targets` gives the failing half alone, with no store |
 | `check-intrusion` | One fragment crowding out another — reported, exit 0; it turns red only when it cannot run | **A knowledge store**, the same way, and PyYAML |
 
