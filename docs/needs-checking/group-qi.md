@@ -32,3 +32,16 @@ and a project plan with ducts and walls. Revit 2020 first. Changes OFF for every
 | **QI3** | In a project plan, `revit_isolate_temporary` with `mode=hide`, `category=walls`; then `mode=isolate` with `ids` = two duct ids in Revit's number and one in its long form | The walls hidden, everything else shown; then ONLY the three ducts shown, the answer saying the earlier temporary state was replaced. Write down what Revit's Undo drop-down shows for the hide (*Heron: hide Walls temporarily*, or none) |
 | **QI4** | **Negative:** `mode=hide` with `ids` = one real long id and one long id from ANOTHER family (or typed with one hex digit changed); then the same with a type's id; then on a sheet | Each refused, *"NOTHING was hidden"*: the first names the long id that names nothing in this model; the second *"These ids name element TYPES"*; the sheet *"cannot hide or isolate temporarily"*. The view unchanged each time |
 | **QI5** | **Negative, older add-in:** with the add-in from before this change still loaded, `mode=hide`, `category=walls` | *"The Heron add-in in this Revit is older than temporary hide, so nothing was hidden"* - and NOTHING isolated: an isolate here would be the very failure the separate operation exists to stop |
+
+### Results, 2026-11-26 - Revit 2020, session 32484, add-in 0.3.0.0 (file `df0d401c52ca05f4`, built from main `e8c3be150`)
+
+**Arranged:** `pt-ahu` - a scratch COPY of Ajmal PS's AHU family *TRG_Mechanical Equipment_Air Handling Unit_DX_SKM MAH-0202S2M.rfa* (the family this group was written from), saved in `%TEMP%\heron-work\pt`; the library file untouched, its default `{3D}` view in
+front, through the chat's `revit_isolate_temporary` and `revit_reset_temporary` (this chat's Heron, main `e8c3be150`).
+
+| Row | Result |
+|---|---|
+| QI1, run 2026-11-26 | **PASS for the answer** - `mode=hide`, three long ids (supply ring, fresh-air ring, drain stub): *"Hid 3 element(s) in "{3D}", in pt-ahu"*. A picture from `revit_view_image` does not show Revit's Temporary Hide/Isolate border, so whether the three vanished on screen was not seen - the owner's eye is owed. |
+| QI2, run 2026-11-26 | **PASS for the answers; the screen owed, as QI1** - two more long ids: *"Hid 2 element(s) ... A temporary hide/isolate was already on in this view, and these were hidden on top of it, as Revit's own HH does."* Then `revit_reset_temporary`: *"The Temporary Hide/Isolate in "{3D}" is off, and the view shows what its own settings show."* |
+| QI3 | **NOT RUN** - needs a project plan with walls and ducts; none was open. |
+| QI4, run 2026-11-26, first case only | **PASS, first case** - a real long id and one with a changed hex digit: *"These long ids name nothing in "pt-ahu": cc308a19-...-00002fff. NOTHING was hidden."* The type's id and the sheet cases are **NOT RUN**. |
+| QI5 | **NOT RUN** - needs the add-in from before this change; this Revit has the current one. |
