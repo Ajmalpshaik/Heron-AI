@@ -420,3 +420,22 @@ utterances:
   # it sent three curtain-wall selections and "what is the fire rating of these
   # doors" to writes on both re-ranked backends.
   - select the level named Level 2
+  # ADDED 2026-11-26, row 5b-2049: selecting the instances of one family, or
+  # one of them, reached SET_FAMILY_SETTINGS, FILTER_ELEMENTS_BY_TYPE and
+  # FIND_VIEWS.
+  - select all the instances of this family
+  - pick one element of this family for me
+  - find the dampers by their family name
+  # ADDED 2026-11-26, row 5b-2049: a select of every element of one named type
+  # - curtain walls above all - reached SET_CURTAIN_WALL_GRID and
+  # SET_CURTAIN_PANEL_TYPE, writes, on the model; these say select beside a
+  # named type.
+  - select all the doors of type Single Flush
+  - select every window of a named type
+  - select the walls whose type is called Storefront
+  # ADDED 2026-11-26, row 5b-2049: the same, said of elements rather than
+  # walls.
+  - select the elements of one type by its name
+  # ADDED 2026-11-26, row 5b-2049: one placed element of a named family, asked
+  # to look at, reached SET_AIR_TERMINAL_FLOW and SET_FAMILY_SETTINGS.
+  - select one of these grilles so I can look at it

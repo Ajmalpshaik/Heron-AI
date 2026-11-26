@@ -105,6 +105,10 @@ namespace Heron.Revit.Addin
         ///   Ask to Delete off          carry on, and keep it as it ran - no
         ///                              box, no second run; `unasked` is how
         ///                              many Revit counted deleted (D-197)
+        ///   not keeping, deletes       carry on - a preview rolls back - and
+        ///                              `ahead` holds what Revit counted
+        ///                              deleted, so the reply can say a Delete
+        ///                              box comes when it is kept (row 5b-1992)
         /// </summary>
         private static string DeleteGate(UIApplication app, Document target, string name,
                                          string request, bool keeping, bool asksInRevit,
@@ -113,10 +117,20 @@ namespace Heron.Revit.Addin
                                          ReadFootprint before, TransactionGroup group,
                                          HeronRollbackWitness.Watch watch,
                                          ref ConfirmedDelete confirmed, out bool again,
-                                         out int unasked)
+                                         out int unasked, out List<ElementId> ahead)
         {
             again = false;
             unasked = 0;
+            ahead = null;
+
+            // ROW 5b-1992: A PREVIEW THAT DELETES SAYS THE BOX IS COMING. Seen
+            // 2026-11-22, Revit 2024.3: a curtain system on 14 faces would
+            // delete 49 elements; the Delete box came up unannounced when it
+            // was kept, closed by itself unanswered, and the ids the dry run
+            // had listed were gone. The ids are kept here and read after the
+            // preview's rollback (WithDeleteAhead) - by category, and the ones
+            // the change itself made and removed said as such.
+            if (!keeping && changed.DeletedIds.Count > 0) ahead = changed.DeletedIds.ToList();
             if (!keeping) return null;
 
             // D-197: THE OWNER'S ASK TO DELETE SWITCH IS OFF. Revit shows no
@@ -346,7 +360,7 @@ namespace Heron.Revit.Addin
             HeronApplication.Log("Delete box: '" + shown + "' would delete " + going.Count
                 + " elements in '" + model + "'; the modeller answered " + answer + ".");
 
-            var asking = HeronDeleteQuestion.Asking(going.Count, onScreen, answer);
+            var asking = HeronDeleteQuestion.Asking(going.Count, onScreen, answer, window);
             if (answer == HeronDeleteQuestion.Deleted)
             {
                 confirmed = new ConfirmedDelete(rows.Select(row => row.Id), going.Count, onScreen,
@@ -583,6 +597,46 @@ namespace Heron.Revit.Addin
                  + "," + Json.Num("deletedUnasked", deleted)
                  + "," + Json.Str("deleteSkipped", AskSkippedBySwitch)
                  + "," + Json.Str("deleteAsking", said) + "}";
+        }
+
+        /// <summary>
+        /// ROW 5b-1992: a PREVIEW Revit counted deletions in. Read after the
+        /// preview's rollback, so the elements that were in the model are back
+        /// and named by category (ListedAs); an id that names nothing now was
+        /// made by the change itself and removed by it again - never in the
+        /// model, and said so rather than listed. `deleteAheadSays` is the
+        /// sentence the chat prints first: when this change is kept, Revit's
+        /// Delete box comes up for them - or, with Ask to Delete off, it does
+        /// not, and the chat's word is the yes (D-197).
+        /// </summary>
+        private static string WithDeleteAhead(string answer, Document doc, IList<ElementId> ahead,
+                                              bool asksInRevit)
+        {
+            if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal)
+                || ahead == null || ahead.Count == 0)
+                return answer;
+
+            var byCategory = new SortedDictionary<string, int>(StringComparer.Ordinal);
+            var madeAndGone = 0;
+            foreach (var id in ahead)
+            {
+                if (!InModel(doc, id)) { madeAndGone++; continue; }
+                var listed = ListedAs(doc, id);
+                int had;
+                byCategory[listed] = byCategory.TryGetValue(listed, out had) ? had + 1 : 1;
+            }
+            var parts = byCategory.OrderByDescending(pair => pair.Value)
+                                  .Select(pair => pair.Value.ToString("N0", CultureInfo.InvariantCulture)
+                                                  + " " + pair.Key)
+                                  .ToList();
+            var categories = string.Join(", ", parts);
+            var says = HeronDeleteQuestion.Ahead(ahead.Count, categories, madeAndGone, asksInRevit);
+
+            return answer.Substring(0, answer.Length - 1)
+                 + "," + Json.Num("deleteAhead", ahead.Count)
+                 + "," + Json.Str("deleteAheadByCategory", categories)
+                 + "," + Json.Num("deleteAheadMadeAndGone", madeAndGone)
+                 + "," + Json.Str("deleteAheadSays", says) + "}";
         }
 
         /// <summary>

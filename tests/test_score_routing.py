@@ -52,12 +52,13 @@ and then by a change has to be named as having fallen.
 
 Section 9, added 2026-10-17: a session's own sentence set (rows 5b-481,
 5b-485, 5b-510) - its shape, asked on a tiny fixture checkout built in a
-scratch folder (this tree's search code, four cards, a FAKE cross-encoder that
-counts shared words, and no trained encoder, so it answers alike on any
-machine and fetches nothing), two backends in two processes, a record refused
-when its answers ran on another backend, every changed answer tagged against
-a second fixture tree with one card gone, and candidate identities re-scored
-offline on the shortlists the fake re-ranker read.
+scratch folder (this tree's search code, four cards and no trained encoder,
+so it answers alike on any machine and fetches nothing), each backend in a
+process of its own, a record refused when its answers ran on another backend,
+and every changed answer tagged against a second fixture tree with one card
+gone. Until 2026-11-26 it also planted a FAKE cross-encoder and re-scored
+candidate identities on the shortlists it read; that went with the re-ranker
+(D-201).
 
 Section 10, added 2026-10-17: on a store the run has just built, the index
 block printed beside the numbers counts it (row 5b-980) - it said "COULD NOT
@@ -574,25 +575,7 @@ def plain_questions(tool, capabilities):
 # Section 9: a session's own sentences - rows 5b-481, 5b-485 and 5b-510
 # ---------------------------------------------------------------------------
 
-# THE FIXTURE'S CROSS-ENCODER: the words a question and a passage share. It
-# replaces heron_rerank._construct, the one place weights are ever loaded, so
-# everything else the re-ranker does is the real module's.
-FAKE_SCORER = '''
-def _construct(offline):
-    """THE TEST'S CROSS-ENCODER - words shared by question and passage."""
-    class _Fake(object):
-        def predict(self, pairs):
-            return [_overlap(q, p) for q, p in pairs]
-    return _Fake()
-
-
-def _overlap(question, passage):
-    import re
-    return float(len(set(re.findall(r"[a-z0-9]+", question.lower()))
-                     & set(re.findall(r"[a-z0-9]+", passage.lower()))))
-'''
-
-# AND NO TRAINED ENCODER, whatever the machine running the test has - so the
+# NO TRAINED ENCODER, whatever the machine running the test has - so the# AND NO TRAINED ENCODER, whatever the machine running the test has - so the
 # fixture fetches nothing and `model` is refused on every machine alike.
 NO_MODEL = '''
 def _load_model():
@@ -607,27 +590,19 @@ def _load_model():
 FIXTURE_CARDS = ("edit-text-values", "find-views", "rename-family",
                  "count-elements")
 
-# Words no card says, so the fake scorer's winner is certain whatever the
+# Words no card says - ranked, never answered by identity, whatever the
 # cards' own words become.
 WANTED = "rename plugh xyzzy"
 QUESTION = "how many frotz"
 
 SECTION_9_NAMES = ("load_sentences", "parse_expect", "backend_problems",
-                   "ask_tree", "compare_runs", "tag", "load_record", "rescore",
-                   "load_identities", "sentence_fingerprint", "BACKENDS")
-
-
-def _overlap(question, passage):
-    """The fake's own count, in this process. WORDS, NOT SPACE-SPLIT PIECES:
-    since D-134 a passage reads "identity. sentences. capability domain", and
-    "frotz." is not "frotz"."""
-    return float(len(set(re.findall(r"[a-z0-9]+", question.lower()))
-                     & set(re.findall(r"[a-z0-9]+", passage.lower()))))
+                   "ask_tree", "compare_runs", "tag", "load_record",
+                   "sentence_fingerprint", "BACKENDS")
 
 
 def _fixture_tree(top, cards=FIXTURE_CARDS):
-    """A tiny checkout in TOP: this tree's search code, a few cards, the fake
-    cross-encoder and no trained encoder."""
+    """A tiny checkout in TOP: this tree's search code, a few cards and no
+    trained encoder."""
     for part in (("brain",), ("mcp", "server")):
         source, there = os.path.join(ROOT, *part), os.path.join(top, *part)
         os.makedirs(there)
@@ -638,8 +613,7 @@ def _fixture_tree(top, cards=FIXTURE_CARDS):
     for card in cards:
         shutil.copytree(os.path.join(ROOT, "brain", "fragments", card),
                         os.path.join(top, "brain", "fragments", card))
-    for name, extra in (("heron_rerank.py", FAKE_SCORER),
-                        ("heron_embed.py", NO_MODEL)):
+    for name, extra in (("heron_embed.py", NO_MODEL),):
         with io.open(os.path.join(top, "brain", name), "a",
                      encoding="utf-8") as handle:
             handle.write("\n\n" + extra)
@@ -668,11 +642,11 @@ def _run(tool, argv):
 
 
 def _answer(n, route="hybrid", capability="A", risk="READ", nearness="lexical",
-            rerank="not used", candidates=3, say=None):
+            candidates=3, say=None):
     return {"n": n, "say": say or "s%d" % n, "route": route,
             "capability": capability, "risk": risk, "order": [capability],
             "candidates": candidates, "error": None,
-            "backends": {"nearness": nearness, "rerank": rerank}}
+            "backends": {"nearness": nearness}}
 
 
 def sentence_shape(tool, work):
@@ -752,17 +726,17 @@ def sentence_shape(tool, work):
 def backend_evidence(tool):
     """9b. A run is refused when its answers ran on another backend."""
     import heron_embed as EMBED
-    import heron_rerank as RERANK
     import heron_retrieve as RETRIEVE
 
     check((tool.LEXICAL, tool.MODEL) == (EMBED.LEXICAL, EMBED.MODEL)
           and "not used" in tool.NOT_RAN
-          and RETRIEVE.ran([])["rerank"] in tool.NOT_RAN
-          and RERANK.CROSS_ENCODER not in tool.NOT_RAN,
+          and RETRIEVE.ran([])["nearness"] in tool.NOT_RAN,
           "the backend names are the ones heron_retrieve.ran() writes")
-    check(set(tool.BACKENDS) == {"lexical", "model", "lexical+rerank",
-                                 "model+rerank"},
-          "four backends: lexical, model, and each with the cross-encoder")
+    check("rerank" not in RETRIEVE.ran([]),
+          "and ran() names no re-ranker - it was removed (D-201)")
+    check(set(tool.BACKENDS) == {"lexical", "model"},
+          "two backends: lexical and the trained model, with no +rerank "
+          "since D-201")
     lexical = [_answer(1), _answer(2), _answer(3, route="identity",
                                                 nearness="not used")]
     check(tool.backend_problems("lexical", lexical) == [],
@@ -771,19 +745,6 @@ def backend_evidence(tool):
     check(tool.backend_problems("model", fell) != [],
           "the model asked for and lexical answering - a silent fallback - "
           "is named")
-    check(tool.backend_problems("lexical", [_answer(1), _answer(
-        2, rerank="cross-encoder")]) != [],
-        "a cross-encoder re-reading a shortlist on a run asked for without "
-        "it is named - row 481's 'both backends' were both re-ranked")
-    check(tool.backend_problems("model+rerank", [
-        _answer(1, nearness="model", rerank="cross-encoder"),
-        _answer(2, nearness="model", rerank="not used", candidates=2)]) != [],
-        "and a shortlist of two the re-ranker did not re-read, on a run that "
-        "asked for it, is named")
-    check(tool.backend_problems("model+rerank", [
-        _answer(1, nearness="model", rerank="cross-encoder"),
-        _answer(2, nearness="model", rerank="not used", candidates=1)]) == [],
-        "but a shortlist of one, which the re-ranker never reads, is not")
     check(tool.backend_problems("lexical", [_answer(
         1, nearness="not used")]) != [],
         "a run where no ranked answer named the backend proved nothing")
@@ -856,9 +817,8 @@ def tagged(tool):
 
 
 def asked_for_real(tool, work):
-    """9d-9g. A fixture checkout asked on two backends, recorded, compared and
-    re-scored - nothing reaches brain/retrieval-history.md."""
-    import heron_rerank as RERANK
+    """9d-9f. A fixture checkout asked, recorded and compared - nothing
+    reaches brain/retrieval-history.md."""
 
     history = os.path.join(ROOT, "brain", "retrieval-history.md")
     with io.open(history, "rb") as handle:
@@ -885,9 +845,8 @@ def asked_for_real(tool, work):
                      % (json.dumps(declared), WANTED, QUESTION))
     record_a = os.path.join(work, "a.json")
     code, said = _run(tool, ["--sentences", sentences, "--tree", tree_a,
-                             "--backend", "lexical", "--backend",
-                             "lexical+rerank", "--backend", "model",
-                             "--shortlists", "--out", record_a])
+                             "--backend", "lexical", "--backend", "model",
+                             "--out", record_a])
     check(code == 0 and os.path.exists(record_a),
           "the fixture is asked and recorded, exit 0 (D-100): %r %s"
           % (code, said[-300:] if code != 0 else ""))
@@ -899,32 +858,17 @@ def asked_for_real(tool, work):
     with io.open(record_a, encoding="utf-8") as handle:
         record = json.load(handle)
     runs = record.get("runs") or {}
-    check(sorted(runs) == ["lexical", "lexical+rerank"],
+    check(sorted(runs) == ["lexical"],
           "one run per backend asked and had: %s" % sorted(runs))
-    lexical, reread = runs.get("lexical") or {}, runs.get("lexical+rerank") or {}
+    lexical = runs.get("lexical") or {}
     answers = lexical.get("answers") or []
     check(len(answers) == 4 and all(a.get("backends") for a in answers),
           "every answer carries the backends that produced it")
     by_say = dict((a["say"], a) for a in answers)
-    check((by_say.get(declared) or {}).get("route") == "identity"
-          and (by_say.get(declared) or {}).get("shortlist") is None,
-          "a declared sentence is answered by identity and reaches no "
-          "shortlist")
-    ranked = [a for a in reread.get("answers") or []
-              if a.get("route") == "hybrid"]
-    check(ranked and all(a["backends"]["rerank"] == "cross-encoder"
-                         for a in ranked if a["candidates"] >= 2)
-          and all(a["backends"]["rerank"] == "not used"
-                  for a in answers if a.get("route") == "hybrid"),
-          "the re-ranked run was re-read by the cross-encoder and the "
-          "lexical one was not - each in its own process")
-    lists = [a.get("shortlist") or [] for a in ranked]
-    check(lists and all(0 < len(s) <= 20 for s in lists),
-          "--shortlists keeps each re-read shortlist, never more than 20")
-    check(all(e.get("rerank") == _overlap(a["say"], e.get("passage") or "")
-              for a in ranked for e in a.get("shortlist") or []),
-          "and each entry's score is the fake cross-encoder's on the passage "
-          "recorded - the shortlist kept is the one the re-ranker read")
+    check((by_say.get(declared) or {}).get("route") == "identity",
+          "a declared sentence is answered by identity")
+    check(all("rerank" not in (a.get("backends") or {}) for a in answers),
+          "and no answer carries a re-ranker's verdict (D-201)")
     head = record.get("tree") or {}
     check(head.get("path") == os.path.realpath(tree_a)
           and record.get("sentences", {}).get("fingerprint"),
@@ -942,9 +886,11 @@ def asked_for_real(tool, work):
     with io.open(wrong, "w", encoding="utf-8") as handle:
         json.dump(planted, handle)
     _record, refused = tool.load_record(wrong)
-    check("lexical" in refused and "lexical+rerank" not in refused,
+    check("lexical" in refused,
           "a run filed as lexical whose answers say model is refused when it "
-          "is read back, and the other run is not: %s" % refused)
+          "is read back: %s" % refused)
+    _record, fine = tool.load_record(record_a)
+    check(fine == {}, "and the record as written is not: %s" % fine)
     real_ask = tool.ask_tree
     # Shaped as a worker returns it - capabilities a list of pairs.
     tool.ask_tree = lambda *a, **k: dict(
@@ -964,18 +910,16 @@ def asked_for_real(tool, work):
     # 9f - EVERY CHANGED ANSWER, TAGGED, against a tree with one card gone.
     record_b = os.path.join(work, "b.json")
     code, said = _run(tool, ["--sentences", sentences, "--tree", tree_b,
-                             "--backend", "lexical", "--backend",
-                             "lexical+rerank", "--compare", record_a,
+                             "--backend", "lexical", "--compare", record_a,
                              "--out", record_b])
-    check(code == 0 and said.count("LEXICAL - 4 sentences in both") == 1
-          and "LEXICAL+RERANK - 4 sentences in both" in said,
-          "--compare lines the two up on each backend (got %r)" % (code,))
+    check(code == 0 and said.count("LEXICAL - 4 sentences in both") == 1,
+          "--compare lines the two up on the backend (got %r)" % (code,))
     # The declared sentence is #1 of the set.
     lost = [line for line in said.splitlines()
             if line.split()[:2] == ["bad", "#1"]]
-    check(len(lost) == 2,
-          "the declared sentence whose card is gone is listed as bad on both "
-          "backends: %s" % lost)
+    check(len(lost) == 1,
+          "the declared sentence whose card is gone is listed as bad: %s"
+          % lost)
     code, said = _run(tool, ["--sentences", sentences, "--tree", tree_a,
                              "--backend", "lexical", "--compare", record_b])
     check(code == 0 and any(line.split()[:2] == ["want", "#1"]
@@ -986,89 +930,15 @@ def asked_for_real(tool, work):
     check("NOT COMPARED ON LEXICAL" in said,
           "an earlier run on the wrong backend is not compared with")
 
-    # 9g - THE FAST LOOP: identities re-scored on the recorded shortlists.
-    _name, threshold, ladder = tool._sibling(
-        "generate-jobs.py").write_threshold()
-
-    def rung(risk):
-        return ladder.get((risk or "").upper(), -1)
-
-    items = tool.items_from_record(record)
-    win, take = "rename plugh xyzzy", "how many frotz"
-    holding = [a for a in ranked if a["say"] in (WANTED, QUESTION)
-               and any(e.get("capability") == "EDIT_TEXT_VALUES"
-                       for e in a.get("shortlist") or [])]
-    check(len(holding) == 2, "the fixture's precondition: both made-up "
-          "sentences' shortlists hold the card (%d do)" % len(holding))
-    found = tool.rescore(items, reread, "EDIT_TEXT_VALUES", [win, take],
-                         lambda q, ps: [_overlap(q, p) for p in ps], rung,
-                         threshold)
-    lines = dict((identity, t) for identity, t in found["lines"])
-    check(found["skipped"]["identity"] == 1,
-          "the declared sentence is skipped - it never reaches the re-ranker")
-    check(found["agree"] == found["read"] and found["read"] >= 2,
-          "the recorded identity, re-scored, gives every winner the run gave "
-          "(%d of %d)" % (found["agree"], found["read"]))
-    check((lines[win]["won"], lines[win]["wanted"]) == (1, 1),
-          "an identity holding the wanted sentence's words wins it: %s"
-          % lines[win])
-    check((lines[take]["taken"], lines[take]["questions"]) == (1, 1),
-          "and one holding the question's words takes that question, which a "
-          "write must not: %s" % lines[take])
-    turned = [dict(item, n=k) for k, item in enumerate(reversed(items), 1)]
-    again = tool.rescore(turned, reread, "EDIT_TEXT_VALUES", [win, take],
-                         lambda q, ps: [_overlap(q, p) for p in ps], rung,
-                         threshold)
-    check(again["lines"] == found["lines"],
-          "a set in another order is matched to the record by its words, not "
-          "by its numbers")
-    gone = json.loads(json.dumps(reread))
-    for answer in gone["answers"]:
-        if answer["say"] == WANTED:
-            answer["shortlist"] = [e for e in answer["shortlist"]
-                                   if e["capability"] != "EDIT_TEXT_VALUES"]
-    out_of_reach = tool.rescore(items, gone, "EDIT_TEXT_VALUES", [win],
-                                lambda q, ps: [_overlap(q, p) for p in ps],
-                                rung, threshold)
-    check(out_of_reach["out_of_reach"]["wanted"] == 1,
-          "a shortlist that did not hold the card is out of reach, never "
-          "counted as lost")
-
-    candidates = os.path.join(work, "ids.txt")
-    with io.open(candidates, "w", encoding="utf-8") as handle:
-        handle.write("# candidates\n%s\n\n%s\n%s\n" % (win, take, win))
-    check(tool.load_identities(candidates) == [win, take],
-          "the candidates file: one per line, comments and repeats skipped")
-    kept = list(RERANK._CACHE)
-    try:
-        RERANK._CACHE[:] = [lambda pairs: [_overlap(q, p) for q, p in pairs]]
-        code, said = _run(tool, ["--identities", candidates, "--card",
-                                 "EDIT_TEXT_VALUES", "--from", record_a])
-        check(code == 0 and said.count("RE-SCORED OFFLINE") == 2
-              and '"%s"' % take in said,
-              "--identities --from re-scores every run's shortlists, one line "
-              "per candidate (got %r)" % (code,))
-        RERANK._CACHE[:] = [None]
-        code, said = _run(tool, ["--identities", candidates, "--card",
-                                 "EDIT_TEXT_VALUES", "--from", record_a])
-        check(code == 2 and "needs a cross-encoder" in said,
-              "with no cross-encoder on this machine it is exit 2, not a score")
-    finally:
-        RERANK._CACHE[:] = kept
-
     for argv, why in (
             (["--tree", tree_a], "--tree with no sentence set"),
             (["--sentences", sentences, "--record"],
              "--record with a sentence set - the history holds his and the "
              "plain sets only"),
-            (["--sentences", sentences, "--identities", candidates, "--card",
-              "EDIT_TEXT_VALUES"], "--identities asking without --shortlists"),
-            (["--identities", candidates, "--from", record_a],
-             "--identities with no --card"),
-            (["--from", record_a, "--out", os.path.join(work, "x.json")],
-             "--from with --out - it asks nothing"),
             (["--sentences", sentences, "--backend", "fastest"],
-             "a backend that is none of the four")):
+             "a backend that is none of the two"),
+            (["--sentences", sentences, "--backend", "model+rerank"],
+             "the re-ranker's backend, removed by D-201")):
         code, _said = _run(tool, argv)
         check(code == 2, "exit 2 for %s (got %r)" % (why, code))
     with io.open(history, "rb") as handle:

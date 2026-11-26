@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -110,35 +110,41 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-16'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: PIPE (3,332 elements), Revit 2020, session 8084
-  positive_case: 'run as it would normally be run. returned elements 6 item(s) [Copper - A,
-    Copper - B, Copper - C, ...], exactName false, findings 7 item(s) [6 pipe segment(s) reported
-    of 19 scanned; 0 carry no sizes, ''Copper - A'' (Copper): 17 size(s), OD 6.35 to 203.2
-    mm, 17 i..., ''Copper - B'' (Copper): 17 size(s), OD 6.35 to 203.2 mm, 17 i..., ...],
-    needle Copper, noSizes 0 item(s), rows 6 item(s) [Copper - A [Copper] 17 size(s) OD 6.35-203.2mm,
-    Copper - B [Copper] 17 size(s) OD 6.35-203.2mm, Copper - C [Copper] 5 size(s) OD 9.52-25.4mm,
-    ...], scanned 19, segmentCount 6, segmentList Copper - A [Copper] 17 size(s) OD 6.35-203.2mm  ||  Copper
-    - B [Copper] 17 size(s) OD 6.35-203.2mm  ||  Copper - C [Copper] 5 size(s) OD 9.52-25.4mm  ||  Copper
-    - D [Copper] 9 size(s) OD 31.75-152.4mm  ||  TCM_MAT_Copper - 01 [TCM_MAT_Copper] 8 size(s)
-    OD 22-108mm  ||  TRG_Copper_Refrigerant [Copper] 10 size(s) OD 6.35-42mm, segments 19
-    item(s) [Steel, Carbon - Schedule 40, Steel, Carbon - Schedule 80, Iron, Ductile - 22,
-    ...], sizeTable , tables 6 item(s) [Copper - A: nom6/OD6.35/w0.91, nom8/OD7.94/w0.91,
+  model: Project1, Revit 2020, session 32484 - the count is NOT recorded because 7,750 elements
+    was measured on pt-ahu, the document in front, and this ran against another one (row 15)
+  positive_case: 'run as it would normally be run. returned elements 4 item(s) [Copper - A,
+    Copper - B, Copper - C, ...], exactName false, findings 5 item(s) [4 pipe segment(s) reported
+    of 17 scanned; 0 carry no sizes; ..., ''Copper - A'' (Copper): 17 size(s), OD 6.35 to
+    203.2 mm, 17 i..., ''Copper - B'' (Copper): 17 size(s), OD 6.35 to 203.2 mm, 17 i...,
+    ...], needle Copper, noSizes 0 item(s), rows 4 item(s) [Copper - A [Copper] 17 size(s)
+    OD 6.35-203.2mm, Copper - B [Copper] 17 size(s) OD 6.35-203.2mm, Copper - C [Copper] 5
+    size(s) OD 9.52-25.4mm, ...], scanned 17, segmentCount 4, segmentList Copper - A [Copper]
+    17 size(s) OD 6.35-203.2mm  ||  Copper - B [Copper] 17 size(s) OD 6.35-203.2mm  ||  Copper
+    - C [Copper] 5 size(s) OD 9.52-25.4mm  ||  Copper - D [Copper] 9 size(s) OD 31.75-152.4mm,
+    segments 17 item(s) [Steel, Carbon - Schedule 40, Steel, Carbon - Schedule 80, Iron, Ductile
+    - 22, ...], sizeTable , tables 4 item(s) [Copper - A: nom6/OD6.35/w0.91, nom8/OD7.94/w0.91,
     nom10/OD9...., Copper - B: nom6/OD6.35/w0.71, nom8/OD7.94/w0.71, nom10/OD9...., Copper
-    - C: nom10/OD9.52/w0.71, nom15/OD12.7/w0.71, nom18/OD..., ...]. inputs came nameContains
-    as given. on PIPE'
-  negative_case: run with nameContains=ZZZNOTASEGMENT instead - chosen because it should not
-    contain what this fragment reports. returned elements 0 item(s), exactName false, findings
-    2 item(s) [0 pipe segment(s) reported of 19 scanned; 0 carry no sizes, Nothing matched
-    'ZZZNOTASEGMENT'. The 19 segment(s) in this ...], needle ZZZNOTASEGMENT, noSizes 0 item(s),
-    rows 0 item(s), scanned 19, segmentCount 0, segmentList , segments 19 item(s) [Steel,
-    Carbon - Schedule 40, Steel, Carbon - Schedule 80, Iron, Ductile - 22, ...], sizeTable
-    , tables 0 item(s). inputs came nameContains as given. on PIPE
+    - C: nom10/OD9.52/w0.71, nom15/OD12.7/w0.71, nom18/OD..., ...], unreadable 0 item(s).
+    inputs came nameContains as given. on Project1'
+  negative_case: run against 'Project1' with nameContains=ZZZNOTASEGMENT instead - chosen
+    because it should not contain what this fragment reports. returned elements 0 item(s),
+    exactName false, findings 2 item(s) [0 pipe segment(s) reported of 17 scanned; 0 carry
+    no sizes; ..., Nothing matched 'ZZZNOTASEGMENT'. The 17 segment(s) in this ...], needle
+    ZZZNOTASEGMENT, noSizes 0 item(s), rows 0 item(s), scanned 17, segmentCount 0, segmentList
+    , segments 17 item(s) [Steel, Carbon - Schedule 40, Steel, Carbon - Schedule 80, Iron,
+    Ductile - 22, ...], sizeTable , tables 0 item(s), unreadable 0 item(s). inputs came nameContains
+    as given. on Project1
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 4e250fb862d454b6
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 6708c001f8505b45
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

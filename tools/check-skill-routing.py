@@ -498,9 +498,9 @@ def margin(answer):
     """How the winner beat the runner-up, in the terms the seam actually gives.
 
     NOT A NUMBER, AND THAT IS A FINDING RATHER THAN A SHORTCUT. `heron_retrieve
-    .find` puts `score`, `words_score`, `nearness_score` and `rerank_score` on
-    every candidate, and `heron_brain.lookup` copies FIVE keys across -
-    capability, provider, status, risk, why - and drops all four scores. So a
+    .find` puts `score`, `words_score` and `nearness_score` on every
+    candidate, and `heron_brain.lookup` copies FIVE keys across -
+    capability, provider, status, risk, why - and drops all three scores. So a
     caller at the seam a host uses cannot tell a landslide from a photo-finish,
     and FRAGMENT-ISSUES row 109's defining measurement - *"2.4 ranks clear of
     the runner-up"* - is not reproducible here at all. It was taken by hand.

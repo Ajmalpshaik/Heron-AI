@@ -6,7 +6,7 @@
 > | **For** | Anyone asking **what was decided, and why** |
 > | **Authority** | The [Constitution](../HERON_CONSTITUTION.md) and [Golden Rules](14-golden-rules.md) win over this file. This file wins over every work note |
 > | **Waiting on you?** | `python tools/owner-queue.py` — **never a list typed on this page** |
-> | **Adding to it** | A settled answer is **promoted here from [OPEN-QUESTIONS](OPEN-QUESTIONS.md)**. A reversal gets a **new entry** that supersedes the old — the original stays, so the reasoning is never lost |
+> | **Adding to it** | A settled answer is **promoted here from [OPEN-QUESTIONS](OPEN-QUESTIONS.md)**. A reversal gets a **new entry** that supersedes the old — the original stays, so the reasoning is never lost. **An Accepted decision's `**Accepted:**` line links where the owner's words can be read** — a pull request or issue of this repository by its full URL, or a claude.ai session he can open; a yes heard only in a session's own chat is written **Proposed**, for him or the coordinator to confirm. `tools/check-decision-sources.py` refuses one that does neither, in CI ([D-206](decisions/D-206.md)) |
 > | **Its numbers** | Derive the highest decision: `grep -oE '^#+ *D-[0-9]+' docs/DECISIONS.md | grep -oE '[0-9]+' | sort -n | tail -1` |
 > | **Where each decision lives** | Since 2026-09-23 **each decision is its own file**, `decisions/D-NN.md`, and this page is the index: the heading, the metadata lines, and a link to the full record. To add one, write it here in full as below and run `python tools/split-decisions.py --write` |
 
@@ -177,7 +177,7 @@
 | [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed) | A proof on another Revit release is an entry of proof.releases, and a second route on a PROVEN fragment is written by accept, signed | ✅ Accepted · 2026-10-17 |
 | [D-132](#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool) | Off Windows the Heron server serves its library alone, and no Revit tool | ✅ Accepted · 2026-10-17 |
 | [D-133](#d-133--a-run-that-contradicts-a-proofreleases-entry-is-reported-as-one-that-contradicts-the-proof-is) | A run that contradicts a proof.releases entry is reported, as one that contradicts the proof is | ✅ Accepted · 2026-10-17 |
-| [D-134](#d-134--the-re-ranker-reads-a-cards-first-declared-sentences-beside-its-identity-carried-in-the-store) | The re-ranker reads a card's first declared sentences beside its identity, carried in the store | ✅ Accepted · 2026-10-17 |
+| [D-134](#d-134--the-re-ranker-reads-a-cards-first-declared-sentences-beside-its-identity-carried-in-the-store) | The re-ranker reads a card's first declared sentences beside its identity, carried in the store | ✅ Accepted · 2026-10-17 · superseded by D-201 · 2026-11-26 |
 | [D-135](#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them) | Heron's Python side keeps its data in %USERPROFILE%\.heron, and the Companion's notes in the temporary folder, where a Store Claude's copy cannot reach them | ✅ Accepted · 2026-10-18 |
 | [D-136](#d-136--the-companions-folder-is-the-users-temporary-folder-found-from-inside-revit-by-stepping-out-of-a-guid-named-one) | The Companion's folder is the user's temporary folder, found from inside Revit by stepping out of a GUID-named one | ✅ Accepted · 2026-10-18 |
 | [D-138](#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking) | The Keep or Discard question gets a switch on the ribbon, and its box can keep the rest of one job without asking | ✅ Accepted · 2026-10-18 · item 2 superseded in part by D-141 · 2026-10-18 |
@@ -232,7 +232,7 @@
 | [D-188](#d-188--a-chat-the-claude-app-resumes-after-a-restart-is-the-same-conversation-to-revit-and-takes-back-its-own-model) | A chat the Claude app resumes after a restart is the same conversation to Revit, and takes back its own model | ✅ Accepted · 2026-11-20 |
 | [D-189](#d-189--a-development-session-never-pulls-into-the-main-heron-folder) | A development session never pulls into the main Heron folder | ✅ Accepted · 2026-11-20 |
 | [D-190](#d-190--the-readme-stops-asking-modellers-not-to-install-before-a-release-is-signed-and-says-plainly-the-build-is-unsigned-and-what-was-checked) | The README stops asking modellers not to install before a release is signed, and says plainly the build is unsigned and what was checked | ✅ Accepted · 2026-11-20 |
-| [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) | The usage counter keeps offered, helped and the last date it helped; "helped" is only the modeller's word; it moves a clause less than one rank; and no question text is kept | ✅ Accepted · 2026-11-20 |
+| [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) | The usage counter keeps offered, helped and the last date it helped; "helped" is only the modeller's word; it moves a clause less than one rank; and no question text is kept | ✅ Accepted · 2026-11-20 · *where a re-ranker is installed* superseded in part by D-201 · 2026-11-26 |
 | [D-192](#d-192--a-job-that-works-only-outside-the-model-it-is-aimed-at-declares-nogroupopen-and-an-admin-or-publish-job-then-opens-no-transaction-group-in-that-model) | A job that works only outside the model it is aimed at declares noGroupOpen, and an Admin or Publish job then opens no transaction group in that model | ✅ Accepted · 2026-11-21 |
 | [D-193](#d-193--making-sheets-keeps-three-rules-for-a-table-and-typed-numbers-alike-a-sheet-whose-number-or-name-revit-refuses-is-taken-back-a-number-asked-for-twice-makes-neither-and-1000-is-the-most-in-one-call) | Making sheets keeps three rules for a table and typed numbers alike: a sheet whose number or name Revit refuses is taken back, a number asked for twice makes neither, and 1,000 is the most in one call | ✅ Accepted · 2026-11-21 |
 | [D-194](#d-194--every-stored-vector-is-compared-in-plain-python-sqlite-vec-is-not-used) | Every stored vector is compared in plain Python; sqlite-vec is not used | ✅ Accepted · 2026-11-21 |
@@ -242,7 +242,11 @@
 | [D-198](#d-198--agents-that-were-built-but-that-nothing-in-heron-called-are-retired-and-their-code-and-tests-removed) | Agents that were built but that nothing in Heron called are retired, and their code and tests removed | ✅ Accepted · 2026-11-24 |
 | [D-199](#d-199--thirteen-more-idle-modules-are-retired-update-trust-release-tagging-versioning-the-import-pipeline-and-the-workflow-engine) | Thirteen more idle modules are retired: update, trust, release, tagging, versioning, the import pipeline and the workflow engine | ✅ Accepted · 2026-11-24 |
 | [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
+| [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 |
 | [D-202](#d-202--every-tool-has-a-title-and-read-and-write-labels-that-match-what-it-keeps-and-a-description-says-when-to-use-its-tool-rather-than-ordering-a-call) | Every tool has a title and read and write labels that match what it keeps, and a description says when to use its tool rather than ordering a call | ✅ Accepted · 2026-11-26 |
+| [D-204](#d-204--a-tool-that-can-never-come-back-empty-is-signed-on-a-by-hand-reading-and-a-tool-with-two-runs-waiting-is-signed-on-the-run-revit-checked) | A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked | ✅ Accepted · 2026-11-26 |
+| [D-206](#d-206--a-decision-accepted-on-the-owners-word-links-where-that-word-can-be-read-or-is-written-proposed-and-a-check-refuses-one-that-does-neither) | A decision accepted on the owner's word links where that word can be read, or is written Proposed, and a check refuses one that does neither | ✅ Accepted · 2026-11-26 |
+| [D-208](#d-208--an-overlap-in-a-clearance-check-is-reported-as-the-modeller-asks-clash-with-its-depth-unless-0-mm-is-asked-for-and-a-hole-is-sized-round-a-services-insulation-only-when-the-model-says-it-carries-some) | An overlap in a clearance check is reported as the modeller asks, CLASH with its depth unless 0 mm is asked for, and a hole is sized round a service's insulation only when the model says it carries some | ✅ Accepted · 2026-11-26 |
 
 ## Format
 
@@ -256,6 +260,7 @@ Decisions already split are left alone. **A number is used once**: D-45 to D-49 
 
 **Status:** Proposed | Accepted | Superseded by D-NN | Rejected
 **Date:** YYYY-MM-DD
+**Accepted:** who, the date, and a link to where the words can be read - a pull request or issue URL, or https://claude.ai/code/session_... (D-206)
 **Question:** Q-NN
 **Affects:** which documents / components
 
@@ -1221,7 +1226,8 @@ What this makes easy. What this makes hard. What it locks in.
 **Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation - shown the numbers measured on `main` `e309c81` and the costs, asked *"Ship it?"*, he chose *"Yes, ship it (Recommended)"* · **Source:** [row 5b-978](fragment-issues/section-5b-rows-976-1000.md)
 **Numbering:** written as D-133, which `tools/next-id.py` found free on `main` and on every branch when it was written, 2026-10-17. #615 merged its own D-133 first, so this was renumbered D-134 with `tools/renumber.py` the same day; the owner's yes was given to it as D-133. The question put to him named row 5b-918, free then; branches took ids up to 5b-977 before this was written, so the row is 5b-978.
 **Keeps:** R-41 - with no re-ranker installed every answer is what it was, measured on the words-only and model-only backends · the rule in `heron_retrieve._fragment_passage` that a question never reads the library · [D-128](#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model) · [D-86](#d-86--a-write-may-declare-a-question-only-when-answering-it-requires-the-write) - no write declares a question here, and every question a change answered is counted on every backend
-**Affects:** [`heron_rerank.py`](../brain/heron_rerank.py) (`PASSAGE_UTTERANCES`, `PASSAGE_WORDS`, `passage_said`), [`heron_search.py`](../brain/heron_search.py) (`rerank_said`, `INDEX_FORMAT` 3), [`heron_retrieve.py`](../brain/heron_retrieve.py) (`_fragment_passage`, `_carry_said`), [`tests/test_rerank.py`](../tests/test_rerank.py) section 12
+**Affects:** `heron_rerank.py` (`PASSAGE_UTTERANCES`, `PASSAGE_WORDS`, `passage_said`), [`heron_search.py`](../brain/heron_search.py) (`rerank_said`, `INDEX_FORMAT` 3), [`heron_retrieve.py`](../brain/heron_retrieve.py) (`_fragment_passage`, `_carry_said`), `tests/test_rerank.py` section 12 - the re-ranker's files, deleted by D-201
+**Superseded by:** [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional), accepted by the owner 2026-11-26 - the re-ranker is removed, and with it the passage this decision shaped and the store's `rerank_said`
 
 **Full record:** [`decisions/D-134.md`](decisions/D-134.md)
 
@@ -1706,6 +1712,7 @@ What this makes easy. What this makes hard. What it locks in.
 **Settles:** the four parts [D-70](decisions/D-70.md) left open · R-16 and R-25 of [the RAG requirement note](work-notes/plans/rag/01-requirements.md) · WN-12 of [#1006](https://github.com/Ajmalpshaik/Heron-AI/issues/1006)
 **Extends:** [D-70](decisions/D-70.md) - Heron keeps a usage counter, on the machine, as numbers
 **Affects:** [`brain/heron_usage.py`](../brain/heron_usage.py) · [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) `USAGE_SPAN` · the `heron_helped` tool · [`tests/test_usage_counter.py`](../tests/test_usage_counter.py)
+**Superseded in part by:** [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional), accepted by the owner 2026-11-26 - *"where a re-ranker is installed, its score sets the order"*: no re-ranker is installed anywhere, so the usage nudge always sits in the fused score
 
 **Full record:** [`decisions/D-191.md`](decisions/D-191.md)
 
@@ -1801,9 +1808,26 @@ agents whose Python copies went stay built, by the installer.
 
 **Full record:** [`decisions/D-200.md`](decisions/D-200.md)
 
+## D-201 — The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in conversation, after being shown the measurements: remove the re-ranker only, and keep model2vec optional.
+**Numbering:** D-201 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `5d9941bb` ending at D-200.
+**Supersedes:** [D-134](#d-134--the-re-ranker-reads-a-cards-first-declared-sentences-beside-its-identity-carried-in-the-store) - the re-ranker it shaped is gone, and with it the store's `rerank_said`
+**Supersedes in part:** [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) - its consequence *"where a re-ranker is installed, its score sets the order"*
+**Keeps:** model2vec and the built-in backend in [`brain/heron_embed.py`](../brain/heron_embed.py) · [D-49](#d-49--a-heavy-optional-import-never-happens-on-a-request-thread) · [D-100](decisions/D-100.md)
+**Affects:** `brain/heron_rerank.py` and `tests/test_rerank.py` deleted · [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) · [`brain/heron_search.py`](../brain/heron_search.py) (`INDEX_FORMAT` 4) · [`brain/heron_embed.py`](../brain/heron_embed.py) · [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) · [`tools/score-routing.py`](../tools/score-routing.py) · `requirements-optional.txt` · [WHAT-TO-INSTALL](WHAT-TO-INSTALL.md)
+
+The re-ranker re-read the top 20 after fusion. Measured, it gave no clear gain over the model alone after
+D-134 (first place 17 and 17, a question handed a change 11 against 8, at 571 fragments), cost about 80 ms
+a question, was the largest optional download, and held about 2 GB a chat on the owner's laptop - and only
+his PC ever had it, since Setup installs neither add-on. It is removed. model2vec stays optional: it is not
+clearly better than the built-in search on his questions, and needs huggingface.co once.
+
+**Full record:** [`decisions/D-201.md`](decisions/D-201.md)
+
 ## D-202 — Every tool has a title and read and write labels that match what it keeps, and a description says when to use its tool rather than ordering a call
 
-**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in conversation.
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in conversation, relayed to this change through the session [session_01XqSwbZ51VK4sEaC3EX94vH](https://claude.ai/code/session_01XqSwbZ51VK4sEaC3EX94vH); the pull request is [#1446](https://github.com/Ajmalpshaik/Heron-AI/pull/1446).
 **Numbering:** D-202 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` ending at D-200 and the id after it taken by an open pull request.
 **Affects:** [04 §8.4](04-heron-mcp.md) · `mcp/server/heron_tools.py` · `mcp/server/heron_server_core.py` · `tests/test_tool_registry.py` · `tests/test_mcp_serves.py`
 
@@ -1812,3 +1836,43 @@ chose (`heron_tools.KEEPS`) is not labelled read-only, and is destructive when i
 is labelled open-world. A tool's description says when it is used and never orders a call to another tool.
 
 **Full record:** [`decisions/D-202.md`](decisions/D-202.md)
+
+## D-204 — A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), answering Q-98 (*"Check by hand is enough"*) and Q-97 (*"if its need to chek the revit chek that and sing make it proven"*).
+**Numbering:** D-204 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201 and D-202 held by an unmerged branch.
+**Keeps:** [D-30](decisions/D-30.md) - only the negative leg is answered differently, for two named tools
+
+`REFRESH_VIEW` and `REPORT_LEVEL_ELEVATIONS` can never come back empty, so each is signed on a by-hand reading
+written on the proof, with release, model and date. A tool with more than one run waiting is signed on the run
+checked in Revit for the tool as it stands, one run at a time. The owner signs; nothing in code changes.
+
+**Full record:** [`decisions/D-204.md`](decisions/D-204.md)
+
+## D-206 — A decision accepted on the owner's word links where that word can be read, or is written Proposed, and a check refuses one that does neither
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), asked *"When a session writes 'the owner said yes', must it link to where you said it?"* and choosing *"Yes, and a checker blocks it"* ([#1262](https://github.com/Ajmalpshaik/Heron-AI/issues/1262) items 2 and 3).
+**Numbering:** D-206 - `tools/next-id.py` printed D-205 free on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201; D-205 was given to a sibling session the same day, so this took the next.
+**Affects:** [`tools/check-decision-sources.py`](../tools/check-decision-sources.py), new · CI's *The gates that must pass*, thirteen commands · the *Adding to it* line and the Format above
+
+An Accepted decision's **Accepted:** line links where the owner's words can be read - a pull request or issue of this
+repository by its full URL, or a claude.ai session he can open; a bare `#N` or a commit's sha does not count. A
+session that heard his yes only in its own chat writes the decision Proposed, for him or the coordinator to confirm.
+`tools/check-decision-sources.py` refuses, in CI, an Accepted decision from D-206 on with no such link; D-00 to D-205
+are grandfathered by number, and `--all` reports them.
+
+**Full record:** [`decisions/D-206.md`](decisions/D-206.md)
+
+## D-208 — An overlap in a clearance check is reported as the modeller asks, CLASH with its depth unless 0 mm is asked for, and a hole is sized round a service's insulation only when the model says it carries some
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), answering issue #1088: *"depending on the user it will be ask depth or just 0, both option maybe needed"*, and *"include insulation if the pipe has insulation - not only pipe, duct also ... before that need to check the pipe or duct has insulation or not"*.
+**Numbering:** D-208 is the id the coordinating session named; `tools/next-id.py` on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201, printed D-207 as the next free and nothing read held D-208.
+**Keeps:** [D-33](decisions/D-33.md) - a clearance or an allowance is still a number the request gives · [D-30](decisions/D-30.md)
+
+Where two boxes overlap, a clearance check reports CLASH with the depth of the overlap unless the request asks for
+0 mm; both are kept, the overlapping pairs are counted either way, and a gap is never a negative number
+(`CHECK_MINIMUM_CLEARANCE` version 5, `overlapAs`). A hole or sleeve is sized round a pipe's or duct's insulation
+only when the model says it carries some - read first, never assumed, lining not counted (`PROPOSE_MEP_OPENINGS`
+version 3, as `CHECK_SLEEVE_SIZE` reads it).
+
+**Full record:** [`decisions/D-208.md`](decisions/D-208.md)

@@ -363,3 +363,6 @@ utterances:
   - what fields are available on this category
   - what can I schedule on these
   - i do not know the parameter name
+  # ADDED 2026-11-26, row 5b-2049: keeping a record of every value before a
+  # change sat within a hair of SET_PARAMETER_VALUES_BY_ID, a write, on lexical.
+  - keep a record of all the parameters and values on this before changing it

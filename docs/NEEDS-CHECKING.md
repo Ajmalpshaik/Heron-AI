@@ -1707,6 +1707,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-qs.md`](needs-checking/group-qs.md)
 
+## Group QU - REPORT_CURTAIN_ELEMENTS version 3: a curtain system read face by face, curtain walls word for word as before - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qu.md`](needs-checking/group-qu.md)
+
+## Group QW - the Delete box announced: a preview that deletes says the box is coming and what goes by category, and a box that closed by itself says TIMED OUT with the time it had - NOT RUN (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qw.md`](needs-checking/group-qw.md)
+
 ## Group QK - CREATE_CURTAIN_SYSTEM version 2: a curtain system on chosen mass faces - sloped, by number, all but some - never over a face already glazed - DRAFT until proved (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qk.md`](needs-checking/group-qk.md)
@@ -1714,6 +1722,22 @@ Step 6 is finished, and not before. At that point:
 ## Group QQ - the rest of the night of 2026-11-24 on Revit 2024: nine MEP and view-filter cards on Night Ducts 1124, and two arrangements owed - NOT RUN (2026-11-24)
 
 **Its own file:** [`needs-checking/group-qq.md`](needs-checking/group-qq.md)
+
+## Group QT - REPORT_ELEMENT_DEPENDENCIES version 2: every dimension in every view that a delete takes or cuts - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qt.md`](needs-checking/group-qt.md)
+
+## Group QV - a delete whose count is not the one the yes named stops before anything goes: `DELETE_ELEMENTS` version 4 - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qv.md`](needs-checking/group-qv.md)
+
+## Group QX - MEASURE_DISTANCE version 3 and MEASURE_AVAILABLE_FALL version 2: the two elements selected in Revit, or two ids typed - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qx.md`](needs-checking/group-qx.md)
+
+## Group QY - CHECK_MINIMUM_CLEARANCE version 5 (vertical clearance merged in), CHECK_SLEEVE_SIZE version 3 and PROPOSE_MEP_OPENINGS version 3 - DRAFT until proved (2026-11-26)
+
+**Its own file:** [`needs-checking/group-qy.md`](needs-checking/group-qy.md)
 
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 

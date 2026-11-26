@@ -3405,7 +3405,8 @@ def calc_obstruction(a):
     _check_standard(a, held["sprinkler_standard"], "the tables used are", "nfpa")
     a.cite(beam["source"])
     a.into_revit("PROBE_AROUND_ELEMENTS finds which sprinklers have a beam or duct within a "
-                 "distance; CHECK_VERTICAL_CLEARANCE measures the gap between services")
+                 "distance; CHECK_MINIMUM_CLEARANCE with stackedOnly measures the vertical gap "
+                 "between services")
 
 
 # --- what NFPA 13's annex lists --------------------------------------------------
@@ -5011,6 +5012,13 @@ def describe_catalogue():
 
 
 def main(argv):
+    # Row 5b-2044: print safely on a cp1252 console. Written here rather
+    # than imported from heron_console: the engine imports the standard
+    # library and its own siblings only (tests/test_hvac.py, test_fire.py).
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
     if len(argv) < 2:
         print(describe_catalogue())
         return 0

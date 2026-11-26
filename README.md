@@ -99,6 +99,9 @@ The latest release is **[v0.3.0](https://github.com/Ajmalpshaik/Heron-AI/release
 Windows user, with **no administrator rights**. Step by step, with troubleshooting, updating and
 removing: [**Installing Heron**](docs/guide/install.md).
 
+**Modellers: use the Setup file.** Downloading or cloning this repository is for developers - it has
+no Revit add-in, and Heron answers only in a Claude Code chat opened in the Heron folder.
+
 1. **Install Python once.** In Windows Terminal: `winget install Python.Python.3.12 --scope user`
 2. **Close Revit**, and close Claude too if you want Heron added to Claude Code in the same go.
 3. **Double-click `HeronSetup-0.3.0-unsigned.exe`.** Windows says *"Windows protected your PC"*

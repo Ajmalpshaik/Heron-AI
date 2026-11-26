@@ -59,14 +59,14 @@ line below with `HERON_CLIENT_ID=ajmal-pc`, `--session <process id>` when two Re
 | **KC4** | *A rising line.* `200000,0,0; 212000,0,1500` | `created` none; Line 1 named as rising 1500 mm |
 | **KC5** | *The same line twice.* `200000,0,0; 212000,0,0 \| 212000,0,0; 200000,0,0` | `created` one; Line 2 named *the same line as line 1 - one truss per line, not two* |
 | **KC6** | *Kept, through `try-once`, on the modeller's yes.* KC2's positive on a saved copy, a plan of the level in front | Keep or Discard; afterwards a Structural Truss schedule shows one new row of the type asked - the second route - and one Ctrl+Z takes it and its members away |
-| **KC7** | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The three sentences reach this card by identity. Any sentence the re-ranker moves to this card from another is a row of its own |
+| ~~**KC7**~~ | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The three sentences reach this card by identity. Any sentence the re-ranker moves to this card from another is a row of its own **CLOSED 2026-11-26** - [D-201](../decisions/D-201.md) (2026-11-26) removed the `+rerank` backends, so the run this row asked for on `model+rerank` can no longer be made anywhere, and the owner's PC now ranks on `model`. The run on `model` that answers its look-for is on record in the routing paragraph below, measured 2026-11-01 in a cloud container; it was not made again on 2026-11-26, and this is not a run on the PC. |
 
 **Then sign**, on the owner's word only: `python brain/heron_validate.py accept create-truss --by "Ajmal
 PS"` once its positive and negative pass, and `heron-status` set to PROVEN in the same change. A row that
 fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here - through `brain/heron_retrieve.py` on a
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on - through `brain/heron_retrieve.py` on a
 scratch store each, against this tree with and without the card, on Revit 2024. The three sentences reach
 this card by identity; without it they reached `CREATE_WALL`, `DIMENSION_GRIDS_AND_LEVELS` and
 `CREATE_ROOF`, ranked. Three undeclared phrasings - *"place a truss"*, *"draw a truss from here to here on

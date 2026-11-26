@@ -54,6 +54,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 | [`check-secrets.py`](check-secrets.py) | a credential in a tracked file, or a tracked file named like one | CI; before pushing anything that holds a key, a token or a config |
 | [`check-products.py`](check-products.py) | the product manifest: a duplicate `addInId`, a `partOf` typo, a release the repository does not build | CI; after editing `platform/heron-products.json` |
 | [`check-decision-titles.py`](check-decision-titles.py) | a decision number keeps the title it was first written with | CI, on the whole history; before merging a new `D-nnn` |
+| [`check-decision-sources.py`](check-decision-sources.py) | an Accepted decision from D-206 on links where the owner's yes can be read ([D-206](../docs/decisions/D-206.md)) | CI; after writing a decision Accepted |
 | [`check-supersessions.py`](check-supersessions.py) | a decision another one supersedes says so under its own heading, and names only a successor that says so too | `check-docs.py` §13 runs it, so before every push and in CI; after writing a `**Supersedes:**` field |
 | [`check-routing.py`](check-routing.py) | every fragment still wins its own sentences; a routing row naming no capability fails | CI; after any change to a card's words |
 | [`check-intrusion.py`](check-intrusion.py) | who turns up in shortlists they have no claim on - exits 0 on a finding | CI, beside `check-routing.py` |
@@ -621,13 +622,12 @@ card's words. **`--sentences`** asks a frozen set instead of the two above, and 
 
 - **`--tree`** measures another checkout, such as a detached worktree of main, with **that tree's own
   search code** over a store built from its cards. Default: this checkout.
-- **`--backend`** is `lexical`, `model`, `lexical+rerank`, `model+rerank`, `all`, or `installed` (the
+- **`--backend`** is `lexical`, `model`, `all`, or `installed` (the
   default: whatever answers, named by what answered). **Each backend is asked in a process of its own on a
   scratch store**, so a backend is never mixed with another, and the store every chat reads is never
   touched. A backend this machine has not got is **NOT ASKED** and named; the others still run.
 - **Every answer carries the backends that produced it**, and a run whose answers ran on anything else —
-  the trained model asked for and lexical answering, a re-ranker on a run asked for without one (row 481),
-  a shortlist of two or more the cross-encoder did not re-read — is refused: **not written with `--out`,
+  the trained model asked for and lexical answering (row 481) — is refused: **not written with `--out`,
   and not compared when it is read back**.
 - **Every run says which cards it was asked on** (`Cards:`, a fingerprint of every file under
   `brain/fragments`, kept in the record as each run's `cards`), and a run whose cards changed while it was
@@ -638,21 +638,13 @@ card's words. **`--sentences`** asks a frozen set instead of the two above, and 
 - **`--compare`** lists every sentence whose answer changed against an earlier record, per backend,
   tagged **want**, **bad** or **neutral**, with the questions reaching a write and the wanted answers
   reached, before and after. Sentences are matched by their words, so a set that grew still compares.
-- **`--shortlists`** records, per sentence, the shortlist the re-ranker read — at most its top 20, with
-  each passage, its fused score and its cross-encoder score. No hook in `heron_retrieve`: the tool wraps
-  its `_rerank` from outside, so it works on a main older than this tool too.
-- **`--identities <file> --card <CAPABILITY>`** is the fast loop: one candidate identity per line,
-  re-scored **offline** with `heron_rerank` on those shortlists, **one line per candidate** — wanted
-  sentences won, bad ones taken (questions counted apart), neutral ones taken. `--from` names the record;
-  without it, the shortlists just taken. A sentence answered by an exact phrase never reaches the
-  re-ranker and is skipped; one whose shortlist did not hold the card is **out of reach** — a new identity
-  moves the words and nearness routes too, so only a full run settles it. It needs a cross-encoder on
-  this machine and refuses without one.
+- `--shortlists`, `--identities`, `--card` and `--from` - recording the shortlist a cross-encoder read
+  and re-scoring candidate identities on it offline, and the `+rerank` backends - went with the
+  re-ranker on 2026-11-26 ([D-201](../docs/decisions/D-201.md)).
 
 **It exits 0 whatever it finds** (D-100); exit 2 when nothing was measured, the set is malformed, or a
-record would be written on the wrong backend. The code and its tests need no model. A run with the
-cross-encoder needs `sentence-transformers` and huggingface.co once for the weights
-([`heron_rerank.py`](../brain/heron_rerank.py)).
+record would be written on the wrong backend. The code and its tests need no model. A run on `model`
+needs model2vec and huggingface.co once for the weights ([`heron_embed.py`](../brain/heron_embed.py)).
 
 ---
 
@@ -1875,8 +1867,8 @@ declared** — the diff outranks the label. Touching a fragment owes a run again
 `semantic-identity`, `utterances`, `purpose`, `domain` or a YAML comment moved, and nothing else in that
 fragment's folder did, the signal is `fragment-routing` - it owes `check-routing` and `check-intrusion`,
 not a Revit run, because Revit reads none of that text and D-30's fingerprint covers `impl/` alone.
-`purpose` is prose, and counts as routing because the lookup indexes it; `domain` is the re-ranker's
-and a lookup's filter, so a wrong one can hide a card - `check-routing` measures that, a Revit run
+`purpose` is prose, and counts as routing because the lookup indexes it; `domain` is indexed by the
+words route and is a lookup's filter, so a wrong one can hide a card - `check-routing` measures that, a Revit run
 cannot (added on the owner's word, 2026-10-17). Any other key - contract,
 risk, revit, runtime, status, proof, capability - or anything under `impl/` or `tests/`, or a card that
 is new or will not parse, keeps `fragment-behaviour`. [Row 5b-862](../docs/FRAGMENT-ISSUES.md).
@@ -2031,7 +2023,7 @@ correct; silent degradation plus an install list nobody can follow is how a pers
 backend believing they are on the better one.**
 
 **It does not install anything.** Saying so is better than a tool that half-installs. Every size it
-prints is read from the code that owns the download - `heron_rerank.SIZE`, `heron_embed.SIZE`,
+prints is read from the code that owns the download - `heron_embed.SIZE`,
 `heron_ingest.PDF_READER_SIZE` - never typed in it.
 
 ## `heron-ready.py` — a new PC made as quick as the old one, before the first chat
@@ -2712,6 +2704,32 @@ shrinks.
 it cannot see. `git fetch --unshallow` first; the gates job fetches the whole history for it.
 [`tests/test_check_decision_titles.py`](../tests/test_check_decision_titles.py) builds its own repositories, so
 it runs anywhere.
+
+---
+
+## `check-decision-sources.py` - an owner's yes is linked where it can be read
+
+```bash
+python tools/check-decision-sources.py          # D-206 and later - the gate
+python tools/check-decision-sources.py --all    # every decision; the older ones only reported
+```
+
+**A gate: CI's gates job runs it ([D-206](../docs/decisions/D-206.md)).** On 2026-11-21 a session wrote D-196
+Accepted on words the owner had not said, and its one source was that session's own chat
+([row 5b-1986](../docs/fragment-issues/row-5b-1986.md), issue #1262). Asked on 2026-11-26 whether a decision that
+says *"the owner said yes"* must link where he said it, he chose *"Yes, and a checker blocks it"*.
+
+It reads every decision numbered D-206 or later whose Status starts with *Accepted* - its full record and its index
+entry, with `check-supersessions.py`'s own header reader - and exits **1** when the header has no `**Accepted:**`
+line, or one that links neither a pull request or issue of this repository (`https://github.com/Ajmalpshaik/Heron-AI/pull/N`,
+`.../issues/N`) nor a claude.ai session (`https://claude.ai/code/session_...`). A bare `#N`, a commit's sha and a link
+in another field do not count. A Proposed decision owes nothing - that is where a yes heard only in a session's own
+chat goes. **D-00 to D-205 are grandfathered by number**; `--all` prints how each would fare and never changes the
+exit code. It exits **2** when there is no decision to read.
+
+**It reads a link's shape, not what is at the other end** - whether the words are there, and whether a comment under
+the owner's login was typed by him, are a reviewer's. [`tests/test_check_decision_sources.py`](../tests/test_check_decision_sources.py)
+builds its own logs, so it runs anywhere.
 
 ---
 

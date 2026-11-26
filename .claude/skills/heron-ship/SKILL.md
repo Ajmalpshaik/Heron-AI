@@ -1,6 +1,6 @@
 ---
 name: heron-ship
-description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the twelve CI actually decides on, the reports whose findings are questions, how to measure what a card's routing words moved - main against the branch on a named backend, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, where a new 5b defect row is written (a file of its own, and its GitHub issue in the same change), and how to resolve a merge conflict in the NEEDS-CHECKING group index or between two branches that took the same id.
+description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the thirteen CI actually decides on, the reports whose findings are questions, how to measure what a card's routing words moved - main against the branch on a named backend, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, where a new 5b defect row is written (a file of its own, and its GitHub issue in the same change), and how to resolve a merge conflict in the NEEDS-CHECKING group index or between two branches that took the same id.
 allowed-tools:
   - Bash
   - Read
@@ -101,11 +101,11 @@ machine can run Heron at all. Run it after a fresh clone, after touching `requir
 missing **optional** package exits 0 on purpose: silent degradation is the designed behaviour, and a
 checker that failed on one would be arguing with the requirement that allows it.
 
-### THESE FOUR ARE NOT WHAT DECIDES THE PULL REQUEST. TWELVE DO.
+### THESE FOUR ARE NOT WHAT DECIDES THE PULL REQUEST. THIRTEEN DO.
 
-`.github/workflows/gates.yml` has a job named **"The gates that must pass"**, and it runs **twelve**
+`.github/workflows/gates.yml` has a job named **"The gates that must pass"**, and it runs **thirteen**
 commands under `bash -e` — so a non-zero exit from **any** of them turns the PR red. The four above
-are four of the twelve. The other eight are:
+are four of the thirteen. The other nine are:
 
 ```bash
 python tools/check-signatures.py       # a signature left unused - signed, still DRAFT (a stale proof is only reported)
@@ -114,6 +114,7 @@ python tools/check-narrow-errors.py    # an sqlite3.OperationalError handler tha
 python tools/check-secrets.py          # a credential shape in a tracked file, or a tracked file .gitignore's Secrets block refuses (D-143)
 python tools/check-products.py         # the manifest the installer reads, which nothing compiles
 python tools/check-decision-titles.py  # a decision number that stopped meaning its decision
+python tools/check-decision-sources.py # an Accepted decision from D-206 on whose yes links nowhere it can be read (D-206)
 HERON_KNOWLEDGE=$(mktemp -d) python tools/check-routing.py    # every capability still reachable, and every routing row names one
 HERON_KNOWLEDGE=$(mktemp -d) python tools/check-intrusion.py  # one fragment crowding out another
 ```
@@ -178,6 +179,13 @@ number it had (renumber.py writes that one), and the decision now under the old 
 title if the branch wrote first. Run it with no flag on the branch, main merged in, and you see what CI
 sees. It was `HEAD^1` until then, which let such a branch pass and turned every pull request after it red.
 
+**`check-decision-sources` fails a decision you write Accepted with no link to where the owner said yes**
+(since 2026-11-26, [D-206](../../../docs/decisions/D-206.md)). From D-206 on, the `**Accepted:**` line links a pull
+request or issue of this repository by its full URL, or the claude.ai session he gave it in; a bare `#N` or a
+commit's sha does not count. A yes you heard only in your own chat, with no such link, is written
+`**Status:** Proposed` for him or the coordinator to confirm - that passes. D-00 to D-205 are grandfathered;
+`--all` reports them. It reads the files only, so it runs anywhere.
+
 ## 2. The tests
 
 ```bash
@@ -207,8 +215,9 @@ Python would put every other suite on a backend CI does not use. Measured 2026-1
 both installs above: this one and `test_bridge_roundtrip.py`, its host not yet built, were the only
 suites waiting. **Where the system Python already has model2vec it runs, and a red there may be the
 machine:** measured 2026-11-12 in a cloud container with model2vec and no re-ranker installed, it failed 8
-checks - the same 8 on `origin/main` at `c65509a9`, so not the branch's change. That is the model
-alone, where the PC ranks `model+rerank` (§3a): run it on main's tree before reading such a red as yours.
+checks - the same 8 on `origin/main` at `c65509a9`, so not the branch's change. Since D-201 removed the
+re-ranker (2026-11-26) the PC ranks on the model alone too, so those reds are the PC's as well - card
+wording, owed in their rows: run it on main's tree before reading such a red as yours.
 
 **Derive which ones, rather than reading a list here** — the same rule as the suite total four lines
 up, and for the same reason it is written twice:
@@ -276,7 +285,7 @@ again on the venv, where an exit 3 fails the job. "They drag in native dependenc
 measured that day rather than repeated: the lock installs on Linux from wheels alone, in seconds. The job
 still **fails the build if a suite on its not-runnable list runs there after all**, so a suite that
 starts running comes off that list in the same change - which today holds `test_routing_phrases.py`
-alone, for the re-ranker.
+alone, for its reds on the model (row 5b-1882).
 
 **Nothing else should fail on any machine.** `test_graph.py` and `test_reachable.py` were on this list
 until 2026-09-12, when both were fixed rather than excused — each had a fixture describing a repository
@@ -468,35 +477,28 @@ say every capability is still reachable; **what moved, sentence by sentence, is
 ```bash
 WORK="$(mktemp -d)"     # rough work goes outside Heron's folder, never beside it (AGENTS.md); s.yaml goes here
 git worktree add --detach "$WORK/main-wt" origin/main
-python tools/score-routing.py --sentences "$WORK/s.yaml" --tree "$WORK/main-wt" --backend all --shortlists --out "$WORK/main.json"
+python tools/score-routing.py --sentences "$WORK/s.yaml" --tree "$WORK/main-wt" --backend all --out "$WORK/main.json"
 python tools/score-routing.py --sentences "$WORK/s.yaml" --backend all --compare "$WORK/main.json"
 git worktree remove "$WORK/main-wt"
 ```
 
 - **Freeze the sentences before you edit the card**, each with `want <CAPABILITY>`, `not-a-write` or
   `neutral`. A set written after the edit measures the edit's own words back.
-- **Name the backend.** Four were measured in row 485: `lexical` (CI's), `model`, and each `+rerank` -
-  the owner's PC is `model+rerank`. A backend this machine has not got is **NOT ASKED**, which is
-  **NOT RUN**, never a pass: a cloud container usually has `lexical` alone. Leave the others to the PC,
-  and say so - or, where PyPI and huggingface.co answer, put them in a **venv of their own** and run the
-  tool with its Python (each backend's process uses the same one). Measured 2026-10-17: all four in
-  about 8 minutes and 5.8 GB, PyPI's CUDA torch because download.pytorch.org was refused. **Never in
-  the system Python:** `heron_embed` falls back to sentence-transformers when model2vec is missing, so
-  every suite would then run on a backend CI does not.
-- **The venv needs the weights too: `python brain/heron_rerank.py --fetch --yes` with its Python, once.**
-  Until then the re-ranker is `absent`. `score-routing` refuses `model+rerank` (NOT ASKED), but
-  `tests/test_routing_phrases.py` and `tests/test_retrieve.py` run on the model alone and do not say so -
-  measured 2026-10-29, when the first "re-ranker" run of a session was not one (row 5b-1293).
-- **The re-ranker reads a card's identity and its first eight utterances (D-134); the order of utterances
-  moves nothing else.** So a misroute only the re-ranker makes is tried by reordering first: an identity
-  is read by all three routes, and rewording one can fix the re-ranker and break the model (row 5b-1293).
-- **A refused run is the point, not a nuisance.** Row 481's "both backends" were both re-ranked, found
-  later. The tool now refuses to write, or to compare against, a run whose answers ran on another backend.
+- **Name the backend.** Two: `lexical` (CI's) and `model` - the owner's PC is `model`. (Row 485
+  measured each with `+rerank` too, until D-201 removed the re-ranker on 2026-11-26.) A backend this
+  machine has not got is **NOT ASKED**, which is **NOT RUN**, never a pass: a cloud container usually
+  has `lexical` alone. Leave the model to the PC, and say so - or, where PyPI and huggingface.co answer,
+  put model2vec in a **venv of its own** and run the tool with its Python (each backend's process uses
+  the same one). **Never in the system Python:** every suite would then run on a backend CI does not.
+- **The order of a card's utterances moves nothing.** It did while the re-ranker read a card's identity
+  and its first eight (D-134, superseded by D-201); the words and nearness routes read them all.
+- **A refused run is the point, not a nuisance.** Row 481's "both backends" were not the backends asked
+  for, found later. The tool refuses to write, or to compare against, a run whose answers ran on
+  another backend.
 - **Every `bad` line is a finding to report**, and it exits 0 (D-100). Never reword a sentence to buy it
   back.
-- **Trying wordings for an identity?** `--identities "$WORK/ids.txt" --card NAME --from "$WORK/main.json"` re-scores
-  them offline on the recorded shortlists, one line per wording. It is a screen: build the winner in full,
-  on both trees, before you claim it.
+- **Trying wordings for an identity?** Build each in full and run `--sentences` on it. The offline
+  re-scoring screen (`--identities`) went with the re-ranker it re-scored for (D-201).
 
 ## 4. The one that exits 1 on purpose
 

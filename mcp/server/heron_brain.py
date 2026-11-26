@@ -166,23 +166,6 @@ def warm():
         # degradation rather than an outage.
         pass
 
-    # THE RE-RANKER IS WARMED FOR THE SAME REASON AND IT IS A HEAVIER IMPORT.
-    #
-    # `A7`/`A8` cost thirty minutes of a real tool call because a 1.0 s
-    # model2vec import ran on the asyncio event loop. A cross-encoder pulls in
-    # torch, which is larger. So it is loaded here, off the request path,
-    # before anything asks - and until it finishes, retrieval keeps fusion's
-    # order and says the re-ranker did not run.
-    #
-    # NOT a seventh member of _brain()'s tuple: six call sites unpack that
-    # positionally, and heron_rerank needs no PyYAML, so importing it here is
-    # always safe.
-    try:
-        import heron_rerank as RERANK
-        RERANK.warm()
-    except Exception:
-        pass
-
 
 # THE FIRST LOOKUP OF A CHAT PAID FOR THE WHOLE STORE, AND NOW NOBODY WAITS FOR IT.
 #
@@ -1200,11 +1183,11 @@ def lookup(request, revit=None, question=False, ceiling=None):
             "excluded": [{"id": e.id, "reason": e.reason} for e in excluded],
             # WHICH BACKENDS ANSWERED, THROUGH THE SEAM A HOST ACTUALLY USES.
             #
-            # heron_retrieve's command line prints both and this path printed
-            # neither, so a caller could not tell a fusion-only answer from one
-            # a cross-encoder had re-read - which is R-41's "degrades but SAYS
-            # SO" holding in the one place nobody looks and failing in the one
-            # place everybody does. The same shape as the citation, found the
+            # heron_retrieve's command line printed the backend and this path
+            # did not, so a caller could not tell a lexical answer from a
+            # model one - which is R-41's "degrades but SAYS SO" holding in
+            # the one place nobody looks and failing in the one place
+            # everybody does. The same shape as the citation, found the
             # same way, by a review.
             #
             # AND IT IS ASKED ABOUT THIS ANSWER, not about the machine. The
@@ -1305,15 +1288,15 @@ def method(skill_id, revit=None):
 
 # The routes that answer WITHOUT searching. heron_search.short_circuit() and
 # recall() return a fragment by exact phrasing or by what was asked before -
-# no nearness, no fusion, nothing to re-rank.
+# no nearness, no fusion, nothing ranked.
 UNSEARCHED = ("identity", "cache", "nothing", "empty", "unindexed")
 
 
 def _backends(answer=None):
     """Which optional backends answered THIS request. Never raises.
 
-    Both are optional by construction and both report absence rather than
-    failing, so asking them cannot be allowed to fail either.
+    The trained encoder is optional by construction and reports absence
+    rather than failing, so asking about it cannot be allowed to fail either.
 
     THE RUN RECORDS IT, THIS ONLY READS IT BACK. Two earlier versions asked
     the backends themselves, after the search, and each time the answer was a
@@ -1323,9 +1306,7 @@ def _backends(answer=None):
         which searches nothing - still reported both as having answered
       * the second gated on the route, which fixed only that: a warm-up
         finishing between RETRIEVE.find() and this line still labelled a
-        lexical, fusion-only result "model", and a loaded re-ranker whose
-        scores() returned None was still reported as having re-read the
-        shortlist
+        lexical, fusion-only result "model"
 
     heron_retrieve.ran() now records what produced a rank, at the moment it
     produced it, and hangs it on the Answer. There is nothing left here to get
@@ -1338,18 +1319,13 @@ def _backends(answer=None):
     if route is None or route in UNSEARCHED:
         return {"nearness": "not used",
                 "nearness_why": "this answer came back on the %s route, which "
-                                "does not search" % (route or "short-circuit"),
-                "rerank": "not used",
-                "rerank_why": "there was no shortlist to re-read"}
+                                "does not search" % (route or "short-circuit")}
     # A SEARCHING ROUTE THAT RECORDED NOTHING. Not reachable from the routes in
     # this repository today, and saying so beats naming a backend on a run
     # nothing was recorded about.
     return {"nearness": "not said",
             "nearness_why": "the %s route did not record which backends ran"
-                            % route,
-            "rerank": "not said",
-            "rerank_why": "the %s route did not record which backends ran"
-                          % route}
+                            % route}
 
 
 class ContextRefused(Exception):
@@ -1516,7 +1492,7 @@ def _carry_cited(CONTEXT, GROUND, store, draft, packet):
     packet held between two calls is a session that can go stale - and the
     reassembly returns a top-five shortlist. So a chunk that WAS shown by
     heron_standards, and is still sitting in the store, could fall out of the
-    new shortlist when a re-ranker finished warming or another document was
+    new shortlist when the trained encoder finished warming or another document was
     ingested between the two calls. The draft then cited a real clause and the
     report said UNRESOLVED: a citation that resolves to nothing, which R-22
     calls the tag pointing at no element - invented here by the checker rather
@@ -2868,8 +2844,7 @@ def standards(request, scopes, project=None, limit=5,
 
     # ONE SEARCH PER SCOPE, SHARED. Calling disagreements() without `asked`
     # made it ask the Librarian again, so every served standards request
-    # searched - and, where a cross-encoder is installed, re-ranked - every
-    # scope twice. Worse than the waste: two shortlists that a finishing
+    # searched every scope twice. Worse than the waste: two shortlists that a finishing
     # warm-up or a changed file could make different, so the disagreement shown
     # could be about clauses other than the ones listed above it.
     asked = RETRIEVE.librarian(request, scopes=wanted, project=project,

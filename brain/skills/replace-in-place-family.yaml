@@ -77,9 +77,14 @@ purpose: >
      cb0704fc... empty - a by-name read showed the empty one. `sameNameTwice`
      names every such pair with both GUIDs; every value is carried and
      compared by GUID first, then by name - never by name alone.
-     Then REPORT_ELEMENT_DEPENDENCIES on the same old ones: every tag,
-     dimension and hosted element Revit deletes with them. Keep the list -
-     step 10 names it. It cannot see a reference from a linked model.
+     Then REPORT_ELEMENT_DEPENDENCIES on the same old ones: Revit's own
+     dependents - tags, hosted elements, an in-place family's parts - and,
+     since its version 2 (row 5b-1990), every dimension IN EVERY VIEW that
+     measures to them or to a dependent, one line each in `dimensionLines`:
+     its view, DELETED (too few references left) or CUT (a string that
+     stays, changed). `goesTotal` is how many the delete is expected to
+     take. Keep it all - steps 9 and 10 name it. It cannot see a reference
+     from a linked model, nor what a delete changes in a view itself.
 
   2. READ THE NEW TYPE, AND AGREE THE MAP WITH THE MODELLER - before anything
      is placed. Where an instance of the new type is already placed
@@ -262,19 +267,37 @@ purpose: >
      leader none or straight as the old tag had, minLengthMm=0 and
      leaderOffsetMm=0. A new one already carrying a tag of that type in the view
      is skipped. Or hand the list to the modeller - on 2026-10-12 the owner
-     chose to re-tag himself. NOTHING COPIES A DIMENSION: one that measured to
-     an old one goes with it, and step 10 names it.
+     chose to re-tag himself. NOTHING COPIES A DIMENSION: one that measured
+     only to an old one goes with it, and one that measured to an old one and
+     to something else is CUT - its segments to the old one removed. Both
+     are in step 1's `dimensionLines`, by view; step 10 names them, and
+     re-dimensioning is the modeller's (2026-11-23, the owner's choice).
 
   10. DELETE THE OLD ONES - LAST, ON THE MODELLER'S YES FOR THAT ONE DELETE,
      WITH EVERYTHING THAT GOES WITH THEM NAMED (Article 7). 2026-10-15: the
      first delete of 13 old openings silently took 33 tags and dimensions with
-     them. So first REPORT_ELEMENT_DEPENDENCIES on the old ones again, fresh,
-     and the yes question names the families and the count AND every
-     dependent by kind and view - which tags step 9 copied, and every tag and
-     dimension that will simply go. DELETE_ELEMENTS with
+     them; 2026-11-23 (row 5b-1990), on Revit 2020, 36 were named, the delete
+     took 62 and cut 26 more dimensions - version 1 of the dependencies card
+     never read a dimension outside Revit's own list. So first
+     REPORT_ELEMENT_DEPENDENCIES on the old ones again, fresh, and the yes
+     question names the families and the count AND every dependent by kind
+     and view - which tags step 9 copied, every tag that will simply go,
+     every dimension DELETED and every dimension CUT from `dimensionLines`,
+     each with its view - and `goesTotal`, the number Revit's Delete box
+     should show. Any `dimensionsUnread` is said too: those were not
+     checked. Then DELETE_ELEMENTS with expectedCount= that `goesTotal` and
      expect_from="select-by-parameter-value where matchText=<old family>" from a
      fresh SELECT_BY_PARAMETER_VALUE of the OLD name, in step 0's categories: never without the expect_from,
-     which deletes whatever is selected in the window. Then set `deleted`
+     which deletes whatever is selected in the window. HERON STOPS BEFORE
+     ANYTHING GOES WHEN THE COUNT DIFFERS (DELETE_ELEMENTS version 4, row
+     5b-1990): it tries the whole delete and rolls it back first, and when
+     Revit's own count is not `goesTotal` it deletes NOTHING and answers with
+     Revit's list - by category, and every id beyond the old ones. Then name
+     that list, ask the yes again with Revit's count, and send DELETE_ELEMENTS
+     with expectedCount= that count; never leave expectedCount out to get
+     past the stop. REVIT'S DELETE BOX STILL NAMES HOW MANY IT WILL DELETE:
+     when that number is not the count the yes named, the modeller presses
+     Cancel - nothing is deleted. Then set `deleted`
      against the list named: anything gone that the question did not name is
      said at once - Revit's Undo still brings it back. For in-place
      equipment, run step 3's SELECT_IN_REGION and REPORT_BOUNDING_BOX again:
@@ -346,7 +369,7 @@ preconditions:
   - the modeller has agreed the map - what is carried and from what, the size map, what a new one may keep from its copy source or family, the workset, and whether Mark is copied
   - the modeller has said whether the tags are copied by Heron or re-tagged by the modeller
   - one new one has been placed, read back and shown to the modeller before the rest
-  - the modeller has said yes to deleting the old families, by name and count with every dependent named, for that one delete
+  - the modeller has said yes to deleting the old families, by name and count with every dependent named and every dimension that will be deleted or cut named by view, for that one delete, and DELETE_ELEMENTS is given that count as expectedCount
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 

@@ -128,3 +128,7 @@ utterances:
   - I do not want to see furniture here
   - hide the whole category
   - turn the structure back on
+  # ADDED 2026-11-26, row 5b-2049: turning off an annotation category in
+  # Visibility/Graphics reached REPORT_CATEGORY_OVERRIDES.
+  - turn off the levels category in this view
+  - switch off an annotation category in visibility graphics

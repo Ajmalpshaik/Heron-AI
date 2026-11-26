@@ -35,7 +35,7 @@ And one change outside the cards: `revit_read` sends [`REPORT_OPEN_DOCUMENTS`](.
 aimed at no model, and its answer neither sets the chat's pin nor is refused by it ([row 5b-1887](../fragment-issues/row-5b-1887.md);
 `mcp/server/heron_mcp_server.py`, `SESSION_READS`; `tests/test_read_door.py` section 15, red on the code before). The
 card itself did not change. And `SET_MEP_JUSTIFICATION` lost the utterance *"set the mep offset"* ([row 5b-1918](../fragment-issues/row-5b-1918.md)),
-measured on lexical and model here; the re-ranked backend is PE7's.
+measured on lexical and model here; the re-ranked backend was PE7's - [D-201](../decisions/D-201.md) (2026-11-26) removed it, and PE7 is now the PC's own `model`.
 
 Written in a cloud container with no Revit; every fragment compiles on 2020 to 2027 (`tools/check-fragments-compile.py`,
 2026-11-21). **Nothing here has run in Revit.**
@@ -54,7 +54,7 @@ Every command line with `HERON_CLIENT_ID=ajmal-pc`, `--session <process id>` whe
 | **PE4** | *`APPLY_VIEW_FILTER` version 4's one sentence.* The PE4 line below - no filter given | refused, nothing changed. **Record** who refused: the add-in's binder (the card's `filter` is not optional), naming `filter` - then the card's own sentence cannot be reached this way and that is written here - or the card, its sentence naming CREATE_VIEW_FILTER and *"UPDATE_SAVED_SET with mode create"*, never CREATE_SELECTION_FILTER. Group OR's OR27 is the card's own pair |
 | **PE5** | *`MEASURE_DISTANCE` version 2 - the pair.* Two ducts that touch end to end, then two that are 500 mm apart - the PE5 lines below | Touching: straightMm 0 and the finding naming FIND_CLASHES *"... though it counts touching as clashing too"*, never SELECT_TOUCHING. Apart: about 500 and no such sentence |
 | **PE6** | *A read of the open models after the pinned one is closed* ([row 5b-1887](../fragment-issues/row-5b-1887.md)). In a chat with Heron, after the copy and a scratch family are both open: pin the chat to the family (`revit_use_this_model` with it in front), save and close the family, then ask `revit_read` for `REPORT_OPEN_DOCUMENTS` | It answers, listing the copy and not the family, with the line *"It reads every model open in this Revit, whichever one this chat is working on; the model this chat is pinned to is unchanged."* **Negative:** then `revit_read` of a read that is about one model - `REPORT_LEVEL_ELEVATIONS` - is still refused *"No open model saved at ..."* naming the closed family: the pin did not slide onto the copy (Constitution Article 12a). On version 3's server the first was refused the same way |
-| **PE7** | *Routing on the owner's PC, model with the re-ranker* ([row 5b-1918](../fragment-issues/row-5b-1918.md)). `heron_lookup` of *"set the mep offset"*, *"line these runs up on their tops"*, *"set the justification on these ducts"* | **Record** where each lands. The first must not be `SET_MEP_JUSTIFICATION`; the other two must be. On lexical and model here (2026-11-21) the first moved to `SET_ROOM_LIMITS` and `OFFSET_MEP_SECTION` - neither sets a run's offset, which is row 5b-1944's gap, not this check's |
+| **PE7** | *Routing on the owner's PC, on `model` (re-pointed 2026-11-26: this row asked for model with the re-ranker, and [D-201](../decisions/D-201.md) removed it)* ([row 5b-1918](../fragment-issues/row-5b-1918.md)). `heron_lookup` of *"set the mep offset"*, *"line these runs up on their tops"*, *"set the justification on these ducts"* | **Record** where each lands. The first must not be `SET_MEP_JUSTIFICATION`; the other two must be. On lexical and model here (2026-11-21) the first moved to `SET_ROOM_LIMITS` and `OFFSET_MEP_SECTION` - neither sets a run's offset, which is row 5b-1944's gap, not this check's |
 
 ### The command lines, by row
 
@@ -96,9 +96,9 @@ python mcp/client/heron_bridge_client.py fragment create-sheets --write --set "n
 python mcp/client/heron_bridge_client.py fragment apply-view-filter --write --set "view=<a floor plan>"
 ```
 
-**PE5** - touching, then apart. **CANNOT BE ARRANGED AS TYPED (row 5b-1970):** `first` and `second` are single-element needs, the only word that binds one is `selected`, and it means exactly one element - so two different ducts cannot be handed over yet, and `--set "first=<duct A>"` is refused. Following `selected` for both measures a duct against itself (0 mm), an answer and not a refusal. Do not run these two lines until a way to name two elements exists:
+**PE5** - touching, then apart. **Version 2 could not be arranged (row 5b-1970):** `first` and `second` were single-element needs, and the only word that bound one, `selected`, bound one duct to both. **Version 3 (2026-11-26, [row 5b-2006](../fragment-issues/row-5b-2006.md)) takes the two selected in Revit, or two ids typed in `elementIds`**, and keeps this sentence - so PE5 is now asked of version 3 by [Group QX](group-qx.md)'s QX3, and settled there. The two lines, as version 3 takes them:
 
 ```text
-python mcp/client/heron_bridge_client.py fragment measure-distance --set "first=<duct A>" --set "second=<duct B touching A>"
-python mcp/client/heron_bridge_client.py fragment measure-distance --set "first=<duct A>" --set "second=<duct C 500 mm away>"
+python mcp/client/heron_bridge_client.py fragment measure-distance --set "elementIds=<duct A>, <duct B touching A>"
+python mcp/client/heron_bridge_client.py fragment measure-distance --set "elementIds=<duct A>, <duct C 500 mm away>"
 ```
