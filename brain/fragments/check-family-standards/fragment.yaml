@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "audit the family library against the office standard and its
 kind: filter
 domain: revit.qa
 capability: CHECK_FAMILY_STANDARDS
-version: 4
+# VERSION 5 (2026-11-26, D-207, row 5b-1879 item 3) - `namePattern` is a `*`
+# wildcard on the whole family name, as CHECK_MODEL_STANDARDS reads its type=
+# pattern; versions 1 to 4 read it as CONTAINS. C# changed, so DRAFT until
+# NEEDS-CHECKING Group QZ is run (D-30); version 4's proof is kept below as the
+# record. Said here and at the input, not in `purpose`, for the reason the
+# comment above `contract` gives.
+version: 5
 source: OFFICIAL
 risk: READ
 
@@ -111,6 +117,15 @@ contract:
   needs:
     - name: doc
       type: Document
+    # VERSION 5 (D-207, the owner's "Wildcards *", 2026-11-26): a `*`
+    # wildcard on the WHOLE family name, case-insensitive - one pattern
+    # language with CHECK_MODEL_STANDARDS. "TRG*" is a name starting TRG,
+    # "*MEP*" a name holding MEP anywhere, "*_v2" one ending _v2, and a
+    # pattern with NO `*` must be the whole name. AN OLD VALUE WRITTEN FOR
+    # VERSIONS 1 TO 4, WHICH READ IT AS "CONTAINS", NOW MEANS SOMETHING
+    # NARROWER: "MEP" passes only a family named exactly MEP (any capitals),
+    # so every other family FAILS the name check - write "*MEP*" for what
+    # "MEP" used to do. Left empty, the name is not checked.
     - name: namePattern
       type: string
       source: request
