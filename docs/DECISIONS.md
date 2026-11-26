@@ -244,6 +244,7 @@
 | [D-200](#d-200--eleven-more-idle-modules-are-retired-and-six-of-the-candidates-are-kept-because-something-does-rely-on-them) | Eleven more idle modules are retired, and six of the candidates are kept because something does rely on them | ✅ Accepted · 2026-11-24 |
 | [D-201](#d-201--the-cross-encoder-re-ranker-is-removed-the-trained-embedding-model2vec-stays-and-stays-optional) | The cross-encoder re-ranker is removed; the trained embedding (model2vec) stays, and stays optional | ✅ Accepted · 2026-11-26 · *model2vec half superseded by D-203 · 2026-11-26* |
 | [D-203](#d-203--the-trained-embedding-model2vec-is-removed-heron-has-one-search-built-in-the-same-on-every-pc) | The trained embedding (model2vec) is removed: Heron has one search, built in, the same on every PC | ✅ Accepted · 2026-11-26 |
+| [D-204](#d-204--a-tool-that-can-never-come-back-empty-is-signed-on-a-by-hand-reading-and-a-tool-with-two-runs-waiting-is-signed-on-the-run-revit-checked) | A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked | ✅ Accepted · 2026-11-26 |
 
 ## Format
 
@@ -1839,3 +1840,15 @@ lookup faster (109 ms median against 147). model2vec is removed; one search is o
 modeller has it. Answers on a PC without the model are unchanged, measured before and after.
 
 **Full record:** [`decisions/D-203.md`](decisions/D-203.md)
+
+## D-204 — A tool that can never come back empty is signed on a by-hand reading, and a tool with two runs waiting is signed on the run Revit checked
+
+**Status:** Accepted · **Date:** 2026-11-26 · **Accepted:** Ajmal PS, 2026-11-26, in the session [session_01XqSwba1ujTrQCkV2SMCjum](https://claude.ai/code/session_01XqSwba1ujTrQCkV2SMCjum), answering Q-98 (*"Check by hand is enough"*) and Q-97 (*"if its need to chek the revit chek that and sing make it proven"*).
+**Numbering:** D-204 is the id `tools/next-id.py` printed free on 2026-11-26, with `origin/main` at `02780d9a` ending at D-201 and D-202 held by an unmerged branch.
+**Keeps:** [D-30](decisions/D-30.md) - only the negative leg is answered differently, for two named tools
+
+`REFRESH_VIEW` and `REPORT_LEVEL_ELEVATIONS` can never come back empty, so each is signed on a by-hand reading
+written on the proof, with release, model and date. A tool with more than one run waiting is signed on the run
+checked in Revit for the tool as it stands, one run at a time. The owner signs; nothing in code changes.
+
+**Full record:** [`decisions/D-204.md`](decisions/D-204.md)
