@@ -1788,6 +1788,33 @@ curtain card is found by both. Under reciprocal rank fusion it scores 1/61 again
 off. Filling the missing rank with 21 handed three more plain questions a
 change; asking nearness 40 deep gained nothing.
 
+### Re-measured the same day on `main` `d79ac5a9`, after the 30-card wording above
+
+Same method, `lexical`, 754 fragments. The wording raised `main` itself a long way, and one lever now
+reads differently:
+
+| Lever | his 79: first / top 3 / not found | handed a change / a different change | plain reaching a write | claims not reached | `test_routing_phrases` failing |
+|---|---|---|---|---|---|
+| `main` | 34 / 43 / 18 | 7 / 14 | 9 | 72 | 12 |
+| porter | **29** / 42 / 18 | **9** / 18 | **14** | | |
+| plurals folded | **30** / 43 / 18 | **11** / 15 | **14** | | |
+| identity + utterances weighted 1.5 / **2** / 3 | 33 / 35 / 35, top 3 43, not found 14 / 14 / 16 | 5 / **4** / 4, and 14 / 14 / 15 | 8 / **8** / **10** | 73 at 2 | 12 at 2 |
+| identity alone ×2, its utterances split out | 33 / 42 / 17 | 7 / 14 | **10** | | |
+| domain column ×2 | 34 / 42 / 18 | 7 / 14 | 9 | | |
+| nearness 0.5 / 0.55 / 0.65 / 0.7 | 34 / 42-43 / 17-18 | 7 / 14 | 9 | | |
+| a route's missing rank filled as pool + 1 | **36 / 47** / 17 | **8** / 12 | **11** | | |
+
+**Identity weighted 2 is the one candidate, and it is not kept.** On his 79 and the plain set it is
+better on every column. But the same weight cost him three first places at `02780d9a`, an hour earlier,
+so what it rewards is the sentences the wording just declared - and those were written for these two
+sets (row 5b-2049). On the sets nobody wrote for, it churns: `check-routing` reached 5 claims it had
+missed and lost 6 it had reached, so net one worse. `check-risk-crossings --revit 2024` gave the same eight answers, with a read now
+second on two of them. 1.5 drops a first place and 3 hands a plain question a change, so the gain sits
+at one value only. **Whether to take it is the owner's call**, with that trade stated; a fresh set of
+questions, written before anyone reads these cards, is what would settle it. The nearness weight no
+longer moves anything on his 79 or the plain set, and the missing-rank fill now gains top-three places
+but hands two more plain questions a change.
+
 ### What this does not establish
 
 - **`lexical` only.** The owner's PC runs `model`, which gets an equal vote and was not asked here; model2vec
