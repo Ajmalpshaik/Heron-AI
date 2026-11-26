@@ -29,7 +29,18 @@ capability: SET_FAMILY_FORMULA
 # regenerate now run in a SubTransaction rolled back on Revit's refusal, and
 # the same words come back through `refused` and `findings`, nothing kept.
 # FRAGMENT-ISSUES row 5b-2010. Nothing else changed.
-version: 3
+#
+# VERSION 4 (2026-11-24) - THE SET PATH HAS A COUNT, `formulaSet`, still
+# DRAFT. Setting a formula, the card's main job, could not be signed: its only
+# count result was `cleared`, false whenever a formula is set, and beside a
+# count `heron_validate accept` does not count the sentences `formulaNow` and
+# `valueNow` (D-51) - "POSITIVE EMPTY - every declared result came back zero
+# (cleared)", measured on Revit 2024 with Leg Height = Height / 5 on M_Desk.
+# `formulaSet` is 1 when a formula was asked for and the family, read back
+# afterwards, holds one; 0 on a clear, a refusal or nothing to do. `cleared`
+# stays the clear path's result. FRAGMENT-ISSUES row 5b-2009, issue #1322.
+# Nothing else changed.
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -92,6 +103,12 @@ contract:
       # a whole number for an Integer, Yes or No for a Yes/No (version 2).
       role: result
       type: string
+    - name: formulaSet
+      # 1 when a formula was asked for and the family, read back afterwards,
+      # holds a formula on the parameter - the set path's count (version 4).
+      # 0 when it was cleared, refused, or there was nothing to do.
+      role: result
+      type: int
     - name: cleared
       role: result
       type: bool

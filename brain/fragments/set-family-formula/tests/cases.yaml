@@ -8,8 +8,8 @@ positive:
 
   - given: the same family, parameterName "Neck Top", formula empty
     expect: >
-      cleared true, the Formula column empty in Family Types, and Neck Top
-      still reading 350 mm and editable again
+      cleared true, formulaSet 0, the Formula column empty in Family Types, and
+      Neck Top still reading 350 mm and editable again
 
   # VERSION 2 (row 5b-2001): an Integer and a Yes/No read back.
   - given: >
@@ -27,7 +27,22 @@ positive:
       valueNow "Yes" (Height is 250); then the formula "Height > 300 mm" gives
       "No" - Family Types showing the tick box ticked, then clear
 
+  # VERSION 4 (row 5b-2009): the set path's count, the one `accept` signs by.
+  - given: >
+      any family with a type and a Length parameter Height, and a Length Leg
+      Height; parameterName "Leg Height", formula "Height / 5"
+    expect: >
+      formulaSet 1, formulaNow "Height / 5", valueNow a fifth of Height, cleared
+      false - and `heron_validate accept` judges the positive on formulaSet,
+      never POSITIVE EMPTY
+
 negative:
+  # VERSION 4: the set path's negative - the count stays 0.
+  - given: parameterName "Heron No Such Parameter 1124", formula "Height / 5"
+    expect: >
+      refused saying it is not a parameter of this family, formulaSet 0,
+      formulaNow empty, nothing set
+
   - given: formula 'Height + "Neck Depth"' (the name in quotes)
     expect: >
       refused naming "Neck Depth" and saying names are written bare - before
