@@ -125,8 +125,10 @@ compatibility-note: >
 #                                                ADMIN change; run this read first
 #                                                (2026-10-14)
 #   "check our grids and levels line up with the linked architect's model"
-#                                             -> CHECK_DATUMS_AGAINST_LINK
-#                                                (2026-11-17) - the link's grids
+#                                             -> REPORT_LEVEL_ELEVATIONS
+#                                                (CHECK_DATUMS_AGAINST_LINK's from
+#                                                2026-11-17, merged in 2026-11-26)
+#                                                - the link's grids
 #                                                and levels against ours, not
 #                                                where the survey puts the link
 
