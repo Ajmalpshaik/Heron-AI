@@ -66,7 +66,7 @@ PS"` once its positive and negative pass, and `heron-status` set to PROVEN in th
 fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the
-owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on - through `brain/heron_retrieve.py` on a
+owner's PC ranks with `model+rerank`, which is **NOT RUN** here and, since [D-201](../decisions/D-201.md) (2026-11-26), cannot be run anywhere: the re-ranker is removed and the PC ranks on `model`, the backend this was measured on; and since [D-203](../decisions/D-203.md) the same day it ranks on `lexical`, which this was not measured on - through `brain/heron_retrieve.py` on a
 scratch store each, against this tree with and without the card, on Revit 2024. The three sentences reach
 this card by identity; without it they reached `CREATE_WALL`, `DIMENSION_GRIDS_AND_LEVELS` and
 `CREATE_ROOF`, ranked. Three undeclared phrasings - *"place a truss"*, *"draw a truss from here to here on

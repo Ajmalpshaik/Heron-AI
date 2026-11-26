@@ -194,9 +194,9 @@ namespace Heron.Installer
         // something hangs gets a sentence instead of a window that never ends.
         //
         // pip fetches about thirty files from PyPI; a slow office line is
-        // minutes. The first heron-ready builds the knowledge store, and
-        // downloads the search model when model2vec is installed - the part of
-        // the owner's seven minutes this exists to move out of the first chat.
+        // minutes. The first heron-ready builds the knowledge store - the part
+        // of the owner's seven minutes this exists to move out of the first
+        // chat.
         private const int AskSeconds = 60;
         private const int PipSeconds = 15 * 60;
         private const int WarmSeconds = 30 * 60;

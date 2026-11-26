@@ -912,8 +912,8 @@ Whenever an existing fragment changes:
 > implements (`grep -l 'HERON-RAG' brain/*.py mcp/server/*.py`), every one is DRAFT, and
 > [28](28-agent-registry.md) is the register ([05 §3](05-heron-brain.md)). What runs for a request is
 > `heron_lookup`, in this order: a hard Revit-version filter, then identity and the wording cache, then
-> word search and — when model2vec is installed — meaning search, fused
-> ([05 §4.1](05-heron-brain.md); the optional re-ranker after it was removed by [D-201](DECISIONS.md)). It returns ranked candidates to the host and
+> word search and the built-in nearness search, fused
+> ([05 §4.1](05-heron-brain.md); the optional re-ranker after it was removed by [D-201](DECISIONS.md), and the optional trained model by [D-203](DECISIONS.md)). It returns ranked candidates to the host and
 > makes no model call ([D-58](DECISIONS.md)); every answer says which search ran. Citation is
 > `heron_check`, which checks a drafted standards answer against the clauses it cites, and
 > `heron_research`, which marks an outside answer that cites nothing `UNCITED`

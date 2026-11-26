@@ -42,7 +42,7 @@ deprecated:
     rolls the call back.
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
-# 2026-10-21: Ajmal PS, building the pipe tag TRG_Pipe_Tag on Revit 2020,
+# 2026-10-21: Ajmal PS, building the pipe tag ABC_Pipe_Tag on Revit 2020,
 # asked for labels to be MADE as well as read. Revit's API cannot make one on
 # any release 2020 to 2027: 2027's AnnotationLabel.Create exists and is
 # INTERNAL in every 2027 package (docs/43 section 8.3a). Copying one can be

@@ -603,9 +603,6 @@ def check_register():
             # under "needs a real Revit" would hide a row that a PC session
             # could clear in two minutes.
             waiting("%s - %s" % (item, body.split("|")[0].strip()[:60]), "Windows")
-        elif item == "A7":
-            waiting("%s - the trained embedding backend" % item,
-                    "a network that can reach a model host")
         else:
             check = body.split("|")[0].strip()
             waiting("%s - %s" % (item, check[:60]),

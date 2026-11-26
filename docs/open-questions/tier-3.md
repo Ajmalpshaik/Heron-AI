@@ -948,6 +948,15 @@ A **site word that means a Revit word** is a third thing and is not a language p
 it belongs in the knowledge store, and Phase 2 owns it. Meanwhile an unfamiliar term is a **question**,
 never a quiet reinterpretation — [D-33](../DECISIONS.md).
 
+**Measured 2026-11-26, and nothing was built.** A list of the modeller's own short forms was tried, read
+before the search. It added each recorded long form after his words: the owner's *VCD*, *AHU* and *FCU*
+from his approved site words. On `lexical` it lost. His 79 fell from 34 first to 30, and the questions
+handed a change rose from 7 to 10. A long form names the equipment, so it pulls the cards named after
+that equipment above the generic action card. The numbers, the variant tried and the follow-ups not
+tried are in [`brain/retrieval-history.md`](../../brain/retrieval-history.md), section *2026-11-26 —
+short forms added to a request before the search*. This leaves D-34 as it stands: a site word is still
+knowledge for the modeller's own store, and how such knowledge should reach the search is still open.
+
 ---
 
 ### 🟡 Q-18 — Can community packages contain executable code?

@@ -592,27 +592,19 @@ jobs:
           #
           # THE SUITES THAT CANNOT RUN ON THIS RUNNER AT ALL, AND WHY.
           #
-          #   test_routing_phrases.py  its sentences are measured on the owner's
-          #                            backend, the trained embedding - the
-          #                            model alone since D-201 removed the
-          #                            re-ranker (2026-11-26). The embedding is
-          #                            cheap to fetch - model2vec and
-          #                            minishlab/potion-base-8M, about 130 MB
-          #                            (heron_embed.SIZE) - but on it the suite
-          #                            still FAILS: 6 checks, measured again
-          #                            2026-11-26 at 753 fragments, the curtain
-          #                            wall selections and the cooling-load
-          #                            units question among them (row 5b-1882,
-          #                            issue #1127). Those are card wording, not
-          #                            this runner; until they are repaired,
-          #                            fetching the model would turn a NOT RUN
-          #                            into a red that is not this change. It
-          #                            runs on the owner's PC, on the model.
-          #
-          # The trained embedding stays out of THIS Python for a second reason:
-          # every routing check in this job ranks by spelling here, on purpose,
-          # and installing model2vec would move every suite onto a backend CI
-          # does not use (the heron-ship skill, s2).
+          #   test_routing_phrases.py  it RUNS here since D-203 (2026-11-26):
+          #                            Heron has one search, the built-in one,
+          #                            on every PC and on this runner. It asks
+          #                            every guard and exits 3 - WAITING on the
+          #                            owner, not a pass - while every failure
+          #                            is one of the five guards recorded open
+          #                            on that search (OPEN_ON_THE_ONE_SEARCH,
+          #                            row 5b-2053, issue #1440). Any other
+          #                            failure exits 1 and turns this job red,
+          #                            and so does an open guard that starts
+          #                            passing: take it off the suite's list,
+          #                            and the suite off this one when the last
+          #                            goes, in the same change.
           #
           # IT IS A NOT-RUNNABLE LIST, NOT A FAILURE LIST. Each of these
           # must come back exit 3. One that comes back exit 1 has RUN and has

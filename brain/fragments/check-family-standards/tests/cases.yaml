@@ -3,12 +3,12 @@ positive:
   # whole name. NOT RUN - NEEDS-CHECKING Group QZ. Fails on version 4, which
   # reads the pattern as "contains" and so finds no '*' in any family name.
   - given: >
-      VERSION 5. A project with families "TRG_Supply Diffuser",
-      "TRG_Return Grille" and "Supply Diffuser TRG", namePattern "TRG*"
+      VERSION 5. A project with families "ABC_Supply Diffuser",
+      "ABC_Return Grille" and "Supply Diffuser ABC", namePattern "ABC*"
     expect: >
-      the two starting TRG pass the name check; "Supply Diffuser TRG" is off
-      standard with "name does not match the pattern 'TRG*'". Version 4 failed
-      all three, looking for the text "TRG*" inside each name
+      the two starting ABC pass the name check; "Supply Diffuser ABC" is off
+      standard with "name does not match the pattern 'ABC*'". Version 4 failed
+      all three, looking for the text "ABC*" inside each name
 
   - given: a library where six air terminal types are missing the office prefix
     expect: >
@@ -104,12 +104,12 @@ positive:
 negative:
   # VERSION 5 (D-207). An old "contains" value, written with no '*'.
   - given: >
-      VERSION 5. The same three families, namePattern "TRG" - a value written
+      VERSION 5. The same three families, namePattern "ABC" - a value written
       for version 4
     expect: >
-      ALL THREE off standard for their name - "TRG" with no '*' is now the
-      WHOLE name, and none is named exactly TRG. Version 4 passed all three.
-      Then namePattern "*TRG*": all three pass, which is what "TRG" used to do
+      ALL THREE off standard for their name - "ABC" with no '*' is now the
+      WHOLE name, and none is named exactly ABC. Version 4 passed all three.
+      Then namePattern "*ABC*": all three pass, which is what "ABC" used to do
 
   - given: >
       VERSION 4. The same scratch elbow with its Angle switched to a TYPE

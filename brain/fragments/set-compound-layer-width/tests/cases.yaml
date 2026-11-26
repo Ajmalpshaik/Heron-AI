@@ -59,7 +59,7 @@ negative:
 
   - given: >
       version 2: a material name the project does not hold -
-      "TRG_Material_White_Render" in a project that has no such material
+      "ABC_Material_White_Render" in a project that has no such material
     expect: >
       refused naming the closest names it has, nothing changed - read back after a
       KEPT run of this case, and the layer still held what it held before

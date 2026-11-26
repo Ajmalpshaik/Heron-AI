@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-002
-semantic-identity: "how many elements a filter found"
+semantic-identity: "count how many elements there are - of a category, in the selection, or what was just found"
 kind: action
 domain: revit.reporting
 capability: COUNT_ELEMENTS
@@ -14,9 +14,18 @@ source: OFFICIAL
 risk: READ
 
 purpose: >
-  How many elements a filter found.
-  Trivial arithmetic, and a separate fragment on purpose: every count question in
-  the library ends here, so the one place a count can go wrong is one place.
+  Counts how many there are of whatever was found or selected - ducts, pipes,
+  fittings, fixtures, equipment, rooms, sheets or views - and changes nothing. A
+  count that finds nothing says zero out loud, never a blank.
+
+# PURPOSE AS IT READ UNTIL 2026-11-26, kept word for word as the record (S7d card
+# audit). The purpose is routing text - the search reads every word of it - and
+# these paragraphs read as engineering notes rather than the one job a modeller
+# asks this card for. Nothing the card does changed; only where its notes live.
+#
+# How many elements a filter found.
+# Trivial arithmetic, and a separate fragment on purpose: every count question in
+# the library ends here, so the one place a count can go wrong is one place.
 
 contract:
   needs:

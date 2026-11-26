@@ -59,6 +59,44 @@ positive:
       included. Version 4 counted the walls alone, 2, because it asked the
       family's "Level" and the start level and nothing else
 
+  # VERSION 7 (2026-11-26, row 5b-1878 (C), D-207) - CHECK_DATUMS_AGAINST_LINK
+  # MERGED IN, AND COPY-MONITORED DATUMS. NONE OF THESE HAS BEEN RUN -
+  # NEEDS-CHECKING Group RA holds the order. The arrangement is the retired
+  # card's own (its tests/cases.yaml, kept): datum-host.rvt with datum-link.rvt
+  # linked Origin to Origin. Each fails on version 6, which has no `report`,
+  # `failures`, `failingIds`, `monitored`, `linkName` or tolerance.
+  - given: datum-host.rvt, includeLinks true, nothing else - the retired card's first positive
+    expect: >
+      linkUsed "datum-link.rvt : 1 : location <Not Shared>"; failures 1;
+      failingIds and failingElements holding grid B only; report rows (each
+      ending with the placement it was measured against) "grid | B | off |
+      3.00 mm | 0.0000 deg", "grid | A | aligned ... drawn the opposite way",
+      "grid | G2 | aligned ... name differs - the link calls it '2'", "grid |
+      R1 | aligned", "grid | X9 | link only", "grid | H7 | host only", "level
+      | Level 3 | host only"; compared 7, aligned 6. The level heights and
+      `storeys` exactly as version 6 gave them
+
+  - given: the same, linkName "datum-link" and includeLinks LEFT OUT
+    expect: the same answer - naming a link reads it whatever includeLinks says
+
+  - given: >
+      datum-host.rvt with its Level 2 tied to the link's by Collaborate >
+      Copy/Monitor > Select Link > Monitor, includeLinks true
+    expect: >
+      `monitored` names "level 'Level 2' copy-monitors 'datum-link.rvt : 1 :
+      location <Not Shared>'" after a line counting the levels, grids and 1
+      monitored; Level 2's report row says "copy-monitored from this link".
+      Raise the LINK's Level 2 by 50 mm and reload: Level 2 off at +50.00 mm
+
+  - given: >
+      datum-link.rvt placed a SECOND time 100 mm up, Level 2 here still
+      monitoring the FIRST placement, includeLinks true, no linkName
+    expect: >
+      `findings` naming both placements - "None of its placements was
+      measured; the first is never taken" - and ONLY Level 2 measured, against
+      the placement it monitors ("(copy-monitored only)"), aligned. No other
+      datum compared: no copy was named
+
 negative:
   - given: >
       a model where the two heights AGREE but the survey point sits above the
@@ -93,9 +131,15 @@ negative:
       NOT read like the absent case: one means there was nothing else to read,
       the other means reload them in Manage Links and ask again
 
-  - given: one linked file placed TWICE, with includeLinks true
+  # VERSION 7 REPLACES THIS CASE (D-207, "Ask which copy"). Version 2 to 6
+  # read a file placed twice through its FIRST placement and counted it once;
+  # now it is never measured until the copy is named.
+  - given: one linked file placed TWICE, with includeLinks true and no linkName
     expect: >
-      linksSearched 1, not 2 - it counts files, not placements
+      linksSearched 0 - NEITHER placement measured; `refused` and the first
+      line of linkedMatches name both placements and ask which copy
+      (linkName); compared 0. On version 6 this FAILS: it read the first
+      placement, linksSearched 1
 
   - given: a linked level whose name this model does not use, includeLinks true
     expect: >
@@ -142,6 +186,37 @@ negative:
       it is not counted on Level 1 or any level - a parameter that holds no
       level is passed over and never answered with
 
+  # VERSION 7 - the check's negatives, the retired card's own. NOT RUN.
+  - given: datum-host.rvt, includeLinks true, toleranceMm 5 - THE FIRST CASE TO RUN
+    expect: >
+      failures 0; failingIds and failingElements EMPTY; grid B "aligned |
+      3.00 mm"; compared 7, aligned 7. The link check's own empty leg - the
+      level heights and storeys still need D-204's by-hand reading
+
+  - given: datum-host.rvt, every value left out
+    expect: >
+      version 6's host answer; `report` empty, compared 0, failures 0,
+      `refused` null, linkedMatches "Host model only - links not read", and a
+      `findings` line saying grids and levels were NOT checked against a link.
+      No link is opened (D-59) - never the retired card's "only" default
+
+  - given: datums "walls", then toleranceMm 0, then angleToleranceDeg 90, each with includeLinks true
+    expect: >
+      refused naming the value, report empty, compared 0, findings ending
+      "NOTHING WAS COMPARED." - and the level heights and storeys still
+      answered above it
+
+  - given: linkName "Structural" in datum-host.rvt
+    expect: >
+      refused "No link matches 'Structural'. This model has:
+      'datum-link.rvt : 1 : location <Not Shared>'."; compared 0
+
+  - given: the link unloaded (Manage Links > Unload), linkName "datum-link"
+    expect: refused "... is placed here but NOT LOADED ..."; compared 0
+
+  - given: any run at all
+    expect: NO TRANSACTION OPENED, NOTHING CHANGED - the model's undo list is untouched
+
 second_route:
   - >
     place a spot elevation on a floor in Revit and compare it against the level
@@ -151,3 +226,8 @@ second_route:
     version 3: click each level head and read its Building Story box in
     Properties, and run FILTER_ELEMENTS_BY_CATEGORY with that levelId on an
     unticked level for the count
+  - >
+    version 7: in a floor plan with the link showing, an aligned dimension from
+    the link's grid B to this model's grid B reads 3 mm; in an elevation the
+    link's level heads and this model's sit on one line for Level 1 and Level
+    2 - the retired card's second routes

@@ -26,12 +26,12 @@ Nothing in the repository could have seen it coming:
     answer by identity before any ranking runs;
   * score-routing and check-risk-crossings report and exit 0 whatever they
     find (D-100), and the second asks questions, never changes;
-  * all three run on whatever backend the machine has, and CI has none but
+  * all three ran on whatever backend the machine had, and CI had none but
     the spelling one - where this sentence was answered correctly all along.
 
 The cause was two cards. PLACE_HOSTED_FAMILY's version 3 opened its purpose
-with its sill rules, and the trained model reads only the first 512
-word-pieces of a card, so the door tool stopped looking like one: nearness
+with its sill rules, and the trained model Heron then had read only the first
+512 word-pieces of a card, so the door tool stopped looking like one: nearness
 rank 1 before that change, 35 after. And the words route matches a typed word
 as a prefix - "walls" never matches "wall" - while every phrasing that card
 declared was singular and the take-off's were plural.
@@ -60,24 +60,31 @@ chat on the machine reads (row 5b-233).
 A sentence in any other table is never declared word for word in any card -
 that would be answered by identity and test nothing - and that is checked too.
 
-ONLY ON THE TRAINED MODEL, AND IT SAYS SO
------------------------------------------
-The owner's PC ranks with the trained embedding. A machine without it ranks
-by spelling, which heron_embed's own docstring calls NOT MEANING, and the two
-disagree on exactly these sentences: measured 2026-10-04, "add windows to the
-outside walls" reaches the door tool on the model and DIMENSION_WALL_OPENINGS
-on spelling. One table asserted on both would be wrong on one of them, and a
-table per backend would be a list of excused failures. So with no trained
-model this exits 3 - COULD NOT RUN, which is not a pass - and
-.github/workflows/gates.yml lists it as not runnable there.
+ON THE ONE SEARCH EVERY PC HAS (D-203)
+--------------------------------------
+Until 2026-11-26 this asked its sentences only of the trained embedding the
+owner's PC ranked with, and exited 3 - COULD NOT RUN - everywhere else, CI
+included: spelling and the model disagreed on exactly these sentences, and
+one table asserted on both would have been wrong on one of them. D-203
+removed the trained embedding, so there is one search - the built-in
+character n-grams, which heron_embed's own docstring calls NOT MEANING - and
+this asks it on every machine. Section 1 checks every card's vector came
+from it.
 
-ONE QUESTION IS NEVER ASKED: THE OWNER CLOSED IT AS BY DESIGN (row 5b-1293)
---------------------------------------------------------------------------
-"are room areas taken to the wall finish" reaches a write on the model, and
-the owner closed that as by design on 2026-11-20. It was asked only where the
-cross-encoder re-ranker ran, as his PC did; D-201 removed the re-ranker on
-2026-11-26, so nowhere asks it now. It prints as NOT ASKED - never as a pass.
-CLOSED_BY_DESIGN below says so; nothing else is excused there.
+FIVE GUARDS ARE OPEN ON IT, AND THE SUITE WAITS ON THE OWNER FOR THEM
+-----------------------------------------------------------------------
+Asked on the built-in search for the first time on 2026-11-26, nine of its
+guards failed - the same nine on main before D-203 with the model turned off,
+so not that change. Card wording repaired four - OFFSET_TAGS_FROM_HOST and
+SELECT_BY_HOST in the change that made it run here, and EDIT_TEXT_VALUES and
+REPORT_AREA_VOLUME_COMPUTATIONS with #1424's wording, merged the same day. The
+five left are OPEN_ON_THE_ONE_SEARCH below, each named in row 5b-2053: wording a guard back by pasting its sentence, or one near it,
+into a card would make the guard test nothing, and closing one is the owner's
+decision. Each is still ASKED and printed as OPEN, never as a pass. While
+every failure is one of them the suite exits 3 - WAITING on the owner, NOT a
+pass - so CI keeps it on its not-runnable list; a failure that is not one of
+them exits 1, and so does an entry that now passes, which has to come off the
+list in the same change (the rule check-routing's KNOWN_DANGLING keeps).
 
 NOT A SCORE
 -----------
@@ -191,7 +198,7 @@ CHANGES = [
     # the card at DRAFT and again at PROVEN, on both backends.
     ("rename the filter OUTSEL_TRG_MECH_Level to OUTSEL_TRG_MECH_Level_Grid",
      "SET_VIEW_FILTER_CATEGORIES", "5b-481: asked live 2026-10-15, answered RENAME_WORKSET"),
-    ("change this filter's rule to type name does not contain TRG_MEC",
+    ("change this filter's rule to type name does not contain ABC_MEC",
      "SET_VIEW_FILTER_CATEGORIES", "5b-481: answered CREATE_VIEW_FILTERS_BY_RULE"),
     ("edit the rule of the OUTSEL filter", "SET_VIEW_FILTER_CATEGORIES",
      "5b-481: answered CREATE_VIEW_FILTER"),
@@ -301,17 +308,31 @@ QUESTIONS = [
      "5b-560: answered ALIGN_VIEWPORTS_ACROSS_SHEETS"),
 ]
 
-# A QUESTION THE OWNER CLOSED AS BY DESIGN ON THE MODEL ALONE. Row 5b-1293,
-# "Yes, close it", 2026-11-20: on the model it reaches
-# CREATE_FROM_ROOM_BOUNDARIES, no card's words repair it, and D-128's question
-# flag from the host guards it. It was asked where the re-ranker ran, until
-# D-201 removed it (2026-11-26); now nothing asks it. Asked, it would be a
-# check against a decision, not against the code - so it is SAID as not
-# asked, never counted as a pass.
-CLOSED_BY_DESIGN = {
-    "are room areas taken to the wall finish":
-        "5b-1293: closed as by design on the model alone, the owner's word 2026-11-20",
+# A QUESTION THE OWNER CLOSED AS BY DESIGN, printed NOT ASKED and never
+# counted as a pass. Empty since D-203 (2026-11-26): the one entry, row
+# 5b-1293's "are room areas taken to the wall finish", was closed on the
+# trained model alone ("Yes, close it", 2026-11-20) and that model is gone,
+# so the question is asked again on the one search there is.
+CLOSED_BY_DESIGN = {}
+
+# OPEN ON THE ONE SEARCH (row 5b-2053), each still asked - see the top of this
+# file. Not excused: printed OPEN, counted, and the suite waits (exit 3) only
+# while every failure is one of these.
+OPEN_ON_THE_ONE_SEARCH = {
+    "place doors and windows hosted in walls at points":
+        "5b-2053: SELECT_BY_HOST, a read, takes it by a hair",
+    "add windows to the outside walls":
+        "5b-2053: PLACE_HOSTED_FAMILY is not in the nearness shortlist",
+    "change the area scheme name from rentable to lettable":
+        "5b-2053: REPORT_AREAS ties SET_AREA_VOLUME_COMPUTATIONS",
+    "select all elements of type Curtain Wall":
+        "5b-2053: SET_CURTAIN_PANEL_TYPE - row 5b-329's residue",
+    # NOT HERE since 2026-11-26 (row 5b-2063): "is the legend going off the
+    # sheet" passes - LIST_VIEWS_ON_SHEET's identity was made shorter and
+    # plainer, and it is asked as an ordinary guard again.
 }
+OPEN_FAILED = []
+OPEN_PASSED = []
 
 # A question about the project's own setup reaches the tool that READS it.
 # Three site questions still reach SET_PROJECT_LOCATION and are NOT here -
@@ -420,6 +441,21 @@ def check(condition, what):
         FAILURES.append(what)
 
 
+def check_open(text, condition, what):
+    """check(), for a sentence that may be OPEN_ON_THE_ONE_SEARCH: asked and
+    printed either way; an open one that fails is counted apart, and an open
+    one that passes is a failure until it comes off the list."""
+    if text not in OPEN_ON_THE_ONE_SEARCH:
+        return check(condition, what)
+    if condition:
+        print("  %-5s %s - PASSES NOW: take it off OPEN_ON_THE_ONE_SEARCH" % ("FAIL", what))
+        OPEN_PASSED.append(what)
+        FAILURES.append("%s - passes now, and is still on OPEN_ON_THE_ONE_SEARCH" % what)
+    else:
+        print("  %-5s %s - %s" % ("OPEN", what, OPEN_ON_THE_ONE_SEARCH[text]))
+        OPEN_FAILED.append(what)
+
+
 def write_line():
     """(ladder, threshold) from the operation registry - Golden Rule 19."""
     path = os.path.join(ROOT, "tools", "generate-jobs.py")
@@ -441,25 +477,13 @@ def main():
     store = None
     try:
         import heron_embed as EMBED
-        backend, why = EMBED.backend()
-        if backend != EMBED.MODEL:
-            print("Sentences a session sent to the wrong tool")
-            print("  COULD NOT RUN - no trained embedding on this machine:")
-            print("    %s" % why)
-            print("\n  This is exit 3, which is NOT a pass: nothing was asked. The")
-            print("  sentences are measured on the search the owner's Heron uses,")
-            print("  and spelling alone disagrees with it on them (see the top of")
-            print("  this file). Install the model and run it again:")
-            print("    pip install --user model2vec")
-            return 3
-
         import heron_scope as SCOPE
         import heron_search as SEARCH
         import heron_capability as CAP
         import heron_retrieve as RETRIEVE
         import heron_fragment as FRAG
 
-        print("1. A PRIVATE STORE, BUILT FROM THIS CHECKOUT, ON THE TRAINED MODEL")
+        print("1. A PRIVATE STORE, BUILT FROM THIS CHECKOUT, ON THE ONE SEARCH (D-203)")
         check(os.path.abspath(SCOPE.knowledge_dir()) == os.path.abspath(home),
               "the store is this run's own folder, never the shared one")
         built, problems = SCOPE.rebuild()
@@ -472,8 +496,8 @@ def main():
         EMBED.index(store)
         stamps = set(r["backend"] for r in store.execute(
             "SELECT backend FROM vectors WHERE COALESCE(kind, 'fragment') = 'fragment'"))
-        check(stamps and all(s.startswith(EMBED.MODEL) for s in stamps),
-              "every card's vector came from the trained model: %s" % ", ".join(sorted(stamps)))
+        check(stamps == set([EMBED.LEXICAL]),
+              "every card's vector came from the built-in search: %s" % ", ".join(sorted(stamps)))
 
         rows = dict((r["id"], r) for r in store.fragments())
         ladder, threshold = write_line()
@@ -499,11 +523,15 @@ def main():
         for text in CLOSED_BY_DESIGN:
             check(text in asked, "the question closed as by design %r is one "
                   "of section 4's, so the exception names a real row" % text)
+        ranked = set(t for t, _c, _w in CHANGES) | asked
+        for text in OPEN_ON_THE_ONE_SEARCH:
+            check(text in ranked, "the open guard %r is one of sections 3 and "
+                  "4's, so the list names a real guard" % text)
 
         print("\n3. A CHANGE ASKED FOR REACHES THE TOOL THAT MAKES IT")
         for text, want, why in CHANGES:
             answer, got, _risk = ask(text)
-            check(got == want, "%r -> %s (%s)" % (text, got, why))
+            check_open(text, got == want, "%r -> %s (%s)" % (text, got, why))
             check(answer.route != "identity",
                   "  and it was ranked, not matched word for word (%s)" % answer.route)
 
@@ -514,7 +542,8 @@ def main():
                       % ("n/a", text, CLOSED_BY_DESIGN[text]))
                 continue
             _answer, got, risk = ask(text)
-            check(not writes(risk), "%r -> %s, %s (%s)" % (text, got, risk or "no risk", why))
+            check_open(text, not writes(risk),
+                       "%r -> %s, %s (%s)" % (text, got, risk or "no risk", why))
 
         print("\n5. A CHANGE NOTHING MAKES IS NOT ANSWERED BY ANOTHER CHANGE")
         for text, why in NO_TOOL:
@@ -555,50 +584,6 @@ def main():
             check(answer.route == "identity" and got == want,
                   "  and the search answers it by identity: %s, %s" % (got, answer.route))
 
-        print("\n9. THE MODEL READS EVERY CARD'S OPENING IN FULL (row 5b-320)")
-        # The trained model reads a card's first EMBED.MODEL_READS word-pieces
-        # and drops the rest, and PLACE_HOSTED_FAMILY's version 3 put its sill
-        # rules first - nearness rank 1 to 35 for its own job. Nothing then
-        # said which cards the cut reaches. A card's opening - identity,
-        # utterances, the purpose's first paragraph - must be read in full.
-        # Asked before it is called, so a heron_embed without it FAILS here
-        # rather than crashing the section (heron-ship 2a).
-        cutter = getattr(EMBED, "cut_before_opening", None)
-        reads = getattr(EMBED, "MODEL_READS", 512)
-        retired_statuses = getattr(EMBED, "RETIRED", SEARCH.RETIRED_FRAGMENTS)
-        check(cutter is not None, "heron_embed can name a card the model cuts")
-        if cutter is None:
-            def cutter(_frags):
-                return None
-        cut = cutter(on_disk.values())
-        check(cut is not None, "the model's own tokenizer counted every card")
-        check(cut == [], "no live card's opening is cut by the model: %s"
-              % (", ".join("%s (%d word-pieces)" % one for one in cut or [])
-                 or "none"))
-
-        # AND IT NAMES ONE THAT IS. A real card, its opening pushed past the
-        # cut by utterances alone - the way #410 pushed a card's job away.
-        class Planted(object):
-            status = "DRAFT"
-
-            def __init__(self, real):
-                self.data = dict(real.data, capability="PLANTED_LONG_OPENING")
-                self._said = list(real.utterances()) + [
-                    "read the sill height of door %d in this wall" % n
-                    for n in range(reads // 4)]
-
-            def utterances(self):
-                return self._said
-
-        real = next(f for f in on_disk.values() if f.status not in retired_statuses)
-        named = cutter([Planted(real)]) or []
-        check([cap for cap, _n in named] == ["PLANTED_LONG_OPENING"],
-              "a card whose opening runs past the cut is named: %s"
-              % (named or "nothing named"))
-        retired = Planted(real)
-        retired.status = "DEPRECATED"
-        check(cutter([retired]) == [],
-              "a retired card is not asked - search never offers it")
     finally:
         if store is not None:
             store.close()
@@ -610,6 +595,15 @@ def main():
         for one in FAILURES:
             print("  - %s" % one)
         return 1
+    if OPEN_FAILED:
+        print("WAITING - every other check passed, and %d guard(s) are OPEN on the"
+              % len(OPEN_FAILED))
+        print("one search, each recorded in row 5b-2053 for the owner's decision:")
+        for one in OPEN_FAILED:
+            print("  - %s" % one)
+        print("\nThis is exit 3, which is NOT a pass: those guards were asked and")
+        print("answered wrong. A failure that is not on the list exits 1.")
+        return 3
     print("PASSED - every sentence reached what it asked for.")
     return 0
 

@@ -193,3 +193,10 @@ utterances:
   - what is hosted on this ceiling
   - list the skylights in this roof
   - which skylights does this roof have
+  # ADDED 2026-11-26 (row 5b-2053, D-203): general phrasing, measured on the built-in
+  # search every PC ranks with now (tests/test_routing_phrases.py, score-routing). No
+  # sentence of that suite, nor one a word away from it, is declared here.
+  - how many windows and doors does each of these walls have
+  - give me a count of the openings each wall hosts
+  - list every door and window each wall carries
+  - tally the doors per wall

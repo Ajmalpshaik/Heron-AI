@@ -94,7 +94,7 @@ purpose: >
      that - nothing more is placed until the table below has its yes.
      Its record says how the new family is hosted - level, work plane, face,
      wall - and where its insertion point sits in its own box (2026-10-15:
-     TRG_GEN_CutOut_Rectangular_HVAC, level based, its point the plan centre,
+     ABC_GEN_CutOut_Rectangular_HVAC, level based, its point the plan centre,
      its centre height the level plus its own Elevation from Level). Then put
      ONE TABLE to the modeller and take their yes:
      - WHAT IS CARRIED, AND FROM WHAT. The same shared parameter on both,
@@ -166,7 +166,7 @@ purpose: >
      why): heron_resolve each by name - its answer gives each one's status.
      WHERE THE PLACEMENT REFUSES, OR PUTS IT ELSEWHERE THAN ASKED - copy an
      existing instance of the new type. 2026-10-15, Revit 2020: asked 2152
-     mm, PLACE_FAMILY_INSTANCES stood the TRG cut-out 2014.5 mm above the
+     mm, PLACE_FAMILY_INSTANCES stood the ABC cut-out 2014.5 mm above the
      level; a separate task investigates. FILTER_ELEMENTS_BY_ID with
      elementIds= the source's id - read `named` - then COPY_ELEMENTS with
      expect_from="filter-elements-by-id where elementIds=<source id>", once
@@ -310,7 +310,7 @@ purpose: >
 # words they share with the request put it first.
 #
 # THE OWNER'S TWO SENTENCES ARE NOT DECLARED HERE, ON PURPOSE (row 5b-740).
-# "replace these openings with the TRG family at the same place" and "swap
+# "replace these openings with the ABC family at the same place" and "swap
 # this family for that one keeping their data" share replace, swap, family,
 # place, their and data with the words below already. Declared, "openings",
 # "same" and "this" - which heron_skill._words turns into "thi", a word it
@@ -378,12 +378,12 @@ note: >
   Written 2026-10-12 from a swap done by hand that day on Revit 2020, project
   4355-BHVD-3D-60P00-BL006A: three in-place
   TCM_ACU_T002_AirCooledCondensingUnit1..3 : AAAA replaced by
-  TRG_Mechanical Equipment_Split Air Conditioner Outdoor Unit_Wall Mounted.
+  ABC_Mechanical Equipment_Split Air Conditioner Outdoor Unit_Wall Mounted.
   Widened 2026-10-17 (row 5b-740) from a second swap done by hand on
   2026-10-15 on Revit 2020, project 4355-BHVD-3D-21P60-ST001I: 13 builders-work
   openings TCM_GEN_CutOut_Rectangular_NEW and TCM_GEN_CutOut_Cirular_NEW,
   Generic Models hosted on a face of the linked structural model, replaced by
-  TRG_GEN_CutOut_Rectangular_HVAC : 12.5mm Cutout Buffer, level based - by
+  ABC_GEN_CutOut_Rectangular_HVAC : 12.5mm Cutout Buffer, level based - by
   FILTER_ELEMENTS_BY_ID, COPY_ELEMENTS, SET_PARAMETER_VALUES_BY_ID,
   MOVE_ELEMENTS once per copy, a by-hand compare by GUID, and DELETE_ELEMENTS,
   because PLACE_FAMILY_INSTANCES stood the new one at the wrong height. Its

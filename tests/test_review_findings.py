@@ -388,12 +388,13 @@ def main():
     # Found in the cross-encoder's loader, which set one around its own load
     # while heron_brain.warm() started the ENCODER on another thread - so the
     # encoder could see the flag, fail its download and cache None for the
-    # process. That loader is gone (D-201); the encoder keeps the rule.
+    # process. That loader is gone (D-201), and the trained encoder with its
+    # per-load keyword (D-203): the built-in one downloads nothing, and still
+    # sets no process-wide flag.
     source = inspect.getsource(EMBED)
-    check("os.environ[key]" not in source and "HF_HUB_OFFLINE\"" not in source,
-          "the encoder sets no huggingface environment variable")
-    check("local_files_only" in source,
-          "it uses a per-load keyword instead, which no other loader can see")
+    check("os.environ[key]" not in source and "HF_HUB_OFFLINE\"" not in source
+          and "os.environ[" not in source,
+          "the encoder sets no environment variable at all")
     print()
 
     print("20. ONE BAD MOMENT DOES NOT DISABLE MAINTENANCE FOR THE PROCESS")
@@ -506,17 +507,14 @@ def main():
           "and the tool renders it")
     print()
 
-    print("24. A VECTOR REMEMBERS WHICH MODEL MADE IT")
+    print("24. A VECTOR REMEMBERS WHICH ENCODER MADE IT")
+    # Until D-203 a stamp also named WHICH trained model, because 'model'
+    # covered every one and a changed model left unchanged chunks holding the
+    # old one's vectors. One encoder now: the stamp is its name, and a row a
+    # removed encoder stamped differs from it, so index() re-embeds that row.
     stamp = EMBED.stamp()
-    check(stamp,
-          "vectors are stamped with %r rather than just the backend name - "
-          "'model' covered every trained encoder, so changing "
-          "HERON_EMBED_MODEL left unchanged chunks holding vectors from the "
-          "OLD one: at a different dimension nearest() discards them all, at "
-          "the same one it computes meaningless cross-model dot products, and "
-          "nothing says so either way" % stamp)
-    check(EMBED.MODEL not in stamp or ":" in stamp,
-          "and where the backend IS a trained model the stamp names WHICH")
+    check(stamp == EMBED.LEXICAL,
+          "vectors are stamped with the encoder's name: %r" % stamp)
     embed_source = inspect.getsource(EMBED)
     check(embed_source.count("name, embed = encoder()") == 2,
           "both index paths take the stamp and the encoder TOGETHER, so a "

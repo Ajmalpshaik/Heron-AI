@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-065
-semantic-identity: "put a door, a window, a skylight or any hosted family into its wall, floor, ceiling or roof"
+semantic-identity: "place doors and windows into walls, skylights and vents into roofs, drains into floors and fittings into ceilings - a hosted family into its host at the points given"
 kind: action
 domain: revit.elements
 capability: PLACE_HOSTED_FAMILY

@@ -22,7 +22,7 @@ flowchart TD
     CC["<b>Claude Code</b> — the host<br/>works out what you meant"]
     MS["<b>Heron MCP server</b> — Python<br/>the tools · finds the capability"]
     BR["<b>Heron Brain</b> — Python<br/>fragments · skills · knowledge · calculations"]
-    SR["<b>Search</b> — finds the capability<br/>word match · built in, always on<br/><i>model2vec</i> — reads meaning · optional"]
+    SR["<b>Search</b> — finds the capability<br/>word match and spelling nearness<br/>built in, the same on every PC"]
     AD["<b>Heron Revit add-in</b> — C#<br/>compiles and runs the fragment<br/>a change: one named TransactionGroup"]
     RV[("<b>Revit</b><br/>2020 → latest")]
     CP["<b>Heron Companion</b><br/>a page beside Revit<br/>live view · editable tables"]
@@ -63,8 +63,8 @@ Claude Code           host: works out what the modeller meant (D-01)
      |  MCP
 Heron MCP server      Python: the tools, finds the capability  <->  Heron Brain: fragments, skills,
      |  named pipe, this PC only                                      knowledge, calculations
-     |                                                                Search: word match (built in),
-     |                                                                model2vec (optional)
+     |                                                                Search: word match and spelling
+     |                                                                nearness (built in)
 Heron Revit add-in    C#: compiles and runs the fragment; a change runs in one named TransactionGroup
      |  ExternalEvent, Revit's main thread
 Revit                 2020 -> latest
@@ -83,8 +83,8 @@ Heron Platform        install, update, config, switches - under all of them
 ## One request, step by step
 
 1. You type *"set the Mark of these doors to D-01"*.
-2. Claude Code asks `heron_lookup` which capability serves it. Heron's search matches your words — by
-   meaning too, when model2vec is installed.
+2. Claude Code asks `heron_lookup` which capability serves it. Heron's search matches your words and
+   their spelling - not their meaning.
 3. It calls `revit_change` with your words. The server sends the job down the named pipe to the add-in.
 4. The add-in compiles the fragment and runs it on Revit's main thread, inside one named
    `TransactionGroup`.
@@ -145,16 +145,18 @@ Cloud session            Claude Code -> Heron (library tools only, no revit_ too
 
 **Search is how the brain finds the capability for your words.**
 
-| Level | What it does | Installed |
+| Part | What it does | Installed |
 |---|---|---|
-| **Word match** | Matches letters and words | Built in, always runs |
-| **model2vec** | Reads meaning — *"stop the air going the wrong way"* can reach the flow-direction check without sharing a word with it | Optional |
-Without model2vec Heron uses the word match, and **every answer says which search ran**. Measured on
-2026-11-26 at 753 fragments, neither was clearly better on the owner's questions, so model2vec stays
-optional. A third level, a **re-ranker** that gave the top picks a second, slower read, was removed on
-2026-11-26 ([D-201](../decisions/D-201.md)): no clear gain, and the largest download Heron had.
-[WHAT-TO-INSTALL §2](../WHAT-TO-INSTALL.md#2-optional--the-trained-search-model) has the figures and how
-to install or remove model2vec.
+| **Word match** | Matches the words you typed | Built in, always runs |
+| **Nearness** | Matches spelling and word order - *ducts* finds *duct* - but not meaning: *grille* does not find *diffuser* | Built in, always runs |
+
+**One search, the same on every PC, and every answer says which search ran.** Two optional add-ons
+were removed on 2026-11-26: a **re-ranker** that gave the top picks a second, slower read
+([D-201](../decisions/D-201.md)), and a **trained search model**, model2vec, that read meaning
+([D-203](../decisions/D-203.md)). Neither was better on the owner's own questions, and Setup never
+installed either, so only one PC ever ranked with them.
+[WHAT-TO-INSTALL §2](../WHAT-TO-INSTALL.md#2-search--built-in-no-add-on) has the figures, and what to
+remove from a PC that has them.
 
 ## Go deeper
 
