@@ -90,7 +90,8 @@ Intent -> Domain -> Knowledge Scope
 > **As built (2026-10-18):** the adopted order is the order of
 > [`heron_retrieve.py`](../brain/heron_retrieve.py) up to rank fusion. The metadata and version filter
 > runs first, and an excluded fragment is reported with its reason. Then come keywords (FTS5) and
-> nearness, then reciprocal rank fusion, then an optional re-rank. The later stages are separate tools,
+> nearness, then reciprocal rank fusion (an optional re-rank after it was removed by
+> [D-201](DECISIONS.md), 2026-11-26). The later stages are separate tools,
 > not one pipeline:
 >
 > - **Trust** is the fragment's own status. Only a `PROVEN` fragment may run off an exact match

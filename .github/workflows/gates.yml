@@ -583,21 +583,21 @@ jobs:
           # THE SUITES THAT CANNOT RUN ON THIS RUNNER AT ALL, AND WHY.
           #
           #   test_routing_phrases.py  its sentences are measured on the owner's
-          #                            backend, the trained embedding WITH the
-          #                            re-ranker (D-134). The embedding alone is
+          #                            backend, the trained embedding - the
+          #                            model alone since D-201 removed the
+          #                            re-ranker (2026-11-26). The embedding is
           #                            cheap to fetch - model2vec and
           #                            minishlab/potion-base-8M, about 130 MB
-          #                            (heron_embed.SIZE) - but on it alone the
-          #                            suite FAILS: 6 checks, measured
-          #                            2026-11-21 on main 0429fc1c, the curtain
+          #                            (heron_embed.SIZE) - but on it the suite
+          #                            still FAILS: 6 checks, measured again
+          #                            2026-11-26 at 753 fragments, the curtain
           #                            wall selections and the cooling-load
           #                            units question among them (row 5b-1882,
-          #                            issue #1127). So fetching the model would
-          #                            turn a NOT RUN into a red that is a
-          #                            backend this runner does not rank on,
-          #                            not this change - and the re-ranker is a
-          #                            torch install of gigabytes. It runs on
-          #                            the owner's PC, model+rerank.
+          #                            issue #1127). Those are card wording, not
+          #                            this runner; until they are repaired,
+          #                            fetching the model would turn a NOT RUN
+          #                            into a red that is not this change. It
+          #                            runs on the owner's PC, on the model.
           #
           # The trained embedding stays out of THIS Python for a second reason:
           # every routing check in this job ranks by spelling here, on purpose,

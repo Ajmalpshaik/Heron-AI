@@ -345,8 +345,8 @@ def contract_changed(diff):
 
 # A CARD'S TOP-LEVEL KEYS THAT ONLY DECIDE WHICH CARD A SENTENCE REACHES.
 # The encoder indexes the identity, the utterances and the purpose
-# (heron_embed._text_for), the re-ranker reads the identity and the domain
-# (heron_retrieve._fragment_passage), a lookup can filter by the domain, and
+# (heron_embed._text_for), the words route indexes the identity and the
+# domain (heron_search.index), a lookup can filter by the domain, and
 # Revit reads none of them - D-30's fingerprint is taken over impl/ alone
 # (heron_fragment.fingerprint). The purpose is prose; it is here because the
 # lookup reads it. The domain is here on the owner's word (2026-10-17): a

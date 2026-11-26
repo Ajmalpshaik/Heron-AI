@@ -5877,7 +5877,7 @@ def heron_lookup(request: str, question: bool = False) -> str:
     #   "isolate all the pipes ..."   -> SET_MEP_SLOPE      (MODIFY), 2.4 clear
     #
     # NEITHER ROUTE IS THE CULPRIT, WHICH IS WHY THIS WARNS RATHER THAN
-    # RE-RANKS. On the isolate sentence the keyword route was wrong and the
+    # RE-ORDERS. On the isolate sentence the keyword route was wrong and the
     # meaning route had ISOLATE_ELEMENTS first; on "can I edit these" the
     # keyword route was right and the meaning route put the READ eleventh. A
     # rule preferring either one would have fixed one case and caused the
@@ -5942,8 +5942,6 @@ def heron_lookup(request: str, question: bool = False) -> str:
         lines.append("")
         lines.append("  nearness     %s - %s" % (backends.get("nearness"),
                                                  backends.get("nearness_why")))
-        lines.append("  re-rank      %s - %s" % (backends.get("rerank"),
-                                                 backends.get("rerank_why")))
 
     if revit is None:
         lines.append("")

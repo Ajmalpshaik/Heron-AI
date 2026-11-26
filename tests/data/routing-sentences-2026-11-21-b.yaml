@@ -11,10 +11,11 @@
 #
 # Read by tools/score-routing.py --sentences. Measured in a cloud container on
 # lexical and model only (origin/main against the branch). OWED ON THE OWNER'S
-# PC, which ranks model+rerank:
+# PC, which ranks model since D-201 removed the re-ranker
+# (2026-11-26; it was model+rerank when this was frozen):
 #
 #   python tools/score-routing.py --sentences tests/data/routing-sentences-2026-11-21-b.yaml \
-#       --backend lexical+rerank --backend model+rerank
+#       --backend model
 #
 # Where a row quotes a sentence, it is that row's (the owner's own where the row
 # says it came from his PC: the first of the 5b-1951 group). Every other
