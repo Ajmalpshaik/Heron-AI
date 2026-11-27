@@ -1338,3 +1338,46 @@ search ranks without a floor, as today. **Not checked:** no question was asked o
 every figure above is A15's, from [`brain/retrieval-history.md`](../../brain/retrieval-history.md).
 
 ---
+
+### 🔵 Q-100 — Every Heron install carries your PC's name, "ajmal-pc", as its client id. Change it to a neutral one, such as "heron-pc"? *(asked 2026-11-27, in the plugin-directory follow-up)*
+
+**Tracked as GitHub issue [#1488](https://github.com/Ajmalpshaik/Heron-AI/issues/1488) since 2026-11-27** - the owner answers there.
+
+**Where it comes from.** [`.mcp.json`](../../.mcp.json) sets `HERON_CLIENT_ID` to `"ajmal-pc"` - your PC's
+name. It is the [D-22](../DECISIONS.md) lease identity, *one person, one id*. Heron's Setup copies it onto
+every modeller's PC: [`platform/Heron.Installer/ClaudeCodeEntry.cs`](../../platform/Heron.Installer/ClaudeCodeEntry.cs)
+reads it with `ClientIdIn(...)` (the call that reads `.mcp.json`, near line 257) and `Add` writes it into the
+user-scope Claude Code entry (near line 131). So every install sends Revit your PC's name. It does no harm -
+the lease is held per Revit, on one PC - but it is your name in somebody else's install, and the
+plugin-directory check of 2026-11-26 asked for that value to be neutral. Read from the files, nothing run:
+
+1. **The documented proof commands give the old value.** The job files in [`tools/jobs/`](../../tools/jobs/README.md),
+   their README and most NEEDS-CHECKING group files give their commands as `HERON_CLIENT_ID=ajmal-pc python ...`
+   (`git grep -l "HERON_CLIENT_ID=ajmal-pc" | wc -l` counts the files; `git grep -l "ajmal-pc"` lists every
+   file that names it). With a different value in `.mcp.json`, those commands would be refused the lease while
+   your chat holds it (D-22).
+2. **Your own install keeps the old value until Setup runs again.** The user-scope entry already on your PC says
+   `"ajmal-pc"`; with a new value in the Heron folder, a chat opened in the Heron folder and a chat opened anywhere
+   else would send two ids and race for the lease - the exact thing `ClientIdIn`'s own comment says it is there
+   to prevent.
+3. **Two tests read the value.** [`tests/test_model_hold.py`](../../tests/test_model_hold.py) checks the literal
+   `"ajmal-pc"` in `.mcp.json` (near line 569) and sets it itself (near line 194);
+   [`tests/test_commands.py`](../../tests/test_commands.py) compares the lease's person with `.mcp.json`'s value
+   (near lines 305 to 311).
+
+**The question, in a modeller's words: should every Heron install go on sending your PC's name, or a neutral
+name that is the same for everybody?**
+
+- **Change it, in one pull request of its own.** `.mcp.json`, the documented commands, the tests' literal and
+  [`.codex/config.toml`](../../.codex/config.toml) (which carries the same value) change together, and then
+  Setup is run again on your PC - a PC check, owed after it merges.
+- **Leave it.** It stays `"ajmal-pc"`; nothing changes, and every install goes on carrying your PC's name.
+- **Recommended:** change it, to a value such as `"heron-pc"`, in its own pull request.
+
+**Nothing is changed until this is answered.** It was not changed in the follow-up that found it, because a
+change of the value alone would break the documented commands and race your own install. **Not checked:** no
+command was run with another value; nothing was run in Revit or on your PC; whether the comments that quote
+`"ajmal-pc"` - in `mcp/client/heron_bridge_client.py`, `revit/Heron.Revit.Addin/HeronKeepGrant.cs` and
+[D-141](../decisions/D-141.md) - should change with it was not looked at.
+
+---
