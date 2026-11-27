@@ -1,0 +1,14 @@
+# 2026-11-27, Revit 2020 - COMBINE_FAMILY_FORMS with a real CUT. "Night MEP Family" (copy of the 2020 sample
+# family) now holds one kept void ...0fd9, a 60 mm round void through the base plate ...09cb (made and saved
+# 2026-11-27 with create-family-forms, PROVEN). Positive: plate + void - the void must cut. Negative: "list"
+# - nothing combined, nothing cut. ROLLED BACK.
+model: "Night MEP Family (scratch copy of the Revit 2020 sample family), Revit 2020"
+defaults:
+  in: "Night MEP Family"
+  setup: []
+jobs:
+  - fragment: combine-family-forms
+    write: true
+    expect: cut
+    set: {forms: "a0683e65-4584-4c07-94d1-ebbad3e4649b-000009cb,46129ac0-84cf-4d47-8421-5079d19852d4-00000fd9"}
+    negative-set: {forms: "list"}

@@ -1,0 +1,53 @@
+# Night 2026-11-26, round 2 - round 1's re-arrangements, Revit 2020.
+# "Night Tag" = a copy of Libraries\US Metric\Annotations\M_Area Tag.rfa - an annotation family, no levels.
+model: "Night Rig 1126 + Night Tag (scratch copies), Revit 2020"
+
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+
+jobs:
+  - fragment: check-family-standards
+    expect: offStandard
+    set: {namePattern: "ZZZ*", requiredParameters: "HERON NOT A PARAMETER", mustHaveConnectors: true}
+    negative-set: {namePattern: "*", requiredParameters: "", mustHaveConnectors: false}
+
+  - fragment: describe-blank-parameters
+    setup: [filter-elements-by-category, read-element-parameters]
+    keep-chain: true
+    expect: findings
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", parameterName: "Comments"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", parameterName: "Length"}
+
+  - fragment: report-mep-pressure-drop
+    expect: criticalPathTotals
+    set: {systemNameContains: ""}
+    negative-set: {systemNameContains: "ZZZ NO SUCH SYSTEM"}
+
+  - fragment: report-level-elevations
+    expect: levels
+    negative-in: "Night Tag"
+
+  - fragment: report-element-dependencies
+    setup: [filter-elements-by-id, set-selection]
+    setup-set: {elementIds: "573604, 573606, 573609"}
+    negative-setup-set: {elementIds: "573780, 573782, 576037"}
+
+  - fragment: measure-distance
+    expect: straightMm
+    set: {elementIds: "802669, 802670"}
+    negative-set: {elementIds: "802669, 802669"}
+
+  - fragment: report-bounding-box
+    expect: measured
+    set: {category: "Mechanical Equipment", inViewOnly: "FloorPlan: Level 1 HVAC Plan", maxRows: 5}
+    negative-set: {category: "Sheets", inViewOnly: "FloorPlan: Level 1 HVAC Plan", maxRows: 5}
+
+  - fragment: report-tags-and-targets
+    expect: tagTargets
+    set: {view: "FloorPlan: Level 1 HVAC Zone Plan"}
+    negative-set: {view: "{3D}"}
+
+  - fragment: report-structural-settings
+    expect: settingsRead
+    negative-in: "Night Tag"

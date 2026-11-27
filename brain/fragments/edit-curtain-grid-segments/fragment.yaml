@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -136,6 +136,64 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-26'
+  by: Ajmal PS
+  model: Night Rig 1126 (21,448 elements), Revit 2020, session 50628
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    create-wall, add-curtain-grid-lines with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned JointMm 1, MillimetresPerFoot
+    304.8, MostAsked 50, SameLineMm 5, alongLine Func`3, alongMax 29.5275590551181, alongMin
+    0, bad , before 6 panels, 0 mullions, changed 1, chosen 1 item(s) [CurtainGridLine], chosenAt
+    1 item(s) [9.84251968503937], countOnWall Func`1, curtainWalls 1 item(s) [Wall], findings
+    3 item(s) [the vertical line at 3000 mm taken away on curtain wall 1020..., Deleting the
+    line took 1 other element(s) with it - the mull..., Read back from Revit - see readBack],
+    flat XYZ, fullName Func`2, grid CurtainGrid, hit (null), invariant CultureInfo, label
+    curtain wall 1020393 (''Curtain Wall: Standard''), level 0.00174532836589831, linesBefore
+    5, linesMm 1 item(s) [3000], linesThatWay Func`1, mode 0, notCurtain 0 item(s), notFound
+    0 item(s), nothingToDo 0 item(s), numbers Func`2, plain Func`2, plannedCurves 1 item(s)
+    [System.Collections.Generic.List`1[Autodesk.Revit.DB.Curve]], plannedPoints 1 item(s)
+    [System.Collections.Generic.List`1[System.Double]], plans 1 item(s) [0], pointsMm 0 item(s),
+    positionOf Func`3, readBack curtain wall 1020393 (''Curtain Wall: Standard''): vertical
+    lines 5 before, 4 now. Before: 6 panels, 0 mullions. Now: 5 panels, 0 mullions. the vertical
+    line at 3000 mm taken away, refused , run Line, runs Func`2, sayMm Func`2, segmentHolding
+    Func`4, sizeOf Func`2, start XYZ, steep 0.999998476913288, wall Wall, way 0, wayWords
+    4 item(s) [vertical, horizontal, at an angle, ...], wholeLine true, zMax 10.1514820763725,
+    zMin 0.308962391333159. inputs came elements from add-curtain-grid-lines as ''created''
+    (1); direction as given; lineAt as given; segmentsAt as given; action as given. on Night
+    Rig 1126'
+  negative_case: 'run with action=remove, direction=vertical, height=3000, level=Level 1,
+    lineAt=3000, points=0,-60000,0; 9000,-60000,0, positions=equal 6, segmentsAt=all, structural=false,
+    wallType=Basic Wall: MW 17.5 instead - chosen because it should not contain what this
+    fragment reports - the arrangement was re-made first by running create-wall, add-curtain-grid-lines
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned JointMm 1, MillimetresPerFoot 304.8, MostAsked
+    50, SameLineMm 5, alongLine Func`3, alongMax -1.79769313486232E+308, alongMin 1.79769313486232E+308,
+    bad , before , changed 0, chosen 0 item(s), chosenAt 0 item(s), countOnWall Func`1, curtainWalls
+    0 item(s), findings 1 item(s) [Nothing given is a curtain wall - ''MW 17.5'' (id 1020412)
+    is ...], flat (null), fullName Func`2, grid (null), hit (null), invariant CultureInfo,
+    label , level 0.00174532836589831, linesBefore 0, linesMm 0 item(s), linesThatWay Func`1,
+    mode -1, notCurtain 1 item(s) [''MW 17.5'' (id 1020412) is a wall with no curtain grid],
+    notFound 0 item(s), nothingToDo 0 item(s), numbers Func`2, plain Func`2, plannedCurves
+    0 item(s), plannedPoints 0 item(s), plans 0 item(s), pointsMm 0 item(s), positionOf Func`3,
+    readBack , refused Nothing given is a curtain wall - ''MW 17.5'' (id 1020412) is a wall
+    with no curtain grid. Select the one curtain wall whose grid line or segment is to go.
+    Nothing was changed, run (null), runs Func`2, sayMm Func`2, segmentHolding Func`4, sizeOf
+    Func`2, start (null), steep 0.999998476913288, wall (null), way -1, wayWords 4 item(s)
+    [vertical, horizontal, at an angle, ...], wholeLine true, zMax -1.79769313486232E+308,
+    zMin 1.79769313486232E+308. inputs came elements from add-curtain-grid-lines as ''created''
+    (1); direction as given; lineAt as given; segmentsAt as given; action as given. on Night
+    Rig 1126'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: c8702fbf93571991
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

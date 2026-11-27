@@ -1,0 +1,36 @@
+# Night 2026-11-26, round M6 - model-changing DRAFT cards, Revit 2020. EVERY RUN IS ROLLED BACK.
+# "Curtain Wall : Standard" already has Automatically Embed ticked (round M5), so the positive unticks it.
+# "Night MEP Family" forms (report-family-forms): ...09cb base plate, ...09e2 body - touching solids.
+model: "Night Rig 1126 + Night MEP Family (scratch copies of the Revit 2020 samples), Revit 2020"
+
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+
+jobs:
+  - fragment: set-curtain-wall-embed
+    write: true
+    setup: [create-wall]
+    expect: typesChanged
+    set: {level: "Level 1", wallType: "Curtain Wall: Standard", points: "0,-60000,0; 9000,-60000,0", height: "3000", structural: "false", embed: "no"}
+    negative-set: {level: "Level 1", wallType: "Basic Wall: MW 17.5", points: "0,-60000,0; 9000,-60000,0", height: "3000", structural: "false", embed: "no"}
+
+  - fragment: create-from-room-boundaries
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: finishWalls
+    set: {category: "Rooms", levelId: "Level 3", hostType: "Basic Wall: MW 11.5", heightAboveLevel: 2400, baseOffset: 0, rooms: "", joinToHost: true}
+    negative-set: {category: "Sprinklers", levelId: "Level 2", hostType: "Basic Wall: MW 11.5", heightAboveLevel: 2400, baseOffset: 0, rooms: "", joinToHost: true}
+
+  - fragment: combine-family-forms
+    in: "Night MEP Family"
+    write: true
+    expect: combinationId
+    set: {forms: "a0683e65-4584-4c07-94d1-ebbad3e4649b-000009cb,a0683e65-4584-4c07-94d1-ebbad3e4649b-000009e2"}
+    negative-set: {forms: "list"}
+
+  - fragment: run-systems-analysis
+    write: true
+    expect: reportView
+    set: {reportName: "N1126 Systems Report", weatherFile: "", workflowFile: ""}
+    negative-set: {reportName: "Level 1 HVAC Plan", weatherFile: "", workflowFile: ""}

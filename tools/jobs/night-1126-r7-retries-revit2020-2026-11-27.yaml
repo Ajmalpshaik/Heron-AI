@@ -1,0 +1,19 @@
+# 2026-11-27, Revit 2020 - two retries. "Night OU21" is a new project from DefaultMetric.rte (its loaded families
+# are Revit's own). Every write ROLLED BACK.
+model: "Night Rig 1126 + Night OU21 (scratch), Revit 2020"
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+jobs:
+  - fragment: check-family-standards
+    expect: offStandard
+    set: {namePattern: "ZZZ*", requiredParameters: "HERON NOT A PARAMETER", mustHaveConnectors: true}
+    negative-in: "Night OU21"
+    negative-set: {namePattern: "*", requiredParameters: "", mustHaveConnectors: false}
+
+  - fragment: create-from-room-boundaries
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: finishWalls
+    set: {category: "Rooms", levelId: "Level 2", hostType: "Basic Wall: MW 11.5", heightAboveLevel: 2400, baseOffset: 0, rooms: "", joinToHost: false}
+    negative-set: {category: "Sprinklers", levelId: "Level 2", hostType: "Basic Wall: MW 11.5", heightAboveLevel: 2400, baseOffset: 0, rooms: "", joinToHost: false}

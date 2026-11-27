@@ -1,0 +1,13 @@
+# 2026-11-27, Revit 2020 - NEEDS-CHECKING Group RB as the proof of CREATE_STARTER_MATERIALS v5:
+# RB2 positive - starterPick "glass; copper" with namePrefix LEFT OUT (expect exactly "Glass Clear", "Pipe Copper");
+# RB1 negative - starterPick none (nothing made, no office prefix). RB3 ran first, record kept apart. ROLLED BACK.
+model: "Night Rig 1126 (scratch copy of the Revit 2020 MEP sample), Revit 2020"
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+jobs:
+  - fragment: create-starter-materials
+    write: true
+    expect: createdMaterialIds
+    set: {starterPick: "glass; copper"}
+    negative-set: {starterPick: "none"}

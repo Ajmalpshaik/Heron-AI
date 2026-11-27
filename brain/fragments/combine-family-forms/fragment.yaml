@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -108,33 +108,35 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-17'
+  date: '2026-11-27'
   by: Ajmal PS
-  model: Heron Forms Scratch (1,804 elements), Revit 2024, session 51856
+  model: Night MEP Family (1,686 elements), Revit 2020, session 50628
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned act combine, combinationId a3f316f2-d6c6-47ae-88f9-a0714f62e35f-00000bcc,
-    combined Cut 1 solid(s) with 1 void(s): 35.341 L before, 34.861 L after - 480000 mm³ taken
-    away. Read back form by form: all 1 solid(s) are in the result - 2 point(s) inside them
+    the transaction group ROLLED BACK afterwards. returned act combine, combinationId 77f5da17-b7b1-405e-af0f-ed9ad6473711-00000fe2,
+    combined Cut 1 solid(s) with 1 void(s): 3.787 L before, 3.68 L after - 107723.2 mm³ taken
+    away. Read back form by form: all 1 solid(s) are in the result - 6 point(s) inside them
     that no void covers, every one found in it., cut true, describe Func`2, findings 3 item(s)
-    [Cut 1 solid(s) with 1 void(s): 35.341 L before, 34.861 L aft..., Combined: solid extrusion
-    1ef4c208-2cb8-4dd3-9b96-5273b6d73b..., Undo, or Revit''s Unjoin Geometry and Uncut Geometry,
+    [Cut 1 solid(s) with 1 void(s): 3.787 L before, 3.68 L after ..., Combined: solid extrusion
+    a0683e65-4584-4c07-94d1-ebbad3e464..., Undo, or Revit''s Unjoin Geometry and Uncut Geometry,
     take it...], invariant CultureInfo, members 2 item(s) [Extrusion, Void Extrusion], notAFamily
-    false, partOfVolume 1E-09, problems 0 item(s), refused (null), separateText , spoken 1ef4c208-2cb8-4dd3-9b96-5273b6d73b00-00000b64,1ef4c208-2cb8-4dd3-9b96-5273b6d73b00-00000b84,
-    volume Func`3, volumeOf Func`2. inputs came forms as given. on Heron Forms Scratch'
-  negative_case: run with forms=1ef4c208-2cb8-4dd3-9b96-5273b6d73b00-00000b84,1ef4c208-2cb8-4dd3-9b96-5273b6d73b00-00000b92
-    instead - chosen because it should not contain what this fragment reports - run inside
-    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    act combine, combinationId , combined , cut false, describe Func`2, findings 1 item(s)
-    [Nothing was joined or cut. Every form named is a void. A voi...], invariant CultureInfo,
-    members 2 item(s) [Void Extrusion, Void Revolve], notAFamily false, partOfVolume 1E-09,
-    problems 1 item(s) [Every form named is a void. A void cuts a solid - name the s...],
-    refused Nothing was joined or cut. Every form named is a void. A void cuts a solid - name
-    the solid it should cut as well., separateText , spoken 1ef4c208-2cb8-4dd3-9b96-5273b6d73b00-00000b84,1ef4c208-2cb8-4dd3-9b96-5273b6d73b00-00000b92,
-    volume Func`3, volumeOf Func`2. inputs came forms as given. on Heron Forms Scratch
+    false, partOfVolume 1E-09, problems 0 item(s), refused (null), separateText , spoken a0683e65-4584-4c07-94d1-ebbad3e4649b-000009cb,46129ac0-84cf-4d47-8421-5079d19852d4-00000fd9,
+    volume Func`3, volumeOf Func`2. inputs came forms as given. on Night MEP Family'
+  negative_case: run with forms=list instead - chosen because it should not contain what this
+    fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned act list, combinationId , combined , cut false, describe
+    Func`2, findings 1 item(s) [0 combination(s) of joined or cut forms in this family.],
+    invariant CultureInfo, members 0 item(s), notAFamily false, partOfVolume 1E-09, problems
+    0 item(s), refused (null), separateText , spoken list, volume Func`3, volumeOf Func`2.
+    inputs came forms as given. on Night MEP Family
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: ca69cfbd3677c569
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 65d6f408572abc9e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

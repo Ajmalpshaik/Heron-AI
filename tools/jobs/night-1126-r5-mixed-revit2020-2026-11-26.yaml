@@ -1,0 +1,37 @@
+# Night 2026-11-26, round 5 - re-arrangements after rounds 3 and 4, Revit 2020. Every write ROLLED BACK.
+# "Level 2 HVAC Duct Plan" holds 12 tags, "Level 1 Lighting Plan" none (read by report-tags-and-targets).
+# 392168 is a duct (a service in round 1's propose-mep-openings answer).
+model: "Night Rig 1126 (scratch copy of the Revit 2020 MEP sample), Revit 2020"
+
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+
+jobs:
+  - fragment: report-tags-and-targets
+    expect: tagTargets
+    set: {view: "FloorPlan: Level 2 HVAC Duct Plan"}
+    negative-set: {view: "FloorPlan: Level 1 Lighting Plan"}
+
+  - fragment: set-element-material
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: writtenIds
+    set: {category: "Structural Columns", levelId: "Level 1", material: "Glass", materialParameter: "Structural Material"}
+    negative-set: {category: "Walls", levelId: "Level 1", material: "Glass", materialParameter: "Structural Material"}
+
+  - fragment: filter-elements-by-type
+    setup: [filter-elements-by-id, set-selection]
+    setup-set: {elementIds: "392168"}
+    negative-setup-set: {elementIds: "392168"}
+    expect: elements
+    set: {exemplar: "selected", inViewOnly: "Level 1 HVAC Duct Plan"}
+    negative-set: {exemplar: "selected", inViewOnly: "ABBREVIATIONS"}
+
+  - fragment: select-by-host
+    setup: [filter-elements-by-id, set-selection]
+    setup-set: {elementIds: "573609"}
+    negative-setup-set: {elementIds: "392168"}
+    expect: elements
+    set: {host: "selected", categories: "Doors, Windows, Curtain Panels, Air Terminals, Lighting Fixtures, Electrical Fixtures, Generic Models"}
+    negative-set: {host: "selected", categories: "Doors, Windows, Curtain Panels, Air Terminals, Lighting Fixtures, Electrical Fixtures, Generic Models"}

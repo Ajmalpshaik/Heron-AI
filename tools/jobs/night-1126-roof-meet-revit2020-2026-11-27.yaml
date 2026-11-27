@@ -1,0 +1,14 @@
+# 2026-11-27, Revit 2020 - REPORT_ROOF_REACH in "Night OU21" after the shed roof 345483 was extended (KEPT, with
+# extend-roof-to-roof, proved and signed tonight) to meet the gable roof 345451. Positive: that pair. Negative:
+# the older shed 345475 (extruded along Y - no end faces a roof) with the gable roof. ROLLED BACK.
+model: "Night OU21 (new project from Revit 2020's DefaultMetric.rte), Revit 2020"
+defaults:
+  in: "Night OU21"
+  setup: [filter-elements-by-id, set-selection]
+jobs:
+  - fragment: report-roof-reach
+    expect: meets
+    setup-set: {elementIds: "345483, 345451"}
+    negative-setup-set: {elementIds: "345475, 345451"}
+    set: {view3d: "OU21 3D"}
+    negative-set: {view3d: "OU21 3D"}

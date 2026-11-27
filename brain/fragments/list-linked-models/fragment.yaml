@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LNK-015
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -89,18 +89,32 @@ contract:
       type: int
 
 proof:
-  date: '2026-09-13'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: >
-    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
-  positive_case: >
-    Snowdon Towers: 6 links, ALL loaded, notLoaded 0, each named with its placement - 'Snowdon Towers Sample Architectural.rvt : Architecture : location <Not Shared>'.
-  negative_case: >
-    Project1: 0 links, 0 loaded, 0 notLoaded. Empty because there are none - and with both documents open it did not report Snowdon's six.
-  second_route: >
-    REPORT_EXTERNAL_REFERENCES counted 8 references on Snowdon and 2 on Project1 in the same run; the difference is exactly these 6 links.
-  fingerprint: "e2c3a50aaaf63f52"
-
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Night Rig 1126, Night Tag - active was Night
+    Rig 1126, Revit 2020, session 50628'
+  positive_case: "run as it would normally be run. returned elements 1 item(s) [Night Link\
+    \ Source.rvt : 2 : location <Not Shared>], findings 1 item(s) [Night Link Source.rvt \
+    \ - NOT LOADED, nothing in it can be re...], loaded 1 entry(ies), notLoaded 1 item(s)\
+    \ [1020325], order 1 item(s) [1020325], pinnedCount 1 entry(ies), placementLines 1 entry(ies),\
+    \ placements 1 entry(ies), skippedPlacements 0, summary Night Link Source.rvt - NOT LOADED,\
+    \ nothing in it can be read, placed 1 time.\n  Path type: Absolute - saved as C:/Users/ajmal/AppData/Local/Temp/heron-work/night-1126/model/Night\
+    \ Link Source.rvt\n  Room Bounding: no. Reference type: Overlay. Nested: no. Unloaded\
+    \ for me: no.\n  - Night Link Source.rvt : 2 : location <Not Shared>: NOT pinned, workshared\
+    \ false. on Night Rig 1126"
+  negative_case: run against 'Night Tag' instead - chosen because it should not contain what
+    this fragment reports. returned elements 0 item(s), findings 0 item(s), loaded 0 entry(ies),
+    notLoaded 0 item(s), order 0 item(s), pinnedCount 0 entry(ies), placementLines 0 entry(ies),
+    placements 0 entry(ies), skippedPlacements 0, summary , workshared false. on Night Tag
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 96ed5f2fdb23ad46
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

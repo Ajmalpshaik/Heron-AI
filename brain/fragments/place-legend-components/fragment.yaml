@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -107,6 +107,39 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-26'
+  by: Ajmal PS
+  model: Night Rig 1126 (21,448 elements), Revit 2020, session 50628
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyShown 4, findings 1 item(s)
+    [3 legend component(s) placed in 'Diffuser Legend', each with...], labels true, leftmost
+    1.38234947379149, lowest -12.8138480666619, mmPerFoot 304.8, onlyUsed true, placed 3,
+    placedIds 3 item(s) [1020331, 1020353, 1020375], refused 0 item(s), seed Element, shown
+    HashSet`1, skipped 0 item(s), spacingMm 10, wantedCategories 1 item(s) [OST_DuctTerminal],
+    wantedTypes 7 item(s) [Standard, 600 x 600 Face 300 x 300 Connection, 600 x 600 Face 300
+    x 300 Connection, ...]. inputs came view as given; categories as given (1); onlyUsed as
+    given; spacingMm as given; labels as given. on Night Rig 1126
+  negative_case: run with categories=Casework, labels=True, onlyUsed=True, spacingMm=10, view=Diffuser
+    Legend instead - chosen because it should not contain what this fragment reports - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned alreadyShown 0, findings 2 item(s) [0 legend component(s) placed in 'Diffuser
+    Legend', each with..., No placed type of Casework in this model - say all types to ...],
+    labels true, leftmost 1.38234947379149, lowest -12.8138480666619, mmPerFoot 304.8, onlyUsed
+    true, placed 0, placedIds 0 item(s), refused 0 item(s), seed Element, shown HashSet`1,
+    skipped 0 item(s), spacingMm 10, wantedCategories 1 item(s) [OST_Casework], wantedTypes
+    0 item(s). inputs came view as given; categories as given (1); onlyUsed as given; spacingMm
+    as given; labels as given. on Night Rig 1126
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: cfce354a744cb4cd
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

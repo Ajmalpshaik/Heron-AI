@@ -1,0 +1,68 @@
+# Night 2026-11-26, round 3 - re-arrangements after rounds R2 and M2, Revit 2020. Every write ROLLED BACK.
+# "Night Tag" = copy of Libraries\US Metric\Annotations\M_Area Tag.rfa (annotation family: no levels,
+# no loaded families, no structural settings to speak of).
+model: "Night Rig 1126 + Night Tag (scratch copies), Revit 2020"
+
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+
+jobs:
+  - fragment: check-family-standards
+    expect: offStandard
+    set: {namePattern: "ZZZ*", requiredParameters: "HERON NOT A PARAMETER", mustHaveConnectors: true}
+    negative-in: "Night Tag"
+    negative-set: {namePattern: "ZZZ*", requiredParameters: "HERON NOT A PARAMETER", mustHaveConnectors: true}
+
+  - fragment: report-level-elevations
+    expect: levels
+    negative-in: "Night Tag"
+
+  - fragment: report-structural-settings
+    expect: settingsRead
+    negative-in: "Night Tag"
+
+  - fragment: report-bounding-box
+    setup: [filter-elements-by-category, set-selection]
+    expect: measured
+    set: {category: "Mechanical Equipment", inViewOnly: "Level 1 HVAC Plan", maxRows: 5}
+    negative-set: {category: "Space Tags", inViewOnly: "Level 1 HVAC Zone Plan", maxRows: 5}
+
+  - fragment: report-tags-and-targets
+    expect: tagTargets
+    set: {view: "FloorPlan: Level 1 HVAC Duct Plan"}
+    negative-set: {view: "3D Duct & Equipment"}
+
+  - fragment: apply-view-filter
+    write: true
+    expect: applied
+    set: {view: "3D Duct & Equipment", filter: "Domestic", overrides: "projection-line-colour=255,0,0", visible: "true", enabled: "", keepOtherSettings: "", solidFill: ""}
+    negative-set: {view: "Project View", filter: "Domestic", overrides: "projection-line-colour=255,0,0", visible: "true", enabled: "", keepOtherSettings: "", solidFill: ""}
+
+  - fragment: set-element-material
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: writtenIds
+    set: {category: "Structural Columns", levelId: "Level 1", material: "Glass", materialParameter: ""}
+    negative-set: {category: "Walls", levelId: "Level 1", material: "Glass", materialParameter: ""}
+
+  - fragment: set-mep-justification
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: set
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", horizontal: "Left", vertical: "Bottom"}
+    negative-set: {category: "Air Terminals", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", horizontal: "Left", vertical: "Bottom"}
+
+  - fragment: set-material-properties
+    write: true
+    setup: [create-starter-materials]
+    expect: changedMaterialIds
+    set: {namePrefix: "N1126_", starterPick: "glass", materialsNamed: "N1126_Glass Clear", fieldValues: "Manufacturer=N1126 Maker; Mark=N1"}
+    negative-set: {namePrefix: "N1126_", starterPick: "glass", materialsNamed: "N1126_Glas", fieldValues: "Mark=N2"}
+
+  - fragment: set-material-appearance
+    write: true
+    setup: [create-starter-materials]
+    expect: changedMaterialIds
+    set: {namePrefix: "N1126_", starterPick: "glass", materialsNamed: "N1126_Glass Clear", appearance: "generic", appearanceValues: "Colour=171,128,82; Glossiness=40", matchShading: false}
+    negative-set: {namePrefix: "N1126_", starterPick: "glass", materialsNamed: "N1126_Glass Clear", appearance: "No Such Look", appearanceValues: "", matchShading: false}

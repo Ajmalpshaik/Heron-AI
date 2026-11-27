@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -74,33 +74,45 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
-    Revit 2024, session 32340'
-  positive_case: "run as it would normally be run. returned catalogText ,Default Elevation##LENGTH##MILLIMETERS,Blade\
-    \ Count##OTHER##,Show Handle##OTHER##,Supply Flow##HVAC_AIR_FLOW##LITERS_PER_SECOND,Depth##LENGTH##MILLIMETERS,Height##LENGTH##MILLIMETERS,Neck\
-    \ Diameter##LENGTH##MILLIMETERS,Width##LENGTH##MILLIMETERS\r\nT1,0,4,1,0,400,500,200,600\r\
-    \n, cell Func`2, fileName .txt, findings 5 item(s) [1 type(s) and 8 column(s) read into\
-    \ a type catalog for \"\" - ..., The family has not been saved, so it has no folder yet.\
-    \ The ..., The family has 1 type(s). A catalog earns its place when the..., ...], flags\
-    \ BindingFlags, invariant CultureInfo, leftOut Body Material (holds an element), Type\
-    \ Image (holds an element), Keynote (blank in every type), Model (blank in every type),\
-    \ Manufacturer (blank in every type), Type Comments (blank in every type), URL (blank\
-    \ in every type), Description (blank in every type), Assembly Code (blank in every type),\
-    \ Cost (blank in every type), Type IFC Predefined Type (blank in every type), Export Type\
-    \ to IFC As (blank in every type), measuredAs Func`2, notAFamily false, specOf Func`2,\
-    \ typeCount 1, units Units. on Family1"
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports. returned catalogText , cell Func`2, fileName , findings 1 item(s)
-    [The document in front, "Project1", is a project, not a famil...], flags BindingFlags,
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Night MEP Family, Night Rig 1126 - active
+    was Night Rig 1126, Revit 2020, session 50628'
+  positive_case: "run as it would normally be run. returned catalogText ,Voltage##ELECTRICAL_POTENTIAL##VOLTS,Number\
+    \ of Poles##OTHER##,Apparent Load##ELECTRICAL_APPARENT_POWER##VOLT_AMPERES,Default Elevation##LENGTH##MILLIMETERS,Total\
+    \ Cooling Capacity##HVAC_POWER##WATTS,Sensible Cooling Capacity##HVAC_POWER##WATTS,Unit\
+    \ Length##LENGTH##MILLIMETERS,Unit Height##LENGTH##MILLIMETERS,Supply Air Width##HVAC_DUCT_SIZE##MILLIMETERS,Supply\
+    \ Air Height##HVAC_DUCT_SIZE##MILLIMETERS,Return Air Width##HVAC_DUCT_SIZE##MILLIMETERS,C2\
+    \ Offset 1##LENGTH##MILLIMETERS,C1 Offset 1##LENGTH##MILLIMETERS,Assembly Code##OTHER##\r\
+    \n141 LPS,120,1,85,0,2637.64,2022.19,641.4,222.3,500,150,550,108,108,\r\n188 LPS,120,1,165,0,3897.85,3018.63,793.8,222.3,650,150,700,108,108,\r\
+    \n282 LPS,120,1,225,0,5275.28,4278.84,920.8,254,800,200,850,123.8,92.1,\r\n376 LPS,120,1,235,0,6623.41,4952.9,1098.6,254,950,200,1000,123.8,92.1,\r\
+    \n470 LPS,120,1,305,0,8059.45,6154.49,1454.2,254,1300,200,1400,85.7,123.8,\r\n564 LPS,120,1,435,0,9612.73,7326.78,1657.4,254,1500,200,1600,85.7,123.8,\r\
+    \n94 LPS,120,1,50,0,1758.43,1348.13,539.8,222.3,400,150,475,108,108,\r\n, cell Func`2,\
+    \ fileName C:\\Users\\ajmal\\AppData\\Local\\Temp\\heron-work\\night-1126\\model\\Night\
+    \ MEP Family.txt, findings 3 item(s) [7 type(s) and 14 column(s) read into a type catalog\
+    \ for \"Nig..., 14 parameter(s) left out: Load Classification (holds an elem..., Yes/No\
+    \ and whole-number values are written as numbers, under...], flags BindingFlags, invariant\
+    \ CultureInfo, leftOut Load Classification (holds an element), Nominal Air Flow (instance),\
+    \ Refrigerant Flow (instance), External Static Pressure (instance), Drain Flow (instance),\
+    \ CFU Material (holds an element), Type Image (holds an element), Keynote (blank in every\
+    \ type), Model (blank in every type), Manufacturer (blank in every type), Type Comments\
+    \ (blank in every type), URL (blank in every type), Description (blank in every type),\
+    \ Cost (blank in every type), measuredAs Func`2, notAFamily false, specOf Func`2, typeCount\
+    \ 7, units Units. on Night MEP Family"
+  negative_case: run against 'Night Rig 1126' instead - chosen because it should not contain
+    what this fragment reports. returned catalogText , cell Func`2, fileName , findings 1
+    item(s) [The document in front, "Night Rig 1126", is a project, not a...], flags BindingFlags,
     invariant CultureInfo, leftOut , measuredAs Func`2, notAFamily true, specOf Func`2, typeCount
-    0, units Units. on Project1
+    0, units Units. on Night Rig 1126
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 4be5f5da08538ee7
-
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 76e9bc8029b34586
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

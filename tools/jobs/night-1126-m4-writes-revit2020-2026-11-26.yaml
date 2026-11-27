@@ -1,0 +1,56 @@
+# Night 2026-11-26, round M4 - model-changing DRAFT cards, Revit 2020. EVERY RUN IS ROLLED BACK.
+# "Level 2 HVAC Duct Plan" holds 12 tags; wall 576037 (MW 17.5) runs along X from about (6059, -6845)
+# for 1525 mm on Level 1 (report-bounding-box, round 2); the door type is the one select-by-host found.
+model: "Night Rig 1126 (scratch copy of the Revit 2020 MEP sample), Revit 2020"
+
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+
+jobs:
+  - fragment: set-mullion-join
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: changed
+    set: {category: "Curtain Wall Mullions", levelId: "Level 3", join: "continuous"}
+    negative-set: {category: "Sprinklers", levelId: "Level 2", join: "continuous"}
+
+  - fragment: set-curtain-wall-embed
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: typesChanged
+    set: {category: "Walls", levelId: "Level 1", embed: "yes"}
+    negative-set: {category: "Sprinklers", levelId: "Level 2", embed: "yes"}
+
+  - fragment: place-legend-components
+    write: true
+    expect: placed
+    set: {view: "Diffuser Legend", categories: "Air Terminals", onlyUsed: true, spacingMm: 10, labels: true}
+    negative-set: {view: "Diffuser Legend", categories: "Casework", onlyUsed: true, spacingMm: 10, labels: true}
+
+  - fragment: arrange-tags
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: moved
+    set: {category: "Duct Tags", inViewOnly: "Level 2 HVAC Duct Plan", view: "FloorPlan: Level 2 HVAC Duct Plan", minGapMm: 3, maxPasses: 10, fallbackTagWidthMm: 15, fallbackTagHeightMm: 5}
+    negative-set: {category: "Duct Tags", inViewOnly: "Level 2 HVAC Duct Plan", view: "FloorPlan: Level 2 HVAC Duct Plan", minGapMm: 0, maxPasses: 10, fallbackTagWidthMm: 15, fallbackTagHeightMm: 5}
+
+  - fragment: move-annotation
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: moved
+    set: {category: "Duct Tags", inViewOnly: "Level 2 HVAC Duct Plan", target: "1000,0,0", arrange: ""}
+    negative-set: {category: "Ducts", inViewOnly: "Level 2 HVAC Duct Plan", target: "1000,0,0", arrange: ""}
+
+  - fragment: create-hvac-zone
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: added
+    set: {category: "Spaces", levelId: "Level 2", zoneName: "N1126 Zone A", level: "Level 2", phase: "New Construction"}
+    negative-set: {category: "Sprinklers", levelId: "Level 2", zoneName: "N1126 Zone B", level: "Level 2", phase: "New Construction"}
+
+  - fragment: place-hosted-family
+    write: true
+    expect: placed
+    set: {symbol: "Drehflügel 1-flg - Stahlzarge: 88.5 x 2.26", level: "Level 1", points: "6821,-6844,0", toRoomAt: "6821,-6344,0", hingeAt: "7121,-6844,0", sillHeight: "", rotation: ""}
+    negative-set: {symbol: "Drehflügel 1-flg - Stahlzarge: 88.5 x 2.26", level: "Level 1", points: "6821,-30000,0", toRoomAt: "6821,-29500,0", hingeAt: "7121,-30000,0", sillHeight: "", rotation: ""}

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -152,34 +152,43 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: Project2 (3,035 elements), Revit 2020, session 13520
+  model: Night Rig 1126 (21,446 elements), Revit 2020, session 50628
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values. returned allowanceMm
-    50, describeLinked Func`3, findings 2 item(s) [1 opening(s) proposed across 2 service(s)
-    and 5 host(s), eac..., NOTHING WAS CREATED. This is a proposal to read and argue wi...],
-    fireRatingOf Func`2, hostCount 5, hostIds 1 item(s) [345436], includeLinks false, linkBlocked
-    , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s)
-    [Host model only - links not read], linkedTotal 0, linksSearched 0, mmPerFoot 304.8, nestedLinks
-    0, proposals 1 item(s) [host 345436 - service 345448 - opening 405 x 405 mm, passing...],
-    runIds 1 item(s) [345448], unmeasured 0 item(s). inputs came elements from the selection
-    (2); hosts as given (5); allowanceMm as given; includeLinks not given - false (optional).
-    on Project2
-  negative_case: run with allowanceMm=50, categoryName=Ducts, hosts=Roofs, inViewOnly=Heron
-    3D instead - chosen because it should not contain what this fragment reports - the arrangement
-    was re-made first by running select-by-category-name, set-selection with this phase's
-    own values. returned allowanceMm 50, describeLinked Func`3, findings 1 item(s) [Both services
-    and hosts are needed, and at least one list wa...], fireRatingOf Func`2, hostCount 0,
-    hostIds 0 item(s), includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements
-    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
-    linkedTotal 0, linksSearched 0, mmPerFoot 304.8, nestedLinks 0, proposals 0 item(s), runIds
-    0 item(s), unmeasured 0 item(s). inputs came elements from the selection (2); hosts as
-    given (0); allowanceMm as given; includeLinks not given - false (optional). on Project2
+    filter-elements-by-category, set-selection with this phase's own values. returned allowanceMm
+    50, describeLinked Func`3, findings 3 item(s) [59 opening(s) proposed across 256 service(s)
+    and 166 host(s)..., 0 of the services carry insulation in the model, and their h..., NOTHING
+    WAS CREATED. This is a proposal to read and argue wi...], fireRatingOf Func`2, hostCount
+    166, hostIds 59 item(s) [573609, 573604, 573606, ...], includeLinks false, insulatedRuns
+    HashSet`1, insulationOf Func`2, insulationWords Func`2, linkBlocked , linkDocs 0 item(s),
+    linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only
+    - links not read], linkedTotal 0, linksSearched 0, mmPerFoot 304.8, nestedLinks 0, proposals
+    59 item(s) [host 573609 - service 392168 - opening 400 x 400 mm (no insu..., host 573604
+    - service 392170 - opening 400 x 400 mm (no insu..., host 573606 - service 392689 - opening
+    450 x 450 mm (no insu..., ...], runIds 59 item(s) [392168, 392170, 392689, ...], unmeasured
+    0 item(s). inputs came elements from the selection (256); hosts as given (166); allowanceMm
+    as given; includeLinks as given. on Night Rig 1126
+  negative_case: run with allowanceMm=50, hosts=Roofs, includeLinks=False arranged with category=Ducts,
+    levelId=Level 1 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running filter-elements-by-category, set-selection
+    with this phase's own values. returned allowanceMm 50, describeLinked Func`3, findings
+    1 item(s) [Both services and hosts are needed, and at least one list wa...], fireRatingOf
+    Func`2, hostCount 0, hostIds 0 item(s), includeLinks false, insulatedRuns HashSet`1, insulationOf
+    Func`2, insulationWords Func`2, linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s),
+    linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal
+    0, linksSearched 0, mmPerFoot 304.8, nestedLinks 0, proposals 0 item(s), runIds 0 item(s),
+    unmeasured 0 item(s). inputs came elements from the selection (256); hosts as given (0);
+    allowanceMm as given; includeLinks as given. on Night Rig 1126
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 25bddf3b9abe50e7
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: bbd802f8ee5e322b
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

@@ -1,0 +1,95 @@
+# Night 2026-11-26, round M1 - model-changing DRAFT cards, Revit 2020. EVERY RUN IS ROLLED BACK.
+# Scratch copies in %TEMP%\heron-work\night-1126\model (see round 1's header).
+# "Night Link Source.rvt" is a copy of Samples\Arch Link Model.rvt, linked only inside rolled-back runs.
+model: "Night Rig 1126 + Night MEP Family (scratch copies of the Revit 2020 samples), Revit 2020"
+
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+
+jobs:
+  - fragment: create-floor
+    write: true
+    expect: created
+    set: {level: "Level 1", floorType: "Floor: STB 20.0", boundary: "0,-60000,0; 5000,-60000,0; 5000,-55000,0; 0,-55000,0"}
+    negative-set: {level: "Level 1", floorType: "Floor: STB 20.0", boundary: "0,-60000,0; 5000,-60000,0"}
+
+  - fragment: create-grids
+    write: true
+    expect: created
+    set: {origin: "0,-60000,0", spacingsAcross: "6000,6000", spacingsUp: "6000,6000", firstLetter: "Q", firstNumber: 91}
+    negative-set: {origin: "0,-60000,0", spacingsAcross: "", spacingsUp: "", firstLetter: "Q", firstNumber: 91}
+
+  - fragment: create-levels
+    write: true
+    expect: created
+    set: {elevations: "15000,18000", names: "HERON L15,HERON L18"}
+    negative-set: {elevations: "", names: ""}
+
+  - fragment: flip-elements
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: flipped
+    set: {category: "Doors", levelId: "Level 1", flipHand: true, flipFacing: false}
+    negative-set: {category: "Doors", levelId: "Level 1", flipHand: false, flipFacing: false}
+
+  - fragment: frame-elements-in-camera
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: framed
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", viewName: "Heron Frame - Callout Ducts", direction: "south-east", lookDownDeg: "30"}
+    negative-set: {category: "Sheets", viewName: "Heron Frame - Sheets", direction: "south-east", lookDownDeg: "30"}
+
+  - fragment: create-starter-materials
+    write: true
+    expect: createdMaterialIds
+    set: {namePrefix: "", starterPick: "glass; copper"}
+    negative-set: {namePrefix: "", starterPick: "granite"}
+
+  - fragment: set-material-properties
+    write: true
+    setup: [create-starter-materials]
+    expect: changedMaterialIds
+    set: {namePrefix: "N1126_", starterPick: "glass", materialsNamed: "N1126_Glass", fieldValues: "Manufacturer=N1126 Maker; Mark=N1"}
+    negative-set: {namePrefix: "N1126_", starterPick: "glass", materialsNamed: "N1126_Glas", fieldValues: "Mark=N2"}
+
+  - fragment: set-material-appearance
+    write: true
+    setup: [create-starter-materials]
+    expect: changedMaterialIds
+    set: {namePrefix: "N1126_", starterPick: "glass", materialsNamed: "N1126_Glass", appearance: "generic", appearanceValues: "Colour=171,128,82; Glossiness=40", matchShading: false}
+    negative-set: {namePrefix: "N1126_", starterPick: "glass", materialsNamed: "N1126_Glass", appearance: "No Such Look", appearanceValues: "", matchShading: false}
+
+  - fragment: create-sheets
+    write: true
+    expect: created
+    set: {numbers: "PH-101,PH-102", names: "HERON PLACEHOLDER 1,HERON PLACEHOLDER 2", titleBlockName: "placeholder"}
+    negative-set: {numbers: "PH-101,PH-102", names: "HERON PLACEHOLDER 1,HERON PLACEHOLDER 2", titleBlockName: "NoSuchTitleBlockAnywhere"}
+
+  - fragment: move-elements
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: moved
+    set: {category: "Sprinklers", levelId: "Level 2", offset: "1000,0,0"}
+    negative-set: {category: "Sprinklers", levelId: "Level 2", offset: "0,0,0"}
+
+  - fragment: link-files
+    write: true
+    expect: linkedIds
+    set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/night-1126/model/Night Link Source.rvt", placement: "origin", viewName: ""}
+    negative-set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/night-1126/model/no-such-folder/nothing.rvt", placement: "origin", viewName: ""}
+
+  - fragment: set-link-room-bounding
+    write: true
+    setup: [link-files]
+    expect: changed
+    set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/night-1126/model/Night Link Source.rvt", placement: "origin", viewName: "", linkName: "Night Link Source.rvt", roomBounding: true, pathType: ""}
+    negative-set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/night-1126/model/Night Link Source.rvt", placement: "origin", viewName: "", linkName: "Night Link Source.rvt", roomBounding: false, pathType: ""}
+
+  - fragment: add-family-type-parameter
+    in: "Night MEP Family"
+    write: true
+    setup: [load-family, place-family-instances]
+    expect: linked
+    set: {familyPath: "C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Lighting/Architectural/Internal/M_Downlight - Round - LED.rfa", reload: false, overwriteValues: false, symbol: "M_Downlight - Round - LED : LED15FMM9-W120", points: "0,0,0", level: "Ref. Level", parameterName: "Lamp Type", category: "Lighting Fixtures", instance: false, parameterGroup: "", elements: "M_Downlight - Round - LED", typeValues: ""}
+    negative-set: {familyPath: "C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Lighting/Architectural/Internal/M_Downlight - Round - LED.rfa", reload: false, overwriteValues: false, symbol: "M_Downlight - Round - LED : LED15FMM9-W120", points: "0,0,0", level: "Ref. Level", parameterName: "Lamp Type", category: "Generic Models", instance: false, parameterGroup: "", elements: "M_Downlight - Round - LED", typeValues: ""}

@@ -1,0 +1,101 @@
+# Night 2026-11-26, round 1 - read-only DRAFT cards, Revit 2020.
+# Scratch copies in %TEMP%\heron-work\night-1126\model:
+#   "Night Rig 1126"   Samples\rme_advanced_sample_project.rvt (8,467 elements, 4 levels, no links, not workshared)
+#   "Night MEP Family" Samples\rme_advanced_sample_family.rfa
+#   "Night Family"     Samples\rac_advanced_sample_family.rfa
+# Arrangements carried from the P1102 MEP runs of 2026-11-02 / 11-21 (the same sample) where one existed.
+model: "Night Rig 1126 + Night MEP Family + Night Family (scratch copies of the Revit 2020 samples), Revit 2020"
+
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+
+jobs:
+  - fragment: check-family-standards
+    expect: offStandard
+    set: {namePattern: "ZZZ*", requiredParameters: "HERON NOT A PARAMETER", mustHaveConnectors: true}
+    negative-set: {namePattern: "", requiredParameters: "", mustHaveConnectors: false}
+
+  - fragment: check-minimum-clearance
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: tooClose
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", defaultClearance: 5000, rules: "", includeInsulation: false}
+    negative-set: {category: "Sprinklers", defaultClearance: 1, rules: "", includeInsulation: false}
+
+  - fragment: describe-blank-parameters
+    setup: [filter-elements-by-category, read-element-parameters]
+    keep-chain: true
+    expect: findings
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", parameterName: "Comments"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", parameterName: "System Type"}
+
+  - fragment: report-curtain-elements
+    setup: [filter-elements-by-category, set-selection]
+    set: {category: "Walls", levelId: "Level 1"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP"}
+
+  - fragment: report-view-filters
+    set: {viewName: "*"}
+    negative-in: "Night Family"
+    negative-set: {viewName: "*"}
+
+  - fragment: report-browser-organization
+    expect: organization
+    negative-in: "Night Family"
+
+  - fragment: report-level-elevations
+    expect: levels
+    negative-in: "Night Family"
+
+  - fragment: report-mep-pressure-drop
+    expect: uncalculated
+    set: {systemNameContains: ""}
+    negative-set: {systemNameContains: "ZZZ NO SUCH SYSTEM"}
+
+  - fragment: select-by-insulation
+    expect: elements
+    set: {categories: "Ducts", wantInsulated: false, countLiningAsInsulated: false}
+    negative-set: {categories: "Ducts", wantInsulated: true, countLiningAsInsulated: false}
+
+  - fragment: select-by-electrical-circuit
+    expect: elements
+    set: {circuitKind: "none", circuitName: "", includeLinks: false}
+    negative-set: {circuitKind: "power", circuitName: "ZZZNOTHINGHERE", includeLinks: false}
+
+  - fragment: report-connectors
+    setup: [filter-elements-by-category, set-selection]
+    setup-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP"}
+    negative-setup-set: {category: "Walls", levelId: "Level 1"}
+
+  - fragment: report-constraints
+    setup: [filter-elements-by-category, set-selection]
+    setup-set: {category: "Walls", levelId: "Level 1"}
+    negative-setup-set: {category: "Sprinklers", levelId: "Level 2"}
+    expect: constrainedBy
+
+  - fragment: report-element-dependencies
+    setup: [filter-elements-by-category, set-selection]
+    setup-set: {category: "Walls", levelId: "Level 1"}
+    negative-setup-set: {category: "Sprinklers", levelId: "Level 2"}
+
+  - fragment: report-family-type-catalog
+    in: "Night MEP Family"
+    expect: fileName
+    negative-in: "Night Rig 1126"
+
+  - fragment: select-by-host
+    expect: elements
+    setup: [filter-elements-by-category, set-selection]
+    setup-set: {category: "Walls", levelId: "Level 1"}
+    negative-setup-set: {category: "Floors", levelId: "Level 1"}
+    set: {host: "selected", categories: "Doors"}
+    negative-set: {host: "selected", categories: "Doors"}
+
+  - fragment: propose-mep-openings
+    setup: [filter-elements-by-category, set-selection]
+    setup-set: {category: "Ducts", levelId: "Level 1"}
+    negative-setup-set: {category: "Ducts", levelId: "Level 1"}
+    expect: proposals
+    set: {hosts: "Walls", allowanceMm: 50, includeLinks: false}
+    negative-set: {hosts: "Roofs", allowanceMm: 50, includeLinks: false}

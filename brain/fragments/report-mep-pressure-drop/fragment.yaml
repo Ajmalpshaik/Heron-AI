@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -128,11 +128,9 @@ contract:
       type: int
 
 proof:
-  date: '2026-10-21'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: MEP Night Test, Revit 2020, session 68704 - the count is NOT recorded because 5,262
-    elements was measured on Cinematic ID Test, the document in front, and this ran against
-    another one (row 15)
+  model: Night Rig 1126 (21,446 elements), Revit 2020, session 50628
   positive_case: 'run as it would normally be run. returned criticalPathTotals 51 item(s)
     [Mechanical Supply Air 1 = 14.3444 (internal units), Mechanical Supply Air 2 = 13.8489
     (internal units), Mechanical Supply Air 3 = 2.913 (internal units), ...], findings 1150
@@ -140,23 +138,28 @@ proof:
     Supply Air 1'' - 40 section(s):,     CRITICAL PATH: 10 section(s), total pressure loss
     14.344..., ...], includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements
     0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
-    linkedTotal 0, linksSearched 0, nestedLinks 0, systems 51 item(s) [Mechanical Supply Air
-    1, Mechanical Supply Air 2, Mechanical Supply Air 3, ...], systemsCalculated 51, uncalculated
-    0 item(s). inputs came systemNameContains as given; includeLinks not given - false (optional).
-    on MEP Night Test'
+    linkedTotal 0, linksSearched 0, nestedLinks 0, skippedSections 0, systems 51 item(s) [Mechanical
+    Supply Air 1, Mechanical Supply Air 2, Mechanical Supply Air 3, ...], systemsCalculated
+    51, uncalculated 0 item(s). inputs came systemNameContains as given; includeLinks not
+    given - false (optional). on Night Rig 1126'
   negative_case: run with systemNameContains=ZZZ NO SUCH SYSTEM instead - chosen because it
     should not contain what this fragment reports. returned criticalPathTotals 0 item(s),
     findings 1 item(s) [0 system(s) with hydraulics calculated, 0 uncalculated. Pres...],
     includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes
     0 item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0,
-    linksSearched 0, nestedLinks 0, systems 51 item(s) [Mechanical Supply Air 1, Mechanical
-    Supply Air 2, Mechanical Supply Air 3, ...], systemsCalculated 0, uncalculated 0 item(s).
-    inputs came systemNameContains as given; includeLinks not given - false (optional). on
-    MEP Night Test
+    linksSearched 0, nestedLinks 0, skippedSections 0, systems 51 item(s) [Mechanical Supply
+    Air 1, Mechanical Supply Air 2, Mechanical Supply Air 3, ...], systemsCalculated 0, uncalculated
+    0 item(s). inputs came systemNameContains as given; includeLinks not given - false (optional).
+    on Night Rig 1126
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: fb5afe1afa21b58d
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 7da6da92439666c0
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

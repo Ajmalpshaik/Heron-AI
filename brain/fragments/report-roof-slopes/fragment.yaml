@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -84,6 +84,41 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-27'
+  by: Ajmal PS
+  model: Night OU21, Revit 2020, session 50628 - the count is NOT recorded because 21,488
+    elements was measured on Night Rig 1126, the document in front, and this ran against another
+    one (row 15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-id, set-selection with this phase''s own values. returned MillimetresPerFoot
+    304.8, asked 1 item(s) [Generic - 125mm], candidates 1 item(s) [Generic - 125mm], degreesPerRadian
+    57.2957795130823, findings 1 item(s) [1 roof(s) read from the selection, nothing changed.
+    Roof by ...], fromSelection true, invariant CultureInfo, lines 1 item(s) [Roof by extrusion
+    345451 "Generic - 125mm": its profile''s li...], pitchOf Func`2, report Roof by extrusion
+    345451 "Generic - 125mm": its profile''s lines, each from level - line 345452 (5508 mm)
+    at 15.8 degrees (rise 0.283 per 1 of run); line 345453 (5508 mm) at 15.8 degrees (rise
+    0.283 per 1 of run), roofsRead 1, skippedRoofs 0. inputs came elements from the selection
+    (1). on Night OU21'
+  negative_case: run arranged with elementIds=345441, 345443 instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    filter-elements-by-id, set-selection with this phase's own values. returned MillimetresPerFoot
+    304.8, asked 2 item(s) [Generic - 200mm, Generic - 200mm], candidates 2 item(s) [Generic
+    - 200mm, Generic - 200mm], degreesPerRadian 57.2957795130823, findings 3 item(s) [No roof
+    by footprint or by extrusion is among the elements s..., Walls 345441 is not a roof, so
+    it was left out, Walls 345443 is not a roof, so it was left out], fromSelection true,
+    invariant CultureInfo, lines 0 item(s), pitchOf Func`2, report , roofsRead 0, skippedRoofs
+    0. inputs came elements from the selection (2). on Night OU21
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 3dbfb72bf9401ba1
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

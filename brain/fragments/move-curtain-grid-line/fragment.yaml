@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -102,6 +102,60 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-26'
+  by: Ajmal PS
+  model: Night Rig 1126 (21,448 elements), Revit 2020, session 50628
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    create-wall, add-curtain-grid-lines with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned InsideEdgeMm
+    100, MillimetresPerFoot 304.8, MostMoveMm 100000, PlacedWithinMm 1, SameLineMm 5, allLines
+    Func`1, alongMax 29.5275590551181, alongMin 0, amountMm 300, findings 2 item(s) [Moved
+    the vertical line from 3000 to 3300 mm on curtain wall..., Read back from Revit - see
+    readBack], flat XYZ, fullName Func`2, handedLines 0 item(s), handedMullions 0 item(s),
+    invariant CultureInfo, known 5 item(s) [(Autodesk.Revit.DB.CurtainGridLine, 0, 4.92125984251968),
+    (Autodesk.Revit.DB.CurtainGridLine, 0, 9.84251968503937), (Autodesk.Revit.DB.CurtainGridLine,
+    0, 14.7637795275591), ...], label curtain wall 1020413 (''Curtain Wall: Standard''), level
+    0.00174532836589831, lineIdsOf Func`2, lines 1 item(s) [(Autodesk.Revit.DB.CurtainGridLine,
+    0, 9.84251968503937)], moved 1, mullionsAt Func`3, mullionsBefore 1 item(s) [0], nameOf
+    Func`2, notMovable 0 item(s), plain Func`2, positionOf Func`3, readBack curtain wall 1020413
+    (''Curtain Wall: Standard''): moved the vertical line from 3000 to 3300 mm, each measured
+    along the wall from the grid''s start after Revit rebuilt the wall. Panels 6 before, 6
+    now, refused , run Line, runs Func`2, sayMm Func`2, start XYZ, steep 0.999998476913288,
+    targets 1 item(s) [10.8267716535433], toPlace false, wall Wall, walls 1 item(s) [Wall],
+    wayWords 4 item(s) [vertical, horizontal, at an angle, ...], zMax 10.1514820763725, zMin
+    0.308962391333159. inputs came elements from add-curtain-grid-lines as ''created'' (1);
+    move as given; direction as given; lineAt as given. on Night Rig 1126'
+  negative_case: 'run with direction=vertical, height=3000, level=Level 1, lineAt=3000, move=300,
+    points=0,-60000,0; 9000,-60000,0, positions=equal 6, structural=false, wallType=Basic
+    Wall: MW 17.5 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running create-wall, add-curtain-grid-lines with
+    this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned InsideEdgeMm 100, MillimetresPerFoot 304.8, MostMoveMm
+    100000, PlacedWithinMm 1, SameLineMm 5, allLines Func`1, alongMax -1.79769313486232E+308,
+    alongMin 1.79769313486232E+308, amountMm 0, findings 1 item(s) [No curtain wall holds
+    what was given - ''MW 17.5'' (id 1020433...], flat (null), fullName Func`2, handedLines
+    0 item(s), handedMullions 0 item(s), invariant CultureInfo, known 0 item(s), label , level
+    0.00174532836589831, lineIdsOf Func`2, lines 0 item(s), moved 0, mullionsAt Func`3, mullionsBefore
+    0 item(s), nameOf Func`2, notMovable 1 item(s) [''MW 17.5'' (id 1020433, Walls) is not
+    a curtain wall, a curta...], plain Func`2, positionOf Func`3, readBack , refused No curtain
+    wall holds what was given - ''MW 17.5'' (id 1020433, Walls) is not a curtain wall, a curtain
+    grid line or a mullion - left alone. Select the mullion or the curtain grid line to move.
+    Nothing was changed, run (null), runs Func`2, sayMm Func`2, start (null), steep 0.999998476913288,
+    targets 0 item(s), toPlace false, wall (null), walls 0 item(s), wayWords 4 item(s) [vertical,
+    horizontal, at an angle, ...], zMax -1.79769313486232E+308, zMin 1.79769313486232E+308.
+    inputs came elements from add-curtain-grid-lines as ''created'' (1); move as given; direction
+    as given; lineAt as given. on Night Rig 1126'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 0c984d5be1fcc822
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

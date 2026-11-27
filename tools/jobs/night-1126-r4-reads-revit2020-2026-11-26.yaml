@@ -1,0 +1,32 @@
+# Night 2026-11-26, round 4 - read-only cards that need one element named by id, Revit 2020.
+# Ids from round 1's own runs on "Night Rig 1126": 573780, 573782, 576037 are walls the dependency
+# report listed as standalone; 573604/573606/573609 are walls ducts pass through (propose-mep-openings);
+# 802669 / 802670 are pipe fittings (the model dashboard's sample ids).
+model: "Night Rig 1126 (scratch copy of the Revit 2020 MEP sample), Revit 2020"
+
+defaults:
+  in: "Night Rig 1126"
+  setup: []
+
+jobs:
+  - fragment: report-constraints
+    setup: [filter-elements-by-id, set-selection]
+    setup-set: {elementIds: "573604, 573606, 573609"}
+    negative-setup-set: {elementIds: "573780, 573782, 576037"}
+    expect: constrainedBy
+
+  - fragment: select-by-host
+    setup: [filter-elements-by-id, set-selection]
+    setup-set: {elementIds: "573609"}
+    negative-setup-set: {elementIds: "802669"}
+    expect: elements
+    set: {host: "selected", categories: ""}
+    negative-set: {host: "selected", categories: ""}
+
+  - fragment: filter-elements-by-type
+    setup: [filter-elements-by-id, set-selection]
+    setup-set: {elementIds: "802669"}
+    negative-setup-set: {elementIds: "802669"}
+    expect: elements
+    set: {exemplar: "selected", inViewOnly: "Level 1 HVAC Pipe Plan"}
+    negative-set: {exemplar: "selected", inViewOnly: "ABBREVIATIONS"}

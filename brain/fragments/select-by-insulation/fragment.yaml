@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -122,32 +122,37 @@ contract:
       type: int
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-26'
   by: Ajmal PS
-  model: Project2 (3,027 elements), Revit 2020, session 13520
+  model: Night Rig 1126 (21,446 elements), Revit 2020, session 50628
   positive_case: run as it would normally be run. returned collectHosts Action`1, collector
-    FilteredElementCollector, countLiningAsInsulated false, covered 0 item(s), elements 2
-    item(s) [Default, Default], findings 2 item(s) [2 of 2 scanned element(s) are BARE - nothing
-    wrapping them. ..., This is what has nothing on it, not a work list. Fittings, f...],
-    includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes
-    0 item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0,
-    linksSearched 0, nestedLinks 0, scanned 2, wantInsulated false. inputs came categories
-    as given (1); wantInsulated as given; countLiningAsInsulated as given; includeLinks not
-    given - false (optional). on Project2
-  negative_case: 'run with categories=Ducts, categoryName=Text Notes, countLiningAsInsulated=False,
-    inViewOnly=FloorPlan: Level 1, wantInsulated=True instead - chosen because it should not
-    contain what this fragment reports. returned collectHosts Action`1, collector FilteredElementCollector,
-    countLiningAsInsulated false, covered 0 item(s), elements 0 item(s), findings 1 item(s)
-    [0 of 2 scanned element(s) are INSULATED. 0 host(s) in this m...], includeLinks false,
-    linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches
-    1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, nestedLinks
-    0, scanned 2, wantInsulated true. inputs came categories as given (1); wantInsulated as
-    given; countLiningAsInsulated as given; includeLinks not given - false (optional). on
-    Project2'
+    FilteredElementCollector, countLiningAsInsulated false, covered 0 item(s), elements 728
+    item(s) [Mitered Elbows / Taps, Mitered Elbows / Taps, Mitered Elbows / Taps, ...], findings
+    2 item(s) [728 of 728 scanned element(s) are BARE - nothing wrapping th..., This is what
+    has nothing on it, not a work list. Fittings, f...], includeLinks false, linkBlocked ,
+    linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s)
+    [Host model only - links not read], linkedTotal 0, linksSearched 0, nestedLinks 0, scanned
+    728, unresolvedCoverings 0, wantInsulated false. inputs came categories as given (1);
+    wantInsulated as given; countLiningAsInsulated as given; includeLinks not given - false
+    (optional). on Night Rig 1126
+  negative_case: run with categories=Ducts, countLiningAsInsulated=False, wantInsulated=True
+    instead - chosen because it should not contain what this fragment reports. returned collectHosts
+    Action`1, collector FilteredElementCollector, countLiningAsInsulated false, covered 0
+    item(s), elements 0 item(s), findings 1 item(s) [0 of 728 scanned element(s) are INSULATED.
+    0 host(s) in this...], includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements
+    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
+    linkedTotal 0, linksSearched 0, nestedLinks 0, scanned 728, unresolvedCoverings 0, wantInsulated
+    true. inputs came categories as given (1); wantInsulated as given; countLiningAsInsulated
+    as given; includeLinks not given - false (optional). on Night Rig 1126
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 718bebf8909d3991
+  built_on:
+    revit_release: '2020'
+    revit_build: 20191106_1200(x64)
+    addin_version: 0.3.0.0
+    addin_hash: df0d401c52ca05f4
+  fingerprint: 4d673b7803e5adcc
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
