@@ -1,18 +1,20 @@
 positive:
   - given: 4 ducts, 3 with an empty Comments and 1 filled in
-    expect: one finding naming 3 empty, and no "absent" finding
+    expect: one finding naming 3 empty, and no "absent" finding; flagged 3
 
   - given: 4 ducts read for a parameter none of them has
     expect: >
       one finding naming 4 ABSENT, worded as a family question rather than as
-      values to type in - the two must never merge into one sentence
+      values to type in - the two must never merge into one sentence; flagged 4
 
 negative:
   - given: every element has a value
     expect: >
-      NO findings at all - an empty list, not a finding that says "0 blank".
-      A report of nothing wrong must be able to say nothing, so that
-      REPORT_FINDINGS can say how many were checked instead
+      NO findings at all - an empty list, not a finding that says "0 blank" -
+      and flagged 0. A report of nothing wrong must be able to say nothing, so
+      that REPORT_FINDINGS can say how many were checked instead. Version 2
+      (row 5b-2067): version 1 had no count, so this case read as content
+      however empty `findings` was
 
 second_route:
   - a Revit schedule of the same parameter, sorted, with blanks visible at one end

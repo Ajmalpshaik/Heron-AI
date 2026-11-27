@@ -1,8 +1,10 @@
 # NO ARRANGEABLE EMPTY LEG AND NOTHING TO VARY (row 5b-1969, Q-98): `storeys` is written
-# on every branch - "(this model has no levels)" included - and the only typed input is
-# includeLinks, so D-53 tracking has nothing to follow and a batch reads every negative
-# below as NEG NOT EMPTY. How it is signed is the owner's call (Q-98); until then it is
-# a by-hand reading and goes in no batch job.
+# on every branch in a model that has levels, and the only typed input is includeLinks, so
+# D-53 tracking has nothing to follow and a batch reads every negative below as NEG NOT
+# EMPTY. D-204 (answering Q-98) signs it on a by-hand reading. VERSION 8 (row 5b-2070): a
+# document with NO levels - a family file - now leaves `storeys` empty, where version 7
+# wrote "Every level is marked Building Story - 0 level(s) read: (this model has no
+# levels)"; that case is below. It does not change how the card is signed.
 
 # D-30: the negative case is what catches "succeeded and did nothing".
 
@@ -116,6 +118,17 @@ negative:
     expect: >
       levels empty, affected false, and no throw. "Nothing to check" must not
       come back as "checked and fine" through an exception being swallowed
+
+  # VERSION 8 (row 5b-2070, issue #1480). Fails on version 7, which told this
+  # file "Every level is marked Building Story - 0 level(s) read".
+  - given: >
+      a family file with no levels open - the area tag family the night of
+      2026-11-26 ran it on, Revit 2020
+    expect: >
+      storeys 0 item(s), and no line anywhere saying every level is marked;
+      levels, elements and every dictionary empty; affected, atRisk and
+      typesDisagree false; findings opening "0 level(s), bottom to top" -
+      read as EMPTY by batch-prove
 
   # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
   - given: includeLinks ABSENT, on a model that HAS loaded links

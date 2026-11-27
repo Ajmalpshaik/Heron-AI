@@ -9,10 +9,23 @@ semantic-identity: "what else goes if this element goes"
 kind: action
 domain: revit.qa
 capability: REPORT_ELEMENT_DEPENDENCIES
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
+# VERSION 3 (2026-11-26, FRAGMENT-ISSUES row 5b-2068, issue #1478) - A FREE
+# ELEMENT LEAVES NOTHING TO COUNT. Version 2 keyed `dependents` by every
+# element given, an empty list for a free one, and `goesTotal` always counts
+# the elements themselves - so on Revit 2020 three free walls read "dependents
+# 3 entry(ies), goesTotal 3" and the negative could never read empty. Now only
+# an element something goes with is a key of `dependents` (as `joined` already
+# was), and `goesTotal` is `accounting`: its value is unchanged and still what
+# DELETE_ELEMENTS is handed as expectedCount, but it is never 0 for a selection,
+# so it is not the evidence. RESHAPED RATHER THAN PROVED BY TRACKING (D-53):
+# version 1's tracking rows matched "N entries for N elements given", which a
+# fragment that read nothing at all would also match. impl/ changed, so still
+# DRAFT, owing NEEDS-CHECKING Group RD and Group QT (D-30).
+#
 # VERSION 2 (2026-11-26, FRAGMENT-ISSUES row 5b-1990, issue #1278) - EVERY
 # DIMENSION THAT MEASURES TO WHAT GOES, IN EVERY VIEW, AND BACK TO DRAFT.
 # Version 1 trusted `GetDependentElements(null)` to be the whole of what a
@@ -75,6 +88,8 @@ contract:
       source: ambient
   provides:
     - name: dependents
+      # VERSION 3: only the elements something goes with are keys - a free
+      # element is left out, as in `joined` (row 5b-2068).
       role: result
       type: IDictionary<ElementId, IList<ElementId>>
     - name: joined
@@ -117,7 +132,9 @@ contract:
       # VERSION 2. Every distinct element the delete is expected to take - the
       # elements, Revit's dependents and `dimensionsDeleted` - the number
       # Revit's Delete box should show. Expected, not promised (group QT).
-      role: result
+      # ACCOUNTING FROM VERSION 3 (row 5b-2068): it counts the elements given,
+      # so it is never 0 for a selection and cannot say nothing goes with them.
+      role: accounting
       type: int
     - name: dimensionsRead
       # VERSION 2. How many dimensions in the model were read - the evidence

@@ -1,5 +1,8 @@
 # D-30: the negative case is what catches "succeeded and did nothing".
 
+# THE POSITIVE NEEDS HELD ELEMENTS (row 5b-2071). The night of 2026-11-26 gave
+# free walls to both legs, so nothing in the positive was held either. Lock a
+# dimension between two walls on the scratch copy first - the case below.
 positive:
   - given: two walls joined by a LOCKED dimension
     expect: >
@@ -22,9 +25,21 @@ negative:
 
   - given: a genuinely free element
     expect: >
-      its id in `unconstrained`, with empty lists rather than absent ones.
-      "Nothing is holding it" is a real answer and must be distinguishable from
-      "not asked about"
+      its id in `unconstrained`, and NO key for it in `constrainedBy` or
+      `lockedTo`. "Nothing is holding it" is a real answer and must be
+      distinguishable from "not asked about" - `unconstrained` is what says it.
+      Version 3 (row 5b-2071): versions 1 and 2 gave it empty lists instead,
+      which made every negative read as content
+
+  # VERSION 3 (row 5b-2071, issue #1478) - THE BATCH NEGATIVE. Fails on
+  # version 2, which keyed both dictionaries by every element given.
+  - given: >
+      three walls nothing holds - the night's arrangement on the Revit 2020
+      MEP sample
+    expect: >
+      constrainedBy 0 entry(ies) and lockedTo 0 entry(ies) - read as EMPTY by
+      batch-prove; the three walls in `unconstrained`, constraintsScanned and
+      unresolvedConstraints written down (accounting)
 
   - given: a model with NO constraints at all
     expect: >
@@ -43,9 +58,11 @@ negative:
   - given: >
       VERSION 2, NEGATIVE. the elements version 1 was proved on
     expect: >
-      constrainedBy, lockedTo and unconstrained exactly as version 1's,
-      unresolvedConstraints written down (0 expected) - above 0, an element in
-      unconstrained may be held by one of them
+      unconstrained exactly as version 1's, and constrainedBy and lockedTo as
+      version 1's WITH ITS EMPTY LISTS LEFT OUT (version 3) - an element
+      version 1 gave an empty list has no key now; unresolvedConstraints
+      written down (0 expected) - above 0, an element in unconstrained may be
+      held by one of them
 
 second_route:
   - >

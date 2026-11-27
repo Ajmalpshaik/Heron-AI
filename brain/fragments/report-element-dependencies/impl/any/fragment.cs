@@ -96,7 +96,13 @@ foreach (var element in elements)
     }
     catch { }
 
-    dependents[id] = attached;
+    // VERSION 3 (row 5b-2068, issue #1478): ONLY AN ELEMENT SOMETHING GOES
+    // WITH IS A KEY, as `joined` already was. Version 2 wrote an empty list for
+    // every element given, so three free walls read "dependents 3 entry(ies)" -
+    // an echo of the input, never empty, and D-30's empty leg could not be
+    // shown. A free element is in `standalone` instead (when Revit allows the
+    // delete and nothing is joined to it).
+    if (attached.Count > 0) dependents[id] = attached;
 
     var joinedTo = new List<ElementId>();
     try
@@ -225,5 +231,8 @@ foreach (var candidate in allDimensions)
 
 // Every distinct element the delete is expected to take: what was given,
 // Revit's dependents and the dimensions Revit did not list. A cut dimension
-// is changed, not deleted, so it is not counted here.
+// is changed, not deleted, so it is not counted here. IT ALWAYS COUNTS THE
+// ELEMENTS GIVEN, so it is never 0 for a selection - which is why the contract
+// calls it accounting from version 3 (row 5b-2068): the number DELETE_ELEMENTS
+// is handed, not the evidence that anything goes with them.
 var goesTotal = goes.Count + dimensionsDeleted.Count;

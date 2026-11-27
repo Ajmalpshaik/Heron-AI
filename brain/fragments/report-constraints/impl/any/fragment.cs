@@ -10,6 +10,14 @@
 // above 0, an element in `unconstrained` may be held by one of them. Every
 // other output reads as version 1's.
 //
+// VERSION 3 (2026-11-26, row 5b-2071, issue #1478) - ONLY AN ELEMENT
+// SOMETHING HOLDS IS A KEY. Versions 1 and 2 keyed `constrainedBy` and
+// `lockedTo` by every element given, an empty list for a free one, so on
+// Revit 2020 three free walls read "constrainedBy 3 entry(ies), lockedTo 3
+// entry(ies)" - an echo of the input, never empty, and D-30's empty leg could
+// not be shown. The lists are built as before and only the ones with anything
+// in them are handed back; a free element is in `unconstrained`, as it was.
+//
 // READ ONLY. Opens no transaction and unlocks nothing - see the last note.
 //
 // A CONSTRAINT IS NOT A PROPERTY OF THE ELEMENT.
@@ -31,8 +39,10 @@
 // annotation goes off the drawing along with the lock, which is almost never
 // what "unlock it" means. That is a person's decision.
 
-var constrainedBy = new Dictionary<ElementId, IList<ElementId>>();
-var lockedTo = new Dictionary<ElementId, IList<ElementId>>();
+// The working index, one list per element given. Version 3 hands back only
+// the lists with something in them - see the end.
+var heldBy = new Dictionary<ElementId, IList<ElementId>>();
+var heldTo = new Dictionary<ElementId, IList<ElementId>>();
 var unconstrained = new List<ElementId>();
 int constraintsScanned = 0;
 // VERSION 2 (D-64): constraints whose references Revit would not give.
@@ -43,8 +53,8 @@ foreach (var element in elements)
 {
     if (element == null) continue;
     wanted.Add(element.Id);
-    constrainedBy[element.Id] = new List<ElementId>();
-    lockedTo[element.Id] = new List<ElementId>();
+    heldBy[element.Id] = new List<ElementId>();
+    heldTo[element.Id] = new List<ElementId>();
 }
 
 // One pass over the constraints, building both directions at once.
@@ -82,16 +92,23 @@ foreach (var constraint in new FilteredElementCollector(doc)
     {
         if (!wanted.Contains(id)) continue;
 
-        constrainedBy[id].Add(constraint.Id);
+        heldBy[id].Add(constraint.Id);
         foreach (var other in touched)
         {
             if (other == id) continue;
-            if (!lockedTo[id].Contains(other)) lockedTo[id].Add(other);
+            if (!heldTo[id].Contains(other)) heldTo[id].Add(other);
         }
     }
 }
 
+// VERSION 3: a key only for an element something holds. An element on a
+// constraint that touches nothing else has a `constrainedBy` entry and no
+// `lockedTo` one - each is handed back on its own count.
+var constrainedBy = new Dictionary<ElementId, IList<ElementId>>();
+var lockedTo = new Dictionary<ElementId, IList<ElementId>>();
 foreach (var id in wanted)
 {
-    if (constrainedBy[id].Count == 0) unconstrained.Add(id);
+    if (heldBy[id].Count == 0) unconstrained.Add(id);
+    else constrainedBy[id] = heldBy[id];
+    if (heldTo[id].Count > 0) lockedTo[id] = heldTo[id];
 }

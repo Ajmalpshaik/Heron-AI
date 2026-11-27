@@ -54,9 +54,21 @@ negative:
 
   - given: an element with nothing attached to it at all
     expect: >
-      dependents empty for it, and its id in `standalone`. THE COUNT MUST BE 0
-      AND NOT 1 - the raw call always returns the element itself, and a fragment
-      that forgets that reports every free element as having one dependent
+      NO key for it in `dependents`, and its id in `standalone`. THE COUNT MUST
+      BE 0 AND NOT 1 - the raw call always returns the element itself, and a
+      fragment that forgets that reports every free element as having one
+      dependent. Version 3 (row 5b-2068): version 2 wrote an empty list for it
+
+  # VERSION 3 (row 5b-2068, issue #1478) - THE BATCH NEGATIVE. Fails on
+  # version 2, which keyed `dependents` by every element given.
+  - given: >
+      three walls with nothing attached, nothing joined, not pinned - the
+      night's arrangement on the Revit 2020 MEP sample
+    expect: >
+      dependents 0 entry(ies), joined 0, undeletable 0, dimensionsDeleted 0,
+      dimensionsCut 0, dimensionLines 0 - read as EMPTY by batch-prove; the
+      three walls in `standalone`, and `goesTotal` 3 (the walls themselves -
+      accounting, the number DELETE_ELEMENTS would be handed)
 
   - given: a PINNED element with no dependents
     expect: >
