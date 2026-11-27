@@ -41,7 +41,17 @@ Claude Code works out what you meant. Heron finds the right tool, runs it inside
 result and keeps a record. You never need to know C#, the Revit API or anything else behind it.
 
 It is **not** a chatbot, a coding assistant, or a plain MCP server.
-More on what you can ask: [**Using Heron**](docs/guide/using-heron.md).
+
+### Three things you can ask
+
+| You type | What Heron does |
+|---|---|
+| *"Which views have no view template?"* | Reads the model and lists them. A read changes nothing, so it always runs |
+| *"Total duct length by size"* | Reads every duct and gives the length for each size |
+| *"Select all ducts on Level 2"* | Selects them in Revit, so you can see them and carry on by hand |
+
+A change to the model - placing, renaming, setting a value - waits until you turn **Changes** on, and
+is one entry in Revit's Undo list. More on what you can ask: [**Using Heron**](docs/guide/using-heron.md).
 
 ## How it fits together
 
@@ -137,6 +147,7 @@ Something wrong? Please [open an Issue](https://github.com/Ajmalpshaik/Heron-AI/
 | **a BIM modeller** | [**Using Heron**](docs/guide/using-heron.md) · [**Revit tool catalogue**](docs/guide/revit-tool-catalogue.md) | What you can ask, every tool by job, and what keeps your model safe |
 | **installing Heron** | [**Installing Heron**](docs/guide/install.md) · [**CHANGELOG**](CHANGELOG.md) | Download to first request, troubleshooting, updating, and what changed in each version |
 | **setting up a PC** | [**What to install**](docs/WHAT-TO-INSTALL.md) · [**System requirements**](docs/guide/system-requirements.md) | Everything a PC needs, Python first, what is optional, and what each piece costs on disk |
+| **office IT** | [**Privacy**](docs/guide/privacy.md) | What stays on the PC and what does not, every connection Heron makes, and where it keeps files |
 | **changing Heron** | [**Changing Heron**](docs/guide/changing-heron.md) | Where each kind of code lives, the rules, and the checks before a pull request |
 | **checking what is proven** | [**What is proven**](docs/guide/what-is-proven.md) | Built versus proven, item by item, and the commands that count it |
 
@@ -181,5 +192,5 @@ fragments are `PROVEN`, `DRAFT` or `DEPRECATED` comes from
 
 ---
 
-**Licence:** [Apache 2.0](LICENSE) · [Disclaimer](DISCLAIMER.md) · [Security](SECURITY.md) ·
+**Licence:** [Apache 2.0](LICENSE) · [Disclaimer](DISCLAIMER.md) · [Security](SECURITY.md) · [Privacy](docs/guide/privacy.md) ·
 **Owner:** Ajmal PS · **Domain:** BIM / Revit engineering automation
