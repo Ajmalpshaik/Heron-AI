@@ -356,6 +356,42 @@ def store_rebuilt(store):
           "a second run, on a store that now matches, rebuilds nothing")
 
 
+def claude_too_old():
+    """Section 7. Asked of the tool's own check with what `claude --version`
+    printed given, so it runs on a machine with no Claude Code at all."""
+    tool = load_tool()
+    check_it = getattr(tool, "claude_code_version", None)
+    check(check_it is not None and getattr(tool, "CLAUDE_CODE_AT_LEAST", None)
+          == (2, 1, 296),
+          "the tool checks Claude Code's version, against 2.1.296")
+    if check_it is None:
+        return
+
+    def asked(text):
+        """(what it printed, whether it added a FIX)."""
+        del tool.MISSING[:]
+        shown = io.StringIO()
+        with contextlib.redirect_stdout(shown):
+            check_it(text)
+        return shown.getvalue(), bool(tool.MISSING)
+
+    said, fixed = asked("2.1.295 (Claude Code)")
+    check(fixed and "FIX" in said and "2.1.295" in said and "2,048" in said,
+          "2.1.295 is a FIX that names the version and the 2,048-character cut: %r"
+          % said.strip()[:120])
+    said, fixed = asked("2.1.296 (Claude Code)")
+    check(not fixed and said.strip().startswith("ok"),
+          "2.1.296 is ok - the oldest that gives a chat every rule")
+    said, fixed = asked("2.2.0 (Claude Code)")
+    check(not fixed and said.strip().startswith("ok"),
+          "and a later minor is ok too, compared as numbers, not text")
+    said, fixed = asked("")
+    check(not fixed and said.strip().startswith("--") and "2.1.296" in said,
+          "a version that cannot be read is a note naming 2.1.296, and moves no "
+          "exit code")
+    del tool.MISSING[:]
+
+
 def main():
     if not os.path.exists(TOOL):
         check(False, "tools/heron-ready.py exists")
@@ -508,6 +544,11 @@ def main():
         print()
         print("6. On Windows every package FIX is the pinned, hashed lock line")
         lock_on_windows()
+
+        print()
+        print("7. A Claude Code too old to give a chat all of Heron's rules is a FIX "
+              "(row 5b-2081)")
+        claude_too_old()
     finally:
         shutil.rmtree(work, ignore_errors=True)
 

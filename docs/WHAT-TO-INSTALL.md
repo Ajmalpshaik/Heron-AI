@@ -98,7 +98,7 @@ Settings button on the Heron tab — not on the ribbon itself.
 | Thing | Needed? | How to get it | How to check it |
 |---|---|---|---|
 | **Revit** | Yes | You have it | `heron-install --list` names the releases Heron finds |
-| **Claude Code** | Yes | From Anthropic — a program of its own, no Node | In the Heron folder, `/mcp` lists `heron` |
+| **Claude Code 2.1.296 or later** | Yes | From Anthropic — a program of its own, no Node. An older one gives a chat only the first 2,048 characters of Heron's rules ([row 5b-2081](fragment-issues/row-5b-2081.md)) | In the Heron folder, `/mcp` lists `heron`; `/status` shows the version, and `python tools/heron-ready.py` checks it |
 | **Python 3.11 to 3.14** | Yes | `winget install Python.Python.3.12 --scope user` | `python --version` in a **new** terminal |
 | **Heron's add-in** | Yes | `HeronSetup-0.3.0-unsigned.exe` from the release page, Revit closed ([D-167](decisions/D-167.md)). The older way, `HeronInstaller.exe` at the top of `heron-project.zip`, still works ([D-96](DECISIONS.md)) | The Heron tab, the next time Revit opens |
 | **PyYAML and `mcp`** | Yes | The Setup's *Set up Heron's AI side too* tick. By hand, the lock line in [section 1](#1-what-every-pc-needs) | `python tools/check-dependencies.py` |
@@ -120,7 +120,7 @@ Settings button on the Heron tab — not on the ribbon itself.
 | | What | Why Heron needs it | How to install it — for your user only | How to check it |
 |---|---|---|---|---|
 | 1 | **Revit** | Heron works inside it | You have it already. `heron-install --list` names the releases Heron finds on the PC | Revit opens |
-| 2 | **Claude Code** | Where you type. Claude decides what you meant; Heron does the Revit work | From Anthropic. It is a program of its own and does not need Node ([Q-39](open-questions/answered.md)) | Open the Heron folder in it: `/mcp` lists `heron` |
+| 2 | **Claude Code**, 2.1.296 or later | Where you type. Claude decides what you meant; Heron does the Revit work. An older one cuts Heron's rules at 2,048 characters | From Anthropic. It is a program of its own and does not need Node ([Q-39](open-questions/answered.md)). The Claude app updates its own copy; to update it now, Help > Check for Updates..., then start a new chat | Open the Heron folder in it: `/mcp` lists `heron`, and `/status` shows the version |
 | 3 | **Python** | Heron's brain, and its connection to Claude, are written in Python | `winget install Python.Python.3.12 --scope user`, or Python from the Microsoft Store | `python --version` in a new terminal. Claude Code starts Heron with the plain command `python`, so that command has to answer |
 | 4 | **PyYAML** — Heron's only *required* Python package | Every Heron tool is described in a file Heron reads with it | In the Heron folder: `python -m pip install --user --require-hashes -r requirements-lock.txt` — one line for rows 4 and 5, every package pinned and hashed, the versions the installer puts on a PC. Python 3.11 to 3.14. [`requirements.txt`](../requirements.txt) stays the list of what Heron needs | `python tools/check-dependencies.py` |
 | 5 | **The MCP package** (`mcp`) | It is the line between Claude Code and Heron | The same line as row 4. Never `mcp` on its own and unpinned: that pulled a `cryptography` which broke on import, on 2026-09-16 ([README](../README.md)) | the same command |
