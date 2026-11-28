@@ -520,7 +520,7 @@ Tested without Revit.
 
 | Group | What it is for | Level, from `heron_tools.TOOLS` | What it needs | Main tools |
 |---|---|---|---|---|
-| **Know the job** | which capability fits the words; a job's whole method; standards and clauses | `READ`, and sends nothing to Revit | nothing. The ones named in `heron_tools.LIBRARY` are also served off Windows, and `heron_check` is not one of them ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)) | `heron_lookup`, `heron_method`, `heron_resolve`, `heron_capabilities`, `heron_standards`, `heron_check`, `heron_why` - why Heron cannot do one capability, and what the modeller can do (§6b) |
+| **Know the job** | which capability fits the words; a job's method, a long one stage by stage; standards and clauses | `READ`, and sends nothing to Revit | nothing. The ones named in `heron_tools.LIBRARY` are also served off Windows, and `heron_check` is not one of them ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)) | `heron_lookup`, `heron_method`, `heron_resolve`, `heron_capabilities`, `heron_standards`, `heron_check`, `heron_why` - why Heron cannot do one capability, and what the modeller can do (§6b) |
 | **Work it out** | HVAC and fire protection calculations | `READ` for `heron_hvac` and `heron_fire`, arithmetic on the values given; `ANALYZE` for the three that read the model first | nothing, and none of them changes the model. Writing a result back is the Companion page's Apply, at `MODIFY` (`heron_tools.COMPANION_ACTIONS`) | `heron_hvac`, `heron_fire`, `revit_building_loads`, `revit_sprinkler_hydraulics`, `revit_sprinkler_layout` |
 | **Read the model** | answer a question about the model in front | `READ`, `ANALYZE` | a connected Revit; Changes may be off | `revit_read` (door); fixed readers such as `revit_levels`, `revit_views`, `revit_sheets`, `revit_rooms`, `revit_parameters`, `revit_worksets`; `revit_view_image` |
 | **Show on screen** | select, zoom, open a view, isolate for now | `EXECUTE` | a connected Revit; Changes may be off | `revit_show` (door), `revit_select_by_category`, `revit_isolate_temporary`, `revit_reset_temporary` |
@@ -778,7 +778,7 @@ family"* with one ranked capability, and the fifteen ordered steps of building a
 remembers Heron; a new one does not, so it read them off disk.
 
 - **`heron_method`** — a READ tool, given to every chat at start (`heron_tools.ALWAYS_LOADED`), that
-  hands over one job's whole method: what must be true first, the steps in order, and every capability
+  hands over one job's method: what must be true first, the steps in order, and every capability
   it uses with its risk and status on this Revit. Empty, it lists every job.
   **A long method comes one stage at a time (2026-11-28, the owner's choice "One stage at a time").**
   `family-creation`, rebuilt on the owner's family standard, came to about 82,000 characters in one
@@ -1354,3 +1354,42 @@ has met a real Revit**: which reply the add-in sends for each ending is the C#'s
   ([Group NU](needs-checking/group-nu.md)).
 - **Which of the two a host shows its model** — the text or the structured content — is still not
   measured (§8.8). Both carry the word.
+
+### 8.13 Slash commands for common jobs — MCP prompts, built 2026-11-28
+
+A host lists a server's **prompts** as commands, and running one puts its text in the chat as the
+modeller's own turn ([D-210](decisions/D-210.md) item 3). Each of Heron's is the sentence a modeller
+would type anyway, in Revit words:
+
+| Prompt | Title | What it asks |
+|---|---|---|
+| `check-model` | Check my model | what in the open model will cost the modeller time - reads only |
+| `build-family` | Build a family | a new family, a step at a time; optional `family`, what kind in one word |
+| `revit-connected` | Is Revit connected? | whether Heron reaches Revit, and which model it would work on |
+| `what-heron-can-do` | What can Heron do? | the jobs Heron knows, and how much is proven |
+
+The list, the titles and every word are [`heron_prompts.PROMPTS`](../mcp/server/heron_prompts.py) -
+`python mcp/server/heron_prompts.py` prints them; where this table differs, the file is right.
+
+- **A prompt only names a job.** It decides nothing ([D-01](decisions/D-01.md)) and orders no tool
+  call ([D-202](decisions/D-202.md)): the host reads it as it reads any turn, and decides.
+  `tests/test_tool_registry.py` holds every prompt's words to the same rule as a tool's description.
+- **It names only a tool this server serves.** Off Windows that is the library alone (§8.10), so a
+  prompt whose words name any other tool is left out at start-up, with a line on stderr saying so -
+  never listed and then refused. `tests/test_mcp_stdio.py` asks a real server over stdio for every prompt, with
+  and without its argument, and holds both negative cases: the check finds such a prompt, and
+  `register` leaves it out.
+- **The command's name follows the server's.** Claude Code lists a prompt as
+  `/servername:promptname (MCP)`, and `/mcp__servername__promptname` runs it too
+  ([its MCP page](https://code.claude.com/docs/en/mcp), *Use MCP prompts as commands*, read
+  2026-11-28). For today's user-scope `heron` server that is `/heron:check-model`. Under the plugin
+  the server is `plugin:heron:heron`, and **the exact command name there is a PC check, not a claim**.
+- **One word to an argument.** Claude Code splits what follows a command on spaces, so `family` asks
+  for one word - `door`, `tag`, `fitting` - and, left out, the prompt asks the modeller instead.
+- **No size budget moves.** Prompts are listed on their own, not in the instructions (§8.3) or any
+  tool's description, and `python mcp/server/heron_tools.py --sizes` printed the same before and after
+  this change.
+
+**Not yet seen in a real Claude Code chat:** that they appear under `/`, under which names, and that
+one runs - [Group RE](needs-checking/group-re.md), issue
+[#1521](https://github.com/Ajmalpshaik/Heron-AI/issues/1521).

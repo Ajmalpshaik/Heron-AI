@@ -5411,8 +5411,9 @@ def _method_lines(found):
     lines = ["", "  A JOB WITH A METHOD. This looks like one step of:"]
     for m in methods:
         lines.append("      %-32s uses %2d  %s" % (m["id"], m["uses"], m["name"]))
-    lines.append("  If it is, call heron_method(job=\"%s\") once for every step "
-                 "in order, before the first one." % methods[0]["id"])
+    lines.append("  If it is, call heron_method(job=\"%s\") once, before the first "
+                 "step. A long method comes as a summary: ask for each stage "
+                 "it names with stage=<id>, as that stage starts." % methods[0]["id"])
     return lines
 
 
@@ -7549,6 +7550,14 @@ from heron_inventory import (                               # noqa: E402,F401
     revit_view_image, revit_sheets, revit_rooms, revit_schedules,
     revit_families, revit_export_check, revit_imports, revit_annotation,
     revit_systems, revit_parameters, revit_groups)
+
+# THE PROMPTS, the slash commands a modeller starts a common job with (D-210
+# item 3, docs/04 §8.13). After every tool, because what each prompt names is
+# checked against what this process serves - the library alone off Windows
+# (D-132) - and a prompt that names another tool is left out. A prompt is not
+# a tool, so registering one here moves no tool in the order a host is served.
+import heron_prompts                                        # noqa: E402
+heron_prompts.register(server, tools.LIBRARY if core.LIBRARY_ONLY else tuple(tools.TOOLS))
 
 
 if __name__ == "__main__":

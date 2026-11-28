@@ -91,6 +91,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_fragment as FRAG                                 # noqa: E402
+import heron_relpath as RELPATH                                 # noqa: E402
 import heron_search as SEARCH                                 # noqa: E402
 import heron_skill as SKILL                                   # noqa: E402
 
@@ -142,7 +143,7 @@ def _shown(folder):
     """
     folder = str(folder)
     if os.path.isabs(folder):
-        folder = os.path.relpath(folder, ROOT)
+        folder = RELPATH.relpath(folder, ROOT)
     return folder.replace(os.sep, "/")
 
 
