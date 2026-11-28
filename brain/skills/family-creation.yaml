@@ -35,11 +35,13 @@ purpose: |
   revit_read, a view or a selection on screen through revit_show, and a
   picture through revit_view_image, which is a tool and not a capability.
   "-> no Heron tool yet:" is a step Heron cannot do - it says what the
-  modeller does by hand, or what is asked. A DRAFT capability is refused by
-  revit_change until it is proved (D-117), and a build on 2026-11-28 found
-  revit_read refusing a DRAFT read too (REPORT_OPEN_DOCUMENTS); the step says
-  what to do meanwhile. A capability of Admin, Publish or Execute risk also needs
-  that switch on, with Changes. Every Heron change is one entry in the Family
+  modeller does by hand, or what is asked. A DRAFT capability that CHANGES
+  the model is refused by revit_change until it is proved (D-117); the step
+  says what to do meanwhile. A DRAFT READ is not refused: revit_read runs it
+  and its answer says DRAFT, so use it, and because it is unproven, confirm
+  what matters another way. A capability of Admin or Publish risk also needs
+  that switch on, with Changes; one that only changes what is on screen
+  (Execute) runs through revit_show with Changes off. Every Heron change is one entry in the Family
   Editor's undo list.
 
   THE ORDER IS NOT A PREFERENCE. Taking two steps the other way round breaks
@@ -133,8 +135,8 @@ purpose: |
        0 decimal places", or the family started again from the Metric
        template; the modeller chooses.
      * A report with no units line, or one it could not read: REPORT_PROJECT_UNITS
-       (DRAFT) is the read - refused until it is proved, so meanwhile ask
-       the modeller to read Manage, Project Units, Length.
+       (DRAFT) is the read: revit_read runs it and says DRAFT, so confirm
+       what it says - the modeller reads Manage, Project Units, Length.
   4. Check the origin and reference levels.
      -> REPORT_FAMILY_TEMPLATE (PROVEN): every plane and level, where each
         sits, what it faces, its Is Reference and Defines Origin.
@@ -147,8 +149,9 @@ purpose: |
         the modeller types - never a path Heron makes up; or the modeller's
         Ctrl+S.
      * Whether it has a file: REPORT_OPEN_DOCUMENTS (DRAFT) names a family
-       NEVER SAVED, but it is refused until it is proved - meanwhile ask the
-       modeller. A family made by CREATE_FAMILY_DOCUMENT already has its file.
+       NEVER SAVED; it runs through revit_read and says DRAFT, so confirm it
+       - the modeller says whether the family has a file, or File Explorer
+       shows the .rfa. A family made by CREATE_FAMILY_DOCUMENT already has its file.
      * A large build in a family with no file is saved BEFORE the first
        write, never only at the end: closed with no file, it is lost with
        every form in it.
@@ -792,9 +795,9 @@ purpose: |
           or, run from the host in front, saves it and gives `openNext`:
           ACTIVATE_DOCUMENT (PROVEN) with that path opens it. An answer lost
           while a window opens is never repeated: check what is open first -
-          REPORT_OPEN_DOCUMENTS (DRAFT) is that read, refused until it is
-          proved, so meanwhile ask the modeller which windows are open (row
-          5b-361).
+          REPORT_OPEN_DOCUMENTS (DRAFT) is that read; it runs and says
+          DRAFT, so confirm it - the modeller says which windows are open
+          (row 5b-361).
        c. These stages build the part in its own window, with
           SET_FAMILY_SETTINGS "Work Plane-Based=yes" so it nests on every
           release.
@@ -1141,8 +1144,8 @@ purpose: |
      -> REPORT_OPEN_DOCUMENTS (DRAFT): `fileTimes` must give the .rfa a time
         of now with no [unsaved changes], and `staleFileCount` 0; "the file
         on disk is from ... - everything since is not saved" means the save
-        did not reach the disk. It is refused until it is proved, so
-        meanwhile the file's time is read another way: the modeller reads
+        did not reach the disk. It runs and says DRAFT, so the file's time
+        is confirmed another way too: the modeller reads
         Date modified in File Explorer, or the chat reads the .rfa's modified
         time with its own file tools where it can see the PC's disk.
   10. Report completed checks.
@@ -1481,7 +1484,7 @@ preconditions:
   - every size, parameter name and type name has been given for THIS request - a picture or a sketch alone gives none of them
   - the family is not yet built - rebuilding one that already has labelled dimensions leaves the old labels behind to fight the new ones
   - this chat is on the family in front - a chat that worked on another model moves with revit_use_this_model first, because revit_read reads the model the chat is pinned to, not the one in front
-  - a step whose capability is DRAFT - the list of uses served beside this method says which - is refused by revit_change (D-117), and revit_read was seen refusing a DRAFT read on 2026-11-28; a DRAFT of MODIFY risk can only be tried once with the bridge client's try-once, on a family saved first with nothing unsaved, and stays only if the modeller presses Keep in Revit (D-119, D-121) - never on a family a project already uses; a DRAFT read, or a DRAFT of Admin, Publish or Execute risk, cannot be tried at all, so its step says what to do meanwhile
+  - a step whose capability is DRAFT - the list of uses served beside this method says which - is refused by revit_change when it CHANGES the model (D-117); a DRAFT of MODIFY risk can only be tried once with the bridge client's try-once, on a family saved first with nothing unsaved, and stays only if the modeller presses Keep in Revit (D-119, D-121) - never on a family a project already uses; a DRAFT of Admin or Publish risk cannot be tried at all, so its step says what to do meanwhile. A DRAFT READ is not refused - revit_read runs it and its answer says DRAFT - and neither is a DRAFT that only changes what is on screen, which revit_show runs and labels the same way; use either, and because it is unproven, confirm what matters another way
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
