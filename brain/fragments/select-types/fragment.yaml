@@ -39,6 +39,10 @@ purpose: >
   Passing none means every category, which is the honest answer to "list the
   types in this model" and is deliberately allowed.
 
+  **BOTH NAME FILTERS MAY BE LEFT OUT, AND LEFT OUT MEANS NO FILTER** (row
+  5b-2079). A category named alone lists every type of that category; empty
+  text means the same.
+
   **FAMILY NAME MEANS TWO DIFFERENT THINGS AND BOTH ARE ANSWERED.** A loadable
   family type carries its family as an object; a system family type - duct,
   pipe, wall - carries only a family NAME, and asking it for a family object
@@ -65,12 +69,24 @@ contract:
     - name: categories
       type: IList<Category>
       source: request
+    #
+    # ROW 5b-2079 (issue #1494, 2026-11-28): `optional: true` and `absent: ""`
+    # on both name filters, the form SAVE_DOCUMENT took in row 5b-2065. With
+    # neither, a filter left out was refused as "a value the CALLER supplies"
+    # (HeronBindingNote.AbsentValue binds no string), so listing every type of
+    # a category meant typing both filters empty. Left out now means no
+    # filter. The run already reads empty text as no filter, so its C# is
+    # unchanged.
     - name: familyNameContains
       type: string
       source: request
+      optional: true
+      absent: ""
     - name: typeNameContains
       type: string
       source: request
+      optional: true
+      absent: ""
   provides:
     - name: elements
       role: result
