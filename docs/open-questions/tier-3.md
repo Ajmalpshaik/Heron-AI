@@ -1384,7 +1384,7 @@ command was run with another value; nothing was run in Revit or on your PC; whet
 
 ---
 
-### 🟡 Q-101 — Articles 9 and 12c reach every chat word for word, in developer words, and leave the chat's rules almost no room. Amend them into Revit words, let a chat be given its own wording of them, or leave them? *(asked 2026-11-28, row 5b-2080)*
+### ✅ Q-101 — Articles 9 and 12c reach every chat word for word, in developer words, and leave the chat's rules almost no room. Amend them into Revit words, let a chat be given its own wording of them, or leave them? → **Amend them in the Constitution, in Revit words** *(asked 2026-11-28, row 5b-2080, answered 2026-11-28)*
 
 **Tracked as GitHub issue [#1499](https://github.com/Ajmalpshaik/Heron-AI/issues/1499) since 2026-11-28** - the owner answers there.
 
@@ -1459,6 +1459,8 @@ was written or measured, so how much room (a) or (b) would give back is not know
 in a real chat for this entry, and whether a modeller's chat actually misreads *"the owner's switch"* was not
 tried; the 3,785 and the 11 are the branch that fixes row 5b-2080, measured before it merged - on `main` at
 `addd1539`, `host.chat` is still 4,635.
+
+**Answer:** (a), on 2026-11-28 - the owner chose *"Reword the Articles (Recommended)"* in the session [session_01XqSwbd2UYtLBpfWTEdD2hu](https://claude.ai/code/session_01XqSwbd2UYtLBpfWTEdD2hu). [D-211](../decisions/D-211.md) amends Article 9 in plain words - and says *Ask to Keep* is in Heron's Settings (D-150; row 5b-1533) - and Article 12c's *"across an `ExternalEvent` boundary"* becomes *"from an earlier step"*, meaning unchanged. Every chat still gets the Articles word for word, from the one file. The room it freed went to a paragraph on the modeller's scope in `host.chat`.
 
 ---
 
