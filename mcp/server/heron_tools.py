@@ -246,7 +246,7 @@ TOOLS = {
     "heron_capabilities":       (READ,    None),
     "heron_resolve":            (READ,    None),
     "heron_lookup":             (READ,    None),
-    # A job's whole method - a skill's ordered steps - so a chat is handed
+    # A job's method - a skill's ordered steps - so a chat is handed
     # how a family is built instead of reading the skill file off disk.
     "heron_method":             (READ,    None),
     # WHY Heron cannot do one capability (PROPOSALS F1, decided 2026-11-15 on
