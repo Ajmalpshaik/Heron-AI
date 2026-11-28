@@ -242,3 +242,7 @@ utterances:
   - create a new Revit project
   - make a new model from our office template
   - start a fresh project file and save it as
+  # ADDED 2026-11-28, row 5b-2076 (issue #1492): a family named by its template
+  # and its shape reached PLACE_DETAIL_COMPONENTS and EXTRUDE_BETWEEN_PLANES.
+  - make a generic model family
+  - create a family for a box from the generic model template

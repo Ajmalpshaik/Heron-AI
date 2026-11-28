@@ -521,3 +521,6 @@ utterances:
   # reaching this card 1st to 2nd, SNAP_TO_GRID first. The owner's own row
   # outranks a retired card's identity; left out, that phrase reaches LOAD_FAMILY
   # (lexical) or SELECT_SUBCOMPONENTS (model) - recorded, not chased.
+  # ADDED 2026-11-28, row 5b-2076 (issue #1492): placing a unit "in the room"
+  # reached PLACE_ROOMS, and a "family instance" REPORT_NESTED_FAMILIES.
+  - place the fan coil unit in this room

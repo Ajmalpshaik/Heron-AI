@@ -222,7 +222,11 @@ contract:
     # duct port (width first, then height), one for a round duct or a pipe
     # (the diameter), none for an electrical connector. Each is a Length, or
     # (version 8) a Duct Size for a duct connector or a Pipe Size for a pipe
-    # connector.
+    # connector. For an electrical connector TYPE IT EMPTY - sizeParameters=""
+    # - and never the word "none": "none" is read as the name of a parameter
+    # and refused ('"none" is not a parameter of this family'). Measured
+    # 2026-11-28 on Revit 2020, runs wf-20261128-061316-0031-a533 (refused)
+    # and wf-20261128-061322-0032-72ef (kept); row 5b-2076's test, issue #1492.
     - name: sizeParameters
       type: string
       source: request
@@ -426,3 +430,9 @@ utterances:
   - add an electrical connector to the family
   - add a fire protection wet pipe connector to the sprinkler family
   - put a supply air connector on the neck
+  # ADDED 2026-11-28, row 5b-2076 (issue #1492): a plain "add a ... connector
+  # to the family" reached REMOVE_FAMILY_CONNECTOR and
+  # SET_FAMILY_CONNECTOR_ROLES first.
+  - add a duct connector to this family
+  - add a pipe connector to the family I am editing
+  - put a new connector on this family
