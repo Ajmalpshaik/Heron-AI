@@ -5364,11 +5364,19 @@ def _method_by_stage(found, revit):
         key = ("not provided%s" % (" on Revit %s" % revit if revit else "")
                if u["missing"] else u["status"] or "-")
         tally[key] = tally.get(key, 0) + 1
-    lines.append("It uses %d capabilities in all - %s. Each stage's answer "
-                 "lists the ones it names, and the door each runs through."
+    # THE ONES NOT PROVEN ARE NAMED HERE, not only counted: the method's own
+    # words send a reader to "the list of uses" for which step is DRAFT, and
+    # in the summary this line is that list until the stage is asked for.
+    short = ["%s (%s)" % (u["capability"], u["missing"] or u["status"] or "-")
+             for u in found["uses"]
+             if u["missing"] or u["status"] not in ("PROVEN", "PRODUCTION")]
+    lines.append("It uses %d capabilities in all - %s.%s Each stage's answer "
+                 "lists the ones it names with its status, and the door each "
+                 "runs through."
                  % (len(found["uses"]),
                     ", ".join("%d %s" % (n, k) for k, n in
-                              sorted(tally.items(), key=lambda kv: (-kv[1], kv[0])))))
+                              sorted(tally.items(), key=lambda kv: (-kv[1], kv[0]))),
+                    " Not PROVEN: %s." % ", ".join(short) if short else ""))
     lines.append("")
     lines.append("Each step's values: heron_resolve <capability>, or call it "
                  "with request= and the hand-back says what to type.")

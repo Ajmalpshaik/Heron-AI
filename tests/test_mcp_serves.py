@@ -4253,6 +4253,14 @@ async def exercise_method_by_stage(module):
           "rules and the report among them")
     check(summary.rstrip().endswith(doors),
           "it ends with which door runs what, whole on a process's first answer")
+    # The method's own words send a reader to "the list of uses" for which
+    # step is DRAFT; in the summary that is one line, naming each.
+    unproven = [u["capability"] for u in found.get("uses") or []
+                if u["missing"] or u["status"] not in ("PROVEN", "PRODUCTION")]
+    check(all(("%s (" % c) in summary for c in unproven)
+          and ("Not PROVEN:" in summary) == bool(unproven),
+          "it names every capability it uses that is not PROVEN here - %d"
+          % len(unproven))
     # Measured 2026-11-28: the summary 10,700 characters with that paragraph
     # whole, and the largest stage, 3, 13,561 - where the whole method had
     # come to 82,253, near the 25,000 tokens a host takes from one reply.
@@ -4302,6 +4310,10 @@ async def exercise_method_by_stage(module):
     for asked in (3, "Stage 3", "geometry"):
         check(three is not None and await call({"job": job, "stage": asked}) == three,
               "stage asked as %r is stage 3" % (asked,))
+    # 0 is the first working stage and the one value a truth test drops.
+    zero = served.get("0")
+    check(zero is not None and await call({"job": job, "stage": 0}) == zero,
+          "stage asked as the number 0 is stage 0, not the summary")
     for asked in ("nonsense", "family"):
         answer = await call({"job": job, "stage": asked})
         check(('has no stage "%s"' % asked) in answer
