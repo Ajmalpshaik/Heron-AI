@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "heron": {
+      "command": "python",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/mcp/server/heron_mcp_server.py"
+      ],
+      "env": {
+        "HERON_CLIENT_ID": "ajmal-pc"
+      }
+    }
+  }
+}

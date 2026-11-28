@@ -1,0 +1,15 @@
+{
+  "name": "heron",
+  "description": "Heron AI's chat side for Revit: ask about the open model, and work on it, in plain words. The Revit add-in comes from Heron's Setup. A change reaches the model only while Heron's Changes switch is on in Revit.",
+  "author": {
+    "name": "Ajmal PS",
+    "url": "https://github.com/Ajmalpshaik"
+  },
+  "homepage": "https://github.com/Ajmalpshaik/Heron-AI",
+  "repository": "https://github.com/Ajmalpshaik/Heron-AI",
+  "license": "Apache-2.0",
+  "keywords": [
+    "revit",
+    "bim"
+  ]
+}

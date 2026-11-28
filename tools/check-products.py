@@ -11,6 +11,13 @@ Is the product manifest one a Revit could survive?
 
     python tools/check-products.py
     python tools/check-products.py --file <a copy>     check some other file
+    python tools/check-products.py --plugin <folder>   and hold that built plugin
+                                                       folder to its version
+
+THE CLAUDE CODE PLUGIN'S VERSION IS THIS MANIFEST'S manifestVersion, written
+by tools/build-plugin.py. The template in platform/Heron.Plugin carries none,
+and a built folder - dist/heron-plugin by default, when it is there - that
+says another number fails here: it is a stale build.
 
 WHY THIS EXISTS
 ---------------
@@ -204,6 +211,76 @@ def check_metadata(doc, problems):
     if doc.get("heron-layer") not in (None, "platform"):
         problems.append("the manifest says heron-layer '%s'; it lives in "
                         "platform/" % doc.get("heron-layer"))
+
+
+# THE CLAUDE CODE PLUGIN CARRIES THIS MANIFEST'S VERSION - section 7 of
+# docs/work-notes/plans/claude-code-plugin-2026-11-27.md. tools/build-plugin.py
+# writes `manifestVersion` into the plugin's plugin.json, and Claude Code moves
+# a modeller to a new version only when that number changes. So the template
+# carries none of its own - a typed copy is the number that goes stale - and a
+# BUILT folder whose version is not this manifest's is a stale build that
+# would be published under the wrong number.
+PLUGIN_TEMPLATE = os.path.join("platform", "Heron.Plugin", ".claude-plugin", "plugin.json")
+PLUGIN_BUILT = os.path.join("dist", "heron-plugin")
+PLUGIN_JSON = os.path.join(".claude-plugin", "plugin.json")
+VERSION = re.compile(r"^\d+\.\d+\.\d+([-+][0-9A-Za-z.-]+)?\Z")
+
+
+def _json_at(path):
+    """(document, None) or (None, why) - never raises."""
+    try:
+        with io.open(path, encoding="utf-8-sig") as handle:
+            return json.load(handle), None
+    except (IOError, OSError) as exc:
+        return None, "cannot be read (%s)" % exc
+    except ValueError as exc:
+        return None, "is not valid JSON (%s)" % exc
+
+
+def check_plugin(doc, built, required, problems):
+    """
+    The plugin's version against this manifest's. Returns the line to print.
+
+    `built` is a plugin folder tools/build-plugin.py wrote; `required` says it
+    was named with --plugin, so its absence is a failure rather than "not
+    built here".
+    """
+    version = doc.get("manifestVersion")
+    if not isinstance(version, str) or not VERSION.match(version):
+        problems.append("manifestVersion is %r, not a version of the shape 1.2.3 - "
+                        "the Claude Code plugin carries it as its own" % (version,))
+        return "no manifestVersion to compare"
+
+    template, why = _json_at(os.path.join(ROOT, PLUGIN_TEMPLATE))
+    if template is None:
+        problems.append("%s %s" % (PLUGIN_TEMPLATE, why))
+    elif "version" in template:
+        problems.append(
+            "%s carries version %r. tools/build-plugin.py writes the plugin's "
+            "version from this manifest's manifestVersion (%s), so the template "
+            "carries none - take it out" % (PLUGIN_TEMPLATE, template["version"], version))
+
+    full = built if os.path.isabs(built) else os.path.join(ROOT, built)
+    marker = os.path.join(full, PLUGIN_JSON)
+    if not os.path.isfile(marker):
+        if required:
+            problems.append("--plugin %s holds no %s - it is not a built plugin "
+                            "folder" % (built, PLUGIN_JSON))
+        return "%s, template carries none; %s not built here" % (version, built)
+
+    made, why = _json_at(marker)
+    if made is None:
+        problems.append("%s %s" % (os.path.join(built, PLUGIN_JSON), why))
+        return "%s, built plugin unreadable" % version
+    if made.get("version") != version:
+        problems.append(
+            "the plugin built in %s says version %r and this manifest's "
+            "manifestVersion is %r. Claude Code would move modellers by the "
+            "plugin's number, so that build is stale - run "
+            "python tools/build-plugin.py again before anything is published"
+            % (built, made.get("version"), version))
+        return "%s, but %s says %r" % (version, built, made.get("version"))
+    return "%s, template carries none; %s says %s too" % (version, built, version)
 
 
 def check_one(p, index, known, supported, version, problems):
@@ -458,6 +535,16 @@ def main():
             w("--file needs a path\n")
             return 1
         path = argv[i + 1]
+    # The built plugin folder to hold to this manifest's version. By default
+    # dist/heron-plugin, and only for the repository's own manifest - a copy
+    # checked with --file is not what that folder was built from.
+    plugin, plugin_named = (PLUGIN_BUILT if path == MANIFEST else None), False
+    if "--plugin" in argv:
+        i = argv.index("--plugin")
+        if i + 1 >= len(argv):
+            w("--plugin needs a folder\n")
+            return 1
+        plugin, plugin_named = argv[i + 1], True
 
     full = path if os.path.isabs(path) else os.path.join(ROOT, path)
     try:
@@ -485,6 +572,8 @@ def main():
 
     problems = []
     check_metadata(doc, problems)
+    if plugin is not None:
+        w("Plugin version:   %s\n" % check_plugin(doc, plugin, plugin_named, problems))
 
     products = doc.get("products")
     if not isinstance(products, list) or not products:

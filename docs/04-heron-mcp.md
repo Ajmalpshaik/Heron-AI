@@ -613,6 +613,15 @@ server serves, its no-Revit line in front, to the cap itself. A Claude Code olde
 [`tests/test_outcome_line.py`](../tests/test_outcome_line.py) section 8 holds both halves: the paragraph
 is there, and each Article's words are all there, in order.
 
+**The same day, the room for the modeller's scope came from Article 9** ([D-211](decisions/D-211.md)).
+Article 9 carried, in developer words, how a change from a chat meets it; the owner had it reworded in
+the Constitution itself, in plain words, with its meaning, its exception and its compensating control
+kept - so the chat still gets it word for word from the one source, and nothing is copied. The 276
+characters that freed went to one new house-rule paragraph, for every modeller who installs Heron: work
+on the modeller's selection, or the active view for *"these"*; change only what was asked and report other
+problems unfixed; keep hosts, constraints and connections, replace nothing silently, clean nothing
+unasked; and after a change, check what its reply counted.
+
 If they cannot be assembled the server **still starts**, and says so in the same place the rules would
 have been. The Constitution's Enforcement table now says which Articles reach every chat this way and
 which do not, and the registry test fails when the two disagree.

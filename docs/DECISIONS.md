@@ -251,6 +251,8 @@
 | [D-207](#d-207--a-name-rule-is-one-rule-across-the-tools-that-share-it-a-name-pattern-is-a--wildcard-a-datum-maker-skips-a-name-already-taken-and-says-so-and-a-link-placed-twice-is-never-measured-until-one-copy-is-named) | A name rule is one rule across the tools that share it: a name pattern is a * wildcard, a datum maker skips a name already taken and says so, and a link placed twice is never measured until one copy is named | ✅ Accepted · 2026-11-26 |
 | [D-205](#d-205--the-usage-counter-is-removed-no-clause-is-counted-and-a-clauses-place-in-an-answer-is-fusions-alone) | The usage counter is removed: no clause is counted, and a clause's place in an answer is fusion's alone | ✅ Accepted · 2026-11-26 |
 | [D-209](#d-209--on-a-near-tie-with-a-write-the-card-that-changes-nothing-goes-first---inside-the-status-nudges-span-never-wider) | On a near-tie with a write, the card that changes nothing goes first - inside the status nudge's span, never wider | ❌ Rejected · 2026-11-26 - no margin is safe, nothing built |
+| [D-210](#d-210--herons-chat-side-is-built-as-a-claude-code-plugin-in-small-pull-requests-the-plugin-slash-commands-for-common-jobs-its-methods-as-skills-and-no-question-each-time-for-a-tool-that-only-reads) | Heron's chat side is built as a Claude Code plugin, in small pull requests: the plugin, slash commands for common jobs, its methods as skills, and no question each time for a tool that only reads | ⏳ Proposed · 2026-11-28 - his yes was heard in his local session; confirm it where it can be read (D-206) |
+| [D-211](#d-211--article-9-is-reworded-in-plain-words-with-its-meaning-kept-and-the-room-it-frees-gives-every-chat-the-modellers-scope-their-selection-or-the-active-view-only-what-was-asked-the-model-kept-whole) | Article 9 is reworded in plain words with its meaning kept, and the room it frees gives every chat the modeller's scope: their selection or the active view, only what was asked, the model kept whole | ⏳ Proposed · 2026-11-28 - his yes was heard in his local session; confirm it where it can be read (D-206) |
 
 ## Format
 
@@ -1941,3 +1943,29 @@ No margin helps a question without that cost, and only the words could separate 
 built.
 
 **Full record:** [`decisions/D-209.md`](decisions/D-209.md)
+
+## D-210 — Heron's chat side is built as a Claude Code plugin, in small pull requests: the plugin, slash commands for common jobs, its methods as skills, and no question each time for a tool that only reads
+
+**Status:** Proposed · **Date:** 2026-11-28 · **Asked:** Ajmal PS, 2026-11-28, in his local Claude Code session: *"Should I start building the plugin now (items 2 to 5), in small pull requests? Type yes, or say not now."*
+**Written by:** a cloud session started from that session, on its relay of his answer, *"Yes, start it"*; with no link to where he said it, Proposed until he confirms it where it can be read ([D-206](decisions/D-206.md) item 3).
+**Numbering:** D-210 is the id `tools/next-id.py` printed free on 2026-11-28, with `origin/main` at `addd1539` ending at D-209.
+**Answers:** the first question of section 9 of [the plugin design](work-notes/plans/claude-code-plugin-2026-11-27.md); its other two stay open
+
+Heron's chat side is built as a versioned Claude Code plugin, in small pull requests: the plugin, MCP prompts as slash
+commands for common jobs, the jobs `heron_method` holds also served as skills, and allow rules so a tool that only
+reads is not asked each time - a change is still asked. Part 1 is `tools/build-plugin.py` and the folder it makes, and
+publishes nothing. The plugin's version is `heron-products.json`'s `manifestVersion`, written by the build; the Revit
+add-in still comes from Setup.
+
+**Full record:** [`decisions/D-210.md`](decisions/D-210.md)
+
+## D-211 — Article 9 is reworded in plain words with its meaning kept, and the room it frees gives every chat the modeller's scope: their selection or the active view, only what was asked, the model kept whole
+
+**Status:** Proposed · **Date:** 2026-11-28 · **Asked:** Ajmal PS, 2026-11-28, in his local Claude Code session: asked whether to shorten Article 9 in the Constitution or let the chat's sheet use its own words, *"do the best shorten the rool or slit the rule and make the llm wiki like link or need full idea"*.
+**Written by:** that local session; with no link to where he said it, Proposed until he confirms it where it can be read ([D-206](decisions/D-206.md) item 3).
+**Numbering:** D-211 is the id `tools/next-id.py` printed free on 2026-11-28, with `origin/main` at `58b47845` ending at D-209 and D-210 held by open pull request #1507.
+**Amends:** Article 9 of the Constitution - its wording, not its meaning
+
+Article 9 is reworded in the Constitution in plain words, its preview, its Keep or Discard, its one exception and that exception's compensating control all kept; how the add-in does it, and which decision superseded which, stay in D-99, D-126 and D-138. The 276 characters that freed in every chat's instructions go to one house-rule paragraph for every modeller: their selection or the active view, only what was asked, the model kept whole, and a check after a change.
+
+**Full record:** [`decisions/D-211.md`](decisions/D-211.md)
