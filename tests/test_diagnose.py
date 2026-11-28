@@ -219,6 +219,78 @@ def switches_as_revit_has_them():
         shutil.rmtree(home, ignore_errors=True)
 
 
+def installed_heron_names_no_missing_tool():
+    """Section 8 (row 5b-2084): an installed Heron - Setup's download or the
+    Claude Code plugin - carries no tools/heron-backup.py and no
+    tools/check-fragments-compile.py, so the diagnosis names neither there."""
+    print()
+    print("8. An installed Heron is told to run nothing it does not carry (row 5b-2084)")
+    import heron_brain as BRAIN
+    import heron_tools as REGISTRY
+
+    # NO EARLY RETURN WHEN THE RULE IS MISSING: the checks below still run,
+    # and FAIL, on the code before it (heron-ship 2a).
+    helper = getattr(BRAIN, "shipped_tool", None)
+    check(helper is not None, "heron_brain has one rule for naming a tool")
+    check(helper is not None and helper("check-docs.py") == "python tools/check-docs.py"
+          and helper("no-such-tool.py") is None,
+          "it names a tool this copy carries, and nothing for one it does not")
+
+    was_root = DIAG.ROOT
+    installed = tempfile.mkdtemp(prefix="heron-diagnose-installed-")
+    try:
+        DIAG.ROOT = installed
+        components, notes = [], []
+        raised = None
+        try:
+            got = DIAG._backups(components, notes)
+        except Exception as exc:                            # noqa: BLE001 - a raise is the FAIL
+            got, raised = None, exc
+        check(raised is None,
+              "with no backup tool on disk the backups probe does not raise (%s)" % raised)
+        check(got is None and not [c for c in components if c.name == "backups"],
+              "and reports no WARNING or DEGRADED for a tool that copy never had")
+        check(any("not part of an installed Heron" in n for n in notes),
+              "a note says why backups were not checked: %s" % notes)
+    finally:
+        DIAG.ROOT = was_root
+        shutil.rmtree(installed, ignore_errors=True)
+
+    was_tool, was_compat = helper, BRAIN.compatibility
+    try:
+        BRAIN.compatibility = lambda *a, **k: {"has_compile_evidence": False,
+                                               "releases": ["2024", "2025"], "rows": []}
+        BRAIN.shipped_tool = lambda name: None
+        components = []
+        DIAG._releases(components, [])
+        rows = [c for c in components if c.name == "releases"]
+        check(rows and "tools/" not in rows[0].detail
+              and "not part of an installed Heron" in rows[0].detail,
+              "with no compile check on disk, releases names none: %r"
+              % (rows[0].detail if rows else None))
+        BRAIN.shipped_tool = was_tool or (lambda name: "python tools/%s" % name)
+        components = []
+        DIAG._releases(components, [])
+        rows = [c for c in components if c.name == "releases"]
+        check(rows and "python tools/check-fragments-compile.py" in rows[0].detail,
+              "and a checkout, which carries it, is still told to run it")
+    finally:
+        BRAIN.compatibility = was_compat
+        if was_tool is None:
+            del BRAIN.shipped_tool
+        else:
+            BRAIN.shipped_tool = was_tool
+
+    # heron_compatibility is read as TEXT (row 5b-2039): importing the server
+    # needs the MCP SDK.
+    server = REGISTRY.server_text()
+    tool = server[server.find("def heron_compatibility("):]
+    tool = tool[:tool.find("\n@server.tool()")]
+    check('brain.shipped_tool("check-fragments-compile.py")' in tool
+          and '"tools/check-fragments-compile.py to turn' not in tool,
+          "heron_compatibility asks the same rule, and no longer types the tool's path")
+
+
 def main():
     probes = ("_live_picture", "_knowledge", "_releases", "_history", "_tools")
 
@@ -355,6 +427,7 @@ def main():
         REGISTRY.TOOLS = keep
 
     switches_as_revit_has_them()
+    installed_heron_names_no_missing_tool()
 
     print()
     if FAILURES:

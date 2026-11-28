@@ -188,11 +188,17 @@ def _releases(components, notes):
         return None
 
     if not found.get("has_compile_evidence"):
+        # The compile check needs a .NET SDK and ships with neither installed
+        # Heron (row 5b-2084), so it is named only where it is on disk.
+        compile_check = brain.shipped_tool("check-fragments-compile.py")
         components.append(_component(
             "releases", HEALTH.WARNING,
             "Heron claims %d Revit release(s), and NOTHING has been checked on "
-            "this machine. Run  python tools/check-fragments-compile.py"
-            % len(found.get("releases") or [])))
+            "this machine. %s"
+            % (len(found.get("releases") or []),
+               "Run  %s" % compile_check if compile_check else
+               "That check is made where Heron is built, with a .NET SDK - it is "
+               "not part of an installed Heron")))
         return found
 
     proven = [r for r in found["rows"] if r["proven"]]
@@ -274,6 +280,14 @@ def _backups(components, notes):
     """
     import importlib.util
     path = os.path.join(ROOT, "tools", "heron-backup.py")
+    # AN INSTALLED HERON CARRIES NO BACKUP TOOL (row 5b-2084): neither Setup's
+    # download nor the Claude Code plugin ships tools/heron-backup.py, so the
+    # load below raised, and every modeller's diagnosis said "backups could not
+    # be checked", DEGRADED, for a tool they never had. Said as what it is.
+    if not os.path.isfile(path):
+        notes.append("backups were not checked: the backup tool is not part of an "
+                     "installed Heron, only of a Heron checkout")
+        return None
     spec = importlib.util.spec_from_file_location("heron_backup_tool", path)
     if spec is None or spec.loader is None:
         notes.append("the backup agent could not be loaded from %s" % path)

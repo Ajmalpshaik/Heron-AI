@@ -6677,10 +6677,15 @@ def heron_compatibility(release: str = "") -> str:
              % (found["fragments"], len(found["releases"])), ""]
 
     if not found["has_compile_evidence"]:
+        # Named only where this copy carries it (row 5b-2084): an installed
+        # Heron - Setup's or the Claude Code plugin - has no tools/ to run.
+        compile_check = brain.shipped_tool("check-fragments-compile.py")
         lines.append("NOTHING HAS BEEN CHECKED ON THIS MACHINE. Every number "
-                     "below is what the tools claim about themselves. Run "
-                     "tools/check-fragments-compile.py to turn the claims into "
-                     "something measured.")
+                     "below is what the tools claim about themselves. "
+                     + ("Run %s to turn the claims into something measured."
+                        % compile_check if compile_check else
+                        "That check is made where Heron is built, with a .NET SDK; "
+                        "it is not part of an installed Heron."))
         lines.append("")
 
     for row in rows:

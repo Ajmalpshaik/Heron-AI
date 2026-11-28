@@ -59,9 +59,10 @@ LEFT OUT, AND WHY
 -----------------
 `revit/`, `platform/`, `tests/`, `tools/` and `.claude/` - the add-in comes
 from Setup, and the rest is for developing Heron (section 3 of the note).
-WORKSPACE_KEEP names five files under `tools/` and two under `platform/` for
-the download's installers; those stay in heron-project.zip and are not
-copied here. No knowledge store is ever copied (R-87, unchanged).
+WORKSPACE_KEEP also names files under `tools/` and `platform/` for the
+download's installers; those stay in heron-project.zip and are not copied
+here - `--list` names each one. No knowledge store is ever copied (R-87,
+unchanged).
 
 WHAT THIS CANNOT TELL YOU
 -------------------------
@@ -70,8 +71,10 @@ modeller's PC. `claude plugin validate dist/heron-plugin` checks the manifest,
 the paths and each MCP entry; the PC checks are section 8 of the note. A
 built folder is not an install and must never be reported as one.
 
-Exit 0 = built (or listed). Exit 1 = refused, and it says why; nothing is left
-in the place of the plugin folder when it refuses.
+Exit 0 = built (or listed). Exit 1 = refused, and it says why. A refusal
+leaves no half-built folder: the build is made beside the target and moved
+into place only once it is whole, and a refusal before that point leaves an
+earlier build as it was.
 """
 
 import argparse
