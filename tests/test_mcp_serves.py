@@ -4261,7 +4261,7 @@ async def exercise_method_by_stage(module):
           and ("Not PROVEN:" in summary) == bool(unproven),
           "it names every capability it uses that is not PROVEN here - %d"
           % len(unproven))
-    # Measured 2026-11-28: the summary 10,700 characters with that paragraph
+    # Measured 2026-11-28: the summary 10,824 characters with that paragraph
     # whole, and the largest stage, 3, 13,561 - where the whole method had
     # come to 82,253, near the 25,000 tokens a host takes from one reply.
     # The bounds keep every answer to about half of that or less, so a
