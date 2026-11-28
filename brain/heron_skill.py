@@ -57,6 +57,7 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_fragment as FRAG                                 # noqa: E402
 import heron_capability as CAP                               # noqa: E402
+import heron_relpath as RELPATH                              # noqa: E402
 
 SKILLS_DIR = os.path.join(ROOT, "brain", "skills")
 
@@ -94,6 +95,21 @@ class Skill(object):
     def needs(self):
         """The capabilities this skill requires. Never fragment ids."""
         return list(self.data.get("needs", []) or [])
+
+    def not_offered_by(self):
+        """Needs this method USES but is never OFFERED through - see
+        methods_for. Every one is in `needs` too (validate() refuses one that
+        is not), so it is still served beside the method with its status;
+        it only stops a request that reached it from naming this method.
+        [] for a skill that says nothing, which is offered through every
+        need, as before the field existed (row 5b-2090)."""
+        return list(self.data.get("not-offered-by", []) or [])
+
+    def offered_by(self):
+        """The needs a request may link this method through - `needs` less
+        `not-offered-by`, in the skill's own order."""
+        held = set(self.not_offered_by())
+        return [c for c in self.needs() if c not in held]
 
     @property
     def purpose(self):
@@ -329,6 +345,28 @@ def validate(skill):
                 "A skill that names a fragment defeats the registry"
                 % (where, capability))
 
+    # `not-offered-by` NAMES NEEDS, AND ONLY NEEDS (row 5b-2090). An entry
+    # that is not in `needs` holds nothing back - a misspelt one would leave
+    # the method offered beside the very requests it was written to stay off,
+    # and nothing would say so. Every need held back is still served.
+    held = skill.data.get("not-offered-by")
+    if held is not None:
+        if not isinstance(held, list):
+            problems.append("%s: not-offered-by must be a list of needs, not %r"
+                            % (where, held))
+        else:
+            needs = set(skill.needs())
+            for capability in held:
+                if not isinstance(capability, str) or capability not in needs:
+                    problems.append(
+                        "%s: not-offered-by names %r, which is not one of its "
+                        "needs - it can only hold back a capability the method "
+                        "uses, so it holds back nothing" % (where, capability))
+            if needs and needs <= set(c for c in held if isinstance(c, str)):
+                problems.append(
+                    "%s: not-offered-by holds back every need, so no request "
+                    "could ever be offered this method" % where)
+
     # A METHOD SERVED IN STAGES MUST CUT WHERE IT SAYS (Skill.parts): a
     # heading reworded in the purpose and not in `stages` is refused here,
     # not discovered as a stage that swallowed the next one.
@@ -390,7 +428,7 @@ def methods_for(skills, request, capabilities, limit=2, ceiling=None):
 
     WHAT LINKS A SKILL TO A REQUEST IS DATA, NOT A GUESS ABOUT MEANING. A
     skill is offered only when it NEEDS one of `capabilities` - what retrieval
-    already returned - and shares at least one word with the request in its
+    already returned, and not one its `not-offered-by` holds back - and shares at least one word with the request in its
     name or its utterances. The words only ORDER what that link allows: the
     most shared words first, then how often they recur in the skill's own
     phrasing - which puts the general family method ahead of the special ones
@@ -398,6 +436,27 @@ def methods_for(skills, request, capabilities, limit=2, ceiling=None):
     last is the weakest sign, because a ranked guess's runners-up are where
     retrieval is noisiest. The host still decides what the user meant (D-01);
     this names the methods so it does not have to read them off disk.
+
+    A NEED A METHOD ONLY USES ALONG THE WAY DOES NOT OFFER IT (row 5b-2090).
+    One shared need is enough to link, so a method that uses many tools was
+    reachable from a request for any of them: family-creation cuts a section
+    to check the family, draws a duct and makes a schedule in its project
+    test, deletes an imported underlay and remakes a connector - and with
+    those in `needs`, "delete this duct", "make a schedule of duct
+    sizes", "create a section through these ducts" and "draw a duct from here
+    to there" each named the family method, through the one word "duct" its
+    air-terminal utterance says. Its builder had left the five out of `needs`
+    to stop it, so the method served a shorter list of what it uses than its
+    stages name. A skill's `not-offered-by` lists those needs: still in
+    `needs`, still served with their status, never a link. A skill without it
+    links through every need, as before. Measured 2026-11-28 against two
+    general rules that need no field: linking only through the capability
+    the lookup ranked first changed the methods named for hundreds of
+    requests, left dozens of methods unnamed for their own utterances, and
+    still named the family method beside three of the four - its link there
+    IS the first capability; a word said only once by a method, or only in
+    its name, did no better. What a method merely uses along the way is a
+    fact about the method, so it is the method's to say.
 
     `ceiling` IS D-128's, AND A METHOD IS HELD TO IT AS A CAPABILITY IS (row
     5b-650). A request the host calls a question is answered under the
@@ -419,7 +478,9 @@ def methods_for(skills, request, capabilities, limit=2, ceiling=None):
         return []
     ranked = []
     for skill in skills:
-        needs = set(skill.needs())
+        # Through the needs it may be offered by, never `not-offered-by`
+        # (row 5b-2090) - a skill without that field links through them all.
+        needs = set(skill.offered_by())
         linked = len([c for c in set(wanted) if c in needs])
         if not linked:
             continue
@@ -436,7 +497,10 @@ def methods_for(skills, request, capabilities, limit=2, ceiling=None):
 
 def main():
     found, problems = load_all()
-    print("Skills in %s" % os.path.relpath(SKILLS_DIR, ROOT))
+    # SKILLS_DIR is a folder a suite repoints at scratch, which on Windows can
+    # sit on another drive than ROOT - os.path.relpath raises there; this
+    # display line answers with the whole path instead (row 5b-2086).
+    print("Skills in %s" % RELPATH.relpath(SKILLS_DIR, ROOT))
     print()
 
     if not found and not problems:

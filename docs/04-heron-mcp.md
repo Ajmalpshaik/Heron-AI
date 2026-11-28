@@ -794,7 +794,9 @@ remembers Heron; a new one does not, so it read them off disk.
   stages is served whole, word for word as before.
 - **`heron_lookup` and every `request=` hand-back name the jobs an answer is one step of**
   (`heron_skill.methods_for`): a skill is named only when it NEEDS a capability retrieval returned, and
-  the words of the request only order those (D-01). Not for an exact declared phrasing that may run on
+  the words of the request only order those (D-01). A need the skill lists under `not-offered-by` - a
+  tool it uses along the way, such as the family method's duct run in its project test - is still served
+  with it but never names it ([row 5b-2090](fragment-issues/row-5b-2090.md)). Not for an exact declared phrasing that may run on
   its own - that request is one step.
 - **The chat's rules say it** (`host.chat`): a job of several steps has its method in `heron_method`, and
   Heron's own folder is never read to work out a Revit job. The top of [`AGENTS.md`](../AGENTS.md) - which
