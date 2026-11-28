@@ -404,6 +404,80 @@ def main():
           "caught (%s)" % _sid10)
 
     print()
+    print("11. A METHOD SERVED IN STAGES CUTS WHERE IT SAYS, AND LOSES NOTHING")
+    # The owner's choice, 2026-11-28 ("One stage at a time"): a method too
+    # long for one reply declares `stages`, and heron_method serves a summary
+    # and then one stage at a time (heron_skill.Skill.parts). Held here: the
+    # parts joined ARE the purpose, byte for byte - so the summary and the
+    # stages together can lose nothing - and every capability the method
+    # needs is named in some stage, so its live status is served with the
+    # stage that uses it. And a declaration that no longer fits its purpose
+    # is refused, never served as one stage swallowing the next.
+    import copy as _copy11
+    import re as _re11
+    _methods11 = SKILL.load_all()[0]
+    _staged11 = sorted(s_.id for s_ in _methods11.values() if s_.data.get("stages"))
+    check("family-creation" in _staged11,
+          "family-creation declares its stages (%s)" % ", ".join(_staged11))
+    _shaped11 = _re11.compile(r"\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b")
+    for _sid11 in _staged11:
+        _s11 = _methods11[_sid11]
+        _parts11 = _s11.parts()
+        check("".join(p_["text"] for p_ in _parts11) == _s11.purpose,
+              "%s: its %d parts joined are its purpose, byte for byte"
+              % (_sid11, len(_parts11)))
+        _stages11 = [p_ for p_ in _parts11 if p_["stage"] is not None]
+        check(len(_stages11) >= 2 and all(
+            p_["text"].lstrip().startswith(p_["starts"]) for p_ in _stages11),
+              "%s: %d stages, each beginning at the line it declares"
+              % (_sid11, len(_stages11)))
+        _named11 = set()
+        for p_ in _stages11:
+            _named11.update(_shaped11.findall(p_["text"]))
+        _unnamed11 = [c for c in _s11.needs() if c not in _named11]
+        check(not _unnamed11,
+              "%s: every one of its %d needs is named in a stage%s"
+              % (_sid11, len(_s11.needs()),
+                 "" if not _unnamed11 else " - NOT: " + ", ".join(_unnamed11)))
+    # A method with no stages has no parts, and is served whole.
+    _plain11 = [s_ for s_ in _methods11.values() if not s_.data.get("stages")]
+    check(_plain11 and all(s_.parts() == [] for s_ in _plain11),
+          "the %d methods that declare no stages have no parts - served whole"
+          % len(_plain11))
+    # AND IT CAN FAIL: a heading that is not a line, one written twice, two
+    # out of order, and an id used twice are each refused by validate().
+    if "family-creation" in _methods11:
+        _real11 = _methods11["family-creation"]
+
+        def _with11(stages, purpose=None):
+            data = _copy11.deepcopy(_real11.data)
+            data["stages"] = stages
+            if purpose is not None:
+                data["purpose"] = purpose
+            return SKILL.validate(SKILL.Skill(data, _real11.path))
+
+        _say11 = [p_ for p_ in _real11.parts() if p_["stage"] is not None]
+        _a11, _b11 = _say11[0]["starts"], _say11[1]["starts"]
+        check(not _with11(_real11.data["stages"]),
+              "family-creation's own stages validate clean")
+        for _why11, _bad11, _purpose11 in (
+                ("a heading that is no line of the purpose",
+                 [{"stage": "x", "starts": _a11 + " - REWORDED"}], None),
+                ("a heading written twice in the purpose",
+                 [{"stage": "x", "starts": _a11}],
+                 _real11.purpose + "\n" + _a11 + "\n"),
+                ("two headings out of the purpose's order",
+                 [{"stage": "x", "starts": _b11}, {"stage": "y", "starts": _a11}],
+                 None),
+                ("one id given to two stages",
+                 [{"stage": "x", "starts": _a11}, {"stage": "X", "starts": _b11}],
+                 None),
+                ("no entry that is a stage",
+                 [{"starts": _a11}], None)):
+            check(any("stage" in p_ for p_ in _with11(_bad11, _purpose11)),
+                  "validate() refuses %s" % _why11)
+
+    print()
     print("The HVAC skills name heron_hvac calculations that exist (PROPOSALS F42-3)")
     import re as _re
     import heron_hvac as _HVAC

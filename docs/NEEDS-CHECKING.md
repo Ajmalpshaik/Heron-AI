@@ -1775,3 +1775,7 @@ Step 6 is finished, and not before. At that point:
 ## Group RD - four reports given an answer that can read empty: DESCRIBE_BLANK_PARAMETERS v2, REPORT_ELEMENT_DEPENDENCIES v3, REPORT_CONSTRAINTS v3, REPORT_LEVEL_ELEVATIONS v8 - DRAFT until proved (2026-11-26)
 
 **Its own file:** [`needs-checking/group-rd.md`](needs-checking/group-rd.md)
+
+## Group RF - Heron's jobs as Claude Code skills, in a real chat on the owner's Windows PC (2026-11-28)
+
+**Its own file:** [`needs-checking/group-rf.md`](needs-checking/group-rf.md)

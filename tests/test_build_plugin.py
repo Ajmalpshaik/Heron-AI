@@ -32,6 +32,16 @@ WHAT THIS PROVES
       the plugin does not carry, and a folder in its place it did not write
     the longest path, under Claude Code's cache folder for a 20-character
       Windows user name, stays under Windows' 260-character limit - PRINTED
+    one skill per job heron_method lists and none for a job it does not -
+      the jobs read here through heron_skill.load_all(), the load
+      heron_brain.method() lists from; each SKILL.md's frontmatter parses,
+      its name is the job id and its folder, its description and
+      when_to_use fit Claude Code's 1,536-character listing cap (the longest
+      PRINTED), its body sends Claude to heron_method with that id and does
+      not paste the method, and it names no path outside the folder
+    a job taken out of the source drops its skill at the next build; a job
+      over the cap, with an id that is not a skill name, or that will not
+      load stops the build, and leaves the last good build in place
 
 WHAT IT CANNOT PROVE
 --------------------
@@ -60,6 +70,9 @@ for _stream in (sys.stdout, sys.stderr):
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 import heron_tools as TOOLS                                  # noqa: E402
+sys.path.insert(0, os.path.join(ROOT, "brain"))
+import heron_skill as SKILL                                  # noqa: E402
+import yaml                                                  # noqa: E402
 
 TOOL = os.path.join(ROOT, "tools", "build-plugin.py")
 # The server's entry file, asked of heron_tools rather than typed (row 5b-2039).
@@ -371,6 +384,126 @@ def main():
         check(total < WINDOWS_LIMIT,
               "under Windows' %d-character limit, for a %d-character user name"
               % (WINDOWS_LIMIT, USER_NAME_CHARS))
+
+        print("\n12. One skill per job heron_method lists")
+        # WHAT heron_method LISTS, asked of the loader it lists through, not of
+        # the build: heron_brain.method("") is heron_skill.load_all() sorted.
+        brain_src = io.open(os.path.join(ROOT, "mcp", "server", "heron_brain.py"),
+                            encoding="utf-8").read()
+        method_src = brain_src.split("\ndef method(", 1)[-1].split("\ndef ", 1)[0]
+        check("found, problems = SKILL.load_all()" in method_src,
+              "heron_method lists its jobs through heron_skill.load_all(), no other folder")
+        listed, problems = SKILL.load_all()
+        check(not problems, "every job loads (%s)" % ("; ".join(problems) or "none broken"))
+        skills_dir = os.path.join(again, "skills")
+        made = sorted(os.listdir(skills_dir)) if os.path.isdir(skills_dir) else []
+        check(bool(listed) and made == sorted(listed),
+              "skills/ holds one folder per job, and none for a job it does not list (%d)"
+              % len(made))
+        bad, longest, pasted, unsent, outside_links = [], (0, ""), [], [], []
+        for sid in made:
+            folder = os.path.join(skills_dir, sid)
+            if os.listdir(folder) != ["SKILL.md"]:
+                bad.append("%s holds %s" % (sid, os.listdir(folder)))
+                continue
+            text = io.open(os.path.join(folder, "SKILL.md"), encoding="utf-8").read()
+            parts = text.split("---\n", 2)
+            try:
+                front = yaml.safe_load(parts[1]) if text.startswith("---\n") and len(parts) == 3 else None
+            except yaml.YAMLError:
+                front = None
+            if not isinstance(front, dict):
+                bad.append("%s: no frontmatter that parses" % sid)
+                continue
+            body = parts[2]
+            job = listed[sid]
+            desc, when = front.get("description"), front.get("when_to_use")
+            if sorted(front) != ["description", "name", "when_to_use"] \
+                    or front.get("name") != sid \
+                    or not re.match(r"^[a-z0-9]+(-[a-z0-9]+)*\Z", str(front.get("name"))) \
+                    or not isinstance(desc, str) or not isinstance(when, str) \
+                    or not desc.startswith(" ".join(job.name.split()).rstrip(".")) \
+                    or any(" ".join(u.split()) not in when for u in job.utterances()):
+                bad.append("%s: frontmatter %r" % (sid, sorted(front)))
+                continue
+            if len(desc) + len(when) > longest[0]:
+                longest = (len(desc) + len(when), sid)
+            if "`%s`" % sid not in body or "`mcp__plugin_heron_heron__heron_method`" not in body \
+                    or "mcp__heron__" in text or "once" not in body:
+                unsent.append(sid)
+            purpose = " ".join(job.purpose.split())
+            if (purpose and purpose[:60] in " ".join(text.split())) \
+                    or any(" ".join(p.split()) in " ".join(text.split())
+                           for p in job.preconditions() if len(p) > 20) \
+                    or len(body.split()) > 120:
+                pasted.append(sid)
+            for link in re.findall(r"\]\(([^)\s]+)\)", text):
+                outside_links.append("%s: %s" % (sid, link))
+            if ".." in text.replace("\\", "/").split("/"):
+                outside_links.append("%s: a path with .." % sid)
+        check(not bad, "every SKILL.md is its folder's only file, its frontmatter parses, its "
+              "name is the job id, and its words are the job's name and the modeller's words%s"
+              % (" - %s" % bad[:3] if bad else ""))
+        print("      longest description + when_to_use: %d of %d characters - %s"
+              % (longest[0], BP.LISTING_CAP, longest[1]))
+        check(BP.LISTING_CAP == 1536 and 0 < longest[0] <= BP.LISTING_CAP,
+              "every skill's description and when_to_use fit Claude Code's 1,536-character cap")
+        check(not unsent, "every skill sends Claude to heron_method with its job id, once, by the "
+              "plugin's tool name%s" % (" - %s" % unsent[:3] if unsent else ""))
+        check(not pasted, "and none pastes the method: no purpose, no precondition, under 120 "
+              "words of body%s" % (" - %s" % pasted[:3] if pasted else ""))
+        check(not outside_links, "no skill links or names a path outside the folder%s"
+              % (" - %s" % outside_links[:3] if outside_links else ""))
+        check(not any("disable-model-invocation" in io.open(os.path.join(skills_dir, s, "SKILL.md"),
+                                                            encoding="utf-8").read()
+                      for s in made),
+              "and none stops Claude from choosing it")
+
+        print("\n13. The job source decides the skills")
+        jobs_copy = tempfile.mkdtemp(prefix="heron-plugin-jobs-")
+        was = BP.JOBS_SRC
+        try:
+            for name in os.listdir(os.path.join(ROOT, BP.JOBS_SRC)):
+                shutil.copyfile(os.path.join(ROOT, BP.JOBS_SRC, name),
+                                os.path.join(jobs_copy, name))
+            gone_file = sorted(n for n in os.listdir(jobs_copy) if n.endswith(".yaml"))[0]
+            gone = SKILL.load(os.path.join(jobs_copy, gone_file)).id
+            os.remove(os.path.join(jobs_copy, gone_file))
+            BP.JOBS_SRC = jobs_copy
+            fewer, _v, _n = BP.build(work)
+            left = sorted(os.listdir(os.path.join(fewer, "skills")))
+            check(gone not in left and len(left) == len(made) - 1,
+                  "a job taken out of the source drops its skill at the next build (%s)" % gone)
+
+            def refused_with(name, body):
+                path = os.path.join(jobs_copy, name)
+                with io.open(path, "w", encoding="utf-8") as handle:
+                    handle.write(body)
+                try:
+                    BP.build(work)
+                    return None
+                except BP.Refused as exc:
+                    return str(exc)
+                finally:
+                    os.remove(path)
+
+            said = refused_with("zz-too-long.yaml", u"id: zz-too-long\nname: %s\n"
+                                u"utterances:\n  - make it\n" % ("word " * 320))
+            check(said is not None and "1536" in said and "zz-too-long" in said,
+                  "a job whose description and when_to_use are over the cap stops the build")
+            said = refused_with("zz-bad-id.yaml", u"id: Not_A_Skill\nname: A job\n"
+                                u"utterances:\n  - do it\n")
+            check(said is not None and "Not_A_Skill" in said,
+                  "a job whose id is not a skill name stops the build")
+            said = refused_with("zz-broken.yaml", u"id: [unclosed\n")
+            check(said is not None and "zz-broken.yaml" in said,
+                  "a job that will not load stops the build, naming its file")
+            still = sorted(os.listdir(os.path.join(work, "heron-plugin", "skills")))
+            check(still == left and not os.path.exists(os.path.join(work, ".heron-plugin.building")),
+                  "and each refusal leaves the last good build in place, nothing half-built")
+        finally:
+            BP.JOBS_SRC = was
+            shutil.rmtree(jobs_copy, ignore_errors=True)
     finally:
         shutil.rmtree(work, ignore_errors=True)
 

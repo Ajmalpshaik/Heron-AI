@@ -170,6 +170,14 @@ WHAT IT PROVES, when an SDK is installed
      #1032), against the real library: SET_VIEW_CAMERA, DEPRECATED, says
      REPLACED BY FRAME_ELEMENTS_IN_CAMERA - its card's `superseded-by`; a
      live capability says no such line.
+ 22. heron_method SERVES A LONG METHOD ONE STAGE AT A TIME (the owner's
+     choice, 2026-11-28): family-creation's summary says first that it is
+     not the method, lists every stage with its size, and carries what must
+     be true first and every line outside the stages; each stage, asked by
+     its id, a number, "stage 3" or a word one heading alone has, is its
+     whole text with the capabilities it names; every line of the purpose
+     is reachable; a stage nothing answers to is refused with the list; a
+     method with no stages is served whole, as before.
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -4196,6 +4204,144 @@ async def exercise_resolve_names_replacement(module):
           "and FRAME_ELEMENTS_IN_CAMERA, live, names no replacement")
 
 
+async def exercise_method_by_stage(module):
+    """Section 22 - a method that declares stages is served a summary first
+    and one stage at a time, every word of it reachable; one that declares
+    none is served whole as before (the owner's choice, 2026-11-28)."""
+    server = module.server
+    brain = module.brain
+    said = module._SAID_IN_FULL
+    print()
+    print("  heron_method serves a long method one stage at a time (2026-11-28)")
+
+    async def call(arguments):
+        said.clear()
+        try:
+            return text_of(await server.call_tool("heron_method", arguments))
+        except Exception as exc:                                # noqa: BLE001
+            return "(raised %s: %s)" % (type(exc).__name__, exc)
+
+    job = "family-creation"
+    found = brain.method(job) or {}
+    stages = found.get("stages") or []
+    check(len(stages) >= 2, "%s declares %d stages" % (job, len(stages)))
+    summary = await call({"job": job})
+    doors = module._cannot_run()
+
+    # THE SUMMARY SAYS FIRST THAT IT IS NOT THE METHOD, and how to ask for
+    # each stage - a host that read "the whole method" for a month would
+    # otherwise build from it alone.
+    check("THIS IS THE METHOD'S SUMMARY, NOT THE METHOD" in summary
+          and 'heron_method(job="%s", stage="<id>")' % job in summary
+          and "before its first step" in summary,
+          "the summary says it is not the method, and to ask for each stage "
+          "before its first step")
+    rows = [line for line in summary.splitlines()
+            if any(line.startswith("  %s " % s["id"]) and s["title"] in line
+                   for s in stages)]
+    check(len(rows) == len(stages)
+          and all("{:,} characters".format(s["chars"]) in summary
+                  for s in stages),
+          "it lists every one of the %d stages, each with its size - %d rows"
+          % (len(stages), len(rows)))
+    check(all(p in summary for p in found.get("preconditions") or []),
+          "it carries what must be true before the first step")
+    outside = [p for p in found.get("parts") or [] if p["stage"] is None]
+    check(outside and all(("  " + line).rstrip() in summary.splitlines()
+                          for p in outside for line in p["text"].splitlines()),
+          "it carries every line of the method outside its stages - the "
+          "rules and the report among them")
+    check(summary.rstrip().endswith(doors),
+          "it ends with which door runs what, whole on a process's first answer")
+    # The method's own words send a reader to "the list of uses" for which
+    # step is DRAFT; in the summary that is one line, naming each.
+    unproven = [u["capability"] for u in found.get("uses") or []
+                if u["missing"] or u["status"] not in ("PROVEN", "PRODUCTION")]
+    check(all(("%s (" % c) in summary for c in unproven)
+          and ("Not PROVEN:" in summary) == bool(unproven),
+          "it names every capability it uses that is not PROVEN here - %d"
+          % len(unproven))
+    # Measured 2026-11-28: the summary 11,184 characters with that paragraph
+    # whole, and the largest stage, 3, 13,561 - where the whole method had
+    # come to 82,253, near the 25,000 tokens a host takes from one reply.
+    # The bounds keep every answer to about half of that or less, so a
+    # stage that grows is seen before a host cuts it.
+    check(len(summary) <= 12000,
+          "and it is %s characters, within 12,000" % "{:,}".format(len(summary)))
+
+    # EVERY STAGE, BY ITS ID: its whole text, the capabilities it names.
+    served = {}
+    for s in stages:
+        served[s["id"]] = answer = await call({"job": job, "stage": s["id"]})
+        lines = answer.splitlines()
+        whole = all(("  " + line).rstrip() in lines
+                    for line in s["text"].splitlines())
+        rows = [n for n in s["named"]
+                if any(line.startswith("  %s " % n) for line in lines)]
+        check(whole and rows == s["named"] and len(answer) <= 20000
+              and answer.rstrip().endswith(doors)
+              and s["title"] in answer and "with no stage" in answer,
+              "stage %s: its %s characters whole, its %d capabilities with "
+              "their status, the way back to the summary and the doors - "
+              "%s characters" % (s["id"], "{:,}".format(s["chars"]),
+                                 len(s["named"]), "{:,}".format(len(answer))))
+    # Each stage's own heading line - as its text serves it - is in no
+    # summary line: the summary names the stages, and carries none of them.
+    heads = ["  " + s["text"].splitlines()[0].rstrip() for s in stages]
+    check(not [h for h in heads if h in summary.splitlines()],
+          "and no stage's text is in the summary")
+
+    # NOTHING OF THE METHOD IS OUT OF REACH: every line of its purpose is in
+    # the summary or in the stage it belongs to.
+    reach = summary.splitlines()
+    for answer in served.values():
+        reach.extend(answer.splitlines())
+    reach = set(reach)
+    lost = [line for line in found.get("purpose", "").splitlines()
+            if ("  " + line).rstrip() not in reach]
+    check(found.get("purpose") and not lost,
+          "every one of the purpose's %d lines is reachable%s"
+          % (len(found.get("purpose", "").splitlines()),
+             "" if not lost else " - NOT: %r" % lost[:2]))
+
+    # A STAGE ASKED ANOTHER WAY IS THE SAME STAGE - a number as JSON sends
+    # it, "stage 3", or a word only one heading has.
+    three = served.get("3")
+    for asked in (3, "Stage 3", "geometry"):
+        check(three is not None and await call({"job": job, "stage": asked}) == three,
+              "stage asked as %r is stage 3" % (asked,))
+    # 0 is the first working stage and the one value a truth test drops.
+    zero = served.get("0")
+    check(zero is not None and await call({"job": job, "stage": 0}) == zero,
+          "stage asked as the number 0 is stage 0, not the summary")
+    for asked in ("nonsense", "family"):
+        answer = await call({"job": job, "stage": asked})
+        check(('has no stage "%s"' % asked) in answer
+              and all(any(line.startswith("  %s " % s["id"])
+                          for line in answer.splitlines()) for s in stages)
+              and doors not in answer,
+              "stage %r is refused with the list of stages, never guessed"
+              % asked)
+
+    # A METHOD WITH NO STAGES IS SERVED WHOLE, AS IT WAS - and a `stage`
+    # asked of it is said to be needless, in front of the same answer.
+    plain = [j["id"] for j in brain.method("")["jobs"]
+             if not (brain.method(j["id"]) or {}).get("stages")]
+    check(len(plain) >= 1, "%d methods declare no stages" % len(plain))
+    if plain:
+        whole = await call({"job": plain[0]})
+        purpose = (brain.method(plain[0]) or {}).get("purpose", "")
+        check("The method, in order:" in whole and "SUMMARY" not in whole
+              and all(("  " + line).rstrip() in whole.splitlines()
+                      for line in purpose.splitlines()),
+              "%s is served whole, every line of its method" % plain[0])
+        asked = await call({"job": plain[0], "stage": "3"})
+        check(asked.endswith(whole) and asked.startswith(
+            "%s has no stages" % plain[0]),
+              "and asked for a stage, it says it has none, then serves the "
+              "same whole method")
+
+
 async def exercise_why(module):
     """
     Section 20 - heron_why names the reason Heron cannot do a capability, and
@@ -4618,6 +4764,7 @@ def main():
         asyncio.run(exercise_said_once(server_module))
         asyncio.run(exercise_resolve_says_why(server_module))
         asyncio.run(exercise_resolve_names_replacement(server_module))
+        asyncio.run(exercise_method_by_stage(server_module))
         asyncio.run(exercise_why(server_module))
         asyncio.run(exercise_activity(server_module))
         asyncio.run(exercise_earlier(server_module))
