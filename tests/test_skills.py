@@ -24,6 +24,7 @@ WHAT IT DOES NOT PROVE
   that is not satisfied here is WORK.
 """
 
+import contextlib
 import io
 import os
 import shutil
@@ -476,6 +477,70 @@ def main():
                  [{"starts": _a11}], None)):
             check(any("stage" in p_ for p_ in _with11(_bad11, _purpose11)),
                   "validate() refuses %s" % _why11)
+
+    print()
+    print("12. A NEED HELD BACK FROM OFFERING A METHOD IS STILL ONE OF ITS NEEDS")
+    # ROW 5b-2090. methods_for offered a method through any one need a lookup
+    # returned, so family-creation left five it uses out of `needs` to stay off
+    # ordinary duct requests, and served a shorter list than its stages name.
+    # `not-offered-by` holds a need back from OFFERING the method; it stays in
+    # `needs`, so it is served with its status - and an entry that is not a
+    # need is refused, because it would hold nothing back and say nothing.
+    import copy as _copy12
+    _methods12 = SKILL.load_all()[0]
+    _five12 = ["REMOVE_FAMILY_CONNECTOR", "CREATE_SECTION_VIEW",
+               "CREATE_MEP_RUNS", "CREATE_SCHEDULE", "DELETE_ELEMENTS"]
+    _fam12 = _methods12.get("family-creation")
+    check(_fam12 is not None and all(c in _fam12.needs() for c in _five12),
+          "family-creation's needs hold the five its stages use and it had "
+          "left out (%s)" % ", ".join(_five12))
+    check(_fam12 is not None and sorted(_fam12.not_offered_by()) == sorted(_five12)
+          and not [c for c in _fam12.offered_by() if c in _five12]
+          and len(_fam12.offered_by()) == len(_fam12.needs()) - len(_five12),
+          "and holds exactly those five back from offering it")
+    _plain12 = [s_ for s_ in _methods12.values()
+                if not s_.data.get("not-offered-by")]
+    check(_plain12 and all(s_.offered_by() == s_.needs() for s_ in _plain12),
+          "the %d methods without the field are offered through every need"
+          % len(_plain12))
+    if _fam12 is not None:
+        def _held12(value):
+            data = _copy12.deepcopy(_fam12.data)
+            data["not-offered-by"] = value
+            return [p_ for p_ in SKILL.validate(SKILL.Skill(data, _fam12.path))
+                    if "not-offered-by" in p_]
+
+        check(not _held12(_five12), "family-creation's own field validates clean")
+        for _why12, _bad12 in (
+                ("a capability that is not one of its needs",
+                 _five12 + ["CREATE_DUCT_SYSTEM_NOT_A_NEED"]),
+                ("a misspelt need", ["DELETE_ELEMENT"]),
+                ("a field that is not a list", "DELETE_ELEMENTS"),
+                ("every need held back", list(_fam12.needs()))):
+            check(_held12(_bad12), "validate() refuses %s" % _why12)
+
+    # THE "Skills in ..." LINE NEVER RAISES (row 5b-2086, its last call). A
+    # suite points SKILLS_DIR at a scratch folder, which on the owner's PC is
+    # on C: while the checkout is on D:, and os.path.relpath raises across
+    # drives. Raised here on any machine, so Linux CI sees it too.
+    _relpath12 = os.path.relpath
+
+    def _no_relative12(path, start=None):
+        raise ValueError("path is on mount 'C:', start on mount 'D:'")
+
+    os.path.relpath = _no_relative12
+    try:
+        with contextlib.redirect_stdout(io.StringIO()) as _out12:
+            try:
+                SKILL.main()
+                _raised12 = None
+            except ValueError as exc:
+                _raised12 = exc
+    finally:
+        os.path.relpath = _relpath12
+    check(_raised12 is None and SKILL.SKILLS_DIR in _out12.getvalue(),
+          "heron_skill's list names its folder whole when no relative path "
+          "exists, never raises (%s)" % (_raised12 or "named"))
 
     print()
     print("The HVAC skills name heron_hvac calculations that exist (PROPOSALS F42-3)")

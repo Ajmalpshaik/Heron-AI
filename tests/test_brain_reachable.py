@@ -681,6 +681,69 @@ def main():
             check(SKILL.methods_for(plain, "paint this", ["MAKE_PIPE"]) == [],
                   "so 'this' alone links no request to a method")
 
+            # ROW 5b-2090: one shared need was enough to link, so a method that
+            # USES a tool along the way was offered beside every request for
+            # it. A need under `not-offered-by` is still a need - served with
+            # the method - and never a link; a skill without the field links
+            # through every need, as before.
+            held = SKILL.Skill({"id": "box-job", "name": "box-job",
+                                "needs": ["MAKE_BOX", "DELETE_THING"],
+                                "not-offered-by": ["DELETE_THING"],
+                                "utterances": ["build a box family",
+                                               "delete a spare box"]},
+                               "box-job.yaml")
+            check(SKILL.methods_for([held], "delete this box",
+                                    ["DELETE_THING"]) == [],
+                  "a need held back by not-offered-by offers nothing, though "
+                  "the request shares a word (5b-2090)")
+            check([s.id for s in SKILL.methods_for(
+                [held], "make a box", ["DELETE_THING", "MAKE_BOX"])]
+                  == ["box-job"] and "DELETE_THING" in held.needs(),
+                  "while its other needs still offer it, and the one held "
+                  "back is still one of its needs")
+            same = SKILL.Skill(dict(held.data, **{"not-offered-by": []}),
+                               "box-job.yaml")
+            check([s.id for s in SKILL.methods_for(
+                [same], "delete this box", ["DELETE_THING"])] == ["box-job"],
+                  "and without the field the same need offers it, as before")
+
+            # THE FOUR ORDINARY DUCT REQUESTS OF ROW 5b-2090 - "draw a duct ..."
+            # from the owner's own test set, the other three from pull request
+            # #1503's check of the family method. With its five
+            # tools back in `needs`, family-creation is named beside
+            # none of them. The capabilities are the ones the lookup returned
+            # for these words on 2026-11-28 (lexical, main 119bc6ef); only the
+            # skills decide here. "draw a duct ..." is an exact declared
+            # phrasing, which the live lookup names no method beside, so it
+            # is asked of methods_for directly.
+            real = SKILL.load_all()[0].values()
+            for said, returned in (
+                    ("draw a duct from here to there", ["CREATE_MEP_RUNS"]),
+                    ("delete this duct",
+                     ["DELETE_ELEMENTS", "DELETE_ELEMENTS",
+                      "FIND_DUPLICATE_ELEMENTS", "REMOVE_FAMILY_CONNECTOR",
+                      "DISCONNECT_CONNECTORS", "REMOVE_MEP_INSULATION"]),
+                    ("make a schedule of duct sizes",
+                     ["EDIT_MEP_SIZES", "EDIT_MEP_SIZES", "GROUP_AND_COUNT",
+                      "REPORT_DUCT_CONDUIT_SIZES", "AUTO_SIZE_MEP",
+                      "CREATE_SCHEDULE"]),
+                    ("create a section through these ducts",
+                     ["CREATE_SECTION_VIEW", "CREATE_SECTION_VIEW",
+                      "MOVE_VIEW_CUT_PLANE", "CREATE_DIMENSION",
+                      "CREATE_ROOM_ELEVATIONS", "SET_MEP_JUSTIFICATION"])):
+                named = [s.id for s in SKILL.methods_for(real, said, returned)]
+                check("family-creation" not in named,
+                      "%r does not name the family method - %s" % (said, named))
+                live = [m["id"] for m in BRAIN.lookup(said).get("methods") or []]
+                check("family-creation" not in live,
+                      "nor does the live lookup - %s" % live)
+            fam = dict((s.id, s) for s in real).get("family-creation")
+            check(fam is not None and set(fam.not_offered_by()) <= set(fam.needs())
+                  and {"CREATE_MEP_RUNS", "DELETE_ELEMENTS",
+                       "REMOVE_FAMILY_CONNECTOR", "CREATE_SCHEDULE",
+                       "CREATE_SECTION_VIEW"} <= set(fam.needs()),
+                  "though the five are in its needs, served with it")
+
             got = BRAIN.method("family-creation")
             needs = SKILL.load_all()[0]["family-creation"].needs()
             check(got is not None and "REPORT_FAMILY_TEMPLATE" in got["purpose"]

@@ -27,11 +27,8 @@ purpose: |
   HOW TO READ IT. "-> CAPABILITY (STATUS)" after a step is the Heron
   capability that does it, and its status on its card when this was written;
   the list of uses served after this method gives each one's status now, and
-  that list wins. Five that the stages name are not in that list, so this
-  method is not offered beside ordinary project requests about ducts:
-  DELETE_ELEMENTS, REMOVE_FAMILY_CONNECTOR, CREATE_SCHEDULE,
-  CREATE_SECTION_VIEW and CREATE_MEP_RUNS - for those, the status written
-  beside them is the one to go by, and heron_resolve gives it now. A change goes through revit_change, a read through
+  that list wins. It holds every capability the stages use - the ones named
+  only as what not to use are left out. A change goes through revit_change, a read through
   revit_read, a view or a selection on screen through revit_show, and a
   picture through revit_view_image, which is a tool and not a capability.
   "-> no Heron tool yet:" is a step Heron cannot do - it says what the
@@ -1388,16 +1385,18 @@ utterances:
 # NOT to use, so not listed: EXPORT_VIEW_IMAGE (not the way to look) and
 # TRANSFER_MATERIALS_BETWEEN_DOCUMENTS (project to project, not a family).
 #
-# NAMED IN THE STAGES, WITH THEIR STATUS, BUT NOT LISTED HERE - ON PURPOSE
-# (2026-11-28). heron_skill.methods_for offers this method beside any request
-# that shares one word with its name or utterances AND returns one of these
-# needs. The word "duct" (an air terminal "with a duct connector") is shared
-# with every duct request, so listing these five made the family method show
-# up beside "delete this duct", "make a schedule of duct sizes", "create a
-# section through these ducts" and "draw a duct from here to there", where it
-# had never been offered: DELETE_ELEMENTS, REMOVE_FAMILY_CONNECTOR,
-# CREATE_SCHEDULE, CREATE_SECTION_VIEW, CREATE_MEP_RUNS. They come back here
-# once methods_for can tell a project request from a family one.
+# FIVE OF THEM ARE USED BUT NEVER OFFER THIS METHOD - `not-offered-by` below
+# (row 5b-2090). heron_skill.methods_for offers a method beside a request that
+# shares one word with its name or utterances AND returns one of its needs.
+# The word "duct" (an air terminal "with a duct connector") is shared with
+# every duct request, so these five - a section to check the family, the
+# project test's duct run and schedule, taking an imported underlay out, and
+# remaking a connector - named the
+# family method beside "delete this duct", "make a schedule of duct sizes",
+# "create a section through these ducts" and "draw a duct from here to
+# there". Each of the five, restored alone, moved at least one of those
+# (measured 2026-11-28). They were left out of this list until then; they
+# are in it, and served with their status, like every other need.
 needs:
   - REPORT_FAMILY_TEMPLATE
   - REPORT_PROJECT_UNITS
@@ -1476,6 +1475,24 @@ needs:
   - CHECK_FAMILY_STANDARDS
   - FIND_PURGEABLE_ELEMENTS
   - SET_FAMILY_PREVIEW_VIEW
+  # Back 2026-11-28 with `not-offered-by` (row 5b-2090): Stage 7's connector
+  # remake, Stage 10's section, Stage 12's duct run and schedule, and Stage
+  # 3's delete of an imported underlay before delivery.
+  - REMOVE_FAMILY_CONNECTOR
+  - CREATE_SECTION_VIEW
+  - CREATE_MEP_RUNS
+  - CREATE_SCHEDULE
+  - DELETE_ELEMENTS
+
+# Needs above that a request never offers this method through - each is a
+# tool the stages use along the way, not what a family request asks for
+# (heron_skill.methods_for). Still served with the method, with its status.
+not-offered-by:
+  - REMOVE_FAMILY_CONNECTOR
+  - CREATE_SECTION_VIEW
+  - CREATE_MEP_RUNS
+  - CREATE_SCHEDULE
+  - DELETE_ELEMENTS
 
 # What must be true BEFORE it runs, so it fails early with something
 # useful instead of deep inside a transaction (docs/09 s2).
