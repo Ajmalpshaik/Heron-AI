@@ -683,7 +683,7 @@ def claude_side():
             "that first.",
             "Claude Code's memory of the old PC does not come across. Heron "
             "hands Claude a job's",
-            "  whole method with heron_method, so a new PC no longer needs it."):
+            "  method with heron_method, so a new PC no longer needs it."):
         print("  %-4s %s" % (NOTE if not line.startswith("  ") else "", line))
 
 

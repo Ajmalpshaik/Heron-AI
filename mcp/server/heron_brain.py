@@ -1196,7 +1196,7 @@ def lookup(request, revit=None, question=False, ceiling=None):
 
 def method(skill_id, revit=None, stage=None):
     """
-    One job's whole method - the steps in order, what must be true first, and
+    One job's method - the steps in order, what must be true first, and
     every capability it uses with its risk and status - or the list of jobs
     when `skill_id` is empty. None when no job has that id.
 

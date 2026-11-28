@@ -126,7 +126,7 @@ Requirement -> Search -> Plan -> Generate -> Review -> Build -> Test -> Deploy
 </details>
 
 > **As built (2026-10-18):** the Orchestrator is the host, Claude Code ([D-01](DECISIONS.md)), and
-> Heron controls no step. A job of several steps is handed over whole by `heron_method`: what must be
+> Heron controls no step. A job of several steps is handed over by `heron_method` (a long one as a summary, then one stage at a time): what must be
 > true first, the steps in order from the skill's file in [`brain/skills/`](../brain/skills/), and each
 > capability with its risk and status on this Revit ([04 §8.7](04-heron-mcp.md)). The host then sends
 > the steps one call at a time. The Workflow Engine is built as

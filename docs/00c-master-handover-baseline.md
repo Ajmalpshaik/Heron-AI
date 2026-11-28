@@ -969,7 +969,7 @@ SMART DUCT DIMENSIONING
 > for, in their own words, and names the **capabilities** it needs — never a fragment — so a fragment can
 > be replaced, split or retired without a skill changing ([D-29](DECISIONS.md), `brain/heron_skill.py`).
 > The capability registry finds who provides each one. A job of several steps, such as building a family,
-> is served whole by `heron_method`. There is no *smart duct dimensioning* skill; dimensioning between MEP
+> is served by `heron_method`. There is no *smart duct dimensioning* skill; dimensioning between MEP
 > runs is one fragment, `create-dimension` (`dimension-mep-runs` until that card was retired into it). A skill is proved in two halves, its words and a model
 > (`python tools/prove-skill.py`).
 
