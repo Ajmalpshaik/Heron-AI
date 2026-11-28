@@ -22,7 +22,8 @@
 - **What a modeller sees.** Setup, once, as today. After that, Heron's chat side updates from inside
   Claude Code (`/plugin` - Update), and a new Setup is needed only when the Revit add-in changes.
 - **The owner decides three things** - §9. The first is answered **yes**, on 2026-11-28
-  ([D-210](../../decisions/D-210.md)); the other two are still open.
+  ([D-210](../../decisions/D-210.md)), and the second - **a `plugin-release` branch of this repository** - the same
+  day ([D-212](../../decisions/D-212.md), section 11). The third, auto-update, is still open.
 
 ## 2. Where Heron is today (read in code, 2026-11-27)
 
@@ -106,8 +107,9 @@ Claude Code installs Node packages for a plugin, **never Python**; the documente
 - Setup keeps putting the add-in into every Revit year. Nothing changes there.
 - **Setup's "Add Heron to Claude Code" tick changes**: instead of writing the user-scope `heron`
   server, it runs `claude plugin marketplace add Ajmalpshaik/Heron-AI` and
-  `claude plugin install heron@<marketplace> --scope user`, and **removes the old user-scope entry**
-  it wrote before - otherwise the modeller has two Herons and every tool twice.
+  `claude plugin install heron@heron --scope user`, and **removes the old user-scope entry**
+  it wrote before - otherwise the modeller has two Herons and every tool twice. Both commands work
+  only after the first release that carries the publishing workflow is published (section 11).
 - **Skew between the two halves is already handled**: an add-in and a server on different protocol
   numbers are refused with a message. Recommended addition: the server says *"run Setup <version>"*
   when the add-in's release is older than the plugin's.
@@ -117,9 +119,10 @@ Claude Code installs Node packages for a plugin, **never Python**; the documente
 - **One number.** `plugin.json`'s `version` is `heron-products.json`'s `version`, written by the build,
   and `check-products` fails if they differ. With `version` set, Claude Code moves a modeller to a new
   version **only when that number changes** - pushes to `main` never reach them.
-- **Where Claude Code fetches it from.** Recommended: a `.claude-plugin/marketplace.json` at the
+- **Where Claude Code fetches it from.** A `.claude-plugin/marketplace.json` at the
   repository root, pointing at a **`plugin-release` branch written only by the release workflow**,
   holding only the built folder. `main` stays the developer repository; a modeller never sees it.
+  **Built 2026-11-28** ([D-212](../../decisions/D-212.md), section 11).
 - **Auto-update is off by default for a marketplace that is not Anthropic's.** Updating is then
   `/plugin` - Installed - Update. Recommended: Setup turns auto-update on for Heron's marketplace
   (a per-marketplace setting the docs name; its exact key is **to confirm**).
@@ -146,6 +149,7 @@ Claude Code installs Node packages for a plugin, **never Python**; the documente
 | Build Heron's chat side as a Claude Code plugin, as above? | **Yes** - in small pull requests: build script, release branch, Setup's tick, then the PC checks |
 | | **Answered 2026-11-28: yes.** Asked *"Should I start building the plugin now (items 2 to 5), in small pull requests? Type yes, or say not now."*, he typed *"Yes, start it"* in his local session - [D-210](../../decisions/D-210.md), **Proposed** until he confirms it where it can be read (D-206) |
 | Publish it from a `plugin-release` branch of this repository, or a second repository? | **A branch of this one** - one place, one release workflow |
+| | **Answered 2026-11-28: a branch of this one.** Asked *"Where should Heron's finished plugin be published, so modellers' Claude Code can download and update it?"*, he chose *"Branch of Heron (Recommended)"* over *"A second repo"* in his local session - [D-212](../../decisions/D-212.md), **Proposed** until he confirms it where it can be read (D-206) |
 | Auto-update on for modellers? | **On** - a version only moves when a release is published, so it is the same as running a new Setup |
 
 ## 10. Read and built on 2026-11-28
@@ -227,8 +231,8 @@ Found the same day, not keyed on a folder: the server's advice for a store that 
 - **Longest path, measured 2026-11-28:** 114 characters inside the folder; under
   `C:\Users\<20-character name>\.claude\plugins\cache\heron\heron\0.3.0\` (70) that is **184 of Windows' 260**. The
   marketplace's name is assumed to be `heron`; a longer one is a re-measure - the test prints it every run.
-- **Not built:** hooks (section 5), slash commands, allow rules, a marketplace file, a release workflow,
-  Setup's tick. **Nothing is published.**
+- **Not built:** hooks (section 5), slash commands, allow rules, Setup's tick. The marketplace file and the
+  release workflow are part 8 (section 11). **Nothing is published.**
 
 ### The slash commands - item 3 of D-210, part P6
 
@@ -274,6 +278,59 @@ Found the same day, not keyed on a folder: the server's advice for a store that 
   `/heron:family-creation` asked for the summary and then its first stage, `classification`.
   **Owed on the owner's Windows PC:** the same, there - [Group RF](../../needs-checking/group-rf.md),
   issue [#1523](https://github.com/Ajmalpshaik/Heron-AI/issues/1523).
+
+## 11. Part 8 - published from a `plugin-release` branch, built 2026-11-28
+
+Answers the second question of section 9 ([D-212](../../decisions/D-212.md), **Proposed**). **Nothing was released**:
+no tag, no GitHub release, no push to `plugin-release`. The first release is the owner's.
+
+- **The marketplace** is [`.claude-plugin/marketplace.json`](../../../.claude-plugin/marketplace.json) on `main`:
+  named `heron` - not one of the reserved names in Claude Code's marketplace reference, read that day - with one
+  plugin, `heron`, fetched from this repository on GitHub at ref `plugin-release`. No `sha`, which would never move,
+  and no version, which is `plugin.json`'s alone.
+- **The branch** is an orphan holding only the built folder at its root. Only
+  [`plugin-release.yml`](../../../.github/workflows/plugin-release.yml) writes it, when a person publishes a release
+  that is not a pre-release - the event Setup's own download waits for. One commit per release, named
+  *"Heron plugin X.Y.Z - release vX.Y.Z"*, its one parent the last release's, never forced.
+  [`tools/publish-plugin.py`](../../../tools/publish-plugin.py) holds every rule: the tag is `v` and the version, the
+  version is new to the branch, the branch's newest commit is one of its own.
+- **A rehearsal** runs on a pull request touching what goes into the plugin, or by hand: it builds the plugin, runs
+  `check-products --plugin`, runs `claude plugin validate --strict` on the marketplace, on a marketplace pointing at
+  the branch's layout and on that layout - Claude Code 2.1.332 from npm, pinned in the workflow - and makes the
+  release's commit without sending it. [`tests/test_plugin_marketplace.py`](../../../tests/test_plugin_marketplace.py)
+  runs the branch's rules on a throwaway repository in every pull request.
+
+**The install line works only after the first release that carries this workflow is published:**
+
+```text
+claude plugin marketplace add Ajmalpshaik/Heron-AI
+claude plugin install heron@heron
+```
+
+Until Setup's tick installs the plugin itself (section 6), it is not for a PC where Setup already added Heron to
+Claude Code: both would start. For the same reason the README does not carry it yet, though `claude plugin validate`
+advises one; it goes in with the part that changes Setup's tick.
+
+**Measured 2026-11-28 in a cloud container, Claude Code 2.1.332**, with no sign-in:
+
+- `claude plugin validate --strict` passed on the repository's marketplace, on a scratch marketplace pointing at the
+  branch's layout, and on that layout. Two notes that change no verdict: no `network.hosts` in `plugin.json`, and the
+  README install line above.
+- On a throwaway repository with the marketplace on `main` and `plugin-release` written by `tools/publish-plugin.py`,
+  its source given as a git address at ref `plugin-release`: `claude plugin marketplace add` and
+  `claude plugin install heron@heron` installed **0.3.0, 63 MB** in Claude Code's plugin cache, with no `.git` in it.
+  After a 0.3.1 release, `claude plugin update heron@heron` moved it to 0.3.1 and left the 0.3.0 folder beside it. A
+  wrong tag and a lower version were refused, and nothing was sent.
+- Not measured: GitHub's own source, and whether the repository's rules let the workflow's token push the branch.
+  Both are the first real release.
+- **That release needs a new number.** `v0.3.0` was published on 2026-11-22, before this workflow existed, and
+  `manifestVersion` is still `0.3.0` - so the first release to fill `plugin-release` raises it first, and is tagged
+  `v` and the new number.
+
+**Owed on a clean Windows user, after the first real release:** `claude plugin marketplace add Ajmalpshaik/Heron-AI`
+and `claude plugin install heron@heron`; how much each downloads; an update to the next release; an uninstall that
+leaves Heron's data alone - [Group RG](../../needs-checking/group-rg.md), issue
+[#1531](https://github.com/Ajmalpshaik/Heron-AI/issues/1531). Section 8's other checks wait for their parts.
 
 ## Sources
 

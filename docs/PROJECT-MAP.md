@@ -199,6 +199,7 @@ Both let `tools/` name it, because a checker has to be able to name what it chec
 | `.claude/` | House rules as skills, Heron's own background agents, and the development hooks — [below](#claude--house-rules-heron-agents-and-the-development-hooks) | [`.claude/skills/README.md`](../.claude/skills/README.md) · [`heron-session`](../.claude/skills/heron-session/SKILL.md) |
 | `.codex/` | The same agents for a second host, pointing at the same skills - compare `ls .claude/agents .codex/agents` before assuming a `.claude` agent has its `.codex` copy. **A `.codex` copy carries no tool list**, so there the read-only rule is an instruction in the agent's text, not a restriction | `.codex/config.toml` |
 | `.github/` | CI, plus the pull-request and issue templates, `CODEOWNERS` and `dependabot.yml` — [below](#github--ci) | [`workflows/gates.yml`](../.github/workflows/gates.yml) |
+| `.claude-plugin/` | One file, `marketplace.json`: the marketplace a modeller's Claude Code installs Heron's plugin from. It names where the plugin is fetched - this repository's `plugin-release` branch - never what is in it ([D-212](decisions/D-212.md)) | `.claude-plugin/marketplace.json` |
 | `.mcp.json` | Not a folder: the file that registers Heron's MCP server with the host, with the `HERON_CLIENT_ID` that `.codex/config.toml` must match | `.mcp.json` |
 
 #### `.claude/` — house rules, Heron agents and the development hooks
@@ -234,7 +235,8 @@ Beside it:
 - `windows.yml` — the installer's Windows half, on a Windows runner with no Revit, for a pull request
   that touches it or `mcp/`;
 - `weekly.yml` — did the outside world break the build while nobody pushed;
-- `release.yml` — builds a release's assets.
+- `release.yml` — builds a release's assets;
+- `plugin-release.yml` — when a person publishes a release, adds its plugin to the `plugin-release` branch, one commit, never forced; on a pull request that touches the plugin, rehearses and sends nothing ([D-212](decisions/D-212.md)).
 
 ---
 

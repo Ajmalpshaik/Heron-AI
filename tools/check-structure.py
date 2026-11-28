@@ -63,6 +63,11 @@ SUPPORT = {
     # no evidence. Found by row 5b-51's own commit. Same kind as .claude -
     # host configuration that ships with the repository and touches nothing.
     ".codex": "the same agents and MCP server, for a second host",
+    # Claude Code reads a marketplace from `.claude-plugin/marketplace.json`
+    # at the root of the default branch - the one name and place it looks.
+    # One file, and it names where the plugin is fetched from, never what is
+    # in it: the plugin itself is on the plugin-release branch (D-212).
+    ".claude-plugin": "the marketplace Claude Code installs Heron's plugin from",
 }
 
 # ------------------------------------------------------------------ layering

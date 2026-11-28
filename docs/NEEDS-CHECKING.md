@@ -1783,3 +1783,7 @@ Step 6 is finished, and not before. At that point:
 ## Group RF - Heron's jobs as Claude Code skills, in a real chat on the owner's Windows PC (2026-11-28)
 
 **Its own file:** [`needs-checking/group-rf.md`](needs-checking/group-rf.md)
+
+## Group RG - Heron's plugin from its own marketplace: the first release that fills plugin-release, and an install on a clean Windows user (2026-11-28)
+
+**Its own file:** [`needs-checking/group-rg.md`](needs-checking/group-rg.md)

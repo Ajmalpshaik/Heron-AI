@@ -253,6 +253,7 @@
 | [D-209](#d-209--on-a-near-tie-with-a-write-the-card-that-changes-nothing-goes-first---inside-the-status-nudges-span-never-wider) | On a near-tie with a write, the card that changes nothing goes first - inside the status nudge's span, never wider | ❌ Rejected · 2026-11-26 - no margin is safe, nothing built |
 | [D-210](#d-210--herons-chat-side-is-built-as-a-claude-code-plugin-in-small-pull-requests-the-plugin-slash-commands-for-common-jobs-its-methods-as-skills-and-no-question-each-time-for-a-tool-that-only-reads) | Heron's chat side is built as a Claude Code plugin, in small pull requests: the plugin, slash commands for common jobs, its methods as skills, and no question each time for a tool that only reads | ⏳ Proposed · 2026-11-28 - his yes was heard in his local session; confirm it where it can be read (D-206) |
 | [D-211](#d-211--article-9-is-reworded-in-plain-words-with-its-meaning-kept-and-the-room-it-frees-gives-every-chat-the-modellers-scope-their-selection-or-the-active-view-only-what-was-asked-the-model-kept-whole) | Article 9 is reworded in plain words with its meaning kept, and the room it frees gives every chat the modeller's scope: their selection or the active view, only what was asked, the model kept whole | ✅ Accepted · 2026-11-28 |
+| [D-212](#d-212--herons-plugin-is-published-from-a-plugin-release-branch-of-this-repository-written-only-by-a-workflow-one-commit-per-published-release-never-forced) | Heron's plugin is published from a plugin-release branch of this repository: written only by a workflow, one commit per published release, never forced | ⏳ Proposed · 2026-11-28 - his answer was heard in his local session; confirm it where it can be read (D-206) |
 | [D-213](#d-213--a-session-brings-the-main-heron-folder-up-to-date-itself-by-fast-forward-only-once-its-checks-pass) | A session brings the main Heron folder up to date itself, by fast-forward only, once its checks pass | ⏳ Proposed · 2026-11-28 - his yes was heard in his local session; confirm it where it can be read (D-206) |
 
 ## Format
@@ -1970,6 +1971,25 @@ add-in still comes from Setup.
 Article 9 is reworded in the Constitution in plain words, its preview, its Keep or Discard, its one exception and that exception's compensating control all kept; how the add-in does it, and which decision superseded which, stay in D-99, D-126 and D-138. Article 9 now says *Ask to Keep* is in Heron's Settings (D-150; row 5b-1533), and Article 12c's *"across an `ExternalEvent` boundary"* becomes *"from an earlier step"*. The 276 characters it freed in every chat's instructions go to one house-rule paragraph for every modeller: their selection or the active view, only what was asked, the model kept whole, and a check after a change.
 
 **Full record:** [`decisions/D-211.md`](decisions/D-211.md)
+
+## D-212 — Heron's plugin is published from a plugin-release branch of this repository: written only by a workflow, one commit per published release, never forced
+
+**Status:** Proposed · **Date:** 2026-11-28 · **Asked:** Ajmal PS, 2026-11-28, in his local Claude Code session on his PC: *"Where should Heron's finished plugin be published, so modellers' Claude Code can download and update it?"*, with the choices *"Branch of Heron (Recommended)"* and *"A second repo"*. He chose *"Branch of Heron (Recommended)"*.
+**Written by:** a cloud session started from that local session, on its relay of his answer. This session did not hear him, and a local session has no link anybody else can open - so, by [D-206](decisions/D-206.md) item 3, this is **Proposed** until he confirms it where it can be read: a comment on the pull request that adds this record, or a claude.ai session. Then the Status becomes Accepted and an **Accepted:** line links that confirmation.
+**Numbering:** D-212 is the id `tools/next-id.py` printed free on 2026-11-28, with `origin/main` at `c59fcffc` ending at D-211 and no open pull request or branch holding a later decision.
+**Answers:** the second of the three questions in section 9 of [the plugin design](work-notes/plans/claude-code-plugin-2026-11-27.md) - *"Publish it from a `plugin-release` branch of this repository, or a second repository?"*. The third - auto-update on for modellers - **stays open**; nothing here answers it.
+**Keeps:** [D-210](decisions/D-210.md) - the plugin's one version is `heron-products.json`'s `manifestVersion`, written by the build · [D-189](decisions/D-189.md) - nothing here pulls a checkout; Claude Code fetches the branch into a folder of its own · R-87 - no knowledge store ships, refused by the build as before · [`release.yml`](../.github/workflows/release.yml)'s draft - a release reaches a modeller only once a person publishes it
+**Affects:** [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json), new · [`.github/workflows/plugin-release.yml`](../.github/workflows/plugin-release.yml), new · [`tools/publish-plugin.py`](../tools/publish-plugin.py), new · [`tests/test_plugin_marketplace.py`](../tests/test_plugin_marketplace.py), new · [`tools/check-structure.py`](../tools/check-structure.py) - `.claude-plugin` a supporting folder · section 9 and section 11 of the design
+
+
+The marketplace is `.claude-plugin/marketplace.json` on `main`, named `heron`, with one plugin fetched from this
+repository at ref `plugin-release`. That branch is an orphan holding only the built plugin folder, and only
+`plugin-release.yml` writes it: one commit per release a person publishes, named with the version, never forced. The
+rules - the tag is `v` and the version, the version is new, the newest commit is the workflow's own - are in
+`tools/publish-plugin.py`. A pull request touching the plugin rehearses with `claude plugin validate --strict` and sends
+nothing. Nothing is released by this; the install line works only after the first release.
+
+**Full record:** [`decisions/D-212.md`](decisions/D-212.md)
 
 ## D-213 — A session brings the main Heron folder up to date itself, by fast-forward only, once its checks pass
 
