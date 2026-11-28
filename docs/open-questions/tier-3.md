@@ -1368,8 +1368,10 @@ plugin-directory check of 2026-11-26 asked for that value to be neutral. Read fr
 **The question, in a modeller's words: should every Heron install go on sending your PC's name, or a neutral
 name that is the same for everybody?**
 
-- **Change it, in one pull request of its own.** `.mcp.json`, the documented commands, the tests' literal and
-  [`.codex/config.toml`](../../.codex/config.toml) (which carries the same value) change together, and then
+- **Change it, in one pull request of its own.** `.mcp.json`, the documented commands, the tests' literal,
+  [`.codex/config.toml`](../../.codex/config.toml) and, since 2026-11-28, the Claude Code plugin's
+  [`platform/Heron.Plugin/.mcp.json`](../../platform/Heron.Plugin/.mcp.json) (both carry the same value -
+  `tests/test_config_and_health.py` fails while one differs, and `tools/build-plugin.py` refuses to build) change together, and then
   Setup is run again on your PC - a PC check, owed after it merges.
 - **Leave it.** It stays `"ajmal-pc"`; nothing changes, and every install goes on carrying your PC's name.
 - **Recommended:** change it, to a value such as `"heron-pc"`, in its own pull request.
