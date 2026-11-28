@@ -1775,3 +1775,7 @@ Step 6 is finished, and not before. At that point:
 ## Group RD - four reports given an answer that can read empty: DESCRIBE_BLANK_PARAMETERS v2, REPORT_ELEMENT_DEPENDENCIES v3, REPORT_CONSTRAINTS v3, REPORT_LEVEL_ELEVATIONS v8 - DRAFT until proved (2026-11-26)
 
 **Its own file:** [`needs-checking/group-rd.md`](needs-checking/group-rd.md)
+
+## Group RE - Heron's slash commands in a real Claude Code chat: its MCP prompts listed under `/`, one run, its one-word argument passed (D-210 item 3) - on the owner's Windows PC, no Revit needed - BUILT, NOT SEEN IN A CHAT (2026-11-28)
+
+**Its own file:** [`needs-checking/group-re.md`](needs-checking/group-re.md)

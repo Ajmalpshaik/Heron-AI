@@ -7409,6 +7409,14 @@ from heron_inventory import (                               # noqa: E402,F401
     revit_families, revit_export_check, revit_imports, revit_annotation,
     revit_systems, revit_parameters, revit_groups)
 
+# THE PROMPTS, the slash commands a modeller starts a common job with (D-210
+# item 3, docs/04 §8.13). After every tool, because what each prompt names is
+# checked against what this process serves - the library alone off Windows
+# (D-132) - and a prompt that names another tool is left out. A prompt is not
+# a tool, so registering one here moves no tool in the order a host is served.
+import heron_prompts                                        # noqa: E402
+heron_prompts.register(server, tools.LIBRARY if core.LIBRARY_ONLY else tuple(tools.TOOLS))
+
 
 if __name__ == "__main__":
     # BELT AND BRACES FOR D-132. This file was run, so off Windows the library
