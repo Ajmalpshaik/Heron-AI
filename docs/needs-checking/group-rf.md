@@ -20,7 +20,8 @@ its job id, once, before the first step; the method itself stays in `brain/skill
 `claude --plugin-dir <build>/heron-plugin` from a fresh build: the session listed one `heron:<job>` skill per job;
 the server connected as `plugin:heron:heron`; *"I want to lay out the air terminals in this room"* and
 `/heron:terminal-layout` each made `mcp__plugin_heron_heron__heron_method` with `job` `terminal-layout` the first
-call; `/heron:terminal-layout` quoted the skill's first sentence word for word; `/heron:no-such-job` loaded nothing.
+call; `/heron:terminal-layout` quoted the skill's first sentence word for word; `/heron:no-such-job` loaded nothing;
+and `/heron:family-creation`, a job `heron_method` serves in stages, asked for its summary and then its first stage.
 `claude plugin validate` passed, plain and `--strict`. **Never run on Windows, and never from an install** - a
 `--plugin-dir` session is not a marketplace install, and the container had no user-scope `heron` beside it.
 
@@ -31,4 +32,4 @@ Heron beside the plugin (section 10 of the design): note which server answered e
 | ID | Do this | Pass looks like |
 |---|---|---|
 | **RF1** | In that folder: `claude --plugin-dir <checkout>\dist\heron-plugin`, then type `/heron:` | One `heron:<job>` entry per job `python tools/build-plugin.py --list` counts, and `/mcp` shows `plugin:heron:heron` connected. A FAIL - none listed, or the server not connected - proves Windows loads a plugin folder differently from the container |
-| **RF2** | In the same chat: *"lay out the air terminals in this room"*, then a new chat with `/heron:terminal-layout` | Each time the first Heron call is `heron_method` with `job` `terminal-layout`, before any `revit_` call, and no file in a Heron folder is read to work the job out |
+| **RF2** | In the same chat: *"lay out the air terminals in this room"*, then a new chat with `/heron:terminal-layout`, then one with `/heron:family-creation` | Each time the first Heron call is `heron_method` with that job, before any `revit_` call, and no file in a Heron folder is read to work the job out. For `family-creation` the first call gets its summary and the next names a `stage` |
