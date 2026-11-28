@@ -27,7 +27,11 @@ purpose: |
   HOW TO READ IT. "-> CAPABILITY (STATUS)" after a step is the Heron
   capability that does it, and its status on its card when this was written;
   the list of uses served after this method gives each one's status now, and
-  that list wins. A change goes through revit_change, a read through
+  that list wins. Five that the stages name are not in that list, so this
+  method is not offered beside ordinary project requests about ducts:
+  DELETE_ELEMENTS, REMOVE_FAMILY_CONNECTOR, CREATE_SCHEDULE,
+  CREATE_SECTION_VIEW and CREATE_MEP_RUNS - for those, the status written
+  beside them is the one to go by, and heron_resolve gives it now. A change goes through revit_change, a read through
   revit_read, a view or a selection on screen through revit_show, and a
   picture through revit_view_image, which is a tool and not a capability.
   "-> no Heron tool yet:" is a step Heron cannot do - it says what the
@@ -1351,6 +1355,17 @@ utterances:
 # FRAME_ELEMENTS_IN_CAMERA (issue #1032). Named in the purpose only as what
 # NOT to use, so not listed: EXPORT_VIEW_IMAGE (not the way to look) and
 # TRANSFER_MATERIALS_BETWEEN_DOCUMENTS (project to project, not a family).
+#
+# NAMED IN THE STAGES, WITH THEIR STATUS, BUT NOT LISTED HERE - ON PURPOSE
+# (2026-11-28). heron_skill.methods_for offers this method beside any request
+# that shares one word with its name or utterances AND returns one of these
+# needs. The word "duct" (an air terminal "with a duct connector") is shared
+# with every duct request, so listing these five made the family method show
+# up beside "delete this duct", "make a schedule of duct sizes", "create a
+# section through these ducts" and "draw a duct from here to there", where it
+# had never been offered: DELETE_ELEMENTS, REMOVE_FAMILY_CONNECTOR,
+# CREATE_SCHEDULE, CREATE_SECTION_VIEW, CREATE_MEP_RUNS. They come back here
+# once methods_for can tell a project request from a family one.
 needs:
   - REPORT_FAMILY_TEMPLATE
   - REPORT_PROJECT_UNITS
@@ -1408,27 +1423,22 @@ needs:
   - DRAW_FAMILY_DETAIL_LINES
   - SET_FAMILY_SWEEP_PROFILE
   - IMPORT_CAD
-  - DELETE_ELEMENTS
   - LIST_CATEGORIES
   - CREATE_LINE_PATTERN
   - SET_OBJECT_STYLE
   - SET_MATERIAL_PROPERTIES
   - CREATE_OPENING
   - REPORT_FAMILY_CONNECTORS
-  - REMOVE_FAMILY_CONNECTOR
   - FIND_LIBRARY_FAMILIES
   - LIST_MATERIALS
-  - CREATE_SECTION_VIEW
   - PLACE_HOSTED_FAMILY
   - PLACE_FAMILY_ON_FACE
   - PLACE_LINE_BASED_FAMILY
   - REPORT_MIRRORED_INSTANCES
   - REPORT_PARAMETER_INVENTORY
-  - CREATE_MEP_RUNS
   - REPORT_CONNECTORS
   - TRACE_CONNECTIVITY
   - CONNECT_OPEN_ENDS
-  - CREATE_SCHEDULE
   - READ_SCHEDULE_CONTENTS
   - READ_MODEL_WARNINGS
   - CHECK_FAMILY_STANDARDS
