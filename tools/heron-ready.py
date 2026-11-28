@@ -606,8 +606,72 @@ def revit_side():
     print("         you ask - a refusal costs a turn.")
 
 
+#: The oldest Claude Code that gives a chat all of Heron's rules. Claude Code's
+#: MCP page, "Tool search for MCP server authors" (code.claude.com/docs/en/mcp):
+#: "Before v2.1.296, the shorter limit was 2,048 characters" - so an older one
+#: cuts the server's instructions in the middle of Article 9, and every Article
+#: after it never reaches the chat (row 5b-2081).
+CLAUDE_CODE_AT_LEAST = (2, 1, 296)
+
+
+def _claude_version_text():
+    """What `claude --version` prints, or None when it cannot be run here -
+    the Claude app alone puts no `claude` on PATH."""
+    try:
+        import subprocess
+        done = subprocess.run(["claude", "--version"], stdout=subprocess.PIPE,
+                              stderr=subprocess.DEVNULL, timeout=15)
+        return done.stdout.decode("utf-8", "replace").strip() or None
+    except Exception:                                   # noqa: BLE001 - not on PATH is an answer
+        return None
+
+
+def claude_version(text):
+    """(major, minor, patch) out of what `claude --version` printed - "2.1.330
+    (Claude Code)" - or None when it holds no version."""
+    found = re.search(r"(\d+)\.(\d+)\.(\d+)", text or "")
+    return tuple(int(n) for n in found.groups()) if found else None
+
+
+#: THE CLAUDE APP RUNS ITS OWN COPY. Claude Code's desktop page: the Code tab
+#: "runs its own copy of Claude Code, which has its own version number ... it
+#: can differ from the `claude` command in your terminal, and updating one
+#: doesn't update the other". So whatever `claude --version` says, the app's
+#: copy is read in the app - and this line says how, every time.
+IN_THE_APP = ("The Claude app runs its own copy: type /status in a chat there "
+              "and read the Claude Code row.")
+
+
+def claude_code_version(text=None):
+    """The one check of Claude Code itself: new enough to give a chat every rule.
+    `text` is what `claude --version` printed; None runs it. That is the
+    terminal's copy only, so the app's is named as /status every time, and a
+    version that cannot be read is a note - the Claude app alone puts no
+    `claude` on PATH."""
+    said = _claude_version_text() if text is None else text
+    have = claude_version(said)
+    least = ".".join(str(n) for n in CLAUDE_CODE_AT_LEAST)
+    if have is None:
+        say(NOTE, "Claude Code's version could not be read here - it must be "
+                  "%s or later" % least,
+            ["An older one gives a chat only the first 2,048 characters of "
+             "Heron's rules.", IN_THE_APP])
+    elif have < CLAUDE_CODE_AT_LEAST:
+        say(FIX, "Claude Code %s in this terminal is older than %s, so a chat is "
+                 "given only the first 2,048 characters of Heron's rules"
+                 % (".".join(str(n) for n in have), least),
+            ["Update it with `claude update`, then start a new chat.",
+             "The Claude app's own copy: Help > Check for Updates..., then a new "
+             "chat."])
+    else:
+        say(OK, "Claude Code %s in this terminal - %s or later, so a chat is "
+                "given all of Heron's rules"
+                % (".".join(str(n) for n in have), least), IN_THE_APP)
+
+
 def claude_side():
     head("8. Claude Code (it keeps these itself - check them once)")
+    claude_code_version()
     for line in (
             "Open Claude Code IN THIS FOLDER, answer YES to trusting it, and "
             "approve the heron server",
@@ -695,14 +759,7 @@ def _claude_side_facts():
     home = configured or os.path.join(os.path.expanduser("~"), ".claude")
     state = (os.path.join(configured, ".claude.json") if configured
              else os.path.join(os.path.expanduser("~"), ".claude.json"))
-    facts = {"config_folder": home, "version": None}
-    try:
-        import subprocess
-        done = subprocess.run(["claude", "--version"], stdout=subprocess.PIPE,
-                              stderr=subprocess.DEVNULL, timeout=15)
-        facts["version"] = done.stdout.decode("utf-8", "replace").strip() or None
-    except Exception:                                   # noqa: BLE001 - not on PATH is an answer
-        pass
+    facts = {"config_folder": home, "version": _claude_version_text()}
     facts["user_settings"] = _settings_facts(os.path.join(home, "settings.json"))
     facts["folder_settings_local"] = _settings_facts(
         os.path.join(ROOT, ".claude", "settings.local.json"))
