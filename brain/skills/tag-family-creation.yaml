@@ -4,7 +4,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: tag-family-creation
-name: Build a tag family - a pipe, duct or equipment tag - with its labels, box and label type, then load it
+name: Build a tag family - pipe, duct or equipment tag - with labels, box and label type, then load it
 domain: revit.families
 # Heron wrote this one. D-66: a unit that ships with Heron says where it
 # came from, so an IMPORTED one that says nothing stands out.
