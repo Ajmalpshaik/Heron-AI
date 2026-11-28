@@ -302,7 +302,9 @@ advises one; it goes in with the part that changes Setup's tick.
   `v` and the new number.
 
 **Owed on a clean Windows user, after the first real release:** `claude plugin marketplace add Ajmalpshaik/Heron-AI`
-and `claude plugin install heron@heron`; how much each downloads; then section 8's checks.
+and `claude plugin install heron@heron`; how much each downloads; an update to the next release; an uninstall that
+leaves Heron's data alone - [Group RG](../../needs-checking/group-rg.md), issue
+[#1531](https://github.com/Ajmalpshaik/Heron-AI/issues/1531). Section 8's other checks wait for their parts.
 
 ## Sources
 

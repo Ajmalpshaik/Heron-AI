@@ -320,9 +320,9 @@ def prepare(repo, plugin, tag, remote, tmpl, strict):
             raise Refused("--push needs --tag, the release's tag")
         tag = "v" + version
     elif tag != "v" + version:
-        rule("The release is tagged %s, and the plugin built from it says %s - "
-             "the tag is `v` and the version in platform/heron-products.json."
-             % (tag, version))
+        rule("The release is tagged %s, but the plugin built from it says %s - "
+             "the tag must be `v` followed by manifestVersion in "
+             "platform/heron-products.json." % (tag, version))
 
     tip = remote_tip(repo, remote)
     parent, old_version = None, None
