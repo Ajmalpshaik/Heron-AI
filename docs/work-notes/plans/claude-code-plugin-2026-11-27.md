@@ -233,6 +233,28 @@ command only where that copy of Heron carries it (`shipped_tool()` in `heron_bra
 - **Not built:** hooks (section 5), slash commands, allow rules, a marketplace file, a release workflow,
   Setup's tick. **Nothing is published.**
 
+### The slash commands - item 3 of D-210, part P6
+
+- **MCP prompts, served by Heron's own server**, which Claude Code lists as commands: `PROMPTS` in
+  [`heron_prompts.py`](../../../mcp/server/heron_prompts.py), registered once after every tool in
+  [`heron_mcp_server.py`](../../../mcp/server/heron_mcp_server.py); `python mcp/server/heron_prompts.py` lists them.
+  Each is the sentence a modeller would type anyway - it names a job and orders no tool call (D-01, D-202). A prompt
+  whose words name a tool the process does not serve is left out, so off Windows none points at a `revit_` tool.
+  [04 §8.13](../../04-heron-mcp.md) says what each is; pull request
+  [#1522](https://github.com/Ajmalpshaik/Heron-AI/pull/1522).
+- **Nothing is in the plugin's folder for them.** The prompts come from the server, so the plugin carries them with
+  `mcp/server` and `tools/build-plugin.py` was not touched.
+- **Held by** [`tests/test_mcp_stdio.py`](../../../tests/test_mcp_stdio.py) over a real stdio server - every prompt,
+  with and without its argument, and two negative cases - and by `tests/test_tool_registry.py` for D-202.
+- **Run headless on 2026-11-28**, `claude -p` 2.1.332 in a Linux cloud container, the server given by
+  `--mcp-config` under the user-scope entry's name, `heron`: every prompt listed as `mcp__heron__<prompt>`, `/mcp__heron__build-family door` ran with its argument,
+  and `/heron:build-family door` was sent as plain words, not run - that form is the interactive `/` menu's. With
+  the built folder loaded by `--plugin-dir`, the server connected as `plugin:heron:heron`, every prompt was listed
+  as `mcp__plugin_heron_heron__<prompt>`, and `/mcp__plugin_heron_heron__build-family door` ran - once the server
+  had connected; sent as the first message, while it was starting, it was answered as not installed.
+  **Owed on the owner's Windows PC:** the `/` menu's names, one prompt run from it, and the names under the plugin -
+  [Group RE](../../needs-checking/group-re.md), issue [#1521](https://github.com/Ajmalpshaik/Heron-AI/issues/1521).
+
 ### The jobs as skills - item 4 of D-210, part P7
 
 - **Generated, one source.** `tools/build-plugin.py` writes `skills/<job>/SKILL.md` for each job `heron_method` lists,
@@ -241,14 +263,18 @@ command only where that copy of Heron carries it (`shipped_tool()` in `heron_bra
   is typed twice: a job taken out of `brain/skills` drops its skill at the next build.
 - **What a skill holds.** `name` is the job's id; `description` is the job's `name` and one sentence; `when_to_use`
   is the modeller's words for it from the job's `utterances`. The body only sends Claude to `heron_method` with that
-  id, once, before the first step - **the method itself is never pasted**. The build stops on a job that will not
-  load, an id that is not a skill name, or a `description` and `when_to_use` over Claude Code's listing cap of
-  **1,536** characters together; `python tests/test_build_plugin.py` prints the longest.
+  id before the first step - **the method itself is never pasted**. A job that declares `stages`, which
+  `heron_method` serves as a summary and then one stage per call ([#1508](https://github.com/Ajmalpshaik/Heron-AI/pull/1508)),
+  says so: the summary first, then `stage` as each stage starts; every other job says *once*. The build stops on a job
+  that will not load, an id that is not a skill name, stages that do not cut the method, or a `description` and
+  `when_to_use` over Claude Code's listing cap of **1,536** characters together; `python tests/test_build_plugin.py`
+  prints the longest, and which jobs come in stages.
 - **Validated** with `claude plugin validate` on Claude Code **2.1.332**, plain and `--strict`: passed, every skill
   listed as `heron:<job>`; the one warning is still **no icon**.
 - **Run in a Linux cloud container** on the same release, with `claude --plugin-dir`: the session listed every
   `heron:<job>` skill, the server connected as `plugin:heron:heron`, and both *"I want to lay out the air terminals
-  in this room"* and `/heron:terminal-layout` made `heron_method` with `terminal-layout` the first call.
+  in this room"* and `/heron:terminal-layout` made `heron_method` with `terminal-layout` the first call, and
+  `/heron:family-creation` asked for the summary and then its first stage, `classification`.
   **Owed on the owner's Windows PC:** the same, there - [Group RF](../../needs-checking/group-rf.md),
   issue [#1523](https://github.com/Ajmalpshaik/Heron-AI/issues/1523).
 

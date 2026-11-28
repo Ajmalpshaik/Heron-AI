@@ -40,9 +40,12 @@ WHAT THIS PROVES
       when_to_use fit Claude Code's 1,536-character listing cap (the longest
       PRINTED), its body sends Claude to heron_method with that id and does
       not paste the method, and it names no path outside the folder
+    a job heron_method serves in stages says so in its skill - its summary
+      first, then each stage - and every other job says once
     a job taken out of the source drops its skill at the next build; a job
-      over the cap, with an id that is not a skill name, or that will not
-      load stops the build, and leaves the last good build in place
+      over the cap, with an id that is not a skill name, that will not load,
+      or whose stages do not cut its method stops the build, and leaves the
+      last good build in place
 
 WHAT IT CANNOT PROVE
 --------------------
@@ -402,6 +405,7 @@ def main():
               "skills/ holds one folder per job, and none for a job it does not list (%d)"
               % len(made))
         bad, longest, pasted, unsent, outside_links = [], (0, ""), [], [], []
+        staged_seen = []
         for sid in made:
             folder = os.path.join(skills_dir, sid)
             if os.listdir(folder) != ["SKILL.md"]:
@@ -429,8 +433,16 @@ def main():
                 continue
             if len(desc) + len(when) > longest[0]:
                 longest = (len(desc) + len(when), sid)
+            # ONCE, OR STAGE BY STAGE - from the job's own declared `stages`,
+            # which heron_method serves a long method by (Skill.parts()).
+            staged = bool(job.parts())
+            if staged:
+                staged_seen.append(sid)
             if "`%s`" % sid not in body or "`mcp__plugin_heron_heron__heron_method`" not in body \
-                    or "mcp__heron__" in text or "once" not in body:
+                    or "mcp__heron__" in text \
+                    or (staged and ("once" in body or "`stage`" not in body
+                                    or "summary" not in body)) \
+                    or (not staged and ("once" not in body or "`stage`" in body)):
                 unsent.append(sid)
             purpose = " ".join(job.purpose.split())
             if (purpose and purpose[:60] in " ".join(text.split())) \
@@ -449,8 +461,10 @@ def main():
               % (longest[0], BP.LISTING_CAP, longest[1]))
         check(BP.LISTING_CAP == 1536 and 0 < longest[0] <= BP.LISTING_CAP,
               "every skill's description and when_to_use fit Claude Code's 1,536-character cap")
-        check(not unsent, "every skill sends Claude to heron_method with its job id, once, by the "
-              "plugin's tool name%s" % (" - %s" % unsent[:3] if unsent else ""))
+        check(not unsent, "every skill sends Claude to heron_method with its job id by the "
+              "plugin's tool name - once, or for a job with stages, its summary and then "
+              "each stage%s" % (" - %s" % unsent[:3] if unsent else ""))
+        print("      jobs served in stages: %s" % (", ".join(staged_seen) or "none"))
         check(not pasted, "and none pastes the method: no purpose, no precondition, under 120 "
               "words of body%s" % (" - %s" % pasted[:3] if pasted else ""))
         check(not outside_links, "no skill links or names a path outside the folder%s"
@@ -499,6 +513,11 @@ def main():
             said = refused_with("zz-broken.yaml", u"id: [unclosed\n")
             check(said is not None and "zz-broken.yaml" in said,
                   "a job that will not load stops the build, naming its file")
+            said = refused_with("zz-bad-stages.yaml", u"id: zz-bad-stages\nname: A job\n"
+                                u"utterances:\n  - do it\npurpose: |\n  First.\n  Second.\n"
+                                u"stages:\n  - stage: 1\n    starts: No such line.\n")
+            check(said is not None and "zz-bad-stages" in said and "stages" in said,
+                  "a job whose stages do not cut its method stops the build")
             still = sorted(os.listdir(os.path.join(work, "heron-plugin", "skills")))
             check(still == left and not os.path.exists(os.path.join(work, ".heron-plugin.building")),
                   "and each refusal leaves the last good build in place, nothing half-built")
