@@ -67,6 +67,7 @@ The same routes, with what to read at each stop: [PROJECT-MAP §E](PROJECT-MAP.m
 |---|---|
 | [**How Heron works**](guide/how-heron-works.md) | The four parts, one request step by step, what runs where, how the right tool is found |
 | [**What keeps the model safe**](guide/safety.md) | The switches, Keep or Discard, one Undo, and every guard |
+| [**Privacy**](guide/privacy.md) | For office IT: what stays on the PC, every connection Heron makes, and where it keeps files |
 | [**Rules and decisions**](guide/rules-and-decisions.md) | The Golden Rules, the Constitution, what is decided, the specification in four parts |
 | [**Every document**](guide/all-documents.md) | All the numbered documents, by theme and by number |
 | [**Registers and working documents**](guide/registers.md) | HANDOVER, NEEDS-CHECKING, FRAGMENT-ISSUES, OPEN-QUESTIONS, work notes, and the folders in `docs/` |

@@ -1,6 +1,13 @@
 # Heron - what the Python side REQUIRES.
 #
-#     pip install --user -r requirements.txt
+# INSTALLING BY HAND? Use the lock, not this file - it is what Setup runs:
+#
+#     python -m pip install --user --require-hashes -r requirements-lock.txt
+#
+# requirements-lock.txt is THE SOURCE OF VERSIONS: every package pinned and
+# hashed, PyYAML and the MCP package together. This file alone installs only
+# PyYAML, unpinned - enough for brain/ and the CLI tools, NOT for the chat:
+# `mcp` is in requirements-optional.txt, because brain/ runs without it.
 #
 # In plain words - everything a PC needs for Heron, Python first:
 #     docs/WHAT-TO-INSTALL.md
