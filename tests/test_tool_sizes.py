@@ -38,7 +38,14 @@ WHAT IT PROVES
 
   5. THE CHECK HAS TEETH. A planted tool over budget, and one that has
      stopped naming its argument, are both caught - from a source file the
-     measurement reads exactly as it reads the real one.
+     measurement reads exactly as it reads the real one. So is a host.chat
+     planted too long for the host, with the Articles it would lose named.
+
+  6. THE RULES EVERY CHAT IS GIVEN ARRIVE WHOLE (row 5b-2080). The host cuts
+     a server's instructions at HOST_INSTRUCTIONS_CAP characters and Claude
+     sees nothing after the cut. host.chat, as assembled - its own words and
+     every Article it declares - stays under the cap by a margin, and every
+     one of those Articles falls inside what the host delivers.
 
 WHAT IT DOES NOT
   The schemas. The SDK writes a tool's input schema from its signature at run
@@ -66,9 +73,30 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "brain"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 
+import heron_instructions as INS                              # noqa: E402
 import heron_tools as TOOLS                                   # noqa: E402
+
+# WHAT THE HOST DELIVERS OF A SERVER'S INSTRUCTIONS, in characters - Claude
+# sees nothing after it. Claude Code's MCP page, section "Tool search for MCP
+# server authors" (https://code.claude.com/docs/en/mcp): "Server
+# instructions, and the description of a tool that loads upfront: 4,096
+# characters". MEASURED TOO, row 5b-2080: on 2026-11-28 host.chat, then 4,635,
+# arrived on the owner's PC (Claude Code 2.1.330) cut at character 4,096
+# exactly, in the middle of Article 12c, and Articles 14 and 27 reached no
+# chat; a cloud session's copy, off Windows, was cut at the same character.
+# The same page says a Claude Code before v2.1.296 cut at 2,048 (row 5b-2081).
+HOST_INSTRUCTIONS_CAP = 4096
+
+# AND THE ROOM KEPT UNDER IT. Off Windows the server puts its no-Revit line in
+# front of host.chat (D-132) - 298 characters on 2026-11-28 - and that whole
+# string must arrive too: tests/test_mcp_stdio.py holds the one a real server
+# serves to the cap. On Windows the same room is what an amended Article has
+# before it would cost a chat its last rule, so the amendment fails here, on a
+# pull request. Raising either number is a decision, and the reason goes here.
+HOST_INSTRUCTIONS_MARGIN = 300
 
 # WHAT EVERY CHAT PAYS FOR BEFORE IT ASKS ANYTHING, in characters of
 # description - docs/19: "if a context assembly exceeds its budget, that is a
@@ -106,6 +134,15 @@ MUST_KEEP = {
         "Changes OFF",
         "revit_change",  # a change is the other door's
     ),
+    # A CONNECTION CHECK IS ANSWERED AND NOTHING MORE IS DONE (docs/04 s8.6).
+    # host.chat said it too until 2026-11-28, when it gave the room to the
+    # Articles the host was cutting off (row 5b-2080); this description is
+    # loaded up front in every chat that has Revit, so it is now the one place.
+    "revit_health": (
+        "asked only whether it is connected",
+        "say what this found and",
+        "stop",
+    ),
 }
 
 FAILURES = []
@@ -142,6 +179,16 @@ def over_budget(report, per_tool=PER_TOOL_BUDGET):
     """The tools whose description is over `per_tool`, largest first."""
     return [(r["tool"], r["description"]) for r in report["tools"]
             if r["description"] > per_tool]
+
+
+def lost_at_cap(text, used, cap=HOST_INSTRUCTIONS_CAP):
+    """
+    The Articles in `used` a chat would not be given whole, if the host cut
+    `text` at `cap` - each as host.chat renders it, without its citations.
+    """
+    arrives = text[:cap]
+    rules = INS.articles()
+    return [n for n in used if INS._without_citations(rules[n]) not in arrives]
 
 
 def unnamed(path=None):
@@ -234,6 +281,39 @@ def main():
               "and a tool that stopped naming its argument is caught")
     finally:
         shutil.rmtree(home, ignore_errors=True)
+    # A host.chat whose own words grew, assembled exactly as the real one is,
+    # with every Article it declares after them.
+    known = INS.instructions()
+    grown = dict(known[INS.HOST], text=(known[INS.HOST].get("text") or "")
+                 + "\n" + "Says the same thing again. " * 40)
+    planted, used = INS.compose(INS.HOST, dict(known, **{INS.HOST: grown}))
+    lost = lost_at_cap(planted, used)
+    check(len(planted) > HOST_INSTRUCTIONS_CAP - HOST_INSTRUCTIONS_MARGIN
+          and lost and lost[-1] == used[-1],
+          "and a host.chat grown past the cap is caught, with the Articles a chat "
+          "would lose named, the last it declares among them: %s"
+          % (", ".join(lost) or "none"))
+
+    print()
+    print("6. The rules every chat is given arrive whole (row 5b-2080)")
+    budget = HOST_INSTRUCTIONS_CAP - HOST_INSTRUCTIONS_MARGIN
+    size, unread = TOOLS.instructions_size()
+    check(size is not None and size <= budget,
+          "host.chat is %s characters, within %s - the %s Claude Code delivers, "
+          "less %s kept for the server's off-Windows line and the next amendment"
+          % ("NOT MEASURED (%s)" % unread if size is None else "{:,}".format(size),
+             "{:,}".format(budget), "{:,}".format(HOST_INSTRUCTIONS_CAP),
+             HOST_INSTRUCTIONS_MARGIN))
+    try:
+        text, used = INS.compose(INS.HOST)
+        lost = lost_at_cap(text, used)
+    except Exception as why:                                 # noqa: BLE001
+        text, used, lost = "", [], ["(it did not assemble: %s: %s)"
+                                    % (type(why).__name__, why)]
+    check(used and not lost,
+          "and every Article it declares falls inside the first %s characters - "
+          "all %d%s" % ("{:,}".format(HOST_INSTRUCTIONS_CAP), len(used),
+                        "" if not lost else "; a chat loses: " + ", ".join(lost)))
 
     print()
     print("  The whole list's descriptions come to %s. Every size, and the schemas"
