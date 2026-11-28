@@ -449,13 +449,13 @@ def methods_for(skills, request, capabilities, limit=2, ceiling=None):
     to stop it, so the method served a shorter list of what it uses than its
     stages name. A skill's `not-offered-by` lists those needs: still in
     `needs`, still served with their status, never a link. A skill without it
-    links through every need, as before. Measured 2026-11-28 against two
-    general rules that need no field: linking only through the capability
-    the lookup ranked first changed the methods named for hundreds of
-    requests, left dozens of methods unnamed for their own utterances, and
-    still named the family method beside three of the four - its link there
-    IS the first capability; a word said only once by a method, or only in
-    its name, did no better. What a method merely uses along the way is a
+    links through every need, as before. Measured 2026-11-28 against general
+    rules that need no field: linking only through the capability the lookup
+    ranked first changed the methods named for hundreds of requests, left
+    dozens of methods unnamed for their own utterances, and still named the
+    family method beside three of the four - its link there IS the first
+    capability; counting only a word the method says twice, or only a word of
+    its name or id, did no better. What a method merely uses along the way is a
     fact about the method, so it is the method's to say.
 
     `ceiling` IS D-128's, AND A METHOD IS HELD TO IT AS A CAPABILITY IS (row

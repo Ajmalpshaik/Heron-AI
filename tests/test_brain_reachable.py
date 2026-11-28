@@ -707,8 +707,10 @@ def main():
                 [same], "delete this box", ["DELETE_THING"])] == ["box-job"],
                   "and without the field the same need offers it, as before")
 
-            # THE OWNER'S FOUR ORDINARY REQUESTS (row 5b-2090). With its five
-            # project tools back in `needs`, family-creation is named beside
+            # THE FOUR ORDINARY DUCT REQUESTS OF ROW 5b-2090 - "draw a duct ..."
+            # from the owner's own test set, the other three from pull request
+            # #1503's check of the family method. With its five
+            # tools back in `needs`, family-creation is named beside
             # none of them. The capabilities are the ones the lookup returned
             # for these words on 2026-11-28 (lexical, main 119bc6ef); only the
             # skills decide here. "draw a duct ..." is an exact declared
