@@ -12,63 +12,229 @@ source: OFFICIAL
 
 risk: MODIFY
 
-purpose: >
-  Builds a 2D family drawn in one view - a DETAIL ITEM (a steel section, a
-  blocking, a fixing), a LINE-BASED DETAIL ITEM (insulation, a membrane, a
-  run of brick, placed with two clicks), or an ANNOTATION SYMBOL - and makes
-  it resize from its parameters. Made from the Detail Item, the line-based
-  Detail Item or a Generic Annotation template.
+# THE SHAPE OF THIS METHOD (2026-11-28): the owner's family creation standard,
+# as family-creation carries it - objective, when to use it, stages of numbered
+# steps with the Heron capability and its card's status after each, verify,
+# report, always and never. A stage the two share is POINTED to, never copied.
+# Every rule of the eight-step method this replaced is kept under the step it
+# belongs to, or corrected by its card (the pull request lists each).
+purpose: |
+  DETAIL FAMILY CREATION - the owner's family creation standard (Ajmal PS,
+  2026-11-28) for a 2D family drawn in one view, with the Heron tool for every
+  step under it.
 
-  0. REPORT_FAMILY_TEMPLATE FIRST - confirm a detail item, a line-based detail
-     item or an annotation; read its view and its planes, and for a line-based
-     one the built-in Length and the planes it is measured between - the
-     template's own, never moved.
-     CHECK THE UNITS (FAMILY-CREATION step 0): a units line reading IMPERIAL
-     where the modeller works in millimetres is said before anything is
-     built, with SET_PROJECT_UNITS or the Metric template offered.
-  1. READ THE THING: the lines, the solid or hatched fills, the masks, and
-     which sizes change between types.
-  2. The sizes as parameters, their values FIRST, formulas, planes on every
-     edge a size moves, and labels between them - FAMILY-CREATION steps 2 to
-     6, in the family's one view.
-  3. DRAW_FAMILY_DETAIL_LINES with lockToPlanes true, so the lines move with
-     the planes; a subcategory for each line weight the drawing needs. Each
-     subcategory's colour, weight and pattern - Object Styles - is then
-     CREATE_LINE_STYLE with familyCategory true and updateExisting true,
-     read back.
-  4. DRAW_FAMILY_FILLED_REGION for every fill: a filled region type by name -
-     the family's own Solid Black or a hatch - or "masking", which Revit makes
-     through its API only from 2024; before that a filled region type with its
-     Masking box ticked hides what is behind it the same way.
-  4b. LOCK_FAMILY_LINES_TO_PLANES for what step 3 cannot lock: lines already
-     drawn, a SLANTED line - an arrow head's edge - whose ENDS sit on planes
-     crossing it, and every filled region's edges. Each end on a plane is
-     locked to it, so the slanted line re-draws between planes a length
-     moves. Run it again after a size change: every lock said as already
-     there and the ends read where the planes now are (row 5b-1493).
-  5. A part only some types show: ADD_FAMILY_PARAMETERS makes a Yes/No, then
-     LINK_FAMILY_PARAMETER links the part's Visible to it - the part named by
-     its category, or a nested detail component by its family name. It links
-     every element so named, so a part that switches on its own is best a
-     nested detail component of its own.
-  6. FLEX_FAMILY at two really different sizes - for a line-based detail, two
+  HOW TO READ IT. family-creation's rules hold here wherever they fit; this
+  method says what a 2D family does differently and POINTS to a shared stage
+  - heron_method(job="family-creation", stage="2") serves its Stage 2 -
+  rather than copying it. "-> CAPABILITY (STATUS)" is the Heron capability
+  for the step and its card's status on 2026-11-28; the list served after
+  this method gives each one's status now, and it wins - except
+  CREATE_FAMILY_DOCUMENT, ACTIVATE_DOCUMENT, SAVE_DOCUMENT,
+  REPORT_OPEN_DOCUMENTS, REPORT_FAMILY_PARAMETERS, REPORT_FAMILY_FORMS,
+  PLACE_DETAIL_COMPONENTS and PLACE_LINE_BASED_FAMILY, left out of that list so this method is not offered beside ordinary
+  requests: heron_resolve gives theirs. "-> no Heron tool yet:" is done by hand, or asked. revit_change
+  refuses a DRAFT that changes the model (D-117); a DRAFT read runs and says
+  DRAFT, so confirm what matters another way. Each Heron change is one undo
+  entry.
+
+
+  1. OBJECTIVE
+
+  A 2D family drawn in one view - a DETAIL ITEM (a steel section, a blocking,
+  a fixing), a LINE-BASED DETAIL ITEM (insulation, a membrane, a run of brick,
+  placed with two clicks), or an ANNOTATION SYMBOL - that resizes from its
+  parameters, is seen following them, and is placed in a test project. No
+  solids, no connectors: family-creation's Stages 3, 6, 7 and 8 do not apply.
+
+
+  2. WHEN TO USE IT - AND WHEN NOT
+
+  For a detail item, a line-based detail item or a generic annotation. A TAG
+  has a method of its own: TAG-FAMILY-CREATION. A profile a sweep is drawn
+  with: PROFILE-FAMILY-CREATION. A plan symbol inside a 3D family:
+  family-creation Stage 9.
+
+
+  3. WORKFLOW
+
+  STAGE 0 - INFORMATION AND PREPARATION
+  1. The family file, and what it is.
+     -> CREATE_FAMILY_DOCUMENT (PROVEN, Admin) with the template the modeller
+        NAMES - Detail Item, the line-based Detail Item or a Generic
+        Annotation - and the .rfa path the modeller NAMES, or the modeller
+        starts it; Heron never picks either (D-33). Then ACTIVATE_DOCUMENT
+        (PROVEN) and revit_use_this_model (family-creation Stage 0 item 1).
+     -> REPORT_FAMILY_TEMPLATE (PROVEN): it must read as a detail item, a
+        line-based detail item or an annotation; its view and its planes; for
+        a line-based one the built-in Length and the planes it is measured
+        between - the template's own, never moved.
+  2. Check the units.
+     -> family-creation Stage 0 item 3: REPORT_FAMILY_TEMPLATE's units line,
+        or REPORT_PROJECT_UNITS (DRAFT, a read) where it has none. IMPERIAL
+        where the modeller works in millimetres is said before anything is
+        built, with SET_PROJECT_UNITS (PROVEN, Admin) or the Metric template
+        offered.
+  3. READ THE THING, in ONE list said back to the modeller: the lines, the
+     solid or hatched fills, the masks, which sizes change between types
+     (they become parameters), the parts only some types show, and the labels.
+     -> no Heron tool: asked; nothing guessed (D-33).
+  4. SAY BEFORE STARTING, where the family has LABELS - the text that shows a
+     parameter's value in a symbol or a title block: Revit's API cannot MAKE a label on any release 2020
+     to 2027, nor change what one SHOWS - its parameters, sample value,
+     prefix, suffix, spaces, break and unit format (docs/43 section 8.3a).
+     They are copied from a seed family of the same category open in the same
+     Revit, or the modeller makes them by hand (Stage 4 item 3).
+  5. A family with no file is saved before the first write: family-creation
+     Stage 0 item 5 (SAVE_DOCUMENT, PROVEN, Publish).
+  GATE: the modeller confirms the list.
+
+  STAGE 1 - PARAMETERS
+  family-creation Stage 1 items 4 to 14, in this family:
+  -> REPORT_SHARED_PARAMETER_FILE (PROVEN) first, then ADD_FAMILY_PARAMETERS
+     (PROVEN, Admin) for the sizes; SET_FAMILY_TYPE_VALUES (PROVEN) - their
+     values FIRST, before any label; SET_FAMILY_FORMULA (PROVEN) for a size
+     that follows another.
+
+  STAGE 2 - REFERENCE FRAMEWORK
+  family-creation Stage 2 items 2 and 4 to 8, in the family's one view:
+  -> CREATE_REFERENCE_PLANES (PROVEN) on every edge a size moves;
+     SET_FAMILY_PLANE_REFERENCE (PROVEN), with the owner's plane colour rule
+     (CREATE_LINE_STYLE, PROVEN, for the gray subcategory); and
+     LABEL_FAMILY_DIMENSION (PROVEN) between them.
+
+  STAGE 3 - LINES AND FILLS
+  1. The lines.
+     -> DRAW_FAMILY_DETAIL_LINES (PROVEN) with lockToPlanes true, so the lines
+        move with the planes; a subcategory for each line weight the drawing
+        needs.
+  2. Each subcategory's colour, weight and pattern - Object Styles.
+     -> CREATE_LINE_STYLE (PROVEN), familyCategory true and updateExisting
+        true, read back (family-creation Stage 4).
+  3. Every fill.
+     -> DRAW_FAMILY_FILLED_REGION (PROVEN): a filled region type by name - the
+        family's own Solid Black or a hatch - or "masking", which Revit makes
+        through its API only from 2024; before that a filled region type with
+        its Masking box ticked hides what is behind it the same way.
+  4. What item 1 cannot lock.
+     -> LOCK_FAMILY_LINES_TO_PLANES (PROVEN): lines already drawn, a SLANTED
+        line - an arrow head's edge - whose ENDS sit on planes crossing it, and
+        every filled region's edges. Each end on a plane is locked to it, so
+        the slanted line re-draws between planes a length moves.
+  Tell the modeller what is now in Revit.
+
+  STAGE 4 - VISIBILITY, LABELS AND TEXT
+  1. A part only some types show.
+     -> ADD_FAMILY_PARAMETERS (PROVEN, Admin) makes a Yes/No, then
+        LINK_FAMILY_PARAMETER (PROVEN) links the part's Visible to it - the
+        part named by its category, or a nested detail component by its
+        family name. It links every element so named, so a part that switches
+        on its own is best a nested detail component of its own.
+  2. Labels from a seed.
+     -> COPY_ELEMENTS_BETWEEN_DOCUMENTS (PROVEN), labels=true - it was
+        COPY_LABELS_FROM_FAMILY until 2026-11-01 - from a seed family of the
+        same category open in the same Revit.
+  3. No seed: no Heron tool yet - the modeller makes the label by hand in
+     Edit Label.
+  4. Read them back and lay them out.
+     -> REPORT_FAMILY_LABELS (PROVEN) - their parameters on Revit 2027 only;
+        SET_FAMILY_LABEL_LAYOUT (PROVEN) moves and sizes them.
+  5. A LABEL'S TEXT - size in mm, font, bold, background - is its TYPE.
+     -> REPORT_TEXT_TYPES (PROVEN), textTypeName labels, reads it;
+        SET_TEXT_TYPE (PROVEN) changes it - duplicateAs keeps the original,
+        switchTo labels moves them onto the copy. The same two serve a text
+        note's type.
+
+  STAGE 5 - FAMILY VERIFICATION AND FLEX
+  This stage is mandatory.
+  1. Read back every line and fill.
+     -> REPORT_FAMILY_FORMS (PROVEN, version 7), which=2d: every detail line,
+        filled and masking region and nested family, its ends in millimetres,
+        its line style or region type, its Visible, and what holds it -
+        "locked along ...", "locked at an end to ...", "labelled ..." -
+        against Stage 0's list.
+  2. LOOK AT IT: revit_view_image of the family's view - every line, fill and
+     label where it belongs. Whether that picture is taken in a 2D family's
+     view is not on any card; where it is refused, the modeller looks.
+  3. FLEX it at two really different sizes - for a line-based detail, two
      lengths.
+     -> FLEX_FAMILY (PROVEN): it measures every labelled dimension against
+        its parameter, and solids, which a 2D family has none of - so it does
+        NOT show that the lines followed. For that: SET_FAMILY_TYPE_VALUES
+        (PROVEN) to the second size, REPORT_FAMILY_FORMS which=2d again - the
+        ends where the planes now are - and LOCK_FAMILY_LINES_TO_PLANES
+        (PROVEN) run again, every lock said as already there (row 5b-1493);
+        then the real values back.
+  4. Parameters and labels: REPORT_FAMILY_PARAMETERS (PROVEN), and
+     REPORT_FAMILY_LABELS (PROVEN) where there are labels.
 
-  7. LABELS - the text that shows a parameter's value in a symbol or a title
-     block. SAY BEFORE STARTING: Revit's API cannot MAKE a label on any
-     release 2020 to 2027, nor change what one SHOWS - its parameters, sample
-     value, prefix, suffix, spaces, break and unit format (docs/43 section
-     8.3a). COPY_ELEMENTS_BETWEEN_DOCUMENTS with labels=true copies them
-     (COPY_LABELS_FROM_FAMILY until 2026-11-01) from a seed family of the
-     same category open in the same Revit; otherwise the modeller makes them
-     by hand in Edit Label. REPORT_FAMILY_LABELS reads them back - their
-     parameters on Revit 2027 only - and SET_FAMILY_LABEL_LAYOUT moves and
-     sizes them. A TAG has a method of its own: TAG-FAMILY-CREATION.
+  STAGE 6 - PROJECT TESTING
+  1. Save it first - a load reads the file.
+     -> SAVE_DOCUMENT (PROVEN, version 4, Publish), as family-creation Stage
+        13's SAVE RULE says; the modeller's Ctrl+S only where it is refused.
+        Its file's time is checked on disk BEFORE the load - the card's
+        proof saved another open document, not the family in front.
+  2. Load it into a test project (family-creation Stage 12).
+     -> ACTIVATE_DOCUMENT (PROVEN), revit_use_this_model; LOAD_FAMILY
+        (PROVEN, version 4) with the .rfa's path.
+  3. Place it in a view.
+     -> PLACE_DETAIL_COMPONENTS (PROVEN, version 2): a detail item or an
+        annotation symbol in the view the modeller names, at the points
+        given. A LINE-BASED detail item, placed by its two ends: neither that
+        card (points) nor PLACE_LINE_BASED_FAMILY's (model families, with a
+        structural type) says it places one - no Heron tool yet: the modeller
+        places it with two clicks. Then revit_view_image of that view.
 
-  A LABEL'S TEXT - size in mm, font, bold, background - is its TYPE, for
-  labels already in the family: REPORT_TEXT_TYPES textTypeName labels reads
-  it, SET_TEXT_TYPE changes it (duplicateAs keeps the original, switchTo
-  labels moves them onto the copy). The same two serve a text note's type.
+  STAGE 7 - FINAL SAVE AND DELIVERY
+  family-creation Stage 13: back in the family first (ACTIVATE_DOCUMENT and
+  revit_use_this_model), items 1 to 9 and its SAVE RULE - the save checked on
+  disk: REPORT_OPEN_DOCUMENTS (DRAFT, a read) fileTimes, and because it is
+  DRAFT the file's Date modified in File Explorer or the chat's own file
+  tools too.
+
+
+  4. RULES
+
+  Always: values before labels; lock every line to the planes it lies on;
+  say the label limit first; look at the family at two sizes; check the save
+  on disk.
+  Never: guess a size; draw a line no plane holds where a size moves it;
+  claim a label was made by Heron; take a flex that measured no lines as
+  proof the lines followed; report a save not checked. A delete waits for
+  the modeller's yes (Constitution 7); a change is taken back with Revit's
+  own Undo, never with a second change.
+
+
+  5. COMMUNICATION WITH THE MODELLER
+
+  Short, plain, in Revit words: after each stage, what was done, checked and
+  left. A step done by hand - a label, a line-based placement - is named with
+  who did it. The final report (family-creation section 6) gives the family's
+  name and kind, its parameters, lines, fills and labels, the two sizes seen,
+  the placement in a project and the save checked on disk: COMPLETED only when
+  every check passed, otherwise PARTIALLY COMPLETED or FAILED, with the
+  reason.
+
+
+  6. CORE PRINCIPLE
+
+  MODEL -> VERIFY -> REPORT -> CONTINUE.
+
+# SERVED ONE STAGE AT A TIME, as family-creation is: whole, this method is
+# over 12,000 characters served, so heron_method serves a summary first -
+# everything here that is not a stage - and each stage when asked by its
+# `stage`. Each entry names the purpose line its part starts at, exactly as
+# written; heron_skill.validate refuses one missing, written twice or out of
+# order.
+stages:
+  - {stage: "0", starts: "STAGE 0 - INFORMATION AND PREPARATION"}
+  - {stage: "1", starts: "STAGE 1 - PARAMETERS"}
+  - {stage: "2", starts: "STAGE 2 - REFERENCE FRAMEWORK"}
+  - {stage: "3", starts: "STAGE 3 - LINES AND FILLS"}
+  - {stage: "4", starts: "STAGE 4 - VISIBILITY, LABELS AND TEXT"}
+  - {stage: "5", starts: "STAGE 5 - FAMILY VERIFICATION AND FLEX"}
+  - {stage: "6", starts: "STAGE 6 - PROJECT TESTING"}
+  - {stage: "7", starts: "STAGE 7 - FINAL SAVE AND DELIVERY"}
+  - {starts: "4. RULES"}
 
 utterances:
   - make a detail item family
@@ -78,7 +244,7 @@ utterances:
 
 needs:
   - REPORT_FAMILY_TEMPLATE
-  # Step 0's units check, as FAMILY-CREATION's.
+  # Stage 0's units check, as family-creation Stage 0 item 3.
   - REPORT_PROJECT_UNITS
   - SET_PROJECT_UNITS
   - ADD_FAMILY_PARAMETERS
@@ -91,26 +257,30 @@ needs:
   - REPORT_TEXT_TYPES
   - SET_TEXT_TYPE
   - DRAW_FAMILY_DETAIL_LINES
-  # Step 3's subcategory colour, weight and pattern (version 2, row 5b-463).
+  # Stage 3's subcategory colour, weight and pattern (version 2, row 5b-463).
   - CREATE_LINE_STYLE
   - DRAW_FAMILY_FILLED_REGION
-  # Step 4b's locks: line ends to crossing planes, a filled region's edges.
+  # Stage 3's locks: line ends to crossing planes, a filled region's edges.
   - LOCK_FAMILY_LINES_TO_PLANES
   - LINK_FAMILY_PARAMETER
-  # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
-  # GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
+  # family-creation Stage 1 item 4 reads first: the shared parameter file and
+  # its GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
   - REPORT_SHARED_PARAMETER_FILE
   # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
-  # The proof, and never skipped.
+  # Stage 5's flex, never skipped - it measures the labelled dimensions; the
+  # lines are read back with REPORT_FAMILY_FORMS which=2d at the second size.
   - FLEX_FAMILY
-  # Step 7's labels: read, copied from a seed of the same category, laid out.
+  # Stage 4's labels: read, copied from a seed of the same category, laid out.
   - REPORT_FAMILY_LABELS
   # COPY_LABELS_FROM_FAMILY was listed here until 2026-11-01, when it was merged into COPY_ELEMENTS_BETWEEN_DOCUMENTS.
   - COPY_ELEMENTS_BETWEEN_DOCUMENTS
   - SET_FAMILY_LABEL_LAYOUT
+  # Added 2026-11-28 with the owner's standard: Stage 6 loads the family into
+  # a test project. Measured: no routing sentence moved.
+  - LOAD_FAMILY
 
 preconditions:
-  - a family document is open in the Family Editor, started by the modeller from a Detail Item, line-based Detail Item or Generic Annotation template - Heron does not choose a template
+  - a family document is open in the Family Editor, started from a Detail Item, line-based Detail Item or Generic Annotation template - by the modeller, or by CREATE_FAMILY_DOCUMENT with the template the modeller named; Heron does not choose a template
   - every size, parameter name and type name has been given for THIS request
   - every label asked for is in a seed family of the same category, or the modeller makes it by hand - Revit's API cannot make one
 
@@ -119,5 +289,6 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 note: >
   Written 2026-10-02 on the owner's request for every kind of family
   creation, from the research recorded in docs/43-building-revit-families.md.
-  Every step is DRAFT until it has been run on a real family with a negative
-  case (D-30).
+  On 2026-11-28 rebuilt on the owner's family creation standard, the Heron
+  capability and its status under every step. Every step is DRAFT until it
+  has been run on a real family with a negative case (D-30).

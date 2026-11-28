@@ -12,86 +12,200 @@ source: OFFICIAL
 
 risk: MODIFY
 
-purpose: >
-  Builds a CONCEPTUAL MASS FAMILY - the block a massing study places in a
-  project: a box on a footprint, an L or a U, a tower that tapers or turns,
-  a podium with a tower on it, a block with a corner cut back. Made in the
-  conceptual Family Editor from the Mass template (Metric Mass.rft), where
-  shapes are built on POINTS and the LINES drawn through them, not on
-  reference planes and labelled dimensions - so the classic form tools of
-  FAMILY-CREATION do not apply here.
+# THE SHAPE OF THIS METHOD (2026-11-28): the owner's family creation standard,
+# as family-creation carries it - objective, when to use it, stages of numbered
+# steps with the Heron capability and its card's status after each, verify,
+# report, always and never. A stage the two share is POINTED to, never copied.
+# Every rule of the seven-step method this replaced is kept under the step it
+# belongs to, or corrected by its card (the pull request lists each) - among
+# them row 5b-2078 part d: SAVE_DOCUMENT and LOAD_FAMILY were called DRAFT
+# here while both cards read PROVEN, version 4.
+purpose: |
+  MASS FAMILY CREATION - the owner's family creation standard (Ajmal PS,
+  2026-11-28) for a conceptual mass, with the Heron tool for every step under
+  it.
 
-  The status in brackets after each capability is what that capability's
-  own fragment.yaml said on 2026-10-28, read again on 2026-11-21. The list
-  of capabilities after this method is read from the library every time it
-  is served: where the two differ, the list is right.
+  HOW TO READ IT. family-creation's rules hold here wherever they fit; this
+  method says what a mass does differently and POINTS to a shared stage -
+  heron_method(job="family-creation", stage="13") serves its Stage 13 -
+  rather than copying it. "-> CAPABILITY (STATUS)" is the Heron capability
+  for the step and its card's status on 2026-11-28; the list served after
+  this method gives each one's status now, and it wins - except
+  ACTIVATE_DOCUMENT and REPORT_OPEN_DOCUMENTS, left out of that list so this
+  method is not offered beside ordinary requests: heron_resolve gives theirs.
+  "-> no Heron tool yet:" is done by hand, or asked. revit_change refuses a
+  DRAFT that changes the model (D-117); a DRAFT read runs and says DRAFT, so
+  confirm what matters another way. Each Heron change is one undo entry.
 
-  WHAT IT CANNOT DO, said first: an IN-PLACE mass (no API makes one on any
-  release - a loaded mass family is what Heron builds, and it behaves the
-  same in a study: mass floors, gross areas, Model by Face); and a size the
-  family's TYPES drive - a form the conceptual tools make is a fixed shape.
-  To change it, the form is made again and the family reloaded (step 7).
 
-  0. REPORT_FAMILY_TEMPLATE (DRAFT since its version 5 of 2026-11-20, a
-     read, so it runs and says so) FIRST - confirm the family in front is
-     a CONCEPTUAL MASS; any other kind is said and nothing is built. A new
-     one is started by the modeller with File > New > Conceptual Mass, or by
-     CREATE_FAMILY_DOCUMENT (PROVEN) with the Mass template's path the
-     modeller gives and the file it is saved to. CHECK THE UNITS
-     (FAMILY-CREATION step 0): a units line reading imperial where the
-     modeller works in millimetres is said before anything is built.
-  1. READ THE THING: every block in ONE TABLE - its plan corners in
-     millimetres from the family origin, its height, and how it changes up
-     the height (tapers to what plan, turns by how much, steps back where).
-     The origin is where the block is placed in the project. A size is the
-     modeller's only once they say yes (D-33).
-  2. THE PLAN: PLACE_ADAPTIVE_POINTS (PROVEN) - FREE reference points,
-     "X,Y,0" for each plan corner, at the mass's base; a mass takes
-     reference points, never adaptive ones. Their ids come back.
-  3. THE OUTLINE: DRAW_FAMILY_POINT_CURVES (PROVEN), as REFERENCE lines, one
-     edge per pair of point ids, closing back to the first - "a,b | b,c |
-     c,d | d,a". Reference lines stay and drive the form; model lines are
-     consumed by it. A curved edge is a spline through three or more
-     points, so a round plan is two splines meeting - close to a circle,
-     not one; the modeller sees it before step 4.
-  4. THE FORM: CREATE_CONCEPTUAL_FORM (DRAFT since its version 2 of
-     2026-11-24 - a chat refuses it until NEEDS-CHECKING Group QM re-proves
-     it) on the outline's curve ids -
-     - A BLOCK: one profile and depthMm the block's height - an extrusion
-       straight up.
-     - A TAPERING OR TWISTING TOWER: steps 2 and 3 again at each height
-       where the plan changes - points at "X,Y,Z" with Z that height, the
-       plan smaller or turned - and the profiles in order, bottom first,
-       with no depth: a LOFT through them. Every profile with the same
-       number of edges, or the loft twists.
-     - A DRUM OR A DOME: an axis - one straight reference line - and a
-       profile beside it: a REVOLVE.
-     solid=false makes a VOID of the same kinds - a cut-back corner, a
+  1. OBJECTIVE
+
+  A CONCEPTUAL MASS FAMILY - the block a massing study places in a project: a
+  box on a footprint, an L or a U, a tower that tapers or turns, a podium with
+  a tower on it, a block with a corner cut back - to the modeller's plans and
+  heights, read back, seen, saved and placed. Made in the conceptual Family
+  Editor from the Mass template (Metric Mass.rft), on POINTS and the LINES
+  drawn through them, not on reference planes and labelled dimensions - so
+  family-creation's Stages 2, 3 and 5 do not apply here.
+
+
+  2. WHEN TO USE IT - AND WHEN NOT
+
+  For a loaded mass family. Said first, what it cannot do:
+    * An IN-PLACE mass: no API makes one on any release. A loaded mass family
+      is what Heron builds, and it behaves the same in a study - mass floors,
+      gross areas, Model by Face.
+    * A size the family's TYPES drive: a form the conceptual tools make is a
+      fixed shape. To change it, the form is made again and the family
+      reloaded (Stage 6 item 4).
+  Mass floors, usage and areas in the project: MASSING-STUDY. A panel for a
+  divided face: PATTERN-BASED-FAMILY-CREATION.
+
+
+  3. WORKFLOW
+
+  STAGE 0 - INFORMATION AND PREPARATION
+  1. The family file, and what it is.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN, version 5): the family in front must
+        read as a CONCEPTUAL MASS; any other kind is said and nothing is
+        built. A new one is started by the modeller with File > New >
+        Conceptual Mass, or by CREATE_FAMILY_DOCUMENT (PROVEN, Admin) with the
+        Mass template's path the modeller gives and the file it is saved to -
+        Heron never picks either (D-33); then ACTIVATE_DOCUMENT (PROVEN) and
+        revit_use_this_model (family-creation Stage 0 item 1).
+  2. Check the units.
+     -> family-creation Stage 0 item 3: REPORT_FAMILY_TEMPLATE's units line,
+        or REPORT_PROJECT_UNITS (DRAFT, a read) where it has none. Imperial
+        where the modeller works in millimetres is said before anything is
+        built; SET_PROJECT_UNITS (PROVEN, Admin) offered.
+  3. Every block in ONE TABLE, said back to the modeller: its plan corners in
+     millimetres from the family origin, its height, and how it changes up the
+     height - tapers to what plan, turns by how much, steps back where. The
+     origin is where the block is placed in the project.
+     -> no Heron tool: asked for, once. A size is the modeller's only once
+        they say yes (D-33).
+  4. THE FORM TOOL IS NOT PROVED: CREATE_CONCEPTUAL_FORM (DRAFT, version 2
+     of 2026-11-24) is refused by revit_change until NEEDS-CHECKING Group QM
+     re-proves it (D-117). Say so before Stage 2; the modeller chooses: try
+     it once (try-once, the family saved first with nothing unsaved, kept
+     only on Keep - D-119, D-121), or make each form by hand on the lines
+     Heron draws - select them, Create Form, Solid Form or Void Form.
+  5. A family with no file is saved before the first write: family-creation
+     Stage 0 item 5 (SAVE_DOCUMENT, PROVEN, Publish, saveAsPath the path the
+     modeller types).
+  GATE: the modeller confirms the table.
+
+  STAGE 1 - THE PLAN: POINTS AND OUTLINES
+  1. The plan's corners.
+     -> PLACE_ADAPTIVE_POINTS (PROVEN): FREE reference points, "X,Y,0" for
+        each plan corner, at the mass's base. A mass takes reference points,
+        never adaptive ones. Their ids come back.
+  2. The outline.
+     -> DRAW_FAMILY_POINT_CURVES (PROVEN), as REFERENCE lines, one edge per
+        pair of point ids, closing back to the first - "a,b | b,c | c,d |
+        d,a". Reference lines stay and drive the form; model lines are
+        consumed by it.
+  3. A curved edge.
+     -> DRAW_FAMILY_POINT_CURVES (PROVEN): a spline through three or more
+        points, so a round plan is two splines meeting - close to a circle,
+        not one; the modeller sees it before Stage 2.
+  4. Each height where the plan changes: items 1 and 2 again, points at
+     "X,Y,Z" with Z that height, the plan smaller or turned.
+  Tell the modeller what is now in Revit after each outline.
+
+  STAGE 2 - THE FORMS
+  -> CREATE_CONCEPTUAL_FORM (DRAFT, version 2 - Stage 0 item 4), on the
+     outline's curve ids, one block at a time, the modeller told after each:
+  A. A BLOCK: one profile and depthMm the block's height - an extrusion
+     straight up.
+  B. A TAPERING OR TWISTING TOWER: the profiles in order, bottom first, with
+     no depth: a LOFT through them. Every profile with the same number of
+     edges, or the loft twists.
+  C. A DRUM OR A DOME: an axis - one straight reference line - and a profile
+     beside it: a REVOLVE.
+  D. A VOID: solid=false makes a void of the same kinds - a cut-back corner, a
      notch, a void through the middle.
-  5. A VOID CUTS NOTHING BY BEING MADE: COMBINE_FAMILY_FORMS (DRAFT since its
-     version 3 of 2026-11-20) with
-     the solid's and the void's ids makes the cut, and the volume is
-     measured before and after - a void that took nothing away fails the
-     call. Whether it is accepted in a mass family is owed in NEEDS-CHECKING
-     Group JO. Two solids that make one block are joined by the same call.
-  6. CHECK IT: REPORT_FAMILY_FORMS (its status is in the list served after
-     this method) - every form, solid or void,
-     its extent and volume against step 1's table. LINK_FAMILY_PARAMETER (links
-     Material=<it>; its status is in the list served after this method; while it
-     is not PROVEN there, a kept change from it is refused, D-117) when the
-     study shows blocks by use or by phase.
-  7. INTO THE PROJECT: SAVE_DOCUMENT (its status is in the list served after
-     this method - DRAFT again since version 3, 2026-11-16, and while it is,
-     the modeller saves the mass with Ctrl+S), then LOAD_FAMILY (DRAFT again, version 4)
-     into the project and PLACE_FAMILY_INSTANCES (merged 2026-11-01) on the
-     ground level at the insertion point; a family changed after it was placed
-     is loaded again with reload=true and every instance follows. The
-     MASSING-STUDY method takes it from there - mass floors, usage, areas.
 
-  A FACADE PANELISED ON THE MASS, when asked: DIVIDE_FAMILY_SURFACE (DRAFT
-  since its version 2 of 2026-11-20)
-  divides a face of the form by number or distance, and a pattern-based
-  panel built by PATTERN-BASED-FAMILY-CREATION fills it.
+  STAGE 3 - CUTS AND JOINS
+  A VOID CUTS NOTHING BY BEING MADE.
+  -> COMBINE_FAMILY_FORMS (PROVEN, version 3), with the solid's and the void's
+     ids, makes the cut, and the volume is measured before and after - a void
+     that took nothing away fails the call. Two solids that make one block are
+     joined by the same call. Whether it is accepted in a mass family is owed
+     in NEEDS-CHECKING Group JO: refused there, the modeller cuts or joins by
+     hand (Modify, Cut or Join).
+
+  STAGE 4 - MATERIALS
+  When the study shows blocks by use or by phase.
+  -> CREATE_STARTER_MATERIALS (PROVEN) where the family holds no material
+     wanted; LINK_FAMILY_PARAMETER (PROVEN), forms= the ids, links
+     Material=<material or parameter> (family-creation Stage 9 item 4).
+
+  STAGE 5 - FAMILY VERIFICATION
+  This stage is mandatory.
+  1. Read back every form, solid or void.
+     -> REPORT_FAMILY_FORMS (PROVEN): its extent and volume against Stage 0's
+        table, and the cut or join it is in.
+  2. LOOK AT IT.
+     -> revit_view_image with elements= the forms' ids, a read (D-123):
+        every block on its plan, at its height, cut where it should be.
+        Fix what is wrong and look again (family-creation Stage 10 E).
+  A mass has no size to flex: family-creation Stage 11 is skipped, and the
+  report says so.
+
+  STAGE 6 - INTO THE PROJECT
+  1. Save it first - a load reads the file.
+     -> SAVE_DOCUMENT (PROVEN, version 4, Publish), as family-creation Stage
+        13's SAVE RULE says - its proof saved another open document, not the
+        family in front, so its file's time is checked on disk BEFORE the
+        load, as Stage 7 says; the
+        modeller's Ctrl+S only where it is refused.
+  2. Load it.
+     -> ACTIVATE_DOCUMENT (PROVEN) to the project and revit_use_this_model;
+        then LOAD_FAMILY (PROVEN, version 4) with the .rfa's path.
+  3. Place it.
+     -> PLACE_FAMILY_INSTANCES (PROVEN) on the ground level at the insertion
+        point; then revit_view_image with elements= the placed mass.
+  4. A family changed after it was placed is loaded again with LOAD_FAMILY
+     reload=true, on the modeller's yes, and every instance follows.
+  The MASSING-STUDY method takes it from there - mass floors, usage, areas.
+
+  STAGE 7 - FINAL SAVE AND DELIVERY
+  family-creation Stage 13 items 6 to 9 and its SAVE RULE: the save checked
+  on disk, never taken from a reply - REPORT_OPEN_DOCUMENTS (DRAFT, a read)
+  fileTimes, and because it is DRAFT the file's Date modified in File
+  Explorer or the chat's own file tools too.
+
+  A FACADE PANELISED ON THE MASS, when asked.
+  -> DIVIDE_FAMILY_SURFACE (PROVEN, version 3) divides a face of the form by
+     number or distance, and a pattern-based panel built by
+     PATTERN-BASED-FAMILY-CREATION fills it.
+
+
+  4. RULES
+
+  Always: confirm a conceptual mass first; take every plan and height from
+  the table; say the form tool's status before building; one block at a time;
+  measure every cut; look at the picture; check the save on disk.
+  Never: guess a size; promise a size the types drive; claim an in-place
+  mass; report a cut not measured or a save not checked. A delete waits for
+  the modeller's yes (Constitution 7); a change is taken back with Revit's
+  own Undo, never with a second change.
+
+
+  5. COMMUNICATION WITH THE MODELLER
+
+  Short, plain, in Revit words: after each stage, what was done, checked and
+  left; after each block, one line. A form made by hand, or a step skipped, is
+  named with who did it or why. The final report (family-creation section 6)
+  gives each block against the table, the cuts, the picture, the placement
+  and the save checked on disk: COMPLETED only when every check passed,
+  otherwise PARTIALLY COMPLETED or FAILED, with the reason.
+
+
+  6. CORE PRINCIPLE
+
+  MODEL -> VERIFY -> REPORT -> CONTINUE.
 
 utterances:
   - make a mass family for this block
@@ -103,6 +217,10 @@ needs:
   - REPORT_FAMILY_TEMPLATE
   - CREATE_FAMILY_DOCUMENT
   - REPORT_PROJECT_UNITS
+  # Added 2026-11-28 with the owner's standard: Stage 0's units, Stage 4's
+  # materials. Measured: no routing sentence moved.
+  - SET_PROJECT_UNITS
+  - CREATE_STARTER_MATERIALS
   - PLACE_ADAPTIVE_POINTS
   - DRAW_FAMILY_POINT_CURVES
   - CREATE_CONCEPTUAL_FORM
@@ -123,6 +241,8 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 note: >
   Written 2026-10-28 on the owner's request for advanced massing. docs/43
   section 11 listed the conceptual mass as a kind with "no skill of its
-  own"; this is that skill, from the conceptual tools already built. Every
-  step is DRAFT until it has been run on a real family with a negative case
-  (D-30) - NEEDS-CHECKING Group JO.
+  own"; this is that skill, from the conceptual tools already built. On
+  2026-11-28 rebuilt on the owner's family creation standard, the Heron
+  capability and its status under every step. Every step is DRAFT until it
+  has been run on a real family with a negative case (D-30) - NEEDS-CHECKING
+  Group JO.

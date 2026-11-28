@@ -12,62 +12,191 @@ source: OFFICIAL
 
 risk: MODIFY
 
-purpose: >
-  Builds a PATTERN-BASED PANEL - the family that fills each cell of a divided
-  surface on a mass and bends to fit it: a glass panel, a solid cladding
-  panel, a panel with a thickness. Made from the Curtain Panel Pattern Based
-  template (or Generic Model Pattern Based), in the conceptual Family Editor,
-  where shapes are built on POINTS and LINES rather than on reference planes
-  and labelled dimensions - so the classic form tools of FAMILY-CREATION do
-  not apply here.
+# THE SHAPE OF THIS METHOD (2026-11-28): the owner's family creation standard,
+# as family-creation carries it - objective, when to use it, stages of numbered
+# steps with the Heron capability and its card's status after each, verify,
+# report, always and never. A stage the two share is POINTED to, never copied.
+# Every rule of the six-step method this replaced is kept under the step it
+# belongs to, or corrected by its card (the pull request lists each).
+purpose: |
+  PATTERN-BASED PANEL CREATION - the owner's family creation standard (Ajmal
+  PS, 2026-11-28) for a pattern-based panel, with the Heron tool for every
+  step under it.
 
-  0. REPORT_FAMILY_TEMPLATE FIRST - confirm a pattern-based panel; read its
-     TILE PATTERN (Rectangle in a new one) and spacing, the placement points
-     the template brings with their numbers (1 to 4 for a rectangle), and the
-     lines already drawn between them, with their ids, in lineList. USE THE
-     TILE PATTERN OF THE DIVIDED SURFACE THE PANEL WILL FILL - Rectangle,
-     Rhomboid, Hexagon, Triangle, Arrows, ZigZag, Octagon and the rest. Revit
-     has no call to set it: the modeller picks it by hand, selecting the grid
-     and choosing the pattern in the Type Selector, and this step reads it
-     back. The spacing is the template's own grid; each cell's real size
-     comes from the surface the panel is applied to.
-     CHECK THE UNITS (FAMILY-CREATION step 0): a units line reading IMPERIAL
-     where the modeller works in millimetres is said before anything is
-     built, with SET_PROJECT_UNITS or the Metric template offered.
-  1. READ THE THING: what the panel is - a flat surface, a solid of a
-     thickness, a frame - and its material. A picture gives shape, never size
-     (D-33).
-  2. THE EDGES: the template's own lines between the points, by their ids from
-     step 0 - or DRAW_FAMILY_POINT_CURVES, "1,2 | 2,3 | 3,4 | 4,1", as
-     reference lines, when the template has none to build on. Lines drawn
-     THROUGH the points move with them, which is what makes the panel follow
-     each cell.
-  3. CREATE_CONCEPTUAL_FORM on that closed profile: no depth is a flat SURFACE
-     (the glass); a depth is a panel that THICK along its normal.
-  4. LINK_FAMILY_PARAMETER, links Material=<it>, on the form - a family material parameter when
-     the types must choose it.
-     CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
-     classificationCodes line lists the OmniClass Numbers (Classification
-     Number from Revit 2026) that Revit's taxonomy file gives the category -
-     run it again after the category changed. The modeller confirms the code
-     that fits, or picks where more than one could, and SET_FAMILY_SETTINGS
-     "OmniClass Number=<code>" writes it; no file or no code is said, never
-     guessed (D-33).
-  5. REPORT_FAMILY_FORMS, then the flex a pattern-based panel takes: in the
-     Family Editor the modeller drags one point and the form must bend with it
-     (FLEX_FAMILY changes parameters, not points); then LOAD_FAMILY puts the
-     panel into a test mass and DIVIDE_FAMILY_SURFACE divides a face of it with
-     this panel as the pattern - every cell takes one. SET_DIVIDED_SURFACE_LAYOUT
-     then changes that surface without dividing it again - rotates the grid 45
-     degrees for a diamond pattern, offsets it, cuts it at every level, or
-     empties the border tiles.
+  HOW TO READ IT. family-creation's rules hold here wherever they fit; this
+  method says what a pattern-based panel does differently and POINTS to a
+  shared stage - heron_method(job="family-creation", stage="13") serves its
+  Stage 13 - rather than copying it. "-> CAPABILITY (STATUS)" is the Heron
+  capability for the step and its card's status on 2026-11-28; the list
+  served after this method gives each one's status now, and it wins - except
+  CREATE_FAMILY_DOCUMENT, ACTIVATE_DOCUMENT, SAVE_DOCUMENT and
+  REPORT_OPEN_DOCUMENTS, left out of that list so this method is not offered
+  beside ordinary requests: heron_resolve gives theirs. FLEX_FAMILY is named
+  only as the test this family does not take. "-> no Heron tool
+  yet:" is done by hand, or asked. revit_change refuses a DRAFT that changes
+  the model (D-117); a DRAFT read runs and says DRAFT, so confirm what
+  matters another way. Each Heron change is one undo entry.
 
-  AN INSET FRAME OR AN OPENING THAT SCALES WITH THE CELL: PLACE_ADAPTIVE_POINTS
-  "on <edge line id> at 0.2" hosts reference points on the template's edges,
-  DRAW_FAMILY_POINT_CURVES joins them into the inner loop, and
-  CREATE_CONCEPTUAL_FORM fills or pushes it - built 2026-10-02, owed BV19.
-  NOT POSSIBLE THROUGH THE API: setting the tile pattern - Revit's
-  CurtainPanelTilePattern is read-only; the modeller picks it by hand.
+
+  1. OBJECTIVE
+
+  A PATTERN-BASED PANEL - the family that fills each cell of a divided surface
+  on a mass and bends to fit it: a glass panel, a solid cladding panel, a
+  panel with a thickness - built, seen bending with its points, and seen
+  filling a test surface. Made from the Curtain Panel Pattern Based template
+  (or Generic Model Pattern Based), in the conceptual Family Editor, where
+  shapes are built on POINTS and LINES rather than on reference planes and
+  labelled dimensions - so family-creation's Stages 2, 3, 5 and 11 do not
+  apply here.
+
+
+  2. WHEN TO USE IT - AND WHEN NOT
+
+  For a panel that a divided surface repeats. A component placed by clicking
+  its own points: ADAPTIVE-FAMILY-CREATION. The mass whose face is divided:
+  MASS-FAMILY-CREATION.
+
+
+  3. WORKFLOW
+
+  STAGE 0 - INFORMATION AND PREPARATION
+  1. The family file, and its template.
+     -> CREATE_FAMILY_DOCUMENT (PROVEN, Admin) with the template the modeller
+        NAMES and the .rfa path the modeller NAMES - or the modeller starts it;
+        Heron never picks either (D-33). Then ACTIVATE_DOCUMENT (PROVEN) and
+        revit_use_this_model (family-creation Stage 0 item 1).
+     -> REPORT_FAMILY_TEMPLATE (PROVEN): it must read as a pattern-based
+        panel; its TILE PATTERN (Rectangle in a new one) and spacing, the
+        placement points the template brings with their numbers (1 to 4 for
+        a rectangle), and the lines already drawn between them, with their
+        ids, in lineList.
+  2. The tile pattern.
+     -> no Heron tool yet: USE THE TILE PATTERN OF THE DIVIDED SURFACE THE
+        PANEL WILL FILL - Rectangle, Rhomboid, Hexagon, Triangle, Arrows,
+        ZigZag, Octagon and the rest. Revit's CurtainPanelTilePattern is
+        read-only through the API, so no call sets it: the modeller picks it
+        by hand, selecting the grid and choosing the pattern in the Type
+        Selector, and REPORT_FAMILY_TEMPLATE (PROVEN) reads it back.
+     * The spacing is the template's own grid; each cell's real size comes
+       from the surface the panel is applied to.
+  3. Check the units.
+     -> family-creation Stage 0 item 3: REPORT_FAMILY_TEMPLATE's units line,
+        or REPORT_PROJECT_UNITS (DRAFT, a read) where it has none. IMPERIAL
+        where the modeller works in millimetres is said before anything is
+        built, with SET_PROJECT_UNITS (PROVEN, Admin) or the Metric template
+        offered.
+  4. What the panel is - a flat surface, a solid of a thickness, a frame -
+     and its material, in ONE list said back to the modeller.
+     -> no Heron tool: asked. A picture gives shape, never size (D-33).
+  5. THE FORM TOOL IS NOT PROVED: CREATE_CONCEPTUAL_FORM (DRAFT, version 2)
+     is refused by revit_change until NEEDS-CHECKING Group QM re-proves it
+     (D-117). Say so before Stage 2, and the modeller chooses: try it once -
+     the bridge client's try-once, on the family saved first with nothing
+     unsaved, kept only if the modeller presses Keep (D-119, D-121) - or
+     Create Form by hand on the lines Heron draws.
+  6. A family with no file is saved before the first write: family-creation
+     Stage 0 item 5 (SAVE_DOCUMENT, PROVEN, Publish).
+  GATE: the modeller confirms the list and the tile pattern.
+
+  STAGE 1 - THE EDGES
+  1. The panel's edges, through the placement points.
+     -> the template's own lines, by their ids from Stage 0 - or
+        DRAW_FAMILY_POINT_CURVES (PROVEN), "1,2 | 2,3 | 3,4 | 4,1", as
+        reference lines, when the template has none to build on. Lines drawn
+        THROUGH the points move with them, which is what makes the panel
+        follow each cell.
+  2. AN INSET FRAME OR AN OPENING THAT SCALES WITH THE CELL.
+     -> PLACE_ADAPTIVE_POINTS (PROVEN), "on <edge line id> at 0.2", hosts
+        reference points on the template's edges; DRAW_FAMILY_POINT_CURVES
+        (PROVEN) joins them into the inner loop; Stage 2 fills or pushes it.
+        Built 2026-10-02; a hosted point's own check is owed, NEEDS-CHECKING
+        BV19.
+  Tell the modeller what is now in Revit.
+
+  STAGE 2 - THE FORM
+  -> CREATE_CONCEPTUAL_FORM (DRAFT, version 2 - Stage 0 item 5), on the
+     closed profile: no depth is a flat SURFACE (the glass); a depth is a
+     panel that THICK along its normal. solid=false for a void.
+
+  STAGE 3 - MATERIAL AND CLASSIFICATION
+  1. The material.
+     -> LINK_FAMILY_PARAMETER (PROVEN), forms= the form's id, links
+        Material=<it> - a family material parameter, made first with
+        ADD_FAMILY_PARAMETERS (PROVEN, Admin), when the types must choose it
+        (family-creation Stage 9 items 4 and 5).
+  2. OmniClass.
+     -> family-creation Stage 1 item 3: REPORT_FAMILY_TEMPLATE's
+        classificationCodes line - run again after the category changed -
+        the modeller confirms the code that fits, or picks where more than one
+        could, then SET_FAMILY_SETTINGS (PROVEN) "OmniClass Number=<code>"; no
+        file or no code is said, never guessed (D-33).
+
+  STAGE 4 - FAMILY VERIFICATION
+  This stage is mandatory.
+  1. Read back the form.
+     -> REPORT_FAMILY_FORMS (PROVEN): its extent, and its area or volume.
+  2. LOOK AT IT.
+     -> revit_view_image with elements= the form's id, a read (D-123) -
+        family-creation Stage 10 E.
+  3. THE FLEX A PANEL TAKES.
+     -> no Heron tool yet: in the Family Editor the modeller drags one point
+        and the form must bend with it. FLEX_FAMILY changes parameters, not
+        points, so it is not this test; family-creation Stage 11 is skipped,
+        and the report says why.
+
+  STAGE 5 - TESTED ON A SURFACE
+  1. Save the panel first - a load reads the file.
+     -> SAVE_DOCUMENT (PROVEN, version 4, Publish), as family-creation Stage
+        13's SAVE RULE says; the modeller's Ctrl+S only where it is refused.
+        Its file's time is checked on disk BEFORE the load - the card's
+        proof saved another open document, not the family in front.
+  2. Load it into a test mass.
+     -> ACTIVATE_DOCUMENT (PROVEN) to the mass, revit_use_this_model; then
+        LOAD_FAMILY (PROVEN, version 4) with the panel's path.
+  3. Fill a face with it.
+     -> DIVIDE_FAMILY_SURFACE (PROVEN, version 3) divides a face of the mass's
+        form with this panel as the pattern, "Family : Type" - every cell
+        takes one. A pattern Revit does not offer for that surface is refused
+        with the ones it does.
+  4. Change the layout without dividing again.
+     -> SET_DIVIDED_SURFACE_LAYOUT (PROVEN): rotate the grid 45 degrees for a
+        diamond pattern, offset it, cut it at every level, or empty the border
+        tiles.
+  5. LOOK: revit_view_image with elements= the mass's form - every cell
+     holds a panel, bent to its cell.
+
+  STAGE 6 - FINAL SAVE AND DELIVERY
+  family-creation Stage 13: back in the panel first (ACTIVATE_DOCUMENT and
+  revit_use_this_model), items 6 to 9 and its SAVE RULE - the save checked on
+  disk: REPORT_OPEN_DOCUMENTS (DRAFT, a read) fileTimes, and because it is
+  DRAFT the file's Date modified in File Explorer or the chat's own file
+  tools too.
+
+
+  4. RULES
+
+  Always: match the tile pattern to the surface; draw every line through the
+  points; say the form tool's status before building; look at the panel and
+  at the filled surface; check the save on disk.
+  Never: set a size the surface gives; guess a material or a size; call the
+  panel done before it has filled a surface; report a save not checked. A
+  delete waits for the modeller's yes (Constitution 7); a change is taken back
+  with Revit's own Undo, never with a second change.
+
+
+  5. COMMUNICATION WITH THE MODELLER
+
+  Short, plain, in Revit words: after each stage, what was done, checked and
+  left. A step done by hand - the tile pattern, a form, the drag test - is
+  named with who did it. The final report (family-creation section 6) gives
+  the panel's name and tile pattern, its form and material, the drag test,
+  the filled surface and the save checked on disk: COMPLETED only when every
+  check passed, otherwise PARTIALLY COMPLETED or FAILED, with the reason.
+
+
+  6. CORE PRINCIPLE
+
+  MODEL -> VERIFY -> REPORT -> CONTINUE.
 
 utterances:
   - make a curtain panel pattern based family
@@ -77,7 +206,7 @@ utterances:
 
 needs:
   - REPORT_FAMILY_TEMPLATE
-  # Step 0's units check, as FAMILY-CREATION's.
+  # Stage 0's units check, as family-creation Stage 0 item 3.
   - REPORT_PROJECT_UNITS
   - SET_PROJECT_UNITS
   - SET_FAMILY_SETTINGS
@@ -88,13 +217,13 @@ needs:
   - LINK_FAMILY_PARAMETER
   - REPORT_FAMILY_FORMS
   - DIVIDE_FAMILY_SURFACE
-  # Step 5's surface, changed after it is divided - its grid rotated, offset,
+  # Stage 5's surface, changed after it is divided - its grid rotated, offset,
   # cut at the levels, its border tiles.
   - SET_DIVIDED_SURFACE_LAYOUT
   - LOAD_FAMILY
 
 preconditions:
-  - a family document is open in the Family Editor, started by the modeller from a pattern-based template - Heron does not choose a template
+  - a family document is open in the Family Editor, started from a pattern-based template the modeller named - by the modeller, or by CREATE_FAMILY_DOCUMENT; Heron does not choose a template
   - the tile pattern of the grid is the one the divided surface will use, set by hand in the Type Selector
   - the panel's build-up and material have been given for THIS request
 
@@ -103,5 +232,6 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 note: >
   Written 2026-10-02 on the owner's request for pattern-based family
   creation, from the research recorded in docs/43-building-revit-families.md.
-  Every step is DRAFT until it has been run on a real family with a negative
-  case (D-30).
+  On 2026-11-28 rebuilt on the owner's family creation standard, the Heron
+  capability and its status under every step. Every step is DRAFT until it
+  has been run on a real family with a negative case (D-30).
