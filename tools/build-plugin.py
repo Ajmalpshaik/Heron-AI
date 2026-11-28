@@ -22,7 +22,8 @@ each version of a plugin into a folder of its own, and every path a plugin
 names must stay inside that folder. So the plugin is BUILT as one folder,
 never pointed at this repository. This is part 1 of that build: the folder.
 No marketplace file, no release workflow and no Setup change are made here -
-those are later parts, each its own pull request.
+those are later parts, each its own pull request. Item 4 of D-210, the jobs
+heron_method holds offered as skills, is generated here too (below).
 
 WHAT GOES IN, AND WHERE EACH PART COMES FROM
 -------------------------------------------
@@ -54,6 +55,23 @@ WHAT GOES IN, AND WHERE EACH PART COMES FROM
                                         relative link re-aimed from its new
                                         folder. A link to anything the plugin
                                         does not carry stops the build.
+    skills/<job>/SKILL.md               GENERATED, one per job heron_method
+                                        lists - brain/heron_skill.py's
+                                        load_all(), the same load
+                                        heron_brain.method() lists them from.
+                                        Never a hand-kept copy of a method:
+                                        each skill is the job's id, its name
+                                        and the modeller's words for it from
+                                        the job's own file, and a body that
+                                        sends Claude to heron_method for the
+                                        whole method, once, before the first
+                                        step. A job that will not load, an id
+                                        that is not a skill name, or a
+                                        description and when_to_use over
+                                        Claude Code's listing cap stops the
+                                        build. A job taken out of brain/skills
+                                        takes its skill with it at the next
+                                        build, because every build is new.
 
 LEFT OUT, AND WHY
 -----------------
@@ -109,6 +127,27 @@ MODELLER_AGENTS = ("heron-model-auditor",)
 # the prefix Claude Code gives a plugin's server instead:
 # mcp__plugin_<plugin>_<server>__ (code.claude.com/docs/en/mcp, read 2026-11-28).
 REPO_TOOL_PREFIX = "mcp__heron__"
+
+# THE JOBS heron_method HOLDS. heron_brain.method() lists what
+# heron_skill.load_all() finds in brain/skills; the build reads the same
+# folder through the same loader. Named here only so a test can point the
+# build at a copy.
+JOBS_SRC = os.path.join("brain", "skills")
+SKILLS_OUT = "skills"
+
+# Claude Code cuts a skill's `description` and `when_to_use`, counted
+# together, at this many characters in the skill listing it gives the AI
+# (code.claude.com/docs/en/skills, read 2026-11-28). Past it the words never
+# reach the AI, so a job whose words do not fit stops the build.
+LISTING_CAP = 1536
+
+# A skill's `name` is the job's id: lowercase words joined by hyphens, which
+# is also the folder it sits in, so /heron:<id> names it.
+SKILL_NAME = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*\Z")
+
+# The folders the build writes itself. A shipped file under one of them would
+# be mixed into what the build generates, so it stops the build.
+GENERATED = (".claude-plugin", "agents", SKILLS_OUT)
 
 VERSION_SHAPE = re.compile(r"^\d+\.\d+\.\d+([-+][0-9A-Za-z.-]+)?\Z")
 MD_LINK = re.compile(r"\]\(([^)\s]+)\)")
@@ -244,6 +283,101 @@ def _agent_text(name, prefix, shipped):
     return MD_LINK.sub(aim, text)
 
 
+def _skill_library():
+    """brain/heron_skill.py - the loader heron_method lists its jobs through."""
+    brain = os.path.join(ROOT, "brain")
+    if brain not in sys.path:
+        sys.path.insert(0, brain)
+    try:
+        import heron_skill
+    except ImportError as exc:
+        raise Refused("the jobs heron_method holds are read through "
+                      "brain/heron_skill.py, which needs PyYAML: %s" % exc)
+    return heron_skill
+
+
+def jobs():
+    """
+    Every job heron_method lists, in id order. A job file that will not load
+    stops the build: heron_method would leave it out without a word, and a
+    plugin built then would quietly lose a job.
+    """
+    found, problems = _skill_library().load_all(os.path.join(ROOT, JOBS_SRC))
+    if problems:
+        raise Refused("a job in %s will not load, so its skill cannot be made: %s"
+                      % (JOBS_SRC.replace(os.sep, "/"), "; ".join(problems)))
+    return [found[key] for key in sorted(found)]
+
+
+def _flat(value):
+    """One line of plain text: every run of whitespace one space."""
+    return " ".join(str(value or "").split())
+
+
+def _skill_text(job, prefix):
+    """
+    One job's SKILL.md and the length of its listing words. Never the method
+    itself: heron_method serves that, so the skill only says to ask for it.
+    """
+    where = os.path.basename(job.path)
+    sid = job.id
+    if not isinstance(sid, str) or not SKILL_NAME.match(sid):
+        raise Refused("the job %r (%s) has an id that is not lowercase words "
+                      "joined by hyphens, so it cannot be a skill's name"
+                      % (sid, where))
+    name = _flat(job.name).rstrip(".")
+    words = [w for w in (_flat(u) for u in job.utterances()) if w]
+    if not name or not words:
+        raise Refused("the job %s (%s) has no name or no words a modeller says "
+                      "for it, so its skill would have nothing to be found by"
+                      % (sid, where))
+    description = ("%s. A Revit job of several steps; Heron holds its whole "
+                   "method." % name)
+    when = ("When the modeller asks for this job, in words like: %s."
+            % "; ".join('"%s"' % w for w in words))
+    listing = len(description) + len(when)
+    if listing > LISTING_CAP:
+        raise Refused("the job %s (%s): its description and when_to_use come to "
+                      "%d characters, over Claude Code's listing cap of %d - the "
+                      "words past it would never reach the AI. Shorten its name "
+                      "or its words." % (sid, where, listing, LISTING_CAP))
+    text = "\n".join([
+        "---",
+        "name: %s" % sid,
+        "description: %s" % json.dumps(description, ensure_ascii=False),
+        "when_to_use: %s" % json.dumps(when, ensure_ascii=False),
+        "---",
+        "",
+        "# %s" % name,
+        "",
+        "This job's whole method comes from Heron, not from this file: the steps "
+        "in order, what must be true first, and each capability it uses with its "
+        "risk.",
+        "",
+        "Before the first step, call `heron_method` once, with `job` set to "
+        "`%s` - in this plugin the tool is `%sheron_method` - and follow what it "
+        "returns, in its order. Do not read Heron's own folder to work the job "
+        "out." % (sid, prefix),
+        "",
+        "<!-- Generated by Heron's plugin build from the job %s that heron_method "
+        "serves. Change the job, never this file. -->" % sid,
+        "",
+    ])
+    return text, listing
+
+
+def job_skills(prefix):
+    """[(job id, SKILL.md text, listing length)], one per job heron_method lists."""
+    out = []
+    for job in jobs():
+        text, listing = _skill_text(job, prefix)
+        if REPO_TOOL_PREFIX in text:
+            raise Refused("the skill %s names a tool %s... - a plugin's tools are "
+                          "named %s..." % (job.id, REPO_TOOL_PREFIX, prefix))
+        out.append((job.id, text, listing))
+    return out
+
+
 def plan():
     """
     (files, dropped): every (source, path in the plugin) to copy, and every
@@ -265,6 +399,10 @@ def plan():
             continue
         if not _inside(norm):
             raise Refused("%s is not a path inside the plugin folder" % rel)
+        if norm.split("/", 1)[0] in GENERATED:
+            raise Refused("%s is under %s/, which the build writes itself - it "
+                          "would be mixed into what is generated there"
+                          % (rel, norm.split("/", 1)[0]))
         if os.path.islink(source):
             raise Refused("%s is a symbolic link; the plugin carries files only" % rel)
         files.append((source, norm))
@@ -290,7 +428,8 @@ def _write_json(path, doc):
 
 
 def build(out_dir):
-    """Build <out_dir>/heron-plugin. Returns (path, version, file count)."""
+    """Build <out_dir>/heron-plugin. Returns (path, version, file count).
+    Everything that can refuse runs before anything is written."""
     version = manifest_version()
     manifest = plugin_manifest(version)
     server, mcp = mcp_entry()
@@ -302,6 +441,7 @@ def build(out_dir):
         if REPO_TOOL_PREFIX in text:
             raise Refused("the agent %s still names a tool %s... after the rewrite"
                           % (name, REPO_TOOL_PREFIX))
+    skills = job_skills(prefix)
 
     target = os.path.join(out_dir, FOLDER)
     if os.path.exists(target) and not _previous_build(target):
@@ -327,6 +467,13 @@ def build(out_dir):
         os.makedirs(os.path.join(stage, "agents"))
         for name, text in agents:
             with io.open(os.path.join(stage, "agents", name + ".md"), "w",
+                         encoding="utf-8", newline="\n") as handle:
+                handle.write(text)
+
+        for sid, text, _listing in skills:
+            folder = os.path.join(stage, SKILLS_OUT, sid)
+            os.makedirs(folder)
+            with io.open(os.path.join(folder, "SKILL.md"), "w",
                          encoding="utf-8", newline="\n") as handle:
                 handle.write(text)
 
@@ -376,6 +523,9 @@ def main():
             print("  %s, from %s" % (PLUGIN_MCP, TEMPLATE.replace(os.sep, "/")))
             for name in MODELLER_AGENTS:
                 print("  agents/%s.md, from %s" % (name, AGENTS_SRC.replace(os.sep, "/")))
+            found = jobs()
+            print("  %s/<job>/SKILL.md, one per job heron_method lists (%d, from %s)"
+                  % (SKILLS_OUT, len(found), JOBS_SRC.replace(os.sep, "/")))
             print("\nLeft out:")
             for rel, why in dropped:
                 print("  %-36s %s" % (rel, why))
@@ -390,7 +540,9 @@ def main():
         return 1
 
     length, rel = longest_path(target)
+    made = sorted(os.listdir(os.path.join(target, SKILLS_OUT)))
     print("Built the Heron plugin %s in %s - %d files." % (version, target, count))
+    print("Skills: %d, one per job heron_method lists." % len(made))
     print("Longest path inside it: %d characters (%s)." % (length, rel))
     print("Check it with:  claude plugin validate %s" % target)
     print("\nNOTHING WAS PUBLISHED. This is a folder on this machine; installing it on")
