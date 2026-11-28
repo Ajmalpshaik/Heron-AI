@@ -1,8 +1,10 @@
 # ROUTING SENTENCES FROZEN 2026-11-28, BEFORE ANY CARD, ROUTING ROW OR HOST
 # RULE WAS EDITED - the owner's own test of tool finding on his PC (Revit 2020,
 # Heron add-in 0.3.0+addd15391), after the re-ranker (D-201) and model2vec
-# (D-203) were removed. Its findings are FRAGMENT-ISSUES rows written in the
-# same pull request, and the baseline later sessions must beat is in its body.
+# (D-203) were removed. The routing misses are FRAGMENT-ISSUES row 5b-2076
+# (GitHub issue #1492); rows 5b-2077 to 5b-2079 are the three smaller defects
+# of the same test. The baseline later sessions must beat is in the pull
+# request that added this file.
 #
 # `raw` is every sentence exactly as the modeller typed it, spelling mistakes
 # kept. `cleaned` is the same request in clean words, where the test recorded
