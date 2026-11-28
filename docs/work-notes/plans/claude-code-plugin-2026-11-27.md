@@ -230,6 +230,28 @@ Found the same day, not keyed on a folder: the server's advice for a store that 
 - **Not built:** hooks (section 5), slash commands, allow rules, a marketplace file, a release workflow,
   Setup's tick. **Nothing is published.**
 
+### The slash commands - item 3 of D-210, part P6
+
+- **MCP prompts, served by Heron's own server**, which Claude Code lists as commands: `PROMPTS` in
+  [`heron_prompts.py`](../../../mcp/server/heron_prompts.py), registered once after every tool in
+  [`heron_mcp_server.py`](../../../mcp/server/heron_mcp_server.py); `python mcp/server/heron_prompts.py` lists them.
+  Each is the sentence a modeller would type anyway - it names a job and orders no tool call (D-01, D-202). A prompt
+  whose words name a tool the process does not serve is left out, so off Windows none points at a `revit_` tool.
+  [04 §8.13](../../04-heron-mcp.md) says what each is; pull request
+  [#1522](https://github.com/Ajmalpshaik/Heron-AI/pull/1522).
+- **Nothing is in the plugin's folder for them.** The prompts come from the server, so the plugin carries them with
+  `mcp/server` and `tools/build-plugin.py` was not touched.
+- **Held by** [`tests/test_mcp_stdio.py`](../../../tests/test_mcp_stdio.py) over a real stdio server - every prompt,
+  with and without its argument, and two negative cases - and by `tests/test_tool_registry.py` for D-202.
+- **Run headless on 2026-11-28**, `claude -p` 2.1.332 in a Linux cloud container, the server given by
+  `--mcp-config` under the user-scope entry's name, `heron`: every prompt listed as `mcp__heron__<prompt>`, `/mcp__heron__build-family door` ran with its argument,
+  and `/heron:build-family door` was sent as plain words, not run - that form is the interactive `/` menu's. With
+  the built folder loaded by `--plugin-dir`, the server connected as `plugin:heron:heron`, every prompt was listed
+  as `mcp__plugin_heron_heron__<prompt>`, and `/mcp__plugin_heron_heron__build-family door` ran - once the server
+  had connected; sent as the first message, while it was starting, it was answered as not installed.
+  **Owed on the owner's Windows PC:** the `/` menu's names, one prompt run from it, and the names under the plugin -
+  [Group RE](../../needs-checking/group-re.md), issue [#1521](https://github.com/Ajmalpshaik/Heron-AI/issues/1521).
+
 ### The jobs as skills - item 4 of D-210, part P7
 
 - **Generated, one source.** `tools/build-plugin.py` writes `skills/<job>/SKILL.md` for each job `heron_method` lists,

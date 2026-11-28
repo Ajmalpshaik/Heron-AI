@@ -1390,6 +1390,23 @@ The list, the titles and every word are [`heron_prompts.PROMPTS`](../mcp/server/
   tool's description, and `python mcp/server/heron_tools.py --sizes` printed the same before and after
   this change.
 
-**Not yet seen in a real Claude Code chat:** that they appear under `/`, under which names, and that
-one runs - [Group RE](needs-checking/group-re.md), issue
-[#1521](https://github.com/Ajmalpshaik/Heron-AI/issues/1521).
+**Seen in a headless Claude Code, 2026-11-28** - `claude -p` 2.1.332 in a Linux cloud container, with the
+server from `main` at `219f1928` given by `--mcp-config` under the user-scope entry's name, `heron`. The
+session listed every prompt:
+`mcp__heron__check-model`, `mcp__heron__build-family`, `mcp__heron__revit-connected` and
+`mcp__heron__what-heron-can-do`. `/mcp__heron__build-family door` ran as a command with `door` as its
+argument, and `/mcp__heron__build-family` with nothing after it ran too. `/mcp__heron__no-such-prompt` was
+not a command and was answered as an ordinary message. **`/heron:build-family door` was not run as a
+command there** - it went to the chat as plain words - so the `/heron:` form is the `/` menu's, which a
+headless run has not got.
+
+**And under the plugin, the same day** - the folder `tools/build-plugin.py` builds, loaded with
+`claude -p --plugin-dir`: the server connected as `plugin:heron:heron` and every prompt was listed as
+`mcp__plugin_heron_heron__<prompt>`. `/mcp__plugin_heron_heron__build-family door` ran with `door` as its
+argument, and the chat went on to the door and window family method. **A prompt is there only once the server
+has connected**: it was still starting when the session opened, and the same command sent as the first message
+was answered as not installed.
+
+**Not yet seen in the `/` menu of an interactive chat on the owner's PC:** the names it shows, for the
+user-scope server and under the plugin, and that a prompt picked from it runs.
+[Group RE](needs-checking/group-re.md), issue [#1521](https://github.com/Ajmalpshaik/Heron-AI/issues/1521).
