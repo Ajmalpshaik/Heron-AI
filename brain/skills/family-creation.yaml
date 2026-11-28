@@ -32,8 +32,9 @@ purpose: |
   picture through revit_view_image, which is a tool and not a capability.
   "-> no Heron tool yet:" is a step Heron cannot do - it says what the
   modeller does by hand, or what is asked. A DRAFT capability is refused by
-  revit_change and revit_read until it is proved (D-117); the step says what
-  to do meanwhile. A capability of Admin, Publish or Execute risk also needs
+  revit_change until it is proved (D-117), and a build on 2026-11-28 found
+  revit_read refusing a DRAFT read too (REPORT_OPEN_DOCUMENTS); the step says
+  what to do meanwhile. A capability of Admin, Publish or Execute risk also needs
   that switch on, with Changes. Every Heron change is one entry in the Family
   Editor's undo list.
 
@@ -871,8 +872,10 @@ purpose: |
         between, or the prefix and *) and matchShading true - a shading
         colour alone draws flat dark grey there (row 5b-1263). A better look
         - glass, a metal, a texture - is its appearance and values, or
-        CREATE_STARTER_MATERIALS' ready-made set. Read back: REPORT_FAMILY_FORMS
-        (PROVEN) names each form's material.
+        CREATE_STARTER_MATERIALS' ready-made set. Read back: CREATE_FAMILY_FORMS
+        names each row's material as it builds it; REPORT_FAMILY_FORMS does
+        not list materials, so one linked later is checked in a Realistic or
+        Shaded picture (Stage 10 E).
   Visibility
   1. Configure Coarse visibility.
   2. Configure Medium visibility.
@@ -923,8 +926,10 @@ purpose: |
   8. Check missing geometry.
   9. Check material assignments.
      -> REPORT_FAMILY_FORMS (PROVEN), which=solid and which=void: every form
-        with its id, plane, extent, volume, material, where it shows, and the
-        cut or join it is in - read against Stage 0's list. For a fixed-size
+        with its id, plane, extent, volume, subcategory, where it shows, and
+        the cut or join it is in - read against Stage 0's list. Item 9, the
+        materials: CREATE_FAMILY_FORMS's own read-back of each row, and the
+        picture (Stage 9 item 6). For a fixed-size
         family this is the last check: the number of forms and the overall
         extents against the plan.
      * AND THE EXTENTS AGAINST THE ORIGIN PLANES, before the family is saved:
@@ -1045,8 +1050,11 @@ purpose: |
   because a load reads the file.
   1. Load the family into a test project.
      -> CREATE_FAMILY_DOCUMENT (PROVEN, Admin) with a project template
-        (.rte) and the .rvt path the modeller names - a .rte makes a project;
-        ACTIVATE_DOCUMENT (PROVEN) and revit_use_this_model to work in it;
+        (.rte) and the .rvt path the modeller names - a .rte makes a project
+        (its card's proof run made a family; the project route is on the same
+        card but not in that run, so read its reply); or a scratch project the
+        modeller opens. ACTIVATE_DOCUMENT (PROVEN) and revit_use_this_model to
+        work in it;
         then LOAD_FAMILY (PROVEN) with the .rfa's path. A family of the same
         name already loaded is refused; reload=true, after a fix, is asked
         for, never assumed.
@@ -1072,7 +1080,9 @@ purpose: |
   7. Check Type and Instance parameters.
      -> REPORT_PARAMETER_INVENTORY (PROVEN) on the placed instance.
   8. Check MEP connector connectivity where applicable.
-     -> CREATE_MEP_RUNS (PROVEN) draws a duct or pipe from the connector;
+     -> CREATE_MEP_RUNS (PROVEN) draws a duct or pipe run to the connector
+        (its card routes by reading connectors; whether it starts from a new
+        family's connector is not yet checked - say what it did);
         REPORT_CONNECTORS (PROVEN) grades every joint on the placed family -
         what is really plugged in, size, shape and domain; TRACE_CONNECTIVITY
         (PROVEN) walks the system; CONNECT_OPEN_ENDS (PROVEN) joins an end
@@ -1084,10 +1094,18 @@ purpose: |
      -> READ_MODEL_WARNINGS (PROVEN), grouped by message, with the elements
         that cause each.
   11. Verify that the family behaves correctly in the project.
+     -> CHECK_FAMILY_STANDARDS (PROVEN) audits the families the project uses
+        against the naming pattern, the required parameters and
+        mustHaveConnectors the modeller gives - there is no universal pattern
+        (D-33); it reads connectors through a placed instance, so place one
+        first.
      * A fault goes back to the family: ACTIVATE_DOCUMENT to its file, fix,
        save, and LOAD_FAMILY reload=true on the modeller's yes.
 
   STAGE 13 - FINAL SAVE AND DELIVERY
+  Back in the family first: Stage 12 put the chat on the test project, so
+  ACTIVATE_DOCUMENT (PROVEN) with the .rfa's path and revit_use_this_model
+  before any item below reads or changes the family.
   1. Create a type catalogue when the family has many types and requires
      one.
      -> REPORT_FAMILY_TYPE_CATALOG (PROVEN): the text, saved beside the .rfa
@@ -1095,10 +1113,9 @@ purpose: |
   2. Check family name.
   3. Check type names.
   4. Check parameter naming.
-     -> CHECK_FAMILY_STANDARDS (PROVEN), the family open in the Family
-        Editor, against the naming pattern and required parameters the
-        modeller gives - there is no universal pattern (D-33);
-        REPORT_FAMILY_PARAMETERS (PROVEN) and REPORT_FAMILY_TYPE_CATALOG
+     -> Stage 12 item 11's CHECK_FAMILY_STANDARDS (PROVEN) for the names
+        against the modeller's pattern; REPORT_FAMILY_PARAMETERS (PROVEN) and
+        REPORT_FAMILY_TYPE_CATALOG
         (PROVEN) list the parameters and types; SET_FAMILY_TYPE_VALUES
         renames a type. Renaming the family's file once it has one: no Heron
         tool - the modeller does it.
@@ -1107,7 +1124,9 @@ purpose: |
         savePath, SAVE_DOCUMENT's saveAskedTo); FIND_LIBRARY_FAMILIES
         (PROVEN) finds it by name in the folder.
      * Lightweight: FIND_PURGEABLE_ELEMENTS (PROVEN) lists what the family
-       holds unused; deleting any of it is the modeller's yes (section 5).
+       holds unused - but a family nested in another reads as unused, so a
+       nested part is never purged from that list; deleting any of it is the
+       modeller's yes (section 5).
        SET_FAMILY_PREVIEW_VIEW (PROVEN) sets the view the preview picture is
        taken from at the next save.
   6. Save the family.
@@ -1329,7 +1348,9 @@ utterances:
 # and SET_FAMILY_FORM_MATERIAL (LINK_FAMILY_PARAMETER), PLACE_NESTED_FAMILY
 # (PLACE_FAMILY_INSTANCES), SELECT_FAMILY_FORMS (REPORT_FAMILY_FORMS),
 # ZOOM_TO_ELEMENTS (SET_SELECTION), and SET_VIEW_CAMERA, retired into
-# FRAME_ELEMENTS_IN_CAMERA (issue #1032).
+# FRAME_ELEMENTS_IN_CAMERA (issue #1032). Named in the purpose only as what
+# NOT to use, so not listed: EXPORT_VIEW_IMAGE (not the way to look) and
+# TRANSFER_MATERIALS_BETWEEN_DOCUMENTS (project to project, not a family).
 needs:
   - REPORT_FAMILY_TEMPLATE
   - REPORT_PROJECT_UNITS
@@ -1398,7 +1419,6 @@ needs:
   - FIND_LIBRARY_FAMILIES
   - LIST_MATERIALS
   - CREATE_SECTION_VIEW
-  - EXPORT_VIEW_IMAGE
   - PLACE_HOSTED_FAMILY
   - PLACE_FAMILY_ON_FACE
   - PLACE_LINE_BASED_FAMILY
@@ -1422,7 +1442,7 @@ preconditions:
   - every size, parameter name and type name has been given for THIS request - a picture or a sketch alone gives none of them
   - the family is not yet built - rebuilding one that already has labelled dimensions leaves the old labels behind to fight the new ones
   - this chat is on the family in front - a chat that worked on another model moves with revit_use_this_model first, because revit_read reads the model the chat is pinned to, not the one in front
-  - a step whose capability is DRAFT - the list of uses served beside this method says which - is refused by revit_change and revit_read (D-117); a DRAFT of MODIFY risk can only be tried once with the bridge client's try-once, on a family saved first with nothing unsaved, and stays only if the modeller presses Keep in Revit (D-119, D-121) - never on a family a project already uses; a DRAFT read, or a DRAFT of Admin, Publish or Execute risk, cannot be tried at all, so its step says what to do meanwhile
+  - a step whose capability is DRAFT - the list of uses served beside this method says which - is refused by revit_change (D-117), and revit_read was seen refusing a DRAFT read on 2026-11-28; a DRAFT of MODIFY risk can only be tried once with the bridge client's try-once, on a family saved first with nothing unsaved, and stays only if the modeller presses Keep in Revit (D-119, D-121) - never on a family a project already uses; a DRAFT read, or a DRAFT of Admin, Publish or Execute risk, cannot be tried at all, so its step says what to do meanwhile
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
