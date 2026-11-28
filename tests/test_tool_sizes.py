@@ -114,6 +114,9 @@ PER_TOOL_BUDGET = 1500
 # THE SENTENCES THE TWO DOORS MAY NEVER LOSE TO A TRIM, each the whole of a
 # safety a host relies on before its first call. Matched as written.
 MUST_KEEP = {
+    "heron_lookup": (
+        "cleaned as",    # its words are cleaned as revit_read says
+    ),
     "revit_change": (
         "KEEP",          # the change is kept at once - D-99, no preview
         "Changes",       # and only while the owner's switch is on
@@ -128,11 +131,17 @@ MUST_KEEP = {
         "Article 11",    # only a PROVEN capability is kept - D-117
         "revit_read",    # a question goes to the door that cannot write
         "Ctrl+Z",        # and one undo puts the model back
+        "cleaned as it says",   # `request` is filled as revit_read says
     ),
     "revit_read": (
         "change nothing",
         "Changes OFF",
         "revit_change",  # a change is the other door's
+        # how the host fills `request`: clear words as typed, or a declared
+        # phrasing stops matching; only short forms it is sure of (D-33)
+        "as typed when clear",
+        "typos fixed",
+        "short forms you are sure of",
     ),
     # A CONNECTION CHECK IS ANSWERED AND NOTHING MORE IS DONE (docs/04 s8.6).
     # host.chat said it too until 2026-11-28, when it gave the room to the
