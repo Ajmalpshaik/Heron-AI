@@ -100,11 +100,25 @@ MUST_KEEP = {
         "Article 11",    # only a PROVEN capability is kept - D-117
         "revit_read",    # a question goes to the door that cannot write
         "Ctrl+Z",        # and one undo puts the model back
+        "cleaned as it says",   # `request` is filled as revit_read says
     ),
     "revit_read": (
         "change nothing",
         "Changes OFF",
         "revit_change",  # a change is the other door's
+        # HOW THE HOST FILLS `request` (2026-11-28) - the one copy, which
+        # revit_change, heron_lookup and revit_show point at. Clear words
+        # pass AS TYPED, or a card's declared phrasing stops matching (all
+        # seven exact matches in the owner's test set were lost when they
+        # were rewritten); only short forms the host is SURE of are written
+        # out, so a word it does not know stays host.chat's to ask about
+        # (D-33, D-34).
+        "as typed when clear",
+        "typos fixed",
+        "short forms you are sure of",
+    ),
+    "heron_lookup": (
+        "cleaned as",    # its words are cleaned as revit_read says
     ),
 }
 
