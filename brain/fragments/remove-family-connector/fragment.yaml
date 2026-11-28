@@ -154,5 +154,8 @@ compatibility-note: >
 utterances:
   - delete the pipe connector from the family being edited
   - remove the connector on Air Outlet from this family
-  - delete the duct connector I just added to the family
+  # REWORDED 2026-11-28, row 5b-2076 (issue #1492): this line read "delete the
+  # duct connector I just added to the family", and its "added" put this card
+  # first for "add a duct connector to the family" - the opposite job.
+  - delete the wrong duct connector from the family
   - remove all connectors from this family
