@@ -3,7 +3,8 @@
 > **Type:** Operational work note. **Not specification.** Where a sentence here disagrees with the
 > [Constitution](../../../HERON_CONSTITUTION.md), the [Golden Rules](../../14-golden-rules.md) or
 > [DECISIONS.md](../../DECISIONS.md), **those win and this note is out of date.**
-> **Status:** **Design only, nothing built.** Written 2026-11-27. **Owner:** Ajmal PS.
+> **Status:** **Design; part 1 built 2026-11-28** - the build script and the folder it makes, nothing
+> published ([section 10](#10-read-and-built-on-2026-11-28)). Written 2026-11-27. **Owner:** Ajmal PS.
 > **Not the same word as [`plugin-extension/`](plugin-extension/README.md)**, which is about Heron's
 > *Revit* products (tabs). This note is about a **Claude Code** plugin: the package Claude Code installs.
 > **Retires** when the owner says no, or when it is built and its PC checks are run.
@@ -20,7 +21,8 @@
   into Revit's Addins folder, and the plugin docs describe no way to run a Windows installer.
 - **What a modeller sees.** Setup, once, as today. After that, Heron's chat side updates from inside
   Claude Code (`/plugin` - Update), and a new Setup is needed only when the Revit add-in changes.
-- **The owner decides three things** - §9. Recommended: **yes**, built in its own pull requests.
+- **The owner decides three things** - §9. The first is answered **yes**, on 2026-11-28
+  ([D-210](../../decisions/D-210.md)); the other two are still open.
 
 ## 2. Where Heron is today (read in code, 2026-11-27)
 
@@ -142,12 +144,95 @@ Claude Code installs Node packages for a plugin, **never Python**; the documente
 | Question | Recommended |
 |---|---|
 | Build Heron's chat side as a Claude Code plugin, as above? | **Yes** - in small pull requests: build script, release branch, Setup's tick, then the PC checks |
+| | **Answered 2026-11-28: yes.** Asked *"Should I start building the plugin now (items 2 to 5), in small pull requests? Type yes, or say not now."*, he typed *"Yes, start it"* in his local session - [D-210](../../decisions/D-210.md), **Proposed** until he confirms it where it can be read (D-206) |
 | Publish it from a `plugin-release` branch of this repository, or a second repository? | **A branch of this one** - one place, one release workflow |
 | Auto-update on for modellers? | **On** - a version only moves when a release is published, so it is the same as running a new Setup |
 
+## 10. Read and built on 2026-11-28
+
+Claude Code **2.1.330** on the owner's PC. Documentation read that day at `code.claude.com/docs/en/`: `mcp`,
+the `plugins` pages, `skills` and `permissions`. Part 1 was built and validated in a cloud container on Claude Code
+**2.1.332**.
+
+### What Claude Code does to a server's words and calls
+
+| | Limit | What it means for Heron |
+|---|---|---|
+| Server instructions, and each always-loaded tool's description | cut at **4,096** characters | the words past it never reach the AI |
+| A deferred tool's description | cut at **16,384** characters | |
+| A text result | over **50,000** characters it is saved to a file | `_meta["anthropic/maxResultSizeChars"]` raises it, ceiling **500,000** |
+| A call still running at **120 s** | becomes a background task (`CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS`) | Heron's wait for a fragment run, Revit's Keep or Discard included, is at least **180 s** - `FRAGMENT_FLOOR_S` in [`heron_config.py`](../../../mcp/client/heron_config.py) is a floor, `max()`ed with the configured wait - so a change waiting on the modeller can pass 120 s - [Group EJ](../../needs-checking/group-ej.md) check **EJ4**, issue [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968), is the PC check |
+
+### Two servers with one name
+
+- Order: **local > project > user > plugin > claude.ai connectors**. One name connects once, from the highest.
+- A plugin's tools are named **`mcp__plugin_heron_heron__<tool>`**, and its server shows as **`plugin:heron:heron`**
+  in `/mcp`. [`tools/build-plugin.py`](../../../tools/build-plugin.py) rewrites the agent it ships to that form.
+- **The owner's PC has had a user-scope `heron` entry pointing at his checkout since 2026-11-28**, set on his word so
+  that Heron works in every folder. A plugin beside it would put two Herons on that PC, so **the plugin stays off
+  there**, and Setup on a modeller's PC must remove the user-scope entry it wrote before (section 6 already says so).
+  Whether a user-scope `heron` and a plugin's `heron` count as one name was not settled by what was read; the rule
+  above is the same either way.
+
+### Skills, allow rules and the two checking commands
+
+- A plugin's own `skills/` folder is an ordinary skills folder. Only skills **served by an MCP server** need Claude
+  Code 2.1.331 or later.
+- **Whether a plugin can ship permission allow rules is not confirmed** by the pages read - the part that builds
+  item 5 of [D-210](../../decisions/D-210.md) checks it first.
+- `claude plugin validate` checks the manifest, the paths and each MCP entry. `claude plugin eval` runs prompt cases
+  with graders; a case that needs Revit needs a real Revit.
+- **Part 1's folder, validated on 2.1.332:** `claude plugin validate dist/heron-plugin` **passed**. With
+  `--profile directory --strict` it failed on its one warning, **no icon** (`ICON_MISSING`). Two pieces of advice
+  that change no verdict: `network.hosts` is not declared in `plugin.json`, and the README has no line installing
+  the plugin from a marketplace - both are for the part that publishes it.
+
+### A new folder for every version - what in Heron is keyed on its own folder
+
+Claude Code installs each version of a plugin into a **new** folder. Read in the code on 2026-11-28, nothing run:
+
+| What | Keyed on | A new folder per version | Recorded |
+|---|---|---|---|
+| The shared knowledge store's rows - `builds_from()`, `refreshes_from()` and the `cards_seen:` marks in [`heron_scope.py`](../../../brain/heron_scope.py) | the card folder of whoever writes; a folder with no `.git` counts as the installed Heron and writes from its own cards | **one version at a time works**: the new folder's marks are new, the rows are compared by bytes, and the old folder's marks go when it does. **Two versions at once** - a chat opened before an update and one after - are two writers on one store | [row 5b-2082](../../fragment-issues/row-5b-2082.md), [#1504](https://github.com/Ajmalpshaik/Heron-AI/issues/1504) |
+| The search index - `library_digest()` in [`heron_search.py`](../../../brain/heron_search.py) | the cards' names and bytes; the folder is only recorded (`search_root`) | same cards in a new folder: no rebuild. Two versions at once rebuild it back and forth | the same row |
+| `developer-checkout.json` - `steps_aside_for()` in [`heron_scope.py`](../../../brain/heron_scope.py) | the developer's checkout the note names | **does not break**: a plugin folder has no `.git`, so on the owner's PC it steps aside whatever its folder; a modeller's PC has no note | - |
+| The runner note `runner.json` - [`heron_commands.py`](../../../brain/heron_commands.py), read by `RunnerStart` in [`HeronCommandStore.cs`](../../../revit/Heron.Revit.Addin/HeronCommandStore.cs) | the folder of the chat that **started last** | **breaks**: after an update Revit's saved commands run the old version's runner until a chat on the new one starts, and a chat on the old version writes it back | [row 5b-2083](../../fragment-issues/row-5b-2083.md), [#1505](https://github.com/Ajmalpshaik/Heron-AI/issues/1505) |
+| `_repo_root()` in [`heron_mcp_server.py`](../../../mcp/server/heron_mcp_server.py) | the server's own file | **does not break**: each version serves its own folder, which is the point - a chat's code never changes under it. `heron_version`'s line that the server was started outside its folder shows for every plugin chat, as it already does for Setup's user-scope entry | - |
+| Group EU's guard - [`heron_running_code.py`](../../../mcp/server/heron_running_code.py) | the files the running server loaded | **does not break**: an update writes a new folder, so a running chat's files never change and the guard has nothing to catch. What it says if Claude Code deletes an older folder under a running chat is **not checked** (section 8, check 5) | - |
+
+Found the same day, not keyed on a folder: the server's advice for a store that needs a rebuild names
+`python tools/heron-ready.py`, and the plugin carries no `tools/` - [row 5b-2084](../../fragment-issues/row-5b-2084.md),
+[#1506](https://github.com/Ajmalpshaik/Heron-AI/issues/1506).
+
+### What part 1 built - and did not
+
+- [`tools/build-plugin.py`](../../../tools/build-plugin.py) writes `dist/heron-plugin/` from the files
+  `heron-project.zip` ships, through `workspace_files()` in
+  [`build-release-assets.py`](../../../tools/build-release-assets.py) - one list and one walk, the R-87 and D-186
+  refusals included. Under `tools/` and `platform/` it leaves out what that list carries for the download's
+  installers; `python tools/build-plugin.py --list` names each.
+- The template is [`platform/Heron.Plugin`](../../../platform/Heron.Plugin/.claude-plugin/plugin.json):
+  `plugin.json` **without** a version - the build writes `heron-products.json`'s `manifestVersion` - and `.mcp.json`
+  starting `python ${CLAUDE_PLUGIN_ROOT}/mcp/server/heron_mcp_server.py`. It pins the same `HERON_CLIENT_ID` as the
+  repository's `.mcp.json` - every file that starts the server does, and `tests/test_config_and_health.py` holds
+  them equal - and the build refuses one that differs. So the client id is **today's value until
+  [Q-100](../../open-questions/tier-3.md) ([#1488](https://github.com/Ajmalpshaik/Heron-AI/issues/1488)) is
+  answered**, and Q-100's list of where it lives gains this file.
+- `agents/heron-model-auditor.md`, from `.claude/agents`, with its tools in the plugin form and its links re-aimed.
+- README, LICENSE and NOTICE are the repository's own, from the same list - a README of the template's own would
+  replace the page the install guide's links open.
+- [`check-products.py`](../../../tools/check-products.py) fails a template that types a version, and a built folder
+  (`dist/heron-plugin`, or `--plugin`) whose version is not `manifestVersion`.
+  [`tests/test_build_plugin.py`](../../../tests/test_build_plugin.py) builds into a temporary folder and reads it back.
+- **Longest path, measured 2026-11-28:** 114 characters inside the folder; under
+  `C:\Users\<20-character name>\.claude\plugins\cache\heron\heron\0.3.0\` (70) that is **184 of Windows' 260**. The
+  marketplace's name is assumed to be `heron`; a longer one is a re-measure - the test prints it every run.
+- **Not built:** hooks (section 5), `skills/`, slash commands, allow rules, a marketplace file, a release workflow,
+  Setup's tick. **Nothing is published.**
+
 ## Sources
 
-The Claude Code plugin documentation, read 2026-11-27: plugins - manifest reference, create a
+The Claude Code documentation read 2026-11-28 is named in section 10. The plugin documentation, read 2026-11-27: plugins - manifest reference, create a
 marketplace, marketplace reference, install, loading, dependencies, and hooks, at
 `code.claude.com/docs/en/`. Where it is silent - Python on Windows, a hook finishing before a server
 starts, running a Windows installer - this note says **to confirm** or **a PC check**.
