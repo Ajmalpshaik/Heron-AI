@@ -1611,12 +1611,11 @@ def revit_change(capability: str = "", values: str = "",
     rename, change an element's type, set a parameter. `dry_run=true` rolls
     it back instead.
 
-    THE SHORT PATH: pass the user's own words as `request` and leave
-    `capability` empty. When they are a phrasing a PROVEN capability declares
-    and every value it needs is in `values`, it runs in THIS call. Otherwise
-    NOTHING is sent and the reply lists the candidates with what each needs:
-    call again with the `capability` the user meant, or ask them. `capability`,
-    when given, always wins.
+    THE SHORT PATH is revit_read's: the user's words, cleaned as it says, as
+    `request` with `capability` empty. A phrasing a PROVEN capability
+    declares, every value in `values`, runs in THIS call; anything else
+    sends NOTHING and hands back the candidates with what each needs.
+    `capability`, when given, always wins.
 
     `values` is one "name=value" per line, trimmed unless in double quotes:
     text="Warehouse - ". `expect_from` names the earlier fragment whose
@@ -3164,16 +3163,16 @@ def revit_read(capability: str = "", values: str = "",
     template", "find the ducts connected to nothing". Never ask for a
     fragment id.
 
-    THE SHORT PATH: pass the user's own words as `request` and leave
-    `capability` empty. When they are a phrasing a PROVEN capability declares
-    and every value it needs is in `values`, it runs in THIS call. Otherwise
-    NOTHING is sent and the reply lists the candidates with what each needs:
-    call again with the `capability` the user meant, or ask them. `capability`,
-    when given, always wins.
+    THE SHORT PATH: pass the user's words as `request`, `capability` empty:
+    as typed when clear, since a declared phrasing matches only word for
+    word; else with typos fixed, short forms you are sure of written out and
+    a broken sentence said plainly, their verbs and nouns kept. A phrasing
+    a PROVEN capability declares, every value in `values`, runs in THIS
+    call. Otherwise NOTHING is sent and the candidates come back with what
+    each needs: call again with the one the user meant, or ask them.
+    `capability`, when given, always wins.
 
-    `values` is one "name=value" per line, e.g. view=Level 1. `expect_from`
-    names the earlier fragment whose result this read acts on, as in
-    revit_change; empty, the read starts clean.
+    `values` (e.g. view=Level 1) and `expect_from` work as in revit_change.
 
     It works with Changes OFF: no transaction is open, and the model is counted
     before and after - a read that moved it is reported, never answered. A
@@ -3186,6 +3185,24 @@ def revit_read(capability: str = "", values: str = "",
     # PROVEN but its code changed since, or never proved. "Above ANALYZE" is one
     # that selects, changes, publishes or administers - heron_tools.door_refusal
     # reads the ceiling off this tool's own row.
+    #
+    # THE HOST CLEANS THE WORDS, AND ONLY WHEN THEY NEED IT (2026-11-28). This
+    # short path is the one copy of how `request` is filled: revit_change and
+    # heron_lookup point here and revit_show works as revit_read. Measured on
+    # the owner's frozen test sentences (lexical, main addd15391, with and
+    # without the Revit 2020 filter), each raw sentence against the same
+    # request cleaned four ways:
+    #   - typos fixed, short forms written out, a broken sentence said
+    #     plainly, their verbs and nouns kept: 4 sentences ranked better
+    #     ("set the OA flow on the louvre" 3rd -> 1st), none worse;
+    #   - trade nouns swapped for a Revit category word as well ("louvre" ->
+    #     "air terminal"): 2 of 3 questions then answered by a write;
+    #   - the seven sentences that match a card's declared phrasing today,
+    #     rewritten into "plain Revit words": all seven lost the exact match
+    #     and three lost first place - hence "as typed when clear".
+    # D-01 holds: the host decides what the words mean; Heron keeps no
+    # glossary (the owner, 2026-11-28), and a word the host is not sure of is
+    # host.chat's - looked up, then asked about, never guessed (D-33, D-34).
     matched = ""
     if not (capability or "").strip() and (request or "").strip():
         capability, handed_back = _by_words(request, "revit_read", values)
@@ -3414,8 +3431,8 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     """
     # Trimmed 2026-10-17 to the budget tests/test_tool_sizes.py holds (D-118);
     # what left it is said here, and in the answer where it is needed:
-    #   - THE SHORT PATH is revit_read's: the user's own words as `request`
-    #     with `capability` empty run a phrasing a PROVEN capability declares,
+    #   - THE SHORT PATH is revit_read's: the user's words, cleaned as it says,
+    #     as `request` with `capability` empty run a phrasing a PROVEN capability declares,
     #     every value given, in this call; anything else sends nothing and
     #     hands back the candidates (_by_words) - looked up under this door's
     #     own ceiling, EXECUTE, so none of them is a card it refuses (row
@@ -5926,8 +5943,9 @@ def heron_why(capability: str, release: str = "") -> str:
 @server.tool()
 def heron_lookup(request: str, question: bool = False) -> str:
     """
-    Which capability serves a request in the user's own words. Answers with
-    it and the values it needs typed, for revit_read or revit_change next.
+    Which capability serves a request in the user's words, cleaned as
+    revit_read says. Answers with it and the values it needs typed, for
+    revit_read or revit_change next.
 
     question: true whenever the user is asking, not asking for a change - "what
     size is this pipe"; every capability that changes the model is left out.

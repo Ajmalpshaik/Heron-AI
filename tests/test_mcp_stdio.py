@@ -90,6 +90,7 @@ Revit looks.
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -264,6 +265,15 @@ class Listener(object):
         """Every notifications/progress, with when it came."""
         return [(at, m.get("params") or {}) for at, m in list(self.lines)
                 if m.get("method") == "notifications/progress"]
+
+
+def host_instructions_cap():
+    """HOST_INSTRUCTIONS_CAP as tests/test_tool_sizes.py states it and gives
+    its source for - the characters a host delivers of a server's
+    instructions - or None when that file no longer says it."""
+    with open(os.path.join(ROOT, "tests", "test_tool_sizes.py"), encoding="utf-8") as fh:
+        found = re.search(r"^HOST_INSTRUCTIONS_CAP = (\d+)", fh.read(), re.M)
+    return int(found.group(1)) if found else None
 
 
 def sdk_missing():
@@ -556,6 +566,14 @@ def library_only(guard, scratch):
             told = ""
         check("no Revit" in told,
               "and its instructions tell the chat there is no Revit on this machine")
+        # AND ALL OF THEM ARRIVE (row 5b-2080). The host cuts a server's
+        # instructions at a fixed length, and this is the longest string the
+        # server serves: host.chat with the no-Revit line in front of it.
+        cap = host_instructions_cap()
+        check(cap is not None and 0 < len(told) <= cap,
+              "all %d characters of them, within the %s a host delivers "
+              "(tests/test_tool_sizes.py, HOST_INSTRUCTIONS_CAP)"
+              % (len(told), "unread" if cap is None else "{:,}".format(cap)))
 
         host.send({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}})
         listed = host.read(DEADLINE)
