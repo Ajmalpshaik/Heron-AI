@@ -116,9 +116,13 @@ pass** — see [`tests/README.md`](tests/README.md).
 
 **Stage explicit paths.** Never `git add -A`; another session may be writing to this tree.
 
-**Never pull, check out or merge in the main Heron folder** - the one a modeller's chat opens from. Work
-in your own worktree or clone; bringing that folder up to date is the owner's step
-([D-189](docs/decisions/D-189.md)). A pull there stopped a modeller's job half-way on 2026-11-19.
+**Never check out, merge, rebase or rebuild in the main Heron folder** - the one a modeller's chat opens
+from. Work in your own worktree or clone ([D-189](docs/decisions/D-189.md)). **Bring it up to date
+yourself** with `git pull --ff-only origin main` and nothing else - never hand the owner the command -
+but only when every check passes: no Revit job running (`revit_health`), the folder on `main` and
+clean, no `.git/index.lock`, and no other session busy on a Revit job from that folder. A check that
+fails is said and waited on ([D-213](docs/decisions/D-213.md)). A pull there stopped a modeller's job
+half-way on 2026-11-19, which is why the checks come first.
 
 **Rough work goes in a temporary folder, never beside Heron.** A helper script written to work
 something out - a family's shapes, a check of numbers - goes in the scratchpad folder the session

@@ -146,6 +146,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_fragment as HF                                     # noqa: E402
+# The relpath that never raises: RUNS and the drafts folder can sit on another drive
+# than the checkout (a scratch folder on C:, the checkout on D:) - row 5b-2086.
+import heron_relpath as RELPATH                                 # noqa: E402
 # Which releases a fragment is already proven on (D-131) - the matrix's reading,
 # the one `accept --release` asks too.
 import heron_matrix as MX                                       # noqa: E402
@@ -724,10 +727,10 @@ def would_replace(jobs, library, release=None):
         draft_file = HV.draft_path(key)
         if os.path.isfile(record):
             what.append("the run record %s (what an earlier run came back "
-                        "with)" % os.path.relpath(record, ROOT))
+                        "with)" % RELPATH.relpath(record, ROOT))
         if os.path.isfile(draft_file):
             what.append("the proof draft %s (unsigned - nobody has accepted it)"
-                        % os.path.relpath(draft_file, ROOT))
+                        % RELPATH.relpath(draft_file, ROOT))
         if key in named:
             what.append("the run of this job file's job %d, which names the "
                         "same card" % named[key])

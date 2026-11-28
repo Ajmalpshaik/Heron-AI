@@ -230,7 +230,7 @@
 | [D-186](#d-186--what-heron-should-know-out-of-the-box-runs-bim-and-iso-standards-first-regional-next-and-company-last---and-no-standard-and-no-knowledge-store-ever-ships-with-heron) | What Heron should know out of the box runs BIM and ISO standards first, regional next and company last - and no standard, and no knowledge store, ever ships with Heron | ✅ Accepted · 2026-11-20 |
 | [D-187](#d-187--every-new-finding-is-a-github-issue-at-once-the-register-entry-and-its-issue-are-written-in-the-same-change-linked-both-ways) | Every new finding is a GitHub issue at once: the register entry and its issue are written in the same change, linked both ways | ✅ Accepted · 2026-11-20 |
 | [D-188](#d-188--a-chat-the-claude-app-resumes-after-a-restart-is-the-same-conversation-to-revit-and-takes-back-its-own-model) | A chat the Claude app resumes after a restart is the same conversation to Revit, and takes back its own model | ✅ Accepted · 2026-11-20 |
-| [D-189](#d-189--a-development-session-never-pulls-into-the-main-heron-folder) | A development session never pulls into the main Heron folder | ✅ Accepted · 2026-11-20 |
+| [D-189](#d-189--a-development-session-never-pulls-into-the-main-heron-folder) | A development session never pulls into the main Heron folder | ✅ Accepted · 2026-11-20 · *the owner's own step* superseded in part by D-213 · 2026-11-28 |
 | [D-190](#d-190--the-readme-stops-asking-modellers-not-to-install-before-a-release-is-signed-and-says-plainly-the-build-is-unsigned-and-what-was-checked) | The README stops asking modellers not to install before a release is signed, and says plainly the build is unsigned and what was checked | ✅ Accepted · 2026-11-20 |
 | [D-191](#d-191--the-usage-counter-keeps-offered-helped-and-the-last-date-it-helped-helped-is-only-the-modellers-word-it-moves-a-clause-less-than-one-rank-and-no-question-text-is-kept) | The usage counter keeps offered, helped and the last date it helped; "helped" is only the modeller's word; it moves a clause less than one rank; and no question text is kept | ✅ Accepted · 2026-11-20 · *where a re-ranker is installed* superseded in part by D-201 · 2026-11-26 · superseded by D-205 · 2026-11-26 |
 | [D-192](#d-192--a-job-that-works-only-outside-the-model-it-is-aimed-at-declares-nogroupopen-and-an-admin-or-publish-job-then-opens-no-transaction-group-in-that-model) | A job that works only outside the model it is aimed at declares noGroupOpen, and an Admin or Publish job then opens no transaction group in that model | ✅ Accepted · 2026-11-21 |
@@ -254,6 +254,7 @@
 | [D-210](#d-210--herons-chat-side-is-built-as-a-claude-code-plugin-in-small-pull-requests-the-plugin-slash-commands-for-common-jobs-its-methods-as-skills-and-no-question-each-time-for-a-tool-that-only-reads) | Heron's chat side is built as a Claude Code plugin, in small pull requests: the plugin, slash commands for common jobs, its methods as skills, and no question each time for a tool that only reads | ⏳ Proposed · 2026-11-28 - his yes was heard in his local session; confirm it where it can be read (D-206) |
 | [D-211](#d-211--article-9-is-reworded-in-plain-words-with-its-meaning-kept-and-the-room-it-frees-gives-every-chat-the-modellers-scope-their-selection-or-the-active-view-only-what-was-asked-the-model-kept-whole) | Article 9 is reworded in plain words with its meaning kept, and the room it frees gives every chat the modeller's scope: their selection or the active view, only what was asked, the model kept whole | ✅ Accepted · 2026-11-28 |
 | [D-212](#d-212--herons-plugin-is-published-from-a-plugin-release-branch-of-this-repository-written-only-by-a-workflow-one-commit-per-published-release-never-forced) | Heron's plugin is published from a plugin-release branch of this repository: written only by a workflow, one commit per published release, never forced | ⏳ Proposed · 2026-11-28 - his answer was heard in his local session; confirm it where it can be read (D-206) |
+| [D-213](#d-213--a-session-brings-the-main-heron-folder-up-to-date-itself-by-fast-forward-only-once-its-checks-pass) | A session brings the main Heron folder up to date itself, by fast-forward only, once its checks pass | ⏳ Proposed · 2026-11-28 - his yes was heard in his local session; confirm it where it can be read (D-206) |
 
 ## Format
 
@@ -1989,3 +1990,13 @@ rules - the tag is `v` and the version, the version is new, the newest commit is
 nothing. Nothing is released by this; the install line works only after the first release.
 
 **Full record:** [`decisions/D-212.md`](decisions/D-212.md)
+
+## D-213 — A session brings the main Heron folder up to date itself, by fast-forward only, once its checks pass
+
+**Status:** Proposed · **Date:** 2026-11-28 · **Asked:** Ajmal PS, 2026-11-28, in his local Claude Code session: *"do that frem your side okkey"*, then *"Yes, change D-189"*.
+**Written by:** that local session; with no link to where he said it, Proposed until he confirms it where it can be read ([D-206](decisions/D-206.md) item 3).
+**Supersedes in part:** [D-189](decisions/D-189.md) - its item 2, the owner's own step, and the pull in its item 1
+
+A session brings the main Heron folder up to date itself, with `git pull --ff-only origin main` and nothing else, once every check passes: no Revit job running, the folder on `main` and clean, no `.git/index.lock`, no other session busy on a Revit job from it. A failed check is said and waited on. No checkout, merge, rebase or rebuild there, as D-189 said.
+
+**Full record:** [`decisions/D-213.md`](decisions/D-213.md)

@@ -2135,7 +2135,7 @@ def main(argv):
         return 0
 
     found, problems = load_all()
-    print("Fragments in %s" % os.path.relpath(FRAGMENTS_DIR, ROOT))
+    print("Fragments in %s" % RELPATH.relpath(FRAGMENTS_DIR, ROOT))
     print()
 
     if not found and not problems:

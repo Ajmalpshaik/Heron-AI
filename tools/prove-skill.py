@@ -805,7 +805,7 @@ def main():
     if wanted:
         for name in sorted(wanted - set(p.id for p in plans)):
             print("No skill called %r in %s"
-                  % (name, os.path.relpath(SKILL.SKILLS_DIR, ROOT)))
+                  % (name, RELPATH.relpath(SKILL.SKILLS_DIR, ROOT)))
     if not plans:
         return 0
 
