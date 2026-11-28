@@ -187,7 +187,8 @@ Not every agent runs for every request.
 > `revit_change` runs the fragment that provides it, inside Revit. A request in a PROVEN capability's
 > declared words, with every value given, needs only that one call
 > ([04 §8.5](04-heron-mcp.md#85-one-request-fewer-turns--built-2026-09-30)). A job of several steps
-> has its method in `heron_method`, a long one served as a summary and then one stage at a time ([04 §8.7](04-heron-mcp.md#87-a-new-pc-as-quick-as-the-old-one--built-2026-10-09)).
+> has its method in `heron_method`, a long one served as a summary and then one stage at a time
+> ([04 §8.7](04-heron-mcp.md#87-a-new-pc-as-quick-as-the-old-one--built-2026-10-09)).
 > A new tool is written at DRAFT by the
 > [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md) subagent
 > ([11 §3](11-orchestration-and-workflows.md#3-reference-workflow--new-tool)).
