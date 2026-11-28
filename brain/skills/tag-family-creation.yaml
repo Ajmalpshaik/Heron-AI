@@ -213,8 +213,9 @@ purpose: |
   STAGE 7 - FINAL SAVE AND DELIVERY
   family-creation Stage 13: back in the family first (ACTIVATE_DOCUMENT and
   revit_use_this_model), items 6 to 9 and its SAVE RULE - SAVE_DOCUMENT
-  (PROVEN, Publish) saves the family Heron works in once its change is kept;
-  the modeller's Ctrl+S only where it is refused. The save is checked, never
+  (PROVEN, Publish) saves the family Heron works in once its change is kept -
+  its proof saved another open document, not the family in front; the
+  modeller's Ctrl+S only where it is refused. The save is checked, never
   taken from "I saved": REPORT_OPEN_DOCUMENTS (DRAFT, a read) fileTimes, and
   because it is DRAFT the file's Date modified in File Explorer or the chat's
   own file tools too.
