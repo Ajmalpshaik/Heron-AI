@@ -76,17 +76,13 @@ Never leave a model partially modified.
 
 **9. Show before you change.**
 Any `MODIFY` operation that does not use a `PRODUCTION` fragment requires a preview the user has
-accepted — what will change, how many elements, what will be skipped.
-**How a change asked for in a chat meets it, [D-126](docs/DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept), superseding D-99's exception:** `revit_change`
-runs the change inside one named `TransactionGroup`, Revit selects and isolates what it touched, and a
-dialog asks the modeller Keep or Discard. Nothing is kept until they choose Keep; Discard, Esc or
-closing it rolls the change back. **The one recorded exception is the owner's switch for that
-question** (*Ask to Keep* on the ribbon, off by default): off, the change is kept at once with no preview, as D-99
-recorded — one named entry in Revit's undo list, to the pinned model only, and its answer says what it
-did. On, the box's third link answers it once for a job
-([D-138](docs/DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)):
-that chat's next changes to that model are kept unasked until ten quiet minutes pass; a publish and a
-DRAFT's one run are still asked.
+accepted — what will change, how many elements, what will be skipped. A change asked for in a chat is
+shown in Revit, which asks Keep or Discard ([D-126](docs/DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept)).
+Nothing is kept until they choose Keep; Discard, Esc or closing it rolls it back. **The one
+recorded exception is the *Ask to Keep* switch on the ribbon, off by default** ([D-99](docs/DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so)): off, the
+change is kept at once as one named undo entry, and its answer says what it did. On, the box's
+third link keeps that chat's next changes to that model unasked until ten quiet minutes pass
+([D-138](docs/DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)); a publish and a DRAFT's one run are still asked.
 *(Golden Rule 17)*
 
 **10. Never synchronise, publish or share on your own initiative.**
@@ -280,6 +276,10 @@ both accepted by the owner, *"go with you suggetions"*.
 On 2026-11-23 **Article 11**'s exception and the way **Article 7**'s delete is confirmed gained the owner's
 *Ask to Delete* switch - off, Revit shows neither its Delete box nor a DRAFT's Keep or Discard, and the chat
 asks in words first — [D-197](docs/DECISIONS.md#d-197--ask-to-delete-one-switch-in-settings-on-at-every-revit-start-that-stops-revits-delete-box-and-a-drafts-keep-or-discard-and-the-chat-asks-in-words-first), accepted by the owner, *"yes D-197, accept it"*.*
+On 2026-11-28 **Article 9** was reworded in plain words, every part of its meaning kept - its preview, its Keep
+or Discard, its one exception and that exception's compensating control; how the add-in does it stays in D-99,
+D-126 and D-138 — [D-211](docs/DECISIONS.md#d-211--article-9-is-reworded-in-plain-words-with-its-meaning-kept-and-the-room-it-frees-gives-every-chat-the-modellers-scope-their-selection-or-the-active-view-only-what-was-asked-the-model-kept-whole),
+Proposed until the owner confirms it where it can be read (D-206).
 
 > **Three stale statements were corrected on acceptance, and they are worth naming rather than quietly
 > fixing.** This file described its own basis as *"Golden Rules 1–15 (official) and 16–19 (proposed)"* —

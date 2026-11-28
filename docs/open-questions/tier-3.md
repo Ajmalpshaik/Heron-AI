@@ -1368,8 +1368,10 @@ plugin-directory check of 2026-11-26 asked for that value to be neutral. Read fr
 **The question, in a modeller's words: should every Heron install go on sending your PC's name, or a neutral
 name that is the same for everybody?**
 
-- **Change it, in one pull request of its own.** `.mcp.json`, the documented commands, the tests' literal and
-  [`.codex/config.toml`](../../.codex/config.toml) (which carries the same value) change together, and then
+- **Change it, in one pull request of its own.** `.mcp.json`, the documented commands, the tests' literal,
+  [`.codex/config.toml`](../../.codex/config.toml) and, since 2026-11-28, the Claude Code plugin's
+  [`platform/Heron.Plugin/.mcp.json`](../../platform/Heron.Plugin/.mcp.json) (both carry the same value -
+  `tests/test_config_and_health.py` fails while one differs, and `tools/build-plugin.py` refuses to build) change together, and then
   Setup is run again on your PC - a PC check, owed after it merges.
 - **Leave it.** It stays `"ajmal-pc"`; nothing changes, and every install goes on carrying your PC's name.
 - **Recommended:** change it, to a value such as `"heron-pc"`, in its own pull request.
@@ -1457,5 +1459,25 @@ was written or measured, so how much room (a) or (b) would give back is not know
 in a real chat for this entry, and whether a modeller's chat actually misreads *"the owner's switch"* was not
 tried; the 3,785 and the 11 are the branch that fixes row 5b-2080, measured before it merged - on `main` at
 `addd1539`, `host.chat` is still 4,635.
+
+---
+
+### 🟡 Q-102 — Heron's family method colours every family's reference planes by your own standard: outline and centre planes green, all the rest gray. Keep that for every modeller, or make it an option? *(asked 2026-11-28, from the family method rebuild)*
+
+**Tracked as GitHub issue [#1516](https://github.com/Ajmalpshaik/Heron-AI/issues/1516) since 2026-11-28** - the owner answers there.
+
+**Where it comes from.** [`brain/skills/family-creation.yaml`](../../brain/skills/family-creation.yaml), the method `heron_method` serves for building a family, carries *"THE OWNER'S STANDING RULE FOR PLANE COLOURS (2026-11-17), every family"* (near line 196 on main `820745f3`): the outline planes (Left, Right, Front, Back, Top, Bottom) and both centre planes stay on *Reference Planes* itself, Revit's default green; every other plane goes on a gray subcategory of it, *Secondary References*, 128,128,128, made once with `CREATE_LINE_STYLE` and applied with `otherPlanesSubcategory` in `SET_FAMILY_PLANE_REFERENCE`, and again after any later step that makes a plane. It ends *"Only where the modeller says otherwise for a family, ask; never drop the rule silently."* The cards carry the same rule in their header comments - [`set-family-plane-reference`](../../brain/fragments/set-family-plane-reference/fragment.yaml) version 2 (*"The owner's standing rule, 2026-11-17: in every family ..."*) and [`create-line-style`](../../brain/fragments/create-line-style/fragment.yaml). It is your office standard, given on 2026-11-17 in your own words, and it applies to every family Heron builds for **every** modeller who uses it.
+
+**Why it is asked now.** On 2026-11-28 you decided Heron gets no glossary of one site's words, because *"this is not for me only, this is for everyone"* (recorded in [row 5b-2076](../fragment-issues/row-5b-2076.md)). This is the same ground: a rule of yours, built into the method everybody gets. [D-27](../decisions/D-27.md) says Heron's defaults are *"defaults, not law"*, because *"one person's preferences cannot be the product's"*, and [Q-22](answered.md) answered *Everyone* for who Heron is for. The method's rebuild on your own family standard (pull request #1503, open as a draft) keeps this rule word for word, marked as yours, **while your decision is pending**. Found by the session recording the leftovers of 2026-11-28; read from the method and the cards, and nothing run in Revit.
+
+**The question, in a modeller's words: when Heron builds a family for someone else, should its reference planes come out in your green-and-gray colours without being asked?**
+
+- **(a) Keep it for everyone.** Every family Heron builds has the gray *Secondary References* subcategory and your colour split, as today; a modeller whose office wants something else says so, and the method asks. **Cost:** a modeller who has never heard of the rule gets a subcategory and a colour they did not choose, in every family.
+- **(b) Make it an option**, on for you and a stated default for the rest - the default itself (on or off) is part of what you decide. **Cost:** somewhere has to hold the choice for each modeller and the method has to read it before it colours the first plane; where Heron keeps such choices was not looked at, and the cards would still hold your rule as their own wording.
+- **(c) Something else** - for example, the rule stays but Heron tells the modeller once, at the start, that it is applied.
+
+No option is recommended here: the session that found this was asked to record the choices, not to pick one.
+
+**Nothing is changed until this is answered.** Until then the method keeps your rule for every family, as today. **Not checked:** how other modellers' offices colour reference planes; whether any other method (for example the mass-family one) carries the rule - a search of `brain/skills/` for *Secondary References* found only `family-creation.yaml`; which of #1503's stages would change under each option.
 
 ---
