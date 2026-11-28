@@ -12,555 +12,1294 @@ source: OFFICIAL
 
 risk: MODIFY
 
-purpose: >
-  Builds a component family in the Family Editor from an empty template - a
-  box, a diffuser with a round neck, a valve, a pump, a bracket, a light
-  fitting, a generator - either PARAMETRIC, so that it RESIZES correctly from
-  its parameters, or FIXED-SIZE, a detailed model built for how it looks. It
-  may start from a list of sizes, a sketch, or only a PICTURE of the thing. The
-  modeller opens the template (File, New, Family); Heron builds inside it. A
-  family is its method, so the steps are listed in the order they have to
-  happen, and the order is not a preference: taking two of them the other way
-  round breaks the family in a way that looks fine until somebody resizes it.
+# THE SHAPE OF THIS METHOD (2026-11-28). Its backbone is the owner's own
+# family creation standard, given by Ajmal PS in his own words that day:
+# sections 1 to 7 below keep his wording. After each of his steps, "->" names
+# the Heron capability that does it and its card's status, and the lines
+# under it are Heron's own rules and traps for that step, moved here from the
+# fifteen-step method this replaced - nothing of it was dropped unless a card
+# proved it wrong (the pull request lists each). The purpose is a literal
+# block, so it is served line for line as it is written here.
+purpose: |
+  HERON AI - REVIT FAMILY CREATION STANDARD. The owner's standard (Ajmal PS,
+  2026-11-28), with the Heron tool for every step under it.
 
-  A FIXED-SIZE FAMILY - "a detailed generator, no parameters", "visual only" -
-  takes steps 0, 1, 7, 10, 11, 12 and 13, in that order, and the modeller
-  saves it. Steps 2 to 6, 8, 9, 14 and 15 are left out, because no size moves,
-  with two exceptions: CREATE_REFERENCE_PLANES for a plane a form is sketched
-  on or a connector sits on, and the one length parameter a connector is sized
-  by (step 11). Its sizes are still asked for once, in step 0's list: where the
-  modeller wants typical proportions, they go in that list as proposals to
-  accept, marked typical rather than a maker's figures (D-33).
+  HOW TO READ IT. "-> CAPABILITY (STATUS)" after a step is the Heron
+  capability that does it, and its status on its card when this was written;
+  the list of uses served after this method gives each one's status now, and
+  that list wins. A change goes through revit_change, a read through
+  revit_read, a view or a selection on screen through revit_show, and a
+  picture through revit_view_image, which is a tool and not a capability.
+  "-> no Heron tool yet:" is a step Heron cannot do - it says what the
+  modeller does by hand, or what is asked. A DRAFT capability is refused by
+  revit_change and revit_read until it is proved (D-117); the step says what
+  to do meanwhile. A capability of Admin, Publish or Execute risk also needs
+  that switch on, with Changes. Every Heron change is one entry in the Family
+  Editor's undo list.
 
-  BUILD IT PART BY PART, NEVER IN ONE CLICK AT THE END (the owner's rule,
-  2026-10-11). Step 0's list splits the thing into GROUPS, and the family
-  decides them: how many groups, what goes in each and in what order is
-  whatever is easiest for THIS family - there is no set number and no set
-  order. Many small parts of one kind may be one group; one big body may be
-  a group on its own. Seen: a desk as top, frame, drawers, handles; a fan
-  coil unit as casing, fans, coil and drain, air side, electrics; a fire
-  pump as baseplate, pump, coupling, motor, trim, connectors. Then, for each
-  group in turn: work out only that group's parts, build them in
-  ONE CREATE_FAMILY_FORMS call with their materials named on the rows (step
-  7 is one call PER GROUP, not one for the whole family), tell the modeller
-  in one line what is now in Revit, and move to the next group. Never work
-  out every part of the family silently and build it all at the end: the
-  thinking takes the same time either way, Revit takes about a second per
-  call, but the modeller sees nothing for many minutes and a wrong part is
-  found only when everything is built. Group by group, the first part is on
-  screen within about a minute and a mistake costs only its own group.
-  Measured 2026-10-11 on a fixed fan coil unit: 87 parts and 6 connectors in
-  5 groups, 4 min 50 s from request to built; a 186-part transformer built
-  in one call took 9 min 40 s, 27 s of it Revit and Heron.
+  THE ORDER IS NOT A PREFERENCE. Taking two steps the other way round breaks
+  a family in a way that looks fine until somebody resizes it: values before
+  labels, planes before forms, forms before locks, a label before a centre
+  lock.
 
-  TWO WAYS TO SEND THE PARTS, and the modeller chooses by name. BATCH BUILD,
-  above, is the default - named so because "group" is Revit's own word for
-  a model group, which this has nothing to do with. CONTINUOUS BUILD - every form its own
-  CREATE_FAMILY_FORMS call, so the modeller watches the parts arrive one
-  after another - is used when the modeller asks for it by that name. It builds the same
-  family with no more mistakes, but it is slower and fills the chat: each
-  call is a turn and each reply is read. Measured 2026-10-12 on one fixed
-  diesel fire pump set already planned, 111 parts and 6 connectors: batch build
-  12 calls, 34 s; continuous build 117 calls, 3 min, Revit's own work
-  4.4 s and 7.4 s. Say that before starting a continuous build of a large
+  STEPS OTHER METHODS NAME. Before 2026-11-28 this method had steps 0 to 15,
+  and the other family methods still name them: step 0 is Stage 0; step 1 is
+  Stage 1 items 1 to 3; steps 2 and 3 are Stage 1 items 4 to 12; step 4 is
+  Stage 1 item 13; steps 5 and 6 are Stage 2; step 7 is Stage 3; steps 8 and
+  9 are Stage 5; step 10 is Stage 6; step 11 is Stages 7 and 8 (its a to g is
+  Stage 8's NESTED PART THAT IS NOT A FAMILY YET); step 12 is Stages 4 and 9;
+  step 13 is Stage 10; step 14 is Stage 11; step 15 is Stage 13 item 1.
+
+
+  1. OBJECTIVE
+
+  Create accurate, clean, lightweight and production-ready Revit families.
+  Every family must:
+    * Follow the supplied dimensions and design information.
+    * Use appropriate Revit family modelling methods.
+    * Preserve design intent.
+    * Use correct parameters and constraints.
+    * Have correctly configured graphics and visibility.
+    * Have correctly configured MEP connectors when applicable.
+    * Be visually inspected and technically verified.
+    * Be saved successfully as an RFA file.
+  Never guess missing information or claim completion without verification.
+
+
+  2. FAMILY CLASSIFICATION
+
+  Before modelling, identify all applicable classifications.
+  Family behaviour: Parametric, Fixed-Size, Multi-Type, Nested, Adaptive
+  Component, Face-Based, Work Plane-Based, Wall-Based, Ceiling-Based,
+  Floor-Based, Roof-Based, Line-Based, Hosted, Non-Hosted.
+  Discipline: Architectural, Structural, Mechanical, Electrical, Plumbing,
+  Fire Protection.
+  MEP equipment classification: Equipment, Duct Accessory, Duct Fitting, Pipe
+  Accessory, Pipe Fitting, Plumbing Fixture, Electrical Equipment, Electrical
+  Fixture, other appropriate category.
+  These classifications can overlap. Identify the actual family category and
+  hosting behaviour from the selected template.
+    -> REPORT_FAMILY_TEMPLATE (PROVEN) reads the template's category and its
+       kind; the category is set in Stage 1.
+    * THIS METHOD IS FOR A LEVEL-BASED OR WORK-PLANE-BASED FAMILY. Another
+      kind has a method of its own, which keeps these stages and adds its
+      own: HOSTED-FAMILY-CREATION for a wall-, ceiling-, floor-, roof- or
+      face-based family, LINE-BASED-FAMILY-CREATION,
+      PATTERN-BASED-FAMILY-CREATION, ADAPTIVE-FAMILY-CREATION,
+      PROFILE-FAMILY-CREATION, DETAIL-FAMILY-CREATION,
+      MEP-FITTING-FAMILY-CREATION for a duct or pipe fitting,
+      DOOR-WINDOW-FAMILY-CREATION, STRUCTURAL-FAMILY-CREATION for a beam, a
+      brace or a structural column, and LIGHTING-FIXTURE-FAMILY-CREATION for
+      a light with its light source.
+    * A FIXED-SIZE FAMILY - "a detailed generator, no parameters", "visual
+      only" - is built for how it looks; no size moves. It follows section 4,
+      which names the stages it takes.
+
+
+  3. FAMILY CREATION WORKFLOW
+
+  STAGE 0 - INFORMATION AND PREPARATION
+  1. Read the selected family template.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN).
+     * THE FAMILY FILE COMES ONE OF TWO WAYS. The modeller opens the template
+       (File, New, Family), or Heron makes it: CREATE_FAMILY_DOCUMENT
+       (PROVEN, Admin) with the template the modeller NAMES and the full
+       .rfa path the modeller NAMES - a name alone is looked up in Revit's
+       own template folder - saves it there and opens it in a window. Run
+       from a family Heron is working in, it may only save it and give
+       `openNext`: ACTIVATE_DOCUMENT (PROVEN) with that path opens it. Then
+       revit_use_this_model puts the chat on it, because revit_read reads
+       the model the chat is pinned to, not the one in front. Heron never
+       picks a template or a path itself (D-33).
+     * A template can hold content its report does not list - forms and
+       solids are not in it; whether the metric casework template does is
+       not yet measured (row 5b-1709).
+  2. Identify the family category and hosting behaviour.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN): the kind of family; another kind
+        goes to its own method (section 2).
+  3. Check family units. Use millimetres for dimensions.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN), its units line;
+        SET_PROJECT_UNITS (PROVEN, Admin) to change them.
+     * Where the units line reads IMPERIAL - Feet and fractional inches -
+       and the modeller works in millimetres, SAY SO BEFORE ANYTHING IS
+       BUILT: sizes typed in millimetres still build right, but every
+       dimension and value then shows in feet and inches, and the modeller
+       finds it only afterwards. Offer SET_PROJECT_UNITS "Length=Millimeters,
+       0 decimal places", or the family started again from the Metric
+       template; the modeller chooses.
+     * A report with no units line, or one it could not read: REPORT_PROJECT_UNITS
+       (DRAFT) is the read - refused until it is proved, so meanwhile ask
+       the modeller to read Manage, Project Units, Length.
+  4. Check the origin and reference levels.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN): every plane and level, where each
+        sits, what it faces, its Is Reference and Defines Origin.
+     * A TWO-LEVEL FAMILY - a column from Metric Column.rft - draws on
+       `Lower Ref. Level`, never `Ref. Level` (a work plane typed `Ref.
+       Level` there is refused), and the placed column's top drives `Upper
+       Ref. Level`: see Stage 3 D.
+  5. Save the family to the requested location if it has no saved file.
+     -> SAVE_DOCUMENT (PROVEN, Publish) with saveAsPath the full .rfa path
+        the modeller types - never a path Heron makes up; or the modeller's
+        Ctrl+S.
+     * Whether it has a file: REPORT_OPEN_DOCUMENTS (DRAFT) names a family
+       NEVER SAVED, but it is refused until it is proved - meanwhile ask the
+       modeller. A family made by CREATE_FAMILY_DOCUMENT already has its file.
+     * A large build in a family with no file is saved BEFORE the first
+       write, never only at the end: closed with no file, it is lost with
+       every form in it.
+  6. Collect all dimensions from the modeller, manufacturer drawings or
+     supplied references.
+     -> no Heron tool: asked for, once, in the one list of item 7.
+     * A PICTURE GIVES SHAPE AND PROPORTION, NEVER SIZE: every size,
+       parameter name and type name is the modeller's, asked for once, and
+       never assumed or scaled off the image (D-33). Where the picture cannot
+       show something - the back, the inside, a hidden neck - ask rather
+       than invent it.
+  7. Prepare a dimension register.
+     -> no Heron tool: the chat writes it, and says it back to the modeller
+        in ONE list - what the thing is and its category; every SIZE that
+        describes it, marked supplied, calculated or typical, and which
+        change between types (they become parameters) and which never do.
+     * Where the modeller wants typical proportions, they go in the list as
+       proposals to accept, marked typical rather than a maker's figures
+       (D-33).
+  8. Identify missing, conflicting or unclear dimensions.
+     -> no Heron tool: asked; never resolved silently.
+  9. Identify the required family classification.
+     -> section 2.
+  10. Identify required geometry, materials, connectors and graphics.
+     -> no Heron tool: the same list names each FORM as the form that
+        builds it - a box between planes; a round or any other shape pushed
+        straight (extrusion); a shape turned about an axis (revolve: cones,
+        domes, knobs, round bodies); one shape changing into another (blend:
+        square-to-round necks, tapered legs); a shape carried along a path
+        (sweep: rails, pipe runs, frames, rings); one shape changing along
+        one bend (swept blend: reducers, elbows); every hole or notch as a
+        void; every part that repeats in a row - blades, fins, slots - as
+        one form and a count, or as a nested family and a count where a size
+        stretches it (Stage 6); every PART only some types have, which
+        becomes a Yes/No parameter; every connector, material and plan
+        symbol.
+     * The list also splits the thing into its GROUPS for Stage 3 E.
+  11. Identify whether nested families or adaptive components are needed.
+     -> no Heron tool: decided in the list - a part that is a family of its
+        own (a motor, a handle) is nested (Stage 8); an adaptive component
+        is ADAPTIVE-FAMILY-CREATION.
+  RULES:
+    * Never invent dimensions.
+    * Never assume dimensions from an image are exact.
+    * Distinguish supplied dimensions from calculated dimensions.
+    * Ask the modeller when essential information is missing.
+    * Never silently resolve conflicting dimensions.
+  GATE: Confirm that sufficient information is available before modelling -
+  the modeller confirms the list.
+
+  STAGE 1 - FAMILY CONFIGURATION
+  1. Set the correct family category.
+     -> SET_FAMILY_SETTINGS (PROVEN), "Category=<name>".
+     * First, when the template's category is not the one wanted - a
+       Generic Model that should be an Air Terminal; in a call with other
+       settings it is written first. The category brings its own built-in
+       parameters, and everything after it builds on them.
+  2. Set Part Type and other category-specific properties where applicable.
+     -> SET_FAMILY_SETTINGS (PROVEN).
+     * A family that will be NESTED in another: Work Plane-Based, so it is
+       placed on a plane and moves with it; Shared when a project must
+       schedule or tag it on its own.
+     * An INLINE valve or accessory that a pipe breaks into is the other way
+       round: Work Plane-Based=no - a work-plane-based check valve would not
+       connect to its pipe - and a Breaks Into Part Type, "Valve - Breaks
+       Into" for a valve (a bare "Valve" is refused with Revit's own list).
+  3. Confirm OmniClass Number and Title with the modeller.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN), its classificationCodes line - the
+        OmniClass Numbers (Classification Number from Revit 2026) Revit's own
+        taxonomy file gives the category; run it again after the category
+        changes. Then SET_FAMILY_SETTINGS (PROVEN) "OmniClass Number=<code>"
+        writes it and reads the title back.
+     * Propose the code that fits; the modeller confirms it, and picks where
+       more than one could fit - never guessed (D-33). No file, or no code
+       for the category - Revit 2026 and later ship only a sample file - is
+       said, and the item is left out.
+  4. Review the office shared parameter file.
+     -> REPORT_SHARED_PARAMETER_FILE (PROVEN), nameContains the names
+        wanted and compareWithDocument true.
+     * READ FIRST, before any shared parameter is added: which file Revit is
+       set to now, whether each name is in it and with which GUID, and
+       whether the family already carries that name with another GUID or not
+       shared. It changes nothing; tell the modeller the file and the GUIDs,
+       then add.
+  5. Add required shared parameters from the office file.
+     -> ADD_FAMILY_PARAMETERS (PROVEN, Admin), kind shared.
+     * Any value a project must TAG or SCHEDULE is a shared parameter. The
+       shared file is outside Undo, so every ADD_FAMILY_PARAMETERS call needs
+       Admin as well as Changes.
+     * A family parameter already labelling dimensions that must become the
+       office's shared one is REPLACED in place - replaceExisting true,
+       "Width=Unit_Width" - never a second parameter driven by a formula,
+       which leaves two per size in the Properties palette.
+     * A name the office file does not have yet is CREATED in it -
+       createMissing true, written "Group: Name [Data type]", "Refrigerant:
+       Gas Pipe Diameter [Pipe Size]". Ask the modeller for the group and the
+       data type; never pick them. It writes the office's file, which Undo
+       does not reach: the Admin switch and the modeller's yes for those
+       names.
+  6. Add required family parameters.
+     -> ADD_FAMILY_PARAMETERS (PROVEN, Admin).
+     * The sizes the family is driven by, as TYPE lengths when they describe
+       the product; a diameter is a length too.
+  7. Set correct parameter names and data types.
+     -> ADD_FAMILY_PARAMETERS (PROVEN, Admin) - renameExisting to rename one.
+  8. Set Type or Instance behaviour.
+     -> ADD_FAMILY_PARAMETERS (PROVEN, Admin) - instance, or switchExisting
+        for one already there.
+  9. Set parameter groups.
+     -> ADD_FAMILY_PARAMETERS (PROVEN, Admin) - parameterGroup.
+  10. Create the first family type.
+     -> SET_FAMILY_TYPE_VALUES (PROVEN) - it makes the type if it is new.
+  11. Enter all supplied parameter values.
+     -> SET_FAMILY_TYPE_VALUES (PROVEN).
+     * BEFORE any dimension is labelled: a new length reads 0, and a label
+       on a 0 drives its planes onto each other.
+     * The SAME values into several types - typeName "all", or a comma list
+       of types the family has - is ONE call, never one per type (row
+       5b-1504).
+  12. Create additional types only when required.
+     -> SET_FAMILY_TYPE_VALUES (PROVEN), a new typeName - it also renames or
+        deletes a type.
+  13. Add formulas for genuine dimensional relationships.
+     -> SET_FAMILY_FORMULA (PROVEN).
+     * "Neck Width = Width - 100 mm", "Radius = Diameter / 2". Names are
+       written bare, spaces and all. A formula needs a type to hold its
+       result, so item 10 comes first.
+  14. Check formulas for circular dependencies and invalid values.
+     -> SET_FAMILY_FORMULA (PROVEN) hands back Revit's own refusal and keeps
+        nothing; REPORT_FAMILY_PARAMETERS (PROVEN) reads every value back.
+  Do not create unnecessary parameters.
+     -> DELETE_FAMILY_PARAMETERS (PROVEN) takes out one that nothing uses.
+
+  STAGE 2 - REFERENCE FRAMEWORK
+  For parametric families:
+  1. Establish the family origin.
+     -> SET_FAMILY_PLANE_REFERENCE (PROVEN), Defines Origin.
+     * Where the family is placed from, and set before it is placed in any
+       project: a project takes a moved origin when the family is loaded
+       again.
+  2. Create the required reference planes.
+     -> CREATE_REFERENCE_PLANES (PROVEN).
+     * The skeleton, at the positions the sizes put them: left-right planes,
+       front-back planes, height planes. One plane for every face whose
+       position a parameter drives.
+  3. Create reference lines where needed.
+     -> no Heron tool yet. A reference line can be made through the API, but
+        no documented call gives the planes a reference line carries, so a
+        form cannot be put on one; the only route found reads a reference
+        out of an undocumented string Autodesk says is not meant to be
+        parsed (row 5b-280). A part that swings or tilts about a pivot is
+        drawn by the modeller by hand; a bend whose angle the types choose is
+        a revolve, the documented route (Stage 5 item 4).
+  4. Name important reference planes.
+     -> CREATE_REFERENCE_PLANES (PROVEN) names every plane it makes.
+  5. Set suitable reference properties.
+     -> SET_FAMILY_PLANE_REFERENCE (PROVEN): Left, Right, Front, Back, Top
+        and Bottom on the outer planes a project dimensions to, Strong or
+        Weak Reference on any other it should reach, Not a Reference on
+        planes only the build needs.
+  6. Establish centre, left, right, front, back, top and bottom references
+     where applicable.
+     -> SET_FAMILY_PLANE_REFERENCE (PROVEN), and CREATE_LINE_STYLE (PROVEN)
+        for the gray subcategory below.
+     * THE OWNER'S STANDING RULE FOR PLANE COLOURS (2026-11-17), every
+       family - the owner's rule, kept as he gave it while his decision on
+       it is pending: the outline planes (Left, Right, Front, Back, Top,
+       Bottom) and both centre planes (Center (Left/Right), Center
+       (Front/Back)) stay on Reference Planes itself, Revit's default green;
+       every other plane goes on a gray subcategory of Reference Planes.
+       Once, before the first such plane is coloured: CREATE_LINE_STYLE,
+       parentCategory "Reference Planes", styleName "Secondary References",
+       colour "128,128,128" (updateExisting true when the family has it
+       already). Then, in the same SET_FAMILY_PLANE_REFERENCE call that sets
+       Is Reference, otherPlanesSubcategory "Secondary References" - and
+       again after any later step makes a plane (EXTRUDE_POLYGON_BETWEEN_PLANES
+       makes its own side planes), a fixed-size family's planes included.
+       Its findings name every outline or centre plane it left on Reference
+       Planes; one named as on another subcategory goes back with
+       subcategories "<plane>=Reference Planes". Only where the modeller says
+       otherwise for a family, ask; never drop the rule silently.
+  7. Add dimensions between reference planes.
+  8. Label dimensions with appropriate parameters.
+     -> LABEL_FAMILY_DIMENSION (PROVEN), for items 7 and 8 in one call.
+     * Every straight size, with the family's centre plane for left-right
+       and front-back - which also adds the EQ dimension, so the shape stays
+       centred on its insertion point - and from Ref. Level for a height.
+       The values are in first (Stage 1 item 11).
+  9. Establish angular and radial references where required.
+     -> CREATE_REFERENCE_PLANES (PROVEN) with axis=angle, and
+        LABEL_FAMILY_DIMENSION (PROVEN) with an Angle parameter.
+     * A sloped plane: each entry of `planes` is Name=degrees, not
+       millimetres - a vertical plane drawn in the floor plan, its line
+       turned that many degrees from the left-right line towards the back -
+       and throughMm, "X,Y" in millimetres, is the point it passes through,
+       the family's origin when left out.
+     * AN ANGLE LABEL between two planes that meet needs an Angle parameter
+       that already holds the angle the two planes make, or the call is
+       refused with both numbers.
+     * A radial size is labelled on its form, after Stage 3 (Stage 5 item 3).
+  10. Check alignment and constraints.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN) reads every plane where it now sits.
+        No Heron read lists which dimension holds a plane in a 3D family:
+        item 11 and Stage 11 show it by moving them.
+  11. Test the reference framework before geometry creation.
+     -> SET_FAMILY_TYPE_VALUES (PROVEN) with other sizes, then
+        REPORT_FAMILY_TEMPLATE (PROVEN): every labelled plane must have moved
+        to its new size; then the real values back.
+  Do not create unnecessary reference planes.
+     * A fixed-size family makes only the planes a form is sketched on or a
+       connector sits on (section 4).
+
+  STAGE 3 - GEOMETRY CREATION
+  Heron must understand and use all appropriate Revit Family Editor geometry
+  tools.
+  A. Solid Forms - Solid Extrusion, Solid Blend, Solid Revolve, Solid Sweep,
+     Solid Swept Blend.
+     -> CREATE_FAMILY_FORMS (PROVEN): a row each, kind=extrusion,
+        kind=revolve, kind=blend, kind=sweep or kind=swept blend, solid=true.
+     -> EXTRUDE_BETWEEN_PLANES (PROVEN) for a box between planes - it locks
+        itself.
+     -> EXTRUDE_POLYGON_BETWEEN_PLANES (PROVEN) for a HEXAGON or another
+        even regular polygon whose size across the flats a parameter drives -
+        a bolt head, a nut: it makes its own side planes, labels them and
+        locks itself, so that size needs no Stage 2 of its own. Never one
+        fixed hexagon per size switched by type.
+  B. Void Forms - Void Extrusion, Void Blend, Void Revolve, Void Sweep, Void
+     Swept Blend.
+     -> CREATE_FAMILY_FORMS (PROVEN), the same rows with solid=false; a void
+        cuts nothing until Stage 6 combines it.
+  C. Other Modelling Methods
+    * Model Lines -> no Heron tool yet in a 3D family: DRAW_FAMILY_DETAIL_LINES
+      (PROVEN) draws a 2D family's lines and refuses a 3D one. A plan or
+      elevation symbol is DRAW_FAMILY_SYMBOLIC_LINES (Stage 9); a model line
+      is drawn by the modeller by hand.
+    * Reference Lines -> no Heron tool yet (Stage 2 item 3).
+    * Reference Planes -> CREATE_REFERENCE_PLANES (PROVEN).
+    * Nested Families -> Stage 8.
+    * Adaptive Components -> ADAPTIVE-FAMILY-CREATION, a method of its own.
+    * Arrays -> ARRAY_FAMILY_FORMS (PROVEN), Stage 6.
+    * Repeated Components -> one extrusion of many loops (D below), an array
+      (Stage 6), or a nested family arrayed (Stage 6).
+    * Appropriate supported freeform geometry -> CREATE_FAMILY_FREEFORM_SOLID
+      (PROVEN): a smooth shape none of the forms makes in one piece - a coil,
+      an organic body. It is a FIXED shape that no plane or parameter moves
+      and no lock or label reaches, so say that before using it.
+    * Imported geometry as reference only, when necessary -> IMPORT_CAD
+      (PROVEN), into a named view of the family as an underlay; it is taken
+      out again before delivery (DELETE_ELEMENTS, PROVEN, on the modeller's
+      yes - section 5).
+  D. Geometry Selection Rules
+  1. Analyse the required shape before choosing a modelling method.
+  2. Select the simplest suitable Revit geometry method.
+  3. Use Extrusion for suitable constant-section shapes.
+  4. Use Blend for changing profiles along a straight direction.
+  5. Use Revolve for rotational geometry.
+  6. Use Sweep for profiles following paths.
+  7. Use Swept Blend for changing profiles following a path.
+  8. Use Void Forms to create required cuts.
+  9. Use nested families for independent or reusable components.
+  10. Use adaptive components when the geometry requires adaptive placement
+      or control.
+  11. Use arrays only when repeated geometry requires them.
+  12. Use segmented sweeps where appropriate.
+      -> CREATE_FAMILY_FORMS (PROVEN), kind=sweep, its path open corners and
+         arcs "X,Y; X,Y; arc MX,MY X,Y" (the first corner written again for a
+         closed ring), its profile drawn about its own origin. A swept blend's
+         path is ONE straight piece or ONE arc; a longer one is a sweep.
+         A sweep with a loaded profile family is SET_FAMILY_SWEEP_PROFILE
+         (PROVEN), by the sweep's id.
+  13. Use appropriate sketch and path methods.
+      -> CREATE_FAMILY_FORMS (PROVEN). Its rules:
+     * IN THE FAMILY'S OWN COORDINATES, NEVER THE PROJECT'S: every point is
+       measured from the planes REPORT_FAMILY_TEMPLATE names and the one that
+       Defines Origin, as they stand after Stage 2, and each form is drawn
+       exactly where the planes are NOW, so that its faces lie on them. A
+       family from the metric casework template drawn in project coordinates
+       and placed at 0,0,0 came out 45 mm short in X, its box reaching back
+       to (-405, -600) where nothing was drawn (Revit 2024, row 5b-1709).
+     * WHICH WAY A PLANE RUNS: on Ref. Level a profile is X,Y and startMm to
+       endMm run up Z; on Center (Front/Back) a profile is X,Z and they run
+       along +Y; on Center (Left/Right) a profile is Y,Z and they run along
+       +X. Both centre planes lie at 0; on a plane elsewhere, where startMm
+       and endMm count from is not yet measured. Shapes are typed in
+       millimetres in the work plane's own two model coordinates.
+     * MANY FORMS ARE ONE CALL: a row per form, written once to a file under
+       %TEMP%\heron-work, one undo entry, every id given back in the order
+       listed. Every form's id is what every later step names it by. A row
+       may carry material= (a family material parameter, a material in the
+       family, or "by category"), detailLevels= and views=.
+     * ONE EXTRUSION TAKES MANY LOOPS, `|` between: every outline that shares
+       a plane, a start and an end - eight bolts, a row of louvre slats, the
+       rings of a fan guard - is one form instead of dozens. A ring is an
+       outer loop with an inner one, and a smaller ring may sit inside that
+       hole. Loops that touch or cross, and a loop that crosses itself, are
+       refused before anything is made, naming the row and the loops (rows
+       5b-296, 5b-1921).
+     * KEEP A CALL TO ABOUT 300 LOOPS: one call of about 1,800 louvre slots
+       ran past the 50-second limit and was rolled back, while 180 to 270
+       loops took 6 to 12 s (Revit 2020, row 5b-1888); more than 600 in one
+       call is refused.
+     * A SLOT WITH ROUND ENDS is one loop of corners and `arc MX,MY X,Y`
+       sides - "xc-5,zc+15; arc xc,zc+20 xc+5,zc+15; xc+5,zc-15; arc
+       xc,zc-20 xc-5,zc-15" - STARTED at the end of a straight side: the tool
+       closes every loop itself with a STRAIGHT line back to its first
+       corner, so that straight side is the one it draws, and the first
+       corner is never written again at the end.
+     * A HEX NUT is `polygon CX,CY R 6`, R the radius to a CORNER, not half
+       across the flats - 13 mm across flats is R 7.5. The first corner lies
+       along the plane's first coordinate, so on Center (Left/Right) the
+       flats come out top and bottom (R 6.35 read back 11 mm across them).
+     * A small part - a port, a screw, a bolt - carries `detailLevels=medium,
+       fine` or `detailLevels=fine` on its own row: set and read back in the
+       same call, with no SET_FAMILY_FORM_VISIBILITY step after it.
+     * A long profile - a thread, blades, rings, a row of bars - is written
+       out by a small script, into that file or the call, never typed by
+       hand and never saved beside Heron.
+     * A FORM THAT WILL BE ARRAYED is sketched on a plane no parameter moves
+       (Stage 6).
+     * IN A TWO-LEVEL FAMILY a revolve drawn above the Upper Ref. Level
+       RIDES UP WITH IT when the column is placed taller - Revit does it, not
+       Heron, which locks nothing to either level - while extrusions sketched
+       on Lower Ref. Level stay where they were drawn (Revit 2020, row
+       5b-1876). So tall geometry there is extrusions or sweeps sketched on
+       Lower Ref. Level, or CREATE_FAMILY_FREEFORM_SOLID shapes - a ring or
+       cap as two freeform half-rings - or the modeller first moves Upper
+       Ref. Level by hand to the family's real height; Heron has no tool
+       that moves a family's level. Geometry MEANT to follow the top is
+       locked to Upper Ref. Level on purpose (LOCK_FORM_TO_PLANES). Not yet
+       tried: a revolve that crosses the Upper Ref. Level, and Revit 2024 or
+       later.
+  14. Avoid unnecessary geometry complexity.
+     * LETTERING - a nameplate, a legend - is ADD_FAMILY_MODEL_TEXT (Stage
+       9), never letters built of forms.
+  E. Geometry Building Rules
+  1. Divide the family into logical geometry groups.
+  2. Identify the geometry creation order.
+  3. Create one group per modelling operation.
+  4. Complete one group before starting another.
+  5. Read back and verify the created geometry.
+  6. Inform the modeller after each group.
+  7. Stop if the geometry is incorrect.
+  8. Correct the issue before continuing.
+  9. Apply constraints to the appropriate reference planes or reference
+     geometry.
+  10. Lock geometry only where the design intent requires it.
+  11. Check joins, intersections and overlaps.
+  12. Avoid unnecessary duplicate geometry.
+     -> CREATE_FAMILY_FORMS (PROVEN), ONE call PER GROUP, with each row's
+        material named; REPORT_FAMILY_FORMS (PROVEN) reads the group back;
+        locks are Stage 5, joins and cuts Stage 6.
+     * BUILD IT PART BY PART, NEVER IN ONE CLICK AT THE END (the owner's
+       rule, 2026-10-11). The family decides the groups: how many, what goes
+       in each and in what order is whatever is easiest for THIS family -
+       there is no set number and no set order. Many small parts of one kind
+       may be one group; one big body may be a group on its own. For
+       example: a desk as top, frame, drawers, handles; a fan coil unit as
+       casing, fans, coil and drain, air side, electrics; a fire pump as
+       baseplate, pump, coupling, motor, trim, connectors.
+     * For each group in turn: work out only that group's parts, build them
+       in one call, tell the modeller in one line what is now in Revit, and
+       move to the next group. Never work out every part silently and build
+       it all at the end: the thinking takes the same time either way and
+       Revit takes about a second a call, but the modeller sees nothing for
+       many minutes and a wrong part is found only when everything is built.
+       Group by group, the first part is on screen within about a minute and
+       a mistake costs only its own group.
+     * Measured: a fixed fan coil unit, 87 parts and 6 connectors in 5
+       groups, 4 min 50 s from request to built; a 186-part transformer
+       built in one call, 9 min 40 s, 27 s of it Revit and Heron.
+     * TWO WAYS TO SEND THE PARTS, and the modeller chooses by name. BATCH
+       BUILD - one call per group - is the default, named so because "group"
+       is Revit's own word for a model group, which this has nothing to do
+       with. CONTINUOUS BUILD - every form its own call, so the modeller
+       watches the parts arrive one after another - only when the modeller
+       asks for it by that name: the same family with no fewer mistakes, but
+       slower, and it fills the chat. Say so before starting one on a large
+       family. Measured on one diesel fire pump set already planned, 111
+       parts and 6 connectors: batch 12 calls, 34 s; continuous 117 calls,
+       3 min, Revit's own work 4.4 s and 7.4 s.
+  Never assume every shape can or should be created using Extrusion.
+
+  STAGE 4 - OBJECT STYLES AND SUBCATEGORIES
+  Configure graphics systematically.
+  Object Styles
+  1. Review the family category's Object Styles.
+     -> LIST_CATEGORIES (PROVEN) - in a family, its own category and its
+        subcategories come first, with their line weights, colours and
+        patterns.
+  2. Configure suitable line weights.
+  3. Configure line colours.
+  4. Configure line patterns where required.
+     -> CREATE_LINE_STYLE (PROVEN), familyCategory true, for a subcategory's
+        colour, line weight and pattern, as Object Styles sets them
+        (updateExisting true once the subcategory exists);
+        CREATE_LINE_PATTERN (PROVEN) for a new pattern. The family's own
+        category is SET_OBJECT_STYLE (PROVEN) - its card is written for a
+        model's categories and does not say it was run in a family, so read
+        the result back with LIST_CATEGORIES.
+  5. Review material-related graphic settings where applicable.
+     -> SET_MATERIAL_PROPERTIES (PROVEN), a material's graphics patterns.
+  Subcategories
+  1. Identify logical geometry groups.
+  2. Create appropriate family subcategories when required.
+  3. Assign geometry to the correct subcategory.
+     -> SET_FAMILY_FORM_SUBCATEGORY (PROVEN), making the subcategory if it
+        is new - the insulation on its own subcategory, for example.
+  4. Apply suitable line graphics.
+     -> CREATE_LINE_STYLE (PROVEN), familyCategory true.
+  5. Check visibility and graphic overrides in the family and project.
+     -> revit_view_image in the family (Stage 10 E); in a project, Stage 12.
+  Do not create unnecessary subcategories.
+
+  STAGE 5 - DIMENSIONS AND PARAMETRIC CONTROL
+  1. Label required linear dimensions.
+     -> LABEL_FAMILY_DIMENSION (PROVEN), done in Stage 2.
+  2. Label angular dimensions where applicable.
+     -> LABEL_FAMILY_DIMENSION (PROVEN), an Angle parameter (Stage 2 item 9).
+  3. Label radial and diameter dimensions where applicable.
+     -> LABEL_FAMILY_RADIUS (PROVEN), the parameter holding the size first,
+        as in Stage 1 item 11.
+     * It labels the form's SKETCH, where Edit Extrusion shows it, never the
+       finished round edge: Revit accepts a label on the edge and the circle
+       ignores it (row 5b-305), while a label in the sketch drove the form.
+       A revolve's radius is measured from a reference plane its axis lies
+       on, so make that plane first.
+     * A label holds the SIZE only: a circle that must stay on planes that
+       move - a spigot centred on a box - also has its centre locked with
+       LOCK_FORM_SKETCH_TO_PLANES, or it drifts (75 mm was measured). The
+       label FIRST: a centre locked on a circle with no size label stretches
+       it as it moves.
+  4. Associate parameters with appropriate geometry.
+     -> LINK_FAMILY_PARAMETER (PROVEN), forms= the form's id, where the size
+        is the form's OWN field rather than a plane: an extrusion's end to a
+        length, a revolve's end angle to an angle - a bend whose angle the
+        types choose. Never both a link and a lock on one face.
+  5. Check dimensional relationships.
+  6. Verify formulas.
+     -> REPORT_FAMILY_PARAMETERS (PROVEN): every value the current type
+        sets.
+  7. Check equality constraints where needed.
+     -> LABEL_FAMILY_DIMENSION (PROVEN) adds the EQ dimension when the
+        centre plane is named (Stage 2 item 8). An EQ anywhere else: no
+        Heron tool yet - the modeller adds it by hand.
+  8. Check alignment constraints.
+  9. Check locked geometry.
+     -> LOCK_FORM_TO_PLANES (PROVEN) for every form that is not a box from
+        EXTRUDE_BETWEEN_PLANES - each flat face that lies on a plane a
+        parameter moves. A face not locked stays where it was drawn when its
+        plane moves, and looks parametric until the first flex.
+     -> LOCK_FORM_SKETCH_TO_PLANES (PROVEN) for a SWEEP: lock its PATH lines
+        and never its faces - a sweep with its faces locked failed every
+        later size change ("Can't create sweep", Revit 2020); whether one END
+        face of an open sweep can be locked safely is not measured.
+     * No Heron read lists a 3D form's locks; Stage 11 shows whether they
+       hold.
+  10. Verify that changing parameters produces the intended result.
+     -> FLEX_FAMILY (PROVEN), Stage 11.
+  Fixed-size families do not need unnecessary parametric controls.
+
+  STAGE 6 - VOIDS AND ARRAYS
+  1. Identify all required openings and cut-outs.
+  2. Create suitable void forms.
+     -> CREATE_FAMILY_FORMS (PROVEN), solid=false, in Stage 3.
+  3. Apply Cut Geometry to the intended solids.
+     -> COMBINE_FAMILY_FORMS (PROVEN).
+     * A void made through the API cuts NOTHING until it is combined, and the
+       cut is measured. Solids that should read as one piece are joined the
+       same way.
+     * A solid is in one combination at most: to cut it again, name that
+       combination's id with the new voids, never the solid.
+     * A void cuts every solid in its combination that it passes through, so
+       one bore void the length of a valve notches whatever else is joined
+       along it - give each flange its own short void.
+     * A void meant to cut a HOSTED family's template host - a floor drain's
+       hole through the floor - is combined with nothing: no Heron tool yet,
+       because Revit's API cannot make that cut on any release; the modeller
+       cuts it by hand before loading, as HOSTED-FAMILY-CREATION says (row
+       5b-1324). An OPENING in a wall- or ceiling-based family's own template
+       wall or ceiling is CREATE_OPENING (PROVEN), in that method.
+  4. Verify that every cut is successful.
+  5. Check void behaviour and constraints.
+     -> REPORT_FAMILY_FORMS (PROVEN): the cut or join each form is in, and
+        each solid's volume; FLEX_FAMILY (PROVEN) at other sizes.
+  6. Create required arrays.
+  7. Set array counts and spacing.
+  8. Associate array controls with parameters where required.
+     -> ARRAY_FAMILY_FORMS (PROVEN): ONE form made in Stage 3, its count an
+        Integer parameter given its value in Stage 1, its step an axis and a
+        distance.
+     * ARRAY ONLY A FORM SKETCHED ON A PLANE NO PARAMETER MOVES - Ref.
+       Level, a centre plane. A form sketched on a plane a parameter moves
+       LOSES ITS WORK PLANE in the array (REPORT_FAMILY_FORMS reads it "on
+       <not associated>"), and the row breaks at another type: on a duct
+       heater the copies stayed at the old length or drifted about 40 mm a
+       step, the array's own trial did not refuse it - it measures only the
+       type in front - and the modeller undid 15 steps (row 5b-1261).
+     * A PART IN A ROW THAT A SIZE STRETCHES IS A NESTED FAMILY: made as
+       Stage 8's nested part, Work Plane-Based, its own planes and labels
+       stretching it; its lengths linked to the host's formulas with
+       LINK_FAMILY_PARAMETER, family= and type=; placed with
+       PLACE_FAMILY_INSTANCES, nested, at a FIXED point - the host's origin
+       on Ref. Level, never on a plane that moves; then ARRAY_FAMILY_FORMS on
+       the nested instance, its count an Integer formula. A row both ways
+       from the centre is two arrays: one up from Z 0, and one down from a
+       second instance on a height plane at Z -80. That rebuild held at four
+       sizes under FLEX_FAMILY, the row reading 9, then 15, then 17.
+     * An arrayed void's copies are each combined in turn, by the ids the
+       array gives back - `members` are the copies' model groups,
+       `memberForms` the void inside each. Whether Revit combines a void that
+       sits in an array's group is not yet run (row 5b-358).
+     * A form already in an array is refused, naming the array that holds it:
+       change that array's count instead.
+  9. Verify minimum and maximum supported values.
+     -> FLEX_FAMILY (PROVEN), at the smallest and largest sizes (Stage 11).
+  10. Check for overlapping or broken geometry.
+     -> REPORT_FAMILY_FORMS (PROVEN) and a picture (Stage 10).
+  Avoid excessive voids and arrays.
+
+  STAGE 7 - MEP CONNECTORS
+  For MEP families, identify every required connector.
+  Connector configuration
+  1. Identify connector locations from supplied drawings.
+     -> no Heron tool: from the drawings, in Stage 0's list.
+  2. Establish the correct reference planes or faces.
+     -> CREATE_REFERENCE_PLANES (PROVEN): each connector face gets a plane
+        of its own.
+     * EXACTLY ONE SOLID FACE may lie on the plane a connector is named by,
+       so a connector face never shares its plane with another flange: make
+       the spigot end the only face there, and set a flange back off that
+       plane.
+     * A REVOLVED flange or spigot leaves its flat end as TWO half-faces on
+       the one plane, and the connector is refused with "2 solid faces lie
+       on" it (row 5b-431). Put a pad on it: a 2 mm EXTRUDED disc -
+       kind=extrusion, a circle the flange's size, startMm and endMm 2 mm
+       apart - its outer face on a NEW plane 2 mm beyond the flange, and name
+       the connector by that plane.
+     * A form's own face is used first; a face inside a combination (Stage
+       6) is searched too, but whether Revit takes a connector there is not
+       yet proved - keep a connector's flange out of every combination, or
+       put a thin uncut pad on its face.
+     * A DUCT ACCESSORY whose ends are a NESTED frame has no face of its own
+       at the ends, and a connector on a nested family's face sits off-centre
+       and does not follow Length (row 5b-1334). Build a 3 mm RING on each end
+       plane - its opening the duct size, its outside 20 mm larger, its faces
+       locked to the duct and ring planes, Visible linked to a Yes/No set No
+       - and name the connector by that end plane: a ring face is measured by
+       its opening and the port centred in it.
+  3. Place connectors on appropriate faces where possible.
+     -> ADD_FAMILY_CONNECTOR (PROVEN): facePlane the plane its face lies on,
+        system as Revit names it ("Supply Air", "Domestic Cold Water",
+        "Power Balanced", "Global"), sizeParameters, and form= the id of the
+        form whose face takes it and facing= the way it points (up, down,
+        left, right, front, back) to settle which face; at= its centre in mm
+        where more than one face still qualifies.
+     * On the face its service leaves by, sized by the parameters so the
+       port follows the neck. A new connector does not take its face's size,
+       so a duct or pipe connector is refused without the parameters that
+       size it.
+     * An ELECTRICAL connector has no size: its sizeParameters is given EMPTY
+       (the word none was refused on 2026-11-28).
+  4. Use suitable work planes when required.
+     -> SET_FAMILY_CONNECTOR_ROLES (PROVEN), host=<reference plane>, moves a
+        connector already made onto a reference plane with no solid face
+        under it, so the solid it was made on can go - Revit 2023 and later
+        only. On Revit 2020 to 2022 no Heron tool puts a connector on a
+        reference plane: use a thin solid with Visible off, or the modeller
+        places it on the work plane by hand.
+  5. Set connector shape.
+     -> SET_FAMILY_CONNECTOR_ROLES (PROVEN), shape=Round, Rectangular or
+        Oval on a duct connector - in the same call as its sizeParameters.
+  6. Set connector dimensions.
+     -> ADD_FAMILY_CONNECTOR (PROVEN), sizeParameters: two for a rectangular
+        duct port (width first, then height), one for a round duct or a pipe.
+     * Each is a Length parameter, or a Duct Size parameter for a duct port
+       and a Pipe Size one for a pipe port - no extra Length parameter made
+       for it. A pipe or duct port is sized by a parameter even in a
+       fixed-size family: add it and its value first (Stage 1 items 6 and 11).
+     * On a flange ring the port may be smaller than the opening it sits in,
+       centred; on a whole face never - a port that will not fit is refused
+       and nothing is kept.
+  7. Set system classification.
+     -> ADD_FAMILY_CONNECTOR (PROVEN) system=; SET_FAMILY_CONNECTOR_ROLES
+        (PROVEN) system= to change it.
+  8. Set flow direction.
+  9. Set flow configuration where applicable.
+     -> SET_FAMILY_CONNECTOR_ROLES (PROVEN): flowDirection, flowConfiguration,
+        presetFlow (a value or a [family parameter]).
+  10. Set appropriate connector parameters.
+     -> SET_FAMILY_CONNECTOR_ROLES (PROVEN).
+     * An ELECTRICAL connector is made with Revit's defaults and no load;
+       this gives it its Voltage, Number of Poles, Apparent Load and Power
+       Factor - "voltage=400 V; poles=3; apparentLoad=1.5 kVA;
+       powerFactor=0.85" - each a value the modeller gave in Stage 0's list,
+       never assumed (D-33), or a family parameter in square brackets that
+       drives it, a shared one where a project must schedule it.
+     * A DRAIN's pipe connectors need Allow Slope Adjustments ticked before
+       the pipework drawn from them can be given a fall:
+       "allowSlopeAdjustments=yes" on each - a pipe connector's box only.
+  11. Configure primary connectors where required.
+     -> SET_FAMILY_CONNECTOR_ROLES (PROVEN), primary=.
+  12. Check connector orientation.
+  13. Check connector elevation and alignment.
+     -> REPORT_FAMILY_CONNECTORS (PROVEN): where each sits and points;
+        SET_FAMILY_CONNECTOR_ROLES (PROVEN) flip=true turns one round.
+  14. Associate connector dimensions with family parameters where
+      appropriate.
+     -> ADD_FAMILY_CONNECTOR (PROVEN) ties them as it makes the connector and
+        reads the size back; SET_FAMILY_CONNECTOR_ROLES (PROVEN)
+        sizeParameters changes them.
+  15. Configure connector relationships where required.
+     -> SET_FAMILY_CONNECTOR_ROLES (PROVEN), links= "Inlet > Outlet" - a
+        linked pair passes a system through a coil, a pump or a valve body,
+        and only when both are Global ("system=Global" in the same call).
+  Connector verification
+  Verify each connector individually: correct location, direction,
+  orientation, shape, size, classification, flow settings and connectivity
+  behaviour.
+     -> REPORT_FAMILY_CONNECTORS (PROVEN) for each in the family;
+        connectivity behaviour in a project, Stage 12. A wrong one:
+        REMOVE_FAMILY_CONNECTOR (PROVEN), and make it again.
+  Never report connectors as correct merely because they exist.
+
+  STAGE 8 - NESTED FAMILIES
+  1. Identify independent components suitable for nesting.
+     -> no Heron tool: from Stage 0's list.
+  2. Check whether an existing office family can be reused.
+     -> FIND_LIBRARY_FAMILIES (PROVEN), in the library folders the modeller
+        names.
+  3. Create or load the required nested family.
+     -> LOAD_FAMILY (PROVEN) for one that has a file.
+     * A NESTED PART THAT IS NOT A FAMILY YET - the tyre of a car, the motor
+       of a fan - is made in its own window and brought back, one call at a
+       time:
+       a. The HOST needs a file for the way back to be automatic: Revit lets
+          no tool bring forward a window with no file. A host never saved is
+          saved once first (Stage 0 item 5). Declined, b to g still run, with
+          e skipped, and the part's window is left for the modeller to close.
+       b. CREATE_FAMILY_DOCUMENT (PROVEN, Admin) from the host - its template
+          and the part's file are asked for. It opens the part in a window,
+          or, run from the host in front, saves it and gives `openNext`:
+          ACTIVATE_DOCUMENT (PROVEN) with that path opens it. An answer lost
+          while a window opens is never repeated: check what is open first -
+          REPORT_OPEN_DOCUMENTS (DRAFT) is that read, refused until it is
+          proved, so meanwhile ask the modeller which windows are open (row
+          5b-361).
+       c. These stages build the part in its own window, with
+          SET_FAMILY_SETTINGS "Work Plane-Based=yes" so it nests on every
+          release.
+       d. STOP AND SHOW THE MODELLER THE PART. Nothing goes into the host
+          until the modeller says it is right.
+       e. ACTIVATE_DOCUMENT (PROVEN) aimed at the host, with the host's file -
+          the host in front again.
+       f. SAVE_DOCUMENT (PROVEN, Publish) aimed at the host, documentPath the
+          part's file, closeWindow=true - saved, its window closed. LOAD_FAMILY
+          refuses a part still open with unsaved work: a load reads the file.
+          Refused, or the add-in is older than version 3, the modeller saves
+          the part with Ctrl+S in its window and closes it. Either save is
+          checked as Stage 13's SAVE RULE says. b needs the Admin switch and f
+          the Publish switch, each with Changes.
+       g. LOAD_FAMILY (PROVEN) into the host, PLACE_FAMILY_INSTANCES at each
+          point, then count the host's elements of that category against the
+          number placed - a stray copy is found by the count (row 5b-350).
+  4. Place it at the correct location.
+     -> PLACE_FAMILY_INSTANCES (PROVEN), nested in the family being edited,
+        on the plane it sits on - workPlane= a reference plane, or the level.
+        A Work Plane-Based family is placed on every release, a level-based
+        one only from Revit 2024.
+  5. Set orientation and alignment.
+     -> LOCK_NESTED_FAMILY_TO_PLANES (PROVEN), by its own Left, Right, Front,
+        Back, Top, Bottom or centres. A DETAIL ITEM nested in a plan - a
+        diffuser's flow arrows - is locked in the plan it is drawn in, to
+        planes seen edge-on there; one placed by PLACE_FAMILY_INSTANCES
+        belongs to no view and is locked in the plan of its level.
+     -> FLIP_ELEMENTS (PROVEN), flipWorkPlane=true, for a nested part that
+        came in facing inward or upside down - its plane's normal points the
+        wrong way - never a rotation (row 5b-1335).
+  6. Associate required parameters.
+     -> LINK_FAMILY_PARAMETER (PROVEN): family= and type= for its type's
+        sizes, and again for its instance's.
+     -> ADD_FAMILY_TYPE_PARAMETER (DRAFT) where the family's types choose
+        the nested part's TYPE - the 5 kW or the 7 kW motor - and to swap a
+        sweep's loaded profile. Refused by revit_change until it is proved;
+        as a MODIFY capability it can be tried once (the last precondition),
+        or the modeller makes the Family Type parameter by hand.
+  7. Configure Shared behaviour only when required.
+     -> SET_FAMILY_SETTINGS (PROVEN), in the nested family's own window.
+  8. Configure visibility.
+     -> LINK_FAMILY_PARAMETER (PROVEN), its Visible to a Yes/No parameter.
+  9. Check nested family category and hosting behaviour.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN), in the nested family's own window.
+  10. Verify nested family geometry and placement.
+     -> REPORT_FAMILY_FORMS (PROVEN), which=nested: each nested family's
+        type, point, rotation, mirror and linked parameters; FLEX_FAMILY
+        (PROVEN) reads every nested family's extent too.
+  Avoid unnecessary nesting and excessive parameter associations.
+
+  STAGE 9 - MATERIALS AND GRAPHICS
+  Materials
+  1. Identify required materials.
+     -> no Heron tool: from Stage 0's list.
+  2. Use existing office materials where available.
+     -> LIST_MATERIALS (PROVEN) - in a family, the materials the family
+        itself holds. Bringing a material in from another file: no Heron
+        tool yet for a family (TRANSFER_MATERIALS_BETWEEN_DOCUMENTS is
+        project to project).
+  3. Create new materials only when required.
+     -> CREATE_STARTER_MATERIALS (PROVEN), materialNames with colours, and
+        transparencies for glass or a vial - the shading colour only,
+        nothing a render uses; starterPick takes from Heron's own starter set
+        of twelve.
+     * Made before Stage 3, the materials are named on CREATE_FAMILY_FORMS's
+       rows (material=) and nothing more is needed.
+  4. Assign materials to appropriate geometry.
+     -> LINK_FAMILY_PARAMETER (PROVEN), forms= the ids, links
+        Material=<parameter or material> - once per material, naming every
+        form that takes it.
+  5. Use material parameters where required.
+     -> ADD_FAMILY_PARAMETERS (PROVEN, Admin) a material parameter, then
+        LINK_FAMILY_PARAMETER - when a project must set it per type, the body
+        and the neck apart.
+  6. Verify material appearance and assignment.
+     -> SET_MATERIAL_APPEARANCE (PROVEN) for a family that will be rendered
+        or shown in a Realistic view: materialsNamed the names made (';'
+        between, or the prefix and *) and matchShading true - a shading
+        colour alone draws flat dark grey there (row 5b-1263). A better look
+        - glass, a metal, a texture - is its appearance and values, or
+        CREATE_STARTER_MATERIALS' ready-made set. Read back: REPORT_FAMILY_FORMS
+        (PROVEN) names each form's material.
+  Visibility
+  1. Configure Coarse visibility.
+  2. Configure Medium visibility.
+  3. Configure Fine visibility.
+  4. Configure plan visibility.
+  5. Configure elevation visibility.
+  6. Configure section visibility.
+  7. Configure 3D visibility.
+  8. Configure detail-level behaviour.
+     -> SET_FAMILY_FORM_VISIBILITY (PROVEN): at which detail levels, and in
+        which kinds of project view, a form or a symbolic line shows - the
+        body hidden in a coarse plan, for example; or detailLevels= and
+        views= on its CREATE_FAMILY_FORMS row.
+     * A part only some types have: LINK_FAMILY_PARAMETER (PROVEN), forms=
+       its id, its Visible to that Yes/No parameter.
+  Plan and Annotation Graphics
+  1. Add symbolic lines.
+     -> DRAW_FAMILY_SYMBOLIC_LINES (PROVEN) - where a plan must show a SYMBOL
+        rather than the body - a valve's bow tie, a fan's circle and cross -
+        on Ref. Level, at the levels the body is hidden at.
+  2. Add masking regions where needed.
+  3. Add filled regions where appropriate.
+     -> DRAW_FAMILY_FILLED_REGION (PROVEN) - in a 3D family from Revit 2023,
+        a masking region from 2024.
+  4. Add labels and text.
+     -> ADD_FAMILY_MODEL_TEXT (PROVEN) - a nameplate, a panel's legend, a
+        label that must stand out in 3D: one call for every text, each on a
+        named plane at a point in that plane's own two model coordinates,
+        its height, depth and material on the row, so it stays editable text.
+  5. Configure visibility of annotations.
+     -> SET_FAMILY_FORM_VISIBILITY (PROVEN), for symbolic lines too.
+  6. Check plan symbols and representations.
+     -> revit_view_image of the family's plan (Stage 10 E).
+     * A family that must flip once placed: ADD_FAMILY_FLIP_CONTROL (PROVEN).
+  Use symbolic graphics instead of detailed 3D geometry when a 2D
+  representation is sufficient.
+
+  STAGE 10 - FAMILY VERIFICATION
+  This stage is mandatory.
+  A. Geometry verification
+  1. Read back every solid.
+  2. Read back every void.
+  3. Check every geometry group.
+  4. Check dimensions and placement.
+  5. Check geometry joins.
+  6. Check intersections.
+  7. Check unexpected overlaps.
+  8. Check missing geometry.
+  9. Check material assignments.
+     -> REPORT_FAMILY_FORMS (PROVEN), which=solid and which=void: every form
+        with its id, plane, extent, volume, material, where it shows, and the
+        cut or join it is in - read against Stage 0's list. For a fixed-size
+        family this is the last check: the number of forms and the overall
+        extents against the plan.
+     * AND THE EXTENTS AGAINST THE ORIGIN PLANES, before the family is saved:
+       every form inside the box the outer planes make, measured from the
+       planes that define the origin. A form or a count that reaches past
+       them, or a total that differs from what the sizes give, is put to the
+       modeller before saving, never saved and explained after (row
+       5b-1709).
+  B. Parameter verification
+  1. Check every parameter name.
+  2. Check parameter data types.
+  3. Check Type and Instance behaviour.
+  4. Check parameter values.
+  5. Check formulas.
+  6. Check dimension labels.
+  7. Check nested parameter associations.
+     -> REPORT_FAMILY_PARAMETERS (PROVEN) for items 1 to 5; that a label
+        still drives its size is shown by Stage 11; REPORT_FAMILY_FORMS
+        (PROVEN) which=nested for item 7.
+  C. Reference verification
+  1. Check reference planes.
+  2. Check reference lines.
+  3. Check dimensions.
+  4. Check constraints.
+  5. Check alignment and locking.
+  6. Check family origin.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN) for the planes, their Is Reference
+        and the origin; reference lines are not built by Heron (Stage 2 item
+        3); dimensions, constraints and locks are shown by Stage 11.
+  D. Connector verification
+  Verify every connector individually.
+     -> REPORT_FAMILY_CONNECTORS (PROVEN), against Stage 7's list.
+  E. Visual verification
+  1. Generate or inspect a 3D view image.
+  2. Inspect the complete family.
+  3. Compare it against the supplied drawing or reference image.
+  4. Inspect plan view.
+  5. Inspect elevation views.
+  6. Inspect section views.
+  7. Check for missing or incorrect details.
+  8. Do not report completion before visual inspection.
+     -> revit_view_image, which is a read (D-123): no switch, nothing in the
+        family changes, and the picture is not kept on the PC - it is for the
+        agent to look at here and is never passed on to anyone.
+     * LOOK AT IT before telling the modeller it is done. Sizes can all read
+       back right while a part sits on the wrong side, floats off the body or
+       is missing - that is found here, never by the modeller. A monitor
+       family once read back to plan while a screen grab showed it half off
+       the screen: the 3D view had never been zoomed.
+     * The quick look: revit_view_image with elements= the main forms' ids -
+       it frames them in a temporary isometric 3D view, a section box round
+       them, connectors hidden unless asked for - with no view of the
+       family changed.
+     * The modeller's own View 1, in this order, since a call between the
+       select and the zoom clears what the select left: OPEN_VIEW (PROVEN)
+       viewName=View 1 through revit_show; SET_VIEW_PROPERTIES (PROVEN)
+       views=View 1, visualStyle=Shaded with Edges, detailLevel=Fine,
+       scale=0 (left as it is) through revit_change, so a part shown only at
+       Fine is in the picture; REPORT_FAMILY_FORMS which=solid through
+       revit_read; SET_SELECTION (PROVEN) through revit_show with expect_from
+       "report-family-forms", show=true and keepSelection=true, so the
+       modeller's screen shows the whole family too. revit_show changes only
+       what is on screen and opens no transaction (D-125). If revit_show is
+       not offered, ask the modeller to open View 1 and press ZF, and go on.
+       Then revit_view_image with view "View 1".
+     * Plan and elevations: revit_view_image with view "Ref. Level", and
+       "Front" (and "Right" or "Back") for a product with a front - a
+       monitor, a panel, a unit.
+     * Section views: CREATE_SECTION_VIEW (PROVEN) cuts a section through
+       elements, but its card does not say it was ever run in a family; on a
+       scratch family try it, then revit_view_image of that section. Refused,
+       no Heron tool yet makes a family section: the elevations and the 3D
+       view stand, or the modeller cuts one by hand.
+     * TO SEE IT AT THE ANGLE OF THE MODELLER'S PHOTO: FRAME_ELEMENTS_IN_CAMERA
+       (PROVEN) through revit_change - never SET_VIEW_CAMERA, retired into
+       it and refused. It never turns View 1: View 1 is isometric and it
+       refuses an isometric view, so it makes a NEW perspective view -
+       viewName "Photo angle", expect_from "report-family-forms" for the
+       solids, side and lookDownDeg as the photo shows them; then
+       revit_view_image with view "Photo angle". Its proof ran in a project:
+       it has not yet been run in a family document (row 5b-1860); refused
+       there, the View 1 and Front pictures stand.
+     * LOOK at every picture: every part from Stage 0's list is there, on the
+       side it belongs, touching what holds it. Fix what is wrong and look
+       again; then tell the modeller, naming what the picture showed.
+     * EXPORT_VIEW_IMAGE is not the way to look: it writes files for other
+       people and needs the Publish switch.
+
+  STAGE 11 - FLEX TESTING
+  For parametric families only:
+  1. Create alternative test values.
+  2. Change width.
+  3. Change height.
+  4. Change depth.
+  5. Change other driving dimensions.
+  6. Test minimum supported values.
+  7. Test maximum supported values.
+  8. Test formulas and relationships.
+  9. Check nested components.
+  10. Check connectors.
+  11. Check voids and arrays.
+  12. Check that geometry remains valid.
+     -> FLEX_FAMILY (PROVEN): tries the family at each set of sizes, reads
+        the geometry back - every solid and every nested family - and puts
+        everything back. The connectors at another size:
+        SET_FAMILY_TYPE_VALUES (PROVEN) to that size, REPORT_FAMILY_CONNECTORS
+        (PROVEN), then the real values back.
+     * Last, at sizes that are really different and not square - the only
+       step that PROVES the family follows. "The calls did not fail" is not
+       the proof; the geometry read back at another size is.
+  If a family fails flexing, correct it before delivery.
+  Do not flex fixed-size families unnecessarily - a fixed family has nothing
+  to flex: skip it, and say it was skipped and why.
+
+  STAGE 12 - PROJECT TESTING
+  Heron's rule: test in a NEW scratch project made for it, never in the
+  modeller's job model unless the modeller asks; the family is saved first,
+  because a load reads the file.
+  1. Load the family into a test project.
+     -> CREATE_FAMILY_DOCUMENT (PROVEN, Admin) with a project template
+        (.rte) and the .rvt path the modeller names - a .rte makes a project;
+        ACTIVATE_DOCUMENT (PROVEN) and revit_use_this_model to work in it;
+        then LOAD_FAMILY (PROVEN) with the .rfa's path. A family of the same
+        name already loaded is refused; reload=true, after a fix, is asked
+        for, never assumed.
+  2. Check placement behaviour.
+  3. Check hosting behaviour.
+     -> PLACE_FAMILY_INSTANCES (PROVEN) for a level- or work-plane-based
+        family; PLACE_HOSTED_FAMILY (PROVEN) into a wall, floor, ceiling or
+        roof; PLACE_FAMILY_ON_FACE (PROVEN) for a face-based one;
+        PLACE_LINE_BASED_FAMILY (PROVEN) for a line-based one. Moving or
+        changing the host by hand and watching the family follow: no Heron
+        tool yet - say what was seen.
+  4. Check orientation.
+     -> revit_view_image with elements= the placed instance;
+        FLIP_ELEMENTS (PROVEN) tries its flip controls;
+        REPORT_MIRRORED_INSTANCES (PROVEN) says which are mirrored or flipped.
+  5. Check visibility in different views.
+     -> OPEN_VIEW (PROVEN), SET_VIEW_PROPERTIES (PROVEN) detailLevel Coarse,
+        Medium and Fine, and revit_view_image of a plan, a section or
+        elevation the project has, and a 3D view.
+  6. Check material appearance.
+     -> SET_VIEW_PROPERTIES (PROVEN) visualStyle Realistic, then
+        revit_view_image.
+  7. Check Type and Instance parameters.
+     -> REPORT_PARAMETER_INVENTORY (PROVEN) on the placed instance.
+  8. Check MEP connector connectivity where applicable.
+     -> CREATE_MEP_RUNS (PROVEN) draws a duct or pipe from the connector;
+        REPORT_CONNECTORS (PROVEN) grades every joint on the placed family -
+        what is really plugged in, size, shape and domain; TRACE_CONNECTIVITY
+        (PROVEN) walks the system; CONNECT_OPEN_ENDS (PROVEN) joins an end
+        that touches but is not joined.
+  9. Check scheduling parameters where applicable.
+     -> CREATE_SCHEDULE (PROVEN) with the shared fields, then
+        READ_SCHEDULE_CONTENTS (PROVEN): the rows as Revit prints them.
+  10. Check project warnings and errors caused by the family.
+     -> READ_MODEL_WARNINGS (PROVEN), grouped by message, with the elements
+        that cause each.
+  11. Verify that the family behaves correctly in the project.
+     * A fault goes back to the family: ACTIVATE_DOCUMENT to its file, fix,
+       save, and LOAD_FAMILY reload=true on the modeller's yes.
+
+  STAGE 13 - FINAL SAVE AND DELIVERY
+  1. Create a type catalogue when the family has many types and requires
+     one.
+     -> REPORT_FAMILY_TYPE_CATALOG (PROVEN): the text, saved beside the .rfa
+        with its name and .txt, so a project loads only the types it picks.
+  2. Check family name.
+  3. Check type names.
+  4. Check parameter naming.
+     -> CHECK_FAMILY_STANDARDS (PROVEN), the family open in the Family
+        Editor, against the naming pattern and required parameters the
+        modeller gives - there is no universal pattern (D-33);
+        REPORT_FAMILY_PARAMETERS (PROVEN) and REPORT_FAMILY_TYPE_CATALOG
+        (PROVEN) list the parameters and types; SET_FAMILY_TYPE_VALUES
+        renames a type. Renaming the family's file once it has one: no Heron
+        tool - the modeller does it.
+  5. Check file location.
+     -> the path the family was made or saved at (CREATE_FAMILY_DOCUMENT's
+        savePath, SAVE_DOCUMENT's saveAskedTo); FIND_LIBRARY_FAMILIES
+        (PROVEN) finds it by name in the folder.
+     * Lightweight: FIND_PURGEABLE_ELEMENTS (PROVEN) lists what the family
+       holds unused; deleting any of it is the modeller's yes (section 5).
+       SET_FAMILY_PREVIEW_VIEW (PROVEN) sets the view the preview picture is
+       taken from at the next save.
+  6. Save the family.
+     -> SAVE_DOCUMENT (PROVEN, Publish), documentPath its own .rfa.
+  7. Check the actual RFA modification time.
+  8. Confirm the file exists and is accessible.
+  9. Confirm the final saved version.
+     -> REPORT_OPEN_DOCUMENTS (DRAFT): `fileTimes` must give the .rfa a time
+        of now with no [unsaved changes], and `staleFileCount` 0; "the file
+        on disk is from ... - everything since is not saved" means the save
+        did not reach the disk. It is refused until it is proved, so
+        meanwhile the file's time is read another way: the modeller reads
+        Date modified in File Explorer, or the chat reads the .rfa's modified
+        time with its own file tools where it can see the PC's disk.
+  10. Report completed checks.
+  11. Report unresolved issues.
+  12. Report any assumptions approved by the modeller.
+     -> section 6.
+  SAVE RULE
+  Heron saves once a change is kept.
+  Use Ctrl+S only if the normal save operation is refused or unsuccessful.
+  Always verify the file modification time after saving.
+  Never claim that a family is saved without checking the actual file.
+    * SAVE_DOCUMENT saves the family Heron works in, in ONE call, once its
+      change is kept (D-171); a family never saved goes to the saveAsPath the
+      modeller types. Its card is PROVEN; its proof run saved another open
+      document, not the family in front.
+    * Its reply is Revit's own read-back: "SAVED ... the file on disk holds it
+      now" is written only when Revit reads the family as having no unsaved
+      changes after the save; "still reads as having unsaved changes - look
+      at the file's time on disk" or NOT SAVED is not a save - say so. Neither
+      replaces the file-time check of items 7 to 9.
+    * Ctrl+S by the modeller only when SAVE_DOCUMENT is refused or the add-in
+      is older than version 3. Ask the modeller to CLICK INSIDE THE REVIT
+      WINDOW FIRST - the keys go to whichever window is in front, often the
+      chat - and check the file's time after it, never "I pressed Ctrl+S".
+    * NEVER MAKE A HELPER MODEL TO SAVE FROM: an empty "save-helper" family,
+      made and pinned so SAVE_DOCUMENT could save the real one as another
+      document, cost five calls a save and an extra model on the modeller's
+      screen (issue #1028). An add-in older than version 3 is UPDATED BY THE
+      MODELLER, never by the chat: close that Revit, then run
+      HeronInstaller.exe - or, building Heron from source, tools/setup.ps1,
+      which builds and deploys for each Revit (tools/deploy-addin.ps1 alone
+      copies what was built last, and builds nothing). `python
+      tools/heron-ready.py` only checks that an add-in is installed.
+    * Save at each milestone of a long build, not only at the end.
+
+
+  4. FIXED-SIZE DETAILED FAMILY WORKFLOW
+
+  For fixed-size equipment such as FCUs, pumps, tanks and other
+  manufacturer-specific equipment:
+  1. Read the template and confirm units.
+     -> Stage 0 items 1 to 4 (REPORT_FAMILY_TEMPLATE, PROVEN).
+  2. Collect all supplied dimensions.
+     -> Stage 0 items 6 to 11 - the one list, its groups, its connectors and
+        their sizes; typical proportions marked typical.
+  3. Save the family.
+     -> Stage 0 item 5 (SAVE_DOCUMENT, PROVEN, Publish).
+  4. Set category and confirm OmniClass.
+     -> Stage 1 items 1 to 3 (SET_FAMILY_SETTINGS, PROVEN).
+  5. Add only necessary parameters.
+     -> ADD_FAMILY_PARAMETERS (PROVEN, Admin): only the ones a connector is
+        sized by - a Length, or a Duct Size or Pipe Size parameter - and any
+        a project must schedule.
+  6. Create the first type and enter supplied values.
+     -> SET_FAMILY_TYPE_VALUES (PROVEN): the connector sizes' values, before
+        any connector is made.
+  7. Establish only the reference planes required for geometry and
+     connectors.
+     -> CREATE_REFERENCE_PLANES (PROVEN): a plane a form is sketched on, and
+        ONE PLANE PER CONNECTOR at the face it will sit on; then
+        SET_FAMILY_PLANE_REFERENCE (PROVEN) otherPlanesSubcategory
+        "Secondary References", so the port planes go gray (the owner's
+        plane colour rule, Stage 2 item 6).
+  8. Build geometry using suitable Revit solid form tools.
+     -> CREATE_STARTER_MATERIALS (PROVEN) FIRST, so every form row can name
+        its material; then CREATE_FAMILY_FORMS (PROVEN), ONE CALL PER GROUP,
+        material= on the rows, and one line to the modeller after each group.
+     * Which way each plane runs (Stage 3 D item 13): Ref. Level, profile X,Y,
+       start and end along Z; Center (Front/Back), profile X,Z, along +Y;
+       Center (Left/Right), profile Y,Z, along +X.
+     * On each connector plane, make the spigot end the ONLY solid face
+       there, and set a flange back off it (Stage 7 item 2).
+  9. Create required voids and arrays.
+     -> Stage 6 (COMBINE_FAMILY_FORMS, ARRAY_FAMILY_FORMS, each PROVEN).
+  10. Add nested components if required.
+     -> Stage 8.
+  11. Add MEP connectors if applicable.
+     -> ADD_FAMILY_CONNECTOR (PROVEN), with form= the spigot's id and
+        facing= the way it points; an electrical connector's sizeParameters
+        given EMPTY. Then SET_FAMILY_CONNECTOR_ROLES (PROVEN): flow direction,
+        links, Allow Slope Adjustments, and an electrical connector's values
+        (Stage 7).
+  12. Configure Object Styles and Subcategories.
+     -> Stage 4.
+  13. Configure materials and visibility.
+     -> Stage 9 - small parts at Medium and Fine on their rows.
+  14. Add plan symbols, labels and text.
+     -> Stage 9 (DRAW_FAMILY_SYMBOLIC_LINES, ADD_FAMILY_MODEL_TEXT, each
+        PROVEN).
+  15. Read back all geometry.
+     -> REPORT_FAMILY_FORMS (PROVEN): the number of forms and the overall
+        extents against the plan, and against the origin planes (Stage 10 A).
+  16. Inspect the 3D image and compare against references.
+     -> revit_view_image with elements= the main form ids when View 1 is not
+        zoomed - it frames a temporary isometric view - then the Stage 10 E
+        pictures.
+  17. Load into a test project.
+  18. Verify placement and connectivity.
+     -> Stage 12.
+  19. Save and verify the final RFA.
+     -> Stage 13 items 6 to 9.
+  Do not force unnecessary parametric controls or flex testing into
+  fixed-size families: Stage 2 beyond the planes it needs, Stage 5, Stage 11
+  and a type catalogue are left out, because no size moves.
+
+
+  5. FAMILY CREATION BEHAVIOUR RULES
+
+  Heron must always:
+    * Use the correct family template.
+    * Use the correct Revit modelling tools.
+    * Follow the supplied dimensions.
+    * Work in logical stages.
+    * Verify each geometry group.
+    * Inform the modeller after each major stage.
+    * Stop when essential information is missing.
+    * Stop when an operation produces an unexpected result.
+    * Preserve successfully saved work.
+    * Use existing office resources where applicable.
+    * Keep families lightweight and efficient.
+    * Avoid unnecessary geometry, nesting, voids and arrays.
+    * Avoid importing unnecessary CAD or SAT geometry into the final family.
+    * Prefer native Revit geometry.
+    * Maintain the correct family origin.
+    * Check connector configuration.
+    * Inspect the actual final family.
+    * Report failures honestly.
+  Heron must never:
+    * Guess missing dimensions.
+    * Silently change supplied values.
+    * Skip failed operations.
+    * Assume geometry is correct without checking.
+    * Create all geometry in one operation.
+    * Assume a connector is correctly configured because it is visible.
+    * Add unnecessary parameters.
+    * Add unnecessary complexity.
+    * Report a successful save without verifying the file.
+    * Claim completion without visual and technical verification.
+  And Heron's own: a delete - a form, an underlay, a parameter, anything
+  purged - waits for the modeller's yes for that delete (Constitution 7); a
+  change is taken back with Revit's own Undo, never with a second change.
+
+
+  6. COMMUNICATION WITH THE MODELLER
+
+  This is what the AI tells the modeller - short, plain, in Revit words.
+  Keep communication short and clear.
+  After every major stage, report:
+    * What was completed.
+    * What was verified.
+    * What remains.
+  When a decision requires modeller approval, ask before proceeding.
+  When an operation fails, explain the exact issue and stop dependent
+  operations.
+  Final report must include:
+    1. Family name and category.
+    2. Family classification.
+    3. Geometry creation status.
+    4. Parameter status.
+    5. Material and visibility status.
+    6. Connector status, if applicable.
+    7. Visual inspection status.
+    8. Flex testing status, if applicable.
+    9. Project testing status.
+    10. Final RFA save and file verification.
+  Only report COMPLETED when every mandatory check for that family type has
+  passed. Otherwise report PARTIALLY COMPLETED or FAILED, with the reason.
+    * After each geometry group, one line: what is now in Revit.
+    * A step done with no Heron tool, or skipped, is named in the report
+      with who did it or why.
+
+
+  7. CORE PRINCIPLE
+
+  MODEL -> VERIFY -> REPORT -> CONTINUE
+  Never sacrifice accuracy for speed.
+  Never sacrifice family performance for unnecessary detail.
+  Never sacrifice modeller control by making unapproved assumptions.
+  The final result must be a reliable, clean and production-ready Revit
   family.
-
-  0. REPORT_FAMILY_TEMPLATE, then READ THE THING. The report says which KIND
-     of family the modeller opened - and a family that is not level-based or
-     work-plane-based has a skill of its own: HOSTED-FAMILY-CREATION for a
-     wall-, ceiling-, floor-, roof- or face-based one, LINE-BASED-FAMILY-CREATION,
-     PATTERN-BASED-FAMILY-CREATION, ADAPTIVE-FAMILY-CREATION,
-     PROFILE-FAMILY-CREATION, DETAIL-FAMILY-CREATION,
-     MEP-FITTING-FAMILY-CREATION for a duct or pipe fitting,
-     DOOR-WINDOW-FAMILY-CREATION, STRUCTURAL-FAMILY-CREATION for a beam, a
-     brace or a structural column, and LIGHTING-FIXTURE-FAMILY-CREATION for a
-     light with its light source. CHECK THE UNITS NEXT: the report's units
-     line says what the family shows a length in. Where it reads IMPERIAL -
-     Feet and fractional inches - and the modeller works in millimetres, SAY
-     SO BEFORE ANYTHING IS BUILT: sizes typed in millimetres still build
-     right, but every dimension and value then shows in feet and inches, and
-     the modeller finds it only afterwards (an outdoor unit, 2026-10-12,
-     Revit 2020). Offer SET_PROJECT_UNITS "Length=Millimeters, 0 decimal
-     places" - the Admin switch - or the family started again from the
-     Metric template, and the modeller chooses. A report with no units line,
-     or one that could not read it, is followed by REPORT_PROJECT_UNITS, one
-     call. SAVE FIRST WHEN IT HAS NO FILE: where REPORT_OPEN_DOCUMENTS lists
-     the family in front as NEVER SAVED and the build is large, ask the
-     modeller once to save it (Ctrl+S) before the first write - closed with
-     no file it is lost. SAVE_DOCUMENT version 3 saves the family in front in
-     ONE call once its change is kept (D-171). Its card is PROVEN (version 4,
-     proof dated 2026-11-24, Revit 2024 - the card's proof block; that run saved
-     another open document), so this is the way to save the family; a save is
-     still checked, never trusted (REPORT_OPEN_DOCUMENTS' fileTimes), and the
-     modeller saves with Ctrl+S only if the save is refused or the add-in is
-     older than version 3.
-     NEVER MAKE A HELPER MODEL TO SAVE FROM: an empty "save-helper" family
-     made, activated and pinned so SAVE_DOCUMENT could save the real one as
-     "another document" cost five calls a save and an extra model on the
-     modeller's screen (issue #1028, Revit 2020, 2026-11-19). The refusal
-     that started it - SAVE_DOCUMENT refusing the pinned family - is version
-     2's: that PC's add-in was older than version 3. AN OLDER ADD-IN IS
-     UPDATED BY THE MODELLER, never by the chat: close that Revit, then run
-     HeronInstaller.exe - or, building Heron from source, tools/setup.ps1,
-     which builds and deploys for each Revit (tools/deploy-addin.ps1 alone
-     copies what was built last, and builds nothing). `python
-     tools/heron-ready.py` only checks that an add-in is installed - it does
-     not update one (issue #1051 item D).
-     A SAVE IS CHECKED, NEVER TRUSTED: ask the modeller to CLICK INSIDE THE
-     REVIT WINDOW FIRST - the keys go to whichever window is in front, often
-     the chat - then read REPORT_OPEN_DOCUMENTS (version 3) again: `fileTimes`
-     must give the family's .rfa a time of now with no [unsaved changes],
-     and `staleFileCount` 0. "The file on disk is from ... - everything
-     since is not saved" means the save did not reach the disk; say so and
-     ask again. The same check closes the build, after the modeller saves.
-     Then read the
-     thing before anything is built - from the picture, the
-     sketch or the words. Say back, in one list: what it is and the category
-     it belongs to; the FORMS it is made of, each as the form that builds it -
-     a box between planes, a round or any other shape pushed straight
-     (extrusion), a shape turned about an axis (revolve: cones, domes, knobs,
-     round bodies), one shape changing into another (blend: square-to-round
-     necks, tapered legs), a shape carried along a path (sweep: rails, pipe
-     runs, frames, rings), one shape changing along one bend (swept blend:
-     reducers, elbows), every hole or notch as a void, every part that
-     repeats in a row - blades, fins, slots - as one form and a count, or as
-     a nested family and a count where a size stretches it (step 10), and
-     every part that is a family of its own - a motor, a handle - nested; every
-     SIZE that
-     describes them, marking which change between types - those become
-     parameters - and which never do; and every PART only some types have,
-     which becomes a Yes/No parameter. A PICTURE GIVES SHAPE AND PROPORTION,
-     NEVER SIZE: every size, parameter name and type name is the modeller's,
-     asked for once, in that one list, and never assumed or scaled off the
-     image (D-33). Where the picture cannot show something - the back, the
-     inside, a hidden neck - ask rather than invent it.
-  1. SET_FAMILY_SETTINGS "Category=<name>" first, when the template's
-     category is not the one wanted - a Generic Model that should be an Air
-     Terminal; in a call with other settings it is written first. The category
-     brings its own built-in parameters, and everything after it builds on
-     them. CLASSIFY IT FROM THAT CATEGORY NEXT: REPORT_FAMILY_TEMPLATE's
-     classificationCodes line lists the OmniClass Numbers (Classification
-     Number from Revit 2026) that Revit's own taxonomy file gives the
-     category - run it again when the category was just changed. Propose the
-     one that fits the thing; the modeller confirms it, and picks where more
-     than one could fit - never guessed (D-33). SET_FAMILY_SETTINGS "OmniClass
-     Number=<code>" writes it and reads the title back. No file, or no code
-     for the category - Revit 2026 and later ship only a sample file - is
-     said, and the step is left out.
-     Then SET_FAMILY_SETTINGS when the family will be nested in another
-     one: Work Plane-Based, so it is placed on a plane and moves with it, and
-     Shared when a project must schedule or tag it on its own. An INLINE valve
-     or accessory that a pipe breaks into is the other way round: Work
-     Plane-Based=no - a work-plane-based check valve would not connect to its
-     pipe - and a Breaks Into Part Type, "Valve - Breaks Into" for a valve
-     (Revit's ValveBreaksInto; a bare "Valve" is refused with Revit's own list).
-  2. ADD_FAMILY_PARAMETERS - the sizes the family is driven by, as TYPE
-     lengths when they describe the product; a diameter is a length too. Any
-     value a project must TAG or SCHEDULE is a shared parameter instead, from
-     the office's shared parameter file: ADD_FAMILY_PARAMETERS with kind
-     shared (ADD_FAMILY_SHARED_PARAMETERS until it was merged into it,
-     2026-11-01 - every ADD_FAMILY_PARAMETERS call needs Admin as well as
-     Changes since then, the shared file being outside Undo). READ
-     FIRST, before any shared parameter is added: REPORT_SHARED_PARAMETER_FILE,
-     nameContains the names wanted and compareWithDocument true - which file
-     Revit is set to now, whether each name is in it and with which GUID, and
-     whether the family already carries that name with another GUID or not
-     shared. It changes nothing; tell the modeller the file and the GUIDs, then
-     add. A family
-     parameter already labelling dimensions that must become the office's
-     shared one is REPLACED in place - the same tool, replaceExisting true,
-     "Width=Unit_Width" - never a second parameter driven by a formula, which
-     leaves two per size in the Properties palette. A name the office's file
-     does not have yet is CREATED in it by the same tool, createMissing true,
-     written "Group: Name [Data type]" - "Refrigerant: Gas Pipe Diameter [Pipe
-     Size]". Ask the modeller for the group and the data type; never pick
-     them. It writes the office's file, which Undo does not reach, so it needs
-     the Admin switch and his yes for those names.
-  3. SET_FAMILY_TYPE_VALUES - make the first type and write the real sizes into
-     it. BEFORE any dimension is labelled: a new length reads 0, and a label on
-     a 0 drives its planes onto each other. The SAME values into several
-     types - typeName "all", or a comma list of types the family has - is ONE
-     call, never one per type (version 5, PROVEN 2026-11-12 on Revit 2024, Group NG,
-     row 5b-1504).
-  4. SET_FAMILY_FORMULA where one size follows another - "Neck Width = Width -
-     100 mm", "Radius = Diameter / 2". Names are written bare, spaces and all.
-  5. CREATE_REFERENCE_PLANES - the skeleton, at the positions the sizes put
-     them: left-right planes, front-back planes, height planes. One plane for
-     every face whose position a parameter drives. Then
-     SET_FAMILY_PLANE_REFERENCE: Left, Right, Front, Back, Top and Bottom on
-     the outer planes a project dimensions to, Strong or Weak Reference on any
-     other it should reach, Not a Reference on planes only the build needs,
-     and Defines Origin where the family is placed from - before anything is
-     placed in a project, because a project's units take a moved origin when
-     the family is loaded again.
-     THE OWNER'S STANDING RULE FOR PLANE COLOURS (2026-11-17), every family:
-     the outline planes (Left, Right, Front, Back, Top, Bottom) and both
-     centre planes (Center (Left/Right), Center (Front/Back)) stay on
-     Reference Planes itself, Revit's default green; every other plane goes on
-     a gray subcategory of Reference Planes. Once, before the first such
-     plane is coloured: CREATE_LINE_STYLE, parentCategory "Reference Planes",
-     styleName "Secondary References", colour "128,128,128" (updateExisting
-     true when the family has it already). Then, in the same
-     SET_FAMILY_PLANE_REFERENCE call that sets Is Reference,
-     otherPlanesSubcategory "Secondary References" - and again after any later
-     step makes a plane (EXTRUDE_POLYGON_BETWEEN_PLANES makes its own side
-     planes), a fixed-size family's planes included. Its findings name every outline or centre plane it
-     left on Reference Planes; one named as on another subcategory goes back
-     with subcategories "<plane>=Reference Planes". Only where the modeller
-     says otherwise for a family, ask; never drop the rule silently.
-  6. LABEL_FAMILY_DIMENSION for every straight size - with the family's centre
-     plane for left-right and front-back, so the shape stays centred on its
-     insertion point; from Ref. Level for a height.
-  7. THE FORMS, each drawn exactly where the planes are NOW, so that its faces
-     lie on them - IN THE FAMILY'S OWN COORDINATES, NEVER THE PROJECT'S: every
-     point is measured from the planes step 0's REPORT_FAMILY_TEMPLATE names
-     and the one that Defines Origin, as they stand after step 5. A family
-     from the metric casework template drawn in project coordinates and
-     placed at 0,0,0 came out 45 mm short in X, with its box reaching back to
-     (-405, -600) where nothing was drawn (Revit 2024, row 5b-1709). A
-     template can also hold content of its own that REPORT_FAMILY_TEMPLATE
-     does not list - forms and solids are not in its report; whether the
-     casework template does is not yet measured (row 5b-1709, a PC run). EXTRUDE_BETWEEN_PLANES for a box, which locks itself;
-     EXTRUDE_POLYGON_BETWEEN_PLANES for a HEXAGON or another even regular
-     polygon whose size across the flats a parameter drives - a bolt head,
-     a nut - which makes its own side planes, labels them and locks itself,
-     so the size needs no step 5 or 6 of its own (never one fixed hexagon
-     per size switched by type: that was the only way until 2026-10-24);
-     CREATE_FAMILY_FORMS for any other shape pushed straight or turned - a
-     kind=extrusion or kind=revolve row, one form or many (CREATE_FAMILY_EXTRUSION
-     and CREATE_FAMILY_REVOLUTION until they were merged into it, 2026-11-01);
-     CREATE_FAMILY_FORMS for the rest too - a kind=blend, kind=sweep or
-     kind=swept blend row (CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and
-     CREATE_FAMILY_SWEPT_BLEND until they were merged into it, 2026-11-01).
-     Every one gives back its form's
-     id, which every later step names it by. A FORM THAT WILL BE ARRAYED is
-     sketched on a plane no parameter moves; a part in a row that a size
-     stretches is a nested family instead - step 10. IN A TWO-LEVEL FAMILY -
-     a column from Metric Column.rft - the base plane is `Lower Ref. Level`,
-     never `Ref. Level` (a work plane typed `Ref. Level` there is refused),
-     and the placed column's top drives `Upper Ref. Level`. A REVOLVE DRAWN
-     ABOVE THE UPPER REF. LEVEL RIDES UP WITH IT when the column is placed
-     taller - Revit does it, not Heron, which locks nothing to either level:
-     shown 2026-11-20 on Revit 2020 (row 5b-1876, issue #1044), a revolve
-     at Z 13500 to 13700 in a template whose Upper Ref. Level stands at
-     4000 floated 9700 mm above a column placed 13700 mm tall, while an
-     extrusion at the same height sketched on Lower Ref. Level, the shaft and
-     a revolve at Z 1100 to 1300 stayed where they were drawn. So TALL
-     GEOMETRY in a two-level family is drawn as extrusions or sweeps sketched
-     on Lower Ref. Level, or as CREATE_FAMILY_FREEFORM_SOLID shapes (seen to
-     stay too, 2026-11-18) - a ring or cap as two freeform half-rings - or
-     the modeller first moves Upper Ref. Level by hand to the family's real
-     height; Heron has no tool that moves a family's level. Geometry MEANT to
-     follow the top is locked to Upper Ref. Level on purpose
-     (LOCK_FORM_TO_PLANES). Not yet tried: a revolve that crosses the Upper
-     Ref. Level, and Revit 2024 or later. MANY extrusions and
-     revolves - a family of dozens of parts - go in ONE call of CREATE_FAMILY_FORMS, a
-     row per form written once to a file under %TEMP%\heron-work: one undo
-     entry, every id given back in the order listed. Shapes are typed in
-     millimetres in the work plane's own two model coordinates. ONE
-     EXTRUSION TAKES MANY LOOPS, `|` between: every outline that shares a
-     plane, a start and an end, such as eight bolts, a row of louvre slats
-     or the rings of a fan guard, is one form instead of dozens. Loops that
-     touch or cross are refused before anything is made, naming the row and
-     the two loops (CREATE_FAMILY_FORMS version 4, row 5b-296 - version 3
-     sent them and Revit answered only "code 1"): a ring is an outer loop
-     with an inner one, and a smaller ring may sit inside that hole. KEEP A
-     CALL TO ABOUT 300 LOOPS: one call of about 1,800 louvre slots ran past
-     the 50-second limit and was rolled back, while 180 to 270 loops took 6
-     to 12 s (Revit 2020, 2026-11-19, row 5b-1888); version 4 refuses a call
-     of more than 600. A SLOT WITH ROUND ENDS is one loop of corners and `arc MX,MY X,Y`
-     sides - "xc-5,zc+15; arc xc,zc+20 xc+5,zc+15; xc+5,zc-15; arc xc,zc-20
-     xc-5,zc-15" - STARTED at the end of a straight side: the tool closes
-     every loop itself with a STRAIGHT line back to its first corner, so
-     that straight side is the one it draws, and the first corner is never
-     written again at the end. A HEX NUT is `polygon CX,CY R 6`, R the
-     radius to a CORNER, not half across the flats - 13 mm across flats is
-     R 7.5. The first corner lies along the plane's first coordinate, so on
-     Center (Left/Right) the flats come out top and bottom - R 6.35 read
-     back at Z 279.5 to 290.5, 11 mm across the flats. A small part -
-     a port, a screw, a bolt - carries `detailLevels=medium, fine` or
-     `detailLevels=fine` on its own row: set and read back in the same
-     call, with no SET_FAMILY_FORM_VISIBILITY step after it. Measured
-     2026-10-14 on Revit 2020, a fixed 60 inch monitor on a wall bracket:
-     43 forms in 6 calls, every extent read back by REPORT_FAMILY_FORMS as
-     planned; six such slots and eight circles through two straps were one
-     row, and its volume read back at the hand calculation's 225980.5 cubic
-     millimetres. A long profile - a thread, blades, rings, a row of bars - is
-     written out by a small script, into that file or the call, never
-     typed by hand and never saved beside Heron. A smooth shape none of
-     these makes in one piece - a coil, an organic body - is
-     CREATE_FAMILY_FREEFORM_SOLID: a FIXED shape that no plane or parameter
-     moves and no lock or label reaches, so say that before using it.
-  8. LOCK_FORM_TO_PLANES for every form that is not a box from step 7 - each
-     flat face that lies on a plane a parameter moves. A face not locked stays
-     where it was drawn when its plane moves, and looks parametric until the
-     first flex. Where the size is the form's OWN field rather than a plane,
-     LINK_FAMILY_PARAMETER with forms= its id instead: an extrusion's end to a length, a
-     revolve's end angle to an angle - a bend whose angle the types choose.
-     Never both on one face. A SWEEP is the exception: lock its PATH lines with
-     LOCK_FORM_SKETCH_TO_PLANES and never its faces - a sweep with its faces
-     locked failed every later size change ("Can't create sweep", Revit 2020,
-     2026-11-10; whether one END face of an open sweep can be locked safely is
-     not measured).
-  9. LABEL_FAMILY_RADIUS for every round size - the parameter holding the size
-     first, as in step 3. A label holds the SIZE only: a circle that must stay
-     on planes that move - a spigot centred on a box - also has its centre
-     locked with LOCK_FORM_SKETCH_TO_PLANES, or it drifts (measured 75 mm on
-     2026-11-10). The label FIRST: a centre locked on a circle with no size
-     label stretches it as it moves (NA5, 2026-11-10).
-  10. THE VOIDS, built as void forms in step 7, each cut into the solid it must
-      cut with COMBINE_FAMILY_FORMS - a void made through the API cuts NOTHING
-      until it is combined, and the cut is measured. A void meant to cut a
-      HOSTED family's template host - a floor drain's hole through the floor -
-      is combined with nothing: Revit's API cannot make that cut on any
-      release, and HOSTED-FAMILY-CREATION step 5 says what the modeller does
-      by hand before loading (measured 2026-10-22 on Revit 2020, row 5b-1324).
-      Solids that should read as
-      one piece are joined the same way. A solid is in one combination at
-      most: to cut it again, name that combination's id with the new voids,
-      never the solid. A void cuts every solid in its combination that it
-      passes through, so one bore void the length of a valve notches whatever
-      else is joined along it - give each flange its own short void. A part
-      that repeats in a row is ONE form made in step 7 and ARRAY_FAMILY_FORMS,
-      its count an Integer parameter given its value in step 3; an arrayed
-      void's copies are each
-      combined in turn, by the ids the array gives back - `members` are the
-      copies' model groups, `memberForms` the void inside each (version 5);
-      whether Revit combines a void that sits in an array's group is not yet
-      run (row 5b-358, NEEDS-CHECKING Group OR).
-      ARRAY ONLY A FORM SKETCHED ON A PLANE NO PARAMETER MOVES - Ref. Level,
-      a centre plane. A form sketched on a plane a parameter moves LOSES ITS
-      WORK PLANE in the array, and the row breaks at another type. Measured
-      2026-10-20 on Revit 2020, a parametric electric duct heater: legs
-      sketched on "Opening Panel Side" and bends on "Element Tip" followed
-      their length perfectly before the array; after ARRAY_FAMILY_FORMS -
-      count from an Integer formula, step Z 80 and Z -80 - REPORT_FAMILY_FORMS
-      read every arrayed form "on <not associated>", and at another type the
-      copies stayed at the old length or drifted diagonally, their Y extents
-      shifted about 40 mm at each step. The array's own trial row did not refuse it - it measures only
-      the type in front - and the modeller undid 15 steps (row 5b-1261).
-      A PART IN A ROW THAT A SIZE STRETCHES IS A NESTED FAMILY: made as step
-      11's a to g, Work Plane-Based, its own planes and labels stretching it;
-      its lengths linked to the host's formulas with LINK_FAMILY_PARAMETER, family= and type=;
-      placed with PLACE_FAMILY_INSTANCES, nested, at a FIXED point - the host's origin on
-      Ref. Level, never on a plane that moves; then ARRAY_FAMILY_FORMS on the
-      nested instance, its count an Integer formula. A row both ways from the
-      centre is two arrays: one up from Z 0, and one down from a second
-      instance on a height plane at Z -80. That rebuild held: FLEX_FAMILY at
-      4 sizes, the row reading 9, then 15, then 17 elements.
-  11. ADD_FAMILY_CONNECTOR on the face its service leaves by, sized by the
-      parameters so the port follows the neck - for MEP families. Its sizes
-      may be Length parameters, or (version 8, DRAFT until NEEDS-CHECKING Group
-      QP) Duct Size ones for a duct port and Pipe Size ones for a pipe port -
-      no extra Length parameters made for it; on a flange ring the port may be
-      smaller than the opening it sits in, on a whole face never. Exactly one
-      SOLID face may lie on the plane it is named by, so each connector face
-      gets a plane of its own, never one it shares with another flange. Since
-      version 3 (row 5b-410) it also looks for the face in a combination, but
-      whether Revit takes a connector there is not yet proved in Revit: until
-      it is, keep a connector's flange out of every combination in step 10, or
-      put a thin uncut pad on its face - a form's own face is used first. A
-      REVOLVED flange needs the pad too, combined or not: a 360-degree revolve
-      leaves its flat end as TWO half-faces on the one plane, and the connector
-      is refused with "2 solid faces lie on" it (seen 2026-10-11, Revit 2024,
-      row 5b-431). Make the pad a 2 mm EXTRUDED disc - kind=extrusion, a
-      circle the flange's size, startMm and endMm 2 mm apart - with its outer
-      face on a NEW plane 2 mm beyond the flange, and name the connector by
-      that plane; it then went on first time. A DUCT ACCESSORY whose ends are a
-      NESTED frame (a casing frame with angle flanges) has no face of its own
-      at the ends: a connector cannot go on a reference plane through the API,
-      and one on a nested family's face sits off-centre and does not follow
-      Length (measured 2026-10-24, Revit 2020, row 5b-1334). Build a 3 mm RING
-      on each end plane - opening the duct size, outside 20 mm larger, faces
-      locked to the duct and ring planes, Visible linked to a Yes/No set No -
-      and name the connector by that end plane: version 5 measures a ring face
-      by its opening and centres the port in it. A pipe or duct port is sized by
-      a length parameter even in a fixed family - add it and its value (steps 2
-      and 3) first. A DRAIN's pipe connectors need Allow Slope Adjustments
-      ticked before the pipework drawn from them can be given a fall:
-      SET_FAMILY_CONNECTOR_ROLES "allowSlopeAdjustments=yes" on each, a pipe
-      connector's box only (version 4, PROVEN 2026-10-24 on Revit 2020, Group
-      IR). An ELECTRICAL connector is made with Revit's defaults and no load:
-      SET_FAMILY_CONNECTOR_ROLES then gives it its Voltage, Number of Poles,
-      Apparent Load and Power Factor - "voltage=400 V; poles=3; apparentLoad=1.5
-      kVA; powerFactor=0.85" - each a value the modeller gave in step 0's list,
-      never assumed (D-33), or a family parameter in square brackets that drives
-      it, a shared one where a project must schedule it (step 2). A part that is
-      a family of its own, loaded in with LOAD_FAMILY: PLACE_FAMILY_INSTANCES,
-      nested in the family being edited, on the plane it sits on - workPlane= a
-      reference plane, or the level (PLACE_NESTED_FAMILY until it was merged
-      into it, 2026-11-01) - a Work Plane-Based family is placed on every
-      release, a level-based one only from Revit 2024 - then
-      LOCK_NESTED_FAMILY_TO_PLANES by its own Left, Right, Front, Back, Top,
-      Bottom or centres - a DETAIL ITEM nested in a plan, a diffuser's flow
-      arrows, too: it is locked in the plan it is drawn in, to planes seen
-      edge-on there; one placed by PLACE_FAMILY_INSTANCES belongs to no view and
-      is locked in the plan of its level (PROVEN 2026-11-11, Group NB) - then
-      LINK_FAMILY_PARAMETER (family=, type=) for its type's sizes and
-      LINK_FAMILY_PARAMETER for its instance's. A nested part that came in
-      facing inward or upside down - its plane's normal points the wrong way -
-      is FLIP_ELEMENTS with flipWorkPlane=true, never a rotation (row 5b-1335).
-      A nested part whose TYPE the family's types choose - the 5 kW or the 7 kW
-      motor - is ADD_FAMILY_TYPE_PARAMETER, which also swaps a sweep's loaded
-      profile. A NESTED PART THAT IS NOT A FAMILY YET - the tyre of a car, the
-      motor of a fan - is made in its own window and brought back, one call at a
-      time:
-      a. The HOST needs a file for the way back to be automatic: Revit lets no
-         tool bring forward a window with no file. A host never saved is asked
-         to be saved once (Ctrl+S). Declined, b to g still run, with e skipped,
-         and the part's window is left for the modeller to close.
-      b. CREATE_FAMILY_DOCUMENT from the host - its template and the part's
-         file are asked for. Run from the host in front it is saved but not
-         opened and gives `openNext`: ACTIVATE_DOCUMENT with that path opens
-         it. An answer lost while a window opens is checked with
-         REPORT_OPEN_DOCUMENTS, never repeated (row 5b-361).
-      c. Steps 0 to 14 build the part in its own window, with
-         SET_FAMILY_SETTINGS "Work Plane-Based=yes" so it nests on every
-         release.
-      d. STOP AND SHOW THE MODELLER THE PART. Nothing goes into the host until
-         the modeller says it is right.
-      e. ACTIVATE_DOCUMENT aimed at the host, with the host's file - the host
-         in front again.
-      f. SAVE_DOCUMENT aimed at the host, documentPath the part's file,
-         closeWindow=true - saved, its window closed. LOAD_FAMILY refuses a
-         part still open with unsaved work: a load reads the file.
-         SAVE_DOCUMENT is PROVEN (version 4, proof dated 2026-11-24 on the
-         card), so a kept change from it runs; read its status in the list
-         served after this method before relying on it. If it is refused, or
-         the add-in is older than version 3, the modeller saves the part with
-         Ctrl+S in its window and closes it. REPORT_OPEN_DOCUMENTS confirms
-         either way.
-      g. LOAD_FAMILY into the host, PLACE_FAMILY_INSTANCES at each point, then
-         count the host's elements of that category against the number
-         placed - a stray copy is found by the count (row 5b-350).
-      b needs the Admin switch and f the Publish switch, each with Changes.
-  12. LINK_FAMILY_PARAMETER for each form's material - forms= its ids, links
-      Material=<parameter or material> (SET_FAMILY_FORM_MATERIAL until it was
-      merged in, 2026-11-01) - linked to a family
-      material parameter when a project must set it per type, the body and
-      the neck apart - then SET_FAMILY_FORM_SUBCATEGORY and
-      SET_FAMILY_FORM_VISIBILITY where a project must show or style a part on
-      its own: the body hidden in a coarse plan, the insulation on its own
-      subcategory. A subcategory's colour, line weight and pattern, as Object
-      Styles sets them, are CREATE_LINE_STYLE with familyCategory true -
-      updateExisting true once the subcategory exists. A part only some types
-      have from step 0:
-      LINK_FAMILY_PARAMETER, forms= its id, its Visible to that Yes/No parameter. Where a
-      plan must show a SYMBOL rather than the body - a valve's bow tie, a fan's
-      circle and cross - DRAW_FAMILY_SYMBOLIC_LINES on Ref. Level at the levels
-      the body is hidden at, with DRAW_FAMILY_FILLED_REGION for a solid or
-      masked part of the symbol (in a 3D family from Revit 2023, a masking
-      region from 2024). A family that must flip once placed gets
-      ADD_FAMILY_FLIP_CONTROL. LETTERING - a nameplate, a panel's legend, a
-      label that must stand out in 3D - is ADD_FAMILY_MODEL_TEXT: one call
-      for every text, each on a named plane at a point in that plane's own
-      two model coordinates, its height, depth and material on the row, so
-      it stays editable text; never letters built of forms in step 7. A
-      fixed family's materials are set outright:
-      CREATE_STARTER_MATERIALS with materialNames, colours and transparencies
-      for each colour (CREATE_MATERIAL's job since 2026-11-01; none of the
-      starter set is made beside names) - the shading colour only, nothing a
-      render uses, with a transparencies value for glass or a vial (2026-10-14,
-      Revit 2020) - then LINK_FAMILY_PARAMETER (links Material=<it>) once per
-      material, naming every form id that takes it. Made before step 7, the
-      materials can be named on CREATE_FAMILY_FORMS's rows instead. A FAMILY
-      THAT WILL BE RENDERED, or shown in a Realistic view, gives each material
-      an appearance too: SET_MATERIAL_APPEARANCE with materialsNamed the names
-      CREATE_STARTER_MATERIALS made (';' between, or the prefix and *) and
-      matchShading true - a shading colour alone draws flat dark grey there
-      (2026-10-20, Revit 2020, row 5b-1263). A better look than its own colour -
-      glass, a metal, a texture - is SET_MATERIAL_APPEARANCE's appearance and
-      values, or CREATE_STARTER_MATERIALS' ready-made set.
-  13. REPORT_FAMILY_FORMS - every form read back with its size, against the
-      list from step 0, before the proof. For a fixed family it is the last
-      check: the number of forms and the overall extents against the plan.
-      AND THE EXTENTS AGAINST THE ORIGIN PLANES, before the family is saved:
-      every form inside the box the outer planes make, measured from the
-      planes that define the origin - a form or a count that reaches past
-      them, or a total that differs from what the sizes give, is put to the
-      modeller before saving, never saved and explained after (row 5b-1709).
-      THEN LOOK AT IT, before telling the modeller it is done. Sizes can all
-      read back right while a part sits on the wrong side, floats off the
-      body or is missing - that is found here, never by the modeller. In
-      this order, since a call between the select and the zoom clears what
-      the select left: OPEN_VIEW viewName=View 1, the family's 3D view, through
-      revit_show; SET_VIEW_PROPERTIES views=View 1, visualStyle=Shaded
-      with Edges, detailLevel=Fine, scale=0 (left as it is), through
-      revit_change, so a part shown only at Fine is in the picture;
-      REPORT_FAMILY_FORMS which=solid through revit_read; SET_SELECTION
-      through revit_show with expect_from "report-family-forms", show=true
-      and keepSelection=true, so the modeller's screen shows the whole family
-      too (ZOOM_TO_ELEMENTS with alsoSelect false until it was merged into
-      SET_SELECTION on 2026-11-01).
-      revit_show changes only what is on screen and opens no transaction,
-      and Revit moves no view inside one (D-125). If revit_show is not
-      offered, or Revit's Heron does not know it yet, ask the modeller to
-      open View 1 and press ZF, and go on. Then revit_view_image with view
-      "View 1" - and again with view "Front" for a product with a front,
-      such as a monitor, a panel or a unit. TO SEE IT AT THE ANGLE OF THE
-      MODELLER'S PHOTO: FRAME_ELEMENTS_IN_CAMERA through revit_change, never
-      SET_VIEW_CAMERA - retired 2026-11-01 into it, and refused (issue
-      #1032). It never turns View 1: View 1 is isometric, and it refuses an
-      isometric view, so it makes a NEW perspective view - viewName "Photo
-      angle", expect_from "report-family-forms" for the solids, side and
-      lookDownDeg as the photo shows them. Then revit_view_image with view
-      "Photo angle". It is DRAFT, so revit_change refuses it (D-117) - tried
-      only as the last precondition says - and it has not been run in a
-      family document (row 5b-1860); refused, the View 1 and Front pictures
-      stand. The picture comes into this
-      chat; LOOK at it: every part from step 0's list is there, on the side
-      it belongs, touching what holds it. Fix what is wrong and look again;
-      then tell the modeller, naming what the picture showed. Seen
-      2026-10-14 on Revit 2020: a fixed 55 inch monitor read back to plan,
-      and a screen grab of the Revit window taken outside Heron showed it
-      half off the screen - the 3D view had never been zoomed.
-      revit_view_image is a read (D-123): no switch, nothing in the family
-      changes, and the picture is not kept on the PC - it is for the agent
-      to look at here and is never passed on to anyone. EXPORT_VIEW_IMAGE
-      is not the way to look: it writes files for other people and needs
-      the Publish switch.
-  14. FLEX_FAMILY last, at sizes that are really different and not square - the
-      only step that PROVES the family follows. "The calls did not fail" is not
-      the proof; the geometry read back at another size is. A fixed family has
-      nothing to flex: skip it, and say it was skipped and why.
-  15. A family with many types gets a TYPE CATALOG - REPORT_FAMILY_TYPE_CATALOG
-      gives the text, saved beside the .rfa with its name and .txt, so a
-      project loads only the types it picks.
-
-  SAVE_DOCUMENT saves the family Heron works in once a change is kept
-  (D-171, Q-69 answered 2026-11-16), and a nested part made in step 11 while
-  Heron works in the host (step f). Its card is PROVEN, version 4, proof
-  dated 2026-11-24, Revit 2024 - that run saved ANOTHER open document, not
-  the family in front. Ctrl+S by the modeller is the fallback when the save
-  is refused or the add-in is older than version 3, and no helper model is
-  ever made to save from (issue #1028). A big build in a family that has
-  never been saved is saved FIRST, as step 0 asks, never only at the end:
-  closed with no file, it is lost with every form in it. Every save is
-  checked as step 0 checks it - REPORT_OPEN_DOCUMENTS' `fileTimes` and
-  `staleFileCount` - never taken from "I pressed Ctrl+S" or from a reply
-  that says SAVED.
-
-  AN ANGLE LABEL between two reference planes that meet is
-  LABEL_FAMILY_DIMENSION with an Angle parameter - one that already holds
-  the angle the two planes make, or the call is refused with both numbers.
-  The sloped plane itself is CREATE_REFERENCE_PLANES with axis=angle: each
-  entry of `planes` is then Name=degrees, not millimetres - a vertical
-  plane drawn in the floor plan, its line turned that many degrees from the
-  left-right line towards the back - and throughMm, "X,Y" in millimetres,
-  is the point it passes through, the family's origin when left out. Each
-  card's status is in the list served after this method.
-  NOT YET: reference lines - a part that swings or tilts about a pivot. A
-  reference line can be made through the API, but no DOCUMENTED call gives
-  the planes a reference line carries, so a form cannot be put on one; the only route found reads a reference out of an
-  undocumented string Autodesk says is not meant to be parsed (row 5b-280).
-  A revolve whose angle the types choose is the documented route for a bend.
-  A Family Type parameter, a type catalog, flip controls and filled and
-  masking regions were on this line until 2026-10-02 and are built now.
-  Whether a label on a round form's edge DRIVES the circle is not yet known
-  on any release: step 14 is where that is found out (NEEDS-CHECKING BM3).
-  This line said until 2026-10-01 that a circle's size cannot be driven
-  through the API on Revit 2020; that was measured for a project, not a
-  family (row 5b-261).
 
 # The words people say when they want a family made.
 utterances:
@@ -578,21 +1317,26 @@ utterances:
   - build a fixed size family of this equipment, visual only
   - make a detailed equipment family with materials and no parameters
 
-# CAPABILITIES, never fragment ids - in the order the purpose gives.
+# CAPABILITIES, never fragment ids - every one the purpose names, so the
+# list served beside the method carries each one's risk and status. The
+# first block is in the order of the fifteen-step method this replaced
+# (2026-11-28); the second adds the ones the owner's standard named. Merged
+# into a capability listed here on 2026-11-01, so no longer listed:
+# SET_FAMILY_CATEGORY (SET_FAMILY_SETTINGS), ADD_FAMILY_SHARED_PARAMETERS
+# (ADD_FAMILY_PARAMETERS), CREATE_FAMILY_EXTRUSION, CREATE_FAMILY_REVOLUTION,
+# CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and CREATE_FAMILY_SWEPT_BLEND
+# (CREATE_FAMILY_FORMS), LINK_FAMILY_FORM_PARAMETER, LINK_NESTED_TYPE_PARAMETER
+# and SET_FAMILY_FORM_MATERIAL (LINK_FAMILY_PARAMETER), PLACE_NESTED_FAMILY
+# (PLACE_FAMILY_INSTANCES), SELECT_FAMILY_FORMS (REPORT_FAMILY_FORMS),
+# ZOOM_TO_ELEMENTS (SET_SELECTION), and SET_VIEW_CAMERA, retired into
+# FRAME_ELEMENTS_IN_CAMERA (issue #1032).
 needs:
   - REPORT_FAMILY_TEMPLATE
-  # Step 0's units check - the read where the report has no units line, and
-  # the change the modeller may choose.
   - REPORT_PROJECT_UNITS
   - SET_PROJECT_UNITS
-  # SET_FAMILY_CATEGORY was listed here until 2026-11-01, when it was merged into SET_FAMILY_SETTINGS.
   - SET_FAMILY_SETTINGS
   - ADD_FAMILY_PARAMETERS
-  # Step 2's read first - the shared parameter file and its GUIDs, against
-  # the family, before ADD_FAMILY_PARAMETERS' shared kind writes anything.
   - REPORT_SHARED_PARAMETER_FILE
-  # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
-  # Values BEFORE labels - see step 3.
   - SET_FAMILY_TYPE_VALUES
   - SET_FAMILY_FORMULA
   - CREATE_REFERENCE_PLANES
@@ -600,139 +1344,103 @@ needs:
   - LABEL_FAMILY_DIMENSION
   - EXTRUDE_BETWEEN_PLANES
   - EXTRUDE_POLYGON_BETWEEN_PLANES
-  # CREATE_FAMILY_EXTRUSION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
-  # CREATE_FAMILY_REVOLUTION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
-  # CREATE_FAMILY_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
-  # CREATE_FAMILY_SWEEP was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
-  # CREATE_FAMILY_SWEPT_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
-  # Step 7's many forms at once - extrusions and revolves, one row each.
   - CREATE_FAMILY_FORMS
   - CREATE_FAMILY_FREEFORM_SOLID
   - LOCK_FORM_TO_PLANES
-  # Step 8's sweep path and step 9's circle centre - the form's sketch.
   - LOCK_FORM_SKETCH_TO_PLANES
-  # LINK_FAMILY_FORM_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - LABEL_FAMILY_RADIUS
   - COMBINE_FAMILY_FORMS
   - ARRAY_FAMILY_FORMS
   - ADD_FAMILY_CONNECTOR
-  # Step 11's electrical connector values, and any connector's settings.
   - SET_FAMILY_CONNECTOR_ROLES
-  # Step 11's nested part that is not a family yet, a to g.
   - CREATE_FAMILY_DOCUMENT
   - ACTIVATE_DOCUMENT
   - REPORT_OPEN_DOCUMENTS
   - SAVE_DOCUMENT
   - LOAD_FAMILY
-  # PLACE_NESTED_FAMILY was listed here until 2026-11-01, when it was merged into PLACE_FAMILY_INSTANCES.
   - PLACE_FAMILY_INSTANCES
   - LOCK_NESTED_FAMILY_TO_PLANES
-  # Step 11's nested part that came in upside down (version 3, row 5b-1335).
   - FLIP_ELEMENTS
-  # LINK_NESTED_TYPE_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - ADD_FAMILY_TYPE_PARAMETER
   - LINK_FAMILY_PARAMETER
-  # SET_FAMILY_FORM_MATERIAL was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - SET_FAMILY_FORM_SUBCATEGORY
-  # Step 12's subcategory colour, weight and pattern (version 2, row 5b-463).
   - CREATE_LINE_STYLE
   - SET_FAMILY_FORM_VISIBILITY
   - DRAW_FAMILY_SYMBOLIC_LINES
   - DRAW_FAMILY_FILLED_REGION
   - ADD_FAMILY_FLIP_CONTROL
-  # Step 12's lettering.
   - ADD_FAMILY_MODEL_TEXT
-  # A fixed family's colours, before LINK_FAMILY_PARAMETER sets them - see step 12.
   - CREATE_STARTER_MATERIALS
-  # Step 12's appearance for a family that will be rendered (row 5b-1263).
   - SET_MATERIAL_APPEARANCE
   - REPORT_FAMILY_FORMS
-  # Step 13's look at what was built - the 3D view opened and zoomed to the
-  # forms through revit_show, and shaded at Fine; the picture itself is the
-  # revit_view_image tool, which is not a capability (row 5b-651).
   - OPEN_VIEW
   - SET_VIEW_PROPERTIES
-  # Step 13's look at the photo's angle - a new perspective view; it replaced
-  # SET_VIEW_CAMERA, retired 2026-11-01 (issue #1032).
   - FRAME_ELEMENTS_IN_CAMERA
-  # SELECT_FAMILY_FORMS was listed here until it was merged into
-  # REPORT_FAMILY_FORMS, above, on 2026-11-01.
-  # ZOOM_TO_ELEMENTS was listed here until it was merged into SET_SELECTION,
-  # its show switch, on 2026-11-01.
   - SET_SELECTION
-  # The proof of a parametric family, and never skipped there.
   - FLEX_FAMILY
   - REPORT_FAMILY_TYPE_CATALOG
+  # Added 2026-11-28 with the owner's standard - Stage 1 parameters, Stage 3
+  # other methods, Stage 4 object styles, Stage 7 connectors, Stage 8 reuse,
+  # Stage 9 materials, Stage 12 project testing, Stage 13 delivery.
+  - REPORT_FAMILY_PARAMETERS
+  - DELETE_FAMILY_PARAMETERS
+  - DRAW_FAMILY_DETAIL_LINES
+  - SET_FAMILY_SWEEP_PROFILE
+  - IMPORT_CAD
+  - DELETE_ELEMENTS
+  - LIST_CATEGORIES
+  - CREATE_LINE_PATTERN
+  - SET_OBJECT_STYLE
+  - SET_MATERIAL_PROPERTIES
+  - CREATE_OPENING
+  - REPORT_FAMILY_CONNECTORS
+  - REMOVE_FAMILY_CONNECTOR
+  - FIND_LIBRARY_FAMILIES
+  - LIST_MATERIALS
+  - CREATE_SECTION_VIEW
+  - EXPORT_VIEW_IMAGE
+  - PLACE_HOSTED_FAMILY
+  - PLACE_FAMILY_ON_FACE
+  - PLACE_LINE_BASED_FAMILY
+  - REPORT_MIRRORED_INSTANCES
+  - REPORT_PARAMETER_INVENTORY
+  - CREATE_MEP_RUNS
+  - REPORT_CONNECTORS
+  - TRACE_CONNECTIVITY
+  - CONNECT_OPEN_ENDS
+  - CREATE_SCHEDULE
+  - READ_SCHEDULE_CONTENTS
+  - READ_MODEL_WARNINGS
+  - CHECK_FAMILY_STANDARDS
+  - FIND_PURGEABLE_ELEMENTS
+  - SET_FAMILY_PREVIEW_VIEW
 
 # What must be true BEFORE it runs, so it fails early with something
 # useful instead of deep inside a transaction (docs/09 s2).
 preconditions:
-  - a family document is open in front in the Family Editor, started by the modeller from the template the job needs - Heron does not choose a template
+  - the family to build is open in front in the Family Editor, opened by the modeller from the template the job needs - or Heron makes it in Stage 0 with CREATE_FAMILY_DOCUMENT from the template and the .rfa path the modeller names; Heron never picks a template or a path itself
   - every size, parameter name and type name has been given for THIS request - a picture or a sketch alone gives none of them
   - the family is not yet built - rebuilding one that already has labelled dimensions leaves the old labels behind to fight the new ones
   - this chat is on the family in front - a chat that worked on another model moves with revit_use_this_model first, because revit_read reads the model the chat is pinned to, not the one in front
-  - a step whose capability is DRAFT - the method's own list of uses says which - is refused by revit_change (D-117); it can only be tried once with the bridge client's try-once, on a family saved first with nothing unsaved, and stays only if the modeller presses Keep in Revit (D-119, D-121) - never on a family a project already uses
+  - a step whose capability is DRAFT - the list of uses served beside this method says which - is refused by revit_change and revit_read (D-117); a DRAFT of MODIFY risk can only be tried once with the bridge client's try-once, on a family saved first with nothing unsaved, and stays only if the modeller presses Keep in Revit (D-119, D-121) - never on a family a project already uses; a DRAFT read, or a DRAFT of Admin, Publish or Execute risk, cannot be tried at all, so its step says what to do meanwhile
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
-  Each step is one entry in the Family Editor's undo list. Built 2026-09-24 on
-  the owner's instruction to bring family creation into Heron, as boxes only;
-  widened 2026-10-01, on the owner's word "extrude, revolve, all modelling
-  capability ... maybe I will give only an image", to every form, the locks, a
-  round size, voids that cut, a form's own fields linked, Is Reference,
-  arrays, plan symbols, nested families, the family's own settings, shared
-  parameters, and a family read from a picture. Widened again 2026-10-02, on
-  the owner's word "line based, ceiling based, patterns, floor based, wall
-  based ... all kind", with the template report as its first step, a Family
-  Type parameter, filled regions, flip controls and a type catalog, and with
-  a skill of its own for each other kind of family (docs/43). Widened on
-  2026-10-07, on the owner's word "this tire should be separate family ... it
-  will automatically open ... bring to that family 1 and it will place", with
-  step 11's nested part made in its own window and brought back, a to g -
-  shown to the modeller before it goes in, "so I can suggest that this is OK
-  or not". Widened on 2026-10-11 with the FIXED-SIZE path, after the owner's
-  visual-only builds asked for as "no parameters, very detailed" - a
-  compressed-air plant and a split AC unit (2026-10-07), a diesel fire pump
-  (10-09), an OS&Y valve and an air-cooled chiller (10-10/11, Revit 2020) and
-  a diesel generator (10-11). It is a path through this job rather than a job
-  of its own: the same template, forms and tools, and a second copy of steps
-  0, 1, 7 and 10 to 13 would drift from this one. Each rule it added was
-  checked against a tool card or a register row (5b-296, 5b-410), and the
-  inline valve's Work Plane-Based=no against the check valves the owner tested
-  in Project1 on 2026-10-04. Widened on 2026-10-12 after three fixed
-  electrical families on Revit 2020 - a fire alarm control panel, a
-  three-phase rotary isolator and an LV switchboard - showed two gaps: no
-  tool placed model text, so lettering was built from square extrusions,
-  and no tool set an electrical connector's voltage, poles or load. Step 12
-  names ADD_FAMILY_MODEL_TEXT and step 11 SET_FAMILY_CONNECTOR_ROLES
-  version 3 (NEEDS-CHECKING Groups DC and DD). Widened on 2026-10-12 after
-  an outdoor unit was built on Revit 2020 in a template whose Length showed
-  Feet and fractional inches: the geometry was right, every dimension read in
-  feet and inches, and the owner noticed only afterwards; REPORT_PROJECT_UNITS
-  showed it in one call and SET_PROJECT_UNITS put it right. Step 0 checks the
-  units from REPORT_FAMILY_TEMPLATE version 3's units line, and the family
-  methods that share step 0 point at it. Widened on 2026-10-14 after a
-  fixed 60 inch monitor and wall bracket on Revit 2020: step 7 names the
-  round-ended slot, the hex nut's polygon and a row's own detailLevels, and
-  step 12 CREATE_MATERIAL's transparency - each as that build wrote it and
-  read it back, the closing straight line and the corner radius also as
-  CREATE_FAMILY_FORMS's code makes them. Widened on 2026-10-16 after the
-  same build: REPORT_OPEN_DOCUMENTS version 2 lists each open family with
-  its file or NEVER SAVED - the chat could not tell the modeller whether the
-  60 inch family had been saved, and step 11 b's lost-answer check could not
-  see a family window - so step 0 asks once for Ctrl+S on a large build in a
-  family with no file (rows 5b-435 and 5b-487). Widened on 2026-10-19 after
-  a 40-floor tower on Revit 2020 sat unsaved on disk for 25 minutes while
-  Ctrl+S, pressed twice, went to the chat: REPORT_OPEN_DOCUMENTS version 3
-  gives each file's last-written time, so step 0 checks a save on disk
-  rather than trusting it (row 5b-1218). Corrected on 2026-10-20 after a
-  parametric electric duct heater on Revit 2020: forms arrayed from planes a
-  parameter moves lost their work plane and the row broke at another type,
-  while the same row rebuilt as an arrayed nested family held at four sizes -
-  so steps 0, 7 and 10 send a row that a size stretches to a nested family
-  (row 5b-1261). Widened on 2026-10-20 after the same heater drew in colour
-  Shaded and flat dark grey in Realistic: step 12 gives a family that will
-  be rendered an appearance per material (row 5b-1263, Group IA). Every
-  step is DRAFT until it
-  has been run on a real family with a negative case (D-30).
+  Built 2026-09-24 on the owner's instruction to bring family creation into
+  Heron, as boxes only; widened 2026-10-01 to every form, the locks, a round
+  size, voids, arrays, plan symbols, nested families, shared parameters and a
+  family read from a picture; 2026-10-02 to the template report, a Family Type
+  parameter, filled regions, flip controls, a type catalog and a method of its
+  own for each other kind of family (docs/43); 2026-10-07 to a nested part
+  made in its own window and brought back; 2026-10-11 to the fixed-size path
+  (rows 5b-296, 5b-410), and the inline valve's Work Plane-Based=no from the
+  owner's check valves of 2026-10-04; 2026-10-12 to model text, electrical
+  connector values (Groups DC and DD) and the units check; 2026-10-14 to the
+  slot, the hex nut and a row's detail levels; 2026-10-16 and 2026-10-19 to
+  the save checks (rows 5b-435, 5b-487, 5b-1218); 2026-10-20 to arrayed nested
+  families (row 5b-1261) and render appearances (row 5b-1263). On 2026-11-28
+  it was rebuilt on the owner's own family creation standard, with the Heron
+  capability and its status under every step of it, and every earlier rule
+  moved under the step it belongs to. Every step is DRAFT until it has been
+  run on a real family with a negative case (D-30).
