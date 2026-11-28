@@ -12,259 +12,420 @@ source: OFFICIAL
 
 risk: MODIFY
 
-purpose: >
-  Builds a DUCT or PIPE FITTING family - an elbow, a tee, a reducing tee, a
-  cross, a transition, a wye or lateral, a tap or spud, a union or coupling, a
-  cap - that a pipe or duct type's routing preferences can pick, that resizes
-  to the run it is placed on, and that stays connected when the run moves.
-  The steps of FAMILY-CREATION still hold; this is what a fitting adds. What
-  every step rests on, and how sure each fact is, is in docs/43 §10.
+# THE SHAPE OF THIS METHOD (2026-11-28): the owner's family creation
+# standard, as family-creation carries it - objective, when to use it, the
+# stages of family-creation in their order, the always/never rules and the
+# report. Shared stages are POINTED AT, never copied: "family-creation Stage
+# N" is heron_method(job="family-creation", stage=N). Every rule the
+# eleven-step method this replaced held - the kind table, the worked
+# elbow, tee and transition, the symptoms - is under the stage it belongs to
+# (the pull request lists each). The research every step rests on, and how
+# sure each fact is, is docs/43 §10.
+purpose: |
+  MEP FITTING FAMILY CREATION - a DUCT or PIPE FITTING: an elbow, a tee, a
+  reducing tee, a cross, a transition, a wye or lateral, a tap or spud, a
+  union or coupling, a cap - that a pipe or duct type's routing preferences
+  can pick, that resizes to the run it is placed on, and that stays
+  connected when the run moves. The owner's family creation standard (Ajmal
+  PS, 2026-11-28), with what a fitting adds.
+
+  HOW TO READ IT. This method keeps family-creation's stages, in their order,
+  and says only what a fitting adds. "family-creation Stage N" is served by
+  heron_method(job="family-creation", stage=N): follow that stage there, then
+  what is written here. family-creation's behaviour rules and its report (its
+  sections 5 and 6) come with its summary, heron_method(job=
+  "family-creation"), and hold here. "-> CAPABILITY (STATUS)" after a step is
+  the Heron capability that does it and its card's status when this was
+  written; the list of uses served after this method gives each one's status
+  now, and that list wins. Four named here are not in that list, so this
+  method is not offered beside ordinary saving, library, window and run
+  requests: FIND_LIBRARY_FAMILIES, ACTIVATE_DOCUMENT, CREATE_MEP_RUNS and
+  SAVE_DOCUMENT - each stage served gives their status too. "-> no Heron tool
+  yet:" is a step Heron cannot do: it says what the modeller does by hand. A
+  DRAFT capability that CHANGES the model is refused by revit_change until it
+  is proved (D-117); a DRAFT READ runs through revit_read and says DRAFT -
+  confirm what matters another way.
+
+  ITS OWN STAGES ARE SERVED IN PARTS:
+  heron_method(job="mep-fitting-family-creation") lists them, and a stage of
+  this method is asked by its part's id - "kinds" for the kind table, "2-6"
+  for Stages 2 to 6, "failures" for the symptoms.
+
+  OLD STEPS. Before 2026-11-28 this method had steps 0 to 10, and other files
+  still name them: step 0 is Stage 0 items 1 and 2; step 1 is Stage 0 item
+  3; step 2 is Stage 0 item 4; step 3 is Stage 1 item 1 and the kind table
+  (stage "kinds"); step 4 is Stage 1 item 2; step 5 is Stage 1 item 3; step 6 is
+  Stage 1 item 4; step 7 is Stages 2 to 6; step 8 is Stage 7; step 9 is
+  Stage 10; step 10 is Stages 11 and 12.
+
+
+  1. OBJECTIVE
 
   A FITTING IS JUDGED BY THE RUN, NOT BY HOW IT LOOKS. A fitting that looks
   right and is never offered, or is offered and leaves the run disconnected,
-  has failed. So the method ends in a project, with a run drawn through it,
-  and nothing is called done before that.
+  has failed. So the method ends in a project, with a run drawn through it at
+  several sizes and angles, and nothing is called done before that. Never
+  guess a size, a parameter name or a table; never call it done before the
+  checks.
 
-  VALVES, STRAINERS, FLEX CONNECTORS AND METERS ARE NOT FITTINGS. They are
-  Pipe or Duct Accessories (Part Type "Valve - Breaks Into", "Breaks Into",
-  "Attaches To"...), sit IN a run rather than joining two, and are built by
-  FAMILY-CREATION with their two connectors linked as Global. Say so and use
-  that method when the modeller asks for a "fitting" that is one of these.
 
-  0. REPORT_FAMILY_TEMPLATE FIRST - category and Part Type as they stand.
-     CHECK THE UNITS (FAMILY-CREATION step 0): a units line reading IMPERIAL
-     where the modeller works in millimetres is said before anything is
-     built, with SET_PROJECT_UNITS or the Metric template offered.
+  2. WHEN TO USE - AND WHEN NOT
 
-  1. LEARN FROM REVIT'S OWN FITTING OF THE SAME KIND, BEFORE BUILDING. Ask
-     the modeller to open one Revit ships (or one their office trusts) of the
-     same kind - an elbow for an elbow, a tap for a tap - and read it, all
-     four reads, nothing changed: REPORT_FAMILY_TEMPLATE (category, Part
-     Type), REPORT_FAMILY_CONNECTORS (how many connectors, where each sits,
-     which way it points, its system, which is primary, each one's Angle and
-     the parameters sizing it), REPORT_FAMILY_TABLES_IN_PROJECT (the table's columns
-     and units) and REPORT_FAMILY_FORMS. Where this method and that family
-     disagree on a point marked UNSURE in docs/43 §10 - how many connectors a
-     tap has, a lateral's branch Angle - THE FAMILY REVIT SHIPS WINS, and the
-     difference is said to the modeller. Skipped only when the modeller says
-     there is none to open, and then said.
+  Use it for a Pipe Fittings or Duct Fittings family that JOINS two or more
+  runs.
+  Not for:
+    * VALVES, STRAINERS, FLEX CONNECTORS AND METERS - they are not fittings.
+      They are Pipe or Duct Accessories (Part Type "Valve - Breaks Into",
+      "Breaks Into", "Attaches To"...), sit IN a run rather than joining two,
+      and are built by family-creation with their two connectors linked as
+      Global (family-creation Stage 7 item 15). Say so and use that method
+      when the modeller asks for a "fitting" that is one of these.
+    * equipment with duct or pipe connectors - family-creation.
+  Which kind it is, and what each kind is built of, is the kind table:
+  heron_method(job="mep-fitting-family-creation", stage="kinds").
 
-  2. READ THE THING: which fitting (the kind table below), its connection
-     sizes, round or rectangular or oval at each end, an elbow's centre-line
-     radius rule (1.0 x D, 1.5 x D, a fixed radius) and angle range, a
-     reducing fitting's size pairs, and where its sizes come from - usually a
-     manufacturer's table. Every size and every parameter name comes from
-     the modeller for THIS request.
+  THE KIND TABLE
+  Part Type, connectors, the routing group that offers it, and its geometry
+  (the forms are CREATE_FAMILY_FORMS (PROVEN) rows unless named):
+    Elbow          2  Elbows       pipe: a revolve about the centre-line
+                                   radius; rectangular or oval duct: a sweep
+                                   of the duct profile along the arc
+    Tee            3  Junctions    run: one form along X through the origin;
+                                   branch: one along Y to the branch end;
+                                   COMBINE_FAMILY_FORMS joins them
+    Cross          4  Crosses      as a tee, with a second branch along -Y
+    Transition     2  Transitions  round to round: a revolve of the cone's
+                                   outline, or a blend; rectangular: a blend,
+                                   base one size, top the other; a
+                                   rectangular-to-round or -oval duct
+                                   transition is a multi-shape one, offered by
+                                   its own group (Rectangular to Round,
+                                   Rectangular to Oval, Oval to Round)
+    Wye, Lateral Tee  3  Junctions a tee whose branch leaves at the lateral
+                                   angle - the angle is fixed in the family
+    Tap - Perpendicular / Adjustable (duct), Spud - Perpendicular /
+    Adjustable (pipe)  Junctions   sits on the side of the main and does not
+                                   cut it; the connector count is read from
+                                   Revit's own tap at Stage 0 item 3
+    Union, Mechanical Coupling  2  Unions, Mechanical Joints - both ends one
+                                   size
+    Cap            1  Caps         one form closing the end
+    Pants, Offset, Multi Port, Lateral Cross, Flange - read Revit's own of the
+                                   kind at Stage 0 item 3 first: their
+                                   connector rules are not recorded here
+  A FAMILY'S CONNECTOR COUNT MUST MATCH ITS PART TYPE. An elbow with a third
+  connector, or a tee with two, is a different part to Revit.
 
-  3. CATEGORY AND PART TYPE. SET_FAMILY_SETTINGS "Category=Pipe Fittings"
-     or Duct Fittings when starting from a Generic Model, and "Part
-     Type=<kind>" - one call does both, the category written first because
-     the Part Type is checked against it. PART TYPE DECIDES WHICH ROUTING
-     PREFERENCE GROUP OFFERS THE FITTING; a wrong one and the family is missing from that
-     group's list with no error. Pipe fittings take Spud where duct fittings
-     take Tap. CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
-     classificationCodes line - run it again after the category changed - and
-     SET_FAMILY_SETTINGS "OmniClass Number=<code>" once the modeller confirms
-     the code; no file or no code is said, never guessed (D-33).
 
-     THE KIND TABLE - Part Type, connectors, the routing group that offers
-     it, and its geometry:
-       Elbow          2  Elbows       pipe: a CREATE_FAMILY_FORMS revolve about the
-                                      centre-line radius; rectangular or oval
-                                      duct: a CREATE_FAMILY_FORMS sweep of
-                                      the duct profile along the arc
-       Tee            3  Junctions    run: one form along X through the origin;
-                                      branch: one along Y to the branch end;
-                                      COMBINE_FAMILY_FORMS joins them
-       Cross          4  Crosses      as a tee, with a second branch along -Y
-       Transition     2  Transitions  round to round: a CREATE_FAMILY_FORMS revolve
-                                      of the cone's outline or a
-                                      CREATE_FAMILY_FORMS blend; rectangular:
-                                      a CREATE_FAMILY_FORMS blend, base one
-                                      size, top the other; a rectangular-to-round or
-                                      -oval duct transition is a multi-shape
-                                      one, offered by its own group
-                                      (Rectangular to Round, Rectangular to
-                                      Oval, Oval to Round)
-       Wye, Lateral Tee  3  Junctions  a tee whose branch leaves at the
-                                      lateral angle - the angle is fixed in
-                                      the family
-       Tap - Perpendicular / Adjustable (duct), Spud - Perpendicular /
-       Adjustable (pipe)  Junctions   sits on the side of the main and does
-                                      not cut it; the connector count is
-                                      read from Revit's own tap at step 1
-       Union, Mechanical Coupling  2  Unions, Mechanical Joints  both ends
-                                      one size
-       Cap            1  Caps         one form closing the end
-       Pants, Offset, Multi Port, Lateral Cross, Flange  read Revit's own
-                                      of the kind at step 1 first: their
-                                      connector rules are not recorded here
-     A FAMILY'S CONNECTOR COUNT MUST MATCH ITS PART TYPE. An elbow with a
-     third connector, or a tee with two, is a different part to Revit.
+  3. WORKFLOW
 
-  4. PARAMETERS - ADD_FAMILY_PARAMETERS. THE RULE: EVERYTHING THE RUN DRIVES
-     IS INSTANCE. The connectors take their size from the pipe or duct they
-     join, so the sizes they are linked to are INSTANCE lengths, and so is
-     every size worked out from them - Revit refuses a type parameter whose
-     formula reads an instance one. An elbow's ANGLE is an instance angle.
-     Revit's own pipe fittings use Nominal Diameter, Nominal Radius (=
-     Nominal Diameter / 2) and Angle; a reducing fitting a size per end
-     (Nominal Diameter 1, Nominal Diameter 2...); a rectangular duct fitting
-     a width and height per end. The modeller's own names are used where
-     they give them. The table's name goes in a TYPE TEXT parameter -
-     "Lookup Table Name" - because size_lookup refuses the bare name (seen in
-     Revit 2024, docs/43 §5). SET_FAMILY_TYPE_VALUES writes a real size and a
-     real angle before any form is drawn.
+  STAGE 0 - INFORMATION AND PREPARATION
+  family-creation Stage 0 holds. A fitting adds:
+  1. Read the template.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN): the category and Part Type as they
+        stand. The file comes from a fitting or Generic Model template, as
+        family-creation Stage 0 item 1 says.
+  2. Check the units - family-creation Stage 0 item 3, which holds.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN), its units line; SET_PROJECT_UNITS
+        (PROVEN, Admin); REPORT_PROJECT_UNITS (DRAFT). IMPERIAL where the
+        modeller works in millimetres is said BEFORE anything is built.
+  3. LEARN FROM REVIT'S OWN FITTING OF THE SAME KIND, BEFORE BUILDING - one
+     Revit ships, or one the modeller's office trusts: an elbow for an elbow,
+     a tap for a tap.
+     -> FIND_LIBRARY_FAMILIES (PROVEN) finds its file in the library folders
+        the modeller names; ACTIVATE_DOCUMENT (PROVEN) with that path opens
+        it in front, and revit_use_this_model puts the chat on it - or the
+        modeller opens it. Nothing in it is changed or saved. Then four reads:
+        REPORT_FAMILY_TEMPLATE
+        (PROVEN) - category, Part Type; REPORT_FAMILY_CONNECTORS (PROVEN) - how
+        many connectors, where each sits, which way it points, its system,
+        which is primary, each one's Angle and the parameters sizing it;
+        REPORT_FAMILY_TABLES_IN_PROJECT (PROVEN) - the table's columns and
+        units; REPORT_FAMILY_FORMS (PROVEN).
+     * Where this method and that family disagree on a point marked UNSURE in
+       docs/43 §10 - how many connectors a tap has, a lateral's branch Angle -
+       THE FAMILY REVIT SHIPS WINS, and the difference is said to the
+       modeller.
+     * Back to the fitting being built: ACTIVATE_DOCUMENT (PROVEN) with its
+       path, and revit_use_this_model.
+     * Skipped only when the modeller says there is none to open, and then
+       said.
+  4. Read the thing, into family-creation's one list.
+     -> no Heron tool: asked once - which fitting (the kind table), its
+        connection sizes, round or rectangular or oval at each end, an
+        elbow's centre-line radius rule (1.0 x D, 1.5 x D, a fixed radius) and
+        angle range, a reducing fitting's size pairs, and where its sizes come
+        from - usually a manufacturer's table. Every size and every parameter
+        name comes from the modeller for THIS request.
+  GATE: the modeller confirms the list and the kind.
 
-  5. THE SIZE TABLE: WRITE_FAMILY_SIZE_TABLE imports the CSV - headers
-     "Name##LENGTH##MILLIMETERS", the unit word Revit's own; a reducing
-     fitting is keyed on BOTH sizes, one row per pair it is made in - and
-     REPORT_FAMILY_TABLES_IN_PROJECT reads it back. Then SET_FAMILY_FORMULA,
-     size_lookup(Lookup Table Name, "Column", default, Nominal Diameter) for
-     each size the table drives - the outside diameter, the socket length,
-     the centre-to-end. Which column a lookup searches is recorded two ways -
-     NEEDS-CHECKING BV15 settles it with a negative case; until then, lay the
-     table out as the family read at step 1 does. THE DEFAULT IS ANSWERED
-     SILENTLY for every size the table has not got, so it is a formula that
-     keeps the geometry valid (Nominal Diameter * 1.1, never 0), and step 9
-     says which sizes fell to it.
+  STAGE 1 - FAMILY CONFIGURATION
+  family-creation Stage 1 holds. A fitting adds:
+  1. CATEGORY AND PART TYPE, in one call.
+     -> SET_FAMILY_SETTINGS (PROVEN): "Category=Pipe Fittings" or Duct
+        Fittings when starting from a Generic Model, and "Part Type=<kind>" -
+        the category written first, because the Part Type is checked against
+        it.
+     * PART TYPE DECIDES WHICH ROUTING PREFERENCE GROUP OFFERS THE FITTING; a
+       wrong one and the family is missing from that group's list with no
+       error. Pipe fittings take Spud where duct fittings take Tap.
+     * OmniClass: family-creation Stage 1 item 3 - REPORT_FAMILY_TEMPLATE
+       (PROVEN)'s classificationCodes line, run again after the category
+       changed, and SET_FAMILY_SETTINGS "OmniClass Number=<code>" once the
+       modeller confirms it, never guessed (D-33).
+  2. PARAMETERS. THE RULE: EVERYTHING THE RUN DRIVES IS INSTANCE.
+     -> REPORT_SHARED_PARAMETER_FILE (PROVEN) first; ADD_FAMILY_PARAMETERS
+        (PROVEN, Admin).
+     * The connectors take their size from the pipe or duct they join, so the
+       sizes they are linked to are INSTANCE lengths, and so is every size
+       worked out from them - Revit refuses a type parameter whose formula
+       reads an instance one. An elbow's ANGLE is an instance angle.
+     * Revit's own pipe fittings use Nominal Diameter, Nominal Radius (=
+       Nominal Diameter / 2) and Angle; a reducing fitting a size per end
+       (Nominal Diameter 1, Nominal Diameter 2...); a rectangular duct fitting
+       a width and height per end. The modeller's own names are used where
+       they give them.
+     * The table's name goes in a TYPE TEXT parameter - "Lookup Table Name" -
+       because size_lookup refuses the bare name (seen in Revit 2024, docs/43
+       §5).
+     -> SET_FAMILY_TYPE_VALUES (PROVEN): a real size and a real angle before
+        any form is drawn.
+  3. THE SIZE TABLE.
+     -> WRITE_FAMILY_SIZE_TABLE (PROVEN) imports the modeller's CSV - headers
+        "Name##LENGTH##MILLIMETERS", the unit word Revit's own; a reducing
+        fitting is keyed on BOTH sizes, one row per pair it is made in - and
+        REPORT_FAMILY_TABLES_IN_PROJECT (PROVEN) reads it back.
+     -> SET_FAMILY_FORMULA (PROVEN): size_lookup(Lookup Table Name, "Column",
+        default, Nominal Diameter) for each size the table drives - the
+        outside diameter, the socket length, the centre-to-end.
+     * Which column a lookup searches is recorded two ways - NEEDS-CHECKING
+       BV15 settles it with a negative case; until then, lay the table out
+       as the family read at Stage 0 item 3 does.
+     * THE DEFAULT IS ANSWERED SILENTLY for every size the table has not got,
+       so it is a formula that keeps the geometry valid (Nominal Diameter *
+       1.1, never 0), and Stage 10 says which sizes fell to it.
+  4. WORKING SIZES BY FORMULA, each guarded.
+     -> SET_FAMILY_FORMULA (PROVEN), with a guard on each so NO LENGTH CAN
+        REACH ZERO OR GO NEGATIVE at the smallest size or the smallest angle:
+        Revit will not solve a form of zero length, and that size simply gets
+        no fitting in the run.
+     * An elbow's centre-line radius follows the modeller's rule ("Nominal
+       Diameter * 1.5") or the table, and its centre-to-end - from where the
+       two centre lines meet to each end - is "Center Radius * tan(Angle /
+       2)", the arc's tangent length.
+     * A transition's length follows the change of size, with a minimum:
+       "if(abs(Nominal Diameter 1 - Nominal Diameter 2) * 2 < 50 mm, 50 mm,
+       abs(Nominal Diameter 1 - Nominal Diameter 2) * 2)", or the
+       manufacturer's.
+     * A lateral's branch length follows its angle.
+     * A rectangular duct elbow's radius is guarded above Width / 2 (Stage 3
+       item 3).
 
-  6. WORKING SIZES BY FORMULA - SET_FAMILY_FORMULA, with a guard on each so
-     NO LENGTH CAN REACH ZERO OR GO NEGATIVE at the smallest size or the
-     smallest angle; Revit will not solve a form of zero length, and that
-     size simply gets no fitting in the run. An elbow's centre-line radius
-     follows the modeller's rule ("Nominal Diameter * 1.5") or the table, and
-     its centre-to-end - from where the two centre lines meet to each end -
-     is "Center Radius * tan(Angle / 2)", the arc's tangent length. A
-     transition's length follows the change of size, with a minimum
-     ("if(abs(Nominal Diameter 1 - Nominal Diameter 2) * 2 < 50 mm, 50 mm,
-     abs(Nominal Diameter 1 - Nominal Diameter 2) * 2)", or the
-     manufacturer's). A lateral's branch length follows its angle.
-
-  7. THE SKELETON AND THE FORMS - FAMILY-CREATION steps 5 to 10.
-     THE ORIGIN IS WHERE THE CONNECTOR AXES MEET: an elbow's two centre lines,
-     a tee's run and branch. Each end gets a reference plane, labelled by its
-     centre-to-end length with LABEL_FAMILY_DIMENSION; a pipe's diameter is
-     labelled with LABEL_FAMILY_RADIUS. A pipe elbow is a revolve whose end
-     angle LINK_FAMILY_PARAMETER (forms= its id) ties to Angle, so the arc opens and
-     closes with the run; a duct elbow a sweep along an arc the same way.
-     Straight parts are EXTRUDE_BETWEEN_PLANES or a CREATE_FAMILY_FORMS extrusion,
-     each locked with LOCK_FORM_TO_PLANES. A socket, a bead or a flange ring
-     is a separate form so its end face stays flat and on its plane - the
-     face the connector will sit on.
-     THE ELBOW, WORKED - the geometry, with Ce the centre-to-end and R the
-     centre-line radius, both from step 6:
+  STAGES 2 TO 6 - FRAMEWORK, GEOMETRY, STYLES, CONTROL, VOIDS
+  family-creation Stages 2 to 6 hold. A fitting adds:
+  STAGE 2 - REFERENCE FRAMEWORK
+  1. THE ORIGIN IS WHERE THE CONNECTOR AXES MEET: an elbow's two centre
+     lines, a tee's run and branch. Each end gets a reference plane, labelled
+     by its centre-to-end length.
+     -> CREATE_REFERENCE_PLANES (PROVEN); SET_FAMILY_PLANE_REFERENCE (PROVEN),
+        the owner's gray rule for every plane the build adds;
+        LABEL_FAMILY_DIMENSION (PROVEN).
+  STAGE 3 - GEOMETRY CREATION
+  1. Straight parts.
+     -> EXTRUDE_BETWEEN_PLANES (PROVEN), or a CREATE_FAMILY_FORMS (PROVEN)
+        extrusion.
+     * A socket, a bead or a flange ring is a SEPARATE form, so its end face
+       stays flat and on its plane - the face the connector will sit on.
+  2. THE ELBOW, WORKED - Ce the centre-to-end and R the centre-line radius,
+     both from Stage 1 item 4.
+     -> CREATE_FAMILY_FORMS (PROVEN), a pipe elbow a kind=revolve row.
        Centre to End = Center Radius * tan(Angle / 2)
        first end face: on a left-right plane at X = Ce, facing +X
        arc centre:     X = Ce, Y = R - the revolve's axis runs through it,
                        straight up (parallel to Z)
        second end:     at 90 degrees, on a front-back plane at Y = Ce,
                        facing +Y; at any other Angle it turns with the arc
-     The profile is the pipe's outside circle on the first end face; the
-     revolve turns it about that axis through Angle. Which way a part-turn
-     sweeps is Revit's rule, read back in the extent and never predicted -
-     REPORT_FAMILY_FORMS says where the second end landed.
-     BUILD AN ELBOW AT 90 DEGREES. Heron's reference planes run along the
-     family's own axes only, and ADD_FAMILY_CONNECTOR finds a face by the
-     named plane it lies on - so the second end face lies on a plane only
-     while Angle is 90. Set Angle to 90 (SET_FAMILY_TYPE_VALUES), place both
-     connectors (step 8), then let the arc follow Angle; FLEX_FAMILY at
-     other angles shows whether the connector rides the face (Group JH JH4).
-     A RECTANGULAR DUCT ELBOW is the same arc swept: the profile is Width by
-     Height on the first end face, Width lying IN the plane of the turn (along
-     Y) and Height across it (along Z); the path is the arc. Its inside face
-     sits at R - Width / 2, so the radius rule keeps R above Width / 2 - a
-     guard in step 6 ("if(Center Radius < Width * 0.75, Width * 0.75, Center
-     Radius)" or the modeller's minimum) - or the inside of the bend folds
-     through itself at the widest size.
-     THE TEE, WORKED: the run is one form along X from -Run Centre to End to
-     +Run Centre to End, the branch one along +Y from the origin to Branch
-     Centre to End, joined with COMBINE_FAMILY_FORMS. All three end faces lie
-     on axis planes - left, right and back - so nothing waits on an angle. A
-     reducing tee drives the run ends by the run size and the branch end by
-     the branch size, and its table is keyed on both.
-     THE TRANSITION, WORKED: its two end faces on two left-right planes,
-     Length apart, labelled; a round one a revolve of the cone's half-section
-     about the X axis, a rectangular one a blend between the two sizes. Where
-     its origin sits - an end or the middle - is read off Revit's own
-     transition at step 1, never assumed.
+     * The profile is the pipe's outside circle on the first end face; the
+       revolve turns it about that axis through Angle. Which way a part-turn
+       sweeps is Revit's rule, read back in the extent and never predicted -
+       REPORT_FAMILY_FORMS (PROVEN) says where the second end landed.
+     * BUILD AN ELBOW AT 90 DEGREES. Heron's reference planes run along the
+       family's own axes only, and ADD_FAMILY_CONNECTOR finds a face by the
+       named plane it lies on - so the second end face lies on a plane only
+       while Angle is 90. Set Angle to 90 (SET_FAMILY_TYPE_VALUES), place both
+       connectors (Stage 7), then let the arc follow Angle; FLEX_FAMILY at
+       other angles shows whether the connector rides the face (Group JH,
+       JH4).
+  3. A RECTANGULAR DUCT ELBOW is the same arc swept.
+     -> CREATE_FAMILY_FORMS (PROVEN), a kind=sweep row: the profile Width by
+        Height on the first end face, Width lying IN the plane of the turn
+        (along Y) and Height across it (along Z); the path the arc.
+     * Its inside face sits at R - Width / 2, so the radius rule keeps R above
+       Width / 2 - a guard in Stage 1 item 4, "if(Center Radius < Width *
+       0.75, Width * 0.75, Center Radius)", or the modeller's minimum - or the
+       inside of the bend folds through itself at the widest size.
+  4. THE TEE, WORKED.
+     -> CREATE_FAMILY_FORMS (PROVEN): the run one form along X from -Run
+        Centre to End to +Run Centre to End, the branch one along +Y from the
+        origin to Branch Centre to End.
+     * All three end faces lie on axis planes - left, right and back - so
+       nothing waits on an angle. A reducing tee drives the run ends by the
+       run size and the branch end by the branch size, and its table is keyed
+       on both.
+  5. THE TRANSITION, WORKED.
+     -> CREATE_FAMILY_FORMS (PROVEN): its two end faces on two left-right
+        planes, Length apart, labelled; a round one a revolve of the cone's
+        half-section about the X axis, a rectangular one a blend between the
+        two sizes.
+     * Where its origin sits - an end or the middle - is read off Revit's own
+       transition at Stage 0 item 3, never assumed.
+  STAGE 4 - OBJECT STYLES AND SUBCATEGORIES
+  family-creation Stage 4, unchanged: SET_FAMILY_FORM_SUBCATEGORY (PROVEN).
+  STAGE 5 - DIMENSIONS AND PARAMETRIC CONTROL
+  1. Lock every straight part to its planes.
+     -> LOCK_FORM_TO_PLANES (PROVEN).
+  2. A pipe's diameter.
+     -> LABEL_FAMILY_RADIUS (PROVEN), in the sketch.
+  3. The elbow's arc follows Angle.
+     -> LINK_FAMILY_PARAMETER (PROVEN), forms= the revolve's id: its end angle
+        tied to Angle, so the arc opens and closes with the run; a duct
+        elbow's sweep along its arc the same way.
+  STAGE 6 - VOIDS AND ARRAYS
+  1. Join the tee's run and branch.
+     -> COMBINE_FAMILY_FORMS (PROVEN) - keep the connector faces' sockets or
+        flanges out of the combination (family-creation Stage 7 item 2).
+     -> ARRAY_FAMILY_FORMS (PROVEN) only where a fitting truly repeats a
+        part - rarely.
 
-  8. CONNECTORS - ADD_FAMILY_CONNECTOR on every end face, system "Fitting"
-     (the classification a fitting's connectors take; it is what shows their
-     Angle), a pipe or round duct port sized by its diameter parameter, a
-     rectangular port by width then height - the tool measures the face and
-     ties them the way round the face is built, so a duct port is never
-     turned through 90 degrees. Each points OUT of the fitting along its
-     leg. Then SET_FAMILY_CONNECTOR_ROLES:
-       - `primary` naming the end plane of the connector lying on the X axis
-         - Autodesk's help puts a fitting's primary there, and the tool
-         reports one that is not; a tee's or cross's is a RUN end.
+  STAGE 7 - MEP CONNECTORS
+  family-creation Stage 7 holds. A fitting adds:
+  1. A connector on every end face.
+     -> ADD_FAMILY_CONNECTOR (PROVEN): system "Fitting" - the classification
+        a fitting's connectors take, and what shows their Angle - a pipe or
+        round duct port sized by its diameter parameter, a rectangular port
+        by width then height. The tool measures the face and ties them the way
+        round the face is built, so a duct port is never turned through 90
+        degrees.
+     * Each points OUT of the fitting along its leg.
+  2. Its roles.
+     -> SET_FAMILY_CONNECTOR_ROLES (PROVEN):
+       - `primary` naming the end plane of the connector lying on the X axis -
+         Autodesk's help puts a fitting's primary there, and the tool reports
+         one that is not; a tee's or cross's is a RUN end.
        - an ELBOW's connectors: "angle=[Angle]" on both, so each connector's
          Angle follows the family's. An elbow whose connector angle is not
          linked does not flex in a run - the commonest reason a custom elbow
          is placed at one angle only. ANGLE MUST ALREADY EXIST AS AN INSTANCE
-         PARAMETER (step 4): finding none, the tool makes a TYPE one, which
-         the run cannot drive - read from its code, 2026-10-28.
+         PARAMETER (Stage 1 item 2): finding none, the tool makes a TYPE one,
+         which the run cannot drive - read from its code, 2026-10-28.
        - a DRAINAGE fitting (sanitary, storm, a sloped run):
          "allowSlopeAdjustments=yes" on its pipe connectors, so a run laid to
          a fall joins it a little off square. Whether Revit keeps the tick on
          a Fitting connector is UNSURE (docs/43 §10, Group IR) - the tool
-         reads it back, and REPORT_FAMILY_CONNECTORS says what stayed.
-     A fitting's connectors are NOT linked as a pair and NOT Global: that is
-     an accessory's or equipment's way of passing a system through.
+         reads it back, and REPORT_FAMILY_CONNECTORS (PROVEN) says what
+         stayed.
+     * A fitting's connectors are NOT linked as a pair and NOT Global: that is
+       an accessory's or equipment's way of passing a system through.
+  3. Read every connector back.
+     -> REPORT_FAMILY_CONNECTORS (PROVEN): count, position, direction,
+        system, primary, Angle and size parameters, against Revit's own
+        fitting read at Stage 0 item 3.
 
-  9. CHECK THE FITTING, READ-ONLY, BEFORE FLEXING IT - two checks, every
-     miss named with its fix:
-       - CHECK_FAMILY_STANDARDS, in the family: PASS, FAIL or WARN for Work
-         Plane-Based (a fitting must be No), a Part Type left Normal, a
-         connector pointing into the body, a union's, transition's,
-         flange's or coupling's two ports not opposite on one line, and a
-         connector size driven by no parameter or by a TYPE one - with how
-         many formulas hang off it.
-       - CHECK_FAMILY_SIZE_TABLES: every size_lookup finds its table, its
-         column and a row; a key that is an instance parameter - a
-         fitting's Nominal Diameter - is reported ROWS NOT CHECKED, so
-         REPORT_FAMILY_TABLES_IN_PROJECT is read against the sizes the modeller's
-         pipe or duct segment comes in, and the sizes with no row are listed:
-         those fall to the default.
-       - and, from CHECK_FAMILY_STANDARDS version 4 in a Pipe or Duct
-         Fittings family, the fitting's own four: the run connectors counted
-         against the Part Type (a FAIL when they differ, NOT CHECKED for a
-         tap, spud, pants, offset, multi port or flange - read Revit's own at
-         step 1); each connector Fitting; one primary on the X axis; an
-         elbow's connector Angle driven by an INSTANCE parameter.
-         REPORT_FAMILY_CONNECTORS is the read when a row needs the detail.
+  STAGES 8 AND 9 - NESTED FAMILIES, MATERIALS AND GRAPHICS
+  family-creation Stages 8 and 9, unchanged - a fitting rarely nests:
+  PLACE_FAMILY_INSTANCES (PROVEN), LOCK_NESTED_FAMILY_TO_PLANES (PROVEN),
+  ADD_FAMILY_TYPE_PARAMETER (DRAFT - refused by revit_change until proved;
+  try it once, or the modeller makes the Family Type parameter by hand);
+  SET_FAMILY_FORM_VISIBILITY (PROVEN), DRAW_FAMILY_SYMBOLIC_LINES (PROVEN),
+  DRAW_FAMILY_FILLED_REGION (PROVEN), ADD_FAMILY_FLIP_CONTROL (PROVEN) for its
+  plan and graphics.
 
-  10. FLEX_FAMILY, then LOAD AND RUN. FLEX_FAMILY at the SMALLEST and the
-      LARGEST size in the table and one between; an elbow at 11.25, 22.5, 30,
-      45, 60 and 90 degrees - Revit's own specific angles - and at the smallest
-      angle the modeller allows; a rectangular duct fitting at a width and
-      height that are NOT equal, then swapped; a reducing fitting at its
-      biggest and smallest size step. Then LOAD_FAMILY into a test project,
-      REPORT_ROUTING_PREFERENCES on the pipe or duct type FIRST, and
-      SET_ROUTING_PREFERENCE to put the fitting in its group with a size
-      window that covers the table's sizes - a size outside every rule gets
-      no fitting, silently. Name the fitting "Family: Type": its type name
-      alone is refused when two loaded families have a type of that name
-      (version 2, rows 5b-1120 and 5b-1549 - DRAFT when this was written,
-      PROVEN since 2026-11-13; while the list served after this method says
-      DRAFT, revit_change refuses it and the rule is set by hand in the
-      type's Routing Preferences). The modeller draws a
-      run through it at three
-      sizes and the angles above; FIND_DEAD_ENDS on the run then names any
-      end the fitting left open, and REPORT_CONNECTORS on a placed fitting
-      shows its sizes taken from the run. A project already holding many
-      fittings: REPORT_FAMILY_TABLES_IN_PROJECT reads every fitting's table
-      in one pass, and FIT_MEP_JOINTS fits the joints a run was drawn without.
+  STAGE 10 - FAMILY VERIFICATION: CHECK THE FITTING, READ-ONLY, BEFORE FLEXING
+  family-creation Stage 10 holds, all of it. A fitting adds two checks, every
+  miss named with its fix:
+  1. The family's rules.
+     -> CHECK_FAMILY_STANDARDS (PROVEN), in the family: PASS, FAIL or WARN for
+        Work Plane-Based (a fitting must be No), a Part Type left Normal, a
+        connector pointing into the body, a union's, transition's, flange's or
+        coupling's two ports not opposite on one line, and a connector size
+        driven by no parameter or by a TYPE one - with how many formulas hang
+        off it.
+     * And, in a Pipe or Duct Fittings family (from its version 4), the
+       fitting's own four: the run connectors counted against the Part Type
+       (a FAIL when they differ, NOT CHECKED for a tap, spud, pants, offset,
+       multi port or flange - read Revit's own at Stage 0 item 3); each
+       connector Fitting; one primary on the X axis; an elbow's connector
+       Angle driven by an INSTANCE parameter. REPORT_FAMILY_CONNECTORS
+       (PROVEN) is the read when a row needs the detail.
+  2. The size tables.
+     -> CHECK_FAMILY_SIZE_TABLES (PROVEN): every size_lookup finds its table,
+        its column and a row. A key that is an instance parameter - a
+        fitting's Nominal Diameter - is reported ROWS NOT CHECKED, so
+        REPORT_FAMILY_TABLES_IN_PROJECT (PROVEN) is read against the sizes the
+        modeller's pipe or duct segment comes in, and the sizes with no row
+        are listed: those fall to the default.
+  3. Read the forms back and look at it.
+     -> REPORT_FAMILY_FORMS (PROVEN), then revit_view_image, as
+        family-creation Stage 10.
 
-  WHEN A FITTING FAILS IN A RUN - the symptom, its usual cause, the read that
-  shows it:
+  STAGES 11 TO 13 - FLEX, LOAD AND RUN, SAVE
+  family-creation Stages 11 to 13 hold. A fitting adds:
+  STAGE 11 - FLEX TESTING
+  1. Flex it at the sizes a run will ask of it.
+     -> FLEX_FAMILY (PROVEN): at the SMALLEST and the LARGEST size in the
+        table and one between; an elbow at 11.25, 22.5, 30, 45, 60 and 90
+        degrees - Revit's own specific angles - and at the smallest angle the
+        modeller allows; a rectangular duct fitting at a width and height
+        that are NOT equal, then swapped; a reducing fitting at its biggest
+        and smallest size step.
+  STAGE 12 - PROJECT TESTING
+  1. Load it into a scratch test project.
+     -> LOAD_FAMILY (PROVEN), with the saved .rfa's path.
+  2. Put it in the pipe or duct type's routing preferences.
+     -> REPORT_ROUTING_PREFERENCES (PROVEN) on the type FIRST; then
+        SET_ROUTING_PREFERENCE (PROVEN): the fitting in its group with a size
+        window that covers the table's sizes - a size outside every rule gets
+        no fitting, silently.
+     * Name the fitting "Family: Type": its type name alone is refused when
+       two loaded families have a type of that name (version 2, rows 5b-1120
+       and 5b-1549).
+  3. A run drawn through it, at three sizes and the angles above.
+     -> CREATE_MEP_RUNS (PROVEN) draws the straight pieces of each run, at its
+        size, meeting where the fitting belongs - it connects nothing; then
+        FIT_MEP_JOINTS (PROVEN) fits the joints, and the type's routing
+        preference picks the fitting, so a joint fitted with another family,
+        or not fitted, says the fitting was not offered at that size. Or the
+        modeller draws the run by hand.
+     -> FIND_DEAD_ENDS (PROVEN) on the run names any end the fitting left
+        open, and REPORT_CONNECTORS (PROVEN) on a placed fitting shows its
+        sizes taken from the run.
+  4. A project already holding many fittings.
+     -> REPORT_FAMILY_TABLES_IN_PROJECT (PROVEN) reads every fitting's table
+        in one pass; FIT_MEP_JOINTS (PROVEN) fits the joints a run was drawn
+        without.
+  5. BY HAND, BECAUSE NO HERON TOOL SETS IT - each said at this stage, never
+     left out:
+     -> no Heron tool yet: a pipe fitting type's Loss Method and K
+        Coefficient Table (Family Types, in the Family Editor - Autodesk's
+        help); a duct fitting's loss, which is the placed instance's in the
+        project (Coefficient from ASHRAE Table); Revit's Mechanical Settings >
+        Angles; a duct type's Preferred Junction Type.
+
+  STAGE 13 - FINAL SAVE AND DELIVERY
+  family-creation Stage 13 holds, its SAVE RULE above all: SAVE_DOCUMENT
+  (PROVEN, Publish), then the file's time checked - and saved BEFORE Stage
+  12's load, which reads the file. Many types: REPORT_FAMILY_TYPE_CATALOG
+  (PROVEN).
+
+  WHEN A FITTING FAILS IN A RUN
+  The symptom, its usual cause, and the read that shows it:
     - missing from the routing preference list: the category or Part Type
       (REPORT_FAMILY_TEMPLATE); the family not loaded (LOAD_FAMILY).
     - offered, yet the run gets no fitting at some sizes: the size has no
       table row, or no routing rule's size window covers it
-      (REPORT_FAMILY_TABLES_IN_PROJECT, REPORT_ROUTING_PREFERENCES); or a length
-      reaches zero at that size (step 6, FLEX_FAMILY at that size).
+      (REPORT_FAMILY_TABLES_IN_PROJECT, REPORT_ROUTING_PREFERENCES); or a
+      length reaches zero at that size (Stage 1 item 4, FLEX_FAMILY at that
+      size).
     - an elbow placed at 90 only, or "no fitting" at other angles: the
       connector Angle not linked (REPORT_FAMILY_CONNECTORS), or the arc's end
       angle not tied to Angle (REPORT_FAMILY_FORMS).
@@ -275,18 +436,65 @@ purpose: >
       tied the wrong way, or the profile drawn on the wrong plane
       (REPORT_FAMILY_CONNECTORS reads each port's width and height).
     - "an invalid formula string" on size_lookup: the table named bare, not
-      through its text parameter (step 4).
+      through its text parameter (Stage 1 item 2).
     - a fitting that will not join a sloped drain: Allow Slope Adjustments
-      (step 8).
+      (Stage 7 item 2).
     - a tap where a tee was wanted, or the reverse: the type's Preferred
       Junction Type in its routing preferences, by hand in Revit.
 
-  BY HAND, BECAUSE NO HERON TOOL SETS IT: a pipe fitting type's Loss Method
-  and K Coefficient Table (Family Types, in the Family Editor - Autodesk's
-  help); a duct fitting's loss, which is the placed instance's in the project
-  (Coefficient from ASHRAE Table); Revit's Mechanical Settings > Angles; a
-  duct type's Preferred Junction Type. Each is said to the modeller at the
-  step it matters, never left out.
+
+  4. ALWAYS / NEVER
+
+  Always:
+    * Read Revit's own fitting of the same kind first, and let it win.
+    * Make every size the run drives an INSTANCE parameter.
+    * Guard every working length so none reaches zero.
+    * Build an elbow at 90 degrees, then let it follow Angle.
+    * End in a project with a run drawn through it.
+  Never:
+    * Call a valve, a strainer or a meter a fitting.
+    * Give a fitting a connector count its Part Type does not have.
+    * Link a fitting's connectors as a pair or make them Global.
+    * Name a size table bare in size_lookup.
+    * Call it done before the run - family-creation Stages 10 to 13 and
+      this method's Stage 12.
+
+
+  5. REPORT TO THE MODELLER
+
+  After each stage, one or two lines: what was completed, what was verified,
+  what remains. The final report is family-creation's (its section 6), and
+  adds: the kind and Part Type; the two checks of Stage 10 with every miss;
+  the sizes that fell to the table's default; the sizes and angles flexed;
+  the routing rule set; and the run drawn through it, with any dead end.
+  Every by-hand item of Stage 12 item 5 is named. Report COMPLETED only when
+  every check has passed and the run is connected; otherwise PARTIALLY
+  COMPLETED, naming what is left and who does it, or FAILED with the reason.
+
+
+  6. CORE PRINCIPLE
+
+  MODEL -> VERIFY -> REPORT -> CONTINUE. Never sacrifice accuracy for speed,
+  and never take a decision that is the modeller's.
+
+# HOW heron_method SERVES THE PURPOSE ABOVE - a summary first, then one part
+# at a time, as family-creation is served (the owner's choice, 2026-11-28):
+# whole, with its uses, it was over 22,000 characters. Each entry names the
+# purpose line its part starts at, exactly as written; an entry with no
+# `stage` goes back into the summary. heron_skill.validate refuses a line
+# missing, written twice or out of order.
+stages:
+  - {stage: kinds, starts: "THE KIND TABLE"}
+  - {starts: "3. WORKFLOW"}
+  - {stage: "0", starts: "STAGE 0 - INFORMATION AND PREPARATION"}
+  - {stage: "1", starts: "STAGE 1 - FAMILY CONFIGURATION"}
+  - {stage: "2-6", starts: "STAGES 2 TO 6 - FRAMEWORK, GEOMETRY, STYLES, CONTROL, VOIDS"}
+  - {stage: "7", starts: "STAGE 7 - MEP CONNECTORS"}
+  - {stage: "8-9", starts: "STAGES 8 AND 9 - NESTED FAMILIES, MATERIALS AND GRAPHICS"}
+  - {stage: "10", starts: "STAGE 10 - FAMILY VERIFICATION: CHECK THE FITTING, READ-ONLY, BEFORE FLEXING"}
+  - {stage: "11-13", starts: "STAGES 11 TO 13 - FLEX, LOAD AND RUN, SAVE"}
+  - {stage: failures, starts: "WHEN A FITTING FAILS IN A RUN"}
+  - {starts: "4. ALWAYS / NEVER"}
 
 utterances:
   - make a pipe elbow fitting family
@@ -302,7 +510,7 @@ utterances:
 
 needs:
   - REPORT_FAMILY_TEMPLATE
-  # Step 0's units check, as FAMILY-CREATION's.
+  # Stage 0's units check, as family-creation's.
   - REPORT_PROJECT_UNITS
   - SET_PROJECT_UNITS
   # SET_FAMILY_CATEGORY was listed here until 2026-11-01, when it was merged into SET_FAMILY_SETTINGS.
@@ -325,14 +533,14 @@ needs:
   - ADD_FAMILY_CONNECTOR
   - LINK_FAMILY_PARAMETER
   - SET_FAMILY_CONNECTOR_ROLES
-  # Steps 1 and 9: Revit's own fitting read first, and this one checked
+  # Stages 0 and 10: Revit's own fitting read first, and this one checked
   # before it is flexed.
   - REPORT_FAMILY_CONNECTORS
   - REPORT_FAMILY_FORMS
   - CHECK_FAMILY_STANDARDS
   - CHECK_FAMILY_SIZE_TABLES
-  # FAMILY-CREATION's steps, which this skill says still hold.
-  # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
+  # family-creation's stages, which this method says still hold.
+  # family-creation Stage 1 item 4 reads first: the shared parameter file and its
   # GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
   - REPORT_SHARED_PARAMETER_FILE
   # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
@@ -366,8 +574,9 @@ needs:
   - FIT_MEP_JOINTS
 
 preconditions:
-  - a family document is open in the Family Editor, started by the modeller from a fitting or Generic Model template - Heron does not choose a template
+  - a family document is open in the Family Editor, started by the modeller from a fitting or Generic Model template - or made by CREATE_FAMILY_DOCUMENT from the template and the .rfa path the modeller names; Heron never picks a template or a path itself
   - the fitting kind, its sizes or its size table, and every parameter name have been given for THIS request
+  - a step whose capability is DRAFT - the list of uses served beside this method says which - is refused by revit_change when it CHANGES the model (D-117), and can be tried once only on a family saved first, kept only if the modeller presses Keep (D-119, D-121); a DRAFT READ runs and says DRAFT, so confirm what matters another way
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
@@ -381,5 +590,10 @@ note: >
   research in docs/43 §10, "Fittings in depth". Step 7 of the old text said
   SET_FAMILY_CONNECTOR_ROLES reports a linked pair that is not Global and
   never sets it; its card says "system=Global" in the same call sets it, and
-  fittings are not linked at all, so the line is gone. Every step is DRAFT
+  fittings are not linked at all, so the line is gone. On 2026-11-28 it was
+  rebuilt on the owner's family creation standard: family-creation's stages
+  in their order, each pointed at rather than copied, the Heron capability
+  and its status under every step, every earlier rule under the stage it
+  belongs to, and SET_ROUTING_PREFERENCE's old "DRAFT when this was written"
+  hedge taken out - its card is PROVEN at version 2. Every step is DRAFT
   until it has been run on a real family with a negative case (D-30).

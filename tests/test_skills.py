@@ -385,13 +385,15 @@ def main():
               "%s no longer serves \"%s\", and needs %s"
               % (_sid10, _stale10, _cap10))
     # The GUID write is named where the job needs it: step 7 writes a value
-    # by "Name {GUID}" through the card that takes that form.
+    # by "Name {GUID}" through the card that takes that form. Stage 7 is the
+    # old step 7 since the method was put in stages (2026-11-28).
     import re as _re10
     _replace10, _ = _served10("replace-in-place-family")
-    _step7 = (_replace10 or "").partition(" 7. ")[2].partition(" 8. ")[0]
+    _step7 = (_replace10 or "").partition(" STAGE 7 - ")[2].partition(
+        " STAGE 8 - ")[0]
     check("SET_PARAMETER_VALUES_BY_ID" in _step7
           and _re10.search(r"\{[^}]*GUID[^}]*\}", _step7) is not None,
-          "replace-in-place-family step 7 writes a value by \"Name {GUID}\" "
+          "replace-in-place-family Stage 7 writes a value by \"Name {GUID}\" "
           "through SET_PARAMETER_VALUES_BY_ID")
     # AND IT CAN FAIL: the stale sentence planted back is caught.
     _sid10, _stale10, _cap10 = _closed10[0]

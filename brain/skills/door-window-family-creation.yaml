@@ -12,81 +12,288 @@ source: OFFICIAL
 
 risk: MODIFY
 
-purpose: >
-  Builds a DOOR or a WINDOW - the wall-hosted families a modeller makes most -
-  from the Door or Window template the modeller opened: a single or double
-  door, a sliding door, a casement or fixed window, and the curtain wall door
-  that fills a panel. The steps of HOSTED-FAMILY-CREATION and FAMILY-CREATION
-  still hold; this is what a door or a window adds. What every step rests on
-  is in docs/43 §7.
+# THE SHAPE OF THIS METHOD (2026-11-28): the owner's family creation
+# standard, as family-creation carries it - objective, when to use it, the
+# stages of family-creation in their order, the always/never rules and the
+# report. Shared stages are POINTED AT, never copied: "family-creation Stage
+# N" is heron_method(job="family-creation", stage=N), and the host's own
+# rules are hosted-family-creation's. Every rule the eight-step method this
+# replaced held is under the stage it belongs to (the pull request lists
+# each). The research every step rests on is docs/43 §7.
+purpose: |
+  DOOR AND WINDOW FAMILY CREATION - the wall-hosted families a modeller makes
+  most: a single or double door, a sliding door, a casement or fixed window,
+  and the curtain wall door or window that fills a panel. The owner's family
+  creation standard (Ajmal PS, 2026-11-28), with what a door or a window adds.
 
-  0. REPORT_FAMILY_TEMPLATE FIRST - a Door or Window template carries a host
-     wall with an OPENING ALREADY CUT in it, and Width and Height as built-in
-     parameters (a window also its Default Sill Height); read the template's
-     planes and views before drawing anything. NEVER MOVE OR DELETE THE
-     TEMPLATE'S PLANES OR ITS OPENING - they carry the hosting and the cut.
-     Whether the template's opening follows Width and Height out of the box
-     is what the report and a first FLEX_FAMILY show (docs/43 §7, UNSURE).
-     CHECK THE UNITS (FAMILY-CREATION step 0): a units line reading IMPERIAL
-     where the modeller works in millimetres is said before anything is
-     built, with SET_PROJECT_UNITS or the Metric template offered.
-  1. READ THE THING: a door's leaf count and swing, its frame and leaf
-     thicknesses, Rough Width and Height if the opening is larger than the
-     door; a window's sill height, frame and sash sizes, glass. A picture
-     gives shape, never size (D-33).
-     CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
-     classificationCodes line lists the OmniClass Numbers (Classification
-     Number from Revit 2026) that Revit's taxonomy file gives the category -
-     run it again after the category changed. The modeller confirms the code
-     that fits, or picks where more than one could, and SET_FAMILY_SETTINGS
-     "OmniClass Number=<code>" writes it; no file or no code is said, never
-     guessed (D-33).
-  2. Parameters and values (FAMILY-CREATION steps 2 and 3): Frame Width,
-     Frame Depth, Leaf Thickness, sash sizes as TYPE lengths; Width, Height,
-     Rough Width and Rough Height are already there. SET_FAMILY_FORMULA ties
-     them - Rough Width = Width + 2 * Frame Width.
-  3. Planes and labels (FAMILY-CREATION steps 4 to 6), measured from the
-     template's own centre and wall-face planes, never from a form: a plane
-     each side of the frame, the leaf's thickness plane, a window's head and
-     sill.
-  4. THE FRAME that follows Width and Height: three EXTRUDE_BETWEEN_PLANES
-     boxes - two jambs and a head - each between its own planes. A moulded
-     frame section is a CREATE_FAMILY_FORMS kind=sweep row along the sides
-     and head on the
-     wall's centre plane, but a swept path keeps the size it was drawn at
-     unless LOCK_FORM_TO_PLANES holds its faces - flex it before trusting it.
-     THE LEAF OR SASH: EXTRUDE_BETWEEN_PLANES between the frame's inner
-     planes, its thickness plane and the floor or sill. THE GLASS: a thin
-     extrusion on the Glass subcategory.
-  5. SUBCATEGORIES AND VISIBILITY: SET_FAMILY_FORM_SUBCATEGORY puts each form
-     on Frame/Mullion, Panel or Glass - the door and window subcategories Revit
-     has built in. In PLAN the 3D leaf and frame are usually hidden
-     (SET_FAMILY_FORM_VISIBILITY) and drawn as symbolic lines instead:
-     DRAW_FAMILY_SYMBOLIC_LINES for the leaf and the SWING ARC on a "Plan
-     Swing" subcategory, and in elevation the opening lines on "Elevation
-     Swing". LINK_FAMILY_PARAMETER links each Material to a material parameter.
-  6. A LEAF THAT SWAPS: PLACE_FAMILY_INSTANCES for the leaf, nested in the
-     door family, LOCK_NESTED_FAMILY_
-     TO_PLANES, then ADD_FAMILY_TYPE_PARAMETER so each type chooses its leaf
-     (glazed, solid, louvred). Hardware is usually nested too.
-  7. ADD_FAMILY_FLIP_CONTROL in the floor plan - Autodesk's remark: a single
-     arrow rotates the placed door 180 degrees, a double one mirrors it.
-  8. Types with SET_FAMILY_TYPE_VALUES, then FLEX_FAMILY at the smallest and
-     largest sizes, and the modeller places it in walls of DIFFERENT
-     THICKNESS in a test project: the frame must follow the wall, the swing
-     must read in plan, and Rough Width must schedule.
+  HOW TO READ IT. This method keeps family-creation's stages, in their order,
+  and says only what a door or a window adds. "family-creation Stage N" is
+  served by heron_method(job="family-creation", stage=N): follow that stage
+  there, then what is written here; a door is wall-hosted, so
+  hosted-family-creation's Stage 0 (the host) and Stage 12 (two walls) hold
+  too. family-creation's behaviour rules and its report (its sections 5 and 6)
+  come with its summary, heron_method(job="family-creation"), and hold here.
+  "-> CAPABILITY (STATUS)" after a step is the Heron capability that does it
+  and its card's status when this was written; the list of uses served after
+  this method gives each one's status now, and that list wins. Two named here
+  are not in that list, so this method is not offered beside ordinary placing
+  and saving requests: PLACE_HOSTED_FAMILY and SAVE_DOCUMENT - each stage
+  served gives their status too. "-> no Heron tool yet:" is a step Heron
+  cannot do: it says what the modeller does by hand. A DRAFT capability that
+  CHANGES the model is refused by revit_change until it is proved (D-117); a
+  DRAFT READ runs through revit_read and says DRAFT - confirm what matters
+  another way.
 
-  A CURTAIN WALL DOOR OR WINDOW is a different family: started from the
-  curtain wall door or window template, it is a curtain PANEL sized by the
-  grid cell, with no host opening and no Width of its own to drive - its
-  forms are locked to the template's four planes and it is swapped into a
-  panel with the Type Selector (docs/43 §7).
+  ITS OWN STAGES ARE SERVED IN PARTS:
+  heron_method(job="door-window-family-creation") lists them, and a stage of
+  this method is asked by its part's id - "1-5" for Stages 1 to 5, "10-13" for
+  Stages 10 to 13.
 
-  NOT YET, AND WHY: re-locking the template's opening sketch to the Rough
-  planes - Revit's API cannot lock an opening's sketch, so that stays a
-  modeller's step in the Family Editor; a swing ANGLE that rotates the leaf -
-  a reference line's planes have no documented call (docs/43 §9); Wall
-  Closure planes - set by hand on a plane's Properties.
+  OLD STEPS. Before 2026-11-28 this method had steps 0 to 8, and other files
+  still name them: step 0 is Stage 0 items 1 to 3; step 1 is Stage 0 item 4
+  and Stage 1 item 1; step 2 is Stage 1 items 2 and 3; step 3 is Stage 2;
+  step 4 is Stages 3 and 5; step 5 is Stages 4 and 9; step 6 is Stage 8;
+  step 7 is Stage 9 item 3; step 8 is Stages 11 and 12.
+
+
+  1. OBJECTIVE
+
+  A door or window whose frame, leaf or sash and glass follow Width and
+  Height, that sits in walls of any thickness, reads in plan with its swing,
+  and schedules its Rough Width. Never guess a size, a leaf count or a swing;
+  never call it done before the checks.
+
+
+  2. WHEN TO USE - AND WHEN NOT
+
+  Use it for a door or a window started from the Door, Window, or curtain
+  wall door or window template.
+  Not for:
+    * any other wall-hosted family - a grille, a cabinet - which is
+      hosted-family-creation;
+    * an opening with no door or window in it - hosted-family-creation's
+      Stage 6, CREATE_OPENING (PROVEN).
+  A CURTAIN WALL DOOR OR WINDOW is a different family, Stage 0 item 5.
+
+
+  3. WORKFLOW
+
+  STAGE 0 - INFORMATION AND PREPARATION
+  family-creation Stage 0 and hosted-family-creation Stage 0 hold. A door or
+  window adds:
+  1. Read the template before drawing anything.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN): a Door or Window template carries a
+        host wall with an OPENING ALREADY CUT in it, and Width and Height as
+        built-in parameters - a window also its Default Sill Height - and its
+        planes and views. The file comes as family-creation Stage 0 item 1
+        says.
+     * NEVER MOVE OR DELETE THE TEMPLATE'S PLANES OR ITS OPENING - they carry
+       the hosting and the cut.
+     * Whether the template's opening follows Width and Height out of the box
+       is what the report and a first FLEX_FAMILY (Stage 11) show (docs/43
+       §7, UNSURE).
+  2. Check the units - family-creation Stage 0 item 3, which holds.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN), its units line; SET_PROJECT_UNITS
+        (PROVEN, Admin); REPORT_PROJECT_UNITS (DRAFT). IMPERIAL where the
+        modeller works in millimetres is said BEFORE anything is built.
+  3. Keep the template's host, opening and planes as it made them.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN), read again before the first write.
+  4. Read the thing, into family-creation's one list.
+     -> no Heron tool: asked once - a door's leaf count and swing, its frame
+        and leaf thicknesses, Rough Width and Height if the opening is larger
+        than the door; a window's sill height, frame and sash sizes, glass. A
+        picture gives shape, never size (D-33).
+  5. A CURTAIN WALL DOOR OR WINDOW: started from the curtain wall door or
+     window template, it is a curtain PANEL sized by the grid cell, with no
+     host opening and no Width of its own to drive.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN) for the template's four planes; its
+        forms are locked to them (Stage 5), and it is swapped into a panel
+        with the Type Selector in the project - by the modeller (docs/43 §7).
+  GATE: the modeller confirms the list, the leaf count and the swing.
+
+  STAGES 1 TO 5 - CONFIGURATION, FRAMEWORK, GEOMETRY, STYLES, CONTROL
+
+  STAGE 1 - FAMILY CONFIGURATION
+  family-creation Stage 1 holds. A door or window adds:
+  1. Confirm the OmniClass Number - family-creation Stage 1 item 3, which
+     holds.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN), its classificationCodes line, run
+        again after any category change; SET_FAMILY_SETTINGS (PROVEN)
+        "OmniClass Number=<code>" once the modeller confirms it - never
+        guessed (D-33).
+  2. Add the sizes the template has not got.
+     -> REPORT_SHARED_PARAMETER_FILE (PROVEN) first; ADD_FAMILY_PARAMETERS
+        (PROVEN, Admin): Frame Width, Frame Depth, Leaf Thickness and the sash
+        sizes as TYPE lengths. Width, Height, Rough Width and Rough Height are
+        already there.
+     -> SET_FAMILY_TYPE_VALUES (PROVEN): every value before any label.
+  3. Tie the rough opening to the door.
+     -> SET_FAMILY_FORMULA (PROVEN): "Rough Width = Width + 2 * Frame Width".
+
+  STAGE 2 - REFERENCE FRAMEWORK
+  family-creation Stage 2 holds. A door or window adds:
+  1. Measure from the template's own centre and wall-face planes, never from
+     a form: a plane each side of the frame, the leaf's thickness plane, a
+     window's head and sill.
+     -> CREATE_REFERENCE_PLANES (PROVEN); SET_FAMILY_PLANE_REFERENCE (PROVEN),
+        the owner's gray rule for every plane the build adds;
+        LABEL_FAMILY_DIMENSION (PROVEN).
+  2. A swing ANGLE that rotates the leaf.
+     -> no Heron tool yet: a reference line's planes have no documented call
+        (docs/43 §9); the leaf is drawn at one position.
+  3. Wall Closure planes.
+     -> no Heron tool yet: set by the modeller on a plane's Properties.
+
+  STAGE 3 - GEOMETRY CREATION
+  family-creation Stage 3 holds, group by group. A door or window adds:
+  1. THE FRAME that follows Width and Height.
+     -> EXTRUDE_BETWEEN_PLANES (PROVEN): three boxes - two jambs and a head -
+        each between its own planes.
+     * A MOULDED frame section is a CREATE_FAMILY_FORMS (PROVEN) kind=sweep
+       row along the sides and head on the wall's centre plane - but a swept
+       path keeps the size it was drawn at unless LOCK_FORM_TO_PLANES holds
+       it (Stage 5): flex it before trusting it.
+  2. THE LEAF OR SASH.
+     -> EXTRUDE_BETWEEN_PLANES (PROVEN), between the frame's inner planes, its
+        thickness plane and the floor or sill.
+  3. THE GLASS.
+     -> CREATE_FAMILY_FORMS (PROVEN), a thin extrusion, on the Glass
+        subcategory (Stage 4).
+  4. Any other form - a curved part included.
+     -> CREATE_FAMILY_FORMS (PROVEN); a round size labelled with
+        LABEL_FAMILY_RADIUS (PROVEN) in Stage 5.
+
+  STAGE 4 - OBJECT STYLES AND SUBCATEGORIES
+  family-creation Stage 4 holds. A door or window adds:
+  1. Put each form on Revit's own door and window subcategories.
+     -> SET_FAMILY_FORM_SUBCATEGORY (PROVEN): Frame/Mullion, Panel or Glass.
+
+  STAGE 5 - DIMENSIONS AND PARAMETRIC CONTROL
+  family-creation Stage 5 holds. A door or window adds:
+  1. Lock every face that a plane moves - and the swept frame's path.
+     -> LOCK_FORM_TO_PLANES (PROVEN); a curtain panel's forms to the
+        template's four planes.
+  2. Re-lock the template's opening sketch to the Rough planes.
+     -> no Heron tool yet: Revit's API cannot lock an opening's sketch, so it
+        stays the modeller's step in the Family Editor.
+
+  STAGE 6 - VOIDS AND ARRAYS
+  family-creation Stage 6 holds for the family's own forms -
+  ARRAY_FAMILY_FORMS (PROVEN), COMBINE_FAMILY_FORMS (PROVEN). The wall's
+  opening is the template's: never a second one, and never CREATE_OPENING
+  (PROVEN), whose opening is a fixed size and would not follow Width.
+
+  STAGES 7 TO 9 - CONNECTORS, NESTED FAMILIES, MATERIALS AND GRAPHICS
+
+  STAGE 7 - MEP CONNECTORS
+  family-creation Stage 7, unchanged, where it applies: ADD_FAMILY_CONNECTOR
+  (PROVEN); an electrical connector's sizeParameters given EMPTY.
+
+  STAGE 8 - NESTED FAMILIES
+  family-creation Stage 8 holds. A door adds:
+  1. A LEAF THAT SWAPS - glazed, solid, louvred.
+     -> PLACE_FAMILY_INSTANCES (PROVEN), the leaf nested in the door family;
+        LOCK_NESTED_FAMILY_TO_PLANES (PROVEN); LINK_FAMILY_PARAMETER (PROVEN)
+        for its sizes.
+     -> ADD_FAMILY_TYPE_PARAMETER (DRAFT), so each type chooses its leaf:
+        refused by revit_change until proved - try it once on the saved
+        family, or the modeller makes the Family Type parameter by hand.
+     * Hardware is usually nested too.
+
+  STAGE 9 - MATERIALS AND GRAPHICS
+  family-creation Stage 9 holds. A door or window adds:
+  1. Plan and elevation symbols instead of the 3D leaf.
+     -> SET_FAMILY_FORM_VISIBILITY (PROVEN): the 3D leaf and frame usually
+        hidden in PLAN.
+     -> DRAW_FAMILY_SYMBOLIC_LINES (PROVEN): the leaf and the SWING ARC on a
+        "Plan Swing" subcategory; in elevation, the opening lines on
+        "Elevation Swing". DRAW_FAMILY_FILLED_REGION (PROVEN) for a solid
+        fill in plan.
+  2. Materials.
+     -> LINK_FAMILY_PARAMETER (PROVEN): each form's Material to a material
+        parameter.
+  3. A flip control in the floor plan.
+     -> ADD_FAMILY_FLIP_CONTROL (PROVEN). Autodesk's remark: a single arrow
+        rotates the placed door 180 degrees, a double one mirrors it.
+
+  STAGES 10 TO 13 - VERIFICATION, FLEX, PROJECT TEST, SAVE
+
+  STAGE 10 - FAMILY VERIFICATION
+  family-creation Stage 10 holds, all of it.
+     -> REPORT_FAMILY_FORMS (PROVEN), then revit_view_image of the plan - the
+        swing reads - and of an elevation.
+
+  STAGE 11 - FLEX TESTING
+  family-creation Stage 11 holds.
+     -> SET_FAMILY_TYPE_VALUES (PROVEN) for the types; FLEX_FAMILY (PROVEN) at
+        the smallest and largest sizes - the frame, leaf, glass and the
+        template's opening must all follow.
+
+  STAGE 12 - PROJECT TESTING
+  family-creation Stage 12 and hosted-family-creation Stage 12 hold.
+  1. Load it into a scratch test project.
+     -> LOAD_FAMILY (PROVEN), with the saved .rfa's path.
+  2. Place it in walls of DIFFERENT THICKNESS.
+     -> PLACE_HOSTED_FAMILY (PROVEN), or the modeller places it by hand.
+  3. Check it: the frame follows the wall, the swing reads in plan, Rough
+     Width schedules.
+     -> revit_view_image of the plan; the schedule as family-creation Stage
+        12 item 9.
+
+  STAGE 13 - FINAL SAVE AND DELIVERY
+  family-creation Stage 13 holds, its SAVE RULE above all: SAVE_DOCUMENT
+  (PROVEN, Publish), then the file's time checked. Many types:
+  REPORT_FAMILY_TYPE_CATALOG (PROVEN).
+
+
+  4. ALWAYS / NEVER
+
+  Always:
+    * Read the template's host, opening and planes first, and keep them.
+    * Measure from the template's centre and wall-face planes.
+    * Show the swing in plan with symbolic lines.
+    * Test in walls of two thicknesses.
+  Never:
+    * Move or delete the template's planes or its opening.
+    * Make a second opening in the wall.
+    * Guess the leaf count, the swing or a size.
+    * Call it done before family-creation Stages 10 to 13.
+  NOT YET IN HERON, AND WHY: re-locking the template's opening sketch to the
+  Rough planes (Stage 5 item 2); a swing angle that rotates the leaf (Stage 2
+  item 2); Wall Closure planes (Stage 2 item 3).
+
+
+  5. REPORT TO THE MODELLER
+
+  After each stage, one or two lines: what was completed, what was verified,
+  what remains. The final report is family-creation's (its section 6), and
+  adds: the leaf count and swing, whether the template's opening followed
+  Width and Height, the walls it was tested in, and every step left to the
+  modeller. Report COMPLETED only when every check has passed; otherwise
+  PARTIALLY COMPLETED, naming what is left and who does it, or FAILED with
+  the reason.
+
+
+  6. CORE PRINCIPLE
+
+  MODEL -> VERIFY -> REPORT -> CONTINUE. Never sacrifice accuracy for speed,
+  and never take a decision that is the modeller's.
+
+# HOW heron_method SERVES THE PURPOSE ABOVE - a summary first, then one part
+# at a time, as family-creation is served (the owner's choice, 2026-11-28):
+# whole, with its uses, it is over 12,000 characters. The short stages are
+# served together - "1-5" is Stages 1 to 5 - so a build asks five parts of
+# this method rather than fourteen. Each entry names the purpose line its
+# part starts at, exactly as written; an entry with no `stage` goes back into
+# the summary. heron_skill.validate refuses a line missing, written twice or
+# out of order.
+stages:
+  - {stage: "0", starts: "STAGE 0 - INFORMATION AND PREPARATION"}
+  - {stage: "1-5", starts: "STAGES 1 TO 5 - CONFIGURATION, FRAMEWORK, GEOMETRY, STYLES, CONTROL"}
+  - {stage: "6", starts: "STAGE 6 - VOIDS AND ARRAYS"}
+  - {stage: "7-9", starts: "STAGES 7 TO 9 - CONNECTORS, NESTED FAMILIES, MATERIALS AND GRAPHICS"}
+  - {stage: "10-13", starts: "STAGES 10 TO 13 - VERIFICATION, FLEX, PROJECT TEST, SAVE"}
+  - {starts: "4. ALWAYS / NEVER"}
 
 utterances:
   - make a door family
@@ -96,7 +303,7 @@ utterances:
 
 needs:
   - REPORT_FAMILY_TEMPLATE
-  # Step 0's units check, as FAMILY-CREATION's.
+  # Stage 0's units check, as family-creation's.
   - REPORT_PROJECT_UNITS
   - SET_PROJECT_UNITS
   - ADD_FAMILY_PARAMETERS
@@ -117,13 +324,13 @@ needs:
   - ADD_FAMILY_TYPE_PARAMETER
   - ADD_FAMILY_FLIP_CONTROL
   - REPORT_FAMILY_FORMS
-  # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
+  # family-creation Stage 1 item 4 reads first: the shared parameter file and its
   # GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
   - REPORT_SHARED_PARAMETER_FILE
   # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
   - SET_FAMILY_PLANE_REFERENCE
-  # FAMILY-CREATION's and HOSTED-FAMILY-CREATION's steps, which this skill says
-  # still hold.
+  # family-creation's and hosted-family-creation's stages, which this method
+  # says still hold.
   # SET_FAMILY_CATEGORY was listed here until 2026-11-01, when it was merged into SET_FAMILY_SETTINGS.
   - SET_FAMILY_SETTINGS
   - CREATE_FAMILY_FORMS
@@ -146,13 +353,18 @@ needs:
   - LOAD_FAMILY
 
 preconditions:
-  - a family document is open in the Family Editor, started by the modeller from a Door, Window or curtain wall door or window template - Heron does not choose a template
+  - a family document is open in the Family Editor, started by the modeller from a Door, Window or curtain wall door or window template - or made by CREATE_FAMILY_DOCUMENT from the template and the .rfa path the modeller names; Heron never picks a template or a path itself
   - the leaf count, swing, frame and every size have been given for THIS request
+  - a step whose capability is DRAFT - the list of uses served beside this method says which - is refused by revit_change when it CHANGES the model (D-117), and can be tried once only on a family saved first, kept only if the modeller presses Keep (D-119, D-121); a DRAFT READ runs and says DRAFT, so confirm what matters another way
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
   Written 2026-10-02 when the owner asked for everything to be checked again
   and doors and windows were found missing, from the research recorded in
-  docs/43-building-revit-families.md §7. Every step is DRAFT until it has been
-  run on a real family with a negative case (D-30).
+  docs/43-building-revit-families.md §7. On 2026-11-28 it was rebuilt on the
+  owner's family creation standard: family-creation's stages in their order,
+  each pointed at rather than copied, the Heron capability and its status
+  under every step, and every earlier rule under the stage it belongs to.
+  Every step is DRAFT until it has been run on a real family with a negative
+  case (D-30).

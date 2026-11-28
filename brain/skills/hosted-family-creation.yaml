@@ -12,94 +12,320 @@ source: OFFICIAL
 
 risk: MODIFY
 
-purpose: >
-  Builds a HOSTED family - one placed only on a wall, a ceiling, a floor or a
-  roof, or on any face - from the template the modeller opened: a wall grille,
-  a wall-mounted fan coil, a recessed light, a floor drain, a roof fan, an
-  outlet on any face. The steps of FAMILY-CREATION still hold, in their order;
-  this skill is what changes when the family has a host.
+# THE SHAPE OF THIS METHOD (2026-11-28): the owner's family creation
+# standard, as family-creation carries it - objective, when to use it, the
+# stages of family-creation in their order, the always/never rules and the
+# report. Shared stages are POINTED AT, never copied, so a rule lives in one
+# place: "family-creation Stage N" is heron_method(job="family-creation",
+# stage=N). Every rule the eight-step method this replaced held is under the
+# stage it belongs to (the pull request lists each).
+purpose: |
+  HOSTED FAMILY CREATION - a family placed only on a wall, a ceiling, a floor
+  or a roof, or on any face. The owner's family creation standard (Ajmal PS,
+  2026-11-28), with what a host changes in it.
 
-  0. REPORT_FAMILY_TEMPLATE FIRST - read which host the template carries (a
-     wall, a ceiling, a floor, a roof, or a face-based placeholder), its own
-     planes, and Host as Family Category and Parameters shows it. THE TEMPLATE
-     DECIDED THE HOST AND NOTHING CHANGES IT: a wall-based family cannot be
-     turned face-based; that is starting again in the other template, or
-     nesting this one in it. Say so before building if the job wants a
-     different host. A family that must sit on walls or ceilings in a LINKED
-     model is FACE-BASED - wall- and ceiling-based families cannot host on a
-     linked element, a face-based one can. Never move or delete the
-     template's own planes: they carry the origin, the named references and,
-     in a door or window, the labelled Width and Height.
-     CHECK THE UNITS (FAMILY-CREATION step 0): a units line reading IMPERIAL
-     where the modeller works in millimetres is said before anything is
-     built, with SET_PROJECT_UNITS or the Metric template offered.
-  1. READ THE THING, as FAMILY-CREATION step 0 - and which SIDE of the host
-     the body sits on: in front of the wall's face, below the ceiling, on top
-     of the floor or roof - and what is cut OUT of the host.
-  2. SET_FAMILY_SETTINGS "Category=<name>" when the template's category is
-     not the one wanted -
-     a face-based Generic Model made a Lighting Fixture or an Air Terminal is
-     the usual route where a category has no face-based template of its own.
-     CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
-     classificationCodes line lists the OmniClass Numbers (Classification
-     Number from Revit 2026) that Revit's taxonomy file gives the category -
-     run it again after the category changed. The modeller confirms the code
-     that fits, or picks where more than one could, and SET_FAMILY_SETTINGS
-     "OmniClass Number=<code>" writes it; no file or no code is said, never
-     guessed (D-33).
-  3. The parameters, values, formulas, planes and labels as FAMILY-CREATION
-     steps 2 to 6 - each size measured from the template's host face or its
-     centre planes, never from the edge of a form.
-  4. THE FORMS on the host's side, each locked to its planes - FAMILY-CREATION
-     steps 7 and 8.
-  5. WHAT IS CUT OUT OF THE HOST. In a wall- or ceiling-based family,
-     CREATE_OPENING with `shape` (CREATE_FAMILY_HOST_OPENING until it was
-     merged into it, 2026-11-01) cuts an opening of a FIXED size in the
-     template's wall or ceiling, and every placement cuts it in its own host.
-     A cut that must resize with a parameter is a VOID form locked to planes.
-     A floor- or roof-based family has no opening call; its cut is a void.
-     A VOID HERON MAKES DOES NOT CUT THE TEMPLATE'S HOST, AND NOTHING IN
-     REVIT'S API MAKES IT - THE MODELLER CUTS IT BY HAND BEFORE LOADING.
-     Measured 2026-10-22 on Revit 2020, a floor-based floor drain (row
-     5b-1324): a round void and a square one through the template's floor
-     cut neither that floor nor any floor the family was placed on, with
-     Cut with Voids When Loaded off and then on - the grate stayed buried.
-     Read the same day in all eight releases' own API remarks, 2020 to 2027:
-     the solid-cut call refuses an ordinary family and a floor, the geometry
-     combination COMBINE_FAMILY_FORMS uses takes forms only, the join call is
-     not for family documents, and the void-instance call wants a loaded
-     family in a project. So once the voids are built and read back, SAY
-     THIS, AND SAY THAT HERON CANNOT DO IT: in the Family Editor, Modify >
-     Geometry > Cut, click the template's host FIRST - the sample floor,
-     roof, wall or ceiling - then the void, once per void, then Load into
-     Project. Revit's own message for a void left uncut says the same:
-     "Some Void Forms of this family do not cut anything and will be
-     deleted. To make a Void Form cut something else use the Cut Geometry
-     tool." Never COMBINE_FAMILY_FORMS such a void with a solid of the
-     family to stand in for the host's cut: a void cuts the solids in its
-     combination and nothing else. Measured on a floor; a wall-, ceiling-
-     or roof-based template's void is NEEDS-CHECKING BV12 until measured.
-     In a FACE-BASED family an UNATTACHED void cuts nothing on placement: turn
-     on Cut with Voids When Loaded with SET_FAMILY_SETTINGS and the modeller
-     cuts with Cut Geometry in the project.
-  6. ADD_FAMILY_CONNECTOR for MEP, on the face the service leaves by; Maintain
-     Annotation Orientation (SET_FAMILY_SETTINGS) keeps a nested symbol
-     readable in plan on a wall. ADD_FAMILY_FLIP_CONTROL where the family must
-     flip left-right or front-back once placed.
-  7. Visibility, subcategories, materials and plan symbols as FAMILY-CREATION
-     step 12.
-  8. REPORT_FAMILY_FORMS, then FLEX_FAMILY at sizes really different - and,
-     because a hosted family also lives with its HOST, LOAD_FAMILY into a test
-     project, where the modeller places it on two walls (or ceilings) of
-     different thickness.
+  HOW TO READ IT. This method keeps family-creation's stages, in their order,
+  and says only what a host adds. "family-creation Stage N" is served by
+  heron_method(job="family-creation", stage=N): follow that stage there, then
+  what is written here. family-creation's behaviour rules and its report (its
+  sections 5 and 6) come with its summary, heron_method(job=
+  "family-creation"), and hold here too. "-> CAPABILITY (STATUS)" after a step
+  is the Heron capability that does it and its card's status when this was
+  written; the list of uses served after this method gives each one's status
+  now, and that list wins. Four named here are not in that list, so this
+  method is not offered beside ordinary placing, saving and connector
+  requests: SET_FAMILY_CONNECTOR_ROLES, PLACE_HOSTED_FAMILY,
+  PLACE_FAMILY_ON_FACE and SAVE_DOCUMENT - each stage served gives their
+  status too. "-> no Heron tool yet:" is a step Heron cannot do: it says what
+  the modeller does by hand. A DRAFT capability that CHANGES the model is
+  refused by revit_change until it is proved (D-117); a DRAFT READ runs
+  through revit_read and says DRAFT - confirm what matters another way.
 
-  NOT YET: cutting a template's host with a void through the API - a floor's
-  or a roof's above all, where no opening call exists, and a face-based
-  family's host extrusion the same: Revit has no public call for the Family
-  Editor's Cut Geometry between a void and the host on any release 2020 to
-  2027 (row 5b-1324, Q-85), so step 5's hand cut stands; the plane a
-  reference line carries; a door's or window's own opening cut locked to its
-  planes - an opening's sketch cannot be locked through the API.
+  ITS OWN STAGES ARE SERVED IN PARTS:
+  heron_method(job="hosted-family-creation") lists them, and a stage of this
+  method is asked by its part's id - "1-5" for Stages 1 to 5, "10-13" for
+  Stages 10 to 13.
+
+  OLD STEPS. Before 2026-11-28 this method had steps 0 to 8, and other files
+  still name them: step 0 is Stage 0 items 1 to 3; step 1 is Stage 0 item 4;
+  step 2 is Stage 1 items 1 and 2; step 3 is Stage 1 item 3 and Stage 2;
+  step 4 is Stages 3 and 5; step 5 is Stage 6; step 6 is Stages 7 to 9;
+  step 7 is Stages 4 and 9; step 8 is Stages 10 to 12.
+
+
+  1. OBJECTIVE
+
+  A hosted family that sits on the side of its host it belongs on, cuts out
+  of the host what it must, follows its sizes, and is checked on two hosts of
+  different thickness in a test project - a wall grille, a wall-mounted fan
+  coil, a recessed light, a floor drain, a roof fan, an outlet on any face.
+  Never guess a size, a host or a side; never call it done before the checks.
+
+
+  2. WHEN TO USE - AND WHEN NOT
+
+  Use it when the family must be placed ON a host: the template the modeller
+  starts from is wall-, ceiling-, floor-, roof- or face-based.
+  Not for:
+    * a family placed on a level or a work plane - family-creation;
+    * a door or a window - door-window-family-creation, which keeps these
+      stages and adds its own;
+    * a light with its light source - lighting-fixture-family-creation (it
+      sends a hosted fixture back here for the host);
+    * a family whose length is set by two clicks - line-based-family-creation.
+
+
+  3. WORKFLOW
+
+  STAGE 0 - INFORMATION AND PREPARATION
+  family-creation Stage 0 holds: the family file, the units, the origin, a
+  save before the first write, the one list of sizes, and its gate. A host
+  adds:
+  1. Read which host the template carries.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN): the host - a wall, a ceiling, a
+        floor, a roof, or a face-based placeholder - its own planes, and
+        Host as Family Category and Parameters shows it.
+     * The family file comes as family-creation Stage 0 item 1 says - never
+       a template or a path Heron picks (D-33).
+     * THE TEMPLATE DECIDED THE HOST AND NOTHING CHANGES IT: a wall-based
+       family cannot be turned face-based; that is starting again in the
+       other template, or nesting this one in it. Say so before building if
+       the job wants a different host.
+     * A family that must sit on walls or ceilings in a LINKED model is
+       FACE-BASED - wall- and ceiling-based families cannot host on a linked
+       element, a face-based one can.
+     * NEVER MOVE OR DELETE THE TEMPLATE'S OWN PLANES: they carry the origin,
+       the named references and, in a door or window, the labelled Width and
+       Height.
+  2. Check the units - family-creation Stage 0 item 3, which holds.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN), its units line; SET_PROJECT_UNITS
+        (PROVEN, Admin); REPORT_PROJECT_UNITS (DRAFT). IMPERIAL where the
+        modeller works in millimetres is said BEFORE anything is built.
+  3. Keep the host as the template made it.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN) read again before the first write: the
+        host and its planes where the template put them.
+  4. Add to family-creation's one list which SIDE of the host the body sits
+     on - in front of the wall's face, below the ceiling, on top of the floor
+     or roof - and what is cut OUT of the host, with its size.
+     -> no Heron tool: asked once, in that list; a picture gives shape, never
+        size (D-33).
+  GATE: the modeller confirms the list, the host and the side.
+
+  STAGES 1 TO 5 - CONFIGURATION, FRAMEWORK, GEOMETRY, STYLES, CONTROL
+
+  STAGE 1 - FAMILY CONFIGURATION
+  family-creation Stage 1 holds. A host adds:
+  1. Set the category when the template's is not the one wanted.
+     -> SET_FAMILY_SETTINGS (PROVEN), "Category=<name>".
+     * A face-based Generic Model made a Lighting Fixture or an Air Terminal
+       is the usual route where a category has no face-based template of its
+       own.
+  2. Confirm the OmniClass Number - family-creation Stage 1 item 3, which
+     holds.
+     -> REPORT_FAMILY_TEMPLATE (PROVEN), its classificationCodes line, run
+        again after any category change; SET_FAMILY_SETTINGS (PROVEN)
+        "OmniClass Number=<code>" once the modeller confirms it - never
+        guessed (D-33).
+  3. Parameters, values and formulas, as family-creation Stage 1.
+     -> REPORT_SHARED_PARAMETER_FILE (PROVEN) first; ADD_FAMILY_PARAMETERS
+        (PROVEN, Admin); SET_FAMILY_TYPE_VALUES (PROVEN) before any label;
+        SET_FAMILY_FORMULA (PROVEN).
+
+  STAGE 2 - REFERENCE FRAMEWORK
+  family-creation Stage 2 holds. A host adds:
+  1. Measure every size from the template's HOST FACE or its centre planes,
+     never from the edge of a form.
+     -> CREATE_REFERENCE_PLANES (PROVEN); SET_FAMILY_PLANE_REFERENCE (PROVEN),
+        with the owner's gray rule for the planes the build adds;
+        LABEL_FAMILY_DIMENSION (PROVEN).
+  2. A plane that a reference line would carry.
+     -> no Heron tool yet (family-creation Stage 2 item 3): a part that swings
+        about a pivot is drawn by the modeller by hand.
+
+  STAGE 3 - GEOMETRY CREATION
+  family-creation Stage 3 holds, group by group. A host adds:
+  1. Build every form on the HOST'S SIDE named in Stage 0 item 4.
+     -> EXTRUDE_BETWEEN_PLANES (PROVEN) for a box; CREATE_FAMILY_FORMS
+        (PROVEN) for every other form, one call per group, each row's
+        material named.
+
+  STAGE 4 - OBJECT STYLES AND SUBCATEGORIES
+  family-creation Stage 4, unchanged.
+     -> SET_FAMILY_FORM_SUBCATEGORY (PROVEN).
+
+  STAGE 5 - DIMENSIONS AND PARAMETRIC CONTROL
+  family-creation Stage 5 holds: each form locked to its planes.
+     -> LOCK_FORM_TO_PLANES (PROVEN); LABEL_FAMILY_RADIUS (PROVEN) for a round
+        size; LINK_FAMILY_PARAMETER (PROVEN) for a form's own field.
+
+  STAGE 6 - WHAT IS CUT OUT OF THE HOST, VOIDS AND ARRAYS
+  family-creation Stage 6 holds for the family's own solids
+  (COMBINE_FAMILY_FORMS (PROVEN), ARRAY_FAMILY_FORMS (PROVEN)). The HOST'S
+  cut is different:
+  1. A wall- or ceiling-based family: an opening of a FIXED size in the
+     template's wall or ceiling.
+     -> CREATE_OPENING (PROVEN), with `shape`: it cuts the template's host,
+        and every placement cuts its own host.
+  2. A cut that must RESIZE with a parameter.
+     -> CREATE_FAMILY_FORMS (PROVEN), a void row, locked to its planes with
+        LOCK_FORM_TO_PLANES (PROVEN). A floor- or roof-based family has no
+        opening call at all: its cut is always a void.
+  3. Make the void cut the template's host.
+     -> no Heron tool yet: THE MODELLER CUTS IT BY HAND BEFORE LOADING. A void
+        Heron makes does not cut the template's host, and nothing in Revit's
+        API makes it.
+     * Measured 2026-10-22 on Revit 2020, a floor-based floor drain (row
+       5b-1324): a round void and a square one through the template's floor
+       cut neither that floor nor any floor the family was placed on, with
+       Cut with Voids When Loaded off and then on - the grate stayed buried.
+     * Read the same day in all eight releases' API remarks, 2020 to 2027: the
+       solid-cut call refuses an ordinary family and a floor, the geometry
+       combination COMBINE_FAMILY_FORMS uses takes forms only, the join call
+       is not for family documents, and the void-instance call wants a loaded
+       family in a project (Q-85).
+     * So once the voids are built and read back, SAY THIS, AND SAY THAT
+       HERON CANNOT DO IT: in the Family Editor, Modify > Geometry > Cut,
+       click the template's host FIRST - the sample floor, roof, wall or
+       ceiling - then the void, once per void, then Load into Project.
+       Revit's own message for a void left uncut says the same: "Some Void
+       Forms of this family do not cut anything and will be deleted. To make
+       a Void Form cut something else use the Cut Geometry tool."
+     * NEVER COMBINE_FAMILY_FORMS such a void with a solid of the family to
+       stand in for the host's cut: a void cuts the solids in its combination
+       and nothing else.
+     * Measured on a floor; a wall-, ceiling- or roof-based template's void is
+       NEEDS-CHECKING BV12 until measured.
+  4. A FACE-BASED family's void.
+     -> SET_FAMILY_SETTINGS (PROVEN), Cut with Voids When Loaded on: an
+        unattached void cuts nothing on placement, so the modeller cuts with
+        Cut Geometry in the project (Stage 12).
+  5. Read every cut back.
+     -> REPORT_FAMILY_FORMS (PROVEN): each void, its plane and extent, and
+        the combination it is in; after the modeller's hand cut, the picture
+        of Stage 10 shows the host cut.
+
+  STAGES 7 TO 9 - CONNECTORS, NESTED FAMILIES, MATERIALS AND GRAPHICS
+
+  STAGE 7 - MEP CONNECTORS
+  family-creation Stage 7 holds. A host adds:
+  1. Put each connector on the face the service leaves by.
+     -> ADD_FAMILY_CONNECTOR (PROVEN); SET_FAMILY_CONNECTOR_ROLES (PROVEN)
+        for its flow, system and links. An electrical connector's
+        sizeParameters is given EMPTY.
+
+  STAGE 8 - NESTED FAMILIES
+  family-creation Stage 8 holds. A host adds:
+  1. Keep a nested symbol readable in plan on a wall.
+     -> SET_FAMILY_SETTINGS (PROVEN), Maintain Annotation Orientation.
+     -> PLACE_FAMILY_INSTANCES (PROVEN), LOCK_NESTED_FAMILY_TO_PLANES
+        (PROVEN), LINK_FAMILY_PARAMETER (PROVEN); ADD_FAMILY_TYPE_PARAMETER
+        (DRAFT) where the types choose the nested part's type - refused by
+        revit_change until proved, so try it once or the modeller makes the
+        Family Type parameter by hand.
+
+  STAGE 9 - MATERIALS AND GRAPHICS
+  family-creation Stage 9 holds. A host adds:
+  1. Let the family flip once placed, where it must face the other way off
+     its host.
+     -> ADD_FAMILY_FLIP_CONTROL (PROVEN), left-right or front-back.
+     -> SET_FAMILY_FORM_VISIBILITY (PROVEN), DRAW_FAMILY_SYMBOLIC_LINES
+        (PROVEN), DRAW_FAMILY_FILLED_REGION (PROVEN), LINK_FAMILY_PARAMETER
+        (PROVEN) for materials.
+
+  STAGES 10 TO 13 - VERIFICATION, FLEX, PROJECT TEST, SAVE
+
+  STAGE 10 - FAMILY VERIFICATION
+  family-creation Stage 10 holds, all of it, before anything is called done.
+  A host adds:
+  1. Read every form back.
+     -> REPORT_FAMILY_FORMS (PROVEN): every solid on the host's side, nothing
+        inside the template's host but the voids.
+  2. Look at it.
+     -> revit_view_image, a read: the body on the side of the host it belongs
+        on, and - once the modeller has cut it - the opening through the
+        template's host.
+
+  STAGE 11 - FLEX TESTING
+  family-creation Stage 11 holds.
+     -> FLEX_FAMILY (PROVEN), at sizes really different and not square; the
+        opening and the voids must move with their planes.
+
+  STAGE 12 - PROJECT TESTING
+  family-creation Stage 12 holds. A hosted family lives with its HOST, so:
+  1. Load it into a scratch test project.
+     -> LOAD_FAMILY (PROVEN), with the saved .rfa's path.
+  2. Place it on TWO hosts of DIFFERENT THICKNESS - two walls, or two
+     ceilings.
+     -> PLACE_HOSTED_FAMILY (PROVEN) into a wall, floor, ceiling or roof;
+        PLACE_FAMILY_ON_FACE (PROVEN) for a face-based one, searchLinks on for
+        a linked face; or the modeller places it by hand.
+  3. Check the cut and the side on each host.
+     -> revit_view_image of each: the body on its side, the opening through
+        the host. A face-based family's void: the modeller cuts it with Cut
+        Geometry in the project.
+  4. Move or change the host and watch the family follow.
+     -> no Heron tool yet: the modeller does it; say what was seen.
+
+  STAGE 13 - FINAL SAVE AND DELIVERY
+  family-creation Stage 13 holds, its SAVE RULE above all: saved by
+  SAVE_DOCUMENT (PROVEN, Publish), its file time checked, never called saved
+  without it. A type catalogue where the family has many types:
+  REPORT_FAMILY_TYPE_CATALOG (PROVEN).
+
+
+  4. ALWAYS / NEVER
+
+  Always:
+    * Read the template's host before anything is built, and keep it and its
+      planes as the template made them.
+    * Measure every size from the host face or a centre plane.
+    * Say, at Stage 6, every hand cut the modeller owes - Heron cannot make a
+      void cut the template's host.
+    * Test on two hosts of different thickness.
+  Never:
+    * Promise to turn one host into another: that is a new family.
+    * Combine a host's void with a family solid to fake the host's cut.
+    * Move or delete the template's planes or host.
+    * Call it done before family-creation Stages 10 to 13.
+  NOT YET IN HERON: a void cutting the template's host - a floor's or a
+  roof's above all, and a face-based family's host extrusion the same - no
+  public call for the Family Editor's Cut Geometry on any release 2020 to
+  2027 (row 5b-1324, Q-85); the plane a reference line carries; a door's or
+  window's own opening locked to its planes - an opening's sketch cannot be
+  locked through the API.
+
+
+  5. REPORT TO THE MODELLER
+
+  After each stage, one or two lines: what was completed, what was verified,
+  what remains. The final report is family-creation's (its section 6), and
+  adds: the host and the side; how the host is cut - by CREATE_OPENING, or a
+  hand cut the modeller owes, named; the two hosts it was tested on. Report
+  COMPLETED only when every check has passed and no hand cut is owed;
+  otherwise PARTIALLY COMPLETED, naming what is left and who does it, or
+  FAILED with the reason.
+
+
+  6. CORE PRINCIPLE
+
+  MODEL -> VERIFY -> REPORT -> CONTINUE. Never sacrifice accuracy for speed,
+  and never take a decision that is the modeller's.
+
+# HOW heron_method SERVES THE PURPOSE ABOVE - a summary first, then one part
+# at a time, as family-creation is served (the owner's choice, 2026-11-28):
+# whole, with its uses, it is over 12,000 characters. The short stages are
+# served together - "1-5" is Stages 1 to 5 - so a build asks five parts of
+# this method rather than fourteen. Each entry names the
+# purpose line its part starts at, exactly as written; an entry with no
+# `stage` goes back into the summary. heron_skill.validate refuses a line
+# missing, written twice or out of order.
+stages:
+  - {stage: "0", starts: "STAGE 0 - INFORMATION AND PREPARATION"}
+  - {stage: "1-5", starts: "STAGES 1 TO 5 - CONFIGURATION, FRAMEWORK, GEOMETRY, STYLES, CONTROL"}
+  - {stage: "6", starts: "STAGE 6 - WHAT IS CUT OUT OF THE HOST, VOIDS AND ARRAYS"}
+  - {stage: "7-9", starts: "STAGES 7 TO 9 - CONNECTORS, NESTED FAMILIES, MATERIALS AND GRAPHICS"}
+  - {stage: "10-13", starts: "STAGES 10 TO 13 - VERIFICATION, FLEX, PROJECT TEST, SAVE"}
+  - {starts: "4. ALWAYS / NEVER"}
 
 # The words people say when they want a hosted family made.
 utterances:
@@ -110,15 +336,17 @@ utterances:
   - make a wall hosted grille family with an opening in the wall
   - make a roof based family for a roof fan
 
-# CAPABILITIES, never fragment ids - in the order the purpose gives.
+# CAPABILITIES, never fragment ids - in the order the eight-step method that
+# this replaced gave them (2026-11-28: unchanged, so the method is offered
+# beside exactly the requests it was before).
 needs:
   - REPORT_FAMILY_TEMPLATE
-  # Step 0's units check, as FAMILY-CREATION's.
+  # Stage 0's units check, as family-creation's.
   - REPORT_PROJECT_UNITS
   - SET_PROJECT_UNITS
   # SET_FAMILY_CATEGORY was listed here until 2026-11-01, when it was merged into SET_FAMILY_SETTINGS.
   - ADD_FAMILY_PARAMETERS
-  # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
+  # family-creation Stage 1 item 4 reads first: the shared parameter file and its
   # GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
   - REPORT_SHARED_PARAMETER_FILE
   # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
@@ -147,7 +375,7 @@ needs:
   - SET_FAMILY_FORM_SUBCATEGORY
   - DRAW_FAMILY_FILLED_REGION
   - LOAD_FAMILY
-  # FAMILY-CREATION's steps, which this skill says still hold.
+  # family-creation's stages, which this method says still hold.
   - LABEL_FAMILY_RADIUS
   - COMBINE_FAMILY_FORMS
   - ARRAY_FAMILY_FORMS
@@ -162,16 +390,21 @@ needs:
   - FLEX_FAMILY
 
 preconditions:
-  - a family document is open in the Family Editor, started by the modeller from a wall-, ceiling-, floor-, roof- or face-based template - Heron does not choose a template
-  - every size, parameter name and type name has been given for THIS request
+  - a family document is open in the Family Editor, started by the modeller from a wall-, ceiling-, floor-, roof- or face-based template - or made by CREATE_FAMILY_DOCUMENT from the template and the .rfa path the modeller names; Heron never picks a template or a path itself
+  - every size, parameter name and type name has been given for THIS request, and the side of the host the body sits on
   - the template's own reference planes and host are as the template made them
+  - a step whose capability is DRAFT - the list of uses served beside this method says which - is refused by revit_change when it CHANGES the model (D-117), and can be tried once only on a family saved first, kept only if the modeller presses Keep (D-119, D-121); a DRAFT READ runs and says DRAFT, so confirm what matters another way
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
   Written 2026-10-02 on the owner's request for "line based, ceiling based,
   floor based, wall based ... all kind" of family creation, from the research
-  recorded in docs/43-building-revit-families.md. Every step is DRAFT until
-  it has been run on a real family with a negative case (D-30). Step 5's
-  hand cut was added 2026-10-22, from the floor drain measured that day on
-  Revit 2020 and a read of all eight releases' API remarks (row 5b-1324).
+  recorded in docs/43-building-revit-families.md. Step 5's hand cut was added
+  2026-10-22, from the floor drain measured that day on Revit 2020 and a read
+  of all eight releases' API remarks (row 5b-1324). On 2026-11-28 it was
+  rebuilt on the owner's family creation standard: family-creation's stages
+  in their order, each pointed at rather than copied, the Heron capability
+  and its status under every step, and every earlier rule under the stage it
+  belongs to (old step 5 is Stage 6). Every step is DRAFT until it has been
+  run on a real family with a negative case (D-30).

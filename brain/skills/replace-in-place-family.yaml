@@ -17,292 +17,488 @@ source: OFFICIAL
 
 risk: MODIFY
 
-purpose: >
-  Swaps families in a project for one loadable family - the old ones IN-PLACE
-  or LOADABLE, each hosted however it is (on a face of this model or of a
-  linked one, on a work plane, on a level, in a wall) and the new one hosted
-  however IT is - placed where each old one stood, turned the way it ran,
-  carrying the values the modeller agreed, and deletes the old ones last, on
-  the modeller's yes. Any category, any two families. Each step below is its
-  own call and its own undo entry, so the job as a whole is NOT one undo: that
-  is why nothing is deleted until the new ones have been read back and match.
-  heron_method lists each capability's status beside this method; a DRAFT
-  one runs once, behind Revit's Keep or Discard box (D-119).
+# THE SHAPE OF THIS METHOD (2026-11-28): the owner's standard for a Heron job
+# method, as family-creation carries it - objective, when to use it, an
+# information gate, stages with a Heron tool on every step, a verify stage,
+# the always/never rules and the report. This is a REPLACE job, not a build,
+# so its stages are its own; its picture, warnings and save checks point at
+# family-creation's (heron_method(job="family-creation", stage=N)). Stage N
+# here is the old step N, so every file that names a step still finds it.
+# Every rule the eleven-step method held is under the stage it belongs to (the
+# pull request lists each).
+purpose: |
+  REPLACE FAMILIES WITH A LOADABLE ONE - swap families in a project for one
+  loadable family: the old ones IN-PLACE or LOADABLE, each hosted however it
+  is (on a face of this model or of a linked one, on a work plane, on a
+  level, in a wall), and the new one hosted however IT is - placed where each
+  old one stood, turned the way it ran, carrying the values the modeller
+  agreed, with the old ones deleted last, on the modeller's yes. Any
+  category, any two families.
+
+  HOW TO READ IT. "-> CAPABILITY (STATUS)" after a step is the Heron
+  capability that does it and its card's status when this was written; the
+  list of uses served after this method gives each one's status now, and that
+  list wins. Four named here are not in that list, so this method is not
+  offered beside ordinary placing, warning and saving requests:
+  PLACE_FAMILY_ON_FACE, PLACE_HOSTED_FAMILY, READ_MODEL_WARNINGS and
+  SAVE_DOCUMENT - each stage served gives their status too. A change goes
+  through revit_change, a read through revit_read. A DRAFT capability that
+  CHANGES the model is refused by revit_change until it is proved (D-117); a
+  DRAFT of MODIFY risk can be tried once behind Revit's Keep or Discard box
+  (D-119). A DRAFT READ runs through revit_read and says DRAFT - confirm what
+  matters another way. "-> no Heron tool yet:" is a step Heron cannot do: it
+  says what the modeller does by hand.
+
+  STAGE N IS THE OLD STEP N. Before 2026-11-28 this method had steps 0 to 10,
+  and other files and tools still name them: step N is Stage N here. Stage 11
+  is new.
+
+  EACH STAGE IS ITS OWN CALLS AND ITS OWN UNDO ENTRIES, so the job as a whole
+  is NOT one undo: that is why nothing is deleted until the new ones have
+  been read back and match.
 
   A VALUE IS CARRIED BY GUID AND WRITTEN BY GUID where a name is held twice:
-  step 7 names the parameter as "Name {GUID}". Never work round a refusal by
+  Stage 7 names the parameter as "Name {GUID}". Never work round a refusal by
   guessing a value or typing an element id.
 
-  0. FIND THE OLD ONES. SELECT_BY_PARAMETER_VALUE (SELECT_BY_FAMILY was
-     merged into it at version 4, 2026-11-01) with parameterName=Family,
-     matchMode=contains, includeTypeParameters=false, categories= the old
-     family's CATEGORY, and matchText= the old family. AT LEAST ONE CATEGORY
-     IS NAMED: an empty list is refused before anything runs - "No
-     categories were named" - because guessing a category is how a job runs
-     against the wrong thing (row 5b-1997, as row 112). The category is the
-     one the family sits under in the Project Browser's Families list, or
-     the one Properties shows with one of them selected - an in-place family
-     keeps the category it was made in (2026-11-23, Revit 2020: Mechanical
-     Equipment). Not known: ask the modeller, never guess; old
-     ones in more than one category are named together, "Mechanical
-     Equipment, Generic Models". In-place: the part of
-     the names they share - every in-place element is a family of its own, so
-     "TCM_ACU_T002" catches ..Unit1, ..Unit2 and ..Unit3. Loadable: the
-     family's name with exactMatch=true, one call per old family (2026-10-15:
-     two - a rectangular and a circular cut-out). The answer names each
-     family that matched with its count, in `matchedFamilies`. Confirm the
-     count with the modeller. If only some are to go, they name which, by id:
-     FILTER_ELEMENTS_BY_ID, and every later expect_from= names that read.
 
-  1. READ EVERYTHING THE OLD ONES HOLD, AND WHAT GOES WITH THEM, BEFORE
-     ANYTHING CHANGES. REPORT_PARAMETER_INVENTORY with sampleOnly=false,
-     includeTypeParameters=true, fullRecord=true and includeTags=true, on the
-     old ones from step 0 (expect_from="select-by-parameter-value where
-     matchText=<old family>"). Its `record` is ONE string: for each old one
-     its unique id, level, workset, location and bounding box in mm, which
-     way it faces and hands and whether it is mirrored, every INSTANCE and
-     every TYPE parameter with its value and, for a shared one, its GUID, and
-     every tag on it - its view, tag type, head position and leader. HOW EACH
-     IS HOSTED is in its parameters: Host (a face of "RVT Link : ..." is a
-     linked model's face), Level or Schedule Level, Elevation from Level or
-     Offset from Host. Keep it whole: steps 2, 6, 8 and 9 read it. Hand it
-     the old ones only. SINCE VERSION 3 (row 5b-489) THE RECORD HOLDS AT
-     MOST 50 ELEMENTS AND STOPS AT maxChars - 60000 when left out, and one
-     unit of about 330 parameters (DI3) is some 30000 by itself - so pass
-     maxChars=1000000 here and at step 8. A record that ends in a "RECORD
-     CUT" line is NOT whole: ask again for the ids that line names before
-     going on.
-     A PROJECT CAN HOLD TWO SHARED PARAMETERS WITH THE SAME NAME. Seen
-     2026-10-12: two called "Equipment Tag", GUID e133774c... filled and GUID
-     cb0704fc... empty - a by-name read showed the empty one. `sameNameTwice`
-     names every such pair with both GUIDs; every value is carried and
-     compared by GUID first, then by name - never by name alone.
-     Then REPORT_ELEMENT_DEPENDENCIES on the same old ones: Revit's own
-     dependents - tags, hosted elements, an in-place family's parts - and,
-     since its version 2 (row 5b-1990), every dimension IN EVERY VIEW that
-     measures to them or to a dependent, one line each in `dimensionLines`:
-     its view, DELETED (too few references left) or CUT (a string that
-     stays, changed). `goesTotal` is how many the delete is expected to
-     take. Keep it all - steps 9 and 10 name it. It cannot see a reference
-     from a linked model, nor what a delete changes in a view itself.
+  1. OBJECTIVE
 
-  2. READ THE NEW TYPE, AND AGREE THE MAP WITH THE MODELLER - before anything
-     is placed. Where an instance of the new type is already placed
-     (SELECT_BY_PARAMETER_VALUE parameterName=Family, matchText= the new
-     family, exactMatch=true, categories= the new family's category), read one
-     the same way as step 1; where none is, place ONE as step 6 says and read
-     that - nothing more is placed until the table below has its yes.
-     Its record says how the new family is hosted - level, work plane, face,
-     wall - and where its insertion point sits in its own box (2026-10-15:
-     ABC_GEN_CutOut_Rectangular_HVAC, level based, its point the plan centre,
-     its centre height the level plus its own Elevation from Level). Then put
-     ONE TABLE to the modeller and take their yes:
-     - WHAT IS CARRIED, AND FROM WHAT. The same shared parameter on both,
+  Every old family in the set replaced by one new loadable family, each new
+  one at its old one's centre, on its level, workset and phase, turned the
+  way it ran, holding exactly the values the modeller agreed - by GUID - and
+  its tags carried; then the old ones deleted with everything that goes with
+  them named first. Nothing inherited silently, nothing deleted unnamed.
+
+
+  2. WHEN TO USE - AND WHEN NOT
+
+  Use it to SWAP placed families for another family at the same places,
+  keeping their data.
+  Not for:
+    * changing one loadable family's type to another type of the SAME family
+      - CHANGE_ELEMENT_TYPE alone (Stage 5 is that, tried first here);
+    * building the new family - family-creation, and come back here with its
+      .rfa;
+    * placing new families where none stood - the placing capabilities
+      alone.
+
+
+  3. WORKFLOW
+
+  STAGE 0 - INFORMATION GATE: FIND THE OLD ONES
+  Nothing is changed in this stage. What must be known first, and asked,
+  never guessed: the old family or families, their CATEGORY, the new family
+  and its type, and whether every old one goes or only some.
+  1. Find the old ones.
+     -> SELECT_BY_PARAMETER_VALUE (PROVEN): parameterName=Family,
+        matchMode=contains, includeTypeParameters=false, categories= the old
+        family's CATEGORY, and matchText= the old family.
+     * AT LEAST ONE CATEGORY IS NAMED: an empty list is refused before
+       anything runs - "No categories were named" - because guessing a
+       category is how a job runs against the wrong thing (row 5b-1997, as
+       row 112). The category is the one the family sits under in the Project
+       Browser's Families list, or the one Properties shows with one of them
+       selected - an in-place family keeps the category it was made in
+       (2026-11-23, Revit 2020: Mechanical Equipment). Not known: ask the
+       modeller, never guess. Old ones in more than one category are named
+       together: "Mechanical Equipment, Generic Models".
+     * IN-PLACE: matchText= the part of the names they share - every
+       in-place element is a family of its own, so the shared stem of
+       <stem>Unit1, <stem>Unit2 and <stem>Unit3 catches all three.
+     * LOADABLE: the family's name with exactMatch=true, one call per old
+       family (2026-10-15: two - a rectangular and a circular cut-out).
+     * The answer names each family that matched with its count, in
+       `matchedFamilies`.
+  2. Confirm the count with the modeller.
+     -> no Heron tool: asked.
+  3. Only some are to go.
+     -> FILTER_ELEMENTS_BY_ID (PROVEN), the ids the modeller names; every
+        later expect_from= names that read.
+  GATE: the modeller confirms the old families, the count, the category and
+  the new family and type.
+
+  STAGE 1 - READ EVERYTHING THE OLD ONES HOLD, AND WHAT GOES WITH THEM
+  Before anything changes.
+  1. The old ones' whole record.
+     -> REPORT_PARAMETER_INVENTORY (PROVEN), sampleOnly=false,
+        includeTypeParameters=true, fullRecord=true and includeTags=true, on
+        the old ones from Stage 0 (expect_from="select-by-parameter-value
+        where matchText=<old family>").
+     * Its `record` is ONE string: for each old one its unique id, level,
+       workset, location and bounding box in mm, which way it faces and
+       hands and whether it is mirrored, every INSTANCE and every TYPE
+       parameter with its value and, for a shared one, its GUID, and every
+       tag on it - its view, tag type, head position and leader.
+     * HOW EACH IS HOSTED is in its parameters: Host (a face of "RVT Link :
+       ..." is a linked model's face), Level or Schedule Level, Elevation from
+       Level or Offset from Host.
+     * Keep it whole: Stages 2, 6, 8 and 9 read it. Hand it the old ones only.
+     * SINCE VERSION 3 (row 5b-489) THE RECORD HOLDS AT MOST 50 ELEMENTS AND
+       STOPS AT maxChars - 60000 when left out, and one unit of about 330
+       parameters (DI3) is some 30000 by itself - so pass maxChars=1000000
+       here and at Stage 8. A record that ends in a "RECORD CUT" line is NOT
+       whole: ask again for the ids that line names before going on.
+     * A PROJECT CAN HOLD TWO SHARED PARAMETERS WITH THE SAME NAME. Seen
+       2026-10-12: two called "Equipment Tag", GUID e133774c... filled and
+       GUID cb0704fc... empty - a by-name read showed the empty one.
+       `sameNameTwice` names every such pair with both GUIDs; every value is
+       carried and compared by GUID first, then by name - never by name
+       alone.
+  2. What Revit deletes with them.
+     -> REPORT_ELEMENT_DEPENDENCIES (DRAFT, a read): it runs through
+        revit_read and says DRAFT; Stage 10's DELETE_ELEMENTS count is the
+        check on it. Revit's own dependents - tags, hosted elements, an
+        in-place family's parts - and, since its version 2 (row 5b-1990),
+        every dimension IN EVERY VIEW that measures to them or to a
+        dependent, one line each in `dimensionLines`: its view, DELETED (too
+        few references left) or CUT (a string that stays, changed).
+        `goesTotal` is how many the delete is expected to take.
+     * Keep it all - Stages 9 and 10 name it. It cannot see a reference from a
+       linked model, nor what a delete changes in a view itself.
+
+  STAGE 2 - READ THE NEW TYPE, AND AGREE THE MAP WITH THE MODELLER
+  Before anything is placed.
+  1. Read one new one.
+     -> SELECT_BY_PARAMETER_VALUE (PROVEN), parameterName=Family, matchText=
+        the new family, exactMatch=true, categories= the new family's
+        category; then REPORT_PARAMETER_INVENTORY (PROVEN) as Stage 1. Where
+        none is placed, place ONE as Stage 6 says and read that - nothing
+        more is placed until the table below has its yes.
+     * Its record says how the new family is hosted - level, work plane,
+       face, wall - and where its insertion point sits in its own box
+       (2026-10-15: the new cut-out family, level based, its point the plan
+       centre, its centre height the level plus its own Elevation from
+       Level).
+  2. Put ONE TABLE to the modeller and take their yes.
+     -> no Heron tool: the chat writes it from the two records.
+     * WHAT IS CARRIED, AND FROM WHAT. The same shared parameter on both,
        paired by GUID. Anything else - an old "Width" into a new "Object
-       Lenght" - only where they name the pair; never paired by a similar name.
-     - A SIZE MAP IS A VALUE THE MODELLER GIVES (2026-10-15: louvres 1000 x
+       Lenght" - only where they name the pair; never paired by a similar
+       name.
+     * A SIZE MAP IS A VALUE THE MODELLER GIVES (2026-10-15: louvres 1000 x
        600, fans 460 x 460, round ones as square), per old type or group, and
        only the parameters they name are changed.
-     - A TYPE VALUE (2026-10-15: Cutout Buffer) is chosen by choosing the
+     * A TYPE VALUE (2026-10-15: Cutout Buffer) is chosen by choosing the
        type. Writing it writes every instance of that type - ask first.
-     - WHAT A NEW ONE WOULD KEEP THAT NOBODY CHOSE: every instance value the
+     * WHAT A NEW ONE WOULD KEEP THAT NOBODY CHOSE: every instance value the
        new type's record shows that is neither carried nor in their map - a
        copy carries ALL of its source's values, a placement the family's
-       defaults.
-       2026-10-15: Wall Width came over from the copy source unnoticed. For
-       each they say keep, blank or a value. NOTHING IS INHERITED SILENTLY.
-     - MARK IS THE MODELLER'S CALL: it identifies an element, so it is never
+       defaults. 2026-10-15: Wall Width came over from the copy source
+       unnoticed. For each they say keep, blank or a value. NOTHING IS
+       INHERITED SILENTLY.
+     * MARK IS THE MODELLER'S CALL: it identifies an element, so it is never
        copied in bulk while the old ones still exist - Revit warns of
        duplicate Marks.
-     - THE WORKSET: each new one on its old one's workset, or one they name.
+     * THE WORKSET: each new one on its old one's workset, or one they name.
+  GATE: the modeller's yes to the table.
 
-  3. THE WALLS AND PIPES BESIDE IN-PLACE EQUIPMENT, where they decide which
-     way the new one faces: its back to the wall, its connectors towards the
-     pipes. SELECT_IN_REGION round each old bounding box, grown a little,
-     with categories= Walls, then again with Pipes (exact=false is a box
-     test, exact=true touches the solid - neither means "wholly inside").
-     Then REPORT_BOUNDING_BOX on what came back. A pipe joined to an in-place
-     family is joined to it, so note which pipes these are: step 10 checks
-     them. A loadable old one's record already says which way it ran - skip
-     this unless they ask.
+  STAGES 3 TO 5 - THE NEIGHBOURS, THE LOAD, AND A TYPE CHANGE TRIED FIRST
 
-  4. LOAD THE LOADABLE FAMILY. First look whether it is already loaded and
-     whether any of it is already placed - SELECT_BY_PARAMETER_VALUE with
-     parameterName=Family, matchText= the new family, exactMatch=true and
-     categories= its category, as step 0; one placed is the
-     source step 6's copy route needs. LOAD_FAMILY with familyPath= the .rfa
-     REFUSES a family that is already loaded; a reload (reload=true) needs
-     the modeller's yes for that one reload (Article 7), and a reload can
-     overwrite same-named materials - its answer lists them.
+  STAGE 3 - THE WALLS AND PIPES BESIDE IN-PLACE EQUIPMENT
+  Where they decide which way the new one faces: its back to the wall, its
+  connectors towards the pipes. A loadable old one's record already says
+  which way it ran - skip this stage unless they ask.
+  1. Find them.
+     -> SELECT_IN_REGION (PROVEN) round each old bounding box, grown a
+        little, with categories= Walls, then again with Pipes (exact=false is
+        a box test, exact=true touches the solid - neither means "wholly
+        inside"); then REPORT_BOUNDING_BOX (PROVEN) on what came back.
+     * A pipe joined to an in-place family is joined to it, so note which
+       pipes these are: Stage 10 checks them.
 
-  5. SAME CATEGORY, SAME HOSTING: TRY A TYPE CHANGE ON ONE FIRST. When the
-     old one is loadable and both families are the same category and hosted
-     the same way, CHANGE_ELEMENT_TYPE with newTypeId= the new type on ONE
-     old one (expect_from="filter-elements-by-id where elementIds=<its id>")
-     keeps the element itself - its id, and with it its tags, dimensions and
-     workset; which of its values survive the change, step 8 reads. It reads
-     the type back and names one that did not take. Where it takes, read it
-     back as step 8 does and show the modeller; on their word change the
-     rest the same way and go to step 8, carrying with step 7 only what the
-     compare finds missing - steps 6, 9 and 10 have nothing to do. Where it
-     does not take, go on to step 6.
+  STAGE 4 - LOAD THE LOADABLE FAMILY
+  1. Look first whether it is already loaded, and whether any of it is
+     already placed.
+     -> SELECT_BY_PARAMETER_VALUE (PROVEN), parameterName=Family, matchText=
+        the new family, exactMatch=true and categories= its category, as
+        Stage 0; one placed is the source Stage 6's copy route needs.
+  2. Load it.
+     -> LOAD_FAMILY (PROVEN), familyPath= the .rfa. It REFUSES a family that
+        is already loaded; a reload (reload=true) needs the modeller's yes for
+        that one reload (Constitution 7), and a reload can overwrite
+        same-named materials - its answer lists them.
 
-  6. PLACE ONE NEW ONE PER OLD ONE - ONE FIRST, SHOWN, THEN THE REST.
-     WHERE: each new one's CENTRE on its old one's - the middle of the old
-     one's bounding box from step 1 - not location point on location point:
+  STAGE 5 - SAME CATEGORY, SAME HOSTING: TRY A TYPE CHANGE ON ONE FIRST
+  When the old one is loadable and both families are the same category and
+  hosted the same way.
+  1. Change ONE old one's type.
+     -> CHANGE_ELEMENT_TYPE (PROVEN), newTypeId= the new type, on ONE old one
+        (expect_from="filter-elements-by-id where elementIds=<its id>"). It
+        keeps the element itself - its id, and with it its tags, dimensions
+        and workset; which of its values survive the change, Stage 8 reads.
+        It reads the type back and names one that did not take.
+  2. Where it takes: read it back as Stage 8 does and show the modeller; on
+     their word change the rest the same way and go to Stage 8, carrying with
+     Stage 7 only what the compare finds missing - Stages 6, 9 and 10 have
+     nothing to do. Where it does not take, go on to Stage 6.
+
+  STAGE 6 - PLACE ONE NEW ONE PER OLD ONE - ONE FIRST, SHOWN, THEN THE REST
+  1. WHERE: each new one's CENTRE on its old one's - the middle of the old
+     one's bounding box from Stage 1 - not location point on location point:
      a face-hosted old one's point sits on its host's face, the new one's
      wherever its family put it. Its level is the old one's (the record's
      level line; for a face-hosted one its Schedule Level), or one they name.
-     BY HOW THE NEW FAMILY IS HOSTED:
-     - LEVEL OR WORK PLANE: PLACE_FAMILY_INSTANCES with symbol= the type,
-       points= in millimetres in the model's own coordinates (Z is the
-       height in the model, not above the level) and level=. It reads each
-       one back.
-     - A FACE: PLACE_FAMILY_ON_FACE with pointsMm= a point just off the face,
-       ray= towards it, view3D= a 3D view, and searchLinks=true when the face
-       is in a linked model.
-     - A WALL, FLOOR, CEILING OR ROOF: PLACE_HOSTED_FAMILY at each point.
-     These two are not in the list after this method (the note there says
-     why): heron_resolve each by name - its answer gives each one's status.
-     WHERE THE PLACEMENT REFUSES, OR PUTS IT ELSEWHERE THAN ASKED - copy an
-     existing instance of the new type. 2026-10-15, Revit 2020: asked 2152
-     mm, PLACE_FAMILY_INSTANCES stood the ABC cut-out 2014.5 mm above the
-     level; a separate task investigates. FILTER_ELEMENTS_BY_ID with
-     elementIds= the source's id - read `named` - then COPY_ELEMENTS with
-     expect_from="filter-elements-by-id where elementIds=<source id>", once
-     per old one: offset= the plan step from the source's centre to the old
-     one's, 0 in Z, when the source stands on the old one's level; toLevels=
-     that level with offset 0,0,0 when it does not. `copies` names the new
-     id. A copy of a HOSTED source stays on its source's host, so this route
-     is for a level-based or work-plane one. No instance of the new type
-     anywhere and the placement refuses: ask the modeller to place one by
-     hand.
-     THEN THE HEIGHT, by the new one's own height parameter - Elevation from
-     Level, or Offset from Host - SET_PARAMETER_VALUES_BY_ID, so its centre
-     stands at the old one's. THEN THE PLAN: read it back and MOVE_ELEMENTS
-     that one alone (expect_from="filter-elements-by-id where
-     elementIds=<its id>") with offset= what is left, "x, y, 0" in
-     millimetres, once per copy. `partly` or
-     `blocked` means a host or a constraint held it - say so.
-     THEN THE TURN, each one alone. FILTER_ELEMENTS_BY_ID with elementIds=
-     that unit's id - digits, as it was printed - and read `named`: it must
-     be the new family's type, not the old one still standing in the same
-     place. ROTATE_ELEMENTS (angleRadians, pivot= its own centre) and, where
-     it must be handed the other way, MIRROR_ELEMENTS with asCopy=false -
-     each with expect_from="filter-elements-by-id where elementIds=<that
-     id>", so it turns that one unit and nothing else. Turn it so it RUNS
-     the way the old one ran: a family hosted on a wall's face has its own Z
-     out of the face, so its facing can point up - compare the direction
-     along the face, its hand, not the facing alone. Typed ids are taken on
-     a read only, and that read is DRAFT until it has run in Revit
-     (FRAGMENT-ISSUES 5b-441). An add-in older than that refuses the digits:
-     then select the unit by a spot ONLY IT occupies - SELECT_IN_REGION on a
-     small box inside it that nothing else touches - and use
-     expect_from="select-in-region where minMm=<that box>" instead. For
-     equipment REPORT_CONNECTORS on it then says which way its connectors
-     point; they should face the pipes found in step 3.
-     THEN THE WORKSET. A copy and a placement land on the ACTIVE workset, not
-     the old one's. LIST_WORKSETS gives each workset's id; SET_ELEMENT_WORKSET
-     with worksetId= the old one's workset (or the one they named), on the new
-     ones that belong there, and step 8 reads it back. A model that is not
-     workshared has none. Phase Created likewise: the old one's,
-     SET_ELEMENT_PHASE where it differs.
-     DO ALL OF THIS FOR ONE, read it back as step 8 does and show the
+     -> no Heron tool: worked out from Stage 1's record.
+  2. Place it, by how the NEW family is hosted.
+     -> LEVEL OR WORK PLANE: PLACE_FAMILY_INSTANCES (PROVEN), symbol= the
+        type, points= in millimetres in the model's own coordinates (Z is the
+        height in the model, not above the level) and level=. It reads each
+        one back.
+     -> A FACE: PLACE_FAMILY_ON_FACE (PROVEN), pointsMm= a point just off the
+        face, ray= towards it, view3D= a 3D view, and searchLinks=true when
+        the face is in a linked model.
+     -> A WALL, FLOOR, CEILING OR ROOF: PLACE_HOSTED_FAMILY (PROVEN), at each
+        point.
+  3. WHERE THE PLACEMENT REFUSES, OR PUTS IT ELSEWHERE THAN ASKED - copy an
+     existing instance of the new type.
+     -> FILTER_ELEMENTS_BY_ID (PROVEN), elementIds= the source's id - read
+        `named` - then COPY_ELEMENTS (PROVEN), expect_from=
+        "filter-elements-by-id where elementIds=<source id>", once per old
+        one: offset= the plan step from the source's centre to the old one's,
+        0 in Z, when the source stands on the old one's level; toLevels= that
+        level with offset 0,0,0 when it does not. `copies` names the new id.
+     * 2026-10-15, Revit 2020: asked 2152 mm, PLACE_FAMILY_INSTANCES stood the
+       new cut-out family 2014.5 mm above the level; a separate task
+       investigates.
+     * A copy of a HOSTED source stays on its source's host, so this route is
+       for a level-based or work-plane one. No instance of the new type
+       anywhere and the placement refuses: ask the modeller to place one by
+       hand.
+  4. THEN THE HEIGHT, by the new one's own height parameter - Elevation from
+     Level, or Offset from Host - so its centre stands at the old one's.
+     -> SET_PARAMETER_VALUES_BY_ID (PROVEN).
+  5. THEN THE PLAN: read it back, and move that one alone by what is left.
+     -> MOVE_ELEMENTS (DRAFT, version 5): offset= what is left, "x, y, 0" in
+        millimetres, expect_from="filter-elements-by-id where elementIds=<its
+        id>", once per copy. As a DRAFT change revit_change refuses it until
+        it is proved: try it once behind Keep or Discard (D-119), or give the
+        modeller the offset to move it with Revit's Move. `partly` or
+        `blocked` means a host or a constraint held it - say so.
+  6. THEN THE TURN, each one alone.
+     -> FILTER_ELEMENTS_BY_ID (PROVEN), elementIds= that unit's id - digits,
+        as it was printed - and read `named`: it must be the new family's
+        type, not the old one still standing in the same place. Typed ids are
+        taken on a read only.
+     -> ROTATE_ELEMENTS (PROVEN), angleRadians, pivot= its own centre; and,
+        where it must be handed the other way, MIRROR_ELEMENTS (PROVEN) with
+        asCopy=false - each with expect_from="filter-elements-by-id where
+        elementIds=<that id>", so it turns that one unit and nothing else.
+     * Turn it so it RUNS the way the old one ran: a family hosted on a
+       wall's face has its own Z out of the face, so its facing can point up -
+       compare the direction along the face, its hand, not the facing alone.
+     * An add-in too old to take typed ids refuses the digits: then select the
+       unit by a spot ONLY IT occupies - SELECT_IN_REGION (PROVEN) on a small
+       box inside it that nothing else touches - and use
+       expect_from="select-in-region where minMm=<that box>" instead.
+     -> For equipment, REPORT_CONNECTORS (PROVEN) on it says which way its
+        connectors point; they should face the pipes found in Stage 3.
+  7. THEN THE WORKSET AND THE PHASE. A copy and a placement land on the
+     ACTIVE workset, not the old one's.
+     -> LIST_WORKSETS (PROVEN) gives each workset's id; SET_ELEMENT_WORKSET
+        (PROVEN), worksetId= the old one's workset (or the one they named), on
+        the new ones that belong there; Stage 8 reads it back. A model that is
+        not workshared has none.
+     -> SET_ELEMENT_PHASE (PROVEN): Phase Created the old one's, where it
+        differs.
+  8. DO ALL OF THIS FOR ONE, read it back as Stage 8 does and show the
      modeller - where it stands against the old one, its box, its values -
      and only on their word do the rest.
+     -> REPORT_PARAMETER_INVENTORY (PROVEN), as Stage 8; revit_view_image of
+        the new one beside where the old one stood.
 
-  7. CARRY THE VALUES - the map from step 2, nothing else.
-     SET_PARAMETER_VALUES_BY_ID with rows id|uniqueId|parameter|was|new, one
-     per new element and parameter, the unique ids and the values held now
-     from the new ones' record: all or nothing, read back. For many,
-     SET_PARAMETER_VALUES_BY_ID (IMPORT_PARAMETER_VALUES was merged into it at
-     version 7, 2026-11-01) with csvPath= a CSV whose first column is the NEW
-     element's id and whose other columns are the parameter names,
-     blankCells=skip - the rows alone name the elements, so the CSV holds only
-     the new ones' ids (read off step 6's record, with their UniqueId column if
-     it can be had), and one row that cannot be used stops the run - all or
-     nothing. A TYPE's value is written by naming the type's own id in its row -
-     every unit of that type changes - so ask first. A CSV goes in the session's
-     scratch folder, or %TEMP%\heron-work - never beside Heron or the model.
-     Both find a parameter by NAME first, and REFUSE a name the element carries
-     twice, which is right. A SHARED parameter is then named by its GUID - in
-     a row, or as a CSV column's heading - as "<name> {<its GUID>}", the GUID
-     the NEW element's record from step 6 gives it: "Equipment Tag
-     {e133774c-3f62-45f1-a0c6-7e6c6238380b}". That reaches the one parameter
-     with that GUID while it is still called that name (since the card's
-     version 6, row 5b-1344, 2026-10-28; it was written as a gap here on
-     2026-10-17, from versions 2 and 3). So a value is CARRIED by GUID - the
-     map pairs the GUIDs - and WRITTEN by name where the new element carries
-     that name once, by "<name> {<its GUID>}" where it carries it twice. A
-     BUILT-IN parameter has no GUID: where its name is held twice it is named
-     by Revit's own name for it, "Top Level {FAMILY_TOP_LEVEL_PARAM}" (the
-     card's version 9, row 5b-1703), and the card's refusal names each one in
-     the form that reaches it. On Revit 2020 a Yes/No that was
-     written correctly can come back called "rejected": read the value before
-     believing either.
+  STAGE 7 - CARRY THE VALUES
+  The map from Stage 2, nothing else.
+  1. A few values.
+     -> SET_PARAMETER_VALUES_BY_ID (PROVEN), rows id|uniqueId|parameter|was|
+        new, one per new element and parameter, the unique ids and the values
+        held now from the new ones' record: all or nothing, read back.
+  2. Many values.
+     -> SET_PARAMETER_VALUES_BY_ID (PROVEN), csvPath= a CSV whose first
+        column is the NEW element's id and whose other columns are the
+        parameter names, blankCells=skip - the rows alone name the elements,
+        so the CSV holds only the new ones' ids (read off Stage 6's record,
+        with their UniqueId column if it can be had), and one row that cannot
+        be used stops the run - all or nothing.
+     * A CSV goes in the session's scratch folder, or %TEMP%\heron-work -
+       never beside Heron or the model.
+  3. A TYPE's value.
+     -> SET_PARAMETER_VALUES_BY_ID (PROVEN), naming the type's own id in its
+        row - every unit of that type changes - so ask first.
+  4. A name the element carries twice.
+     -> SET_PARAMETER_VALUES_BY_ID (PROVEN). Both forms find a parameter by
+        NAME first, and REFUSE a name the element carries twice, which is
+        right. A SHARED parameter is then named by its GUID - in a row, or as
+        a CSV column's heading - as "<name> {<its GUID>}", the GUID the NEW
+        element's record from Stage 6 gives it: "Equipment Tag
+        {e133774c-3f62-45f1-a0c6-7e6c6238380b}". That reaches the one
+        parameter with that GUID while it is still called that name (since
+        the card's version 6, row 5b-1344, 2026-10-28).
+     * So a value is CARRIED by GUID - the map pairs the GUIDs - and WRITTEN by
+       name where the new element carries that name once, by "<name> {<its
+       GUID>}" where it carries it twice.
+     * A BUILT-IN parameter has no GUID: where its name is held twice it is
+       named by Revit's own name for it, "Top Level {FAMILY_TOP_LEVEL_PARAM}"
+       (the card's version 9, row 5b-1703), and the card's refusal names each
+       one in the form that reaches it.
+     * On Revit 2020 a Yes/No that was written correctly can come back called
+       "rejected": read the value before believing either.
 
-  8. READ BACK AND COMPARE, by GUID first, then name:
-     REPORT_PARAMETER_INVENTORY with step 1's values on the new ones
-     (expect_from="select-by-parameter-value where matchText=<new family>"), its
-     `record` against step 1's and the map: each new one's box centre where
-     the old one's was, its level, workset and phase as agreed; every value
-     the map carries present under the same GUID with the same value; every
-     value the size map set as given; every other instance value one they
-     chose to keep. 0 missing, 0 different, 0 they did not choose - or the job
-     is not done. What belongs to the element itself - its id, family, type
-     - differs by nature. COMPARE_ELEMENTS on one old and one new unit (one
-     region round both selects the pair) is a first look only: it compares by
-     name, so two parameters sharing a name can hide a difference.
+  STAGE 8 - VERIFY: READ BACK AND COMPARE, BY GUID FIRST, THEN NAME
+  1. Read the new ones back.
+     -> REPORT_PARAMETER_INVENTORY (PROVEN), with Stage 1's values (and
+        maxChars=1000000), on the new ones (expect_from=
+        "select-by-parameter-value where matchText=<new family>").
+  2. Compare its `record` against Stage 1's and the map.
+     -> no Heron tool does the whole compare: the chat reads the two records
+        side by side. Each new one's box centre where the old one's was; its
+        level, workset and phase as agreed; every value the map carries
+        present under the same GUID with the same value; every value the size
+        map set as given; every other instance value one they chose to keep.
+     * 0 missing, 0 different, 0 they did not choose - or the job is not
+       done. What belongs to the element itself - its id, family, type -
+       differs by nature.
+     -> COMPARE_ELEMENTS (PROVEN) on one old and one new unit (one region
+        round both selects the pair) is a first look only: it compares by
+        name, so two parameters sharing a name can hide a difference.
+  3. Look at them.
+     -> revit_view_image, as family-creation Stage 10 E: each new one where
+        its old one stood, the right way round.
 
-  9. THE TAGS. COPY_TAGS_TO_REPLACEMENTS with csvPath= a CSV of pairs - a
-     header line, then an old id and its new id per line, in the scratch
-     folder as at step 7 - and the new ones handed in (expect_from=
-     "select-by-parameter-value where matchText=<new family>"). On each new one it
-     makes a copy of every tag its old one carries, in every view: the same
-     type, head, leader, end and orientation, read back, and `notReproduced`
-     names what differs. It never deletes the old tags; a second run makes
-     none. Or re-tag from the TAGS lines of step 1's record with
-     TAG_ELEMENTS_IN_VIEW (TAG_ELEMENTS was merged into it at version 6,
-     2026-11-01): view, tagTypeId the old tag's own type, tagTypeHintId= none,
-     leader none or straight as the old tag had, minLengthMm=0 and
-     leaderOffsetMm=0. A new one already carrying a tag of that type in the view
-     is skipped. Or hand the list to the modeller - on 2026-10-12 the owner
-     chose to re-tag himself. NOTHING COPIES A DIMENSION: one that measured
-     only to an old one goes with it, and one that measured to an old one and
-     to something else is CUT - its segments to the old one removed. Both
-     are in step 1's `dimensionLines`, by view; step 10 names them, and
-     re-dimensioning is the modeller's (2026-11-23, the owner's choice).
+  STAGE 9 - THE TAGS
+  1. Copy every tag the old ones carry.
+     -> COPY_TAGS_TO_REPLACEMENTS (PROVEN), csvPath= a CSV of pairs - a header
+        line, then an old id and its new id per line, in the scratch folder as
+        at Stage 7 - and the new ones handed in (expect_from=
+        "select-by-parameter-value where matchText=<new family>"). On each new
+        one it makes a copy of every tag its old one carries, in every view:
+        the same type, head, leader, end and orientation, read back, and
+        `notReproduced` names what differs. It never deletes the old tags; a
+        second run makes none.
+  2. Or re-tag from the TAGS lines of Stage 1's record.
+     -> TAG_ELEMENTS_IN_VIEW (PROVEN): view, tagTypeId the old tag's own type,
+        tagTypeHintId= none, leader none or straight as the old tag had,
+        minLengthMm=0 and leaderOffsetMm=0. A new one already carrying a tag
+        of that type in the view is skipped.
+  3. Or hand the list to the modeller - on 2026-10-12 the owner chose to
+     re-tag himself.
+     -> no Heron tool: the list from Stage 1.
+  4. The dimensions.
+     -> no Heron tool, on the owner's choice: NOTHING COPIES A DIMENSION. One
+        that measured only to an old one goes with it, and one that measured
+        to an old one and to something else is CUT - its segments to the old
+        one removed. Both are in Stage 1's `dimensionLines`, by view; Stage 10
+        names them, and re-dimensioning is the modeller's (2026-11-23).
 
-  10. DELETE THE OLD ONES - LAST, ON THE MODELLER'S YES FOR THAT ONE DELETE,
-     WITH EVERYTHING THAT GOES WITH THEM NAMED (Article 7). 2026-10-15: the
-     first delete of 13 old openings silently took 33 tags and dimensions with
-     them; 2026-11-23 (row 5b-1990), on Revit 2020, 36 were named, the delete
-     took 62 and cut 26 more dimensions - version 1 of the dependencies card
-     never read a dimension outside Revit's own list. So first
-     REPORT_ELEMENT_DEPENDENCIES on the old ones again, fresh, and the yes
-     question names the families and the count AND every dependent by kind
-     and view - which tags step 9 copied, every tag that will simply go,
-     every dimension DELETED and every dimension CUT from `dimensionLines`,
-     each with its view - and `goesTotal`, the number Revit's Delete box
-     should show. Any `dimensionsUnread` is said too: those were not
-     checked. Then DELETE_ELEMENTS with expectedCount= that `goesTotal` and
-     expect_from="select-by-parameter-value where matchText=<old family>" from a
-     fresh SELECT_BY_PARAMETER_VALUE of the OLD name, in step 0's categories: never without the expect_from,
-     which deletes whatever is selected in the window. HERON STOPS BEFORE
-     ANYTHING GOES WHEN THE COUNT DIFFERS (DELETE_ELEMENTS version 4, row
-     5b-1990): it tries the whole delete and rolls it back first, and when
-     Revit's own count is not `goesTotal` it deletes NOTHING and refuses, with
-     Revit's list in `refusedWhy` (version 5, row 5b-2060) - by category, and
-     every id beyond the old ones. Then name
-     that list, ask the yes again with Revit's count, and send DELETE_ELEMENTS
-     with expectedCount= that count; never leave expectedCount out to get
-     past the stop. REVIT'S DELETE BOX STILL NAMES HOW MANY IT WILL DELETE:
-     when that number is not the count the yes named, the modeller presses
-     Cancel - nothing is deleted. Then set `deleted`
-     against the list named: anything gone that the question did not name is
-     said at once - Revit's Undo still brings it back. For in-place
-     equipment, run step 3's SELECT_IN_REGION and REPORT_BOUNDING_BOX again:
-     the same walls and pipes, in the same places.
+  STAGE 10 - DELETE THE OLD ONES, LAST, ON THE MODELLER'S YES
+  On the modeller's yes for that one delete, with everything that goes with
+  them named (Constitution 7). 2026-10-15: the first delete of 13 old
+  openings silently took 33 tags and dimensions with them; 2026-11-23 (row 5b-1990), on Revit 2020, 36 were
+  named, the delete took 62 and cut 26 more dimensions - version 1 of the
+  dependencies card never read a dimension outside Revit's own list.
+  1. Read what goes, again, fresh.
+     -> REPORT_ELEMENT_DEPENDENCIES (DRAFT, a read) on the old ones: it runs
+        and says DRAFT, and item 3's count is the check on it.
+  2. Ask the yes, naming everything.
+     -> no Heron tool: the question names the families and the count AND
+        every dependent by kind and view - which tags Stage 9 copied, every
+        tag that will simply go, every dimension DELETED and every dimension
+        CUT from `dimensionLines`, each with its view - and `goesTotal`, the
+        number Revit's Delete box should show. Any `dimensionsUnread` is said
+        too: those were not checked.
+  3. Delete.
+     -> SELECT_BY_PARAMETER_VALUE (PROVEN), fresh, of the OLD name in Stage
+        0's categories; then DELETE_ELEMENTS (PROVEN), expectedCount= that
+        `goesTotal` and expect_from="select-by-parameter-value where
+        matchText=<old family>" - never without the expect_from, which
+        deletes whatever is selected in the window.
+     * HERON STOPS BEFORE ANYTHING GOES WHEN THE COUNT DIFFERS (DELETE_ELEMENTS
+       version 4, row 5b-1990): it tries the whole delete and rolls it back
+       first, and when Revit's own count is not `goesTotal` it deletes
+       NOTHING and refuses, with Revit's list in `refusedWhy` (version 5, row
+       5b-2060) - by category, and every id beyond the old ones. Then name
+       that list, ask the yes again with Revit's count, and send
+       DELETE_ELEMENTS with expectedCount= that count; never leave
+       expectedCount out to get past the stop.
+     * REVIT'S DELETE BOX STILL NAMES HOW MANY IT WILL DELETE: when that
+       number is not the count the yes named, the modeller presses Cancel -
+       nothing is deleted.
+  4. Check what went.
+     -> DELETE_ELEMENTS' own `deleted`, set against the list named: anything
+        gone that the question did not name is said at once - Revit's Undo
+        still brings it back.
+     -> For in-place equipment, Stage 3's SELECT_IN_REGION (PROVEN) and
+        REPORT_BOUNDING_BOX (PROVEN) again: the same walls and pipes, in the
+        same places.
+
+  STAGE 11 - CHECK THE PROJECT, AND SAVE ONLY WHEN ASKED
+  1. Warnings the swap caused.
+     -> READ_MODEL_WARNINGS (PROVEN), as family-creation Stage 12 item 10:
+        grouped by message, with the elements that cause each - a duplicate
+        Mark, an element off its host.
+  2. Save - only when the modeller asks; never Synchronize with Central,
+     which is theirs (Constitution 10).
+     -> SAVE_DOCUMENT (PROVEN, Publish), on the modeller's word, then the
+        file's time checked as family-creation Stage 13's SAVE RULE says -
+        never called saved without it.
+
+
+  4. ALWAYS / NEVER
+
+  Always:
+    * Name the category; never guess it.
+    * Read and keep the old ones' whole record and their dependents before
+      anything changes.
+    * Agree the map in one table before anything is placed.
+    * Place, read back and show ONE before the rest.
+    * Carry and compare by GUID first, then by name.
+    * Delete last, on a yes that names every dependent and dimension by view,
+      with DELETE_ELEMENTS given that count.
+  Never:
+    * Pair parameters by a similar name, or copy Mark in bulk.
+    * Let a new one keep a value nobody chose.
+    * Delete without expect_from, or leave expectedCount out.
+    * Sync with central, or save without being asked.
+    * Call it done before Stage 8's compare reads 0 missing, 0 different and
+      0 not chosen.
+
+
+  5. REPORT TO THE MODELLER
+
+  After each stage, one or two lines: what was completed, what was verified,
+  what remains. The final report names: the old families and count, and the
+  new family and type; how each was placed (type change, placement or copy);
+  Stage 8's compare - missing, different, not chosen; the tags copied and
+  those left to the modeller; every dimension deleted or cut, by view; what
+  the delete took against what was named; the warnings; and whether the
+  project was saved, with its file time. Report COMPLETED only when every
+  check has passed; otherwise PARTIALLY COMPLETED, naming what is left and
+  who does it, or FAILED with the reason.
+
+
+  6. CORE PRINCIPLE
+
+  MODEL -> VERIFY -> REPORT -> CONTINUE. Nothing inherited silently, nothing
+  deleted unnamed, and never take a decision that is the modeller's.
+
+# HOW heron_method SERVES THE PURPOSE ABOVE - a summary first, then one part
+# at a time, as family-creation is served (the owner's choice, 2026-11-28):
+# whole, with its uses, it was over 23,000 characters. Stage N is the old
+# step N. Each entry names the purpose line its part starts at, exactly as
+# written; an entry with no `stage` goes back into the summary.
+# heron_skill.validate refuses a line missing, written twice or out of order.
+stages:
+  - {stage: "0", starts: "STAGE 0 - INFORMATION GATE: FIND THE OLD ONES"}
+  - {stage: "1", starts: "STAGE 1 - READ EVERYTHING THE OLD ONES HOLD, AND WHAT GOES WITH THEM"}
+  - {stage: "2", starts: "STAGE 2 - READ THE NEW TYPE, AND AGREE THE MAP WITH THE MODELLER"}
+  - {stage: "3-5", starts: "STAGES 3 TO 5 - THE NEIGHBOURS, THE LOAD, AND A TYPE CHANGE TRIED FIRST"}
+  - {stage: "6", starts: "STAGE 6 - PLACE ONE NEW ONE PER OLD ONE - ONE FIRST, SHOWN, THEN THE REST"}
+  - {stage: "7", starts: "STAGE 7 - CARRY THE VALUES"}
+  - {stage: "8", starts: "STAGE 8 - VERIFY: READ BACK AND COMPARE, BY GUID FIRST, THEN NAME"}
+  - {stage: "9", starts: "STAGE 9 - THE TAGS"}
+  - {stage: "10", starts: "STAGE 10 - DELETE THE OLD ONES, LAST, ON THE MODELLER'S YES"}
+  - {stage: "11", starts: "STAGE 11 - CHECK THE PROJECT, AND SAVE ONLY WHEN ASKED"}
+  - {starts: "4. ALWAYS / NEVER"}
 
 # The words a modeller says. Skills are not indexed (tools/check-skill-routing.py),
 # so these move no other sentence's answer: they name this job beside a lookup
@@ -310,8 +506,9 @@ purpose: >
 # words they share with the request put it first.
 #
 # THE OWNER'S TWO SENTENCES ARE NOT DECLARED HERE, ON PURPOSE (row 5b-740).
-# "replace these openings with the ABC family at the same place" and "swap
-# this family for that one keeping their data" share replace, swap, family,
+# "replace these openings with the <new> family at the same place" (held as
+# he typed it, his family name and all, by tests/test_brain_reachable.py) and
+# "swap this family for that one keeping their data" share replace, swap, family,
 # place, their and data with the words below already. Declared, "openings",
 # "same" and "this" - which heron_skill._words turns into "thi", a word it
 # does not drop (row 5b-741) - named this method beside 19 to 21 more
@@ -330,12 +527,14 @@ utterances:
 # needs on purpose, and step 7 said nothing provides it, while that card had
 # taken "Name {GUID}" since its version 6 of 2026-10-28 (row 5b-1344).
 #
-# PLACE_FAMILY_ON_FACE AND PLACE_HOSTED_FAMILY ARE NAMED IN STEP 6 AND LEFT OUT
-# HERE, ON PURPOSE (row 5b-740). In `needs`, heron_skill.methods_for named this
-# method beside 16 to 17 more sentences that place one door, window, skylight
-# or face-based family and replace nothing - "place windows in this wall" -
-# because this method's own id says "place". Measured 2026-10-17 on both
-# search backends, main's skills against this file's.
+# PLACE_FAMILY_ON_FACE AND PLACE_HOSTED_FAMILY ARE NAMED IN STAGE 6 AND LEFT
+# OUT HERE, ON PURPOSE (row 5b-740). In `needs`, heron_skill.methods_for named
+# this method beside 16 to 17 more sentences that place one door, window,
+# skylight or face-based family and replace nothing - "place windows in this
+# wall" - because this method's own id says "place". Measured 2026-10-17 on
+# both search backends, main's skills against this file's. READ_MODEL_WARNINGS
+# and SAVE_DOCUMENT, named in Stage 11 (2026-11-28), are left out for the same
+# reason: every warning and save request would be offered this method.
 needs:
   - SELECT_BY_PARAMETER_VALUE
   - FILTER_ELEMENTS_BY_ID
@@ -371,25 +570,33 @@ preconditions:
   - the modeller has said whether the tags are copied by Heron or re-tagged by the modeller
   - one new one has been placed, read back and shown to the modeller before the rest
   - the modeller has said yes to deleting the old families, by name and count with every dependent named and every dimension that will be deleted or cut named by view, for that one delete, and DELETE_ELEMENTS is given that count as expectedCount
+  - a step whose capability is DRAFT - the list of uses served beside this method says which - is refused by revit_change when it CHANGES the model (D-117), and can be tried once behind Keep or Discard (D-119); a DRAFT READ runs and says DRAFT, so confirm what matters another way
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
-  Written 2026-10-12 from a swap done by hand that day on Revit 2020, project
-  4355-BHVD-3D-60P00-BL006A: three in-place
-  TCM_ACU_T002_AirCooledCondensingUnit1..3 : AAAA replaced by
-  ABC_Mechanical Equipment_Split Air Conditioner Outdoor Unit_Wall Mounted.
+  Written 2026-10-12 from a swap done by hand that day on Revit 2020, in one
+  of the owner's real job projects: three in-place air-cooled condensing
+  units replaced by a loadable wall-mounted split outdoor unit family.
   Widened 2026-10-17 (row 5b-740) from a second swap done by hand on
-  2026-10-15 on Revit 2020, project 4355-BHVD-3D-21P60-ST001I: 13 builders-work
-  openings TCM_GEN_CutOut_Rectangular_NEW and TCM_GEN_CutOut_Cirular_NEW,
-  Generic Models hosted on a face of the linked structural model, replaced by
-  ABC_GEN_CutOut_Rectangular_HVAC : 12.5mm Cutout Buffer, level based - by
-  FILTER_ELEMENTS_BY_ID, COPY_ELEMENTS, SET_PARAMETER_VALUES_BY_ID,
-  MOVE_ELEMENTS once per copy, a by-hand compare by GUID, and DELETE_ELEMENTS,
-  because PLACE_FAMILY_INSTANCES stood the new one at the wrong height. Its
-  lessons are in steps 2, 6, 9 and 10. Since the first version, tags are
+  2026-10-15 on Revit 2020, in another of his job projects: 13 builders-work
+  openings, a rectangular and a circular cut-out family, Generic Models
+  hosted on a face of the linked structural model, replaced by a level-based
+  cut-out family with a 12.5 mm Cutout Buffer type - by FILTER_ELEMENTS_BY_ID,
+  COPY_ELEMENTS, SET_PARAMETER_VALUES_BY_ID, MOVE_ELEMENTS once per copy, a
+  by-hand compare by GUID, and DELETE_ELEMENTS, because
+  PLACE_FAMILY_INSTANCES stood the new one at the wrong height. Its lessons
+  are in steps 2, 6, 9 and 10. Since the first version, tags are
   COPY_TAGS_TO_REPLACEMENTS and steps 1 and 8 are REPORT_PARAMETER_INVENTORY,
   and step 7 writes by GUID through SET_PARAMETER_VALUES_BY_ID (row 5b-1981).
-  Neither swap has been watched working
-  through this method, so it stays DRAFT (D-30); its proof plan is Group GC of
-  docs/NEEDS-CHECKING.md, on a NEW project.
+  On 2026-11-28 it was rebuilt on the owner's standard for a Heron job
+  method - stages with a tool on every step, a verify stage, the rules and
+  the report - with Stage N the old step N, a Stage 11 for warnings and a
+  save only when asked, and three statuses corrected from the cards:
+  FILTER_ELEMENTS_BY_ID PROVEN at version 2 (typed ids), MOVE_ELEMENTS DRAFT
+  at version 5, and REPORT_ELEMENT_DEPENDENCIES a DRAFT read at version 3.
+  The family and project names of both swaps were taken out of the method
+  (the owner's rule of 2026-11-28: no office names in a method). Neither
+  swap has been watched working through this method, so it stays DRAFT
+  (D-30); its proof plan is Group GC of docs/NEEDS-CHECKING.md, on a NEW
+  project.
