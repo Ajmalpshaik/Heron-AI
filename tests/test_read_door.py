@@ -351,10 +351,16 @@ def show_door(text, cs, door_refusal):
         check(modifies == "" and unknown == "",
               "and a MODIFY one, or one whose risk cannot be read, is sent "
               "nowhere - %r, %r" % (modifies, unknown))
+    # The list is written by one helper since 2026-11-28, for a whole method
+    # and for each stage of a long one alike, so the sentence is held there
+    # and both answers are held to use it.
     method = body_of(text, "heron_method") or ""
-    check("EXECUTE through revit_show" in method,
-          "heron_method's list of a job's capabilities says EXECUTE runs "
-          "through revit_show")
+    by_stage = body_of(text, "_method_by_stage") or ""
+    listed = body_of(text, "_method_uses") or ""
+    check("EXECUTE through revit_show" in listed
+          and "_method_uses(" in method and "_method_uses(" in by_stage,
+          "heron_method's list of a job's capabilities - whole, or a stage's "
+          "- says EXECUTE runs through revit_show")
 
     disk_doors(text, cs)
 

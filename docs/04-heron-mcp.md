@@ -757,6 +757,18 @@ remembers Heron; a new one does not, so it read them off disk.
 - **`heron_method`** — a READ tool, given to every chat at start (`heron_tools.ALWAYS_LOADED`), that
   hands over one job's whole method: what must be true first, the steps in order, and every capability
   it uses with its risk and status on this Revit. Empty, it lists every job.
+  **A long method comes one stage at a time (2026-11-28, the owner's choice "One stage at a time").**
+  `family-creation`, rebuilt on the owner's family standard, came to about 82,000 characters in one
+  reply - near what a host takes from one tool before it cuts the end off, and the end is the rules and
+  the report. A skill now may declare `stages`: the purpose lines its parts start at, checked by
+  `heron_skill.validate` (`Skill.parts`). Asked with no `stage`, such a method is served a SUMMARY - it
+  says first that it is not the method, then what must be true first, every stage with its id, size and
+  how many capabilities it names, and every line of the method outside its stages (how to read it, the
+  objective, the rules, the report). With `stage` - its id, a number, *"stage 3"*, or a word one heading
+  alone has - it is that stage's whole text and the capabilities it names, each with its status here;
+  anything else is refused with the list. The summary and the stages together hold every line of the
+  purpose (`tests/test_skills.py` §11, `tests/test_mcp_serves.py` §22). A method that declares no
+  stages is served whole, word for word as before.
 - **`heron_lookup` and every `request=` hand-back name the jobs an answer is one step of**
   (`heron_skill.methods_for`): a skill is named only when it NEEDS a capability retrieval returned, and
   the words of the request only order those (D-01). Not for an exact declared phrasing that may run on

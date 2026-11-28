@@ -5189,7 +5189,7 @@ def heron_method(job: str = "", stage: Union[str, int] = "") -> str:
     terminals, a building shell - in the order the steps must happen, what
     must be true first, and each capability it uses with its risk.
 
-    Call it before the first step, when heron_lookup or a hand-back names a
+    Use it before the first step, when heron_lookup or a hand-back names a
     job with a method, or the modeller asks for something plainly more than
     one call. Empty `job` lists every job by id. A long one comes as a
     summary: pass each stage it names as `stage` as it starts. Nothing in
@@ -5256,8 +5256,8 @@ def _method_head(found, preconditions=True):
 def _method_uses(uses, revit, what):
     """The capabilities a method - or one stage of it - uses, one a line,
     and the door each kind runs through."""
-    lines = ["%s%s - READ and ANALYZE run through revit_read, EXECUTE through "
-             "revit_show, the rest through revit_change:"
+    lines = ["%s%s - READ and ANALYZE run through revit_read, "
+             "EXECUTE through revit_show, the rest through revit_change:"
              % (what, " on Revit %s" % revit if revit else "")]
     for s in uses:
         lines.append("  %-32s %-8s %-9s %s"
