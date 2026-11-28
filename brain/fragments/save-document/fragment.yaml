@@ -13,23 +13,36 @@ version: 4
 source: OFFICIAL
 risk: PUBLISH
 
-# VERSION 4 (2026-11-21, still DRAFT) - A CENTRAL MODEL OPENED DIRECTLY IS
+# WHERE THE CARD STANDS (corrected 2026-11-28, row 5b-2085, issue #1510): it is
+# PROVEN, version 4. Its `proof:` block below is dated 2026-11-24, by Ajmal PS,
+# on Revit 2024 (session 26904, model Night Rig 1124), and its positive case
+# saved ANOTHER open document (M_Desk), after the group and on a preview; its
+# negative case was a path no open document has. It does NOT say the family in
+# front on Revit 2020 was saved: NEEDS-CHECKING Group EN's EN14 to EN16 (the
+# FAMILY in front, a never-saved family) have no recorded result in
+# docs/needs-checking/group-en.md, and whether they count as run is the
+# owner's decision. The comments below are the history of how the card got
+# here; where one says DRAFT it describes that day, not the card today.
+#
+# VERSION 4 (2026-11-21, DRAFT that day) - A CENTRAL MODEL OPENED DIRECTLY IS
 # REFUSED AS ANOTHER OPEN DOCUMENT TOO (row 5b-1833, issue #1216). Version 3
 # asked only the model Heron works in whether it is the central model itself,
 # so another open document that was one was saved - the file everybody on the
 # job works from - under a reply that said "local copy only". The run refuses
 # it now, and the add-in's SaveOtherNow asks again before it saves. Its Revit
-# check is NEEDS-CHECKING Group PP. Not run in Revit.
+# check is NEEDS-CHECKING Group PP (PP1), whose text still says not run in Revit.
 #
 # VERSION 3 (2026-11-16) - THE MODEL HERON WORKS IN IS SAVED TOO, BY THE ADD-IN
-# AFTER ITS UNDO ENTRY HAS CLOSED, and back to DRAFT. OPEN-QUESTIONS Q-69,
+# AFTER ITS UNDO ENTRY HAS CLOSED, and back to DRAFT that day. OPEN-QUESTIONS Q-69,
 # answered by Ajmal PS that day in his own words, "go with you suggetions":
 # Shape 2 - save after the group closes, from the add-in, only when the
 # modeller asks; Heron never picks a name. Version 2 was PROVEN on 2026-10-07
 # (the proof block below, kept as the record of what it proved - the save of
 # ANOTHER open document, and the refusal of the one Heron works in, which
-# version 3 now saves); its C# moved, so it is DRAFT again until NEEDS-CHECKING
-# Group EN is run (D-30, D-117). Rows 5b-365 and 5b-513. Three new inputs:
+# version 3 now saves); its C# moved, so it was DRAFT again that day, to be
+# proved by NEEDS-CHECKING Group EN (D-30, D-117) - since proved by the
+# 2026-11-24 block below, on another open document. Rows 5b-365 and 5b-513.
+# Three new inputs:
 # `saveAsPath`, `replaceFile`, and the ambient `saveWhenKept`; `documentPath`
 # may now be left out, for a Save As. Recorded as D-171. A PREVIEW SAVES TOO:
 # asked whether a preview of "save my model" should really save, the owner
@@ -184,12 +197,21 @@ contract:
 # was never run in Revit, and could not have saved (row 5b-365). The proof
 # below is version 2's, kept as its record: its negative case - the document
 # Heron works in, refused - is the case version 3 now saves, after the group.
-# Version 3 is proved by NEEDS-CHECKING Group EN EN6 to EN10, and EN11 and
-# EN12 for another document's save after the group (row 5b-1824), and EN14 to
-# EN16 for the FAMILY in front (issue #1028, 2026-11-21 - the case a chat once
-# worked round with an empty "save-helper" family), as previews on scratch
-# models - a preview saves too (D-171) - and its save after a Keep is looked
-# at once it is PROVEN, since D-117 refuses a DRAFT kept for real.
+# Version 3 was to be proved by NEEDS-CHECKING Group EN EN6 to EN10, and EN11
+# and EN12 for another document's save after the group (row 5b-1824), and
+# EN14 to EN16 for the FAMILY in front (issue #1028, 2026-11-21 - the case a
+# chat once worked round with an empty "save-helper" family), as previews on
+# scratch models - a preview saves too (D-171).
+#
+# WHAT THE PROOF BELOW COVERS (2026-11-24, Revit 2024): the save of ANOTHER
+# open document on a preview, and the refusal of a path no open document has.
+# WHAT IT DOES NOT: EN14 to EN16 - the family in front, saved to its own file,
+# and a never-saved family saved as a typed path (Revit 2020 first) - have no
+# recorded result. One run on 2026-11-28, Revit 2020, saved the family in front
+# (run wf-20261128-061624-0046-88af); it was one run with no negative case and
+# was not written against EN14's values, so it is an observation, not a proof.
+# Whether Group EN is recorded as run, EN14 to EN16 with it, is the owner's
+# decision (row 5b-2085); nothing here changes that group.
 
 proof:
   date: '2026-11-24'
