@@ -147,7 +147,7 @@ Claude Code installs Node packages for a plugin, **never Python**; the documente
 | Question | Recommended |
 |---|---|
 | Build Heron's chat side as a Claude Code plugin, as above? | **Yes** - in small pull requests: build script, release branch, Setup's tick, then the PC checks |
-| | **Answered 2026-11-28: yes.** Asked *"Should I start building the plugin now (items 2 to 5), in small pull requests? Type yes, or say not now."*, he typed *"Yes, start it"* in his local session - [D-210](../../decisions/D-210.md), **Proposed** until he confirms it where it can be read (D-206) |
+| | **Answered 2026-11-28: yes.** Asked *"Should I start building the plugin now (items 2 to 5), in small pull requests? Type yes, or say not now."*, he typed *"Yes, start it"* in his local session, and confirmed it in a claude.ai session the same day - [D-210](../../decisions/D-210.md), **Accepted** |
 | Publish it from a `plugin-release` branch of this repository, or a second repository? | **A branch of this one** - one place, one release workflow |
 | | **Answered 2026-11-28: a branch of this one.** Asked *"Where should Heron's finished plugin be published, so modellers' Claude Code can download and update it?"*, he chose *"Branch of Heron (Recommended)"* over *"A second repo"* in his local session - [D-212](../../decisions/D-212.md), **Proposed** until he confirms it where it can be read (D-206) |
 | Auto-update on for modellers? | **On** - a version only moves when a release is published, so it is the same as running a new Setup |
@@ -165,7 +165,7 @@ the `plugins` pages, `skills` and `permissions`. Part 1 was built and validated 
 | Server instructions, and each always-loaded tool's description | cut at **4,096** characters | the words past it never reach the AI |
 | A deferred tool's description | cut at **16,384** characters | |
 | A text result | over **50,000** characters it is saved to a file | `_meta["anthropic/maxResultSizeChars"]` raises it, ceiling **500,000** |
-| A call still running at **120 s** | becomes a background task (`CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS`) | Heron's wait for a fragment run, Revit's Keep or Discard included, is at least **180 s** - `FRAGMENT_FLOOR_S` in [`heron_config.py`](../../../mcp/client/heron_config.py) is a floor, `max()`ed with the configured wait - so a change waiting on the modeller can pass 120 s - [Group EJ](../../needs-checking/group-ej.md) check **EJ4**, issue [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968), is the PC check |
+| A call still running at **120 s** | becomes a background task (`CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS`) | Heron waits at least **180 s** for a fragment run, Revit's Keep or Discard included (`FRAGMENT_FLOOR_S` in [`heron_config.py`](../../../mcp/client/heron_config.py) is a floor, `max()`ed with the configured wait), so a change waiting on the modeller can pass 120 s. Check **EJ4** of [Group EJ](../../needs-checking/group-ej.md), issue [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968), is the PC check |
 
 ### Two servers with one name
 
@@ -201,12 +201,14 @@ Claude Code installs each version of a plugin into a **new** folder. Read in the
 | The search index - `library_digest()` in [`heron_search.py`](../../../brain/heron_search.py) | the cards' names and bytes; the folder is only recorded (`search_root`) | same cards in a new folder: no rebuild. Two versions at once rebuild it back and forth | the same row |
 | `developer-checkout.json` - `steps_aside_for()` in [`heron_scope.py`](../../../brain/heron_scope.py) | the developer's checkout the note names | **does not break**: a plugin folder has no `.git`, so on the owner's PC it steps aside whatever its folder; a modeller's PC has no note | - |
 | The runner note `runner.json` - [`heron_commands.py`](../../../brain/heron_commands.py), read by `RunnerStart` in [`HeronCommandStore.cs`](../../../revit/Heron.Revit.Addin/HeronCommandStore.cs) | the folder of the chat that **started last** | **breaks**: after an update Revit's saved commands run the old version's runner until a chat on the new one starts, and a chat on the old version writes it back | [row 5b-2083](../../fragment-issues/row-5b-2083.md), [#1505](https://github.com/Ajmalpshaik/Heron-AI/issues/1505) |
-| `_repo_root()` in [`heron_mcp_server.py`](../../../mcp/server/heron_mcp_server.py) | the server's own file | **does not break**: each version serves its own folder, which is the point - a chat's code never changes under it. `heron_version`'s line that the server was started outside its folder shows for every plugin chat, as it already does for Setup's user-scope entry | - |
+| `_repo_root()` in [`heron_mcp_server.py`](../../../mcp/server/heron_mcp_server.py) | the server's own file | **does not break**: each version serves its own folder, which is the point - a chat's code never changes under it. `heron_version` told every plugin chat, as it told every Setup chat, that the server was started outside its folder and that git did not answer - fixed the same day: an installed Heron is said to be one | [row 5b-2091](../../fragment-issues/row-5b-2091.md), [#1526](https://github.com/Ajmalpshaik/Heron-AI/issues/1526) |
 | Group EU's guard - [`heron_running_code.py`](../../../mcp/server/heron_running_code.py) | the files the running server loaded | **does not break**: an update writes a new folder, so a running chat's files never change and the guard has nothing to catch. What it says if Claude Code deletes an older folder under a running chat is **not checked** (section 8, check 5) | - |
 
-Found the same day, not keyed on a folder: the server's advice for a store that needs a rebuild names
-`python tools/heron-ready.py`, and the plugin carries no `tools/` - [row 5b-2084](../../fragment-issues/row-5b-2084.md),
-[#1506](https://github.com/Ajmalpshaik/Heron-AI/issues/1506).
+Found the same day, not keyed on a folder: the server's advice for a store that needs a rebuild named
+`python tools/heron-ready.py`, and the plugin carries no `tools/`; `heron_diagnose` and `heron_compatibility` named
+two tools neither installed Heron carries - [row 5b-2084](../../fragment-issues/row-5b-2084.md),
+[#1506](https://github.com/Ajmalpshaik/Heron-AI/issues/1506), **fixed the same day**: an answer names a `tools/`
+command only where that copy of Heron carries it (`shipped_tool()` in `heron_brain.py`).
 
 ### What part 1 built - and did not
 
@@ -221,7 +223,8 @@ Found the same day, not keyed on a folder: the server's advice for a store that 
   repository's `.mcp.json` - every file that starts the server does, and `tests/test_config_and_health.py` holds
   them equal - and the build refuses one that differs. So the client id is **today's value until
   [Q-100](../../open-questions/tier-3.md) ([#1488](https://github.com/Ajmalpshaik/Heron-AI/issues/1488)) is
-  answered**, and Q-100's list of where it lives gains this file.
+  answered**; Q-100's list of what changes with the id names this file
+  ([#1518](https://github.com/Ajmalpshaik/Heron-AI/pull/1518)).
 - `agents/heron-model-auditor.md`, from `.claude/agents`, with its tools in the plugin form and its links re-aimed.
 - README, LICENSE and NOTICE are the repository's own, from the same list - a README of the template's own would
   replace the page the install guide's links open.
@@ -334,9 +337,9 @@ leaves Heron's data alone - [Group RG](../../needs-checking/group-rg.md), issue
 
 ## Sources
 
-The Claude Code documentation read 2026-11-28 is named in section 10. The plugin documentation, read 2026-11-27: plugins - manifest reference, create a
-marketplace, marketplace reference, install, loading, dependencies, and hooks, at
-`code.claude.com/docs/en/`. Where it is silent - Python on Windows, a hook finishing before a server
+The Claude Code documentation read on 2026-11-28 is named in section 10. The plugin documentation read on
+2026-11-27: plugins - manifest reference, create a marketplace, marketplace reference, install, loading,
+dependencies, and hooks, at `code.claude.com/docs/en/`. Where it is silent - Python on Windows, a hook finishing before a server
 starts, running a Windows installer - this note says **to confirm** or **a PC check**.
 
 ---

@@ -137,6 +137,26 @@ def main():
           "and never the old sentence that named no folder and no command")
 
     print()
+    print("2b. The same, from a Heron with no tools/ - the Claude Code plugin (row 5b-2084)")
+    was = getattr(BRAIN, "shipped_tool", None)
+    check(was is not None, "heron_brain has one rule for naming a tool")
+    # Planted whether or not the rule exists, so the two checks below run - and
+    # FAIL - on the code before it (heron-ship 2a).
+    BRAIN.shipped_tool = lambda name: None
+    try:
+        text = said(BRAIN, Scope())
+    finally:
+        if was is None:
+            del BRAIN.shipped_tool
+        else:
+            BRAIN.shipped_tool = was
+    whole = os.path.join(BRAIN.ROOT, "brain", "heron_scope.py")
+    check("heron-ready" not in text and "tools/" not in text,
+          "it names no tool the plugin does not carry: %r" % text[-160:])
+    check(('"%s" --rebuild' % whole) in text,
+          "and gives the rebuild that IS there, by its whole path")
+
+    print()
     print("3. The main Heron folder on a branch")
     text = said(BRAIN, Scope(refusal="on a branch", on_main=False))
     check("git checkout main" in text and "HERON_KNOWLEDGE" in text,

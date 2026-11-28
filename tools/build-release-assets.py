@@ -268,6 +268,11 @@ def pack(product, release, out_dir):
 # The first cut errs WIDE on purpose: docs/ is 5.8 MB and the AI reads it.
 # Shipping more than needed is recoverable; shipping less is a user whose
 # question has no answer on their disk.
+#
+# THE CLAUDE CODE PLUGIN SHIPS THIS LIST TOO (D-210). tools/build-plugin.py
+# copies the same entries through workspace_files() below, leaving out those
+# under revit/, platform/, tests/, tools/ and .claude/, so an entry added here
+# reaches both packages, and tests/test_build_plugin.py says if one is missing.
 WORKSPACE_KEEP = [
     "brain",                        # fragments, skills, agents - the knowledge
     "mcp",                          # the server .mcp.json starts

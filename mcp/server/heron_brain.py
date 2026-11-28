@@ -807,6 +807,19 @@ def _store_drift(store, walked=None):
             % ("; ".join(parts), _drift_remedy(SCOPE, missing, extra)))
 
 
+def shipped_tool(name):
+    """`python tools/<name>` when this copy of Heron carries that tool, or None.
+
+    WHAT A MODELLER IS TOLD TO RUN MUST BE ON THEIR DISK (row 5b-2084). The
+    Claude Code plugin carries no `tools/` folder, and heron-project.zip only
+    the few its installers drive (WORKSPACE_KEEP in
+    tools/build-release-assets.py) - so an answer names a tool only where this
+    returns one, and says something true where it does not.
+    """
+    return ("python tools/%s" % name
+            if os.path.isfile(os.path.join(ROOT, "tools", name)) else None)
+
+
 #: The way out that is always open, said wherever this checkout's own cards
 #: are wanted and the shared store may not be built from them (row 5b-1711).
 OWN_STORE = ("to look this checkout's own cards up instead, set HERON_KNOWLEDGE to "
@@ -854,8 +867,15 @@ def _drift_remedy(SCOPE, missing, extra):
         return ("a rebuild is needed: python brain/heron_scope.py --rebuild with "
                 "HERON_KNOWLEDGE=%s - it is this checkout's own store" % base)
     if here:
-        return ("run python tools/heron-ready.py in this Heron folder - it rebuilds the "
-                "store (python brain/heron_scope.py --rebuild does the same) - then ask again")
+        ready = shipped_tool("heron-ready.py")
+        if ready:
+            return ("run %s in this Heron folder - it rebuilds the store (python "
+                    "brain/heron_scope.py --rebuild does the same) - then ask again" % ready)
+        # NO tools/ HERE - the Claude Code plugin carries none (row 5b-2084), and
+        # its folder is Claude Code's own, which a modeller never opens. So the
+        # command is the one this copy does carry, by its whole path.
+        return ('run python "%s" --rebuild - it rebuilds the store - then ask again'
+                % os.path.join(ROOT, "brain", "heron_scope.py"))
     if source is None:
         return ("this is a worktree whose main Heron folder cannot be found, so the store "
                 "every chat on this PC shares cannot follow it; %s" % OWN_STORE)

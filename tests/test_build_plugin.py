@@ -28,8 +28,9 @@ WHAT THIS PROVES
     README.md (40 words or more), LICENSE and NOTICE are there
     check-products.py passes the build, fails one whose version differs, and
       fails a template that types a version of its own
-    the build refuses a template with a version, an agent linking something
-      the plugin does not carry, and a folder in its place it did not write
+    the build refuses a template with a version, a template whose client id
+      is not the repository's, an agent linking something the plugin does not
+      carry, and a folder in its place it did not write
     the longest path, under Claude Code's cache folder for a 20-character
       Windows user name, stays under Windows' 260-character limit - PRINTED
     one skill per job heron_method lists and none for a job it does not -

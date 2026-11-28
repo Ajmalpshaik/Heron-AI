@@ -930,10 +930,37 @@ def exercise_served_from(module):
           "and the commit is the one git reads there, or 'not read' - never a guess")
     check(not any("NOT that folder" in line for line in lines),
           "started in that folder, nothing is said about another")
-    elsewhere = said(started_in=tempfile.gettempdir())
-    check(any("NOT that folder" in line and tempfile.gettempdir() in line
-              for line in elsewhere),
-          "started in another folder, it says so and names both")
+    # ROW 5b-2091: a folder that holds no Heron - a modeller's project folder,
+    # where Setup's entry and the plugin start the server - is not "another
+    # folder" to warn about; another Heron folder is.
+    plain = tempfile.mkdtemp(prefix="heron-served-plain-")
+    other = tempfile.mkdtemp(prefix="heron-served-other-")
+    try:
+        os.makedirs(os.path.join(other, "brain", "fragments"))
+        entry = os.path.basename(module.tools.server_files()[-1])
+        os.makedirs(os.path.join(other, "mcp", "server"))
+        io.open(os.path.join(other, "mcp", "server", entry), "w", encoding="utf-8").close()
+        os.makedirs(os.path.join(other, "docs"))
+        check(not any("NOT that folder" in line for line in said(started_in=plain)),
+              "started in a folder that holds no Heron - a modeller's own - nothing is "
+              "said about another folder")
+        elsewhere = said(started_in=os.path.join(other, "docs"))
+        check(any("NOT that folder" in line and os.path.join(other, "docs") in line
+                  for line in elsewhere),
+              "started inside another Heron folder, it says so and names both")
+        was = module._repo_root
+        module._repo_root = lambda: other
+        try:
+            installed = said(started_in=other)
+        finally:
+            module._repo_root = was
+        check(installed and "an installed Heron, not a git checkout" in installed[0]
+              and not any("git did not answer" in line for line in installed),
+              "a Heron with no .git is said to be an installed one, not a git that failed: %r"
+              % (installed[:1],))
+    finally:
+        shutil.rmtree(plain, ignore_errors=True)
+        shutil.rmtree(other, ignore_errors=True)
     check(any("not seen here" in line for line in lines),
           "and it says a folder the session moved to later is not seen by the server")
     check("_served_from()" in module.tools.server_text(),

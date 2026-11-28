@@ -814,6 +814,21 @@ def _git_said(folder, *args):
     return said if done.returncode == 0 and said else None
 
 
+def _heron_folder_holding(path):
+    """The Heron folder `path` is in - one holding the card library and this
+    server's own entry file - or None for a folder with no Heron above it."""
+    here = os.path.normpath(os.path.abspath(path))
+    while True:
+        if (os.path.isdir(os.path.join(here, "brain", "fragments"))
+                and os.path.isfile(os.path.join(here, "mcp", "server",
+                                                os.path.basename(__file__)))):
+            return here
+        parent = os.path.dirname(here)
+        if parent == here:
+            return None
+        here = parent
+
+
 def _served_from(started_in=None):
     """
     The lines heron_version says about the code this server runs (row 5b-1156):
@@ -829,17 +844,30 @@ def _served_from(started_in=None):
     whose code it runs. A folder the session moved to after the start is not
     visible to the server, and the last line says so rather than imply it is.
     Developer-facing: a modeller's chat opens in one folder and stays there.
+
+    AN INSTALLED HERON IS SAID TO BE ONE, AND A MODELLER'S OWN FOLDER IS NOT
+    ANOTHER HERON (row 5b-2091). Setup's user-scope entry and the Claude Code
+    plugin both start the server by its whole path, in the folder the modeller
+    opened - a project folder that holds no Heron - and neither installed copy
+    has a `.git`. So "git did not answer" and "NOT that folder" were said to
+    every modeller, as faults, about nothing. The second line is now said only
+    where the folder it was started in is inside a Heron folder of its own:
+    the developer's case it was written for.
     """
     folder = os.path.normpath(_repo_root())
-    branch = _git_said(folder, "rev-parse", "--abbrev-ref", "HEAD")
-    commit = _git_said(folder, "rev-parse", "--short=12", "HEAD")
-    lines = ["Served from %s - branch %s, commit %s." % (
-        folder, branch or "not read", commit or "not read")]
-    if branch is None and commit is None:
-        lines.append("  git did not answer there, so which code this is could not be read.")
+    if not os.path.exists(os.path.join(folder, ".git")):
+        lines = ["Served from %s - an installed Heron, not a git checkout, so it has "
+                 "no branch or commit; its version is the one above." % folder]
+    else:
+        branch = _git_said(folder, "rev-parse", "--abbrev-ref", "HEAD")
+        commit = _git_said(folder, "rev-parse", "--short=12", "HEAD")
+        lines = ["Served from %s - branch %s, commit %s." % (
+            folder, branch or "not read", commit or "not read")]
+        if branch is None and commit is None:
+            lines.append("  git did not answer there, so which code this is could not be read.")
     started_in = os.path.normpath(os.path.abspath(started_in or os.getcwd()))
     inside = started_in == folder or started_in.startswith(folder + os.sep)
-    if not inside:
+    if not inside and _heron_folder_holding(started_in) is not None:
         lines.append("  This server was started in %s, which is NOT that folder: its cards, "
                      "proofs and code are the folder above's, not the one it was started in."
                      % started_in)
@@ -6819,10 +6847,15 @@ def heron_compatibility(release: str = "") -> str:
              % (found["fragments"], len(found["releases"])), ""]
 
     if not found["has_compile_evidence"]:
+        # Named only where this copy carries it (row 5b-2084): an installed
+        # Heron - Setup's or the Claude Code plugin - has no tools/ to run.
+        compile_check = brain.shipped_tool("check-fragments-compile.py")
         lines.append("NOTHING HAS BEEN CHECKED ON THIS MACHINE. Every number "
-                     "below is what the tools claim about themselves. Run "
-                     "tools/check-fragments-compile.py to turn the claims into "
-                     "something measured.")
+                     "below is what the tools claim about themselves. "
+                     + ("Run %s to turn the claims into something measured."
+                        % compile_check if compile_check else
+                        "That check is made where Heron is built, with a .NET SDK; "
+                        "it is not part of an installed Heron."))
         lines.append("")
 
     for row in rows:
