@@ -88,8 +88,12 @@ purpose: >
      the family in front as NEVER SAVED and the build is large, ask the
      modeller once to save it (Ctrl+S) before the first write - closed with
      no file it is lost. SAVE_DOCUMENT version 3 saves the family in front in
-     ONE call once its change is kept (D-171), but it is DRAFT until
-     NEEDS-CHECKING Group EN is run, so until then the modeller saves it.
+     ONE call once its change is kept (D-171). Its card is PROVEN (version 4,
+     proof dated 2026-11-24, Revit 2024 - the card's proof block; that run saved
+     another open document), so this is the way to save the family; a save is
+     still checked, never trusted (REPORT_OPEN_DOCUMENTS' fileTimes), and the
+     modeller saves with Ctrl+S only if the save is refused or the add-in is
+     older than version 3.
      NEVER MAKE A HELPER MODEL TO SAVE FROM: an empty "save-helper" family
      made, activated and pinned so SAVE_DOCUMENT could save the real one as
      "another document" cost five calls a save and an extra model on the
@@ -420,10 +424,12 @@ purpose: >
       f. SAVE_DOCUMENT aimed at the host, documentPath the part's file,
          closeWindow=true - saved, its window closed. LOAD_FAMILY refuses a
          part still open with unsaved work: a load reads the file.
-         SAVE_DOCUMENT is DRAFT again since version 3 (2026-11-16, Q-69), so a
-         kept change from it is refused (D-117): until its status in the list
-         served after this method says PROVEN, the modeller saves the part with
-         Ctrl+S in its window and closes it, and REPORT_OPEN_DOCUMENTS confirms.
+         SAVE_DOCUMENT is PROVEN (version 4, proof dated 2026-11-24 on the
+         card), so a kept change from it runs; read its status in the list
+         served after this method before relying on it. If it is refused, or
+         the add-in is older than version 3, the modeller saves the part with
+         Ctrl+S in its window and closes it. REPORT_OPEN_DOCUMENTS confirms
+         either way.
       g. LOAD_FAMILY into the host, PLACE_FAMILY_INSTANCES at each point, then
          count the host's elements of that category against the number
          placed - a stray copy is found by the count (row 5b-350).
@@ -524,13 +530,13 @@ purpose: >
   The family is saved by the modeller (Ctrl+S): Revit will not save the
   document open in its window while Heron holds it. A nested part made in
   step 11 is the exception - SAVE_DOCUMENT saves it while Heron works in the
-  host, once it is PROVEN again (step f). A big build in a family that has
+  host (step f; the card is PROVEN, version 4, 2026-11-24). A big build in a family that has
   never been saved is saved FIRST, as step 0 asks, never only at the end:
   closed with no file, it is lost with every form in it. Q-69 was answered
-  on 2026-11-16 and SAVE_DOCUMENT version 3 can save the family Heron works
-  in once a change is kept - but it is DRAFT, so until it is proved the
-  modeller saves it, and no helper model is ever made to save it from
-  (issue #1028). Every save the modeller makes is checked
+  on 2026-11-16 and SAVE_DOCUMENT (card PROVEN, version 4, proof dated
+  2026-11-24) can save the family Heron works in once a change is kept, so
+  the modeller's Ctrl+S is the fallback when it is refused, and no helper
+  model is ever made to save it from (issue #1028). Every save the modeller makes is checked
   as step 0 checks it - REPORT_OPEN_DOCUMENTS' `fileTimes` and
   `staleFileCount` - never taken from "I pressed Ctrl+S".
 
