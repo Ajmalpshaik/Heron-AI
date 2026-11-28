@@ -437,47 +437,69 @@ def workspace(out_dir, installers_dir=None):
             for name in sorted(os.listdir(installers_dir)):
                 zf.write(os.path.join(installers_dir, name), name)
 
-        for keep in WORKSPACE_KEEP:
-            full = os.path.join(ROOT, keep)
-
-            if os.path.isfile(full):
-                zf.write(full, keep)
-                continue
-
-            if not os.path.isdir(full):
-                # SAID, NEVER SKIPPED IN SILENCE. A folder that was renamed and
-                # not renamed here would otherwise ship a workspace missing the
-                # brain, and the first anybody knew would be a Connect button
-                # that still answers nothing.
-                raise IOError(
-                    "R-51 says the download carries the brain, and '%s' is not "
-                    "in this repository. Either it moved and WORKSPACE_KEEP did "
-                    "not, or it was deleted. Publishing without it would ship a "
-                    "workspace that cannot answer anything." % keep)
-
-            for base, dirs, files in os.walk(full):
-                dirs[:] = [d for d in dirs if d not in WORKSPACE_NEVER]
-                for name in sorted(files):
-                    if name.endswith(".pyc"):
-                        continue
-                    one = os.path.join(base, name)
-                    if name.lower().endswith(STORE_SHAPES):
-                        raise IOError(
-                            "R-87: %s is shaped like a knowledge store, and no "
-                            "store is ever shipped with Heron - it can hold a "
-                            "client's documents and a standard bought per "
-                            "seat (D-186). Move it out of the checkout and "
-                            "build again. Nothing was published."
-                            % os.path.relpath(one, ROOT))
-                    if name.lower().endswith(DOCUMENT_SHAPES):
-                        raise IOError(
-                            "D-186: %s is a document, and no standard or "
-                            "client document is ever bundled with Heron. Move "
-                            "it out of the checkout and build again. Nothing "
-                            "was published." % os.path.relpath(one, ROOT))
-                    zf.write(one, os.path.relpath(one, ROOT))
+        for one, rel in workspace_files():
+            zf.write(one, rel)
 
     return path
+
+
+def workspace_files(keep=None):
+    """
+    Every (file on disk, path inside the download) the workspace carries, in
+    the order it is packed - `keep` entries of WORKSPACE_KEEP, all of them by
+    default.
+
+    ONE WALK, TWO PACKAGES. heron-project.zip packs these, and
+    tools/build-plugin.py copies the same walk into the Claude Code plugin
+    folder (docs/work-notes/plans/claude-code-plugin-2026-11-27.md section 3),
+    so the list, WORKSPACE_NEVER and the two refusals below cannot drift
+    between them. Read as module globals at the call, so a suite that plants
+    ROOT or WORKSPACE_KEEP is obeyed.
+
+    Raises IOError, naming the file, for an entry that is not there (R-51), a
+    file shaped like a knowledge store (R-87) or a document (D-186). Nothing
+    has been written anywhere when it raises before the first file; a caller
+    that writes as it goes stops where it is, and says nothing was published.
+    """
+    for entry in (WORKSPACE_KEEP if keep is None else keep):
+        full = os.path.join(ROOT, entry)
+
+        if os.path.isfile(full):
+            yield full, entry
+            continue
+
+        if not os.path.isdir(full):
+            # SAID, NEVER SKIPPED IN SILENCE. A folder that was renamed and
+            # not renamed here would otherwise ship a workspace missing the
+            # brain, and the first anybody knew would be a Connect button
+            # that still answers nothing.
+            raise IOError(
+                "R-51 says the download carries the brain, and '%s' is not "
+                "in this repository. Either it moved and WORKSPACE_KEEP did "
+                "not, or it was deleted. Publishing without it would ship a "
+                "workspace that cannot answer anything." % entry)
+
+        for base, dirs, files in os.walk(full):
+            dirs[:] = [d for d in dirs if d not in WORKSPACE_NEVER]
+            for name in sorted(files):
+                if name.endswith(".pyc"):
+                    continue
+                one = os.path.join(base, name)
+                if name.lower().endswith(STORE_SHAPES):
+                    raise IOError(
+                        "R-87: %s is shaped like a knowledge store, and no "
+                        "store is ever shipped with Heron - it can hold a "
+                        "client's documents and a standard bought per "
+                        "seat (D-186). Move it out of the checkout and "
+                        "build again. Nothing was published."
+                        % os.path.relpath(one, ROOT))
+                if name.lower().endswith(DOCUMENT_SHAPES):
+                    raise IOError(
+                        "D-186: %s is a document, and no standard or "
+                        "client document is ever bundled with Heron. Move "
+                        "it out of the checkout and build again. Nothing "
+                        "was published." % os.path.relpath(one, ROOT))
+                yield one, os.path.relpath(one, ROOT)
 
 
 def checksums(out_dir):

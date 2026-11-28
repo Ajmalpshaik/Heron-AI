@@ -198,6 +198,10 @@ to the engine is [`ClaudeCodeEntry.cs`](Heron.Installer/ClaudeCodeEntry.cs) - He
 Code's user settings - and the two flags in [`Arguments.cs`](Heron.Installer.Cli/Arguments.cs). Its runs are
 [Group OA](../docs/needs-checking/group-oa.md). [Its own README](Heron.Setup/README.md).
 
+### `Heron.Plugin` — the template of Heron's Claude Code plugin, BUILT 2026-11-28, published nowhere
+
+**Two files, and not a C# project**: [`.claude-plugin/plugin.json`](Heron.Plugin/.claude-plugin/plugin.json) and [`.mcp.json`](Heron.Plugin/.mcp.json). [`tools/build-plugin.py`](../tools/build-plugin.py) copies them into `dist/heron-plugin/` beside the files `heron-project.zip` ships ([D-210](../docs/decisions/D-210.md)). **`plugin.json` carries no version** - the build writes [`heron-products.json`](heron-products.json)'s `manifestVersion`, and [`check-products.py`](../tools/check-products.py) fails a template that types one. `.mcp.json` pins the same client id as the repository's own [`.mcp.json`](../.mcp.json), as every file that starts the server does (`tests/test_config_and_health.py` holds them equal), and the build refuses one that differs - today's value until [Q-100](../docs/open-questions/tier-3.md) is answered. The plugin's README, LICENSE and NOTICE are the repository's own, from the same workspace list. Nothing from `platform/` itself goes into the plugin. [The design](../docs/work-notes/plans/claude-code-plugin-2026-11-27.md).
+
 ### `policy` — BUILT 2026-11-17, NOT RUN on a domain
 
 **Group Policy templates for an office's IT** - [`Heron.admx`](policy/Heron.admx) and
