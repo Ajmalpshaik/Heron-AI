@@ -80,8 +80,8 @@ accepted — what will change, how many elements, what will be skipped. A change
 shown in Revit, which asks Keep or Discard ([D-126](docs/DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept)).
 Nothing is kept until they choose Keep; Discard, Esc or closing it rolls it back. **The one
 recorded exception is the *Ask to Keep* switch on the ribbon, off by default** ([D-99](docs/DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so)): off, the
-change is kept at once as one named undo entry, and its answer says what it did. On, the box's third
-link keeps that chat's next changes to that model unasked until ten quiet minutes pass
+change is kept at once as one named undo entry, and its answer says what it did. On, the box's
+third link keeps that chat's next changes to that model unasked until ten quiet minutes pass
 ([D-138](docs/DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)); a publish and a DRAFT's one run are still asked.
 *(Golden Rule 17)*
 
