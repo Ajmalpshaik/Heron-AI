@@ -1,0 +1,165 @@
+name: Plugin release
+
+# WHAT THIS IS FOR.
+#
+# Heron's chat side is a Claude Code plugin (D-210). A modeller's Claude Code
+# reads the marketplace from .claude-plugin/marketplace.json on `main`, and
+# that file sends it to the `plugin-release` branch of this repository for the
+# plugin itself (D-212). THIS WORKFLOW IS THE ONLY THING THAT WRITES THAT
+# BRANCH: when a Heron release is published, it builds the plugin from the
+# release's commit and adds ONE commit to the branch, named with the version.
+# Never a force-push.
+#
+# IT HOLDS NO RULE ITSELF. tools/build-plugin.py builds the folder;
+# tools/publish-plugin.py owns every rule about the branch and the marketplace
+# - the orphan, the one parent, the tag that must be `v` + the version, the
+# version that must be new, and the push with no `+`. A rule written in YAML is
+# a rule no test can reach (release.yml says the same), and
+# tests/test_plugin_marketplace.py runs those rules on a throwaway repository.
+#
+# THIS IS NOT THE GATES FILE, and it adds no gate. brain/heron_qa.py reads
+# .github/workflows/gates.yml, not this.
+
+on:
+  # PUBLISHED, NOT TAGGED. release.yml makes a DRAFT on a `v*` tag, and a
+  # draft is the owner's to publish. Setup fetches from the newest PUBLISHED
+  # release, so the plugin moves on the same event: the moment a release
+  # becomes one a modeller can install. A release published by a workflow's
+  # own GITHUB_TOKEN would not start this; one published by a person does.
+  release:
+    types: [published]
+
+  # A REHEARSAL on a pull request that touches what goes into the plugin, or
+  # by hand. It builds, validates and makes the commit, and sends nothing.
+  pull_request:
+    paths:
+      - '.claude-plugin/**'
+      - 'platform/Heron.Plugin/**'
+      - 'platform/heron-products.json'
+      - 'tools/build-plugin.py'
+      - 'tools/publish-plugin.py'
+      - 'tools/build-release-assets.py'
+      - '.claude/agents/heron-model-auditor.md'
+      - '.github/workflows/plugin-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # The Claude Code that validates the plugin, pinned so a run means the same
+  # thing tomorrow. 2.1.332 is the release part 1 and part 8 were checked on.
+  CLAUDE_CODE_CLI: '@anthropic-ai/claude-code@2.1.332'
+
+jobs:
+  rehearse:
+    name: Build the plugin, validate it, make its commit - send nothing
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      # THE CLI, NOT A COPY OF ITS RULES. `claude plugin validate` needs no
+      # sign-in; installed into a folder of its own, not globally.
+      - name: Install the Claude Code command line
+        run: |
+          npm install --prefix "$RUNNER_TEMP/claude-cli" --no-audit --no-fund "$CLAUDE_CODE_CLI"
+          echo "$RUNNER_TEMP/claude-cli/node_modules/.bin" >> "$GITHUB_PATH"
+
+      - name: The marketplace names the plugin and the branch
+        run: python tools/publish-plugin.py --check
+
+      - name: Build the plugin
+        run: python tools/build-plugin.py --out "$RUNNER_TEMP/build"
+
+      - name: The built plugin carries heron-products.json's version
+        run: python tools/check-products.py --plugin "$RUNNER_TEMP/build/heron-plugin"
+
+      - name: Lay out the branch, and a marketplace pointing at it
+        run: python tools/publish-plugin.py --plugin "$RUNNER_TEMP/build/heron-plugin" --stage "$RUNNER_TEMP/stage"
+
+      - name: Validate the marketplace, the rehearsal marketplace and the branch
+        run: |
+          claude --version
+          claude plugin validate --strict .
+          claude plugin validate --strict "$RUNNER_TEMP/stage"
+          claude plugin validate --strict "$RUNNER_TEMP/stage/plugin-release"
+
+      # Reads plugin-release from the remote if it is there, and makes the
+      # commit a release would make on top of it. Nothing is pushed.
+      - name: Make the release's commit, and send nothing
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: python tools/publish-plugin.py --plugin "$RUNNER_TEMP/build/heron-plugin"
+
+  publish:
+    name: Add the release's commit to plugin-release
+    needs: rehearse
+    # NOT A PRE-RELEASE: Setup's /releases/latest skips those, and so does this.
+    if: github.event_name == 'release' && !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write      # the one job here that writes, and only plugin-release
+    # One release at a time: a second waits rather than racing the first.
+    concurrency:
+      group: plugin-release
+      cancel-in-progress: false
+    steps:
+      # The release's own commit - on a release event, the tag's.
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Build the plugin
+        run: python tools/build-plugin.py --out "$RUNNER_TEMP/build"
+
+      - name: The built plugin carries heron-products.json's version
+        run: python tools/check-products.py --plugin "$RUNNER_TEMP/build/heron-plugin"
+
+      - name: Commit it to plugin-release and push - never forced
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: python tools/publish-plugin.py --plugin "$RUNNER_TEMP/build/heron-plugin" --tag "$TAG" --push
+
+      - name: Say what was published
+        if: always()
+        shell: bash
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          {
+            echo "### Plugin release"
+            echo
+            if tip=$(git ls-remote --heads origin refs/heads/plugin-release | cut -f1) && [ -n "$tip" ]; then
+              echo "plugin-release is at \`$tip\` after release $TAG."
+              echo
+              echo "A modeller installs it with:"
+              echo
+              echo '```'
+              echo "claude plugin marketplace add Ajmalpshaik/Heron-AI"
+              echo "claude plugin install heron@heron"
+              echo '```'
+              echo
+              echo "Not on a PC where Setup already added Heron to Claude Code: Setup's"
+              echo "tick does not install the plugin yet, and both would start."
+            else
+              echo "**plugin-release does not exist** - nothing was published. The log"
+              echo "above says why."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
