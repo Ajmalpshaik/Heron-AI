@@ -102,6 +102,13 @@ import shutil
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "brain"))
+
+# The relpath that never raises. AGENTS_SRC can be pointed at a folder on another
+# drive than the checkout (a scratch folder on C:, the checkout on D:) and the raw
+# call raises there - a link then reads as one the plugin does not carry, and is
+# refused in words, rather than crashing.
+import heron_relpath as RELPATH                                 # noqa: E402
 
 TEMPLATE = os.path.join("platform", "Heron.Plugin")
 MANIFEST = os.path.join("platform", "heron-products.json")
@@ -270,7 +277,7 @@ def _agent_text(name, prefix, shipped):
         if re.match(r"^[a-z][a-z0-9+.-]*:", target) or target.startswith("#"):
             return match.group(0)
         path, _, anchor = target.partition("#")
-        repo_rel = os.path.relpath(os.path.normpath(os.path.join(here, path)), ROOT)
+        repo_rel = RELPATH.relpath(os.path.normpath(os.path.join(here, path)), ROOT)
         repo_rel = repo_rel.replace(os.sep, "/")
         if repo_rel not in shipped:
             raise Refused(
