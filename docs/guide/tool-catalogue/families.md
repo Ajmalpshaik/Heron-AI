@@ -1003,7 +1003,7 @@ Deletes connectors from the family open in the Family Editor - a connector ADD_F
 3. In a Claude chat, ask in your own words, for example *"delete the pipe connector from the family being edited"*. Say the values under **You say** in the same sentence.
 4. Heron makes the change as **one entry in Revit's Undo list**. With **Ask to Keep** on, Revit asks **Keep or Discard** first; Ctrl+Z takes it back.
 
-Other ways to ask: *"remove the connector on Air Outlet from this family"* · *"delete the duct connector I just added to the family"*
+Other ways to ask: *"remove the connector on Air Outlet from this family"* · *"delete the wrong duct connector from the family"*
 
 <a id="report-family-connectors"></a>
 

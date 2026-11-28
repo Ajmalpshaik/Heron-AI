@@ -1381,3 +1381,81 @@ command was run with another value; nothing was run in Revit or on your PC; whet
 [D-141](../decisions/D-141.md) - should change with it was not looked at.
 
 ---
+
+### 🟡 Q-101 — Articles 9 and 12c reach every chat word for word, in developer words, and leave the chat's rules almost no room. Amend them into Revit words, let a chat be given its own wording of them, or leave them? *(asked 2026-11-28, row 5b-2080)*
+
+**Tracked as GitHub issue [#1499](https://github.com/Ajmalpshaik/Heron-AI/issues/1499) since 2026-11-28** - the owner answers there.
+
+**Where it comes from.** Every chat that reaches Heron is told `host.chat` before its first tool call -
+[`brain/instructions/host.chat.yaml`](../../brain/instructions/host.chat.yaml), with Articles 7, 8, 9, 10, 12,
+12a, 12b, 12c, 14 and 27 assembled **word for word** from [`HERON_CONSTITUTION.md`](../../HERON_CONSTITUTION.md);
+only their citations are left out (`citations: leave-out`). A copy or a rewording is refused on purpose, in two
+places: the copy rule in [`brain/heron_instructions.py`](../../brain/heron_instructions.py) (`validate`, near
+line 376) refuses an instruction whose own text shares any eight words in a row with any Article
+(`COPY_WINDOW`), and [`tests/test_outcome_line.py`](../../tests/test_outcome_line.py) (near line 2708) checks
+that every word of every Article a chat is given arrives, in order. Both rest on the Constitution's own
+*Enforcement* section (near line 246): the Articles are assembled from that file *"so there is one source and
+no copies to drift"*. Found 2026-11-28 while fixing [row 5b-2080](../fragment-issues/row-5b-2080.md) (issue
+[#1497](https://github.com/Ajmalpshaik/Heron-AI/issues/1497)), by a second session reading the whole assembled
+text with you. Read from the files; nothing run in Revit.
+
+Three things a modeller's chat is given read in developer words, not Revit words:
+
+1. **Article 9 is about a quarter of the whole**, and it speaks of a `TransactionGroup`, a `PRODUCTION`
+   fragment, *"D-126, superseding D-99's exception"*, D-138 and *"a DRAFT's one run"*. In Revit words it says:
+   Revit selects what changed and asks Keep or Discard; nothing is kept until Keep; Discard, Esc or closing the
+   box takes it back; with *Ask to Keep* off the change is kept at once, as one entry in the undo list. Those
+   words are an illustration, not a proposed text - a shorter wording still has to carry every part of the
+   Article: the preview's *what will change, how many, what is skipped*, the box's third link that keeps the
+   rest of one job unasked, and the publish and DRAFT runs that are still asked.
+2. **Article 9's *"the owner's switch for that question"*** reads, to any modeller who is not Heron's owner,
+   as somebody else's switch. It is the modeller's own *Ask to Keep*, in Heron's Settings window
+   ([D-150](../decisions/D-150.md)). Article 9 also still says *"on the ribbon"* - that is
+   [row 5b-1533](../fragment-issues/section-5b-rows-1526-1550.md), open in issue
+   [#915](https://github.com/Ajmalpshaik/Heron-AI/issues/915), and yours to amend either way.
+3. **Article 12c's *"`ExternalEvent` boundary"*** is a code word a modeller's chat does not need. And the line
+   that introduces the Articles, *"Rules you may not violate, from HERON_CONSTITUTION.md:"* (`compose` in
+   `brain/heron_instructions.py`, near line 296), names a file in Heron's own folder, which the same
+   instructions tell a chat never to read for a Revit job.
+
+**Why it matters now.** Claude Code gives a chat only the first 4,096 characters of a server's instructions
+(row 5b-2080). After that row's fix, `python mcp/server/heron_tools.py --sizes` gives `host.chat` as 3,785
+characters, and its budget in [`tests/test_tool_sizes.py`](../../tests/test_tool_sizes.py) is the cap less a
+300-character margin (`HOST_INSTRUCTIONS_CAP`, `HOST_INSTRUCTIONS_MARGIN`, near lines 91 and 99) - 3,796, so
+11 characters are left. The margin is not spare room: off Windows the server puts its no-Revit line in front
+(298 characters, row 5b-2080), and [`tests/test_mcp_stdio.py`](../../tests/test_mcp_stdio.py) holds that form to
+the cap itself. The ten Articles are 3,041 of the 3,785 and Article 9 alone is 1,005 - measured 2026-11-28 with
+`compose("host.chat")` and `_without_citations` in `brain/heron_instructions.py`. So an amendment that makes
+any of these Articles longer by more than a few words, or one more sentence of house rules for a chat, fails
+that budget on its pull request. Row 5b-1533's own amendment - a few words, with D-150 named - would most
+likely not fit either; that was not tried. Shorter Articles in Revit words would read better to a modeller
+**and** give room back.
+
+**The question, in a modeller's words: should the rules every chat is given be written in Revit words - and if
+so, by changing the Constitution's own words, or by letting a chat be given its own wording of them?**
+
+- **(a) Amend Articles 9 and 12c in `HERON_CONSTITUTION.md`** into words a modeller reads - an amendment, yours
+  alone, recorded as a decision with its reasoning (the Constitution's *Amendment* section). The copy rule and
+  the word-for-word test stay as they are. **Cost:** Heron's own change agent is given Articles 9 and 12c from
+  the same file ([`brain/instructions/agent.modify.yaml`](../../brain/instructions/agent.modify.yaml)), so it is
+  given the new words too; and `host.chat`'s own cases (near the end of `host.chat.yaml`, *"Article 9 arrives
+  with how revit_change meets it"* and the one after it) look for *"D-126"*, *"the owner's switch for that"*,
+  *"D-138"*, *"third link"* and *"one run are still asked"*, so they change with it.
+- **(b) A decision that a chat may be given its own wording of an Article**, held to the Article by a test of
+  its meaning - which the copy rule and the word-for-word test refuse today. The Constitution's Articles stay as
+  written. **Cost:** two wordings of one rule, which is what the *Enforcement* sentence above gives as the
+  reason Articles are assembled, so that sentence may need amending too; and a test of meaning has to be
+  designed, because what exists checks words.
+- **(c) Leave them as they are.** Nothing changes: every chat goes on being given Articles 9 and 12c in
+  developer words, and its rules keep the room they have.
+
+No option is recommended here: the session that found this was asked to record the choices, not to pick one.
+
+**Nothing is changed until this is answered.** Until then the Articles are given word for word, as today, and
+a change that takes `host.chat` past its budget fails `tests/test_tool_sizes.py`. **Not checked:** no rewording
+was written or measured, so how much room (a) or (b) would give back is not known; nothing was run in Revit or
+in a real chat for this entry, and whether a modeller's chat actually misreads *"the owner's switch"* was not
+tried; the 3,785 and the 11 are the branch that fixes row 5b-2080, measured before it merged - on `main` at
+`addd1539`, `host.chat` is still 4,635.
+
+---
