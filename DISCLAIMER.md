@@ -85,6 +85,22 @@ source documents it has been given, and cites them.
 **It does not certify compliance.** It does not replace a competent person's review, a formal QA/QC
 process, or your obligations under the project's information requirements.
 
+**Heron cites standards; it does not reproduce them.** Where Heron's calculations carry a standard's
+figures - NFPA 13, 14, 20 and 72, BS EN 12845, ASHRAE 62.1 and 90.1 - they are values, formulas and
+Heron's own short summaries, each with the document, edition and clause named, as the source block in
+[`brain/heron_fire.py`](brain/heron_fire.py) says: *"Cited by document, edition and section - never
+quoted at length"*. **Checked on 2026-11-27** by reading [`brain/heron_fire.py`](brain/heron_fire.py),
+[`brain/heron_sprinkler_layout.py`](brain/heron_sprinkler_layout.py),
+[`brain/heron_research.py`](brain/heron_research.py), [`brain/heron_hvac.py`](brain/heron_hvac.py)'s
+tables, [`brain/agents/HERON-MEP-FPD-002.yaml`](brain/agents/HERON-MEP-FPD-002.yaml) and
+[42](docs/42-fire-protection-design.md), and searching every tracked file for quoted *"shall"* text
+beside a standard's name: **no passage of a standard's text was found**. The closest are the NFPA 13
+hazard-class descriptions (`hazard_definitions` in `heron_fire.py`, labelled *in Heron's words*) and the
+ASHRAE 62.1 Table 6-4 rows (`zone_air_distribution` in `heron_hvac.py`), whose short descriptions
+follow the table's own. Both are facts with the source named; they are the first to shorten if more
+margin is wanted. The standards' own texts were not available to compare against, so this is a reading
+of style and wording, not a line-by-line comparison.
+
 **This section said *"Where Heron reports compliance with a standard"* until 2026-11-16** - a word the
 chat is told never to say of a model. It now says what the chat says
 ([D-169](docs/DECISIONS.md#d-169--the-disclaimer-says-what-the-chat-says-heron-reports-which-checked-values-a-model-meets-cites-its-source-and-certifies-no-compliance)).
