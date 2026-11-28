@@ -65,6 +65,11 @@ jobs:
         with:
           python-version: '3.11'
 
+      # Heron's one required package, as gates.yml installs it: the build
+      # reads the jobs heron_method lists, to write one skill for each.
+      - name: Install PyYAML
+        run: python -m pip install --quiet pyyaml
+
       # THE CLI, NOT A COPY OF ITS RULES. `claude plugin validate` needs no
       # sign-in; installed into a folder of its own, not globally.
       - name: Install the Claude Code command line
@@ -121,6 +126,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
+
+      # Heron's one required package, as gates.yml installs it: the build
+      # reads the jobs heron_method lists, to write one skill for each.
+      - name: Install PyYAML
+        run: python -m pip install --quiet pyyaml
 
       - name: Build the plugin
         run: python tools/build-plugin.py --out "$RUNNER_TEMP/build"
