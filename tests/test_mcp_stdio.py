@@ -86,6 +86,16 @@ tests/test_tool_registry.py holds, as text, that no listed file imports the
 entry file. Off Windows only, where start-up reaches nothing but the child's
 own scratch store; on Windows the same start writes the Companion's note where
 Revit looks.
+
+AND THE SLASH COMMANDS (D-210 item 3, docs/04 §8.13). A host lists a server's
+prompts as commands, so the same real server is asked for them as a host asks
+- prompts/list, then prompts/get for each, with and without its optional
+argument. Every prompt heron_prompts declares is listed, with a title and a
+one-line description; each puts the modeller's own turn in the chat, word for
+word what heron_prompts renders; and no prompt names a tool this server does
+not serve - off Windows, a tool outside the library. Two negative cases: the
+check finds a prompt that names an unserved tool, and heron_prompts.register
+leaves such a prompt out. Whether Claude Code SHOWS them under / is a PC check.
 """
 
 import json
@@ -106,6 +116,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "sup
 from heron_tools import TOOLS                                  # noqa: E402
 import heron_tools as REGISTRY                                 # noqa: E402
 import heron_bridge_client as bridge                           # noqa: E402
+import heron_prompts as PROMPTS                                # noqa: E402
 import live_revit_guard as GUARD                               # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -422,6 +433,123 @@ def text_of(line):
     return "".join(c.get("text", "") for c in d["result"].get("content", []))
 
 
+def unserved_in(text, served):
+    """The tool-shaped words in `text` that are not in `served` - the check a
+    prompt's words are held to, applied to words that came over the wire."""
+    return sorted(set(PROMPTS.TOOL_SHAPED.findall(text or "")) - set(served))
+
+
+class _StandIn(object):
+    """Enough of a server for heron_prompts.register: a prompt() that takes a
+    name, a title and a description, and keeps what it was given."""
+
+    def __init__(self):
+        self.kept = []
+
+    def prompt(self, name=None, title=None, description=None):
+        def keep(fn):
+            self.kept.append((name, fn))
+            return fn
+        return keep
+
+
+def prompts_served(host, served, first_id):
+    """
+    The slash commands, asked of a real server as a host asks (D-210 item 3).
+    `served` is every tool name its tools/list gave; ids from `first_id` up.
+    """
+    print()
+    print("  the slash commands: the prompts it serves (D-210 item 3)")
+    host.send({"jsonrpc": "2.0", "id": first_id, "method": "prompts/list", "params": {}})
+    line = host.read(DEADLINE)
+    try:
+        listed = json.loads(line)["result"]["prompts"]
+    except Exception:                                       # noqa: BLE001
+        listed = []
+    names = [p.get("name") for p in listed]
+    # DERIVED: what heron_prompts declares, less any prompt whose words name a
+    # tool this server does not serve - which register() leaves out.
+    meant = [p.name for p in PROMPTS.PROMPTS if not PROMPTS.unserved(p, served)]
+    check(bool(meant) and names == meant,
+          "prompts/list gives every prompt heron_prompts declares, in its order: %s"
+          % (", ".join(n or "?" for n in names) or "none"))
+    check(len(meant) == len(PROMPTS.PROMPTS),
+          "and none is left out here - each names only a tool this server serves")
+    check(bool(listed) and all(
+              (p.get("title") or "").strip()
+              and (p.get("description") or "").strip()
+              and "\n" not in p.get("description", "") for p in listed),
+          "each has a title and a one-line description")
+    check(all(not a.get("required") for p in listed for a in p.get("arguments") or []),
+          "and every argument is optional")
+    listed_title = {p.get("name"): p.get("title") for p in listed}
+    check(all(listed_title.get(p.name) == p.title for p in PROMPTS.PROMPTS
+              if p.name in listed_title),
+          "each title is heron_prompts' own")
+
+    ident = first_id
+    for prompt in PROMPTS.PROMPTS:
+        if prompt.name not in names:
+            continue
+        asks = [(None, {"name": prompt.name})]
+        if prompt.argument:
+            asks.append(("door", {"name": prompt.name,
+                                  "arguments": {prompt.argument: "door"}}))
+        for value, params in asks:
+            ident += 1
+            host.send({"jsonrpc": "2.0", "id": ident, "method": "prompts/get",
+                       "params": params})
+            line = host.read(DEADLINE)
+            try:
+                messages = json.loads(line)["result"]["messages"]
+            except Exception:                               # noqa: BLE001
+                messages = []
+            said = " ".join(m.get("content", {}).get("text", "") for m in messages)
+            how = ("with %s=%s" % (prompt.argument, value)) if value else "with no argument"
+            check(len(messages) == 1 and messages[0].get("role") == "user"
+                  and said == PROMPTS.render(prompt, value),
+                  "%s, %s, puts the modeller's own turn in the chat, as "
+                  "heron_prompts renders it" % (prompt.name, how))
+            check("{" not in said and (value is None or value in said),
+                  "  and every place in it is filled%s"
+                  % ("" if value is None else ", with the word given"))
+            check(not unserved_in(said, served),
+                  "  and it names no tool this server does not serve%s"
+                  % ("" if not unserved_in(said, served)
+                     else " - it names %s" % ", ".join(unserved_in(said, served))))
+
+    ident += 1
+    host.send({"jsonrpc": "2.0", "id": ident, "method": "prompts/get",
+               "params": {"name": "no-such-prompt"}})
+    line = host.read(DEADLINE)
+    try:
+        reply = json.loads(line) if line else {}
+    except ValueError:
+        reply = {}
+    check("error" in reply, "a prompt it does not serve is refused, not answered")
+
+    # THE CHECK CAN FAIL, on words the server never served.
+    check(unserved_in("Heron has revit_no_such_tool for this.", served)
+          == ["revit_no_such_tool"],
+          "the check finds a tool this server does not serve, named in a prompt's words")
+    # AND register() LEAVES SUCH A PROMPT OUT, and says so - a stand-in prompt
+    # naming one tool served here and one that is not, beside one naming only
+    # the served one.
+    one = sorted(served)[0] if served else "heron_lookup"
+    forged = (PROMPTS.Job("names-unserved", "Forged", "One line.", None, None,
+                          "Ask %s and revit_no_such_tool." % one, None),
+              PROMPTS.Job("names-served", "Forged", "One line.", None, None,
+                          "Ask %s." % one, None))
+    told, stand_in = [], _StandIn()
+    kept = PROMPTS.register(stand_in, served, jobs=forged, said=told.append)
+    check(kept == ["names-served"] and [n for n, _fn in stand_in.kept] == ["names-served"],
+          "heron_prompts.register leaves out a prompt naming a tool this server "
+          "does not serve, and keeps the one beside it that names only a served tool")
+    check(len(told) == 1 and "revit_no_such_tool" in told[0] and "names-unserved" in told[0],
+          "and says which prompt it left out, and the tool it named")
+    return ident
+
+
 def as_a_host(guard, scratch):
     """The real server, started as a host starts it. Windows only: off it the
     server serves the library alone, and library_only() holds that."""
@@ -525,6 +653,8 @@ def as_a_host(guard, scratch):
         if found:
             check("would need" in found,
                   "it names a capability for a sentence in BIM language")
+
+        prompts_served(host, names, 20)
     finally:
         host.close()
 
@@ -698,6 +828,10 @@ def library_only(guard, scratch):
               "that nothing was sent to Revit")
         check("switches  " not in why,
               "and reads no switch here, so judges none")
+
+        # THE SLASH COMMANDS, against the library alone: a prompt naming a
+        # revit_ tool would be one this server never offered.
+        prompts_served(host, names, 20)
     finally:
         host.close()
 
