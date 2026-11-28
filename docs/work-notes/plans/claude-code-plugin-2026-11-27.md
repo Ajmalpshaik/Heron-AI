@@ -260,14 +260,18 @@ Found the same day, not keyed on a folder: the server's advice for a store that 
   is typed twice: a job taken out of `brain/skills` drops its skill at the next build.
 - **What a skill holds.** `name` is the job's id; `description` is the job's `name` and one sentence; `when_to_use`
   is the modeller's words for it from the job's `utterances`. The body only sends Claude to `heron_method` with that
-  id, once, before the first step - **the method itself is never pasted**. The build stops on a job that will not
-  load, an id that is not a skill name, or a `description` and `when_to_use` over Claude Code's listing cap of
-  **1,536** characters together; `python tests/test_build_plugin.py` prints the longest.
+  id before the first step - **the method itself is never pasted**. A job that declares `stages`, which
+  `heron_method` serves as a summary and then one stage per call ([#1508](https://github.com/Ajmalpshaik/Heron-AI/pull/1508)),
+  says so: the summary first, then `stage` as each stage starts; every other job says *once*. The build stops on a job
+  that will not load, an id that is not a skill name, stages that do not cut the method, or a `description` and
+  `when_to_use` over Claude Code's listing cap of **1,536** characters together; `python tests/test_build_plugin.py`
+  prints the longest, and which jobs come in stages.
 - **Validated** with `claude plugin validate` on Claude Code **2.1.332**, plain and `--strict`: passed, every skill
   listed as `heron:<job>`; the one warning is still **no icon**.
 - **Run in a Linux cloud container** on the same release, with `claude --plugin-dir`: the session listed every
   `heron:<job>` skill, the server connected as `plugin:heron:heron`, and both *"I want to lay out the air terminals
-  in this room"* and `/heron:terminal-layout` made `heron_method` with `terminal-layout` the first call.
+  in this room"* and `/heron:terminal-layout` made `heron_method` with `terminal-layout` the first call, and
+  `/heron:family-creation` asked for the summary and then its first stage, `classification`.
   **Owed on the owner's Windows PC:** the same, there - [Group RF](../../needs-checking/group-rf.md),
   issue [#1523](https://github.com/Ajmalpshaik/Heron-AI/issues/1523).
 
