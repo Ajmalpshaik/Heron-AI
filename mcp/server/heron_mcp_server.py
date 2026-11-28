@@ -121,6 +121,7 @@ import re
 import sys
 import time
 import uuid
+from typing import Union
 
 # The bridge client is the layer below this one. It stays dependency-free on
 # purpose, so `doctor` keeps working on a machine where nothing else does.
@@ -5227,21 +5228,21 @@ def heron_capabilities() -> str:
 
 
 @server.tool()
-def heron_method(job: str = "") -> str:
+def heron_method(job: str = "", stage: Union[str, int] = "") -> str:
     """
-    The whole method for a job of several steps - building a family, laying
-    out terminals, a building shell - in the order the steps must happen,
-    what must be true first, and each capability it uses with its risk.
+    The method for a job of several steps - building a family, laying out
+    terminals, a building shell - in the order the steps must happen, what
+    must be true first, and each capability it uses with its risk.
 
-    Use it ONCE, before the first step, when heron_lookup or a hand-back
-    names a job with a method, or the modeller asks for something that is
-    plainly more than one call. Empty `job` lists every job by id. This is
-    everything Heron holds about how the job is done: nothing in Heron's own
-    folder needs reading. Reads only files that shipped with Heron.
+    Use it before the first step, when heron_lookup or a hand-back names a
+    job with a method, or the modeller asks for something plainly more than
+    one call. Empty `job` lists every job by id. A long one comes as a
+    summary: pass each stage it names as `stage` as it starts. Nothing in
+    Heron's own folder needs reading. Reads only files shipped with Heron.
     """
     revit, _how = _revit_version()
     try:
-        found = brain.method(job, revit=revit)
+        found = brain.method(job, revit=revit, stage=stage)
     except brain.BrainUnavailable as why:
         return str(why)
 
@@ -5259,28 +5260,168 @@ def heron_method(job: str = "") -> str:
             lines.append("  %-34s uses %2d  %s" % (j["id"], j["uses"], j["name"]))
         return "\n".join(lines)
 
+    if found.get("stages"):
+        return _method_by_stage(found, revit)
+
+    # A METHOD WITH NO STAGES IS SERVED WHOLE, AS IT ALWAYS WAS - word for
+    # word, which tests/test_mcp_serves.py holds. A `stage` asked of one is
+    # said to be needless, never refused: the whole method is the answer.
+    lines = (["%s has no stages, so this is the whole of it - `stage` is not "
+              "needed." % found["id"], ""]
+             if stage not in (None, "") else [])
+    lines.extend(_method_head(found))
+    lines.append("The method, in order:")
+    lines.extend("  " + line for line in found["purpose"].rstrip().splitlines())
+    lines.append("")
+    lines.extend(_method_uses(found["uses"], revit, "The capabilities it uses"))
+    lines.append("")
+    lines.append("Each step's values: heron_resolve <capability>, or call it "
+                 "with request= and the hand-back says what to type.")
+    lines.append(_doors_in_short() if _said_before("doors") else _cannot_run())
+    return "\n".join(lines)
+
+
+def _method_head(found, preconditions=True):
+    """The lines a method's answer opens with - which job, how far it is
+    proved, its risk - and what must be true before its first step."""
     lines = ["%s - %s" % (found["id"], found["name"]),
              "  status   %s - the job as a whole has not been watched working "
              "on a real model unless this says PROVEN; each step's own status "
              "is below" % found["status"],
              "  risk     %s at most" % found["risk"],
              ""]
-    if found["preconditions"]:
+    if preconditions and found["preconditions"]:
         lines.append("Before the first step:")
         for p in found["preconditions"]:
             lines.append("  - %s" % p)
         lines.append("")
-    lines.append("The method, in order:")
-    lines.extend("  " + line for line in found["purpose"].rstrip().splitlines())
-    lines.append("")
-    lines.append("The capabilities it uses%s - READ and ANALYZE run through "
-                 "revit_read, EXECUTE through revit_show, the rest through "
-                 "revit_change:"
-                 % (" on Revit %s" % revit if revit else ""))
-    for s in found["uses"]:
+    return lines
+
+
+def _method_uses(uses, revit, what):
+    """The capabilities a method - or one stage of it - uses, one a line,
+    and the door each kind runs through."""
+    lines = ["%s%s - READ and ANALYZE run through revit_read, "
+             "EXECUTE through revit_show, the rest through revit_change:"
+             % (what, " on Revit %s" % revit if revit else "")]
+    for s in uses:
         lines.append("  %-32s %-8s %-9s %s"
                      % (s["capability"], s["risk"] or "-", s["status"] or "-",
                         s["missing"] or ""))
+    return lines
+
+
+def _stage_rows(found):
+    """The stage list, one line each: the id to pass as `stage`, the heading,
+    how many capabilities it names and how long it is."""
+    width = max(len(s["id"]) for s in found["stages"])
+    return ["  %-*s  %s: %d %s, %s characters"
+            % (width, s["id"], s["title"], len(s["named"]),
+               "capability" if len(s["named"]) == 1 else "capabilities",
+               "{:,}".format(s["chars"]))
+            for s in found["stages"]]
+
+
+def _here(waiting):
+    """The one line standing in the summary where stages were cut out."""
+    return ("  >> here: stage%s %s - heron_method with that stage"
+            % ("s" if len(waiting) > 1 else "", ", ".join(waiting)))
+
+
+def _method_by_stage(found, revit):
+    """
+    A method that declares stages (heron_skill.Skill.parts), served a piece
+    at a time: with no `stage` its SUMMARY, with one that stage.
+
+    WHY (the owner's choice, 2026-11-28, "One stage at a time"). Served
+    whole, family-creation came to about 82,000 characters - near what a host
+    takes from one tool reply before it cuts the rest off, and what is cut
+    is the end: the behaviour rules and the report. So the summary carries
+    what must be true first, how to read the steps, the rules and the report
+    - every word of the method outside its stages - and each stage is asked
+    for as it starts. The summary and the stages together hold the purpose,
+    every line of it once (tests/test_mcp_serves.py joins them back).
+
+    THE SUMMARY SAYS FIRST THAT IT IS NOT THE METHOD, because a host told
+    until now that heron_method hands over the whole method would otherwise
+    build from the summary alone.
+    """
+    job = found["id"]
+    order = [s["id"] for s in found["stages"]]
+    asked = found.get("stage")
+
+    if found.get("stage_refused") is not None:
+        lines = ["%s has no stage \"%s\". Its stages - pass one as `stage`, "
+                 "by its id, its heading or a word only one heading has:"
+                 % (job, found["stage_refused"])]
+        lines.extend(_stage_rows(found))
+        return "\n".join(lines)
+
+    if asked is not None:
+        at = order.index(asked["id"])
+        after = (" The next is stage \"%s\"." % order[at + 1]
+                 if at + 1 < len(order) else " It is the last stage.")
+        lines = _method_head(found, preconditions=False)
+        lines.append("STAGE \"%s\", %d of the %d this method is served in. What "
+                     "must be true first, how to read the steps, the rules and "
+                     "the report are in its summary: heron_method(job=\"%s\") "
+                     "with no stage.%s" % (asked["id"], at + 1, len(order), job,
+                                           after))
+        lines.append("")
+        lines.extend("  " + line for line in asked["text"].rstrip().splitlines())
+        lines.append("")
+        lines.extend(_method_uses(asked["uses"], revit,
+                                  "The capabilities this stage names"))
+        lines.append("")
+        lines.append("Each step's values: heron_resolve <capability>, or call "
+                     "it with request= and the hand-back says what to type.")
+        lines.append(_doors_in_short() if _said_before("doors")
+                     else _cannot_run())
+        return "\n".join(lines)
+
+    lines = _method_head(found)
+    lines.append("THIS IS THE METHOD'S SUMMARY, NOT THE METHOD: its steps are in "
+                 "%d stages, and none of them is here. Call heron_method(job="
+                 "\"%s\", stage=\"<id>\") at each stage, before its first step - "
+                 "each answer is that stage's whole text and the capabilities "
+                 "it names, with their status%s."
+                 % (len(order), job, " on Revit %s" % revit if revit else ""))
+    lines.append("")
+    lines.append("The stages, in order - the first column is the `stage` to "
+                 "pass:")
+    lines.extend(_stage_rows(found))
+    lines.append("")
+    lines.append("The method's words outside its stages, in its own order:")
+    waiting = []
+    for part in found["parts"]:
+        if part["stage"] is not None:
+            waiting.append(part["stage"])
+            continue
+        if waiting:
+            lines.append(_here(waiting))
+            waiting = []
+        lines.extend("  " + line for line in part["text"].rstrip().splitlines())
+    if waiting:
+        lines.append(_here(waiting))
+    lines.append("")
+    tally = {}
+    for u in found["uses"]:
+        key = ("not provided%s" % (" on Revit %s" % revit if revit else "")
+               if u["missing"] else u["status"] or "-")
+        tally[key] = tally.get(key, 0) + 1
+    # THE ONES NOT PROVEN ARE NAMED HERE, not only counted: the method's own
+    # words send a reader to "the list of uses" for which step is DRAFT, and
+    # in the summary this line is that list until the stage is asked for.
+    short = ["%s (%s)" % (u["capability"], u["missing"] or u["status"] or "-")
+             for u in found["uses"]
+             if u["missing"] or u["status"] not in ("PROVEN", "PRODUCTION")]
+    lines.append("It uses %d capabilities in all - %s.%s Each stage's answer "
+                 "lists the ones it names with its status, and the door each "
+                 "runs through."
+                 % (len(found["uses"]),
+                    ", ".join("%d %s" % (n, k) for k, n in
+                              sorted(tally.items(), key=lambda kv: (-kv[1], kv[0]))),
+                    " Not PROVEN: %s." % ", ".join(short) if short else ""))
     lines.append("")
     lines.append("Each step's values: heron_resolve <capability>, or call it "
                  "with request= and the hand-back says what to type.")

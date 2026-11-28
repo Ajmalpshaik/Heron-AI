@@ -1214,19 +1214,28 @@ def lookup(request, revit=None, question=False, ceiling=None):
         }
 
 
-def method(skill_id, revit=None):
+def method(skill_id, revit=None, stage=None):
     """
     One job's whole method - the steps in order, what must be true first, and
     every capability it uses with its risk and status - or the list of jobs
     when `skill_id` is empty. None when no job has that id.
 
     WHY IT IS A TOOL AND NOT A FILE TO READ. The method of building a family
-    is fifteen ordered steps in brain/skills/family-creation.yaml, and before
-    this nothing served it: a chat learned it by reading that file and the
-    58 KB of docs/43 off disk, which is the "it reads lots of files the first
-    time" a modeller saw on a new laptop. The skill IS the method, so it is
-    handed over whole, and the capabilities beside it are resolved against
-    this Revit the same way heron_resolve resolves one.
+    lives in brain/skills/family-creation.yaml, and before this nothing
+    served it: a chat learned it by reading that file and the 58 KB of
+    docs/43 off disk, which is the "it reads lots of files the first time" a
+    modeller saw on a new laptop. The skill IS the method, so it is handed
+    over, and the capabilities beside it are resolved against this Revit the
+    same way heron_resolve resolves one.
+
+    A METHOD THAT DECLARES STAGES (heron_skill.Skill.parts) is too long for
+    one reply, so `stages` lists them - id, heading, size, the capabilities
+    each names - and `parts` is the purpose cut where it says, for the
+    summary heron_method serves first. With `stage`, `stage` is that one
+    stage: its text and the capabilities it names, each resolved as `uses`
+    is; a `stage` no stage answers to is `stage_refused`, beside the list.
+    `purpose` and `uses` stay whole either way. A method with no stages has
+    `stages` empty, and is served whole as it always was.
     """
     _S, CAP, SKILL, _SE, _E, _R = _brain()
     with _Open() as store:
@@ -1243,11 +1252,10 @@ def method(skill_id, revit=None):
         if skill is None:
             return None
 
-        uses = []
-        for name in skill.needs():
+        def _use(name):
             got = CAP.resolve(store, name, revit=revit)
             anywhere = got or (CAP.resolve(store, name) if revit else None)
-            uses.append({
+            return {
                 "capability": name,
                 "risk": got.risk if got else None,
                 "status": got.status if got else None,
@@ -1255,7 +1263,57 @@ def method(skill_id, revit=None):
                 "missing": (None if got else
                             "not declared for Revit %s" % revit if anywhere
                             else "nothing provides it yet"),
-            })
+            }, anywhere
+
+        uses = [_use(name)[0] for name in skill.needs()]
+
+        # THE STAGES, when the method declares them. A broken declaration is
+        # heron_skill.validate's to report, and the method is then served
+        # whole - never cut somewhere nobody declared.
+        try:
+            parts = skill.parts()
+        except ValueError:
+            parts = []
+        stages, chosen, refused = [], None, None
+        if parts:
+            needs = dict((u["capability"], u) for u in uses)
+            known = {}
+            retired = tuple(_SE.RETIRED_FRAGMENTS)
+
+            def _named(text):
+                # Every capability the stage's own words name, in the order it
+                # names them: one the method needs, as `uses` has it; any other
+                # only when a card provides it on some release - a retired or
+                # mistyped name is not a tool to hand over.
+                found = []
+                for name in _CAPABILITY_SHAPED.findall(text):
+                    if name in found:
+                        continue
+                    if name in needs:
+                        found.append(name)
+                        known[name] = needs[name]
+                        continue
+                    if name not in known:
+                        entry, anywhere = _use(name)
+                        known[name] = (entry if anywhere and anywhere.status
+                                       not in retired else None)
+                    if known[name] is not None:
+                        found.append(name)
+                return found
+
+            for part in parts:
+                if part["stage"] is None:
+                    continue
+                stages.append({"id": part["stage"], "title": part["starts"],
+                               "chars": len(part["text"]),
+                               "named": _named(part["text"]),
+                               "text": part["text"]})
+            if stage not in (None, ""):
+                chosen = _stage_asked(stages, stage)
+                if chosen is None:
+                    refused = str(stage)
+                else:
+                    chosen = dict(chosen, uses=[known[n] for n in chosen["named"]])
         # D-62: a brain answer leaves a trace. One job's catalogue, so the
         # same line as heron_capabilities with skills=1.
         _audit().catalogue(skills=1, capabilities=len(uses),
@@ -1269,7 +1327,35 @@ def method(skill_id, revit=None):
             "purpose": skill.purpose,
             "uses": uses,
             "revit": revit,
+            "parts": parts,
+            "stages": stages,
+            "stage": chosen,
+            "stage_refused": refused,
         }
+
+
+# A capability's name as the steps write it - the shape heron_fragment's
+# CAPABILITY_PATTERN holds, found inside prose. tests/test_brain_reachable.py
+# reads a method's steps with the same expression.
+_CAPABILITY_SHAPED = re.compile(r"\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b")
+
+
+def _stage_asked(stages, asked):
+    """The one stage `asked` names, or None. Asked by its id ("3",
+    "fixed-size"), as "stage 3", by its whole heading, or by words found in
+    one heading alone ("geometry") - case aside. Words two headings share
+    name neither, so a host is shown the list rather than handed a guess."""
+    want = " ".join(str(asked).split()).lower()
+    if not want:
+        return None
+    for s in stages:
+        if want in (s["id"].lower(), "stage %s" % s["id"].lower(),
+                    s["title"].lower()):
+            return s
+    if len(want) < 3:
+        return None
+    hits = [s for s in stages if want in s["title"].lower()]
+    return hits[0] if len(hits) == 1 else None
 
 
 # The routes that answer WITHOUT searching. heron_search.short_circuit() and
