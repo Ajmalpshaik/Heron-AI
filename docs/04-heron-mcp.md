@@ -598,6 +598,18 @@ Articles as the file has them. The room it made, inside the same word budget, we
 reply from `revit_change`, `revit_read` or `revit_show` carries a line starting `outcome:`, and that
 line, not the wording around it, says how the request ended (§8.12,
 [row 5b-1562](fragment-issues/section-5b-rows-1551-1575.md)).
+
+**Since 2026-11-28 they are held in characters as well as words, because the host cuts them.** Claude
+Code gives a chat only the first 4,096 characters of a server's instructions
+([its MCP page](https://code.claude.com/docs/en/mcp), *Tool search for MCP server authors*), and
+`host.chat` had grown to 4,635: on the owner's PC the end of Article 12c and all of Articles 14 and 27
+reached no chat ([row 5b-2080](fragment-issues/row-5b-2080.md)). The Articles still arrive word for word
+and take most of that room, so the house rules were reworded shorter, none dropped, and the one on a
+question that asks only whether Revit is connected now lives only in `revit_health`'s description,
+which every chat with Revit is given up front (§8.6). `tests/test_tool_sizes.py` holds the whole, as
+assembled, to the cap less a margin, and `tests/test_mcp_stdio.py` holds the off-Windows form a real
+server serves, its no-Revit line in front, to the cap itself. A Claude Code older than v2.1.296 cuts at
+2,048 ([row 5b-2081](fragment-issues/row-5b-2081.md)).
 [`tests/test_outcome_line.py`](../tests/test_outcome_line.py) section 8 holds both halves: the paragraph
 is there, and each Article's words are all there, in order.
 
@@ -729,8 +741,10 @@ ordinary case.
   changes.
 - **A connection check is answered and nothing more is done.** The owner, 2026-10-01: when he asks
   first whether Heron is connected he wants that answer and then to say what is next - *"only need to
-  check the connected or not"*. The chat's rules (`host.chat`) and `revit_health`'s own description
-  now say so. Its WARNING about Changes being on is unchanged: it is a safety notice.
+  check the connected or not"*. `revit_health`'s own description says so - and until 2026-11-28 the
+  chat's rules (`host.chat`) said it too, until that room went to the Articles the host was cutting
+  off (§8.3, [row 5b-2080](fragment-issues/row-5b-2080.md)); `tests/test_tool_sizes.py` keeps the
+  description's sentence. Its WARNING about Changes being on is unchanged: it is a safety notice.
 - **The developer's session line is silent in a modeller's chat** - the main checkout on `main` - and
   runs no git there ([`heron-session`](../.claude/skills/heron-session/SKILL.md)).
 
@@ -976,7 +990,8 @@ least the name, description and input schema, and the rest is the host's to pass
   changes the shape of every reply, so it is a question rather than part of this change. Since
   2026-11-12 the three doors' `structuredContent` carries how the call ended beside the answer (§8.12).
 - **`host.chat`** - [`tests/test_instructions.py`](../tests/test_instructions.py) already holds its word
-  budget.
+  budget, and since 2026-11-28 [`tests/test_tool_sizes.py`](../tests/test_tool_sizes.py) holds its
+  characters to what the host delivers (§8.3).
 
 **NOT MEASURED, AND IT NEEDS A REAL CHAT:** whether Claude Code chooses the right Heron tool as often from
 the shorter descriptions. Nothing in a container can show it.

@@ -666,3 +666,9 @@ utterances:
   # CREATE_PARTS - writes.
   - how many roofs are there
   - how many roofs does this model have
+  # ADDED 2026-11-28, row 5b-2076 (issue #1492): "select all pipes" reached
+  # SELECT_BY_PARAMETER_VALUE, a select by one value, though "select all
+  # ducts" reaches this card by its own words.
+  - select all pipes
+  - select all the pipes in the model
+  - select every pipe

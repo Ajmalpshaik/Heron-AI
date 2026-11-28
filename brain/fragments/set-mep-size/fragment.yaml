@@ -155,3 +155,7 @@ utterances:
   - set the duct size
   - change the diameter on these
   - make it 100 mm
+  # ADDED 2026-11-28, row 5b-2076 (issue #1492): "change the duct size to ..."
+  # reached CONVERT_TO_FLEX_DUCT.
+  - change the duct size to 400 by 300
+  - change the size of this duct
