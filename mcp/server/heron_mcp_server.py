@@ -5411,8 +5411,9 @@ def _method_lines(found):
     lines = ["", "  A JOB WITH A METHOD. This looks like one step of:"]
     for m in methods:
         lines.append("      %-32s uses %2d  %s" % (m["id"], m["uses"], m["name"]))
-    lines.append("  If it is, call heron_method(job=\"%s\") once for every step "
-                 "in order, before the first one." % methods[0]["id"])
+    lines.append("  If it is, call heron_method(job=\"%s\") once, before the first "
+                 "step. A long method comes as a summary: ask for each stage "
+                 "it names with stage=<id>, as that stage starts." % methods[0]["id"])
     return lines
 
 

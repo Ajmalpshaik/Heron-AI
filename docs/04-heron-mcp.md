@@ -520,7 +520,7 @@ Tested without Revit.
 
 | Group | What it is for | Level, from `heron_tools.TOOLS` | What it needs | Main tools |
 |---|---|---|---|---|
-| **Know the job** | which capability fits the words; a job's whole method; standards and clauses | `READ`, and sends nothing to Revit | nothing. The ones named in `heron_tools.LIBRARY` are also served off Windows, and `heron_check` is not one of them ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)) | `heron_lookup`, `heron_method`, `heron_resolve`, `heron_capabilities`, `heron_standards`, `heron_check`, `heron_why` - why Heron cannot do one capability, and what the modeller can do (§6b) |
+| **Know the job** | which capability fits the words; a job's method, a long one stage by stage; standards and clauses | `READ`, and sends nothing to Revit | nothing. The ones named in `heron_tools.LIBRARY` are also served off Windows, and `heron_check` is not one of them ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)) | `heron_lookup`, `heron_method`, `heron_resolve`, `heron_capabilities`, `heron_standards`, `heron_check`, `heron_why` - why Heron cannot do one capability, and what the modeller can do (§6b) |
 | **Work it out** | HVAC and fire protection calculations | `READ` for `heron_hvac` and `heron_fire`, arithmetic on the values given; `ANALYZE` for the three that read the model first | nothing, and none of them changes the model. Writing a result back is the Companion page's Apply, at `MODIFY` (`heron_tools.COMPANION_ACTIONS`) | `heron_hvac`, `heron_fire`, `revit_building_loads`, `revit_sprinkler_hydraulics`, `revit_sprinkler_layout` |
 | **Read the model** | answer a question about the model in front | `READ`, `ANALYZE` | a connected Revit; Changes may be off | `revit_read` (door); fixed readers such as `revit_levels`, `revit_views`, `revit_sheets`, `revit_rooms`, `revit_parameters`, `revit_worksets`; `revit_view_image` |
 | **Show on screen** | select, zoom, open a view, isolate for now | `EXECUTE` | a connected Revit; Changes may be off | `revit_show` (door), `revit_select_by_category`, `revit_isolate_temporary`, `revit_reset_temporary` |
@@ -778,7 +778,7 @@ family"* with one ranked capability, and the fifteen ordered steps of building a
 remembers Heron; a new one does not, so it read them off disk.
 
 - **`heron_method`** — a READ tool, given to every chat at start (`heron_tools.ALWAYS_LOADED`), that
-  hands over one job's whole method: what must be true first, the steps in order, and every capability
+  hands over one job's method: what must be true first, the steps in order, and every capability
   it uses with its risk and status on this Revit. Empty, it lists every job.
   **A long method comes one stage at a time (2026-11-28, the owner's choice "One stage at a time").**
   `family-creation`, rebuilt on the owner's family standard, came to about 82,000 characters in one

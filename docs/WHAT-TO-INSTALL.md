@@ -205,7 +205,8 @@ Then, the three things only you can do:
    [Group HG](needs-checking/group-hg.md)).
 
 Claude Code's own memory of your old PC does not come across. It does not need to: Heron hands Claude
-a job's whole method — every step of building a family, in order — through its `heron_method` tool.
+a job's method — every step of building a family, in order, a long one a stage at a time —
+through its `heron_method` tool.
 
 ## 1b. If your Claude app came from the Microsoft Store — install from your own terminal
 
