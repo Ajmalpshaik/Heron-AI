@@ -322,6 +322,21 @@ def descriptions_say_when():
     check(not ordering,
           "no tool's description orders a call%s"
           % ("" if not ordering else " - " + "; ".join(ordering[:5])))
+    # AND NO PROMPT'S WORDS (D-210 item 3, docs/04 §8.13). A prompt is the
+    # modeller's own turn, put in the chat by a slash command: it says what they
+    # want, and the host decides which tool - so the same rule, on everything
+    # a prompt shows or says. A prompt is no tool, so none of its words are
+    # its own call.
+    import heron_prompts as prompts
+    ordering = []
+    for prompt in prompts.PROMPTS:
+        for text in (prompt.title, prompt.description, prompt.argument_says,
+                     prompt.text, prompt.text_with):
+            ordering.extend("%s: %r" % (prompt.name, got)
+                            for got in orders_a_call("", text or ""))
+    check(prompts.PROMPTS and not ordering,
+          "and no prompt's words order a call either%s"
+          % ("" if not ordering else " - " + "; ".join(ordering[:5])))
 
 
 def source_list():
