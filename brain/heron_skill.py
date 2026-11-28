@@ -108,6 +108,75 @@ class Skill(object):
     def preconditions(self):
         return list(self.data.get("preconditions", []) or [])
 
+    def parts(self):
+        """The purpose cut where the skill's `stages` says - a list of
+        {"stage", "starts", "text"} in the purpose's own order, whose texts
+        joined are the purpose exactly. [] for a skill that declares no
+        stages, which is served whole as it always was.
+
+        WHY A METHOD IS CUT AT ALL (the owner's choice, 2026-11-28, "One
+        stage at a time"). family-creation's purpose grew to about 72,000
+        characters on his family standard, and heron_method served it in one
+        reply of about 82,000 - near what a host takes from one tool before
+        it cuts the end off, and the end is the behaviour rules and the
+        report. So a method this long is served as a summary first and one
+        stage at a time after (heron_brain.method).
+
+        THE CUTS ARE DECLARED, NEVER GUESSED FROM PROSE. Each entry of
+        `stages` names the purpose line its part starts at, exactly as
+        written (stripped of its indent); the part runs to the next entry's
+        line. An entry with a `stage` is a stage, served on its own when
+        asked by that id; one without goes back into the summary, as does
+        everything before the first entry. A line that is missing, written
+        twice or out of order is a ValueError - validate() reports it - so a
+        heading reworded in the purpose cannot quietly fold one stage into
+        its neighbour."""
+        declared = self.data.get("stages")
+        if not declared:
+            return []
+        if not isinstance(declared, list):
+            raise ValueError("stages must be a list, not %r" % (declared,))
+        purpose = self.purpose
+        lines = purpose.splitlines(True)
+        cuts, seen, previous = [], set(), -1
+        for entry in declared:
+            if not isinstance(entry, dict) or not isinstance(
+                    entry.get("starts"), str) or not entry["starts"].strip():
+                raise ValueError("every entry of stages names the purpose line "
+                                 "it starts at as `starts`, not %r" % (entry,))
+            starts = entry["starts"].strip()
+            stage = entry.get("stage")
+            stage = None if stage is None else str(stage).strip()
+            if stage == "":
+                raise ValueError("stage %r has an empty id" % starts)
+            if stage is not None and stage.lower() in seen:
+                raise ValueError("stage %s is declared twice" % stage)
+            if stage is not None:
+                seen.add(stage.lower())
+            at = [i for i, line in enumerate(lines) if line.strip() == starts]
+            if len(at) != 1:
+                raise ValueError("stages: %r is %s of the purpose, so where its "
+                                 "part starts cannot be known"
+                                 % (starts, "not a line" if not at
+                                    else "%d lines" % len(at)))
+            if at[0] <= previous:
+                raise ValueError("stages: %r comes before the line declared "
+                                 "ahead of it - list them in the purpose's "
+                                 "order" % starts)
+            previous = at[0]
+            cuts.append((at[0], stage, starts))
+        if not seen:
+            raise ValueError("stages declares no entry with a `stage`")
+        found = []
+        if cuts[0][0] > 0:
+            found.append({"stage": None, "starts": None,
+                          "text": "".join(lines[:cuts[0][0]])})
+        for n, (at, stage, starts) in enumerate(cuts):
+            end = cuts[n + 1][0] if n + 1 < len(cuts) else len(lines)
+            found.append({"stage": stage, "starts": starts,
+                          "text": "".join(lines[at:end])})
+        return found
+
     def __repr__(self):
         return "<Skill %s %s>" % (self.id, self.status)
 
@@ -259,6 +328,14 @@ def validate(skill):
                 "%s: needs must be CAPABILITY names in SCREAMING_SNAKE, not %r. "
                 "A skill that names a fragment defeats the registry"
                 % (where, capability))
+
+    # A METHOD SERVED IN STAGES MUST CUT WHERE IT SAYS (Skill.parts): a
+    # heading reworded in the purpose and not in `stages` is refused here,
+    # not discovered as a stage that swallowed the next one.
+    try:
+        skill.parts()
+    except ValueError as exc:
+        problems.append("%s: %s" % (where, exc))
 
     unknown = [v for v in (skill.data.get("revit") or [])
                if str(v) not in FRAG.REVIT_VERSIONS]
