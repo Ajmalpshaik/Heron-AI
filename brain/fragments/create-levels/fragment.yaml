@@ -223,3 +223,7 @@ utterances:
   - I need a level at this height
   - make a new level
   - add 4 more floors
+  # ADDED 2026-11-28, row 5b-2076 (issue #1492): a count of levels with the
+  # height between them reached REPORT_MASSES, a read.
+  - create 10 levels each 4000 apart
+  - create the levels with the same floor to floor height

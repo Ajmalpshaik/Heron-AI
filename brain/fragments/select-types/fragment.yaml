@@ -164,3 +164,13 @@ utterances:
   - the types not the instances
   - show me every family type in this category
   - what are the mullion types in this model
+  # ADDED 2026-11-28, row 5b-2076 (issue #1492): the title block types loaded in
+  # a model reached REPORT_SHEET_TITLE_BLOCKS, which reads the title blocks
+  # placed on sheets and refused a model with none, and SET_SHEET_TITLE_BLOCK.
+  # Those two cards' own purposes are about title blocks, so the search alone
+  # cannot bring this card above them; both lines are declared whole, so the
+  # exact question reaches this card by its own words. A third line (door
+  # types) was tried and taken out: it moved the answer key's row 32 off
+  # SELECT_BY_PARAMETER_VALUE.
+  - which title blocks are loaded in the model
+  - list the title block types in the project
