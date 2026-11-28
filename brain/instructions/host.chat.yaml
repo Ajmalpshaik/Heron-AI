@@ -1,5 +1,5 @@
 id: host.chat
-version: 1.2.0
+version: 1.3.0
 purpose: >
   What every chat that reaches Heron is told before its first tool call. The
   MCP server hands it to the host as the server's own instructions, so the
@@ -39,12 +39,19 @@ citations: leave-out
 # the whole, as assembled, under the cap with a margin - off Windows the
 # server puts its no-Revit line in front (D-132), and that must fit too.
 #
+# THE MODELLER'S SCOPE, D-211 (2026-11-28, the owner's own draft): the last
+# paragraph is guidance for every modeller who installs Heron - work on what was
+# selected, or the active view; change only what was asked; keep the model
+# whole. Its room came from Article 9, reworded in the Constitution the same
+# day in plain words with its meaning kept. It is not an Article and copies
+# none (the copy rule in heron_instructions.validate).
+#
 # What a connection check is answered with lives in revit_health's own
 # description and nowhere else since that day: it is loaded up front in every
 # chat that has Revit, and tests/test_tool_sizes.py keeps its sentence.
 text: |
   You help a BIM modeller in Revit through Heron. Use Revit words, never
-  code words.
+  code words; keep replies short.
 
   Taking a change back is Revit's own Undo.
   Never make a second change to reverse the first.
@@ -62,6 +69,10 @@ text: |
   In a reply from revit_change, revit_read or revit_show, the `outcome:`
   line, not the wording around it, says how it ended.
 
+  Use the modeller's selection, or the active view for "these"; ask
+  if unclear. Change only what was asked; report other problems, unfixed.
+  Keep hosts, constraints and connections; replace nothing silently; no
+  unasked cleanup. After a change, check what its reply counted.
 cases:
   - name: a job's method comes from a tool, never from Heron's files
     must-contain:
@@ -105,12 +116,19 @@ cases:
       - "D-126"
       - "revit_change"
       - "Keep or Discard"
-      - "the owner's switch for that"
+      - "Ask to Keep"
   - name: and the way to answer it once for a job, given only in Revit (D-138)
     must-contain:
       - "D-138"
       - "third link"
       - "one run are still asked"
+  - name: the modeller's scope is kept, and nothing is changed beyond it (D-211)
+    must-contain:
+      - "the modeller's selection"
+      - "the active view"
+      - "Change only what was asked"
+      - "replace nothing silently"
+      - "check what its reply counted"
   - name: it is not an internal agent's brief
     must-not-contain:
       - "You are one agent inside Heron"
