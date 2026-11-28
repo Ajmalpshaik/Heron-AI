@@ -11,9 +11,9 @@ domain: revit.document
 capability: CREATE_FAMILY_DOCUMENT
 # VERSION 3 (2026-11-01): CREATE_PROJECT_DOCUMENT was merged into this card on
 # the owner's instruction - "make sure there is no duplicate tools" - and is
-# DEPRECATED; see the merge block above `utterances`. Version 2's proof below
-# was kept as the record; it no longer described the code, so the card was
-# DRAFT at the time. It is PROVEN again since 2026-11-02 (the `proof:` block below,
+# DEPRECATED; see the merge block above `utterances`. Version 2's proof was
+# kept as the record for a while; it no longer described the code, so the card
+# was DRAFT at the time. It is PROVEN again since 2026-11-02 (the `proof:` block below,
 # Revit 2020): that proof ran the FAMILY route only. The `.rte` to `.rvt` project
 # route was run once, 2026-10-20, under the old CREATE_PROJECT_DOCUMENT
 # (NEEDS-CHECKING Group CM, CM6), and has no run recorded under this card's name.
@@ -146,7 +146,8 @@ contract:
       type: IList<string>
 
 # VERSION 2 PROVED 2026-10-06 on scratch HeronNewFam_A (Revit 2024), signed by
-# Ajmal PS on his word - NEEDS-CHECKING CM5.
+# Ajmal PS on his word - NEEDS-CHECKING CM5. The `proof:` block below is the later
+# one, 2026-11-02 (Revit 2020), the family route only.
 proof:
   date: '2026-11-02'
   by: Ajmal PS
