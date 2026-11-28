@@ -1324,6 +1324,35 @@ purpose: |
   The final result must be a reliable, clean and production-ready Revit
   family.
 
+# HOW heron_method SERVES THE PURPOSE ABOVE - ONE STAGE AT A TIME (the
+# owner's choice, 2026-11-28). Whole, it is too long for one tool reply, so
+# heron_method serves a summary first - everything here that is not a stage:
+# how to read it, the objective, the rules, the report - and each stage when
+# asked by its `stage`. Each entry names the purpose line its part starts at,
+# exactly as written; the part runs to the next entry's line. An entry with
+# no `stage` goes back into the summary. Nothing above is changed by this
+# list, and heron_skill.validate refuses a line missing, written twice or out
+# of order, so a heading reworded above has to be reworded here too.
+stages:
+  - {stage: classification, starts: "2. FAMILY CLASSIFICATION"}
+  - {starts: "3. FAMILY CREATION WORKFLOW"}
+  - {stage: "0", starts: "STAGE 0 - INFORMATION AND PREPARATION"}
+  - {stage: "1", starts: "STAGE 1 - FAMILY CONFIGURATION"}
+  - {stage: "2", starts: "STAGE 2 - REFERENCE FRAMEWORK"}
+  - {stage: "3", starts: "STAGE 3 - GEOMETRY CREATION"}
+  - {stage: "4", starts: "STAGE 4 - OBJECT STYLES AND SUBCATEGORIES"}
+  - {stage: "5", starts: "STAGE 5 - DIMENSIONS AND PARAMETRIC CONTROL"}
+  - {stage: "6", starts: "STAGE 6 - VOIDS AND ARRAYS"}
+  - {stage: "7", starts: "STAGE 7 - MEP CONNECTORS"}
+  - {stage: "8", starts: "STAGE 8 - NESTED FAMILIES"}
+  - {stage: "9", starts: "STAGE 9 - MATERIALS AND GRAPHICS"}
+  - {stage: "10", starts: "STAGE 10 - FAMILY VERIFICATION"}
+  - {stage: "11", starts: "STAGE 11 - FLEX TESTING"}
+  - {stage: "12", starts: "STAGE 12 - PROJECT TESTING"}
+  - {stage: "13", starts: "STAGE 13 - FINAL SAVE AND DELIVERY"}
+  - {stage: fixed-size, starts: "4. FIXED-SIZE DETAILED FAMILY WORKFLOW"}
+  - {starts: "5. FAMILY CREATION BEHAVIOUR RULES"}
+
 # The words people say when they want a family made.
 utterances:
   - build a new parametric family
