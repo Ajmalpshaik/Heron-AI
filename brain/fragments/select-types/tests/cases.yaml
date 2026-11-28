@@ -23,6 +23,24 @@ positive:
       family type has no Family object, and matching only the loadable case
       would have reported zero with a browser full of them
 
+  # ROW 5b-2079 (issue #1494, 2026-11-28): both name filters carry `absent: ""`.
+  - given: >
+      categories holding only Title Blocks, familyNameContains and
+      typeNameContains NOT GIVEN at all, through a chat (revit_change) or the
+      bridge client
+    expect: >
+      runs - never refused as a value the caller supplies; the binding note
+      says each filter was not given, the card's own default; found is every
+      title block type in the project, the same as with both typed empty
+
+  - given: >
+      categories holding Duct Accessories, familyNameContains NOT GIVEN and
+      typeNameContains "Damper"
+    expect: >
+      runs with the type filter only - the family filter bound as empty,
+      which the run reads as no filter - and found is the types whose type
+      name carries Damper
+
   - given: categories null and both name filters empty
     expect: >
       every element type in the document, with scanned equal to found. That is

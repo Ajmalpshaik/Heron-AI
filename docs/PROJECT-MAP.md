@@ -248,7 +248,7 @@ Beside it:
 | Add or change a **fragment** | [`brain/README.md`](../brain/README.md) → `heron_fragment.py` | [09 — Skills & Fragments](09-skills-and-fragments.md). A re-authored fragment arrives **unproven** whatever it was elsewhere ([D-44](DECISIONS.md)) |
 | **Prove** a fragment against a model | [`fragment-proving`](../.claude/skills/fragment-proving/SKILL.md) skill | [NEEDS-CHECKING.md](NEEDS-CHECKING.md). A proof needs a named model, a negative case and a fingerprint ([D-30](DECISIONS.md)) |
 | Add or change an **MCP tool** | [`mcp/README.md`](../mcp/README.md) → `server/heron_tools.py` | [04 — Heron MCP](04-heron-mcp.md). Transport only — no BIM logic |
-| Add or change a **job's method** — the steps of a job like building a family | [`brain/README.md`](../brain/README.md) → `skills/` | A skill names capabilities, never fragments, and `heron_method` hands it to the chat whole. `python brain/heron_skill.py` says whether every capability it needs is provided |
+| Add or change a **job's method** — the steps of a job like building a family | [`brain/README.md`](../brain/README.md) → `skills/` | A skill names capabilities, never fragments, and `heron_method` hands it to the chat - a long one as a summary, then one stage at a time. `python brain/heron_skill.py` says whether every capability it needs is provided |
 | Change the **Companion page** | [`mcp/companion/README.md`](../mcp/companion/README.md) | [40 — Heron Companion](40-heron-companion.md). It never talks to an AI, never prints, and never asks Revit through the pipe |
 | Change **which Revit versions** are supported | [16 — Version Support](16-version-support-strategy.md) | `Directory.Build.props` maps release → runtime. `revit-version-support` skill has the API breaks |
 | Understand **why** a design is the way it is | [DECISIONS.md](DECISIONS.md) | Then the numbered document for that area |
@@ -484,7 +484,7 @@ Full definitions: [15 — Glossary](15-glossary.md). The ones that cause the mos
 |---|---|
 | **Fragment** | One reusable unit of implementation — C# plus its card, `fragment.yaml`, in `brain/fragments/<name>/`. The thing that does the work |
 | **Capability** | *What you want done*, named without naming who does it — `FILTER_ELEMENTS_BY_CATEGORY`. Skills and the chat ask for these, never for a fragment |
-| **Skill** | What a user can ask for in their own words, in `brain/skills/`. Names capabilities, never fragments; a job of several steps is a skill, and `heron_method` hands it over whole. Not the house rules in `.claude/skills/` |
+| **Skill** | What a user can ask for in their own words, in `brain/skills/`. Names capabilities, never fragments; a job of several steps is a skill, and `heron_method` hands it over (a long one a stage at a time). Not the house rules in `.claude/skills/` |
 | **Door** | One of the three MCP tools a fragment is run through — `revit_read`, `revit_show`, `revit_change` — each with a ceiling on the risk it will run |
 | **Host** | The AI application providing the conversation — Claude Code ([D-01](DECISIONS.md)). Not part of Heron |
 | **MCP** | The tool interface between the host and Heron |
