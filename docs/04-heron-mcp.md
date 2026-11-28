@@ -1354,3 +1354,42 @@ has met a real Revit**: which reply the add-in sends for each ending is the C#'s
   ([Group NU](needs-checking/group-nu.md)).
 - **Which of the two a host shows its model** — the text or the structured content — is still not
   measured (§8.8). Both carry the word.
+
+### 8.13 Slash commands for common jobs — MCP prompts, built 2026-11-28
+
+A host lists a server's **prompts** as commands, and running one puts its text in the chat as the
+modeller's own turn ([D-210](decisions/D-210.md) item 3). Each of Heron's is the sentence a modeller
+would type anyway, in Revit words:
+
+| Prompt | Title | What it asks |
+|---|---|---|
+| `check-model` | Check my model | what in the open model will cost the modeller time - reads only |
+| `build-family` | Build a family | a new family, a step at a time; optional `family`, what kind in one word |
+| `revit-connected` | Is Revit connected? | whether Heron reaches Revit, and which model it would work on |
+| `what-heron-can-do` | What can Heron do? | the jobs Heron knows, and how much is proven |
+
+The list, the titles and every word are [`heron_prompts.PROMPTS`](../mcp/server/heron_prompts.py) -
+`python mcp/server/heron_prompts.py` prints them; where this table differs, the file is right.
+
+- **A prompt only names a job.** It decides nothing ([D-01](decisions/D-01.md)) and orders no tool
+  call ([D-202](decisions/D-202.md)): the host reads it as it reads any turn, and decides.
+  `tests/test_tool_registry.py` holds every prompt's words to the same rule as a tool's description.
+- **It names only a tool this server serves.** Off Windows that is the library alone (§8.10), so a
+  prompt whose words name any other tool is left out at start-up, with a line on stderr saying so -
+  never listed and then refused. `tests/test_mcp_stdio.py` asks a real server over stdio for every prompt, with
+  and without its argument, and holds both negative cases: the check finds such a prompt, and
+  `register` leaves it out.
+- **The command's name follows the server's.** Claude Code lists a prompt as
+  `/servername:promptname (MCP)`, and `/mcp__servername__promptname` runs it too
+  ([its MCP page](https://code.claude.com/docs/en/mcp), *Use MCP prompts as commands*, read
+  2026-11-28). For today's user-scope `heron` server that is `/heron:check-model`. Under the plugin
+  the server is `plugin:heron:heron`, and **the exact command name there is a PC check, not a claim**.
+- **One word to an argument.** Claude Code splits what follows a command on spaces, so `family` asks
+  for one word - `door`, `tag`, `fitting` - and, left out, the prompt asks the modeller instead.
+- **No size budget moves.** Prompts are listed on their own, not in the instructions (§8.3) or any
+  tool's description, and `python mcp/server/heron_tools.py --sizes` printed the same before and after
+  this change.
+
+**Not yet seen in a real Claude Code chat:** that they appear under `/`, under which names, and that
+one runs - [Group RE](needs-checking/group-re.md), issue
+[#1521](https://github.com/Ajmalpshaik/Heron-AI/issues/1521).

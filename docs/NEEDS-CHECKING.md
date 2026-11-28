@@ -1776,6 +1776,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-rd.md`](needs-checking/group-rd.md)
 
+## Group RE - Heron's slash commands in a real Claude Code chat: its MCP prompts listed under `/`, one run, its one-word argument passed (D-210 item 3) - on the owner's Windows PC, no Revit needed - BUILT, NOT SEEN IN A CHAT (2026-11-28)
+
+**Its own file:** [`needs-checking/group-re.md`](needs-checking/group-re.md)
+
 ## Group RF - Heron's jobs as Claude Code skills, in a real chat on the owner's Windows PC (2026-11-28)
 
 **Its own file:** [`needs-checking/group-rf.md`](needs-checking/group-rf.md)
