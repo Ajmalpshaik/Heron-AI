@@ -3,8 +3,8 @@
 > **Type:** Operational work note. **Not specification.** Where a sentence here disagrees with the
 > [Constitution](../../../HERON_CONSTITUTION.md), the [Golden Rules](../../14-golden-rules.md) or
 > [DECISIONS.md](../../DECISIONS.md), **those win and this note is out of date.**
-> **Status:** **Design; part 1 and the job skills built 2026-11-28** - the build script and the folder it makes, nothing
-> published ([section 10](#10-read-and-built-on-2026-11-28)). Written 2026-11-27. **Owner:** Ajmal PS.
+> **Status:** **Design; part 1 and the job skills built 2026-11-28** - the build script, the folder it makes and a
+> skill per job, nothing published ([section 10](#10-read-and-built-on-2026-11-28)). Written 2026-11-27. **Owner:** Ajmal PS.
 > **Not the same word as [`plugin-extension/`](plugin-extension/README.md)**, which is about Heron's
 > *Revit* products (tabs). This note is about a **Claude Code** plugin: the package Claude Code installs.
 > **Retires** when the owner says no, or when it is built and its PC checks are run.
@@ -233,18 +233,21 @@ Found the same day, not keyed on a folder: the server's advice for a store that 
 ### The jobs as skills - item 4 of D-210, part P7
 
 - **Generated, one source.** `tools/build-plugin.py` writes `skills/<job>/SKILL.md` for each job `heron_method` lists,
-  read through `load_all()` in [`heron_skill.py`](../../../brain/heron_skill.py) - the same load
-  `method()` in [`heron_brain.py`](../../../mcp/server/heron_brain.py) lists them from, out of
-  `brain/skills`. Nothing about a job is typed twice: a job taken out
-  of `brain/skills` drops its skill at the next build.
+  read through `load_all()` in [`heron_skill.py`](../../../brain/heron_skill.py) - the same load `method()` in
+  [`heron_brain.py`](../../../mcp/server/heron_brain.py) lists them from, out of `brain/skills`. Nothing about a job
+  is typed twice: a job taken out of `brain/skills` drops its skill at the next build.
 - **What a skill holds.** `name` is the job's id; `description` is the job's `name` and one sentence; `when_to_use`
   is the modeller's words for it from the job's `utterances`. The body only sends Claude to `heron_method` with that
   id, once, before the first step - **the method itself is never pasted**. The build stops on a job that will not
   load, an id that is not a skill name, or a `description` and `when_to_use` over Claude Code's listing cap of
   **1,536** characters together; `python tests/test_build_plugin.py` prints the longest.
 - **Validated** with `claude plugin validate` on Claude Code **2.1.332**, plain and `--strict`: passed, every skill
-  listed as `heron:<job>`; the one warning is still **no icon**. **Owed on the owner's PC:** the skills appear in a
-  real chat with the plugin installed, and one starts its job.
+  listed as `heron:<job>`; the one warning is still **no icon**.
+- **Run in a Linux cloud container** on the same release, with `claude --plugin-dir`: the session listed every
+  `heron:<job>` skill, the server connected as `plugin:heron:heron`, and both *"I want to lay out the air terminals
+  in this room"* and `/heron:terminal-layout` made `heron_method` with `terminal-layout` the first call.
+  **Owed on the owner's Windows PC:** the same, there - [Group RF](../../needs-checking/group-rf.md),
+  issue [#1523](https://github.com/Ajmalpshaik/Heron-AI/issues/1523).
 
 ## Sources
 
