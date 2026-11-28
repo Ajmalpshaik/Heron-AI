@@ -160,6 +160,8 @@ purpose: |
   1. Save it first - a load reads the file.
      -> SAVE_DOCUMENT (PROVEN, version 4, Publish), as family-creation Stage
         13's SAVE RULE says; the modeller's Ctrl+S only where it is refused.
+        Its file's time is checked on disk BEFORE the load - the card's
+        proof saved another open document, not the family in front.
   2. Load it into a test project (family-creation Stage 12).
      -> ACTIVATE_DOCUMENT (PROVEN), revit_use_this_model; LOAD_FAMILY
         (PROVEN, version 4) with the .rfa's path.

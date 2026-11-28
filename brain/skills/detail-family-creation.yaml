@@ -30,8 +30,8 @@ purpose: |
   for the step and its card's status on 2026-11-28; the list served after
   this method gives each one's status now, and it wins - except
   CREATE_FAMILY_DOCUMENT, ACTIVATE_DOCUMENT, SAVE_DOCUMENT,
-  REPORT_OPEN_DOCUMENTS, REPORT_FAMILY_PARAMETERS and PLACE_DETAIL_COMPONENTS,
-  left out of that list so this method is not offered beside ordinary
+  REPORT_OPEN_DOCUMENTS, REPORT_FAMILY_PARAMETERS, REPORT_FAMILY_FORMS,
+  PLACE_DETAIL_COMPONENTS and PLACE_LINE_BASED_FAMILY, left out of that list so this method is not offered beside ordinary
   requests: heron_resolve gives theirs. "-> no Heron tool yet:" is done by hand, or asked. revit_change
   refuses a DRAFT that changes the model (D-117); a DRAFT read runs and says
   DRAFT, so confirm what matters another way. Each Heron change is one undo
@@ -79,7 +79,7 @@ purpose: |
      (they become parameters), the parts only some types show, and the labels.
      -> no Heron tool: asked; nothing guessed (D-33).
   4. SAY BEFORE STARTING, where the family has LABELS - the text that shows a
-     parameter's value: Revit's API cannot MAKE a label on any release 2020
+     parameter's value in a symbol or a title block: Revit's API cannot MAKE a label on any release 2020
      to 2027, nor change what one SHOWS - its parameters, sample value,
      prefix, suffix, spaces, break and unit format (docs/43 section 8.3a).
      They are copied from a seed family of the same category open in the same
@@ -146,35 +146,43 @@ purpose: |
 
   STAGE 5 - FAMILY VERIFICATION AND FLEX
   This stage is mandatory.
-  1. LOOK AT IT: revit_view_image of the family's view, a read (D-123) -
-     every line, fill and label where Stage 0's list puts it. No Heron read
-     lists a 2D family's lines, so the picture is the check. Fix what is
-     wrong and look again.
-  2. FLEX it at two really different sizes - for a line-based detail, two
+  1. Read back every line and fill.
+     -> REPORT_FAMILY_FORMS (PROVEN, version 7), which=2d: every detail line,
+        filled and masking region and nested family, its ends in millimetres,
+        its line style or region type, its Visible, and what holds it -
+        "locked along ...", "locked at an end to ...", "labelled ..." -
+        against Stage 0's list.
+  2. LOOK AT IT: revit_view_image of the family's view - every line, fill and
+     label where it belongs. Whether that picture is taken in a 2D family's
+     view is not on any card; where it is refused, the modeller looks.
+  3. FLEX it at two really different sizes - for a line-based detail, two
      lengths.
      -> FLEX_FAMILY (PROVEN): it measures every labelled dimension against
         its parameter, and solids, which a 2D family has none of - so it does
         NOT show that the lines followed. For that: SET_FAMILY_TYPE_VALUES
-        (PROVEN) to the second size, LOCK_FAMILY_LINES_TO_PLANES (PROVEN) run
-        again - every lock said as already there and the ends read where the
-        planes now are (row 5b-1493) - and revit_view_image again; then the
-        real values back.
-  3. Parameters and labels: REPORT_FAMILY_PARAMETERS (PROVEN), and
+        (PROVEN) to the second size, REPORT_FAMILY_FORMS which=2d again - the
+        ends where the planes now are - and LOCK_FAMILY_LINES_TO_PLANES
+        (PROVEN) run again, every lock said as already there (row 5b-1493);
+        then the real values back.
+  4. Parameters and labels: REPORT_FAMILY_PARAMETERS (PROVEN), and
      REPORT_FAMILY_LABELS (PROVEN) where there are labels.
 
   STAGE 6 - PROJECT TESTING
   1. Save it first - a load reads the file.
      -> SAVE_DOCUMENT (PROVEN, version 4, Publish), as family-creation Stage
         13's SAVE RULE says; the modeller's Ctrl+S only where it is refused.
+        Its file's time is checked on disk BEFORE the load - the card's
+        proof saved another open document, not the family in front.
   2. Load it into a test project (family-creation Stage 12).
      -> ACTIVATE_DOCUMENT (PROVEN), revit_use_this_model; LOAD_FAMILY
         (PROVEN, version 4) with the .rfa's path.
   3. Place it in a view.
      -> PLACE_DETAIL_COMPONENTS (PROVEN, version 2): a detail item or an
         annotation symbol in the view the modeller names, at the points
-        given. A LINE-BASED detail item, placed by its two ends: no Heron tool
-        yet - the modeller places it with two clicks. Then revit_view_image of
-        that view.
+        given. A LINE-BASED detail item, placed by its two ends: neither that
+        card (points) nor PLACE_LINE_BASED_FAMILY's (model families, with a
+        structural type) says it places one - no Heron tool yet: the modeller
+        places it with two clicks. Then revit_view_image of that view.
 
   STAGE 7 - FINAL SAVE AND DELIVERY
   family-creation Stage 13: back in the family first (ACTIVATE_DOCUMENT and
@@ -259,7 +267,8 @@ needs:
   # its GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
   - REPORT_SHARED_PARAMETER_FILE
   # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
-  # The proof, and never skipped.
+  # Stage 5's flex, never skipped - it measures the labelled dimensions; the
+  # lines are read back with REPORT_FAMILY_FORMS which=2d at the second size.
   - FLEX_FAMILY
   # Stage 4's labels: read, copied from a seed of the same category, laid out.
   - REPORT_FAMILY_LABELS

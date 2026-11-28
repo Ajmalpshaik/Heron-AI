@@ -157,7 +157,8 @@ purpose: |
   1. Save it first - a load reads the file.
      -> SAVE_DOCUMENT (PROVEN, version 4, Publish), as family-creation Stage
         13's SAVE RULE says - its proof saved another open document, not the
-        family in front, so the file's time is checked (Stage 7); the
+        family in front, so its file's time is checked on disk BEFORE the
+        load, as Stage 7 says; the
         modeller's Ctrl+S only where it is refused.
   2. Load it.
      -> ACTIVATE_DOCUMENT (PROVEN) to the project and revit_use_this_model;

@@ -28,8 +28,8 @@ purpose: |
   than copying it. "-> CAPABILITY (STATUS)" is the Heron capability for the
   step and its card's status on 2026-11-28; the list served after this method
   gives each one's status now, and it wins - except CREATE_FAMILY_DOCUMENT,
-  ACTIVATE_DOCUMENT, SAVE_DOCUMENT, REPORT_OPEN_DOCUMENTS and
-  REPORT_FAMILY_FORMS, left out of that list so this method is not offered
+  ACTIVATE_DOCUMENT, SAVE_DOCUMENT and REPORT_OPEN_DOCUMENTS, left out of
+  that list so this method is not offered
   beside ordinary requests: heron_resolve gives theirs. "-> no Heron tool
   yet:" is done by hand, or asked. revit_change refuses a DRAFT that changes
   the model (D-117); a DRAFT read runs and says DRAFT, so confirm what
@@ -108,20 +108,26 @@ purpose: |
 
   STAGE 4 - FAMILY VERIFICATION AND FLEX
   This stage is mandatory.
-  1. LOOK AT IT: revit_view_image of the profile's view, a read (D-123) -
-     the shape against Stage 0's list. No Heron read lists a 2D family's
-     lines, so the picture is the check.
-  2. FLEX it at two really different sizes.
+  1. Read back every line.
+     -> REPORT_FAMILY_FORMS (PROVEN, version 7), which=2d: each line's ends in
+        millimetres and what holds it - "locked along ...", "labelled ..." -
+        against Stage 0's list: closed loops, every edge a size moves locked.
+  2. LOOK AT IT: revit_view_image of the profile's view, a read (D-123).
+     Whether that picture is taken in a 2D family's view is not on any card;
+     where it is refused, the modeller looks.
+  3. FLEX it at two really different sizes.
      -> FLEX_FAMILY (PROVEN): it measures every labelled dimension against its
         parameter, and solids, which a profile has none of - so it does NOT
         show that the lines followed. For that: SET_FAMILY_TYPE_VALUES
-        (PROVEN) to the second size and revit_view_image again; then the real
-        values back.
+        (PROVEN) to the second size and REPORT_FAMILY_FORMS which=2d again -
+        the ends where the planes now are; then the real values back.
 
   STAGE 5 - PUT TO WORK IN A SWEEP
   1. Save the profile first - a load reads the file.
      -> SAVE_DOCUMENT (PROVEN, version 4, Publish), as family-creation Stage
         13's SAVE RULE says; the modeller's Ctrl+S only where it is refused.
+        Its file's time is checked on disk BEFORE the load - the card's
+        proof saved another open document, not the family in front.
   2. Load it into the family that sweeps it.
      -> ACTIVATE_DOCUMENT (PROVEN) to that family, revit_use_this_model;
         LOAD_FAMILY (PROVEN, version 4) with the profile's path.
@@ -198,13 +204,17 @@ needs:
   # its GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
   - REPORT_SHARED_PARAMETER_FILE
   # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
-  # The proof, and never skipped.
+  # Stage 4's flex, never skipped - it measures the labelled dimensions; the
+  # lines are read back with REPORT_FAMILY_FORMS which=2d at the second size.
   - FLEX_FAMILY
   - LOAD_FAMILY
   # CREATE_FAMILY_SWEEP was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   - CREATE_FAMILY_FORMS
   - SET_FAMILY_SWEEP_PROFILE
   - ADD_FAMILY_TYPE_PARAMETER
+  # Added 2026-11-28 with the owner's standard: Stage 4 reads the profile's
+  # lines back (which=2d), Stage 5 the sweep. Measured: no routing sentence moved.
+  - REPORT_FAMILY_FORMS
 
 preconditions:
   - a family document is open in the Family Editor, started from a Profile template - by the modeller, or by CREATE_FAMILY_DOCUMENT with the template the modeller named; Heron does not choose a template

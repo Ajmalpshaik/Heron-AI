@@ -30,8 +30,9 @@ purpose: |
   rather than copying it. "-> CAPABILITY (STATUS)" is the Heron capability
   for the step and its card's status on 2026-11-28; the list served after
   this method gives each one's status now, and it wins - except
-  SAVE_DOCUMENT, CREATE_LINE_STYLE, READ_ELEMENT_PARAMETERS and
-  FILTER_ELEMENTS_BY_CATEGORY, left out of that list so this method is not offered beside ordinary
+  SAVE_DOCUMENT, CREATE_LINE_STYLE, REPORT_FAMILY_FORMS,
+  READ_ELEMENT_PARAMETERS and FILTER_ELEMENTS_BY_CATEGORY, left out of that
+  list so this method is not offered beside ordinary
   project requests: heron_resolve gives theirs. "-> no Heron tool yet:" is
   done by hand, or asked. revit_change refuses a DRAFT that changes the model
   (D-117); a DRAFT read runs and says DRAFT, so confirm what matters another
@@ -116,7 +117,8 @@ purpose: |
      code, that is said and the item left out.
 
   STAGE 2 - LABELS
-  1. Open the seed and put the chat on it.
+  1. Open the seed and put the chat on it - the modeller's own seed for that
+     category, named by the modeller (docs/43 section 8.3b).
      -> ACTIVATE_DOCUMENT (PROVEN), the seed's file; revit_use_this_model.
   2. List the seed's labels.
      -> REPORT_FAMILY_LABELS (PROVEN): every label, its id, where it sits,
@@ -176,11 +178,13 @@ purpose: |
   1. Every label: REPORT_FAMILY_LABELS (PROVEN) against Stage 0's list - the
      parameters on 2027; on 2020 to 2026, what it reads, and Edit Label by the
      modeller for the rest (IJ10).
-  2. Every line and fill: no Heron read lists a 2D family's lines - the
-     picture shows them.
+  2. Every line and fill: REPORT_FAMILY_FORMS (PROVEN, version 7), which=2d -
+     each detail line and region, its ends in millimetres and its style.
   3. LOOK AT IT: revit_view_image of the tag's view, which is a read (D-123)
      - every label where it belongs against the insertion point, inside its
-     box. Fix what is wrong and look again; family-creation Stage 10 E.
+     box. Whether that picture is taken in an annotation family's view is not
+     on any card; where it is refused, the modeller looks. Fix what is wrong
+     and look again; family-creation Stage 10 E.
   4. Settings: REPORT_FAMILY_TEMPLATE (PROVEN) - the category, Rotate with
      Component, Keep Text Readable.
   A tag has no size to flex: family-creation Stage 11 is skipped, and the
@@ -188,7 +192,9 @@ purpose: |
 
   STAGE 6 - PROJECT TESTING
   The family is saved first, because a load reads the file: SAVE_DOCUMENT
-  (PROVEN, Publish), as family-creation Stage 13 item 6 and its SAVE RULE say.
+  (PROVEN, Publish), as family-creation Stage 13 item 6 and its SAVE RULE say,
+  and its file's time checked on disk BEFORE the load, as Stage 7 says - the
+  card's proof saved another open document, not the family in front.
   Heron's rule: a project the modeller names, never a job model unless the
   modeller asks (family-creation Stage 12).
   1. Load it.
@@ -205,8 +211,8 @@ purpose: |
      -> revit_view_image of that view: a Bottom Elevation of +1200 reading
         "Bottom +1200", before it is used on a whole drawing. The value it
         should show is READ_ELEMENT_PARAMETERS (PROVEN) on the tagged
-        element. A label that shows nothing, or Revit's ?, is said - an empty
-        value, or a parameter the label does not reach.
+        element. A label that shows nothing, or not that value, is said -
+        never passed over.
   4. A fault goes back to the family: ACTIVATE_DOCUMENT to its file, fix,
      save, and LOAD_FAMILY reload=true on the modeller's yes.
 

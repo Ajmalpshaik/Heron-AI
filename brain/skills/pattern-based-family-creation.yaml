@@ -126,9 +126,10 @@ purpose: |
         (family-creation Stage 9 items 4 and 5).
   2. OmniClass.
      -> family-creation Stage 1 item 3: REPORT_FAMILY_TEMPLATE's
-        classificationCodes line, the modeller confirms the code, then
-        SET_FAMILY_SETTINGS (PROVEN) "OmniClass Number=<code>"; no file or no
-        code is said, never guessed (D-33).
+        classificationCodes line - run again after the category changed -
+        the modeller confirms the code that fits, or picks where more than one
+        could, then SET_FAMILY_SETTINGS (PROVEN) "OmniClass Number=<code>"; no
+        file or no code is said, never guessed (D-33).
 
   STAGE 4 - FAMILY VERIFICATION
   This stage is mandatory.
@@ -147,6 +148,8 @@ purpose: |
   1. Save the panel first - a load reads the file.
      -> SAVE_DOCUMENT (PROVEN, version 4, Publish), as family-creation Stage
         13's SAVE RULE says; the modeller's Ctrl+S only where it is refused.
+        Its file's time is checked on disk BEFORE the load - the card's
+        proof saved another open document, not the family in front.
   2. Load it into a test mass.
      -> ACTIVATE_DOCUMENT (PROVEN) to the mass, revit_use_this_model; then
         LOAD_FAMILY (PROVEN, version 4) with the panel's path.
