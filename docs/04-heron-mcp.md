@@ -1351,11 +1351,11 @@ The list, the titles and every word are [`heron_prompts.PROMPTS`](../mcp/server/
 `python mcp/server/heron_prompts.py` prints them; where this table differs, the file is right.
 
 - **A prompt only names a job.** It decides nothing ([D-01](decisions/D-01.md)) and orders no tool
-  call ([D-202](decisions/D-202.md)): the host reads it as any turn and decides.
+  call ([D-202](decisions/D-202.md)): the host reads it as it reads any turn, and decides.
   `tests/test_tool_registry.py` holds every prompt's words to the same rule as a tool's description.
 - **It names only a tool this server serves.** Off Windows that is the library alone (§8.10), so a
-  prompt whose words name any other tool is left out at start-up and said on stderr - never listed
-  and then refused. `tests/test_mcp_stdio.py` asks a real server over stdio for every prompt, with
+  prompt whose words name any other tool is left out at start-up, with a line on stderr saying so -
+  never listed and then refused. `tests/test_mcp_stdio.py` asks a real server over stdio for every prompt, with
   and without its argument, and holds both negative cases: the check finds such a prompt, and
   `register` leaves it out.
 - **The command's name follows the server's.** Claude Code lists a prompt as
@@ -1366,7 +1366,8 @@ The list, the titles and every word are [`heron_prompts.PROMPTS`](../mcp/server/
 - **One word to an argument.** Claude Code splits what follows a command on spaces, so `family` asks
   for one word - `door`, `tag`, `fitting` - and, left out, the prompt asks the modeller instead.
 - **No size budget moves.** Prompts are listed on their own, not in the instructions (§8.3) or any
-  tool's description, and `python mcp/server/heron_tools.py --sizes` reads the same before and after.
+  tool's description, and `python mcp/server/heron_tools.py --sizes` printed the same before and after
+  this change.
 
 **Not yet seen in a real Claude Code chat:** that they appear under `/`, under which names, and that
 one runs - [Group RE](needs-checking/group-re.md), issue

@@ -164,8 +164,8 @@ def _handler(prompt):
 def register(server, served, jobs=PROMPTS, said=None):
     """
     Register every prompt in `jobs` on `server` whose words name only tools in
-    `served`, and return their names. A prompt that names another is left out
-    and said on `said` (stderr by default), never registered half-checked.
+    `served`, and return their names. A prompt that names any other tool is
+    left out, and a line saying so goes to `said` (stderr by default).
     The title is passed only to an SDK whose prompt() takes one.
     """
     said = said or sys.stderr.write
