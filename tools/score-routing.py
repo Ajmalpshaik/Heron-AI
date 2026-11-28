@@ -165,6 +165,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
+# The relpath that never raises - a questions file or a history file is often
+# on another drive than the checkout (a scratch folder on C:, the checkout on D:).
+import heron_relpath as RELPATH                                  # noqa: E402
+
 QUESTIONS = os.path.join(ROOT, "tests", "data", "owner-questions.yaml")
 HISTORY = os.path.join(ROOT, "brain", "retrieval-history.md")
 SKILLS_DIR = os.path.join(ROOT, "brain", "skills")
@@ -254,7 +258,7 @@ def load_key(path=QUESTIONS):
     rows = doc.get("questions") or []
     problems, seen = [], set()
     if not rows:
-        problems.append("%s holds no questions" % os.path.relpath(path, ROOT))
+        problems.append("%s holds no questions" % RELPATH.relpath(path, ROOT))
     for i, row in enumerate(rows, 1):
         if not isinstance(row, dict):
             problems.append("row %d is not a mapping of n, question, kind "
@@ -896,7 +900,7 @@ def load_plain(path=PLAIN):
     rows = doc.get("questions") or []
     problems, seen = [], set()
     if not rows:
-        problems.append("%s holds no questions" % os.path.relpath(path, ROOT))
+        problems.append("%s holds no questions" % RELPATH.relpath(path, ROOT))
     for i, row in enumerate(rows, 1):
         if not isinstance(row, dict):
             problems.append("row %d is not a mapping of n, row and question" % i)
@@ -2196,7 +2200,7 @@ def main(argv=None):
         for header, one in ((TABLE_HEADER, line), (PLAIN_HEADER, plain_line)):
             append_row(args.history, one, header)
             print("\nRecorded in %s:\n%s"
-                  % (os.path.relpath(args.history, ROOT), one))
+                  % (RELPATH.relpath(args.history, ROOT), one))
     else:
         print("\nThe rows --record would append:\n%s\n%s" % (line, plain_line))
 
