@@ -527,18 +527,18 @@ purpose: >
       gives the text, saved beside the .rfa with its name and .txt, so a
       project loads only the types it picks.
 
-  The family is saved by the modeller (Ctrl+S): Revit will not save the
-  document open in its window while Heron holds it. A nested part made in
-  step 11 is the exception - SAVE_DOCUMENT saves it while Heron works in the
-  host (step f; the card is PROVEN, version 4, 2026-11-24). A big build in a family that has
+  SAVE_DOCUMENT saves the family Heron works in once a change is kept
+  (D-171, Q-69 answered 2026-11-16), and a nested part made in step 11 while
+  Heron works in the host (step f). Its card is PROVEN, version 4, proof
+  dated 2026-11-24, Revit 2024 - that run saved ANOTHER open document, not
+  the family in front. Ctrl+S by the modeller is the fallback when the save
+  is refused or the add-in is older than version 3, and no helper model is
+  ever made to save from (issue #1028). A big build in a family that has
   never been saved is saved FIRST, as step 0 asks, never only at the end:
-  closed with no file, it is lost with every form in it. Q-69 was answered
-  on 2026-11-16 and SAVE_DOCUMENT (card PROVEN, version 4, proof dated
-  2026-11-24) can save the family Heron works in once a change is kept, so
-  the modeller's Ctrl+S is the fallback when it is refused, and no helper
-  model is ever made to save it from (issue #1028). Every save the modeller makes is checked
-  as step 0 checks it - REPORT_OPEN_DOCUMENTS' `fileTimes` and
-  `staleFileCount` - never taken from "I pressed Ctrl+S".
+  closed with no file, it is lost with every form in it. Every save is
+  checked as step 0 checks it - REPORT_OPEN_DOCUMENTS' `fileTimes` and
+  `staleFileCount` - never taken from "I pressed Ctrl+S" or from a reply
+  that says SAVED.
 
   AN ANGLE LABEL between two reference planes that meet is
   LABEL_FAMILY_DIMENSION with an Angle parameter - one that already holds
