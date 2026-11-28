@@ -1,0 +1,84 @@
+# ROUTING SENTENCES FROZEN 2026-11-28, BEFORE ANY CARD, ROUTING ROW OR HOST
+# RULE WAS EDITED - the owner's own test of tool finding on his PC (Revit 2020,
+# Heron add-in 0.3.0+addd15391), after the re-ranker (D-201) and model2vec
+# (D-203) were removed. Its findings are FRAGMENT-ISSUES rows written in the
+# same pull request, and the baseline later sessions must beat is in its body.
+#
+# `raw` is every sentence exactly as the modeller typed it, spelling mistakes
+# kept. `cleaned` is the same request in clean words, where the test recorded
+# one - the host's job in the next session, never a Heron glossary (the owner,
+# 2026-11-28: no site-word or abbreviation glossary, because Heron is for
+# everyone). "list the VCDs in the model" has no cleaned form here: none was
+# recorded, and writing one would be a guess at what the owner chose not to
+# build. A sentence whose words were already clean sits in both groups, with
+# the same expectation.
+#
+# Two wants differ from the list this session was handed, each checked against
+# the cards on main (grep -h '^capability:' brain/fragments/*/fragment.yaml):
+#   - "rename the view" wants EDIT_TEXT_VALUES, not RENAME_ELEMENTS: that card
+#     is DEPRECATED since 2026-11-01, superseded-by EDIT_TEXT_VALUES, and
+#     retrieval never offers it.
+#   - "make a new project" wants CREATE_FAMILY_DOCUMENT as handed: version 3
+#     makes a project from a .rte, and CREATE_PROJECT_DOCUMENT is DEPRECATED,
+#     superseded-by it.
+#
+# Read by tools/score-routing.py --sentences. That tool asks the lookup with no
+# question flag, so a `not-a-write` sentence measures whether the search alone
+# keeps a question off a write. Never reworded to buy back a rank: a sentence
+# here is the instrument.
+groups:
+- group: 'raw - as the modeller typed them'
+  sentences:
+  # questions
+  - {say: which views have no template, expect: want FIND_VIEWS}
+  - {say: find the ducts connected to nothing, expect: want SELECT_BY_CONNECTION_STATUS}
+  - {say: how many sheets are in this model, expect: want COUNT_ELEMENTS}
+  - {say: what size is this pipe, expect: want READ_ELEMENT_PARAMETERS}
+  - {say: show me rooms with no number, expect: want REPORT_ROOM_SPACE_DATA}
+  - {say: chk the model health, expect: want REPORT_MODEL_DASHBOARD}
+  - {say: which families are not used in the project, expect: want FIND_PURGEABLE_ELEMENTS}
+  - {say: how many sprinklers on level 1, expect: want COUNT_ELEMENTS}
+  - {say: what is the fresh air flow of this louvre, expect: not-a-write}
+  - {say: list the VCDs in the model, expect: not-a-write}
+  - {say: which toilet has no exhaust, expect: not-a-write}
+  - {say: what duct size is this, expect: want REPORT_DUCT_CONDUIT_SIZES}
+  - {say: which title blocks are loaded in the model, expect: want SELECT_TYPES}
+  - {say: list the title block types in the project, expect: want SELECT_TYPES}
+  # changes
+  - {say: select all ducts, expect: want FILTER_ELEMENTS_BY_CATEGORY}
+  - {say: selct al pipes, expect: want FILTER_ELEMENTS_BY_CATEGORY}
+  - {say: create a new family, expect: want CREATE_FAMILY_DOCUMENT}
+  - {say: creat famly of a box 600x600x300, expect: neutral}
+  - {say: make a generic model box family, expect: want CREATE_FAMILY_DOCUMENT}
+  - {say: add a parameter to the family, expect: want ADD_FAMILY_PARAMETERS}
+  - {say: add a duct connector to the family, expect: want ADD_FAMILY_CONNECTOR}
+  - {say: rename the view, expect: want EDIT_TEXT_VALUES}
+  - {say: duplicate the duct type, expect: want DUPLICATE_TYPE}
+  - {say: change the duct size to 300x200, expect: want SET_MEP_SIZE}
+  - {say: change the pipe size to 50, expect: want SET_MEP_SIZE}
+  - {say: create levels every 3.5 m, expect: want CREATE_LEVELS}
+  - {say: make 4 walls for a room 5 x 4 m, expect: want CREATE_WALL}
+  - {say: place the FCU in the room, expect: want PLACE_FAMILY_INSTANCES}
+  - {say: tag all the diffusers in this view, expect: want TAG_ELEMENTS_IN_VIEW}
+  - {say: put a door in the wall, expect: want PLACE_HOSTED_FAMILY}
+  - {say: create a sheet and put the plan on it, expect: neutral}
+  - {say: hide the ceilings in this view, expect: neutral}
+  - {say: draw a duct from here to there, expect: want CREATE_MEP_RUNS}
+  - {say: set the OA flow on the louvre, expect: want SET_AIR_TERMINAL_FLOW}
+  - {say: make a new project, expect: want CREATE_FAMILY_DOCUMENT}
+  - {say: load the family into the project, expect: want LOAD_FAMILY}
+  - {say: create 10 sheets in the model sheet number hvac_05001 then 05002 like that, expect: want CREATE_SHEETS}
+  - {say: create 10 levels total and each level difrents 4000 mm, expect: want CREATE_LEVELS}
+- group: 'cleaned - the same requests in clean words'
+  sentences:
+  - {say: which toilet rooms have no exhaust air terminal, expect: want CHECK_ROOM_MEP_COMPLETENESS}
+  - {say: select all pipes, expect: want FILTER_ELEMENTS_BY_CATEGORY}
+  - {say: create a new generic model family, expect: want CREATE_FAMILY_DOCUMENT}
+  - {say: add a duct connector to the family, expect: want ADD_FAMILY_CONNECTOR}
+  - {say: rename the view, expect: want EDIT_TEXT_VALUES}
+  - {say: change the duct width to 300 and height to 200, expect: want SET_MEP_SIZE}
+  - {say: place a fan coil unit family instance in the room, expect: want PLACE_FAMILY_INSTANCES}
+  - {say: set the outside air flow on the air terminal, expect: want SET_AIR_TERMINAL_FLOW}
+  - {say: which title blocks are loaded in the model, expect: want SELECT_TYPES}
+  - {say: list the title block types in the project, expect: want SELECT_TYPES}
+  - {say: create levels 4000 mm apart, expect: want CREATE_LEVELS}
